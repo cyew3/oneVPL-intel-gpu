@@ -4,11 +4,10 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2020 Intel Corporation. All Rights Reserved.
 //
 */
 #include "ts_encoder.h"
-#include "ts_parser.h"
 #include "ts_struct.h"
 
 namespace hevce_hrd_violation
@@ -66,7 +65,6 @@ namespace hevce_hrd_violation
         mfxExtCodingOption *buff_in = NULL;
         try
         {
-
             const tc_struct& tc = test_case[id];
 
             MFXInit();
@@ -74,6 +72,9 @@ namespace hevce_hrd_violation
 
             SETPARS(m_pPar, MFX_PAR);
             g_tsStatus.expect(tc.sts);
+
+            mfxVideoParam tmp = m_par;
+            m_pParOut = &tmp;
 
             if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
             {
@@ -89,7 +90,7 @@ namespace hevce_hrd_violation
                 m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
                 m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
 
-                // HEVCE_HW heve don't support NalHrdConformance
+                // HEVCE_HW doesn't support NalHrdConformance
                 if (tc.sts != MFX_ERR_NONE)
                     g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
                 if ((tc.val == MFX_CODINGOPTION_OFF) || (tc.val == MFX_CODINGOPTION_UNKNOWN))
@@ -104,10 +105,8 @@ namespace hevce_hrd_violation
             buff_in->NalHrdConformance = tc.val;
             m_par.NumExtParam = 1;
             m_par.ExtParam = (mfxExtBuffer**)&buff_in;
-            m_pParOut = new mfxVideoParam;
-            *m_pParOut = m_par;
 
-            //call tested funcion
+            //call tested function
             Init(m_session, m_pPar);
             if (buff_in)
                 delete  buff_in;
