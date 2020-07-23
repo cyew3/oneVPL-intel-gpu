@@ -109,9 +109,9 @@ namespace UMC_AV1_DECODER
             frame.GetFrameHeader();
 
         picParam.width = (USHORT)frame.GetUpscaledWidth();
-        picParam.height = (USHORT)frame.GetHeight();
+        picParam.height = (USHORT)frame.GetFrameHeight();
         picParam.max_width = (USHORT)frame.GetUpscaledWidth();
-        picParam.max_height = (USHORT)frame.GetHeight();
+        picParam.max_height = (USHORT)frame.GetFrameHeight();
         picParam.CurrPicTextureIndex = (UCHAR)frame.GetMemID(SURFACE_RECON);
         picParam.superres_denom = (UCHAR)info.SuperresDenom;
         picParam.BitDepth = (UCHAR)sh.color_config.BitDepth;
