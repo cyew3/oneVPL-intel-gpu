@@ -327,18 +327,36 @@ namespace TEST_NAME
             }
         }
 
-        g_tsStatus.expect(tc.sts);
+        bool unsupported = g_tsOSFamily == MFX_OS_FAMILY_LINUX &&
+            (g_tsHWtype != MFX_HW_APL && g_tsHWtype != MFX_HW_CFL);
+
+        g_tsStatus.expect(unsupported?
+                          (tc.ctrl[0].type & QUERY ? MFX_ERR_UNSUPPORTED
+                           : MFX_ERR_INVALID_VIDEO_PARAM)
+                          : tc.sts);
 
         mfxVideoParam out = m_par;
 
         if (tc.ctrl[0].type & QUERY)
         {
             Query(m_session, &m_par, &out);
+
+            if (unsupported)
+            {
+                // UNSUPPORTED returned, no need to check other calls
+                return 0;
+            }
         }
 
         if (tc.ctrl[0].type & INIT)
         {
             Init(m_session, &out);
+
+            if (unsupported)
+            {
+                // INVALID_VIDEO_PARAM returned, no need to check other calls
+                return 0;
+            }
         }
 
         if (tc.ctrl[0].type & RESET)
