@@ -12,7 +12,6 @@ File Name: hevce_dirty_rect.cpp
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
-#include "ts_parser.h"
 
 namespace hevce_dirty_rect {
 

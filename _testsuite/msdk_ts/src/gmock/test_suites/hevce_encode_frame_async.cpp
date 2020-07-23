@@ -11,7 +11,6 @@ File Name: hevce_encode_frame_async.cpp
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
-#include "ts_parser.h"
 #include "ts_struct.h"
 #include "ts_aux_dev.h"
 #include <map>

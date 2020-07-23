@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 - 2016 Intel Corporation.All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation.All Rights Reserved.
 
 File Name : vpp_deinterlac_inv_telec.cpp
 \* ****************************************************************************** */
@@ -32,7 +32,6 @@ Algorithm:
 */
 #include "ts_vpp.h"
 #include "ts_struct.h"
-#include "ts_parser.h"
 #include <cmath>
 
 /*! \brief Main test name space */

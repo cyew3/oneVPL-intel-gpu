@@ -4,11 +4,12 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 //
 */
 #include "ts_struct.h"
 #include "ts_vpp.h"
+#include "ts_utils.h"
 
 /*
 Description:
@@ -21,9 +22,6 @@ Description:
     - process nframes in second session, calculate CRC of output
     - compare crcs of outputs from both sessions
 */
-
-#define MSDK_ALIGN16(value)  (((value + 15) >> 4) << 4) // round up to a multiple of 16
-#define MSDK_ALIGN32(value)  (((value + 31) >> 5) << 5) // round up to a multiple of 16
 
 namespace vpp_oversized_surfaces
 {

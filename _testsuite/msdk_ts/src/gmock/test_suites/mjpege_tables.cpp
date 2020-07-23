@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -663,7 +663,7 @@ exit:
                     ht_set = 0;
                 }
             }
-            else // defoult init
+            else // default init
             {
                 if (tc.table_ctr.qt_init) {m_pPar->ExtParam[m_pPar->NumExtParam++] = &(qt0.Header); qt_expect = qt0;}
                 if (tc.table_ctr.ht_init) {m_pPar->ExtParam[m_pPar->NumExtParam++] = &(ht0.Header); ht_expect = ht0;}

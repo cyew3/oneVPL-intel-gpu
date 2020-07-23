@@ -8,7 +8,6 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
-#include "ts_parser.h"
 #include "ts_struct.h"
 #include <stdint.h>
 

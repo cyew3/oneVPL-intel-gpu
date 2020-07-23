@@ -11,7 +11,6 @@ File Name: hevce_load.cpp
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
-#include "ts_parser.h"
 #include "ts_struct.h"
 
 namespace hevce_load
