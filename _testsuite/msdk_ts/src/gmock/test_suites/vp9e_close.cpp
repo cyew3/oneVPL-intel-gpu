@@ -11,7 +11,6 @@ File Name: vp9e_close.cpp
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
-#include "ts_parser.h"
 #include "ts_struct.h"
 #include "gmock/test_suites/vp9e_utils.h"
 

@@ -9,7 +9,6 @@ Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
-#include "ts_parser.h"
 #include "ts_struct.h"
 #include "gmock/test_suites/vp9e_utils.h"
 
