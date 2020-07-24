@@ -2863,7 +2863,7 @@ mfxStatus ImplementationAvc::BuildPPyr(DdiTask & task, mfxU32 pyrWidth, bool bLa
     mfxExtCodingOption3 const & extOpt3 = GetExtBufferRef(m_video);
     MFX_CHECK(m_video.mfx.GopRefDist == 1 &&
         extOpt3.PRefType == MFX_P_REF_PYRAMID &&
-        pyrWidth > 1 && pyrWidth <= MAX_PYR_SIZE
+        pyrWidth > 0 && pyrWidth <= MAX_PYR_SIZE
         &&!IsOn(extOpt3.ExtBrcAdaptiveLTR),
         MFX_ERR_NONE);
 
