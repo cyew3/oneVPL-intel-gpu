@@ -493,10 +493,10 @@ public:
         , const Defaults::Param& par)
     {
         const mfxExtHEVCParam* pHEVC = ExtBuffer::Get(par.mvp);
-        mfxU32 profile  = par.mvp.mfx.CodecProfile;
-        mfxU16 maxBy4CC = par.base.GetMaxChromaByFourCC(par);
-        bool bCheckConstraints = profile >= MFX_PROFILE_HEVC_REXT && pHEVC;
-        bool bMax420 =
+        mfxU32 profile               = par.mvp.mfx.CodecProfile;
+        mfxU16 maxBy4CC              = par.base.GetMaxChromaByFourCC(par);
+        bool   bCheckConstraints     = profile >= MFX_PROFILE_HEVC_REXT && pHEVC;
+        bool   bMax420 =
             profile == MFX_PROFILE_HEVC_MAIN
             || profile == MFX_PROFILE_HEVC_MAINSP
             || profile == MFX_PROFILE_HEVC_MAIN10
@@ -1412,7 +1412,7 @@ public:
     {
         mfxU8 nL0 = 0, nL1 = 0;
 
-        if (IsB(fi.FrameType))
+        if (IsB(fi.FrameType) && !fi.isLDB)
         {
             const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par.mvp);
             const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par.mvp);
@@ -1422,7 +1422,7 @@ public:
             nL1 = (mfxU8)CO3.NumRefActiveBL1[layer];
         }
 
-        if (IsP(fi.FrameType))
+        if (IsP(fi.FrameType) || fi.isLDB)
         {
             const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par.mvp);
             auto layer = mfx::clamp<mfxI32>(fi.PyramidLevel, 0, 7);
@@ -2627,7 +2627,7 @@ public:
         changed += SetIf(pCO3->WinBRCMaxAvgKbps, pCO3->WinBRCMaxAvgKbps != maxKbps, maxKbps);
 
         MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            return MFX_ERR_NONE;
+        return MFX_ERR_NONE;
     }
 
     static mfxStatus SAO(
