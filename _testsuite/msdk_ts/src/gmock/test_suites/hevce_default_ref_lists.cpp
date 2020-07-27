@@ -531,7 +531,7 @@ namespace hevce_default_ref_lists
                    return lhs_distance < rhs_distance;
                 };
 
-                // If lists are bigger than max supported, sort them and remove extra elements
+                // If lists are bigger than max supported, sort them
                 if (L0.size() > (isB ? CO3.NumRefActiveBL0[0] : CO3.NumRefActiveP[0]))
                 {
                     if (isPPyramid)
@@ -539,40 +539,24 @@ namespace hevce_default_ref_lists
                         // For P-pyramid we remove oldest references
                         // with the highest layer except the closest frame or field pair.
 
-                        if (bIsFieldCoding)
+                        auto cmp = [&](const Frame & a, const Frame & b)
                         {
-                            std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
-                                                            {
-                                                                return !preferSamePolarity(lhs_frame, rhs_frame);
-                                                            });
-                        }
-                        else
-                        {
-                            std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
-                                                            {
-                                                                return !distance(lhs_frame, rhs_frame);
-                                                            });
-                        }
+                            return (a.PLayer < b.PLayer) || (a.PLayer == b.PLayer) && distance(a, b);
+                        };
 
-                        while (L0.size() > CO3.NumRefActiveP[out.PLayer])
-                        {
-                            auto weak = L0.begin();
-                            for (auto it = L0.begin(); it != L0.end(); it ++)
-                            {
-                                if (weak->PLayer < it->PLayer &&
-                                    (bIsFieldCoding ?
-                                        it->poc != L0.rbegin()[0].poc && it->poc != L0.rbegin()[1].poc :
-                                        it->poc != L0.rbegin()[0].poc))
-                                {
-                                    weak = it;
-                                }
-                            }
+                        sort(L0.begin(), L0.end(), cmp);
 
-                            L0.erase(weak);
-                        }
                     } // if PPyramid
                 }
 
+                {
+                    auto it = std::min_element(L0.begin(), L0.end(), distance);
+                    auto lastPocFrame = *it;
+                    L0.erase(it);
+                    L0.insert(L0.begin(), lastPocFrame);
+                }
+                std::vector<Frame> list0(L0);
+                std::vector<Frame> list1(L1);
                 if (bIsFieldCoding)
                 {
                     std::sort(L0.begin(), L0.end(), preferSamePolarity);
@@ -626,8 +610,47 @@ namespace hevce_default_ref_lists
                 else if (L1.size() > CO3.NumRefActiveBL1[0])
                     L1.resize(CO3.NumRefActiveBL1[0]);
 
-                std::sort(L0.begin(), L0.end(), distance);
-                std::sort(L1.begin(), L1.end(), distance);
+                bool bValid = (list0.size() <= (isB ? CO3.NumRefActiveBL0[0] : CO3.NumRefActiveP[0]) && list1.size() <= CO3.NumRefActiveBL1[0]);
+                if (bIsFieldCoding && !bValid && isPPyramid)
+                {
+                    list1 = L1;
+                    auto IsNotInL0 = [&](Frame x)
+                    {
+                        for (auto i : L0)
+                            if (i.poc == x.poc)
+                                return false;
+                        return true;
+                    };
+                    auto IsNotInL1 = [&](Frame x)
+                    {
+                        for (auto i : L1)
+                            if (i.poc == x.poc)
+                                return false;
+                        return true;
+                    };
+
+                    std::remove_if(list0.begin(), list0.end(), IsNotInL0);
+                    std::remove_if(list1.begin(), list1.end(), IsNotInL1);
+
+                    L0 = list0;
+                    L1 = list1;
+                }
+                else if (!L0.empty() && !L1.empty())
+                {
+                    auto cmp = [&](const Frame & a, const Frame & b)
+                    {
+                        return (isPPyramid ? (a.PLayer < b.PLayer) || (a.PLayer == b.PLayer) && distance(a, b) : distance(a, b));
+                    };
+                    std::sort(L0.begin(), L0.end(), cmp);
+                    std::sort(L1.begin(), L1.end(), distance);
+                    if (isPPyramid)
+                    {
+                        auto it = std::min_element(L0.begin(), L0.end(), distance);
+                        auto lastPocFrame = *it;
+                        L0.erase(it);
+                        L0.insert(L0.begin(), lastPocFrame);
+                    }
+                }
             }
 
             //=================5. Save current frame in DPB=====================
@@ -980,43 +1003,37 @@ namespace hevce_default_ref_lists
                  { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID },
                  { EXT_COD3, &mfx_GPB,         MFX_CODINGOPTION_OFF }},
                 163},
-        {/*23*/ NOT_LOWPOWER,
-                {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM },
-                 { MFX_PAR,  &mfx_GopPicSize,  30 },
-                 { MFX_PAR,  &mfx_GopRefDist,  1 },
-                 { EXT_COD3, &mfx_PRefType,    MFX_P_REF_PYRAMID }},
-                163},
-        {/*24*/ LOWPOWER,
+        {/*23*/ LOWPOWER,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  0 },
                  { MFX_PAR,  &mfx_GopRefDist,  1 },
                  { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
                  50 },
-        {/*25*/ LOWPOWER,
+        {/*24*/ LOWPOWER,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  0 },
                  { MFX_PAR,  &mfx_GopRefDist,  0 },
                  { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID }},
                  50 },
-        {/*26*/ LOWPOWER,
+        {/*25*/ LOWPOWER,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  50 },
                  { MFX_PAR,  &mfx_GopRefDist,  1 },
                  { EXT_COD3, &mfx_PRefType,    MFX_P_REF_SIMPLE }},
                  200 },
-        {/*27*/ LOWPOWER,
+        {/*26*/ LOWPOWER,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  30 },
                  { MFX_PAR,  &mfx_GopRefDist,  1 },
                  { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
                  200 },
-        {/*28*/ LOWPOWER,
+        {/*27*/ LOWPOWER,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  256 },
                  { MFX_PAR,  &mfx_GopRefDist,  1 },
                  { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
                  600 },
-        {/*29*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_4K,
+        {/*28*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_4K,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  0 },
                  { MFX_PAR,  &mfx_GopRefDist,  0 },
@@ -1026,7 +1043,7 @@ namespace hevce_default_ref_lists
                  { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
                  { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 }},
                  1 },
-        {/*30*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_8K,
+        {/*29*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_8K,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  0 },
                  { MFX_PAR,  &mfx_GopRefDist,  0 },
@@ -1036,7 +1053,7 @@ namespace hevce_default_ref_lists
                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 }},
                  1 },
-        {/*31*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_4K,
+        {/*30*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_4K,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  0 },
                  { MFX_PAR,  &mfx_GopRefDist,  0 },
@@ -1046,7 +1063,7 @@ namespace hevce_default_ref_lists
                  { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
                  { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 }},
                  1 },
-        {/*32*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_8K,
+        {/*31*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_8K,
                 {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
                  { MFX_PAR,  &mfx_GopPicSize,  0 },
                  { MFX_PAR,  &mfx_GopRefDist,  0 },

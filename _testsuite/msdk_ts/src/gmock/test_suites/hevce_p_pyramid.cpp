@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -135,7 +135,14 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             L0.erase(weak);
         }
 
-        L0.reverse();
+        {
+            DPBPic last = L0.back(); L0.pop_back();
+            L0.sort([&](const DPBPic & a, const DPBPic & b)
+            {
+                return (a.layer < b.layer || (a.layer == b.layer && a.POC > b.POC));
+            });
+            L0.push_front(last);
+        }
 
         mfxU16 idx = 0;
         for (auto expected : L0)
@@ -171,6 +178,7 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             m_dpb.resize(0);
 
         DPBPic pic = {AU.pic->PicOrderCntVal, layer};
+
         m_dpb.push_back(pic);
     }
 
