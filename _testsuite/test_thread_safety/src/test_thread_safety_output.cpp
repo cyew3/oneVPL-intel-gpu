@@ -1,4 +1,4 @@
-/* ****************************************************************************** *\
+﻿/* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -16,13 +16,10 @@ File Name: test_thread_safety_output.cpp
 
 OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file** fdOut, mfxU32 syncOpt)
 : m_counterMutex()
-, m_allIn()
-, m_allOut()
 , m_data(new Data[numWriter])
 , m_numWriter(numWriter)
 , m_numRegistered(0)
-, m_numUnregistered(0)
-, m_numCommit(0)
+, m_isLastRegistered(false)
 , m_compareStatus(OK)
 , m_fdRef(fdRef)
 , m_fdOut(fdOut)
@@ -31,26 +28,31 @@ OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file**
     if (numWriter + HandleBase < 0)
     {
         vm_file_fprintf(vm_stderr, VM_STRING("TEST: numWriter %u is too big for HandleBase %llu\n"),
-                        numWriter, HandleBase);
+            numWriter, HandleBase);
         throw std::invalid_argument("numWriter is too big");
     }
-    m_allIn.Init(1, 0);
-    m_allOut.Init(1, 0);
-
     memset(&m_data[0], 0, numWriter * sizeof(m_data[0]));
 }
 
 mfxHDL OutputRegistrator::Register()
 {
-    std::lock_guard<std::mutex> guard(m_counterMutex);
+    std::unique_lock<std::mutex> guard(m_counterMutex);
+    m_isLastRegistered = false;
     if (m_numRegistered == m_numWriter)
         return 0;
 
     m_numRegistered++;
-    if (m_numRegistered == m_numWriter)
-        m_allOut.Set(); // allow commits
+    mfxHDL m_handle = (mfxHDL)(mfxU64)(HandleBase + m_numRegistered);
 
-    return (mfxHDL)(mfxU64)(m_numRegistered + HandleBase);
+    if (m_syncOpt == SYNC_OPT_PER_WRITE) {
+        if (m_numRegistered != m_numWriter)
+            m_condVar.wait(guard, [this] { return m_isLastRegistered; });
+        else {
+            m_isLastRegistered = true;
+            m_condVar.notify_all();
+        }
+    }
+    return m_handle;
 }
 
 mfxI32 OutputRegistrator::UnRegister(mfxHDL handle)
@@ -60,83 +62,32 @@ mfxI32 OutputRegistrator::UnRegister(mfxHDL handle)
 
 mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
 {
-    if (!IsRegistered(handle))
-    {
-        vm_file_fprintf(vm_stderr, VM_STRING("TEST: invalid handle %p is out of range [%p; %p]\n"),
-                        handle, (mfxHDL)(HandleBase + 1), (mfxHDL)(HandleBase + m_numWriter));
-        return -1;
-    }
     if (m_syncOpt == SYNC_OPT_PER_WRITE)
     {
-        m_allOut.Wait(); // wait until all threads encode previous frame
+        std::unique_lock<std::mutex> guard(m_counterMutex);
+        m_numRegistered--;
+        m_isLastRegistered = false;
+        m_data[m_numRegistered].ptr = ptr;
+        m_data[m_numRegistered].len = len;
 
-        bool last = false;
-
-        {
-            std::lock_guard<std::mutex> guard(m_counterMutex);
-            if (m_numCommit >= m_numWriter)
-            {
-                vm_file_fprintf(vm_stderr, VM_STRING("TEST: attempt of invalid commit with "
-                                                     "handle %p: commit out of bound\n"), handle);
-                return -1;
-            }
-            m_data[m_numCommit].ptr = ptr;
-            m_data[m_numCommit].len = len;
-            m_numCommit++;
-            // If thread was unregistered (e.g. due to gpu hang) there is no need to wait this thread
-            // So, need to wait only alive threads (which is equal to m_numWriter - m_numUnregistered)
-            last = (m_numCommit >= (m_numWriter - m_numUnregistered));
-        }
-
-        if (last)
+        if (m_numRegistered != 0)
+            m_condVar.wait(guard, [this]{ return m_isLastRegistered; });    // wait until all threads encode current frame
+        else
         {
             if (m_compareStatus == OK)
                 m_compareStatus = Compare();
             memset(&m_data[0], 0, m_numWriter * sizeof(m_data[0]));
-            m_allOut.Reset();
-            m_allIn.Set(); // all threads encode current frame
-        }
-        else
-        {
-            m_allIn.Wait(); // wait until all threads encode current frame
+            m_isLastRegistered = true;
+            m_condVar.notify_all();    // all threads encode current frame
         }
 
-        {
-            std::unique_lock<std::mutex> guard(m_counterMutex);
-            m_numCommit--;
-            last = (m_numCommit == 0);
-        }
+        if (m_numRegistered >= m_numWriter)
+            VM_ASSERT(!"the number of registered threads is greater than the number of available threads");
 
-        if (last)
-        {
-            m_allIn.Reset();
-            m_allOut.Set(); // allow to encode next frame for all threads
-        }
-    }
-
-    {
-        std::unique_lock<std::mutex> guard(m_counterMutex);
-        if (ptr == 0)
-        {
-            // came here from UnRegister
-            if (m_numRegistered <= m_numUnregistered)
-            {
-                vm_file_fprintf(vm_stderr, VM_STRING(
-                                    "TEST: %u writers registred, while %u unregistred"
-                                    " already. Can't unregister another one.\n"),
-                                m_numRegistered, m_numUnregistered);
-                return -1;
-            }
-
-            m_numUnregistered++;
+        if (ptr == 0)    // If thread was unregistered (e.g. due to gpu hang) there is no need to wait this thread
             vm_file_fprintf(vm_stderr, VM_STRING("TEST: handle %p unregistered.\n"), handle);
-            if (m_numUnregistered == m_numWriter)
-            {
-                // last writer unregistered, restore initial state
-                m_numUnregistered = 0;
-                m_numRegistered = 0;
-            }
-        }
+        else
+            m_numRegistered++;
     }
 
     mfxU32 intHdl = (mfxU32)((mfxU64)handle - HandleBase);
@@ -179,11 +130,4 @@ mfxU32 OutputRegistrator::Compare() const
     }
 
     return OK;
-}
-
-bool OutputRegistrator::IsRegistered(mfxHDL handle) const
-{
-    // a <= x <= b is equivalent to x - a <= b - a for unsigned comparison,
-    // see Warren, Hacker's Delight (2nd Edition), 4 - 1
-    return  (mfxU64)handle > HandleBase && (mfxU64)handle - (HandleBase + 1) <= m_numWriter + HandleBase - (HandleBase + 1);
 }
