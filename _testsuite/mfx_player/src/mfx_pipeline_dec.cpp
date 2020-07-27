@@ -2826,7 +2826,7 @@ mfxStatus MFXDecPipeline::InitYUVSource()
     mfxStatus sts;
 
     //See MediaSDK manual, 1 means that decorative flags will be produced by decoder
-    //for jpeg there is no term extended pictstruct
+    //for jpeg/vp8/vp9/av1 there are no term extended pictstruct
     if (!m_inParams.bNoExtPicstruct &&
         m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG &&
         m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_VP8 &&
