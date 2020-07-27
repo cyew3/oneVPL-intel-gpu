@@ -1,5 +1,9 @@
 /******************************************************************************\
+<<<<<<< HEAD
 Copyright (c) 2005-2018, Intel Corporation
+=======
+Copyright (c) 2005-2020, Intel Corporation
+>>>>>>> 5478175965... Fixup b76c44afe("Use CL/cl2.hpp for rotate_opencl_plugin")
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,10 +25,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #if defined(_WIN32) || defined(_WIN64)
 
+#include <d3d11.h>
+
 #include "opencl_filter.h"
-#include "d3d11_allocator.h"
-#include <initguid.h>
-#include <guiddef.h>
+
 
 class OpenCLFilterDX11 : public OpenCLFilterBase
 {
