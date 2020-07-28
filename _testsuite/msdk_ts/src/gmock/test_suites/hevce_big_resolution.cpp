@@ -26,7 +26,7 @@ namespace hevce_big_resolution
 
         TestSuite()
             : tsVideoEncoder(MFX_CODEC_HEVC)
-            , isResolutionSupported(false)
+            , isResolutionSupported(true)
         {
 
         }
