@@ -41,34 +41,34 @@ namespace Base
             : HEVCEHW::Base::ReconInfo(FeatureId)
         {
             ModRec[0] =
-            { //8b
+            {
                 {
                     mfxU16(1 + MFX_CHROMAFORMAT_YUV444)
-                    , [](mfxFrameInfo& rec, eMFXHWType)
+                    , [](mfxFrameInfo& rec)
                     {
                         rec.FourCC = MFX_FOURCC_AYUV;
                     }
                 }
                 , {
                     mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
-                    , [](mfxFrameInfo& rec, eMFXHWType)
+                    , [](mfxFrameInfo& rec)
                     {
                         rec.FourCC = MFX_FOURCC_NV12;
                     }
                 }
             };
             ModRec[1] =
-            { //10b
+            {
                 {
                     mfxU16(1 + MFX_CHROMAFORMAT_YUV444)
-                    , [](mfxFrameInfo& rec, eMFXHWType)
+                    , [](mfxFrameInfo& rec)
                     {
                         rec.FourCC = MFX_FOURCC_Y410;
                     }
                 }
                 , {
                     mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
-                    , [](mfxFrameInfo& rec, eMFXHWType)
+                    , [](mfxFrameInfo& rec)
                     {
                         rec.FourCC = MFX_FOURCC_P010;
                     }

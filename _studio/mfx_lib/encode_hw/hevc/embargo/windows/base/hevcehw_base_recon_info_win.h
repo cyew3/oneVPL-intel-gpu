@@ -45,7 +45,7 @@ namespace Base
                 { //8b
                     {
                         mfxU16(1 + MFX_CHROMAFORMAT_YUV444)
-                        , [](mfxFrameInfo& rec, eMFXHWType)
+                        , [](mfxFrameInfo& rec)
                         {
                             rec.FourCC = MFX_FOURCC_AYUV;
                             /* Pitch = 4*W for AYUV format
@@ -57,7 +57,7 @@ namespace Base
                     }
                     , {
                         mfxU16(1 + MFX_CHROMAFORMAT_YUV422)
-                        , [](mfxFrameInfo& rec, eMFXHWType)
+                        , [](mfxFrameInfo& rec)
                         {
                             rec.FourCC = MFX_FOURCC_YUY2;
                             rec.Width /= 2;
@@ -66,7 +66,7 @@ namespace Base
                     }
                     , {
                         mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
-                        , [](mfxFrameInfo& rec, eMFXHWType)
+                        , [](mfxFrameInfo& rec)
                         {
                             rec.FourCC = MFX_FOURCC_NV12;
                         }
@@ -77,7 +77,7 @@ namespace Base
             { //10b
                 {
                     mfxU16(1 + MFX_CHROMAFORMAT_YUV444)
-                    , [](mfxFrameInfo& rec, eMFXHWType)
+                    , [](mfxFrameInfo& rec)
                     {
                         rec.FourCC = MFX_FOURCC_Y410;
                         /* Pitch = 4*W for Y410 format
@@ -89,7 +89,7 @@ namespace Base
                 }
                 , {
                     mfxU16(1 + MFX_CHROMAFORMAT_YUV422)
-                    , [](mfxFrameInfo& rec, eMFXHWType)
+                    , [](mfxFrameInfo& rec)
                     {
                         rec.FourCC = MFX_FOURCC_Y210;
                         rec.Width /= 2;
@@ -98,7 +98,7 @@ namespace Base
                 }
                 , {
                     mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
-                    , [](mfxFrameInfo& rec, eMFXHWType)
+                    , [](mfxFrameInfo& rec)
                     {
                         rec.FourCC = MFX_FOURCC_P010;
                     }

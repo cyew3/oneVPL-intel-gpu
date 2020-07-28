@@ -32,9 +32,9 @@ void ReconInfo::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         , [this](StorageRW& strg, StorageRW& local) -> mfxStatus
     {
         auto& par = Glob::VideoParam::Get(strg);
-        mfxFrameAllocRequest rec = {}, raw = {};
+        mfxFrameAllocRequest rec = {};
 
-        if (GetRecInfo(par, ExtBuffer::Get(par), Glob::VideoCore::Get(strg).GetHWType(), rec.Info))
+        if (GetRecInfo(par, ExtBuffer::Get(par), rec.Info))
         {
             Tmp::RecInfo::GetOrConstruct(local, rec);
             SetDefault(rec.NumFrameMin, GetMaxRec(par));
@@ -80,7 +80,6 @@ mfxU16 ReconInfo::GetMaxRec(mfxVideoParam const & par)
 bool ReconInfo::GetRecInfo(
     const mfxVideoParam& par
     , const mfxExtCodingOption3& CO3
-    , eMFXHWType hw
     , mfxFrameInfo& rec)
 {
     rec = par.mfx.FrameInfo;
@@ -93,7 +92,7 @@ bool ReconInfo::GetRecInfo(
 
     if (!bUndef)
     {
-        itModRec->second(rec, hw);
+        itModRec->second(rec);
     }
 
     rec.ChromaFormat = CO3.TargetChromaFormatPlus1 - 1;

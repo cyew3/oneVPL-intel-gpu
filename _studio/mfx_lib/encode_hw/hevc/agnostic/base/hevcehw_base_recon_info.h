@@ -47,7 +47,7 @@ namespace Base
         }
 
     protected:
-        typedef std::function<void(mfxFrameInfo&, eMFXHWType)> RecUpd;
+        typedef std::function<void(mfxFrameInfo&)> RecUpd;
         std::map<mfxU16, RecUpd> ModRec[2];
 
         virtual void InitInternal(const FeatureBlocks& blocks, TPushII Push);
@@ -57,7 +57,6 @@ namespace Base
         bool GetRecInfo(
             const mfxVideoParam& par
             , const mfxExtCodingOption3& CO3
-            , eMFXHWType hw
             , mfxFrameInfo& rec);
     };
 

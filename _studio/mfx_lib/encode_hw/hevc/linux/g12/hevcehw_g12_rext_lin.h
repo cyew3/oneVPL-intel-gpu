@@ -45,7 +45,10 @@ public:
                 mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
                 , [](mfxFrameInfo& rec, mfxU16& type, bool /*bVDEnc*/)
                 {
-                    rec.FourCC = MFX_FOURCC_P010;
+                    if (rec.BitDepthLuma == 10)
+                        rec.FourCC = MFX_FOURCC_P010;
+                    else
+                        rec.FourCC = MFX_FOURCC_P016;
                 }
             }
         };
