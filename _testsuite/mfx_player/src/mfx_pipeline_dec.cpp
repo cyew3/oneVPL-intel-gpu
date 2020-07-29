@@ -497,24 +497,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         pLastParams->m_nMaxAsync = last_params_async;
     }
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
-    //Force type of adapter in case if user set iGfx or dGfx
-    if (m_inParams.bPrefferiGfx || m_inParams.bPrefferdGfx)
-    {
-        if (m_inParams.bPrefferdGfx && m_inParams.bPrefferiGfx)
-        {
-            PipelineTrace((VM_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered")));
-            m_inParams.bPrefferdGfx = false;
-        }
-
-        mfxIMPL tmpImpl = m_components.front().m_libType;
-        mfxStatus sts = ForceImpl(m_inParams, tmpImpl);
-        MFX_CHECK_STS(sts);
-
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, tmpImpl));
-    }
-#endif
-
     MFX_CHECK_STS_SET_ERR(InitVPP(), PE_CREATE_VPP);
     TIME_PRINT(VM_STRING("InitVPP"));
 
@@ -1147,6 +1129,25 @@ mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
 
 mfxStatus MFXDecPipeline::CreateCore()
 {
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    //Force type of adapter in case if user set iGfx or dGfx
+    if (m_inParams.bPrefferiGfx || m_inParams.bPrefferdGfx)
+    {
+        if (m_inParams.bPrefferdGfx && m_inParams.bPrefferiGfx)
+        {
+            PipelineTrace((VM_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered")));
+            m_inParams.bPrefferdGfx = false;
+        }
+
+        mfxIMPL tmpImpl = m_components.front().m_libType;
+        mfxStatus sts = ForceImpl(m_inParams, tmpImpl);
+        MFX_CHECK_STS(sts);
+
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, tmpImpl));
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_RealImpl, tmpImpl));
+    }
+#endif
+
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     //shared access prevention section
     {
