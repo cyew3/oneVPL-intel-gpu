@@ -466,7 +466,7 @@
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
       <Profile>false</Profile>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <AdditionalOptions>/PDB:$(TargetDir)$(TargetName).pdb %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -506,7 +506,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
       <Profile>false</Profile>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <AdditionalOptions>/PDB:$(TargetDir)$(TargetName).pdb %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -548,7 +548,7 @@
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
       <Profile>false</Profile>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)343d689665ba4548829942a32a386569\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
@@ -586,7 +586,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
       <Profile>false</Profile>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)343d689665ba4548829942a32a386569\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
