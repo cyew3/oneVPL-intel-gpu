@@ -155,6 +155,24 @@ static mfxU32 CheckNumSegments(mfxExtAV1Segmentation& seg)
     return invalid;
 }
 
+static mfxU32 CheckHWLimitations(mfxExtAV1Segmentation& seg)
+{
+    mfxU32 invalid = 0;
+
+    if (seg.NumSegments)
+    {
+        const mfxAV1SegmentParam lastSeg = seg.Segment[seg.NumSegments - 1];
+
+        if (IsFeatureEnabled(lastSeg.FeatureEnabled, SEG_LVL_ALT_Q) && !lastSeg.AltQIndex)
+        {
+            // last segment with zero delta QP isn't supported by HW
+            invalid++;
+        }
+    }
+
+    return invalid;
+}
+
 mfxStatus CheckAndFixSegmentBuffers(
     const mfxVideoParam& par
     , const ENCODE_CAPS_AV1& caps
@@ -187,12 +205,15 @@ mfxStatus CheckAndFixSegmentBuffers(
         changed += CheckAndFixSegmentParam(caps, pSeg->Segment[i]);
     }
 
+    invalid += CheckHWLimitations(*pSeg);
+
     // clean out per-segment parameters for segments with numbers exceeding seg.NumSegments
     for (mfxU16 i = pSeg->NumSegments; i < AV1_MAX_NUM_OF_SEGMENTS; ++i)
     {
         changed += CheckAndZeroSegmentParam(pSeg->Segment[i]);
     }
 
+    MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
     MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
