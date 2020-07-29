@@ -620,7 +620,10 @@ namespace hevce_default_ref_lists
                 if (!isB && L0.size() > CO3.NumRefActiveP[0])
                     L0.resize(CO3.NumRefActiveP[0]);
 
-                if (L1.size() > CO3.NumRefActiveBL1[0])
+                // on VDENC for LDB frames L1 must be completely identical to L0
+                if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON && !isB && CO3.GPB == MFX_CODINGOPTION_ON)
+                    L1 = L0;
+                else if (L1.size() > CO3.NumRefActiveBL1[0])
                     L1.resize(CO3.NumRefActiveBL1[0]);
 
                 std::sort(L0.begin(), L0.end(), distance);
