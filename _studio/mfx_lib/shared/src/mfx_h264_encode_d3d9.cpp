@@ -121,6 +121,8 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2.MaxFrameSize;
     sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
     sps.bAutoMaxPBFrameSizeForSceneChange       = IsOn(extOpt3.AdaptiveMaxFrameSize) ? 1 : 0;
+    sps.HierarchicalFlag = (extOpt3.PRefType == MFX_P_REF_PYRAMID || extOpt2.BRefType == MFX_B_REF_PYRAMID) ? 1:0;
+    sps.LowDelayMode = (par.mfx.GopRefDist == 1) ? 1 : 0;
 
     if (extVsi.ColourDescriptionPresent)
     {
@@ -485,6 +487,8 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         pps.TargetFrameSize = task.m_lplastatus.TargetFrameSize;
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
         pps.QpModulationStrength = task.m_lplastatus.QpModulation;
+        if (task.m_lplastatus.MiniGopSize > 1)
+            pps.HierarchLevelPlus1 = (mfxU8)(task.m_LowDelayPyramidLayer + 1);
 #endif
     }
 #endif

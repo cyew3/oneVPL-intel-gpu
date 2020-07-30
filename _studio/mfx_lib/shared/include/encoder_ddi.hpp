@@ -1033,7 +1033,10 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
             UINT    EnableStreamingBufferDDR        : 1;
             UINT    BlockQPforNonRectROI            : 1;
             UINT    DisableHRDConformance           : 1;
-            UINT    Reserved1                       : 5;
+            UINT    HierarchicalFlag                : 1;
+            UINT    LowDelayMode                    : 1;
+            UINT    bLookAheadPhase                 : 1;
+            UINT    Reserved1                       : 2;
         };
 
         UINT sFlags;
@@ -1193,8 +1196,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
             UINT        bEnablePollingMode                       : 1;
             UINT        bRepeatFrame                             : 1;
             UINT        bEnableQpAdjustment                      : 1;
-            UINT        bLookAheadPhase                          : 1;
-            UINT        bReserved                                : 11;
+            UINT        bReserved                                : 12;
         };
         BOOL    UserFlags;
     };

@@ -59,10 +59,36 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 sps.VBVBufferSizeInBit = 8000 * lpla->BufferSizeInKB;
                 sps.TargetBitRate = lpla->TargetKbps;
                 sps.LookaheadDepth = (UCHAR)lpla->LookAheadDepth;
+                sps.bLookAheadPhase= 1;
             }
 
             // need to disable SAO for lowpower lookahead analysis since the alogrithm doesn't support
             sps.SAO_enabled_flag = 0;
+        });
+
+        ddiCC.UpdatePPS.Push([this](
+            TCC::TUpdatePPS::TExt prev
+            , const StorageR& global
+            , const StorageR& s_task
+            , const ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps
+            , ENCODE_SET_PICTURE_PARAMETERS_HEVC& pps)
+        {
+            prev(global, s_task, sps, pps);
+
+            if (!m_lplaEnabled)
+            {
+                return;
+            }
+
+            auto& par = Glob::VideoParam::Get(global);
+            const mfxExtLplaParam* lpla = ExtBuffer::Get(par);
+
+            pps.X16Minus1_X =
+                (lpla->LookAheadScaleX <=4) ?
+                (16 >> lpla->LookAheadScaleX) - 1 : 0;
+            pps.X16Minus1_Y =
+                (lpla->LookAheadScaleY <= 4) ?
+                (16 >> lpla->LookAheadScaleY) - 1 : 0;
         });
 
         ddiCC.UpdateCqmHint.Push([this](
@@ -140,6 +166,9 @@ void LpLookAheadAnalysis::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(InitialDelayInKB);
         MFX_COPY_FIELD(BufferSizeInKB);
         MFX_COPY_FIELD(TargetKbps);
+        MFX_COPY_FIELD(LookAheadScaleX);
+        MFX_COPY_FIELD(LookAheadScaleY);
+
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
@@ -166,6 +195,9 @@ void LpLookAheadAnalysis::SetInherited(ParamInheritance& par)
         InheritOption(src.InitialDelayInKB, dst.InitialDelayInKB);
         InheritOption(src.BufferSizeInKB, dst.BufferSizeInKB);
         InheritOption(src.TargetKbps, dst.TargetKbps);
+        InheritOption(src.LookAheadScaleX, dst.LookAheadScaleX);
+        InheritOption(src.LookAheadScaleY, dst.LookAheadScaleY);
+
     });
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION2].emplace_back(

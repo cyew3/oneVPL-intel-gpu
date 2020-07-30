@@ -57,7 +57,8 @@ public:
         m_device(0),
         m_pAllocator(nullptr),
         m_pmfxENC(nullptr),
-        m_curDispOrder(-1)
+        m_curDispOrder(-1),
+        m_lookAheadScale (0)
     {
         m_bitstream  = {};
         m_encParams  = {};
@@ -92,6 +93,7 @@ protected:
     mfxExtHEVCParam               m_extBufHevcParam;
     mfxExtCodingOption3           m_extBufCO3;
     mfxExtLpLaStatus              m_lplaHints;
+    mfxU32                        m_lookAheadScale;
 
 };
 #endif

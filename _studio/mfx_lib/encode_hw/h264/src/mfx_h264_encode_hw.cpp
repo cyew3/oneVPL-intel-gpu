@@ -2892,7 +2892,7 @@ mfxStatus ImplementationAvc::BuildPPyr(DdiTask & task, mfxU32 pyrWidth, bool bLa
             AddRefInPreferredList(task, distFromIntra, 2*pyrWidth, numPrefered);
 
         //reject previous miniGop
-        for (mfxU32 i = 1; i < pyrWidth; i++)
+        for (mfxU32 i = 1; i  < pyrWidth; i++)
             AddRefInRejectedList(task, distFromIntra, pyrWidth - i, numRejected);
     }
     else
@@ -2942,6 +2942,8 @@ mfxStatus ImplementationAvc::BuildPPyr(DdiTask & task, mfxU32 pyrWidth, bool bLa
                 rejDiff[pyrWidth - 2][posInPyr - 1];
             AddRefInRejectedList(task, distFromIntra, diff, numRejected);
         }
+        task.m_LowDelayPyramidLayer = layer[pyrWidth - 2][posInPyr - 1];
+
         if (IsOn(extOpt3.EnableQPOffset))
         {
             task.m_QPdelta = extOpt3.QPOffset[layer[pyrWidth - 2][posInPyr - 1]];

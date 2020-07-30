@@ -101,7 +101,6 @@ mfxStatus LPLA_EncTool::InitSession()
     return sts;
 }
 
-
 mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl  const & ctrl)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -122,13 +121,15 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl  const & ctrl)
     m_encParams.mfx.GopPicSize = ctrl.MaxGopSize;
 
     m_encParams.mfx.FrameInfo = ctrl.FrameInfo;
+    m_lookAheadScale = 0;
 
     if (m_encParams.mfx.FrameInfo.Width >= 720)
     {
-        m_encParams.mfx.FrameInfo.Width = ((m_encParams.mfx.FrameInfo.Width >> 2) + 15) &~0xF;
-        m_encParams.mfx.FrameInfo.Height = ((m_encParams.mfx.FrameInfo.Height >> 2) + 15) &~0xF;
-        m_encParams.mfx.FrameInfo.CropW = m_encParams.mfx.FrameInfo.CropW >> 2;
-        m_encParams.mfx.FrameInfo.CropH = m_encParams.mfx.FrameInfo.CropH >> 2;
+        m_lookAheadScale = 2;
+        m_encParams.mfx.FrameInfo.Width = ((m_encParams.mfx.FrameInfo.Width >> m_lookAheadScale) + 15) &~0xF;
+        m_encParams.mfx.FrameInfo.Height = ((m_encParams.mfx.FrameInfo.Height >> m_lookAheadScale) + 15) &~0xF;
+        m_encParams.mfx.FrameInfo.CropW = m_encParams.mfx.FrameInfo.CropW >> m_lookAheadScale;
+        m_encParams.mfx.FrameInfo.CropH = m_encParams.mfx.FrameInfo.CropH >> m_lookAheadScale;
     }
 
     return sts;
@@ -157,6 +158,7 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     m_extBufLPLA.InitialDelayInKB = (mfxU16)ctrl.InitialDelayInKB;
     m_extBufLPLA.BufferSizeInKB   = (mfxU16)ctrl.BufferSizeInKB;
     m_extBufLPLA.TargetKbps       = (mfxU16)ctrl.TargetKbps;
+    m_extBufLPLA.LookAheadScaleX = m_extBufLPLA.LookAheadScaleY = (mfxU8)m_lookAheadScale;
 
     extBuf[0] = (mfxExtBuffer *)&m_extBufLPLA;
     m_encParams.NumExtParam = 1;

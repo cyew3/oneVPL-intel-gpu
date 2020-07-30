@@ -213,7 +213,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    DisableHRDConformance               : 1;
             UINT    HierarchicalFlag                    : 1;
             UINT    TCBRCEnable                         : 1;
-            UINT    ReservedBits                        : 2;
+            UINT    bLookAheadPhase                     : 1;
+            UINT    ReservedBits                        : 1;
         };
         UINT    EncodeFlags;
     };
@@ -328,7 +329,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    pps_deblocking_filter_disabled_flag     : 1;
             UINT    bEnableCTULevelReport                   : 1;    // [0..1]
             UINT    bEnablePartialFrameUpdate               : 1;
-            UINT    bLookAheadPhase                         : 1;
+            UINT    reserved1bit                            : 1;
             UINT    bTileReplayEnable                       : 1;
             UINT                                            : 1;
         };
@@ -416,7 +417,18 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     UINT    *pTileOffset;
     USHORT  LcuMaxBitsizeAllowedHigh16b;
 
-    USHORT  reserved16b;
+    union
+    {
+        struct
+        {
+            UCHAR    X16Minus1_X : 4; // scaling ratio = (X16Minus1_X + 1) / 16
+            UCHAR    X16Minus1_Y : 4;
+        };
+        UCHAR    DownScaleRatio;
+    };
+
+    UCHAR   QpModulationStrength;
+
     UINT    TargetFrameSize;
     UINT    reserved32b[16];
 
