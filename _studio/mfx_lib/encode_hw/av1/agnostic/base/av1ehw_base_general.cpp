@@ -191,6 +191,18 @@ void General::SetSupported(ParamSupport& blocks)
         auto& buf_dst = *(mfxExtEncoderResetOption*)pDst;
         MFX_COPY_FIELD(StartNewSequence);
     });
+
+    blocks.m_ebCopySupported[MFX_EXTBUFF_AVC_REFLIST_CTRL].emplace_back(
+        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
+    {
+        const auto& buf_src = *(const mfxExtAVCRefListCtrl*)pSrc;
+        auto& buf_dst = *(mfxExtAVCRefListCtrl*)pDst;
+        for (mfxU32 i = 0; i < 16; i++)
+        {
+            MFX_COPY_FIELD(RejectedRefList[i].FrameOrder);
+            MFX_COPY_FIELD(LongTermRefList[i].FrameOrder);
+        }
+    });
 }
 
 void General::SetInherited(ParamInheritance& par)
@@ -1195,6 +1207,23 @@ void General::AllocTask(const FeatureBlocks& blocks, TPushAT Push)
     });
 }
 
+static bool CheckRefListCtrl(mfxExtAVCRefListCtrl* refListCtrl)
+{
+    mfxU32 changed = 0;
+    changed += CheckOrZero<mfxU16>(refListCtrl->ApplyLongTermIdx, 0);
+    changed += CheckOrZero<mfxU16>(refListCtrl->NumRefIdxL0Active, 0);
+    changed += CheckOrZero<mfxU16>(refListCtrl->NumRefIdxL1Active, 0);
+    for (auto& preferred : refListCtrl->PreferredRefList)
+    {
+        if (preferred.FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        {
+            preferred.FrameOrder = mfxU32(MFX_FRAMEORDER_UNKNOWN);
+            changed++;
+        }
+    }
+    return changed;
+}
+
 void General::InitTask(const FeatureBlocks& blocks, TPushIT Push)
 {
     Push(BLK_InitTask
@@ -1218,8 +1247,13 @@ void General::InitTask(const FeatureBlocks& blocks, TPushIT Push)
 
         tpar.pSurfIn = pSurf;
 
+        bool changed = 0;
         if (pCtrl)
+        {
             tpar.ctrl = *pCtrl;
+            if (mfxExtAVCRefListCtrl* refListCtrl = ExtBuffer::Get(tpar.ctrl))
+                changed = CheckRefListCtrl(refListCtrl);
+        }
 
         if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
@@ -1239,7 +1273,7 @@ void General::InitTask(const FeatureBlocks& blocks, TPushIT Push)
 
         tpar.DPB.resize(par.mfx.NumRefFrame);
 
-        return MFX_ERR_NONE;
+        return changed ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
     });
 }
 
@@ -1748,12 +1782,82 @@ inline void SetTaskEncodeOrders(
     }
 }
 
+// task - [in/out] Current task object, task.DPB may be modified
+// Return - N/A
+inline void MarkLTR(TaskCommonPar& task)
+{
+    const mfxExtAVCRefListCtrl* refListCtrl = ExtBuffer::Get(task.ctrl);
+    if (!refListCtrl)
+        return;
+
+    // Count how many unique STR left in DPB so far
+    // We need to keep at least 1 STR
+    decltype(task.DPB) tmpDPB(task.DPB);
+    std::unique(tmpDPB.begin(), tmpDPB.end());
+    auto numberOfUniqueSTRs = std::count_if(
+        tmpDPB.begin()
+        , tmpDPB.end()
+        , [](const auto& f) { return f && !f->isLTR; });
+
+    const auto& ltrList = refListCtrl->LongTermRefList;
+    for (mfxI32 i = 0; i < 16 && numberOfUniqueSTRs > 1; i++)
+    {
+        const mfxU32 ltrFrameOrder = ltrList[i].FrameOrder;
+        if (ltrFrameOrder == static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
+            continue;
+
+        auto frameToBecomeLTR = std::find_if(
+            task.DPB.begin()
+            , task.DPB.end()
+            , [ltrFrameOrder](const auto &f) { return f && f->DisplayOrder == ltrFrameOrder; });
+
+        if (frameToBecomeLTR != task.DPB.end()
+            && !(*frameToBecomeLTR)->isLTR
+            && !(*frameToBecomeLTR)->wasLTR)
+        {
+            (*frameToBecomeLTR)->isLTR = true;
+            numberOfUniqueSTRs--;
+        }
+    }
+}
+
+// task - [in/out] Current task object, task.DPB may be modified
+// Return - N/A
+inline void UnmarkLTR(TaskCommonPar& task)
+{
+    const mfxExtAVCRefListCtrl* refListCtrl = ExtBuffer::Get(task.ctrl);
+    if (!refListCtrl)
+        return;
+
+    for (const auto& rejected : refListCtrl->RejectedRefList)
+    {
+        const mfxU32 rejectedFrameOrder = rejected.FrameOrder;
+        if (rejectedFrameOrder == static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
+            continue;
+
+        // Frame with certain FrameOrder may be included into DPB muliple times and
+        // if it is rejected we need to find all links to it from DPB.
+        // Reference frames are refreshed in the end of encoding
+        // so, here we only can mark rejected LTRs for further removal
+        for (auto &f : task.DPB)
+        {
+            if (f && f->DisplayOrder == rejectedFrameOrder && f->isLTR)
+            {
+                f->isLTR = false;
+                f->wasLTR = true;
+            }
+        }
+    }
+}
+
 inline void InitTaskDPB(
     TaskCommonPar& task,
     TaskCommonPar& prevTask)
 {
     assert(task.DPB.size() >= prevTask.DPB.size());
     std::move(prevTask.DPB.begin(), prevTask.DPB.end(), task.DPB.begin());
+
+    UnmarkLTR(task);
 }
 
 // task - [in/out] Current task object, RefList field will be set in place
@@ -1787,11 +1891,28 @@ inline void SetTaskRefList(
         FillRefListRAB(fwd, maxFwdRefs, bwd, maxBwdRefs, refList);
 }
 
+template <typename DPBIter>
+DPBIter FindOldestSTR(DPBIter dpbBegin, DPBIter dpbEnd)
+{
+    DPBIter oldestSTR = dpbEnd;
+    for (auto it = dpbBegin; it != dpbEnd; ++it)
+    {
+        if ((*it) && !(*it)->isLTR)
+        {
+            if (oldestSTR == dpbEnd)
+                oldestSTR = it;
+            else if ((*oldestSTR)->DisplayOrder > (*it)->DisplayOrder)
+                oldestSTR = it;
+        }
+    }
+    return oldestSTR;
+}
+
 // task - [in/out] Current task object, RefreshFrameFlags field will be set in place
 // Return - N/A
 inline void SetTaskDPBRefresh(
     TaskCommonPar& task
-    , const mfxVideoParam& par)
+    , const mfxVideoParam&)
 {
     auto& refreshRefFrames = task.RefreshFrameFlags;
 
@@ -1799,10 +1920,33 @@ inline void SetTaskDPBRefresh(
         std::fill(refreshRefFrames.begin(), refreshRefFrames.end(), static_cast<mfxU8>(1));
     else if (IsRef(task.FrameType))
     {
-        // round robin DPB update
-        refreshRefFrames = {};
-        const mfxU16 slotToRefresh = task.RefOrderInGOP % par.mfx.NumRefFrame;
-        refreshRefFrames.at(slotToRefresh) = 1;
+        // At first find all rejected LTRs to refresh them with current frame
+        mfxU8 refreshed = 0;
+        for (size_t i = 0; i < task.DPB.size(); i++)
+            if (task.DPB[i]->wasLTR)
+                refreshed = refreshRefFrames.at(i) = 1;
+
+        if (!refreshed)
+        {
+            auto dpbBegin = task.DPB.begin();
+            auto dpbEnd = task.DPB.end();
+            auto slotToRefresh = dpbEnd;
+
+            // If no LTR was refreshed, then find duplicate reference frame
+            // Some frames can be included multiple times into DPB
+            for (auto it = dpbBegin + 1; it < dpbEnd && slotToRefresh == dpbEnd; ++it)
+                if (std::find(dpbBegin, it, *it) != it)
+                    slotToRefresh = it;
+
+            // If no duplicates, then find the oldest STR
+            if (slotToRefresh == dpbEnd)
+                slotToRefresh = FindOldestSTR(dpbBegin, dpbEnd);
+
+            // If failed, just do not refresh any reference frame.
+            // This should not happend since we maintain at least 1 STR in DPB
+            if (slotToRefresh != dpbEnd)
+                refreshRefFrames.at(slotToRefresh - dpbBegin) = 1;
+        }
     }
 }
 
@@ -2081,6 +2225,7 @@ void General::ConfigureTask(
     m_prevTask = task;
 
     UpdateDPB(m_prevTask.DPB, reinterpret_cast<DpbFrame&>(task), task.RefreshFrameFlags, DpbFrameReleaser(recPool));
+    MarkLTR(m_prevTask);
 }
 
 static bool HaveL1(DpbType const & dpb, mfxI32 displayOrderInGOP)
