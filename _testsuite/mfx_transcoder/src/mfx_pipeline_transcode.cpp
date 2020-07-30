@@ -1926,6 +1926,24 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 m_ExtBuffersPerFrame.get()->push_back(pExt);
 
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-av1TemporalUpdate"), VM_STRING("Enable/disable temporal update for segmentation map"), OPT_TRI_STATE, VM_STRING("integer")))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+
+            mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
+            MFX_PARSE_STR_ON_OFF(value, argv[1]);
+            argv++;
+
+            mfxExtAV1Segmentation *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Segmentation>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Segmentation.get();
+
+            pExt->TemporalUpdate = value;
+
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
+
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-av1SegmentationAltQIndex"), VM_STRING("Array of 8 digits containing quantization index deltas for 8 possible segments, each value [-255..255]"), OPT_SPECIAL, VM_STRING("")))
         {
             const mfxU16 AV1E_MAX_SUPPORTED_SEGMENTS = 8;

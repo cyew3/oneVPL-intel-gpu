@@ -305,10 +305,6 @@ static void MergeSegParam(
         mergedSeg.SegmentId = frameSeg.SegmentId;
         mergedSeg.SegmentIdBlockSize = frameSeg.SegmentIdBlockSize;
     }
-
-    // (4) switch to Frame TemporalUpdate (if tri-state is properly defined)
-    if (frameSeg.TemporalUpdate)
-        mergedSeg.TemporalUpdate = frameSeg.TemporalUpdate;
 }
 
 inline bool CheckForCompleteness(const mfxExtAV1Segmentation& seg)
@@ -406,18 +402,24 @@ inline std::tuple<bool, bool> NeedMapUpdate(const mfxExtAV1Segmentation& currPar
     bool updateMap = true;
     bool temporalUpdate = false;
 
-    if (currPar.SegmentIdBlockSize == refPar.SegmentIdBlockSize
-        && currPar.NumSegments == refPar.NumSegments)
+    if (!IsSegmentationSwitchedOff(&refPar))
     {
-        assert(currPar.SegmentId);
-        assert(refPar.SegmentId);
+        if (currPar.SegmentIdBlockSize == refPar.SegmentIdBlockSize
+            && currPar.NumSegments == refPar.NumSegments)
+        {
+            assert(currPar.SegmentId);
+            assert(refPar.SegmentId);
 
-        const mfxU32 mapSize = std::min(currPar.NumSegmentIdAlloc, refPar.NumSegmentIdAlloc);
+            const mfxU32 mapSize = std::min(currPar.NumSegmentIdAlloc, refPar.NumSegmentIdAlloc);
 
-        if (std::equal(currPar.SegmentId, currPar.SegmentId + mapSize, refPar.SegmentId))
-            updateMap = false;
-        else if (!IsOff(currPar.TemporalUpdate))
-            temporalUpdate = true;
+            if (std::equal(currPar.SegmentId, currPar.SegmentId + mapSize, refPar.SegmentId))
+                updateMap = false;
+        }
+
+        // default value of TemporalUpdate (MFX_CODINGOPTION_UNKNOWN) is treated as ON
+        // (we assume that in average enabled segmentation_temporal_update saves bits in comparison with disabled)
+        // TODO: implement setting of default value for TemporalUpdate so it's always ON or OFF
+        temporalUpdate = updateMap && !IsOff(currPar.TemporalUpdate);
     }
 
     return std::make_tuple(updateMap, temporalUpdate);
