@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,5 +20,5 @@
 
 #ifndef __genx_bdw_simple_me__
 #define __genx_bdw_simple_me__
-extern const unsigned char genx_bdw_simple_me[253430];
+extern const unsigned char genx_bdw_simple_me[294761];
 #endif
