@@ -4087,11 +4087,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #if defined(MFX_ENABLE_ENCTOOLS)
     if (H264EncTools::isEncToolNeeded(par))
     {
-        sts = H264EncTools::Query(par);
-        if (sts == MFX_ERR_UNSUPPORTED)
-            unsupported = true;
+        if (IsOn(extOpt2->ExtBRC) || par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+        {
+            changed = true;
+            ResetEncToolsPar(*extConfig, MFX_CODINGOPTION_OFF);
+        } else {
+            sts = H264EncTools::Query(par);
+            if (sts == MFX_ERR_UNSUPPORTED)
+                unsupported = true;
         else if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
             changed = true;
+        }
     }
 #endif
 #if !defined(MFX_EXT_BRC_DISABLE)
