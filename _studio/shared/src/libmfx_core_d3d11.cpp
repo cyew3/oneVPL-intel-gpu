@@ -869,19 +869,20 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
         }
     }
 
-    sts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
-    MFX_CHECK_STS(sts);
+    mfxStatus fcSts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
 
     if (true == isSrcLocked)
     {
         if (srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
         {
             sts = UnlockExternalFrame(srcMemId, &srcTempSurface.Data);
+            MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
         else if (srcMemType & MFX_MEMTYPE_INTERNAL_FRAME)
         {
             sts = UnlockFrame(srcMemId, &srcTempSurface.Data);
+            MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
     }
@@ -891,16 +892,18 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
         if (dstMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
         {
             sts = UnlockExternalFrame(dstMemId, &dstTempSurface.Data);
+            MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
         else if (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME)
         {
             sts = UnlockFrame(dstMemId, &dstTempSurface.Data);
+            MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
     }
 
-    return MFX_ERR_NONE;
+    return fcSts;
 }
 
 mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
