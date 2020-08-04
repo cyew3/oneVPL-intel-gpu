@@ -8393,12 +8393,15 @@ The `CodecLevel` enumerator itemizes codec levels for all codecs.
 `MFX_LEVEL_VC1_LOW`,<br>`MFX_LEVEL_VC1_MEDIAN`,<br>`MFX_LEVEL_VC1_HIGH` | VC-1 Level Low (simple & main profiles)
 `MFX_LEVEL_VC1_0`,<br>`MFX_LEVEL_VC1_1`,<br>`MFX_LEVEL_VC1_2`,<br>`MFX_LEVEL_VC1_3`,<br>`MFX_LEVEL_VC1_4` | VC-1 advanced profile levels
 `MFX_LEVEL_HEVC_1`,<br>`MFX_LEVEL_HEVC_2`,<br>`MFX_LEVEL_HEVC_21`,<br>`MFX_LEVEL_HEVC_3`,<br>`MFX_LEVEL_HEVC_31`,<br>`MFX_LEVEL_HEVC_4`,<br>`MFX_LEVEL_HEVC_41`,<br>`MFX_LEVEL_HEVC_5`,<br>`MFX_LEVEL_HEVC_51`,<br>`MFX_LEVEL_HEVC_52`,<br>`MFX_LEVEL_HEVC_6`,<br>`MFX_LEVEL_HEVC_61`,<br>`MFX_LEVEL_HEVC_62`,<br><br>`MFX_TIER_HEVC_MAIN`,<br>`MFX_TIER_HEVC_HIGH` | HEVC levels and tiers
+`MFX_LEVEL_AV1_2`,<br>`MFX_LEVEL_AV1_21`,<br>`MFX_LEVEL_AV1_22`,<br>`MFX_LEVEL_AV1_23`,<br>`MFX_LEVEL_AV1_3`,<br>`MFX_LEVEL_AV1_31`,<br>`MFX_LEVEL_AV1_32`,<br>`MFX_LEVEL_AV1_33`,<br>`MFX_LEVEL_AV1_4`,<br>`MFX_LEVEL_AV1_41`,<br>`MFX_LEVEL_AV1_42`,<br>`MFX_LEVEL_AV1_43`,<br>`MFX_LEVEL_AV1_5`,<br>`MFX_LEVEL_AV1_51` | AV1 levels
 
 **Change History**
 
 This enumerator is available since SDK API 1.0.
 
 SDK API 1.8 added HEVC level and tier definitions.
+
+SDK API **TBD** added AV1 level definitions.
 
 ## <a id='CodecProfile'>CodecProfile</a>
 
