@@ -32,19 +32,21 @@ typedef struct tagENCODE_CAPS_AV1
     {
         struct
         {
-            UINT   CodingLimitSet            : 1;
-            UINT   ForcedSegmentationSupport : 1;
-            UINT   AutoSegmentationSupport   : 1;
-            UINT   BRCReset                  : 1;
-            UINT   TemporalLayerRateCtrl     : 3;
-            UINT   DynamicScaling            : 1;
-            UINT   NumScalablePipesMinus1    : 4;
-            UINT   UserMaxFrameSizeSupport   : 1;
-            UINT   DirtyRectSupport          : 1;
-            UINT   MoveRectSupport           : 1;
-            UINT   TileSizeBytesMinus1       : 2;
-            UINT   FrameOBUSupport           : 1;
-            UINT                             : 14;
+            UINT   CodingLimitSet              : 1;
+            UINT   ForcedSegmentationSupport   : 1;
+            UINT   AutoSegmentationSupport     : 1;
+            UINT   BRCReset                    : 1;
+            UINT   TemporalLayerRateCtrl       : 3;
+            UINT   DynamicScaling              : 1;
+            UINT   NumScalablePipesMinus1      : 4;
+            UINT   UserMaxFrameSizeSupport     : 1;
+            UINT   DirtyRectSupport            : 1;
+            UINT   MoveRectSupport             : 1;
+            UINT   TileSizeBytesMinus1         : 2;
+            UINT   FrameOBUSupport             : 1;
+            UINT   SuperResSupport             : 1;
+            UINT   CDEFChannelStrengthSupport  : 1;
+            UINT                               : 12;
         };
         UINT       CodingLimits;
     };
@@ -106,7 +108,8 @@ typedef struct tagENCODE_CAPS_AV1
             UINT   enable_superres            : 1;
             UINT   enable_cdef                : 1;
             UINT   enable_restoration         : 1;
-            UINT   ReservedBits               : 17;
+            UINT   allow_intrabc              : 1;
+            UINT   ReservedBits               : 16;
         } fields;
         UINT value;
     } AV1ToolSupportFlags;
@@ -479,15 +482,14 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
     // global motion
     DXVA_Warped_Motion_Params_AV1 wm[7];
 
-    UINT  QIndexBitOffset;
-    UINT  SegmentationBitOffset;
-    UINT  LoopFilterParamsBitOffset;
-    UINT  CDEFParamsBitOffset;
-    UCHAR CDEFParamsSizeInBits;
-    UCHAR reserved8bits0;
-    UCHAR reserved8bits1;
-    UCHAR reserved8bits2;
-    UINT  FrameHdrOBUSizeByteOffset;
+    UINT   QIndexBitOffset;
+    UINT   SegmentationBitOffset;
+    UINT   LoopFilterParamsBitOffset;
+    UINT   CDEFParamsBitOffset;
+    UCHAR  CDEFParamsSizeInBits;
+    UCHAR  reserved8bits0;
+    USHORT FrameHdrOBUSizeInBits;
+    UINT   FrameHdrOBUSizeByteOffset;
 
     UINT  StatusReportFeedbackNumber;
 
@@ -510,7 +512,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
 
     // Skip Frames
     UCHAR NumSkipFrames;
-    UINT  SkipFramesSizeInBytess;
+    UINT  SkipFramesSizeInBytes;
 
     USHORT NumDirtyRects;
     ENCODE_RECT *pDirtyRect;

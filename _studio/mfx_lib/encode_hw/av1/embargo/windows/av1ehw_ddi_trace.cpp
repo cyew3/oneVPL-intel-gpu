@@ -515,7 +515,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1)
     TRACE_AUTO(StatusReportFeedbackNumber);
 
     TRACE_AUTO(NumSkipFrames             );
-    TRACE_AUTO(SkipFramesSizeInBytess    );
+    TRACE_AUTO(SkipFramesSizeInBytes     );
 
     TRACE_AUTO(NumDirtyRects             );
     if (b.NumDirtyRects)
