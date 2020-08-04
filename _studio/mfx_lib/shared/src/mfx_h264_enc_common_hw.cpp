@@ -6504,7 +6504,7 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.NumRefFrame = std::min({nrfDefault, nrfMaxByLevel, nrfMaxByCaps});
 
 #if defined(LOWPOWERENCODE_AVC)
-        if (IsOn(par.mfx.LowPower))
+        if (IsOn(par.mfx.LowPower) && (extOpt3->PRefType != MFX_P_REF_PYRAMID))
         {
             par.mfx.NumRefFrame = std::min<mfxU16>(hwCaps.ddi_caps.MaxNum_Reference, par.mfx.NumRefFrame);
         }
