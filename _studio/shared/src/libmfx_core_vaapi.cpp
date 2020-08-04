@@ -405,6 +405,10 @@ typedef struct {
     { 0x020B, MFX_HW_ATS, MFX_GT4 },
     { 0x020C, MFX_HW_ATS, MFX_GT4 },
     { 0x020D, MFX_HW_ATS, MFX_GT4 },
+    { 0x020E, MFX_HW_ATS, MFX_GT4 },
+    { 0x020F, MFX_HW_ATS, MFX_GT4 },
+    { 0x0210, MFX_HW_ATS, MFX_GT4 },
+
 
     /* DG2 */
     { 0x4F80, MFX_HW_DG2, MFX_GT4 }, // DG2-512 / IDG2_8x4x16_SKU_DEVICE_F0_ID
