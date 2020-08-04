@@ -3173,11 +3173,8 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
 
     for (i = 0; i < nSurfNum; i++)
     {
-        mfxFrameSurface1 *surface = new mfxFrameSurface1;
-        MSDK_CHECK_POINTER(surface, MFX_ERR_MEMORY_ALLOC);
-
-        MSDK_ZERO_MEMORY(*surface);
-        MSDK_MEMCPY_VAR(surface->Info, &(pRequest->Info), sizeof(mfxFrameInfo));
+        auto surface = std::unique_ptr<mfxFrameSurface1>(new mfxFrameSurface1);
+        surface->Info = pRequest->Info;
 
         if (m_rawInput)
         {
@@ -3200,7 +3197,9 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
         }
 #endif
 
-        (isDecAlloc) ? m_pSurfaceDecPool.push_back(surface):m_pSurfaceEncPool.push_back(surface);
+        auto surface_ptr = surface.release();
+
+        (isDecAlloc) ? m_pSurfaceDecPool.push_back(surface_ptr) : m_pSurfaceEncPool.push_back(surface_ptr);
     }
 
     (isDecAlloc) ? m_DecSurfaceType = pRequest->Type : m_EncSurfaceType = pRequest->Type;
