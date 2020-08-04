@@ -26,21 +26,21 @@ import pathlib
 from . import test, configuration
 
 
-def tests(base_dir, cfg, gold):
+def tests(base_dir, cfg):
     base_dir = pathlib.Path(base_dir)
 
     for fn in (base_dir / 'tests').rglob("*.json"):
         try:
-            yield test.Test(fn, base_dir, cfg, gold)
+            yield test.Test(fn, base_dir, cfg)
         except Exception as ex:
             print(" WARN: Can't parse test '{}' - {}".format(fn.name, ex))
 
 
-def config(base_dir, gold):
+def config(base_dir):
     fn = base_dir / 'ted.json'
 
     cfg = json.loads(fn.read_text())
 
-    return configuration.Configuration(cfg, base_dir, gold)
+    return configuration.Configuration(cfg, base_dir)
 
 
