@@ -3476,9 +3476,10 @@ mfxStatus ImplementationAvc::NextBitstreamDataLength(mfxBitstream * bs)
 mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    mfxEncToolsHintPreEncodeGOP st = {};
+
     if (m_encTools.IsAdaptiveGOP() || m_encTools.IsAdaptiveQP() || m_encTools.IsAdaptiveLTR() || m_encTools.IsAdaptiveRef())
     {
-        mfxEncToolsHintPreEncodeGOP st = {};
         sts = m_encTools.QueryPreEncRes(task.m_frameOrder, st);
         MFX_CHECK_STS(sts);
 
@@ -3557,16 +3558,17 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
     if (m_encTools.IsLookAhead())
     {
         mfxEncToolsBRCBufferHint bufHint = {};
-        mfxEncToolsHintPreEncodeGOP gopHint = {};
+        // if QueryPreEncRes has been called above, no need to Query PreEncodeGOP again
+        mfxEncToolsHintPreEncodeGOP *pGopHint = st.Header.BufferSz > 0 ? nullptr : &st;
         mfxEncToolsHintQuantMatrix cqmHint = {};
 
-        sts = m_encTools.QueryLookAheadStatus(task.m_frameOrder, bufHint, gopHint, cqmHint);
+        sts = m_encTools.QueryLookAheadStatus(task.m_frameOrder, &bufHint, pGopHint, &cqmHint);
         MFX_CHECK_STS(sts);
 
         task.m_lplastatus.CqmHint              = (mfxU8)(cqmHint.MatrixType == MFX_QUANT_MATRIX_HIGH_FREQUENCY_STRONG ? CQM_HINT_USE_CUST_MATRIX : CQM_HINT_USE_FLAT_MATRIX);
         task.m_lplastatus.TargetFrameSize      = bufHint.OptimalFrameSizeInBytes;
-        task.m_lplastatus.MiniGopSize          = (mfxU8)gopHint.MiniGopSize;
-        task.m_lplastatus.QpModulation         = (mfxU8)gopHint.QPModulation;
+        task.m_lplastatus.MiniGopSize          = (mfxU8)st.MiniGopSize;
+        task.m_lplastatus.QpModulation         = (mfxU8)st.QPModulation;
 
         //task.m_targetBufferFullness = laStatus.TargetBufferFullnessInBit;
 

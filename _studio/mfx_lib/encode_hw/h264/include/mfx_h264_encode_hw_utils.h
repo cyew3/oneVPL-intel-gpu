@@ -2455,9 +2455,10 @@ public:
     }
 
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
-    mfxStatus QueryLookAheadStatus(mfxU32 displayOrder, mfxEncToolsBRCBufferHint &bufHint, mfxEncToolsHintPreEncodeGOP &gopHint, mfxEncToolsHintQuantMatrix &cqmHint)
+    mfxStatus QueryLookAheadStatus(mfxU32 displayOrder, mfxEncToolsBRCBufferHint *bufHint, mfxEncToolsHintPreEncodeGOP *gopHint, mfxEncToolsHintQuantMatrix *cqmHint)
     {
         MFX_CHECK(m_pEncTools != 0, MFX_ERR_NOT_INITIALIZED);
+        MFX_CHECK(bufHint || gopHint || cqmHint, MFX_ERR_NULL_PTR);
         MFX_CHECK((m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) &&
             (IsOn(m_EncToolConfig.AdaptiveQuantMatrices) || IsOn(m_EncToolConfig.BRCBufferHints) || IsOn(m_EncToolConfig.AdaptivePyramidQuantP)), MFX_ERR_NOT_INITIALIZED);
 
@@ -2465,20 +2466,29 @@ public:
         par.DisplayOrder = displayOrder;
         std::vector<mfxExtBuffer*> extParams;
 
-        bufHint = {};
-        bufHint.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
-        bufHint.Header.BufferSz = sizeof(bufHint);
-        extParams.push_back((mfxExtBuffer *)&bufHint);
+        if (bufHint)
+        {
+            *bufHint = {};
+            bufHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
+            bufHint->Header.BufferSz = sizeof(bufHint);
+            extParams.push_back((mfxExtBuffer *)bufHint);
+        }
 
-        gopHint = {};
-        gopHint.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
-        gopHint.Header.BufferSz = sizeof(gopHint);
-        extParams.push_back((mfxExtBuffer *)&gopHint);
+        if (gopHint)
+        {
+            *gopHint = {};
+            gopHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
+            gopHint->Header.BufferSz = sizeof(gopHint);
+            extParams.push_back((mfxExtBuffer *)gopHint);
+        }
 
-        cqmHint = {};
-        cqmHint.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX;
-        cqmHint.Header.BufferSz = sizeof(gopHint);
-        extParams.push_back((mfxExtBuffer *)&cqmHint);
+        if (cqmHint)
+        {
+            *cqmHint = {};
+            cqmHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX;
+            cqmHint->Header.BufferSz = sizeof(gopHint);
+            extParams.push_back((mfxExtBuffer *)cqmHint);
+        }
 
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();

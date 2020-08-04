@@ -56,7 +56,7 @@ mfxStatus InitCtrl(mfxVideoParam const & par, mfxEncToolsCtrl *ctrl)
 
     ctrl->MaxGopSize = par.mfx.GopPicSize;
     ctrl->MaxGopRefDist = par.mfx.GopRefDist;
-    ctrl->MaxIDRDist = par.mfx.GopPicSize * par.mfx.IdrInterval;
+    ctrl->MaxIDRDist = par.mfx.GopPicSize * (par.mfx.IdrInterval + 1);
     ctrl->BRefType = CO2->BRefType;
 
     ctrl->ScenarioInfo = CO3->ScenarioInfo;
@@ -157,6 +157,7 @@ inline void CopyPreEncLATools(mfxExtEncToolsConfig const & confIn, mfxExtEncTool
     confOut->AdaptiveQuantMatrices = confIn.AdaptiveQuantMatrices;
     confOut->BRCBufferHints = confIn.BRCBufferHints;
     confOut->AdaptivePyramidQuantP = confIn.AdaptivePyramidQuantP;
+    confOut->AdaptiveI = confIn.AdaptiveI;
 }
 
 inline void OffPreEncLATools(mfxExtEncToolsConfig* conf)
@@ -180,7 +181,8 @@ inline bool isPreEncLA(mfxExtEncToolsConfig const & conf, mfxEncToolsCtrl const 
 {
     return (
         ctrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING &&
-        (IsOn(conf.AdaptiveQuantMatrices) ||
+        (IsOn(conf.AdaptiveI) ||
+         IsOn(conf.AdaptiveQuantMatrices) ||
          IsOn(conf.BRCBufferHints) ||
          IsOn(conf.AdaptivePyramidQuantP)));
 }

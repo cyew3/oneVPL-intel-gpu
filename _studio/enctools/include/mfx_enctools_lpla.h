@@ -54,11 +54,15 @@ class LPLA_EncTool
 public:
     LPLA_EncTool() :
         m_bInit(false),
-        m_device(0),
+        m_device(nullptr),
         m_pAllocator(nullptr),
         m_pmfxENC(nullptr),
         m_curDispOrder(-1),
-        m_lookAheadScale (0)
+        m_lookAheadScale (0),
+        m_lastIFrameNumber(0),
+        m_lastIDRFrameNumber(0),
+        m_GopPicSize(0),
+        m_IdrInterval(1)
     {
         m_bitstream  = {};
         m_encParams  = {};
@@ -74,14 +78,14 @@ public:
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqmHint);
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPreEncGOP);
     virtual mfxStatus InitSession();
-    virtual mfxStatus InitEncParams(mfxEncToolsCtrl const & ctrl);
+    virtual mfxStatus InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
     virtual mfxStatus ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
 
 protected:
     bool                          m_bInit;
     mfxHDL                        m_device;
     mfxU32                        m_deviceType;
-    mfxFrameAllocator            *m_pAllocator;
+    mfxFrameAllocator*            m_pAllocator;
     MFXVideoSession               m_mfxSession;
     MFXVideoENCODE*               m_pmfxENC;
     mfxBitstream                  m_bitstream;
@@ -94,7 +98,10 @@ protected:
     mfxExtCodingOption3           m_extBufCO3;
     mfxExtLpLaStatus              m_lplaHints;
     mfxU32                        m_lookAheadScale;
-
+    mfxU32                        m_lastIFrameNumber;
+    mfxU32                        m_lastIDRFrameNumber;
+    mfxU16                        m_GopPicSize;
+    mfxU16                        m_IdrInterval;
 };
 #endif
 #endif

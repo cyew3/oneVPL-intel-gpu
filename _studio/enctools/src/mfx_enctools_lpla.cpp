@@ -47,7 +47,11 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
     m_pmfxENC = new MFXVideoENCODE(m_mfxSession);
     MFX_CHECK_NULL_PTR1(m_pmfxENC);
 
-    sts = InitEncParams(ctrl);
+    m_GopPicSize = ctrl.MaxGopSize;
+    if (m_GopPicSize)
+        m_IdrInterval = ctrl.MaxIDRDist / m_GopPicSize;
+
+    sts = InitEncParams(ctrl, pConfig);
     MFX_CHECK_STS(sts);
 
     memset(&m_bitstream, 0, sizeof(mfxBitstream));
@@ -100,7 +104,7 @@ mfxStatus LPLA_EncTool::InitSession()
     return sts;
 }
 
-mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl  const & ctrl)
+mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -117,7 +121,11 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl  const & ctrl)
     m_encParams.mfx.QPP = 32;
     m_encParams.mfx.QPB = 32;
     m_encParams.mfx.NumSlice = 1;
-    m_encParams.mfx.GopPicSize = ctrl.MaxGopSize;
+
+    if (IsOn(pConfig.AdaptiveI))
+        m_encParams.mfx.GopPicSize = 0xffff; // infinite GOP
+    else
+        m_encParams.mfx.GopPicSize = ctrl.MaxGopSize;
 
     m_encParams.mfx.FrameInfo = ctrl.FrameInfo;
     m_lookAheadScale = 0;
@@ -173,6 +181,12 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     m_extBufLPLA.TargetKbps       = (mfxU16)ctrl.TargetKbps;
     m_extBufLPLA.LookAheadScaleX = m_extBufLPLA.LookAheadScaleY = (mfxU8)m_lookAheadScale;
 
+    if (IsOn(pConfig.AdaptiveI))
+    {
+        m_extBufLPLA.MaxAdaptiveGopSize = ctrl.MaxGopSize;
+        m_extBufLPLA.MinAdaptiveGopSize = (mfxU16)std::max(16, m_extBufLPLA.MaxAdaptiveGopSize / 4);
+    }
+
     extBuf[0] = (mfxExtBuffer *)&m_extBufLPLA;
     m_encParams.NumExtParam = 1;
 
@@ -208,11 +222,9 @@ mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface)
     sts = m_mfxSession.SyncOperation(encSyncPoint, msdk_wait_interval);
     MFX_CHECK_STS(sts);
 
-
     mfxExtLpLaStatus* lplaHints = (mfxExtLpLaStatus*)Et_GetExtBuffer(m_bitstream.ExtParam, m_bitstream.NumExtParam, MFX_EXTBUFF_LPLA_STATUS);
     if(lplaHints)
     {
-
         if (lplaHints->CqmHint != CQM_HINT_INVALID)
         {
             m_encodeHints.push_back({
@@ -225,7 +237,6 @@ mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface)
                 lplaHints->TargetBufferFullnessInBit,
             });
         }
-
     }
 
     return sts;
@@ -233,7 +244,8 @@ mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface)
 
 mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPreEncGOP)
 {
-    MFX_CHECK_NULL_PTR1(pPreEncGOP)
+    MFX_CHECK_NULL_PTR1(pPreEncGOP);
+    mfxStatus sts = MFX_ERR_NONE;
 
     if (!m_bInit)
         return MFX_ERR_NOT_INITIALIZED;
@@ -243,35 +255,68 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPr
     else if ((mfxI32)dispOrder > m_curDispOrder)
     {
         if (m_encodeHints.empty())
-            return MFX_ERR_NOT_FOUND;
-        m_curEncodeHints = m_encodeHints.front();
-        m_curDispOrder = (mfxI32)dispOrder;
-        m_encodeHints.pop_front();
+        {
+            sts = MFX_ERR_NOT_FOUND;
+            pPreEncGOP->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+            if (m_encParams.mfx.GopPicSize && (dispOrder - m_lastIFrameNumber >= (mfxU32)m_encParams.mfx.GopPicSize))
+                pPreEncGOP->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+        }
+        else
+        {
+            m_curEncodeHints = m_encodeHints.front();
+            m_curDispOrder = (mfxI32)dispOrder;
+            m_encodeHints.pop_front();
+        }
     }
 
-    switch (m_curEncodeHints.MiniGopSize)
+    if (sts == MFX_ERR_NONE)
     {
-    case 1:
-    case 2:
-    case 4:
-    case 8:
-        pPreEncGOP->MiniGopSize = m_curEncodeHints.MiniGopSize;
-        break;
-    default:
-        pPreEncGOP->MiniGopSize = 0;
+        switch (m_curEncodeHints.MiniGopSize)
+        {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            pPreEncGOP->MiniGopSize = m_curEncodeHints.MiniGopSize;
+            break;
+        default:
+            pPreEncGOP->MiniGopSize = 0;
+        }
+
+        if (m_curEncodeHints.PyramidQpHint <= MFX_QP_MODULATION_HIGH)
+            pPreEncGOP->QPModulation = m_curEncodeHints.PyramidQpHint;
+        else
+            pPreEncGOP->QPModulation = MFX_QP_MODULATION_NOT_DEFINED;
+
+        if (m_curEncodeHints.IntraHint)
+            pPreEncGOP->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+        else
+            pPreEncGOP->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
     }
 
-    if (m_curEncodeHints.PyramidQpHint <= MFX_QP_MODULATION_HIGH)
-        pPreEncGOP->QPModulation = m_curEncodeHints.PyramidQpHint;
-    else
-        pPreEncGOP->QPModulation = MFX_QP_MODULATION_NOT_DEFINED;
+    if (dispOrder == 0) // just in case
+        pPreEncGOP->FrameType = MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
 
-    return MFX_ERR_NONE;
+    // for adaptiveI==off only: m_encParams.mfx.GopPicSize is "infinite" (0xffff) when adaptiveI==on
+    if (m_encParams.mfx.GopPicSize && (dispOrder - m_lastIFrameNumber >= (mfxU32)m_encParams.mfx.GopPicSize))
+        pPreEncGOP->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+
+    if (pPreEncGOP->FrameType & MFX_FRAMETYPE_I)
+    {
+        m_lastIFrameNumber = dispOrder;
+        if (m_GopPicSize && (dispOrder - m_lastIDRFrameNumber > (mfxU32)m_GopPicSize * m_IdrInterval))
+        {
+            pPreEncGOP->FrameType |= MFX_FRAMETYPE_IDR;
+            m_lastIDRFrameNumber = dispOrder;
+        }
+    }
+
+    return sts;
 }
 
 mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqmHint)
 {
-    MFX_CHECK_NULL_PTR1(pCqmHint)
+    MFX_CHECK_NULL_PTR1(pCqmHint);
 
     if (!m_bInit)
         return MFX_ERR_NOT_INITIALIZED;

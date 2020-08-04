@@ -50,7 +50,6 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
             {
                 return;
             }
-
             //when HEVC VDEnc as lookahead pass, the encoder works in CQP mode, but need to set
             //BRC parameters in the sps for the lookahead kernel for analysis
             if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
@@ -61,6 +60,8 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 sps.LookaheadDepth = (UCHAR)lpla->LookAheadDepth;
                 sps.bLookAheadPhase= 1;
                 sps.GopRefDist = (UCHAR)lpla->GopRefDist;
+                sps.maxAdaptiveGopPicSize = lpla->MaxAdaptiveGopSize;
+                sps.minAdaptiveGopPicSize = (UCHAR)lpla->MinAdaptiveGopSize;
             }
 
             // need to disable SAO for lowpower lookahead analysis since the alogrithm doesn't support
@@ -172,6 +173,9 @@ void LpLookAheadAnalysis::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(LookAheadScaleX);
         MFX_COPY_FIELD(LookAheadScaleY);
         MFX_COPY_FIELD(GopRefDist);
+        MFX_COPY_FIELD(MaxAdaptiveGopSize);
+        MFX_COPY_FIELD(MinAdaptiveGopSize);
+
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
@@ -201,6 +205,9 @@ void LpLookAheadAnalysis::SetInherited(ParamInheritance& par)
         InheritOption(src.LookAheadScaleX, dst.LookAheadScaleX);
         InheritOption(src.LookAheadScaleY, dst.LookAheadScaleY);
         InheritOption(src.GopRefDist, dst.GopRefDist);
+        InheritOption(src.MaxAdaptiveGopSize, dst.MaxAdaptiveGopSize);
+        InheritOption(src.MinAdaptiveGopSize, dst.MinAdaptiveGopSize);
+
     });
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION2].emplace_back(

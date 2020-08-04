@@ -426,7 +426,9 @@ typedef struct {
     mfxU8        LookAheadScaleX;
     mfxU8        LookAheadScaleY;
     mfxU16       GopRefDist;
-    mfxU16       reserved[22];
+    mfxU16       MaxAdaptiveGopSize;
+    mfxU16       MinAdaptiveGopSize;
+    mfxU16       reserved[20];
 } mfxExtLplaParam;
 
 #endif
