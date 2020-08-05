@@ -1188,6 +1188,13 @@ mfxU32 GetMinPlaneSize(mfxFrameInfo & info)
     }
     else
     {
+        // For NV12 with odd resolution, the number of samples for luma is width * height, and the number of samples for cb/cr is
+        // (width + 1) / 2 * (heigth + 1) / 2 separately
+        if (info.FourCC == MFX_FOURCC_NV12 && (info.CropW % 2 != 0 || info.CropH % 2 != 0))
+        {
+            return info.CropW * info.CropH + ((info.CropW + 1) / 2) * ((info.CropH + 1) / 2) * 2;
+        }
+
         switch (info.FourCC)
         {
         case MFX_FOURCC_YV12:

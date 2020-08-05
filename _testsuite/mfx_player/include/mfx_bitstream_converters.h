@@ -415,24 +415,63 @@ public:
         // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
         BSConverterUtil::ZeroedOutsideCropsNV12(surface);
 #endif
-
-        IppiSize roi = { info.CropW, info.CropH };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y + info.CropX + info.CropY*pitch;
         mfxU8  *ptrUV = data.UV + info.CropX + (info.CropY >> 1)*pitch;
 
-        Ipp32s pYVUStep[3] = { info.CropW, info.CropW / 2, info.CropW / 2 };
-        const Ipp8u *(pYVU[3]);
-        pYVU[0] = bs->Data + bs->DataOffset;
-        pYVU[1] = pYVU[0] + roi.width * roi.height;
-        pYVU[2] = pYVU[1] + roi.width * roi.height/4;
+        if (info.CropW % 2 != 0 || info.CropH % 2 != 0)
+        {
+            const mfxU8 *(pYVU[3]);
+            pYVU[0] = bs->Data + bs->DataOffset;
+            pYVU[1] = pYVU[0] + info.CropW * info.CropH;
+            pYVU[2] = pYVU[1] + (info.CropW + 1) / 2 * (info.CropH + 1) / 2;
 
-        bs->DataOffset += planeSize;
-        bs->DataLength -= planeSize;
+            bs->DataOffset += planeSize;
+            bs->DataLength -= planeSize;
 
-        IppStatus sts = ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, ptr, pitch, ptrUV, pitch, roi);
-        if (sts != ippStsNoErr)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            mfxU16 height = info.CropH;
+            mfxU16 width  = info.CropW;
+            // copy luma, width * height
+            for (mfxU16 i = 0; i < height; ++i)
+            {
+                memcpy(ptr, pYVU[0], width);
+
+                ptr += pitch;
+                pYVU[0] += width;
+            }
+
+            height = (info.CropH + 1) / 2;
+            width  = (info.CropW + 1) / 2;
+            // copy cb and cr, (width + 1) / 2 * (height + 1) / 2
+            for (mfxU16 i = 0; i < height; ++i)
+            {
+                for (mfxU16 j = 0; j < width; ++j)
+                {
+                    ptrUV[2*j]     = pYVU[1][j];
+                    ptrUV[2*j + 1] = pYVU[2][j];
+                }
+
+                ptrUV += pitch;
+                pYVU[1] += (info.CropW + 1) / 2;
+                pYVU[2] += (info.CropW + 1) / 2;
+            }
+        }
+        else
+        {
+            IppiSize roi = { info.CropW, info.CropH };
+            Ipp32s pYVUStep[3] = { info.CropW, info.CropW / 2, info.CropW / 2 };
+            const Ipp8u *(pYVU[3]);
+            pYVU[0] = bs->Data + bs->DataOffset;
+            pYVU[1] = pYVU[0] + roi.width * roi.height;
+            pYVU[2] = pYVU[1] + roi.width * roi.height/4;
+
+            bs->DataOffset += planeSize;
+            bs->DataLength -= planeSize;
+
+            IppStatus sts = ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, ptr, pitch, ptrUV, pitch, roi);
+            if (sts != ippStsNoErr)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
 
         return MFX_ERR_NONE;
     }
