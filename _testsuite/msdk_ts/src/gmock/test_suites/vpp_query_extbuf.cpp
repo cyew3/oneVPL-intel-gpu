@@ -44,7 +44,8 @@ namespace vpp_query_extbuf
         PROCAMP,
         SCLY,
         MULTIBUF,
-        NULL_BUF
+        NULL_BUF,
+        SCALING
     };
 
     /*!\brief Structure of test suite parameters*/
@@ -70,6 +71,8 @@ namespace vpp_query_extbuf
         mfxU32 dnu[4];
         //! \brief Array with values for mfxExtVPPProcamp (if required)
         mfxF64 procamp_val[4];
+        //! \brief Array with values for mfxExtVPPScaling (if required)
+        mfxU16 scaling_val[2];
     };
 
     //!\brief Main test class
@@ -92,70 +95,70 @@ namespace vpp_query_extbuf
 
     const        tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ STANDART, MFX_ERR_UNSUPPORTED, { {MFX_PAR, &tsStruct::mfxExtCodingOption.Header, MFX_EXTBUFF_CODING_OPTION} }, {},{} },
-        {/*01*/ STANDART, MFX_ERR_UNSUPPORTED, { { MFX_PAR, &tsStruct::mfxExtCodingOptionSPSPPS.Header, MFX_EXTBUFF_CODING_OPTION_SPSPPS } }, {},{} },
-        {/*02*/ STANDART, MFX_ERR_UNDEFINED_BEHAVIOR,{ { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 0 } } ,{},{} },
-        {/*03*/ STANDART, MFX_ERR_UNSUPPORTED, { { MFX_PAR, &tsStruct::mfxExtVppAuxData.Header, MFX_EXTBUFF_VPP_AUXDATA } },{},{} },
-        {/*04*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDenoise.Header, MFX_EXTBUFF_VPP_DENOISE } },{},{} },
+        {/*00*/ STANDART, MFX_ERR_UNSUPPORTED, { {MFX_PAR, &tsStruct::mfxExtCodingOption.Header, MFX_EXTBUFF_CODING_OPTION} }, {},{},{} },
+        {/*01*/ STANDART, MFX_ERR_UNSUPPORTED, { { MFX_PAR, &tsStruct::mfxExtCodingOptionSPSPPS.Header, MFX_EXTBUFF_CODING_OPTION_SPSPPS } }, {},{},{} },
+        {/*02*/ STANDART, MFX_ERR_UNDEFINED_BEHAVIOR,{ { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 0 } } ,{},{},{} },
+        {/*03*/ STANDART, MFX_ERR_UNSUPPORTED, { { MFX_PAR, &tsStruct::mfxExtVppAuxData.Header, MFX_EXTBUFF_VPP_AUXDATA } },{},{},{} },
+        {/*04*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDenoise.Header, MFX_EXTBUFF_VPP_DENOISE } },{},{},{} },
 
-        {/*05*/ SCLY, MFX_ERR_UNSUPPORTED, {},{} },
+        {/*05*/ SCLY, MFX_ERR_UNSUPPORTED, {},{},{} },
 
-        {/*06*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 1 } }, { MFX_EXTBUFF_VPP_DENOISE },{} },
-        {/*07*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 1 } },{ MFX_EXTBUFF_VPP_SCENE_ANALYSIS },{} },
+        {/*06*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 1 } }, { MFX_EXTBUFF_VPP_DENOISE },{},{} },
+        {/*07*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 1 } },{ MFX_EXTBUFF_VPP_SCENE_ANALYSIS },{},{} },
 
-        {/*08*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50}}, {},{} },
-        {/*09*/ STANDART, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,{ { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 101 } },{},{} },
+        {/*08*/ STANDART, MFX_ERR_NONE, { { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50}}, {},{},{} },
+        {/*09*/ STANDART, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,{ { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 101 } },{},{},{} },
 
-        {/*10*/ STANDART, MFX_ERR_NONE,{ { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 } },{},{} },
-        {/*11*/ STANDART, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,{ { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 101 } },{},{} },
+        {/*10*/ STANDART, MFX_ERR_NONE,{ { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 } },{},{},{} },
+        {/*11*/ STANDART, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,{ { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 101 } },{},{},{} },
 
-        {/*12*/ STANDART, MFX_ERR_NONE,{ { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 2 } },{ MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_SCENE_ANALYSIS },{} },
-        {/*13*/ STANDART, MFX_ERR_UNSUPPORTED,{ { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 2 } },{ MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_SCENE_ANALYSIS },{} },
+        {/*12*/ STANDART, MFX_ERR_NONE,{ { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 2 } },{ MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_SCENE_ANALYSIS },{},{} },
+        {/*13*/ STANDART, MFX_ERR_UNSUPPORTED,{ { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 2 } },{ MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_SCENE_ANALYSIS },{},{} },
 
         {/*14*/ PROCAMP, MFX_ERR_NONE,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{}, {50.1, 5.11, 50.1, 5.11}},
+        },{}, {50.1, 5.11, 50.1, 5.11},{}},
 
         {/*15*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ -100.1 , 5.11, 50.1, 5.11 } },
+        },{},{ -100.1 , 5.11, 50.1, 5.11 },{} },
 
         {/*16*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ 50.1, -0.1, 50.1, 5.11 } },
+        },{},{ 50.1, -0.1, 50.1, 5.11 },{} },
 
         {/*17*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ 50.1, 5.11, -180.1, 5.11 } },
+        },{},{ 50.1, 5.11, -180.1, 5.11 },{} },
 
         {/*18*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ 50.1, 5.11, 50.1, -0.1 } },
+        },{},{ 50.1, 5.11, 50.1, -0.1 },{} },
 
         {/*19*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ 100.1, 5.11, 50.1, 5.11 } },
+        },{},{ 100.1, 5.11, 50.1, 5.11 },{} },
 
         {/*20*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ 50.1, 10.1, 50.1, 5.11 } },
+        },{},{ 50.1, 10.1, 50.1, 5.11 },{} },
 
         {/*21*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ 50.1, 5.11, 180.1, 5.11 } },
+        },{},{ 50.1, 5.11, 180.1, 5.11 },{} },
 
         {/*22*/ PROCAMP, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
         {
             { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Header, MFX_EXTBUFF_VPP_PROCAMP },
-        },{},{ 50.1, 5.11, 50.1, 10.1 } },
+        },{},{ 50.1, 5.11, 50.1, 10.1 },{} },
 
 
         {/*23*/ MULTIBUF, MFX_ERR_NONE, 
@@ -164,17 +167,93 @@ namespace vpp_query_extbuf
             { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
             { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
         },
-        {MFX_EXTBUFF_VPP_SCENE_ANALYSIS}, { 50.1, 5.11, 50.1, 5.1 }
+        {MFX_EXTBUFF_VPP_SCENE_ANALYSIS}, { 50.1, 5.11, 50.1, 5.1 },{}
         },
 
-        {/*24*/ NULL_BUF, MFX_ERR_NULL_PTR, {}, {}},
+        {/*24*/ NULL_BUF, MFX_ERR_NULL_PTR, {}, {},{}},
 
         {/*25*/ STANDART, MFX_ERR_UNDEFINED_BEHAVIOR, 
         {
             { MFX_PAR, &tsStruct::mfxExtVPPDoNotUse.NumAlg, 1 },
             { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 }
-        }, {MFX_EXTBUFF_VPP_DENOISE}, {}
-        }
+        }, {MFX_EXTBUFF_VPP_DENOISE}, {},{}
+        },
+#if (MFX_VERSION >= 1033)
+        // MFX_SCALING_MODE_LOWPOWER
+        {/*26*/ SCALING, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_LOWPOWER, MFX_INTERPOLATION_DEFAULT}
+        },
+
+        {/*27*/ SCALING, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_LOWPOWER, MFX_INTERPOLATION_NEAREST_NEIGHBOR}
+        },
+
+        {/*28*/ SCALING, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_LOWPOWER, MFX_INTERPOLATION_BILINEAR}
+        },
+
+        {/*29*/ SCALING, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_LOWPOWER, MFX_INTERPOLATION_ADVANCED}
+        },
+
+        // MFX_SCALING_MODE_DEFAULT
+        {/*30*/ SCALING, MFX_ERR_NONE,
+         {
+             { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+         },{},{},{MFX_SCALING_MODE_DEFAULT, MFX_INTERPOLATION_DEFAULT}
+        },
+
+        {/*31*/ SCALING, MFX_ERR_INVALID_VIDEO_PARAM,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_DEFAULT, MFX_INTERPOLATION_NEAREST_NEIGHBOR}
+        },
+
+        {/*32*/ SCALING, MFX_ERR_INVALID_VIDEO_PARAM,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_DEFAULT, MFX_INTERPOLATION_BILINEAR}
+        },
+
+        {/*33*/ SCALING, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_DEFAULT, MFX_INTERPOLATION_ADVANCED}
+        },
+
+        // MFX_SCALING_MODE_QUALITY
+        {/*34*/ SCALING, MFX_ERR_NONE,
+         {
+             { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+         },{},{},{MFX_SCALING_MODE_QUALITY, MFX_INTERPOLATION_DEFAULT}
+        },
+
+        {/*35*/ SCALING, MFX_ERR_INVALID_VIDEO_PARAM,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_QUALITY, MFX_INTERPOLATION_NEAREST_NEIGHBOR}
+        },
+
+        {/*36*/ SCALING, MFX_ERR_INVALID_VIDEO_PARAM,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_QUALITY, MFX_INTERPOLATION_BILINEAR}
+        },
+
+        {/*37*/ SCALING, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtVPPScaling.Header, MFX_EXTBUFF_VPP_SCALING },
+        },{},{},{MFX_SCALING_MODE_QUALITY, MFX_INTERPOLATION_ADVANCED}
+        },
+#endif
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -187,6 +266,7 @@ namespace vpp_query_extbuf
         SETPARS(&m_par, MFX_PAR);
         mfxExtVPPDoNotUse* buf;
         mfxExtVPPProcAmp* buf1;
+        mfxExtVPPScaling* bufScaling;
 
         switch(tc.mode) {
             case MODE::MULTIBUF:
@@ -226,6 +306,12 @@ namespace vpp_query_extbuf
                     memcpy(buf->AlgList, tc.dnu, sizeof(mfxU32)*buf->NumAlg);
                 }
 
+                break;
+
+            case MODE::SCALING:
+                bufScaling = (mfxExtVPPScaling*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_SCALING);
+                bufScaling->ScalingMode = tc.scaling_val[0];
+                bufScaling->InterpolationMethod = tc.scaling_val[1];
                 break;
 
             default:
