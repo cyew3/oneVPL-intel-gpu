@@ -27,7 +27,7 @@
 #include <cstddef>
 
 #include "mfxstructures.h"
-#include "mfxenctools.h"
+#include "mfxenctools-int.h"
 #include "mfxvp8.h"
 #include "mfxvp9.h"
 #include "mfxplugin.h"

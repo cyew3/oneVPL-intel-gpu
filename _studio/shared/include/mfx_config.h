@@ -47,9 +47,7 @@
 #define MFX_ENABLE_VPP_SVC
 #endif // #ifndef OPEN_SOURCE
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
 #define MFX_ENABLE_ENCTOOLS
-#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 #undef MFX_DEBUG_TOOLS
