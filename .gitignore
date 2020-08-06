@@ -28,7 +28,7 @@ __cmake
 .gitreview
 *.ipch
 /samples/include
-content
+/content
 # Android sub-projects
 /samples/sample_openmax_plugins
 
@@ -49,3 +49,7 @@ __cmake
 *.db
 *.aps
 /GitExtensions.settings.backup
+
+# TEd files
+tests/results/
+tests/ted/__pycache__/
