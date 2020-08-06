@@ -755,11 +755,15 @@ mfxStatus ParseSegmentMap(
     pSeg->SegmentId = new mfxU8[pSeg->NumSegmentIdAlloc];
 
     bool isInvalid = false;
+    int bufSize = sizeof(vm_char) * (mapWidth + blockSize);
+    vm_char *sbuf = new vm_char[bufSize];
+
     for (mfxU16 i = 0; !isInvalid && i < mapHeight; ++i)
     {
-        vm_char sbuf[256], *pStr;
+        vm_char *pStr = nullptr;
 
-        pStr = vm_file_fgets(sbuf, sizeof(sbuf), parFile);
+        pStr = vm_file_fgets(sbuf, bufSize, parFile);
+
         if (!pStr)
             break;
 
@@ -778,6 +782,7 @@ mfxStatus ParseSegmentMap(
         }
     }
 
+    delete[] sbuf;
     vm_file_close(parFile);
 
     if (isInvalid)
