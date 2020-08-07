@@ -78,6 +78,9 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInitParam              ,80   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtThreadsParam        ,132  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPlatform               ,32   )
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxStructVersion          ,2    )
+#endif
     #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtBuffer              ,8    )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVersion                ,4    )
@@ -85,6 +88,9 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInitParam              ,68   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtThreadsParam        ,132  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPlatform               ,32   )
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxStructVersion          ,2    )
+#endif
     #endif
 #endif //defined (__MFXCOMMON_H__)
 
@@ -997,7 +1003,11 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Minor                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Major                         ,2    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Version                       ,0    )
-
+#if MFX_VERSION >= MFX_VERSION_NEXT
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Minor                         ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Major                         ,1    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Version                       ,0    )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBitstream                       ,EncryptedData                 ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBitstream                       ,ExtParam                      ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBitstream                       ,NumExtParam                   ,16   )
@@ -1035,7 +1045,11 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Minor                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Major                         ,2    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Version                       ,0    )
-
+#if MFX_VERSION >= MFX_VERSION_NEXT
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Minor                         ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Major                         ,1    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Version                       ,0    )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBitstream                       ,EncryptedData                 ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBitstream                       ,ExtParam                      ,4    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBitstream                       ,NumExtParam                   ,8    )
