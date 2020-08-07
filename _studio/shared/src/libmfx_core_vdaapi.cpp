@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -124,7 +124,7 @@ void* VDAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         return NULL;
     }
     
-} // void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
+} // void* VDAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
 
 #if 0
 mfxStatus
