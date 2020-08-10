@@ -445,7 +445,7 @@ namespace av1d_film_grain
 
         mfxExtAV1FilmGrainParam const* pFGPar = reinterpret_cast<mfxExtAV1FilmGrainParam const*>(pBuf);
 
-        if ((pFGPar->Flags & MFX_FILM_GRAIN_APPLY) == 0)
+        if ((pFGPar->FilmGrainFlags & MFX_FILM_GRAIN_APPLY) == 0)
         {
             ADD_FAILURE() << "ERROR: Incorrect film grain parameters reported by mfxExtAV1FilmGrainParam";
             throw tsFAIL;

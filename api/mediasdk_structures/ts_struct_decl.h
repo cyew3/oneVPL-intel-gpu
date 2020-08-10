@@ -1542,7 +1542,7 @@ STRUCT(mfxAV1FilmGrainPoint,
 
 STRUCT(mfxExtAV1FilmGrainParam,
     FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16, Flags)
+    FIELD_T(mfxU16, FilmGrainFlags)
     FIELD_T(mfxU16, GrainSeed)
     FIELD_T(mfxU8, RefIdx)
     FIELD_T(mfxI8, NumYPoints)

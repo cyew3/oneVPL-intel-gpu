@@ -1513,7 +1513,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAV1FilmG
 {
     std::string str;
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD(Flags);
+    DUMP_FIELD(FilmGrainFlags);
     DUMP_FIELD(GrainSeed);
     DUMP_FIELD(RefIdx);
     DUMP_FIELD(NumYPoints);
