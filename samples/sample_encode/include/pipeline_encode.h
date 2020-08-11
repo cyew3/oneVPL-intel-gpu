@@ -372,7 +372,6 @@ protected:
     std::string m_strDevicePath; //path to device for processing
 #endif
 
-    mfxExtEncToolsConfig m_et_config;
     std::vector<mfxPayload*> m_UserDataUnregSEI;
 
     CHWDevice *m_hwdev;
