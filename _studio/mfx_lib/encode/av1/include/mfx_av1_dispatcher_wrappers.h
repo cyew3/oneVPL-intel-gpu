@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,18 +121,18 @@ namespace AV1PP {
     }
 
     inline void ftransform_vp9(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type) {
-        assert(size >= 0 && size <= 10);
+        assert(size >= 0 && size <= 3);
         assert(type >= 0 && type <= 3);
         ftransform_vp9_fptr_arr[size][type](src, dst, pitchSrc);
     }
 
     inline void ftransform_av1(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type) {
-        assert(size >= 0 && size <= 10);
+        assert(size >= 0 && size <= 3);
         assert(type >= 0 && type <= 3 || type == 9);
         ftransform_av1_fptr_arr[size][type](src, dst, pitchSrc);
     }
     inline void ftransform_av1(const int16_t *src, int32_t *dst, int pitchSrc, int size, int type) {
-        assert(size >= 0 && size <= 10);
+        assert(size >= 0 && size <= 3);
         assert(type >= 0 && type <= 3 || type == 9);
         ftransform_av1_hbd_fptr_arr[size][type](src, dst, pitchSrc);
     }

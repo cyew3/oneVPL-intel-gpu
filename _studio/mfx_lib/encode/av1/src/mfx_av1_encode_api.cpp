@@ -1956,7 +1956,8 @@ mfxStatus MFXVideoENCODEAV1::Query(MFXCoreInterface1 *core, mfxVideoParam *in, m
     if (out == NULL)
         return MFX_ERR_NULL_PTR;
 
-    if (const mfxExtEncoderCapability *inCaps = GetExtBuffer(*in)) {
+    const mfxExtEncoderCapability *inCaps = NULL;
+    if (in && (inCaps = GetExtBuffer(*in))) {
         // special case: called from MFT
         mfxExtEncoderCapability *outCaps = GetExtBuffer(*out);
         if (outCaps == nullptr)

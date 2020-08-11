@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1021,6 +1021,7 @@ static const int16_t LOG2_MUL_256[32] = {
 };
 
 uint32_t FastLog2Mul256(uint16_t x) {
+    if (x == 0) return 0; // Not defined
     if (x <= 32)
         return LOG2_MUL_256[x - 1];
     // linear approximation

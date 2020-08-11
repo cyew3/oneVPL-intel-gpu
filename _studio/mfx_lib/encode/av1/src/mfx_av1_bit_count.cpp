@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -870,7 +870,7 @@ uint32_t AV1Enc::EstimateCoefs(const CoefBitCounts &bits, const CoeffsType *coef
         assert(ctx < PREV_COEF_CONTEXTS);
 
         int32_t absCoef = abs(coefs[pos]);
-        int32_t tok = GetToken(absCoef);
+        int32_t tok = std::min(11, GetToken(absCoef));
         tokenCacheA[pos & maskPosX] = energy_class[tok];
         tokenCacheL[pos >> shiftPosY] = energy_class[tok];
         numbits += bits.tokenMc[band[c]][ctx][tok]; // more_coef=1 and token
@@ -897,7 +897,7 @@ uint32_t AV1Enc::EstimateCoefs(const CoefBitCounts &bits, const CoeffsType *coef
 
             absCoef = abs(coefs[pos]);
             ctx = GetCtxTokenAc<txType>(pos & maskPosX, pos >> shiftPosY, tokenCacheA, tokenCacheL);
-            tok = GetToken(absCoef);
+            tok = std::min(11, GetToken(absCoef));
             tokenCacheA[pos & maskPosX] = energy_class[tok];
             tokenCacheL[pos >> shiftPosY] = energy_class[tok];
             numbits += bits.token[band[c]][ctx][tok]; // token

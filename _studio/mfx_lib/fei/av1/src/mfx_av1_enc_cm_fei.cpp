@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -552,6 +552,7 @@ void AV1CmCtx::LoadPrograms(GPU_PLATFORM hwType)
 #endif // ENABLE_TGL
 
 #if ENABLE_TGLLP
+    case PLATFORM_INTEL_DG1:
     case PLATFORM_INTEL_TGLLP:
         programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_tgllp, sizeof(genx_av1_prepare_src_tgllp));
         programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_tgllp, sizeof(genx_av1_hme_and_me_p32_4mv_tgllp));

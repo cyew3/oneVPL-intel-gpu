@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1522,7 +1522,7 @@ namespace {
         const int16_t newmv_ctx = mvRefs->interModeCtx[C] & NEWMV_CTX_MASK;
         const int16_t refmv_ctx = (mvRefs->interModeCtx[C] >> REFMV_OFFSET) & REFMV_CTX_MASK;
         //mvRefs->interModeCtx[C] = (refmv_ctx >> 1) * COMP_NEWMV_CTXS + std::min(newmv_ctx, COMP_NEWMV_CTXS - 1);
-        mvRefs->interModeCtx[C] = compound_mode_ctx_map[refmv_ctx >> 1][std::min((int32_t)newmv_ctx, COMP_NEWMV_CTXS - 1)];
+        mvRefs->interModeCtx[C] = compound_mode_ctx_map[std::min(refmv_ctx >> 1, 3)][std::min((int32_t)newmv_ctx, COMP_NEWMV_CTXS - 1)];
     }
 
 };  // anonymous namespace

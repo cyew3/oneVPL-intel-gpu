@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2450,7 +2450,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
     sliceQpY = uint8_t(sliceQpY + mQuantOffset);
 
     int32_t layer = (picType == MFX_FRAMETYPE_I ? 0 : (picType == MFX_FRAMETYPE_P ?  1 : 1 + std::max(1, pFrame->m_pyramidLayer))); // should be 0 for I, 1 for P, etc. !!!
-    int32_t player = (video->PGopPicSize > 1 && layer == 1) ? 1 + pFrame->m_pyramidLayer : layer;
+    int32_t player = (video && video->PGopPicSize > 1 && layer == 1) ? 1 + pFrame->m_pyramidLayer : layer;
     double qstep = QP2Qstep(sliceQpY, mQuantOffset);
     // AMT_LTR
     if (picType == MFX_FRAMETYPE_I) {

@@ -134,7 +134,7 @@ namespace AV1Enc {
                 tp->rowHeight[i] = uint16_t(tp->rowEnd[i] - tp->rowStart[i]);
             }
         } else {
-            int32_t widestTileWidth = 0;
+            int32_t widestTileWidth = 1;
             for (int32_t i = 0; i < tp->cols; i++) {
                 tp->colStart[i] = uint16_t((i + 0) * sbCols / tp->cols);
                 tp->colEnd[i]   = uint16_t((i + 1) * sbCols / tp->cols);
@@ -5058,7 +5058,7 @@ void SetupModeDecisionControl(const AV1VideoParam &par, const Frame &frame, MdCo
                 const int32_t newmvCtx  = (modeCtx & NEWMV_CTX_MASK);
                 const int32_t globmvCtx = (modeCtx >> GLOBALMV_OFFSET) & GLOBALMV_CTX_MASK;
                 const int32_t refmvCtx  = (modeCtx >> REFMV_OFFSET) & REFMV_CTX_MASK;
-                const int32_t compModeCtx = compound_mode_ctx_map[refmvCtx >> 1][std::min(newmvCtx, COMP_NEWMV_CTXS - 1)];
+                const int32_t compModeCtx = compound_mode_ctx_map[std::min(refmvCtx >> 1,3)][std::min(newmvCtx, COMP_NEWMV_CTXS - 1)];
 
                 auto &singleModes = ctrl->bc.singleModes[nearestRefMatch][refMatch][hasNewMv];
                 auto &compModes   = ctrl->bc.compModes[nearestRefMatch][refMatch][hasNewMv];
