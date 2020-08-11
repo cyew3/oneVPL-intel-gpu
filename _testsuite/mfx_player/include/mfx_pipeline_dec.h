@@ -66,8 +66,8 @@ struct sCommandlineParams
   bool           bUseExplicitEncShift; // true if shift specified from cmd
 
   mfxU32         InputCodecType;
-  mfxFrameInfo   FrameInfo; //decode input frame info
-  mfxFrameInfo   outFrameInfo; //file writerRender output frameInfo
+  mfxFrameInfo   FrameInfo    = {}; //decode input frame info
+  mfxFrameInfo   outFrameInfo = {}; //file writerRender output frameInfo
   mfxExtBuffer** ExtParam;
   mfxU16         NumExtParam;
   //mfxF64         dFrameRate;
@@ -514,7 +514,7 @@ protected:
 #endif
 
     //Pipeline parameters
-    sCommandlineParams       m_inParams = {};
+    sCommandlineParams       m_inParams = {}; // Note: {} calls constructor but doesn't set all to 0!
     enum
     {
         eDEC,
