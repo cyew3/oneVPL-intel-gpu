@@ -719,10 +719,10 @@ void MfxHwH264Encode::ModifyRefPicLists(
 
         bool BEncToolsMode = false;
 #if defined(MFX_ENABLE_ENCTOOLS)
-        mfxExtEncToolsConfig * config = GetExtBuffer(video);
-        BEncToolsMode = ((IsOn(config->AdaptiveRefB) ||
-            IsOn(config->AdaptiveRefP) ||
-            IsOn(config->AdaptiveLTR))  &&
+        mfxExtEncToolsConfig &config = GetExtBufferRef(video);
+        BEncToolsMode = ((IsOn(config.AdaptiveRefB) ||
+            IsOn(config.AdaptiveRefP) ||
+            IsOn(config.AdaptiveLTR))  &&
             task.m_internalListCtrlPresent &&
             (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE));
 #endif

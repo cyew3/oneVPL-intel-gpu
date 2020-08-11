@@ -2661,8 +2661,8 @@ protected:
                     config.AdaptiveI : config.AdaptivePyramidQuantB;
 
                 mfxU16 bAdaptRef = config.AdaptiveI;
-                mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
-                if (extDdi->NumActiveRefP == 1 )
+                mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(video);
+                if (extDdi.NumActiveRefP == 1)
                     bAdaptRef = (mfxU16)MFX_CODINGOPTION_OFF;
 
                 config.AdaptiveRefB = IsNotDefined(config.AdaptiveRefB) ?
@@ -2720,7 +2720,7 @@ protected:
    static mfxU32 CorrectVideoParams(MfxVideoParam &video, mfxExtEncToolsConfig& supportedConfig)
    {
        mfxExtCodingOption2  &extOpt2 = GetExtBufferRef(video);
-       mfxExtCodingOptionDDI *    extDdi = GetExtBuffer(video);
+       mfxExtCodingOptionDDI &extDdi = GetExtBufferRef(video);
 
        mfxExtBRC*  extBRC = GetExtBuffer(video);
        mfxU32 numChanges = 0;
@@ -2732,7 +2732,7 @@ protected:
                video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) &&
                video.calcParam.numTemporalLayer == 0);
            bool bGopStrict = ((video.mfx.GopOptFlag & MFX_GOP_STRICT) != 0);
-           bool bMultiRef = (extDdi->NumActiveRefP != 1);
+           bool bMultiRef = (extDdi.NumActiveRefP != 1);
 
            CheckFlag(pConfig->AdaptiveI, bEncToolsCnd && (!bGopStrict), numChanges);
 
@@ -2786,7 +2786,7 @@ protected:
    {
        encTools = GetExtBuffer(video);
        bCreated = false;
-       if (!encTools->Context)
+       if (!(encTools && encTools->Context))
        {
            encTools = MFXVideoENCODE_CreateEncTools();
            MFX_CHECK(encTools != 0, MFX_ERR_INVALID_VIDEO_PARAM);
