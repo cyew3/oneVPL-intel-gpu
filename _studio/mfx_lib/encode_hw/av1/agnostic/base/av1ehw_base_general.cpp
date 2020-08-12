@@ -76,6 +76,7 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(mfx.FrameInfo.FrameRateExtD);
         MFX_COPY_FIELD(mfx.FrameInfo.AspectRatioW);
         MFX_COPY_FIELD(mfx.FrameInfo.AspectRatioH);
+        MFX_COPY_FIELD(mfx.FrameInfo.PicStruct);
         MFX_COPY_FIELD(mfx.FrameInfo.ChromaFormat);
     });
 
@@ -985,9 +986,7 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
         auto& hint = Glob::ResetHint::Get(global);
 
         const mfxExtEncoderResetOption* pResetOpt = ExtBuffer::Get(par);
-
         hint.Flags = RF_IDR_REQUIRED * (pResetOpt && IsOn(pResetOpt->StartNewSequence));
-
 
         m_GetMaxRef = [&](const mfxVideoParam& par)
         {
@@ -1004,7 +1003,6 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
         std::for_each(std::begin(blocks.m_mvpInheritDefault)
             , std::end(blocks.m_mvpInheritDefault)
             , [&](decltype(*std::begin(blocks.m_mvpInheritDefault)) inherit) { inherit(&parOld, &parNew); });
-
 
         std::for_each(std::begin(blocks.m_ebInheritDefault)
             , std::end(blocks.m_ebInheritDefault)
@@ -1023,12 +1021,11 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
         });
 
         auto& qInitExternal = FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks);
-        auto& qInitInternal = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
-
         auto sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, qInitExternal, parNew, global, local);
         MFX_CHECK(sts >= MFX_ERR_NONE, sts);
         wrn = sts;
 
+        auto& qInitInternal = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
         sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, qInitInternal, global, local);
         MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
@@ -1047,11 +1044,6 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
         auto& hint = Glob::ResetHint::Get(global);
         auto defOld = GetRTDefaults(init);
         auto defNew = GetRTDefaults(global);
-
-        const mfxExtEncoderResetOption* pResetOpt = ExtBuffer::Get(par);
-
-        const mfxExtHEVCParam (&hevcPar)[2] = { ExtBuffer::Get(parOld), ExtBuffer::Get(parNew) };
-        MFX_CHECK(hevcPar[0].LCUSize == hevcPar[1].LCUSize, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); // LCU Size Can't be changed
 
         MFX_CHECK(parOld.AsyncDepth                 == parNew.AsyncDepth,                   MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(parOld.mfx.GopRefDist             >= parNew.mfx.GopRefDist,               MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -1075,19 +1067,21 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
               && (mfxU32)BufferSizeInKB(parOld.mfx) == (mfxU32)BufferSizeInKB(parNew.mfx))
             , MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
+        bool isSpsChanged = false;
+        isSpsChanged = parOld.mfx.FrameInfo.FrameRateExtN != parNew.mfx.FrameInfo.FrameRateExtN
+            || parOld.mfx.FrameInfo.FrameRateExtD != parNew.mfx.FrameInfo.FrameRateExtD;
+
+        hint.Flags |= RF_SPS_CHANGED * isSpsChanged;
+
         bool isIdrRequired = false;
-
-        // check if IDR required after change of encoding parameters
-        const mfxExtCodingOption2(&CO2)[2] = { ExtBuffer::Get(parOld), ExtBuffer::Get(parNew) };
-
         isIdrRequired =
                (hint.Flags & RF_SPS_CHANGED)
             || (hint.Flags & RF_IDR_REQUIRED)
-            || parOld.mfx.GopPicSize != parNew.mfx.GopPicSize
-            || CO2[0].IntRefType != CO2[1].IntRefType;
+            || parOld.mfx.GopPicSize != parNew.mfx.GopPicSize;
 
         hint.Flags |= RF_IDR_REQUIRED * isIdrRequired;
 
+        const mfxExtEncoderResetOption* pResetOpt = ExtBuffer::Get(par);
         MFX_CHECK(!isIdrRequired || !(pResetOpt && IsOff(pResetOpt->StartNewSequence))
             , MFX_ERR_INVALID_VIDEO_PARAM); // Reset can't change parameters w/o IDR. Report an error
 
@@ -1134,17 +1128,15 @@ void General::ResetState(const FeatureBlocks& blocks, TPushRS Push)
         Glob::SH::Get(real) = Glob::SH::Get(global);
         Glob::FH::Get(real) = Glob::FH::Get(global);
 
-        m_forceHeaders |= !!(hint.Flags & RF_PPS_CHANGED) * INSERT_PPS;
-
         MFX_CHECK(hint.Flags & RF_IDR_REQUIRED, MFX_ERR_NONE);
 
+        // Need to call ResetState before UnlockAll surfaces, as DBP releaser will try to unlock surface in ResetState
+        ResetState();
         Glob::AllocRec::Get(real).UnlockAll();
         Glob::AllocBS::Get(real).UnlockAll();
 
         if (real.Contains(Glob::AllocRaw::Key))
             Glob::AllocRaw::Get(real).UnlockAll();
-
-        ResetState();
 
         return MFX_ERR_NONE;
     });
@@ -2191,24 +2183,29 @@ inline void SetTaskRepeatedFrames(
 
 inline void SetTaskIVFHeaderInsert(
     TaskCommonPar& task
-    , const ExtBuffer::Param<mfxVideoParam>& par)
+    , const ExtBuffer::Param<mfxVideoParam>& par
+    , bool& insertIVFSeq)
 {
     const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
     //WriteIVFHeaders should be enabled if pAV1Par is nullptr
     if (pAV1Par && !IsOn(pAV1Par->WriteIVFHeaders))
         return;
 
-    if (task.EncodedOrder == 0)
+    if (insertIVFSeq)
+    {
         task.InsertHeaders |= INSERT_IVF_SEQ;
+        insertIVFSeq        = false;
+    }
 
     task.InsertHeaders |= INSERT_IVF_FRM;
 }
 
 inline void SetTaskInsertHeaders(
     TaskCommonPar& task
-    , const mfxVideoParam& par)
+    , const mfxVideoParam& par
+    , bool& insertIVFSeq)
 {
-    SetTaskIVFHeaderInsert(task, par);
+    SetTaskIVFHeaderInsert(task, par, insertIVFSeq);
 
     if (IsI(task.FrameType))
         task.InsertHeaders |= INSERT_SPS;
@@ -2246,7 +2243,7 @@ void General::ConfigureTask(
     }
     SetTaskRepeatedFrames(task);
 
-    SetTaskInsertHeaders(task, par);
+    SetTaskInsertHeaders(task, par, m_insertIVFSeq);
 
     if (!IsHidden(task))
         task.wasShown = true;

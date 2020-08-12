@@ -106,8 +106,8 @@ namespace Base
         TaskCommonPar m_prevTask;
         mfxU32
             m_frameOrder = 0
-            , m_lastKeyFrame = 0
-            , m_forceHeaders = 0;
+            , m_lastKeyFrame = 0;
+        bool m_insertIVFSeq  = true;
 
         std::function<std::tuple<mfxU16, mfxU16>(const mfxVideoParam&)> m_GetMaxRef;
         std::unique_ptr<Defaults::Param> m_pQWCDefaults;
