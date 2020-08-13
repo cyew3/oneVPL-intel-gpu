@@ -417,6 +417,10 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
         m_components[eDEC].m_params.mfx.DecodedOrder = m_inParams.DecodedOrder;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    m_components[eDEC].m_params.mfx.FilmGrain = !m_inParams.DisableFilmGrain;
+#endif
+
     //no output frame rate specified
     if (0.0 == m_components[eVPP].m_fFrameRate)
     {
@@ -5192,9 +5196,12 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         if (bUnhandled)
         {
             HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Brightness, VM_STRING("-brightness"), VM_STRING("enable ProcAmp filter with specified brightness (from -100.0f to 100.0f by 0.01f, default = 0.0f)"),m_inParams.bUseProcAmp)
-        else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Contrast, VM_STRING("-contrast"), VM_STRING("enable ProcAmp filter with specified contrast (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
+            else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Contrast, VM_STRING("-contrast"), VM_STRING("enable ProcAmp filter with specified contrast (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Hue, VM_STRING("-hue"), VM_STRING("enable ProcAmp filter with specified hue (from -180.0f to 180.0f by 0.1f, default = 0.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Saturation, VM_STRING("-saturation"), VM_STRING("enable ProcAmp filter with specified saturation (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            else HANDLE_BOOL_OPTION(m_inParams.DisableFilmGrain, VM_STRING("-DisableFilmGrain"), VM_STRING("Force film grain off in decoder"));
+#endif
             else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipePadding,          VM_STRING("-camera_padding"), VM_STRING("provide camera pipe padding exttended buffer"));
             else HANDLE_INT_OPTION(m_inParams.m_WallW,VM_STRING("-wall_w"), VM_STRING("width of video wall (several windows without overlapping"))
             else HANDLE_INT_OPTION(m_inParams.m_WallH,VM_STRING("-wall_h"), VM_STRING("height of video wall (several windows without overlapping"))

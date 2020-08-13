@@ -138,6 +138,9 @@ struct sCommandlineParams
   mfxU16         DecodedOrder;
   mfxU16         EncodedOrder;
   mfxU32         nDecoderSurfs;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+  mfxU16         DisableFilmGrain;
+#endif
   EncodeExtraParams encodeExtraParams;
 
   mfxU16         InputPicstruct;
@@ -372,6 +375,7 @@ struct sCommandlineParams
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
       AV1LargeScaleTileMode = 0;
       AV1AnchorFramesNum = 0;
+      DisableFilmGrain = 0;
 #endif
       nYUVLoop = 0;
       nFramesAfterRecovery = 0;
