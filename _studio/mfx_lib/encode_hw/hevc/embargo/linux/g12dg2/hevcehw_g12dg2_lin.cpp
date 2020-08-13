@@ -29,6 +29,7 @@
 #include "hevcehw_base_parser.h"
 #include "hevcehw_g12_scc_lin.h"
 #include "hevcehw_g12_lin.h"
+#include "hevcehw_g12_caps.h"
 
 namespace HEVCEHW
 {
@@ -86,6 +87,13 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             iint
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetPPS }
             , { HEVCEHW::Linux::Gen12::FEATURE_SCC, HEVCEHW::Linux::Gen12::SCC::BLK_SetPPSExt });
+
+        auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
+        Reorder(
+            qwc
+            , { HEVCEHW::Gen12::FEATURE_CAPS, HEVCEHW::Gen12::Caps::BLK_HardcodeCaps }
+            , { FEATURE_CAPS, Caps::BLK_HardcodeCaps }
+        , PLACE_AFTER);
     }
 }
 
