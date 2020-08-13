@@ -43,6 +43,8 @@ mfx_player:
   - roman.kopytin@intel.com
   - anton.grishin@intel.com
   - sofya.balandina@intel.com
+  - betty.qin@intel.com
+  - wade.yuan@intel.com
 
 mfx_transcoder:
   paths:
@@ -71,6 +73,8 @@ h264d:
   - will.guo@intel.com
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
+  - gavin.shen@intel.com
+  - yan.wang@intel.com
 
 h264e:
   paths:
@@ -100,6 +104,8 @@ mpeg2d:
   - will.guo@intel.com
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
+  - gavin.shen@intel.com
+  - yan.wang@intel.com
 
 mpeg2e:
   paths:
@@ -144,7 +150,9 @@ hevcd:
   - will.guo@intel.com
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
-
+  - gavin.shen@intel.com
+  - yan.wang@intel.com
+  
 encode_hw-shared:
   paths:
   - _studio/mfx_lib/encode_hw/shared
@@ -188,6 +196,8 @@ mjpegd:
   - will.guo@intel.com
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
+  - gavin.shen@intel.com
+  - yan.wang@intel.com
 
 mjpege:
   paths:
@@ -214,6 +224,8 @@ vp8d:
   - will.guo@intel.com
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
+  - gavin.shen@intel.com
+  - yan.wang@intel.com
 
 vp8e:
   paths:
@@ -238,6 +250,8 @@ vp9d:
   - will.guo@intel.com
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
+  - gavin.shen@intel.com
+  - yan.wang@intel.com
 
 vp9e:
   paths:
@@ -265,7 +279,10 @@ av1d:
   - will.guo@intel.com
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
-
+  - gavin.shen@intel.com
+  - yan.wang@intel.com
+  - chunjuan.liu@intel.com
+ 
 av1e:
   paths:
   - _studio/mfx_lib/encode_hw/av1
