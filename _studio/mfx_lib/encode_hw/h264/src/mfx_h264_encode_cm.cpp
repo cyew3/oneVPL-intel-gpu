@@ -912,6 +912,7 @@ void CmContext::Setup(
         break;
     case MFX_HW_TGL_LP:
     case MFX_HW_DG1:
+    case MFX_HW_RKL:
         m_program = ReadProgram(m_device, genx_tgllp_simple_me, SizeOf(genx_tgllp_simple_me));
         m_programHist = ReadProgram(m_device, genx_tgllp_histogram, SizeOf(genx_tgllp_histogram));
         break;

@@ -899,17 +899,15 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
 #if (MFX_VERSION >= 1031)
     case MFX_HW_EHL    : platform->CodeName = MFX_PLATFORM_ELKHARTLAKE;   break;
     case MFX_HW_JSL    : platform->CodeName = MFX_PLATFORM_JASPERLAKE;    break;
-#endif
-#ifndef STRIP_EMBARGO
-    case MFX_HW_LKF    : platform->CodeName = MFX_PLATFORM_LAKEFIELD;     break;
-    case MFX_HW_RYF    :
     case MFX_HW_RKL    :
-#endif
-#if (MFX_VERSION >= 1031)
     case MFX_HW_TGL_LP : platform->CodeName = MFX_PLATFORM_TIGERLAKE;     break;
     case MFX_HW_DG1    :
                          platform->MediaAdapterType = MFX_MEDIA_DISCRETE;
                          platform->CodeName = MFX_PLATFORM_TIGERLAKE;     break;
+#endif
+#ifndef STRIP_EMBARGO
+    case MFX_HW_LKF    : platform->CodeName = MFX_PLATFORM_LAKEFIELD;     break;
+    case MFX_HW_RYF    :
 #endif
 #ifndef STRIP_EMBARGO
     case MFX_HW_TGL_HP :
