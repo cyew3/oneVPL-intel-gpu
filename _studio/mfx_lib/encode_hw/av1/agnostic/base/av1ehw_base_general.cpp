@@ -173,6 +173,17 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(TargetBitDepthChroma);
     });
 
+    blocks.m_ebCopySupported[MFX_EXTBUFF_AVC_TEMPORAL_LAYERS].emplace_back(
+        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
+    {
+        const auto& buf_src = *(const mfxExtAvcTemporalLayers*)pSrc;
+        auto& buf_dst = *(mfxExtAvcTemporalLayers*)pDst;
+        for (mfxU32 i = 0; i < 8; i++)
+        {
+            MFX_COPY_FIELD(Layer[i].Scale);
+        }
+    });
+
     blocks.m_ebCopySupported[MFX_EXTBUFF_ENCODER_RESET_OPTION].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -554,6 +565,12 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     {
         const auto& caps = Glob::EncodeCaps::Get(strg);
         return CheckCDEF(out, caps);
+    });
+
+    Push(BLK_CheckTemporalLayers
+        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
+    {
+        return CheckTemporalLayers(out);
     });
 
     Push(BLK_CheckGopRefDist
@@ -1494,7 +1511,7 @@ static void FillSortedFwdBwd(
     for (mfxU8 refIdx = 0; refIdx < task.DPB.size(); refIdx++)
     {
         auto& refFrm = task.DPB.at(refIdx);
-        if (refFrm)
+        if (refFrm && refFrm->TemporalID <= task.TemporalID)
             uniqueRefs.insert({ refFrm->DisplayOrderInGOP, refIdx });
     }
     uniqueRefs.erase(task.DisplayOrderInGOP);
@@ -2323,6 +2340,23 @@ void General::SetSH(
     sh.color_config.separate_uv_delta_q = 1; // NB: currently driver not work if it's '0'
     sh.color_config.subsampling_x       = 1; // YUV 4:2:0
     sh.color_config.subsampling_y       = 1; // YUV 4:2:0
+
+    const mfxExtAvcTemporalLayers& TL = ExtBuffer::Get(par);
+    sh.operating_points_cnt_minus_1   = CountTL(TL) - 1;
+
+    if (sh.operating_points_cnt_minus_1)
+    {
+        // (1) Only temporal scalability is supported
+        // (2) Set operating_point_idc[] such that the i=0 point corresponds to the
+        // lowest quality operating point (only base layer), and subsequent
+        // operarting points (i > 0) are higher quality corresponding to
+        // add decoding enhancement  layers
+        for (mfxU8 i = 0; i <= sh.operating_points_cnt_minus_1; i++)
+        {
+            sh.operating_point_idc[i] = (1u << 8) | ~(~0u << (i + 1));
+            sh.seq_level_idx[i] = 8;//TODO: implement functionality
+        }
+    }
 }
 
 inline INTERP_FILTER MapMfxInterpFilter(mfxU16 filter)
@@ -2565,6 +2599,12 @@ void General::SetDefaults(
     }
 
     SetDefaultOrderHint(pAuxPar);
+
+    mfxExtAvcTemporalLayers* pTL = ExtBuffer::Get(par);
+    if (pTL)
+    {
+        SetDefault(pTL->Layer[0].Scale, mfxU16(1));
+    }
 }
 
 mfxStatus General::CheckNumRefFrame(
@@ -2580,6 +2620,13 @@ mfxStatus General::CheckNumRefFrame(
             && par.mfx.NumRefFrame == 1
             && !defPar.base.GetNonStdReordering(defPar))
         , defPar.base.GetMinRefForBNoPyramid(defPar));
+
+    mfxU16 NumTL = defPar.base.GetNumTemporalLayers(defPar);
+    changed += SetIf(
+        par.mfx.NumRefFrame
+        , (NumTL > 1
+            && par.mfx.NumRefFrame < NumTL - 1)
+        , NumTL - 1);
 
     MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     return MFX_ERR_NONE;
@@ -2817,6 +2864,38 @@ mfxStatus General::CheckIOPattern(mfxVideoParam & par)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 
+    return MFX_ERR_NONE;
+}
+
+mfxStatus General::CheckTemporalLayers(mfxVideoParam & par)
+{
+    mfxU32 changed = 0;
+    mfxExtAvcTemporalLayers* pTL = ExtBuffer::Get(par);
+
+    MFX_CHECK(pTL, MFX_ERR_NONE);
+    MFX_CHECK(!CheckOrZero<mfxU16>(pTL->Layer[0].Scale, 0, 1), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(!CheckOrZero<mfxU16>(pTL->Layer[7].Scale, 0), MFX_ERR_UNSUPPORTED);
+
+    mfxU16 nTL = 1;
+
+    for (mfxU16 i = 1, prev = 0; i < 7; ++i)
+    {
+        if (!pTL->Layer[i].Scale)
+            continue;
+
+        auto& scaleCurr = pTL->Layer[i].Scale;
+        auto  scalePrev = pTL->Layer[prev].Scale;
+
+        MFX_CHECK(!CheckMinOrZero(scaleCurr, scalePrev + 1), MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(!CheckOrZero(scaleCurr, mfxU16(scaleCurr - (scaleCurr % scalePrev))), MFX_ERR_UNSUPPORTED);
+
+        prev = i;
+        ++nTL;
+    }
+
+    changed += CheckOrZero<mfxU16>(par.mfx.GopRefDist, 0, 1, par.mfx.GopRefDist * (nTL <= 1));
+
+    MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     return MFX_ERR_NONE;
 }
 

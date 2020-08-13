@@ -198,7 +198,10 @@ public:
 
         // TODO: add NumRefFrame calculation for B-pyramid
 
-        return (par.base.GetGopRefDist(par) > 1) ? 2 : 1;
+        mfxU16 NumTL   = par.base.GetNumTemporalLayers(par);
+        mfxU16 numRefs = par.base.GetGopRefDist(par) > 1 ? 2 : 1;
+
+        return std::max<mfxU16>(numRefs, NumTL - 1);
     }
 
     static mfxU16 MinRefForBNoPyramid(
@@ -566,13 +569,6 @@ public:
         return Bool2CO(bForceON);
     }
 
-    static mfxU16 NumTemporalLayers(
-        Defaults::TChain<mfxU16>::TExt
-        , const Defaults::Param&)
-    {
-        return 1;
-    }
-
     static mfxU8 NumReorderFrames(
         Defaults::TChain<mfxU8>::TExt
         , const Defaults::Param& par)
@@ -628,6 +624,99 @@ public:
         return ft;
     }
 
+    class TemporalLayers
+    {
+    public:
+        TemporalLayers()
+            : m_numTL(1)
+        {
+            m_TL[0].Scale = 1;
+        }
+        TemporalLayers(const mfxExtAvcTemporalLayers& tl)
+        {
+            SetTL(tl);
+        }
+
+        ~TemporalLayers() {}
+
+        void SetTL(mfxExtAvcTemporalLayers const & tl)
+        {
+            m_numTL = 0;
+            memset(&m_TL, 0, sizeof(m_TL));
+            m_TL[0].Scale = 1;
+
+            for (mfxU8 i = 0; i < 7; i++)
+            {
+                if (tl.Layer[i].Scale)
+                {
+                    m_TL[m_numTL].TId = i;
+                    m_TL[m_numTL].Scale = (mfxU8)tl.Layer[i].Scale;
+                    m_numTL++;
+                }
+            }
+
+            m_numTL = std::max<mfxU8>(m_numTL, 1);
+        }
+
+        mfxU8 NumTL() const { return m_numTL; }
+
+        mfxU8 GetTId(mfxU32 frameOrder) const
+        {
+            mfxU16 i;
+
+            if (m_numTL < 1 || m_numTL > 8)
+                return 0;
+
+            for (i = 0; i < m_numTL && (frameOrder % (m_TL[m_numTL - 1].Scale / m_TL[i].Scale)); i++);
+
+            return (i < m_numTL) ? m_TL[i].TId : 0;
+        }
+
+        mfxU8 HighestTId() const
+        {
+            mfxU8 htid = m_TL[m_numTL - 1].TId;
+            return mfxU8(htid + !htid * -1);
+        }
+
+    private:
+        mfxU8 m_numTL;
+
+        struct
+        {
+            mfxU8 TId = 0;
+            mfxU8 Scale = 0;
+        }m_TL[8];
+    };
+
+    static mfxU8 GetTId(
+        const Defaults::Param& par
+        , mfxU32 fo)
+    {
+        const mfxExtAvcTemporalLayers* pTL = ExtBuffer::Get(par.mvp);
+        if (!pTL)
+            return 0;
+        return TemporalLayers(*pTL).GetTId(fo);
+    }
+
+    static mfxU16 NumTemporalLayers(
+        Defaults::TChain<mfxU16>::TExt
+        , const Defaults::Param& par)
+    {
+        const mfxExtAvcTemporalLayers* pTL = ExtBuffer::Get(par.mvp);
+        if (!pTL)
+            return 1;
+        return CountTL(*pTL);
+    }
+
+    static mfxU8 GetHighestTId(
+        const Defaults::Param& par)
+    {
+        const mfxExtAvcTemporalLayers* pTL = ExtBuffer::Get(par.mvp);
+        if (!pTL)
+            return mfxU8(-1);
+        return TemporalLayers(*pTL).HighestTId();
+    }
+
     static mfxStatus PreReorderInfo(
         Defaults::TGetPreReorderInfo::TExt
         , const Defaults::Param& par
@@ -651,6 +740,10 @@ public:
 
         fi.DisplayOrderInGOP = !IsI(ftype) * (frameOrder - prevKeyFrameOrder);
         fi.FrameType         = ftype;
+        fi.TemporalID        = !IsI(ftype) * GetTId(par, fi.DisplayOrderInGOP);
+
+        bool bForceNonRef = IsRef(ftype) && fi.TemporalID == GetHighestTId(par);
+        fi.FrameType &= ~(bForceNonRef * MFX_FRAMETYPE_REF);
 
         if (IsP(ftype))
         {

@@ -529,6 +529,10 @@ namespace Base
         uint32_t large_scale_tile;
     } FH;
 
+    struct ObuExtensionHeader {
+        uint32_t temporal_id;
+        uint32_t spatial_id;
+    };
     enum AV1_OBU_TYPE
     {
         OBU_SEQUENCE_HEADER = 1,

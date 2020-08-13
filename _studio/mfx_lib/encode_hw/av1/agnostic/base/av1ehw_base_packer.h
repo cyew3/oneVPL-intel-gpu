@@ -132,10 +132,10 @@ namespace Base
             , PackedHeaders& ph);
 
         void PackIVF          (BitstreamWriter& bs, FH const& fh, mfxU32 insertHeaders, mfxVideoParam const& vp);
-        void PackOBUHeader    (BitstreamWriter& bs, AV1_OBU_TYPE obu_type);
+        void PackOBUHeader    (BitstreamWriter& bs, AV1_OBU_TYPE obu_type, mfxU32 obu_extension_flag, ObuExtensionHeader const& oeh);
         void PackOBUHeaderSize(BitstreamWriter& bs, mfxU32 const obu_size_in_bytes, mfxU8 const fixed_output_len = 0);
-        void PackSPS          (BitstreamWriter& bs, SH const & sh, FH const& fh);
-        void PackPPS          (BitstreamWriter& bs, BitOffsets& offsets, SH const& sh, FH& fh, mfxU32 insertHeaders);
+        void PackSPS          (BitstreamWriter& bs, SH const & sh, FH const& fh, ObuExtensionHeader const& oeh);
+        void PackPPS          (BitstreamWriter& bs, BitOffsets& offsets, SH const& sh, FH& fh, ObuExtensionHeader const& oeh, mfxU32 insertHeaders);
 
         static bool PutBit (BitstreamWriter& bs, mfxU32 b) { bs.PutBit(!!b); return true; };
         static bool PutBits(BitstreamWriter& bs, mfxU32 n, mfxU32 b) { if (n) bs.PutBits(n, b); return !!n; };

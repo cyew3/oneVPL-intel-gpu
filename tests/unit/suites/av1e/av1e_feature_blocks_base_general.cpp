@@ -171,9 +171,11 @@ namespace av1e {
             vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
             vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
             vp.NewEB(MFX_EXTBUFF_CODING_OPTION3, false);
+            vp.NewEB(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, false);
             mfxExtAV1Param& av1Par      = ExtBuffer::Get(vp);
             mfxExtAV1AuxData& av1AuxPar = ExtBuffer::Get(vp);
             mfxExtCodingOption3& pCO3   = ExtBuffer::Get(vp);
+            mfxExtAvcTemporalLayers& pTL= ExtBuffer::Get(vp);
 
             av1Par.StillPictureMode         = MFX_CODINGOPTION_OFF;
             av1Par.EnableSuperres           = MFX_CODINGOPTION_OFF;

@@ -625,6 +625,12 @@ inline T TileLog2(T blkSize, T target)
     return k;
 }
 
+inline mfxU16 CountTL(const mfxExtAvcTemporalLayers& tl)
+{
+    typedef decltype(tl.Layer[0]) TRLayer;
+    return std::max<mfxU16>(1, (mfxU16)std::count_if(
+        tl.Layer, tl.Layer + Size(tl.Layer), [](TRLayer l) { return !!l.Scale; }));
+}
 } //namespace AV1EHW
 
 #endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
