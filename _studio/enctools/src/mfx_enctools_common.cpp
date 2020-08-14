@@ -333,12 +333,27 @@ mfxStatus EncTools::InitMfxVppParams(mfxEncToolsCtrl const & ctrl)
     }
     else // LPLA
     {
-        m_mfxVppParams.vpp.Out.Width = ((ctrl.FrameInfo.Width >> 2) + 15) &~ 0xF;
-        m_mfxVppParams.vpp.Out.Height = ((ctrl.FrameInfo.Height >> 2) + 15) &~ 0xF;
-        m_mfxVppParams.vpp.Out.CropW = ctrl.FrameInfo.CropW >> 2;
-        m_mfxVppParams.vpp.Out.CropH = ctrl.FrameInfo.CropH >> 2;
-    }
+        mfxU16 crW = m_mfxVppParams.vpp.In.CropW ? m_mfxVppParams.vpp.In.CropW : m_mfxVppParams.vpp.In.Width;
+        mfxU16 crH = m_mfxVppParams.vpp.In.CropH ? m_mfxVppParams.vpp.In.CropH : m_mfxVppParams.vpp.In.Height;
 
+        mfxPlatform platform;
+        m_mfxSession.QueryPlatform(&platform);
+
+        if (platform.CodeName < MFX_PLATFORM_TIGERLAKE)
+        {
+            m_mfxVppParams.vpp.In.CropW = m_mfxVppParams.vpp.In.Width  = crW & ~0x3F;
+            m_mfxVppParams.vpp.In.CropH = m_mfxVppParams.vpp.In.Height = crH & ~0x3F;
+            m_mfxVppParams.vpp.Out.CropW = m_mfxVppParams.vpp.Out.Width  = m_mfxVppParams.vpp.In.CropW >> 2;
+            m_mfxVppParams.vpp.Out.CropH = m_mfxVppParams.vpp.Out.Height = m_mfxVppParams.vpp.In.CropH >> 2;
+        }
+        else
+        {
+            m_mfxVppParams.vpp.Out.CropW = (crW >> 2);
+            m_mfxVppParams.vpp.Out.CropH = (crH >> 2);
+            m_mfxVppParams.vpp.Out.Width  = (m_mfxVppParams.vpp.Out.CropW + 15) & ~0xF;
+            m_mfxVppParams.vpp.Out.Height = (m_mfxVppParams.vpp.Out.CropH + 15) & ~0xF;
+        }
+    }
     return MFX_ERR_NONE;
 }
 
@@ -398,8 +413,8 @@ mfxStatus EncTools::Init(mfxExtEncToolsConfig const * pConfig, mfxEncToolsCtrl c
     }
 #endif
 
-
-    if ((isPreEncSCD(m_config, *ctrl) || (isPreEncLA(m_config, *ctrl) && ctrl->FrameInfo.Width >= 720)) && (ctrl->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
+    mfxU16 crW = ctrl->FrameInfo.CropW ? ctrl->FrameInfo.CropW : ctrl->FrameInfo.Width;
+    if ((isPreEncSCD(m_config, *ctrl) || (isPreEncLA(m_config, *ctrl) && crW >= 720)) && (ctrl->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
     {
         mfxEncToolsCtrlExtDevice *extDevice = (mfxEncToolsCtrlExtDevice *)Et_GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_ENCTOOLS_DEVICE);
         if (extDevice)

@@ -39,7 +39,6 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
     if (extAlloc)
         m_pAllocator = extAlloc->pAllocator;
 
-
     MFX_CHECK_NULL_PTR2(m_device, m_pAllocator);
 
     sts = InitSession();
@@ -123,13 +122,27 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl  const & ctrl)
     m_encParams.mfx.FrameInfo = ctrl.FrameInfo;
     m_lookAheadScale = 0;
 
-    if (m_encParams.mfx.FrameInfo.Width >= 720)
+    mfxU16 crW = m_encParams.mfx.FrameInfo.CropW ? m_encParams.mfx.FrameInfo.CropW : m_encParams.mfx.FrameInfo.Width;
+    mfxU16 crH = m_encParams.mfx.FrameInfo.CropH ? m_encParams.mfx.FrameInfo.CropH : m_encParams.mfx.FrameInfo.Height;
+
+    if (crW >= 720)
     {
         m_lookAheadScale = 2;
-        m_encParams.mfx.FrameInfo.Width = ((m_encParams.mfx.FrameInfo.Width >> m_lookAheadScale) + 15) &~0xF;
-        m_encParams.mfx.FrameInfo.Height = ((m_encParams.mfx.FrameInfo.Height >> m_lookAheadScale) + 15) &~0xF;
-        m_encParams.mfx.FrameInfo.CropW = m_encParams.mfx.FrameInfo.CropW >> m_lookAheadScale;
-        m_encParams.mfx.FrameInfo.CropH = m_encParams.mfx.FrameInfo.CropH >> m_lookAheadScale;
+        mfxPlatform platform;
+        m_mfxSession.QueryPlatform(&platform);
+
+        if (platform.CodeName < MFX_PLATFORM_TIGERLAKE)
+        {
+            m_encParams.mfx.FrameInfo.CropW = m_encParams.mfx.FrameInfo.Width = (crW >> m_lookAheadScale) & ~0xF;
+            m_encParams.mfx.FrameInfo.CropH = m_encParams.mfx.FrameInfo.Height = (crH >> m_lookAheadScale) & ~0xF;
+        }
+        else
+        {
+            m_encParams.mfx.FrameInfo.CropW = (crW >> m_lookAheadScale);
+            m_encParams.mfx.FrameInfo.CropH = (crH >> m_lookAheadScale);
+            m_encParams.mfx.FrameInfo.Width = (m_encParams.mfx.FrameInfo.CropW + 15) & ~0xF;
+            m_encParams.mfx.FrameInfo.Height = (m_encParams.mfx.FrameInfo.CropH + 15) & ~0xF;
+        }
     }
 
     return sts;
