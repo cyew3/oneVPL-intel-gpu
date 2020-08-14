@@ -25,6 +25,7 @@
 #include "hevcehw_g12dg2_lin.h"
 #include "hevcehw_g12dg2_caps.h"
 #include "hevcehw_base_legacy.h"
+#include "hevcehw_g12_qp_modulation_lin.h"
 
 namespace HEVCEHW
 {
@@ -43,7 +44,8 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     TFeatureList newFeatures;
 
     newFeatures.emplace_back(new Caps(FEATURE_CAPS));
-    
+    newFeatures.emplace_back(new HEVCEHW::Linux::Gen12::QpModulation(HEVCEHW::Gen12::FEATURE_QP_MODULATION));
+
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
 
