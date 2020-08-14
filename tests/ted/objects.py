@@ -31,10 +31,12 @@ class ConfigurationError(Exception):
 _BUILTIN_CODECS = {
     'h264',
     'mpeg2',
+    'jpeg',
 }
 
 _PLUGIN_CODECS = {
     'h265',
+    'vp8',
 }
 
 
