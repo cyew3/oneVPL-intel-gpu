@@ -9611,6 +9611,22 @@ The `ContentInfo` enumerator itemizes content types for the encoding session.
 
 This enumerator is available since SDK API 1.16.
 
+## <a id='IntraPredBlockSize/InterPredBlockSize'>IntraPredBlockSize/InterPredBlockSize</a>
+
+**Description**
+
+The `IntraPredBlockSize/InterPredBlockSize` specifies minimum block size of inter-prediction.
+
+**Name/Description**
+
+| | |
+--- | ---
+<br>`enumerator MFX_BLOCKSIZE_UNKNOWN = 0` Unspecified.<br>`enumerator MFX_BLOCKSIZE_MIN_16X16 = 1` 16x16 <br>`enumerator MFX_BLOCKSIZE_MIN_8X8 = 2` 16x16, 8x8 <br>`enumerator MFX_BLOCKSIZE_MIN_4X4 = 3` 16x16, 8x8, 4x4 |
+
+**Change History**
+
+N/A.
+
 ## <a id='PRefType'>PRefType</a>
 
 **Description**
