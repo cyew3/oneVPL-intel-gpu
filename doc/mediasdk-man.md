@@ -9627,6 +9627,22 @@ The `IntraPredBlockSize/InterPredBlockSize` specifies minimum block size of inte
 
 N/A.
 
+## <a id='MVPrecision'>MVPrecision</a>
+
+**Description**
+
+The `MVPrecision` enumerator specifies the motion estimation precision.
+
+**Name/Description**
+
+| | |
+--- | ---
+<br>`enumerator MFX_MVPRECISION_UNKNOWN  = ` 0, Unspecified.<br>`enumerator BLOCKSIZE = ` (1 << 0) <br>`enumerator MFX_MVPRECISION_HALFPEL = ` (1 << 1) <br>`enumerator MFX_MVPRECISION_QUARTERPEL = ` (1 << 2) |
+
+**Change History**
+
+N/A.
+
 ## <a id='PRefType'>PRefType</a>
 
 **Description**
