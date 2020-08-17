@@ -531,6 +531,3 @@ namespace HEVCExtBRC
 
 #endif
 #endif
-
-
-

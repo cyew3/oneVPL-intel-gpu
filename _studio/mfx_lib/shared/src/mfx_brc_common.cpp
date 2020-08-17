@@ -158,7 +158,7 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par, bool bField)
               par->mfx.RateControlMethod == MFX_RATECONTROL_VBR,
               MFX_ERR_UNDEFINED_BEHAVIOR);
     bFieldMode = bField;
-    codecId = par->mfx.CodecId;
+    codecId    = par->mfx.CodecId;
 
     mfxU32 k  = par->mfx.BRCParamMultiplier == 0 ?  1: par->mfx.BRCParamMultiplier;
     targetbps = k*par->mfx.TargetKbps * 1000;
@@ -928,7 +928,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
     mfxI32 bitsEncoded  = frame_par->CodedFrameSize*8;
     mfxU32 picType      = GetFrameType(frame_par->FrameType, frame_par->PyramidLayer, m_par.gopRefDist);
-    bool  bIdr          = (picType == MFX_FRAMETYPE_IDR);
+    bool   bIdr         = (picType == MFX_FRAMETYPE_IDR);
     mfxI32 qpY          = frame_ctrl->QpY + m_par.quantOffset;
     mfxI32 layer        = frame_par->PyramidLayer;
     mfxF64 qstep        = QP2Qstep(qpY, m_par.quantOffset);
@@ -1296,7 +1296,6 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             mfxF64 maxFrameSizeHrd = 0.0;
             if (m_par.HRDConformance != MFX_BRC_NO_HRD)
             {
-
                 HRDDevFactor = m_hrdSpec->GetBufferDeviationFactor(frame_par->EncodedOrder);
                 HRDDev = m_hrdSpec->GetBufferDeviation(frame_par->EncodedOrder);
                 maxFrameSizeHrd = m_hrdSpec->GetMaxFrameSizeInBits(frame_par->EncodedOrder, bIdr);
@@ -1306,7 +1305,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
             mfxF64 bAbPreriod = m_par.bAbPeriod;
 
-            if (m_par.HRDConformance != MFX_BRC_NO_HRD)
+            if (m_par.HRDConformance != MFX_BRC_NO_HRD && totDev > 0)
             {
                 if (m_par.rateControlMethod == MFX_RATECONTROL_VBR && m_par.maxbps > m_par.targetbps )
                 {
