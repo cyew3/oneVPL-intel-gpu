@@ -9589,7 +9589,7 @@ The `ScenarioInfo` enumerator itemizes scenarios for the encoding session.
 
 | | |
 --- | ---
-`MFX_SCENARIO_UNKNOWN`,<br>`MFX_SCENARIO_DISPLAY_REMOTING`,<br>`MFX_SCENARIO_VIDEO_CONFERENCE`,<br>`MFX_SCENARIO_ARCHIVE`,<br>`MFX_SCENARIO_LIVE_STREAMING`,<br>`MFX_SCENARIO_CAMERA_CAPTURE`,<br>`MFX_SCENARIO_VIDEO_SURVEILLANCE`,<br>`MFX_SCENARIO_GAME_STREAMING`,<br>`MFX_SCENARIO_REMOTE_GAMING` |
+<br>`enumerator MFX_SCENARIO_UNKNOWN = 0`<br>`enumerator MFX_SCENARIO_DISPLAY_REMOTING = 1`<br>`enumerator MFX_SCENARIO_VIDEO_CONFERENCE = 2`<br>`enumerator MFX_SCENARIO_ARCHIVE = 3`<br>`enumerator MFX_SCENARIO_LIVE_STREAMING = 4`<br>`enumerator MFX_SCENARIO_CAMERA_CAPTURE = 5`<br>`enumerator MFX_SCENARIO_VIDEO_SURVEILLANCE = 6`<br>`enumerator MFX_SCENARIO_GAME_STREAMING = 7`<br>`enumerator MFX_SCENARIO_REMOTE_GAMING = 8` |
 
 **Change History**
 
@@ -9605,7 +9605,7 @@ The `ContentInfo` enumerator itemizes content types for the encoding session.
 
 | | |
 --- | ---
-`MFX_CONTENT_UNKNOWN`, `MFX_CONTENT_FULL_SCREEN_VIDEO`, `MFX_CONTENT_NON_VIDEO_SCREEN` |
+<br>`enumerator MFX_CONTENT_UNKNOWN = 0`<br>`enumerator MFX_CONTENT_FULL_SCREEN_VIDEO = 1`<br>`enumerator MFX_CONTENT_NON_VIDEO_SCREEN = 2` |
 
 **Change History**
 
