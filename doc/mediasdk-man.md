@@ -8771,7 +8771,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_DECODE_ERROR_REPORT` | This extended buffer is used by SDK decoders to report error information before frames get decoded. See the [mfxExtDecodeErrorReport](#mfxExtDecodeErrorReport) structure for more details.
 `MFX_EXTBUFF_CENC_PARAM` | This structure is used to pass decryption status report index for Common Encryption usage model. See the [mfxExtCencParam](#mfxExtCencParam) structure for more details.
 `MFX_EXTBUFF_TIME_CODE` | See the [mfxExtTimeCode](#mfxExtTimeCode) structure for more details.
-`MFX_HEVC_REGION_SLICE` | This extended buffer instructs HEVC encoder to encode only one region. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for HEVC encoding initialization.
+`MFX_EXTBUFF_HEVC_REGION` | This extended buffer specifies the region to encode. See the [mfxExtHEVCRegion](#mfxExtHEVCRegion) The application can attach this buffer to the mfxVideoParam structure during HEVC encoder initialization.
 `MFX_EXTBUFF_THREADS_PARAM` | See the [mfxExtThreadsParam](#mfxExtThreadsParam) structure for details.
 `MFX_EXTBUFF_PRED_WEIGHT_TABLE` | See the [mfxExtPredWeightTable](#mfxExtPredWeightTable) structure for details.
 `MFX_EXTBUFF_AVC_ROUNDING_OFFSET` | See the [mfxExtAVCRoundingOffset](#mfxExtAVCRoundingOffset) structure for details.
@@ -8802,8 +8802,8 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_INSERT_HEADERS` | See the [mfxExtInsertHeaders](#mfxExtInsertHeaders) structure for details.
 `MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO` | This extended buffer defines video signal type. See the [mfxExtVideoSignalInfo](#mfxExtVideoSignalInfo) structure for details. The application can attach this buffer to the mfxVideoParam structure for encoding initialization, and for retrieving such information from the decoders.
 `MFX_EXTBUFF_ENCODER_ROI` | This extended buffer is used by the application to specify different Region Of Interests during encoding. See the [mfxExtEncoderROI](#mfxExtEncoderROI). The application should provide it at initialization or at runtime.
-`MFX_EXTBUFF_VPP_DEINTERLACING` | This extended buffer is used by the application to specify different deinterlacing algorithms. See the [mfxExtVPPDeinterlacing](#mfxExtVPPDeinterlacing)
-`MFX_EXTBUFF_AVC_REFLISTS` | This extended buffer specifies reference lists for the SDK encoder. See the [mfxExtAVCRefLists](#mfxExtAVCRefLists)
+`MFX_EXTBUFF_VPP_DEINTERLACING` | This extended buffer is used by the application to specify different deinterlacing algorithms. See the [mfxExtVPPDeinterlacing](#mfxExtVPPDeinterlacing).
+`MFX_EXTBUFF_AVC_REFLISTS` | This extended buffer specifies reference lists for the SDK encoder. See the [mfxExtAVCRefLists](#mfxExtAVCRefLists).
 
 **Change History**
 
