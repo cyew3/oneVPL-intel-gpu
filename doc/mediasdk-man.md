@@ -8399,6 +8399,7 @@ If this option is turned ON (Granularity != MFX_PARTIAL_BITSTREAM_NONE), then th
 
 | | |
 --- | ---
+`Header.BufferId` | Must be equal [MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM](#MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM)
 `Granularity` | Granulatiry of the partial bitstream: slice/block/any, all types of granularity state in [PartialBitstreamOutput](#PartialBitstreamOutput) enum
 `BlockSize`   | Output block granulatiry for PartialBitstreamGranularity, valid only for [MFX_PARTIAL_BITSTREAM_BLOCK](#PartialBitstreamOutput)
 
@@ -8804,6 +8805,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_ENCODER_ROI` | This extended buffer is used by the application to specify different Region Of Interests during encoding. See the [mfxExtEncoderROI](#mfxExtEncoderROI). The application should provide it at initialization or at runtime.
 `MFX_EXTBUFF_VPP_DEINTERLACING` | This extended buffer is used by the application to specify different deinterlacing algorithms. See the [mfxExtVPPDeinterlacing](#mfxExtVPPDeinterlacing).
 `MFX_EXTBUFF_AVC_REFLISTS` | This extended buffer specifies reference lists for the SDK encoder. See the [mfxExtAVCRefLists](#mfxExtAVCRefLists).
+`MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM` | This extended buffer specifies the partial bitstream parameters. See the [mfxExtPartialBitstreamParam](#mfxExtPartialBitstreamParam) structure description for details.
 
 **Change History**
 
