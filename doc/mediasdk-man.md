@@ -8801,6 +8801,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO` | This extended buffer defines video signal type. See the [mfxExtVideoSignalInfo](#mfxExtVideoSignalInfo) structure for details. The application can attach this buffer to the mfxVideoParam structure for encoding initialization, and for retrieving such information from the decoders.
 `MFX_EXTBUFF_ENCODER_ROI` | This extended buffer is used by the application to specify different Region Of Interests during encoding. See the [mfxExtEncoderROI](#mfxExtEncoderROI). The application should provide it at initialization or at runtime.
 `MFX_EXTBUFF_VPP_DEINTERLACING` | This extended buffer is used by the application to specify different deinterlacing algorithms. See the [mfxExtVPPDeinterlacing](#mfxExtVPPDeinterlacing)
+`MFX_EXTBUFF_AVC_REFLISTS` | This extended buffer specifies reference lists for the SDK encoder. See the [mfxExtAVCRefLists](#mfxExtAVCRefLists)
 
 **Change History**
 
