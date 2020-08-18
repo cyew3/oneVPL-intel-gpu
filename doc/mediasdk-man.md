@@ -298,6 +298,7 @@ Notice revision #20110804
   * [ErrorTypes](#ErrorTypes)
   * [ChromaSiting](#ChromaSiting)
   * [Protected](#Protected)
+  * [MBQPMode](#MBQPMode)
 - [Appendices](#appendices)
   * [Appendix A: Configuration Parameter Constraints](#Appendix_A)
   * [Appendix B: Multiple-Segment Encoding](#Appendix_B)
@@ -6495,7 +6496,8 @@ The **mfxExtMBQP** structure specifies per-macroblock QP for current frame if [m
 `Header.BufferId` | Must be [MFX_EXTBUFF_MBQP](#ExtendedBufferID).
 `NumQPAlloc` | The allocated QP array size.
 `QP` | Pointer to a list of per-macroblock QP in raster scan order. In case of interlaced encoding the first half of QP array affects top field and the second – bottom field.<br><br>For AVC valid range is 1..51.<br><br>For HEVC valid range is 1..51. Application’s provided QP values should be valid; otherwise invalid QP values may cause undefined behavior. MBQP map should be aligned for 16x16 block size. (align rule is (width +15 /16) && (height +15 /16))<br><br>For MPEG2 QP corresponds to quantizer_scale of the ISO*/IEC* 13818-2 specification and have valid range 1..112.
-`QPmode` | Block-granularity modes when `MFX_MBQP_MODE_QP_ADAPTIVE` is set.
+`Mode` | Defines QP update mode. See [MBQPMode](#MBQPMode) enumerator for more details.
+`BlockSize` | QP block size, valid for HEVC only during Init and Runtime.
 
 **Change History**
 
@@ -10155,6 +10157,20 @@ The `PartialBitstreamOutput` enumerator indicates flags of partial bitstream out
 **Change History**
 
 This enumerator is available since SDK API 1.31.
+
+## <a id='MBQPMode'>MBQPMode</a>
+
+**Description**
+
+The `MBQPMode` enumerator itemizes QP update modes.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_MBQP_MODE_QP_VALUE = 0` | QP array contains QP values.
+`MFX_MBQP_MODE_QP_DELTA = 1` | QP array contains deltas for QP.
+`MFX_MBQP_MODE_QP_ADAPTIVE = 2` | QP array contains deltas for QP or absolute QP values
 
 # Appendices
 
