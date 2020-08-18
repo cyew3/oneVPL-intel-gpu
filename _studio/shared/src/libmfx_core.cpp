@@ -922,6 +922,11 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
                          platform->MediaAdapterType = MFX_MEDIA_DISCRETE;
 #endif
                          platform->CodeName = MFX_PLATFORM_PONTE_VECCHIO; break;
+    case MFX_HW_DG2:
+#if (MFX_VERSION >= 1031)
+                         platform->MediaAdapterType = MFX_MEDIA_DISCRETE;
+#endif
+                         platform->CodeName = MFX_PLATFORM_DG2;           break;
     case MFX_HW_ADL_S  : platform->CodeName = MFX_PLATFORM_ALDERLAKE_S;   break;
     case MFX_HW_ADL_P  : platform->CodeName = MFX_PLATFORM_ALDERLAKE_P;   break;
     case MFX_HW_MTL    : platform->CodeName = MFX_PLATFORM_METEORLAKE;    break;
