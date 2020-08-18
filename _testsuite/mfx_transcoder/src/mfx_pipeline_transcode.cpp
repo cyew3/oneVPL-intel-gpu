@@ -2658,6 +2658,7 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
         pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     }
 
+    FILL_MASK_FROM_FIELD(pMFXParams->mfx.InitialDelayInKB, 0);
     FILL_MASK_FROM_FIELD(pMFXParams->mfx.TargetKbps, 0);
     FILL_MASK_FROM_FIELD(pMFXParams->mfx.MaxKbps, 0);
     FILL_MASK_FROM_FIELD(pMFXParams->mfx.RateControlMethod, 0);
