@@ -643,7 +643,7 @@ namespace Base
         mfxU32   DisplayOrder   = mfxU32(-1);
         mfxU32   EncodedOrder   = mfxU32(-1);
         bool     isLTR          = false; // is "long-term"
-        bool     wasLTR         = false; // unmarked LTRs should be refreshed by the nearest ref frame
+        bool     isRejected     = false; // rejected ref frame should be refreshed asap
         bool     wasShown       = false;
         mfxU8    CodingType     = 0;
         Resource Raw;

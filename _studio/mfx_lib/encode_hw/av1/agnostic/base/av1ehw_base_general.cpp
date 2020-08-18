@@ -1528,6 +1528,18 @@ void General::Close(const FeatureBlocks& blocks, TPushCLS Push)
 
 using DpbIndexes = std::vector<mfxU8>;
 
+static void RemoveRejected(
+    const DpbType& dpb
+    , DpbIndexes* dpbIndexes)
+{
+    dpbIndexes->erase(
+        std::remove_if(
+            dpbIndexes->begin()
+            , dpbIndexes->end()
+            , [&dpb](mfxU8 idx) { return dpb[idx]->isRejected; })
+        , dpbIndexes->end());
+}
+
 static void FillSortedFwdBwd(
     const TaskCommonPar& task
     , DpbIndexes* fwd
@@ -1553,10 +1565,26 @@ static void FillSortedFwdBwd(
     auto firstBwd = find_if(uniqueRefs.begin(), uniqueRefs.end(), IsBwd);
 
     if (fwd)
+    {
         std::transform(uniqueRefs.begin(), firstBwd, std::back_inserter(*fwd), GetIdx);
+        RemoveRejected(task.DPB, fwd);
+        // if all fwd references are rejected
+        // use ref closest rejected to the current frame
+        if (fwd->empty() && firstBwd != uniqueRefs.begin()) {
+            auto lastFwd = std::prev(firstBwd);
+            fwd->push_back(lastFwd->second);
+        }
+    }
 
     if (bwd)
+    {
         std::transform(firstBwd, uniqueRefs.end(), std::back_inserter(*bwd), GetIdx);
+        RemoveRejected(task.DPB, bwd);
+        // if all bwd references are rejected
+        // use ref closest rejected to the current frame
+        if (bwd->empty() && firstBwd != uniqueRefs.end())
+            bwd->push_back(firstBwd->second);
+    }
 }
 
 namespace RefListRules
@@ -1813,7 +1841,7 @@ inline void MarkLTR(TaskCommonPar& task)
 
         if (frameToBecomeLTR != task.DPB.end()
             && !(*frameToBecomeLTR)->isLTR
-            && !(*frameToBecomeLTR)->wasLTR)
+            && !(*frameToBecomeLTR)->isRejected)
         {
             (*frameToBecomeLTR)->isLTR = true;
             numberOfUniqueSTRs--;
@@ -1823,7 +1851,7 @@ inline void MarkLTR(TaskCommonPar& task)
 
 // task - [in/out] Current task object, task.DPB may be modified
 // Return - N/A
-inline void UnmarkLTR(TaskCommonPar& task)
+inline void MarkRejected(TaskCommonPar& task)
 {
     const mfxExtAVCRefListCtrl* refListCtrl = ExtBuffer::Get(task.ctrl);
     if (!refListCtrl)
@@ -1838,15 +1866,10 @@ inline void UnmarkLTR(TaskCommonPar& task)
         // Frame with certain FrameOrder may be included into DPB muliple times and
         // if it is rejected we need to find all links to it from DPB.
         // Reference frames are refreshed in the end of encoding
-        // so, here we only can mark rejected LTRs for further removal
+        // so, here we only can mark rejected ref frames for further removal
         for (auto &f : task.DPB)
-        {
-            if (f && f->DisplayOrder == rejectedFrameOrder && f->isLTR)
-            {
-                f->isLTR = false;
-                f->wasLTR = true;
-            }
-        }
+            if (f && f->DisplayOrder == rejectedFrameOrder)
+                f->isRejected = true;
     }
 }
 
@@ -1857,7 +1880,7 @@ inline void InitTaskDPB(
     assert(task.DPB.size() >= prevTask.DPB.size());
     std::move(prevTask.DPB.begin(), prevTask.DPB.end(), task.DPB.begin());
 
-    UnmarkLTR(task);
+    MarkRejected(task);
 }
 
 // task - [in/out] Current task object, RefList field will be set in place
@@ -1923,7 +1946,7 @@ inline void SetTaskDPBRefresh(
         // At first find all rejected LTRs to refresh them with current frame
         mfxU8 refreshed = 0;
         for (size_t i = 0; i < task.DPB.size(); i++)
-            if (task.DPB[i]->wasLTR)
+            if (task.DPB[i]->isRejected)
                 refreshed = refreshRefFrames.at(i) = 1;
 
         if (!refreshed)
