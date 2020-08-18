@@ -8220,12 +8220,12 @@ when attached to the [mfxVideoParam](#mfxVideoParam) structure during [VPP Init]
 
 ChromaSiting is applied on input or output surface depending on the scenario:
 
-**VPP Input** | **VPP Output** |
+**VPP Input** | **VPP Output** | **The ChromaSiting indicates:** |
 --- | --- | ---
-`MFX_CHROMAFORMAT_YUV420` or `MFX_CHROMAFORMAT_YUV422` | `MFX_CHROMAFORMAT_YUV444` |  the ChromaSiting indicates the input chroma location.
-`MFX_CHROMAFORMAT_YUV444` | `MFX_CHROMAFORMAT_YUV420` or `MFX_CHROMAFORMAT_YUV422` |  the ChromaSiting indicates the output chroma location.
-`MFX_CHROMAFORMAT_YUV420` | `MFX_CHROMAFORMAT_YUV420` |  the chroma siting location indicates chroma location for both input and output.
-`MFX_CHROMAFORMAT_YUV420` | `MFX_CHROMAFORMAT_YUV422` |  the chroma siting location indicates horizontal location for both input and output, and vertical location for input.
+`MFX_CHROMAFORMAT_YUV420` or `MFX_CHROMAFORMAT_YUV422` | `MFX_CHROMAFORMAT_YUV444` |  The input chroma location.
+`MFX_CHROMAFORMAT_YUV444` | `MFX_CHROMAFORMAT_YUV420` or `MFX_CHROMAFORMAT_YUV422` |  The output chroma location.
+`MFX_CHROMAFORMAT_YUV420` | `MFX_CHROMAFORMAT_YUV420` |  Chroma location for both input and output.
+`MFX_CHROMAFORMAT_YUV420` | `MFX_CHROMAFORMAT_YUV422` |  Horizontal location for both input and output. Vertical location for input.
 
 **Change History**
 
