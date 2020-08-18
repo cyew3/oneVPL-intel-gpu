@@ -4742,7 +4742,7 @@ The application can retrieve list of active filters by attaching [mfxExtVPPDoUse
 | | |
 --- | ---
 `Header.BufferId` | Must be [MFX_EXTBUFF_VPP_IMAGE_STABILIZATION](#ExtendedBufferID)
-`Mode` | Specify the image stabilization mode. It should be one of the next values:<br>`MFX_IMAGESTAB_MODE_UPSCALE `<br>`MFX_IMAGESTAB_MODE_BOXING`
+`Mode` | Specify the image stabilization mode. It should be one of the next values (enumerator):<br>`MFX_IMAGESTAB_MODE_UPSCALE = 0x0001 ` Upscale mode.<br>`MFX_IMAGESTAB_MODE_BOXING = 0x0002` Boxing mode.
 
 **Change History**
 
