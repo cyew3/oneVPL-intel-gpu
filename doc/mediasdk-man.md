@@ -8798,6 +8798,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM` | This extended buffer is used by AV1 SDK decoder to report film grain parameters for decoded frame. See the [mfxExtAV1FilmGrainParam](#mfxExtAV1FilmGrainParam) structure for more details.
 `MFX_EXTBUFF_ENCODER_IPCM_AREA` | See the [mfxExtEncoderIPCMArea](#mfxExtEncoderIPCMArea) structure for details.
 `MFX_EXTBUFF_INSERT_HEADERS` | See the [mfxExtInsertHeaders](#mfxExtInsertHeaders) structure for details.
+`MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO` | This extended buffer defines video signal type. See the [mfxExtVideoSignalInfo](#mfxExtVideoSignalInfo) structure for details. The application can attach this buffer to the mfxVideoParam structure for encoding initialization, and for retrieving such information from the decoders.
 
 **Change History**
 
