@@ -1069,7 +1069,9 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
 
         bool isSpsChanged = false;
         isSpsChanged = parOld.mfx.FrameInfo.FrameRateExtN != parNew.mfx.FrameInfo.FrameRateExtN
-            || parOld.mfx.FrameInfo.FrameRateExtD != parNew.mfx.FrameInfo.FrameRateExtD;
+            || parOld.mfx.FrameInfo.FrameRateExtD != parNew.mfx.FrameInfo.FrameRateExtD
+            || parOld.mfx.FrameInfo.Height != parNew.mfx.FrameInfo.Height
+            || parOld.mfx.FrameInfo.Width != parNew.mfx.FrameInfo.Width;
 
         hint.Flags |= RF_SPS_CHANGED * isSpsChanged;
 

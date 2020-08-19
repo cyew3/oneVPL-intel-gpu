@@ -269,9 +269,16 @@ void Tile::SetInherited(ParamInheritance& par)
 
         INHERIT_OPT(UniformTileSpacing);
         INHERIT_OPT(ContextUpdateTileIdPlus1);
+
+        // Tile number or Tile size changed, can't inherit NumTilesPerTileGroup, TileHeightInSB or TileWidthInSB
+        const bool paramChanged = ebInit.FrameWidth != ebReset.FrameWidth || ebInit.FrameHeight != ebReset.FrameHeight
+            || ebInit.NumTileRows != ebReset.NumTileRows || ebInit.NumTileColumns != ebReset.NumTileColumns;
         INHERIT_OPT(NumTileRows);
         INHERIT_OPT(NumTileColumns);
         INHERIT_OPT(NumTileGroups);
+
+        if (paramChanged)
+            return;
 
         for (mfxU32 i = 0; i < sizeof(ebInit.NumTilesPerTileGroup) / sizeof(mfxU16)
             && ebInit.NumTilesPerTileGroup[i] != 0; i++)
