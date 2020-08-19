@@ -303,12 +303,6 @@ STRUCT(mfxExtVPPProcAmp,
     FIELD_T(mfxF64, Saturation  )
 )
 
-STRUCT(mfxExtVPPScaling,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16, ScalingMode)
-    FIELD_T(mfxU16, InterpolationMethod)
-)
-
 STRUCT(mfxEncodeStat,
     FIELD_T(mfxU32, NumFrame            )
     FIELD_T(mfxU64, NumBit              )
