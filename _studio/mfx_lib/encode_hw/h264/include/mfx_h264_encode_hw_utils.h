@@ -2560,11 +2560,16 @@ public:
         par.DisplayOrder = dispOrder;
         std::vector<mfxExtBuffer*> extParams;
 
-        mfxEncToolsBRCQuantControl extFrameQP;
+        mfxEncToolsBRCQuantControl extFrameQP = {};
         extFrameQP.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_QUANT_CONTROL;
         extFrameQP.Header.BufferSz = sizeof(extFrameQP);
-
         extParams.push_back((mfxExtBuffer *)&extFrameQP);
+
+        mfxEncToolsBRCHRDPos extHRDPos = {};
+        extFrameQP.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_HRD_POS;
+        extFrameQP.Header.BufferSz = sizeof(extFrameQP);
+        extParams.push_back((mfxExtBuffer *)&extHRDPos);
+
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
@@ -2576,6 +2581,10 @@ public:
         frame_ctrl->MaxFrameSize = extFrameQP.MaxFrameSize;
         std::copy(extFrameQP.DeltaQP, extFrameQP.DeltaQP + 8, frame_ctrl->DeltaQP);
         frame_ctrl->MaxNumRepak = extFrameQP.NumDeltaQP;
+
+        frame_ctrl->InitialCpbRemovalDelay = extHRDPos.InitialCpbRemovalDelay;
+        frame_ctrl->InitialCpbRemovalOffset = extHRDPos.InitialCpbRemovalDelayOffset;
+
         return sts;
     }
 

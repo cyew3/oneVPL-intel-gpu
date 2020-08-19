@@ -1362,6 +1362,24 @@ static mfxI32 compute_new_qp_intra(mfxI32 targetBits, mfxI32 rawSize, mfxF64 rac
     if (qp < 1) qp = 1;
     return qp;
 }
+mfxStatus BRC_EncTool::GetHRDPos(mfxU32 dispOrder, mfxEncToolsBRCHRDPos *pHRDPos)
+{
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR1(pHRDPos);
+
+    auto frameStructItr = std::find_if(m_FrameStruct.begin(), m_FrameStruct.end(), CompareByDisplayOrder(dispOrder));
+    if (frameStructItr == m_FrameStruct.end())
+        return MFX_ERR_UNDEFINED_BEHAVIOR; // BRC hasn't processed the frame
+    BRC_FrameStruct frameStruct = *frameStructItr;
+
+    if (m_par.HRDConformance != MFX_BRC_NO_HRD)
+    {
+        pHRDPos->InitialCpbRemovalDelay = m_hrdSpec->GetInitCpbRemovalDelay(frameStruct.encOrder);
+        pHRDPos->InitialCpbRemovalDelayOffset = m_hrdSpec->GetInitCpbRemovalDelayOffset(frameStruct.encOrder);
+    }
+    return MFX_ERR_NONE;
+}
+
 
 mfxStatus BRC_EncTool::ProcessFrame(mfxU32 dispOrder, mfxEncToolsBRCQuantControl *pFrameQp)
 {
@@ -1574,12 +1592,8 @@ mfxStatus BRC_EncTool::ProcessFrame(mfxU32 dispOrder, mfxEncToolsBRCQuantControl
     }
     frameStruct.qp = qp - m_par.quantOffset;
 
-//???
-    //if (m_par.HRDConformance != MFX_BRC_NO_HRD)
-    //{
-    //    ctrl->InitialCpbRemovalDelay = m_hrdSpec->GetInitCpbRemovalDelay(par->EncodedOrder);
-    //    ctrl->InitialCpbRemovalOffset = m_hrdSpec->GetInitCpbRemovalDelayOffset(par->EncodedOrder);
-    //}
+
+
     //printf("EncOrder %d ctrl->QpY %d, qp %d quantOffset %d Cmplx %lf\n", par->EncodedOrder, ctrl->QpY , qp , m_par.quantOffset, par->FrameCmplx);
 
     if (isIntra) {

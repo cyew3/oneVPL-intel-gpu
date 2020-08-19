@@ -650,7 +650,14 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
     mfxEncToolsBRCQuantControl *pFrameQp = (mfxEncToolsBRCQuantControl *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_BRC_QUANT_CONTROL);
     if (pFrameQp && IsOn(m_config.BRC))
     {
-        return m_brc.ProcessFrame(par->DisplayOrder, pFrameQp);
+        sts = m_brc.ProcessFrame(par->DisplayOrder, pFrameQp);
+        MFX_CHECK_STS(sts);
+    }
+    mfxEncToolsBRCHRDPos *pHRDPos = (mfxEncToolsBRCHRDPos *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_BRC_HRD_POS);
+    if (pHRDPos && IsOn(m_config.BRC))
+    {
+        sts = m_brc.GetHRDPos(par->DisplayOrder, pHRDPos);
+        MFX_CHECK_STS(sts);
     }
 
     return sts;
