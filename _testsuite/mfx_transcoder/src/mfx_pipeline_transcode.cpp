@@ -1431,12 +1431,22 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxU32 val;
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
+            {
+                mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffers.get());
 
-            mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
+                pExt->FrameWidth = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+            else
+#endif
+            {
+                mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
 
-            pExt->FrameWidth = val;
-            m_ExtBuffers.get()->push_back(pExt);
-
+                pExt->FrameWidth = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
             argv++;
         }
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-FrameHeight"), VM_STRING("")))
@@ -1444,12 +1454,22 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxU32 val;
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
+            {
+                mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffers.get());
 
-            mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
+                pExt->FrameHeight = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+            else
+#endif
+            {
+                mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
 
-            pExt->FrameHeight = val;
-            m_ExtBuffers.get()->push_back(pExt);
-
+                pExt->FrameHeight = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
             argv++;
         }
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumTileRows"), VM_STRING("")))
