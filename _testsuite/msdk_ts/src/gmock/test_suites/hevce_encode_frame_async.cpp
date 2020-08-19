@@ -199,23 +199,31 @@ namespace hevce_encode_frame_async
         },
         {/*25*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },}
         },
+        //InitialDelayInKB is taken bigger than supposed BufferSizeInKB (BufferSizeInKB = TargetKbps * DEFAULT_CPB_IN_SECONDS(=2) / 8)
+        //to check that BufferSizeInKB>=InitialDelayInKB
         {/*26*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 100 },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 26 }, }
         },
         {/*27*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 100 },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 26 },}
         },
         {/*28*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 100 },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 26 },}
         },
         {/*29*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 100 },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 26 },}
         },
         {/*30*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 100 },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 26 },}
         },
         {/*31*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 100 },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 26 },}
         },
         {/*32*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                                                             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },}
