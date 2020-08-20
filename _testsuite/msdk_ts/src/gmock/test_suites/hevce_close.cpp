@@ -237,7 +237,9 @@ namespace hevce_close
 
 
                 if (tc.type != NOT_SYNC)
+                {
                     SyncOperation(); TS_CHECK_MFX;
+                }
                 encoded++;
             }
         }
