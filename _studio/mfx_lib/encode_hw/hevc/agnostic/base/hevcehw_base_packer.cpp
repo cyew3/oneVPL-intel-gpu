@@ -22,6 +22,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_base_packer.h"
+#include <iterator>
 #include <numeric>
 
 using namespace HEVCEHW;

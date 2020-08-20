@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 Intel Corporation
+// Copyright (c) 2018-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include "umc_mpeg2_decoder.h"
 #include "umc_mpeg2_utils.h"
 #include "umc_mpeg2_slice.h"
+#include <iterator>
 
 namespace UMC_MPEG2_DECODER
 {

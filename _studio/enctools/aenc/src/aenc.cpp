@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 #include <algorithm>
+#include <iterator>
 #include <cmath>
 
 #include "aenc++.h"

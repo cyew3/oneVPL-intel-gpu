@@ -24,6 +24,7 @@
 #include "hevcehw_base_interlace.h"
 #include "hevcehw_base_packer.h"
 #include "hevcehw_base_legacy.h"
+#include <iterator>
 #include <numeric>
 
 using namespace HEVCEHW;

@@ -22,6 +22,7 @@
 #include "ehw_device.h"
 #include "encoding_ddi.h"
 #include <algorithm>
+#include <iterator>
 
 namespace MfxEncodeHW
 {

@@ -28,6 +28,7 @@
 #include "fast_copy.h"
 #include <algorithm>
 #include <exception>
+#include <iterator>
 #include <numeric>
 #include <set>
 #include <cmath>
