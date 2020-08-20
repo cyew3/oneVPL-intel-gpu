@@ -2486,7 +2486,6 @@ void General::SetSH(
     sh.sbSize                 = SB_SIZE;
     sh.enable_order_hint      = CO2Flag(pAuxPar->EnableOrderHint);
     sh.order_hint_bits_minus1 = pAuxPar->OrderHintBits - 1;
-    sh.enable_superres        = CO2Flag(pAV1Par->EnableSuperres);
     sh.enable_cdef            = CO2Flag(pAV1Par->EnableCdef);
     sh.enable_restoration     = CO2Flag(pAV1Par->EnableRestoration);
 
@@ -2563,7 +2562,7 @@ void General::SetFH(
     assert(pAV1Par); // all ext buffers must be present at this stage
     assert(pAuxPar); // all ext buffers must be present at this stage
 
-    fh.FrameWidth                   = pAV1Par->FrameWidth;
+    fh.FrameWidth                   = GetActualEncodeWidth(*pAV1Par);
     fh.FrameHeight                  = pAV1Par->FrameHeight;
     fh.error_resilient_mode         = CO2Flag(pAuxPar->ErrorResilientMode);
     fh.disable_cdf_update           = CO2Flag(pAV1Par->DisableCdfUpdate);

@@ -34,6 +34,7 @@
     <ClCompile Include="av1\agnostic\base\av1ehw_base_general_defaults.cpp" />
     <ClCompile Include="av1\agnostic\base\av1ehw_base_packer.cpp" />
     <ClCompile Include="av1\agnostic\base\av1ehw_base_segmentation.cpp" />
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_superres.cpp" />
     <ClCompile Include="av1\agnostic\base\av1ehw_base_task.cpp" />
     <ClCompile Include="av1\agnostic\base\av1ehw_base_tile.cpp" />
     <ClCompile Include="av1\av1ehw_disp.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="av1\agnostic\base\av1ehw_base_iddi_packer.h" />
     <ClInclude Include="av1\agnostic\base\av1ehw_base_packer.h" />
     <ClInclude Include="av1\agnostic\base\av1ehw_base_segmentation.h" />
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_superres.h" />
     <ClInclude Include="av1\agnostic\base\av1ehw_base_task.h" />
     <ClInclude Include="av1\agnostic\base\av1ehw_base_tile.h" />
     <ClInclude Include="av1\av1ehw_disp.h" />

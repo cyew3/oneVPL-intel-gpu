@@ -378,7 +378,7 @@ void DDIPacker::FillPpsBuffer(
 
     //frame size
     pps.frame_height_minus1 = static_cast<USHORT>(bs_fh.FrameHeight - 1);
-    pps.frame_width_minus1 = static_cast<USHORT>(bs_fh.FrameWidth - 1);
+    pps.frame_width_minus1 = static_cast<USHORT>(bs_fh.UpscaledWidth - 1);
 
     //quantizer
     pps.y_dc_delta_q = static_cast<CHAR>(bs_fh.quantization_params.DeltaQYDc);
@@ -390,11 +390,13 @@ void DDIPacker::FillPpsBuffer(
     //other params
     pps.PicFlags.fields.error_resilient_mode = bs_fh.error_resilient_mode;
     pps.interp_filter = static_cast<UCHAR>(bs_fh.interpolation_filter);
+    pps.PicFlags.fields.use_superres = bs_fh.use_superres;
     pps.PicFlags.fields.allow_high_precision_mv = bs_fh.allow_high_precision_mv;
     pps.PicFlags.fields.reduced_tx_set_used = bs_fh.reduced_tx_set;
     //description for tx_mode in DDI 0.04 is outdated (lists TX modes not supported by 1.0.0.errata1)
     pps.dwModeControlFlags.fields.tx_mode = bs_fh.TxMode;
     pps.temporal_id = 0;
+    pps.superres_scale_denominator = static_cast<UCHAR>(bs_fh.SuperresDenom);
 }
 
 inline void FillSearchIdx(

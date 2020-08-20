@@ -102,19 +102,21 @@ static mfxU32 CheckSegmentMap(
 {
     mfxU32 invalid = 0;
 
-    mfxFrameInfo   fiTemp  = par.mfx.FrameInfo;
-    mfxU16 frameWidthTemp  = av1Par.FrameWidth;
+    mfxFrameInfo  fiTemp  = par.mfx.FrameInfo;
+    mfxU16 frameWidthTemp = av1Par.FrameWidth;
     mfxU16 frameHeightTemp = av1Par.FrameHeight;
     SetDefaultFrameInfo(frameWidthTemp, frameHeightTemp, fiTemp);
 
-    const mfxU32 frameWidth  = frameWidthTemp ? frameWidthTemp : fiTemp.Width;
-    const mfxU32 frameHeight = frameHeightTemp ? frameHeightTemp : fiTemp.Height;
+    mfxU16 frameWidth = frameWidthTemp ? frameWidthTemp : fiTemp.Width;
+    frameWidth        = GetActualEncodeWidth(frameWidth, CO2Flag(av1Par.EnableSuperres), av1Par.SuperresScaleDenominator);
 
-    const mfxU32 blockSize = seg.SegmentIdBlockSize > 0 ? seg.SegmentIdBlockSize : MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32;
-    const mfxU32 widthInBlocks = CeilDiv(frameWidth, blockSize);
-    const mfxU32 heightInBlocks = CeilDiv(frameHeight, blockSize);
+    const mfxU16 frameHeight = frameHeightTemp ? frameHeightTemp : fiTemp.Height;
 
-    if (seg.NumSegmentIdAlloc && seg.NumSegmentIdAlloc < (widthInBlocks * heightInBlocks))
+    const mfxU16 blockSize = seg.SegmentIdBlockSize > 0 ? seg.SegmentIdBlockSize : MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32;
+    const mfxU16 widthInBlocks = CeilDiv(frameWidth, blockSize);
+    const mfxU16 heightInBlocks = CeilDiv(frameHeight, blockSize);
+
+    if (seg.NumSegmentIdAlloc && seg.NumSegmentIdAlloc < static_cast<mfxU32>(widthInBlocks) * heightInBlocks)
         invalid++;
 
     if (seg.SegmentId && seg.NumSegments)

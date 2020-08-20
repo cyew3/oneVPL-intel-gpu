@@ -233,7 +233,7 @@ void Packer::PackIVF(BitstreamWriter& bs, FH const& fh, mfxU32 insertHeaders, mf
     {
         // IVF SEQ header
         mfxU32 ivfSeqHeader[8] = {0x46494B44, 0x00200000, 0x31305641,
-            (mfxU32)(fh.FrameWidth + (fh.FrameHeight << 16)),
+            (mfxU32)(fh.UpscaledWidth + (fh.FrameHeight << 16)),
             vp.mfx.FrameInfo.FrameRateExtN,
             vp.mfx.FrameInfo.FrameRateExtD,
             0/*numFramesInFile*/,
@@ -343,7 +343,7 @@ inline void PackFrameSizeInfo(BitstreamWriter& bs, FH const& fh)
     bs.PutBits(4, frame_height_bits_minus_1);
 
     // max width/height of the stream
-    mfxU32 max_frame_width_minus_1 = fh.FrameWidth - 1;
+    mfxU32 max_frame_width_minus_1 = fh.UpscaledWidth - 1;
     bs.PutBits(frame_width_bits_minus_1 + 1, max_frame_width_minus_1);
     mfxU32 max_frame_height_minus_1 = fh.FrameHeight - 1;
     bs.PutBits(frame_height_bits_minus_1 + 1, max_frame_height_minus_1);
@@ -541,7 +541,69 @@ inline void PackInterpolationFilter(BitstreamWriter& bs, FH const& fh)
     }
 }
 
-static void PackFrameRefInfo(BitstreamWriter& bs, SH const& sh, FH const& fh)
+inline void PackSuperresParams(BitstreamWriter& bs, SH const& sh, FH const& fh)
+{
+    if (sh.enable_superres)
+    {
+        bs.PutBit(fh.use_superres); //use_superres
+        if (fh.use_superres)
+        {
+            bs.PutBits(3, fh.SuperresDenom - 9);  // coded_denom
+        }
+    }
+}
+
+inline void PackFrameSize(
+    BitstreamWriter& bs,
+    SH const& sh,
+    FH const& fh)
+{
+    if (fh.frame_size_override_flag)
+    {
+        bs.PutBits(sh.frame_width_bits + 1, fh.UpscaledWidth - 1); //frame_width_minus_1
+        bs.PutBits(sh.frame_height_bits + 1, fh.FrameHeight - 1); //frame_height_minus_1
+    }
+
+    PackSuperresParams(bs, sh, fh);
+}
+
+inline void PackRenderSize(
+    BitstreamWriter& bs,
+    FH const& fh)
+{
+    mfxU32 render_and_frame_size_different = 0;
+
+    bs.PutBit(render_and_frame_size_different); //render_and_frame_size_different
+
+    if (render_and_frame_size_different == 1)
+    {
+        bs.PutBits(16, fh.RenderWidth - 1); //render_width_minus_1
+        bs.PutBits(16, fh.RenderHeight - 1); //render_height_minus_1
+    }
+}
+
+inline void PackFrameSizeWithRefs(
+    BitstreamWriter& bs,
+    SH const& sh,
+    FH const& fh)
+{
+    mfxU32 found_ref = 0;
+
+    for (mfxI8 ref = 0; ref < REFS_PER_FRAME; ref++)
+        bs.PutBit(found_ref); //found_ref
+
+    if (found_ref == 0)
+    {
+        PackFrameSize(bs, sh, fh);
+        PackRenderSize(bs, fh);
+    }
+    else
+    {
+        PackSuperresParams(bs, sh, fh);
+    }
+}
+
+static void PackFrameRefInfo(BitstreamWriter& bs, SH const& sh, FH const& fh, mfxU8 const error_resilient_mode)
 {
     if (sh.enable_order_hint)
         bs.PutBit(0); //frame_refs_short_signaling
@@ -549,7 +611,15 @@ static void PackFrameRefInfo(BitstreamWriter& bs, SH const& sh, FH const& fh)
     for (mfxI8 ref = 0; ref < REFS_PER_FRAME; ref++)
         bs.PutBits(REF_FRAMES_LOG2, fh.ref_frame_idx[ref]);
 
-    bs.PutBit(0); //render_and_frame_size_different
+    if (fh.frame_size_override_flag && !error_resilient_mode)
+    {
+        PackFrameSizeWithRefs(bs, sh, fh);
+    }
+    else
+    {
+        PackFrameSize(bs, sh, fh);
+        PackRenderSize(bs, fh);
+    }
 
     bs.PutBit(fh.allow_high_precision_mv); //allow_high_precision_mv
 
@@ -559,12 +629,6 @@ static void PackFrameRefInfo(BitstreamWriter& bs, SH const& sh, FH const& fh)
 
     if (fh.use_ref_frame_mvs)
         bs.PutBit(1); //use_ref_frame_mvs
-}
-
-inline void PackSuperresParams(BitstreamWriter& bs, SH const& sh)
-{
-    if (sh.enable_superres)
-        bs.PutBit(0); //use_superres
 }
 
 inline void PackUniformTile(BitstreamWriter& bs, TileInfo const& tileInfo)
@@ -846,18 +910,18 @@ inline void PackFrameHeader(
 
     bs.PutBit(fh.disable_cdf_update); //disable_cdf_update
     bs.PutBit(0); //allow_screen_content_tools
-    bs.PutBit(0); //frame_size_overriding_flag
+    bs.PutBit(fh.frame_size_override_flag); //frame_size_override_flag
 
     PackOrderHint(bs, sh, fh);
 
     PackRefFrameFlags(bs, fh, error_resilient_mode);
 
     if (!frameIsIntra)
-        PackFrameRefInfo(bs, sh, fh);
+        PackFrameRefInfo(bs, sh, fh, error_resilient_mode);
     else
     {
-        PackSuperresParams(bs, sh);
-        bs.PutBit(0); //render_and_frame_size_different
+        PackFrameSize(bs, sh, fh);
+        PackRenderSize(bs, fh);
     }
 
     if (!fh.disable_cdf_update)

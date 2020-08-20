@@ -475,6 +475,7 @@ namespace Base
 
         uint32_t FrameWidth;
         uint32_t FrameHeight;
+        uint32_t use_superres;
         uint32_t SuperresDenom;
         uint32_t UpscaledWidth;
         uint32_t MiCols;
@@ -738,6 +739,19 @@ namespace Base
     }
     inline bool isValid(DpbFrame const & frame) { return IDX_INVALID != frame.Rec.Idx; }
     inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_SIZE || !isValid(dpb[idx]); }
+
+    inline mfxU16 GetActualEncodeWidth(mfxU16 upscaledWidth, bool use_superres, mfxU16 SuperresDenom)
+    {
+        if (use_superres && SuperresDenom >= 9 && SuperresDenom <= 16)
+            return ((upscaledWidth << 3) + (SuperresDenom >> 1)) / SuperresDenom;
+
+        return upscaledWidth;
+    }
+
+    inline mfxU16 GetActualEncodeWidth(const mfxExtAV1Param &av1Par)
+    {
+        return GetActualEncodeWidth(av1Par.FrameWidth, IsOn(av1Par.EnableSuperres), av1Par.SuperresScaleDenominator);
+    }
 
     class FrameLocker
         : public mfxFrameData
@@ -1096,6 +1110,7 @@ namespace Base
         , FEATURE_BLOCKING_SYNC
         , FEATURE_EXT_BRC
         , FEATURE_TILE
+        , FEATURE_SUPERRES
         , FEATURE_DIRTY_RECT
         , FEATURE_SEGMENTATION
         , FEATURE_DPB_REPORT

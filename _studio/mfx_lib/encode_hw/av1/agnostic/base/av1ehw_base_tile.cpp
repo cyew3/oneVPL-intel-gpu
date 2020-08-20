@@ -308,7 +308,12 @@ void Tile::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         mfxExtAV1Param* pAV1Par = ExtBuffer::Get(out);
         MFX_CHECK(pAV1Par, MFX_ERR_NONE);
 
-        const mfxU16 frameWidth = pAV1Par->FrameWidth ? pAV1Par->FrameWidth : out.mfx.FrameInfo.Width;
+        mfxU16 frameWidth = pAV1Par->FrameWidth ? pAV1Par->FrameWidth : out.mfx.FrameInfo.Width;
+        if (pAV1Par->EnableSuperres != MFX_CODINGOPTION_UNKNOWN)
+        {
+            frameWidth = GetActualEncodeWidth(frameWidth, CO2Flag(pAV1Par->EnableSuperres), pAV1Par->SuperresScaleDenominator);
+        }
+
         const mfxU16 frameHeight = pAV1Par->FrameHeight ? pAV1Par->FrameHeight : out.mfx.FrameInfo.Height;
         const mfxU16 sbCols = CeilDiv<mfxU16>(frameWidth, SB_SIZE);
         const mfxU16 sbRows = CeilDiv<mfxU16>(frameHeight, SB_SIZE);
@@ -355,7 +360,7 @@ void Tile::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
         if (!pAV1Par)
             return;
 
-        const mfxU16 sbCols = CeilDiv<mfxU16>(pAV1Par->FrameWidth, SB_SIZE);
+        const mfxU16 sbCols = CeilDiv<mfxU16>(GetActualEncodeWidth(*pAV1Par), SB_SIZE);
         const mfxU16 sbRows = CeilDiv<mfxU16>(pAV1Par->FrameHeight, SB_SIZE);
         SetDefaultTileParams(sbCols, sbRows, *pAV1Par);
     });
@@ -438,7 +443,7 @@ void Tile::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         auto& fh = Glob::FH::Get(strg);
         auto& caps = Glob::EncodeCaps::Get(strg);
 
-        mfxU16 sbCols = CeilDiv<mfxU16>(pAV1Par->FrameWidth , SB_SIZE);
+        mfxU16 sbCols = CeilDiv<mfxU16>(GetActualEncodeWidth(*pAV1Par), SB_SIZE);
         mfxU16 sbRows = CeilDiv<mfxU16>(pAV1Par->FrameHeight, SB_SIZE);
         fh.sbCols = sbCols;
         fh.sbRows = sbRows;
@@ -496,7 +501,7 @@ void Tile::InitTask(const FeatureBlocks& blocks, TPushIT Push)
 
             const auto& par = Glob::VideoParam::Get(global);
             const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-            const mfxU16 sbCols = CeilDiv<mfxU16>(av1Par.FrameWidth, SB_SIZE);
+            const mfxU16 sbCols = CeilDiv<mfxU16>(GetActualEncodeWidth(av1Par), SB_SIZE);
             const mfxU16 sbRows = CeilDiv<mfxU16>(av1Par.FrameHeight, SB_SIZE);
 
             mfxStatus sts = CheckAndFixTileBuffer(sbCols, sbRows, *pFrameAv1Par);
@@ -529,7 +534,8 @@ void Tile::PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push)
 
         const auto& par = Glob::VideoParam::Get(global);
         const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-        const mfxU16 sbCols = CeilDiv<mfxU16>(av1Par.FrameWidth, SB_SIZE);
+
+        const mfxU16 sbCols = CeilDiv<mfxU16>(GetActualEncodeWidth(av1Par), SB_SIZE);
         const mfxU16 sbRows = CeilDiv<mfxU16>(av1Par.FrameHeight, SB_SIZE);
 
         const auto& caps = Glob::EncodeCaps::Get(global);
