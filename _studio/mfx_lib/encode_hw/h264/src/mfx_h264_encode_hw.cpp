@@ -4384,10 +4384,14 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             if (IsOn(extOpt3.EnableMBQP))
             {
-                const mfxExtMBQP *mbqp = GetExtBuffer(task->m_ctrl);
+                task->m_mbqp = GetExtBuffer(task->m_ctrl);
+                if (!task->m_mbqp && isSWBRC(m_video))
+                {
+                    task->m_mbqp = GetExtBuffer(task->m_brcFrameCtrl);
+                }
                 mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
                 mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
-                task->m_isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
+                task->m_isMBQP = task->m_mbqp && task->m_mbqp->QP && task->m_mbqp->NumQPAlloc >= wMB * hMB;
     #ifdef ENABLE_APQ_LQ
                     if (!task->m_isMBQP && task->m_ALQOffset != 0) {
                         task->m_isMBQP = true;

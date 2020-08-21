@@ -246,6 +246,7 @@ public:
     mfxF64   mMinQstepRateEP;
     mfxI32   mMinQstepCmplxKPUpdt;
     mfxF64   mMinQstepCmplxKPUpdtErr;
+    bool     mMBBRC;
 
     mfxU32  codecId;
 
@@ -294,6 +295,7 @@ public:
         mMinQstepRateEP(0),
         mMinQstepCmplxKPUpdt(0),
         mMinQstepCmplxKPUpdtErr(0),
+        mMBBRC(false),
         codecId(0)
     {}
 
@@ -444,6 +446,10 @@ private:
     std::unique_ptr<AVGBitrate> m_avg;
     mfxU32     m_SkipCount;
     mfxU32     m_ReEncodeCount;
+    std::vector <mfxExtMBQP> m_MBQP;
+    std::vector <mfxU8> m_MBQPBuff;
+    std::vector <mfxExtBuffer*> m_ExtBuff;
+
 
 public:
     ExtBRC():

@@ -1082,7 +1082,7 @@ namespace MfxHwH264Encode
             , m_minQP(0)
             , m_maxQP(0)
             , m_resetBRC(false)
-
+            , m_mbqp(0)
             , m_idxMBQP(NO_INDEX)
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
@@ -1367,6 +1367,7 @@ namespace MfxHwH264Encode
 
         bool m_resetBRC;
 
+        const mfxExtMBQP *m_mbqp;
         mfxU32   m_idxMBQP;
         mfxMemId m_midMBQP;
         bool     m_isMBQP;

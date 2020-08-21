@@ -117,6 +117,7 @@ public:
     mfxI32   quantMinP;
     mfxI32   quantMaxB;
     mfxI32   quantMinB;
+    bool     mMBBRC;
     mfxU32  codecId;
 
 public:
@@ -156,6 +157,7 @@ public:
         quantMinP(0),
         quantMaxB(0),
         quantMinB(0),
+        mMBBRC(false),
         codecId(0)
     {}
 
@@ -411,6 +413,9 @@ private:
     bool       m_bInit;
     BRC_Ctx    m_ctx;
     std::unique_ptr<AVGBitrate> m_avg;
+    std::vector <mfxExtMBQP> m_MBQP;
+    std::vector <mfxU8> m_MBQPBuff;
+    std::vector <mfxExtBuffer*> m_ExtBuff;
 
 public:
     ExtBRC():

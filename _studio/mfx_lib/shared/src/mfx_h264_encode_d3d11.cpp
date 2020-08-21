@@ -647,7 +647,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
 
     if (task.m_isMBQP)
     {
-        const mfxExtMBQP *mbqp = GetExtBuffer(task.m_ctrl);
+        const mfxExtMBQP *mbqp = task.m_mbqp;
         mfxU32 wMB = (m_sps.FrameWidth + 15) / 16;
         mfxU32 hMB = (m_sps.FrameHeight + 15) / 16 / (2 - !task.m_fieldPicFlag);
         mfxU32 fieldOffset = (mfxU32)fieldId * (wMB * hMB) * (mfxU32)!!task.m_fieldPicFlag;

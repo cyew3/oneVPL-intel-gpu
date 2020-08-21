@@ -237,6 +237,7 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(TargetBitDepthChroma);
 #endif
     SERIALIZE_INT(ExtBrcAdaptiveLTR);
+    SERIALIZE_INT(EnableMBQP);
 
 #if (MFX_VERSION >= 1027)
     if (m_pStruct->TargetChromaFormatPlus1)
