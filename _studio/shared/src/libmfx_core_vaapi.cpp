@@ -375,14 +375,13 @@ typedef struct {
     { 0x9A70, MFX_HW_TGL_LP, MFX_GT2 },
     { 0x9A78, MFX_HW_TGL_LP, MFX_GT2 },
 
-    /* DG1 */
+    /* DG1/SG1 */
     { 0x4905, MFX_HW_DG1, MFX_GT2 },
     { 0x4906, MFX_HW_DG1, MFX_GT2 },
+    { 0x4907, MFX_HW_DG1, MFX_GT2 },
     { 0x4908, MFX_HW_DG1, MFX_GT2 },
 
 #ifndef STRIP_EMBARGO
-    { 0x4907, MFX_HW_DG1, MFX_GT2 },
-
     { 0xFF20, MFX_HW_TGL_LP, MFX_GT2 },//iTGLSIM
     { 0x9A09, MFX_HW_TGL_LP, MFX_GT2 },
     { 0x9A39, MFX_HW_TGL_LP, MFX_GT2 },//iTGLLPDEVMOB4
