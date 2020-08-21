@@ -953,21 +953,12 @@ public:
         return MFX_ERR_NONE;
     }
 
-    static mfxStatus LowPower(
-        Defaults::TPreCheck::TExt
-        , const mfxVideoParam& in)
-    {
-        MFX_CHECK(in.mfx.LowPower != MFX_CODINGOPTION_OFF, MFX_ERR_UNSUPPORTED);
-        return MFX_ERR_NONE;
-    }
-
     static void Push(Defaults& df)
     {
 #define PUSH_DEFAULT(X) df.PreCheck##X.Push(X);
 
         PUSH_DEFAULT(CodecId);
         PUSH_DEFAULT(ChromaFormat);
-        PUSH_DEFAULT(LowPower);
 
 #undef PUSH_DEFAULT
     }

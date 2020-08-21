@@ -42,7 +42,6 @@ namespace Base
     DECL_BLOCK(SetDefaultsCallChain )\
     DECL_BLOCK(PreCheckCodecId      )\
     DECL_BLOCK(PreCheckChromaFormat )\
-    DECL_BLOCK(PreCheckLowPower     )\
     DECL_BLOCK(PreCheckExtBuffers   )\
     DECL_BLOCK(CopyConfigurable     )\
     DECL_BLOCK(SetLowPowerDefault   )\

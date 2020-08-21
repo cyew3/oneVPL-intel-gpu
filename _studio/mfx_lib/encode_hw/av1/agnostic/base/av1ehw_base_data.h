@@ -1070,7 +1070,6 @@ namespace Base
         using TPreCheck = CallChain<mfxStatus, const mfxVideoParam&>;
         TPreCheck PreCheckCodecId;
         TPreCheck PreCheckChromaFormat;
-        TPreCheck PreCheckLowPower;
 
         //for Query w/caps (check + fix)
         using TCheckAndFix = CallChain<mfxStatus, const Defaults::Param&, mfxVideoParam&>;

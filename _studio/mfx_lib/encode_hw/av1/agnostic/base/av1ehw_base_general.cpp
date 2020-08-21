@@ -48,7 +48,6 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(Protected);
         MFX_COPY_FIELD(AsyncDepth);
         MFX_COPY_FIELD(mfx.CodecId);
-        MFX_COPY_FIELD(mfx.LowPower);
         MFX_COPY_FIELD(mfx.CodecLevel);
         MFX_COPY_FIELD(mfx.CodecProfile);
         MFX_COPY_FIELD(mfx.TargetUsage);
@@ -448,12 +447,6 @@ void General::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
         [this](const mfxVideoParam& in, mfxVideoParam&, StorageW&) -> mfxStatus
     {
         return m_pQNCDefaults->PreCheckChromaFormat(in);
-    });
-
-    Push(BLK_PreCheckLowPower,
-        [&blocks, this](const mfxVideoParam& in, mfxVideoParam&, StorageRW& /*strg*/) -> mfxStatus
-    {
-        return m_pQNCDefaults->PreCheckLowPower(in);
     });
 
     Push(BLK_PreCheckExtBuffers
