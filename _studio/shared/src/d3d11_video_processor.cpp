@@ -1795,7 +1795,7 @@ mfxStatus D3D11VideoProcessor::CameraPipeSet3DLUTParams(Camera3DLUTParams * para
     switch(params->LUTSize)
     {
     case(LUT33_SEG*LUT33_SEG*LUT33_SEG):
-        memset(m_camera3DLUT33, 0, sizeof(m_camera3DLUT33));
+        memset(m_camera3DLUT33, 0, sizeof(*m_camera3DLUT33));
         lutParams.LUTSize = LUT33_SEG;
         for(int i = 0; i < LUT33_SEG; i++)
         {
@@ -1813,7 +1813,7 @@ mfxStatus D3D11VideoProcessor::CameraPipeSet3DLUTParams(Camera3DLUTParams * para
         break;
 
     case(LUT65_SEG*LUT65_SEG*LUT65_SEG):
-        memset(m_camera3DLUT65, 0, sizeof(m_camera3DLUT65));
+        memset(m_camera3DLUT65, 0, sizeof(*m_camera3DLUT65));
         lutParams.LUTSize = LUT65_SEG;
         for(int i = 0; i < LUT65_SEG; i++)
         {
@@ -1833,7 +1833,7 @@ mfxStatus D3D11VideoProcessor::CameraPipeSet3DLUTParams(Camera3DLUTParams * para
     case(LUT17_SEG*LUT17_SEG*LUT17_SEG):
     default:
 
-        memset(m_camera3DLUT17, 0, sizeof(m_camera3DLUT17));
+        memset(m_camera3DLUT17, 0, sizeof(*m_camera3DLUT17));
         lutParams.LUTSize = LUT17_SEG;
         for(int i = 0; i < LUT17_SEG; i++)
         {
