@@ -113,6 +113,12 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(Cdef.CdefDampingMinus3);
         MFX_COPY_FIELD(Cdef.CdefBits);
 
+        for (mfxU32 i = 0; i < CDEF_MAX_STRENGTHS; i++)
+        {
+            MFX_COPY_FIELD(Cdef.CdefYStrengths[i]);
+            MFX_COPY_FIELD(Cdef.CdefUVStrengths[i]);
+        }
+
         MFX_COPY_FIELD(LoopFilter.LFLevelYVert);
         MFX_COPY_FIELD(LoopFilter.LFLevelYHorz);
         MFX_COPY_FIELD(LoopFilter.LFLevelU);
@@ -327,6 +333,12 @@ void General::SetInherited(ParamInheritance& par)
         INIT_EB(mfxExtAV1AuxData);
         INHERIT_OPT(Cdef.CdefDampingMinus3);
         INHERIT_OPT(Cdef.CdefBits);
+
+        for (mfxU32 i = 0; i < CDEF_MAX_STRENGTHS; i++)
+        {
+            INHERIT_OPT(Cdef.CdefYStrengths[i]);
+            INHERIT_OPT(Cdef.CdefUVStrengths[i]);
+        }
 
         INHERIT_OPT(LoopFilter.LFLevelYVert);
         INHERIT_OPT(LoopFilter.LFLevelYHorz);
