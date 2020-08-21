@@ -407,5 +407,353 @@ namespace av1e {
                 ASSERT_EQ(infos[i].TgEnd, tileGroups[i].TgEnd);
             }
         }
+
+        struct FeatureBlocksTileSingleTileSuperres
+            : testing::Test
+        {
+            static FeatureBlocks   blocks;
+            static Tile            tile;
+            static StorageRW       strg;
+
+            const mfxU16 upscaledWidth = 7680;
+            const mfxU16 superresDenom = 11;
+            const mfxU16 downscaledWidth = GetActualEncodeWidth(upscaledWidth, true, superresDenom);
+
+            static void SetUpTestCase()
+            {
+                tile.Init(INIT | RUNTIME, blocks);
+
+                Glob::VideoParam::GetOrConstruct(strg);
+                Glob::EncodeCaps::GetOrConstruct(strg);
+            }
+
+            static void TearDownTestCase()
+            {
+                strg.Clear();
+            }
+
+            void InitAV1Param(ExtBuffer::Param<mfxVideoParam>& vp)
+            {
+                mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+
+                pAV1Par->FrameWidth = upscaledWidth;
+                pAV1Par->FrameHeight = 4320;
+                pAV1Par->EnableSuperres = MFX_CODINGOPTION_ON;
+                pAV1Par->SuperresScaleDenominator = superresDenom;
+            }
+        };
+
+        FeatureBlocks FeatureBlocksTileSingleTileSuperres::blocks{};
+        Tile FeatureBlocksTileSingleTileSuperres::tile(FEATURE_TILE);
+        StorageRW FeatureBlocksTileSingleTileSuperres::strg{};
+
+        TEST_F(FeatureBlocksTileSingleTileSuperres, CheckAndFix)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_CheckAndFix });
+            auto& vp = Glob::VideoParam::Get(strg);
+
+            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
+            InitAV1Param(vp);
+            ASSERT_EQ(
+                block->Call(vp, vp, strg),
+                MFX_ERR_NONE
+            );
+        }
+
+        TEST_F(FeatureBlocksTileSingleTileSuperres, SetDefaults)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetDefaults });
+            auto& vp = Glob::VideoParam::Get(strg);
+
+            block->Call(vp, strg, strg);
+
+            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+
+            ASSERT_EQ(pAV1Par->UniformTileSpacing, MFX_CODINGOPTION_ON);
+            ASSERT_EQ(pAV1Par->NumTileColumns, 1);
+            ASSERT_EQ(pAV1Par->NumTileRows, 1);
+
+            ASSERT_EQ(
+                pAV1Par->TileWidthInSB[0],
+                CeilDiv(downscaledWidth, SB_SIZE)
+            );
+
+            ASSERT_EQ(
+                pAV1Par->TileHeightInSB[0],
+                CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+            );
+
+            ASSERT_EQ(
+                pAV1Par->ContextUpdateTileIdPlus1,
+                pAV1Par->NumTileColumns * pAV1Par->NumTileRows
+            );
+        }
+
+        TEST_F(FeatureBlocksTileSingleTileSuperres, SetTileInfo)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileInfo });
+
+            ASSERT_EQ(
+                block->Call(strg, strg),
+                MFX_ERR_UNDEFINED_BEHAVIOR
+            );
+
+            const auto& fh = Glob::FH::GetOrConstruct(strg);
+
+            ASSERT_EQ(
+                block->Call(strg, strg),
+                MFX_ERR_NONE
+            );
+
+            const auto& vp = Glob::VideoParam::Get(strg);
+            const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+
+            ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);
+
+            for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
+            {
+                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], pAV1Par->TileWidthInSB[i]);
+            }
+
+            ASSERT_EQ(fh.tile_info.TileRows, pAV1Par->NumTileRows);
+
+            for (auto i = 0; i < pAV1Par->NumTileRows; i++)
+            {
+                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], pAV1Par->TileHeightInSB[i]);
+            }
+        }
+
+        TEST_F(FeatureBlocksTileSingleTileSuperres, SetTileGroups)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileGroups });
+
+            ASSERT_EQ(
+                block->Call(strg, strg),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_TRUE(strg.Contains(Glob::TileGroups::Key));
+
+            const auto& infos = Glob::TileGroups::Get(strg);
+            ASSERT_EQ(
+                infos.size(),
+                1
+            );
+
+            ASSERT_EQ(infos[0].TgStart, 0);
+
+            const auto& fh = Glob::FH::Get(strg);
+            ASSERT_EQ(
+                infos[0].TgEnd,
+                fh.tile_info.TileCols * fh.tile_info.TileRows - 1
+            );
+        }
+
+        struct FeatureBlocksTileMultiTileSuperres
+            : testing::Test
+        {
+            static FeatureBlocks   blocks;
+            static Tile            tile;
+            static StorageRW       strg;
+
+            const mfxU16 upscaledWidth   = 7680;
+            const mfxU16 superresDenom   = 16;
+            const mfxU16 downscaledWidth = GetActualEncodeWidth(upscaledWidth, true, superresDenom);
+
+            static void SetUpTestCase()
+            {
+                tile.Init(INIT | RUNTIME, blocks);
+
+                Glob::VideoParam::GetOrConstruct(strg);
+                Glob::EncodeCaps::GetOrConstruct(strg);
+            }
+
+            static void TearDownTestCase()
+            {
+                strg.Clear();
+            }
+
+            void InitAV1Param(ExtBuffer::Param<mfxVideoParam>& vp)
+            {
+                mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+
+                pAV1Par->FrameWidth = upscaledWidth;
+                pAV1Par->FrameHeight = 4320;
+                pAV1Par->EnableSuperres = MFX_CODINGOPTION_ON;
+                pAV1Par->SuperresScaleDenominator = superresDenom;
+
+                pAV1Par->UniformTileSpacing = MFX_CODINGOPTION_ON;
+
+                pAV1Par->NumTileColumns = 2;
+                pAV1Par->NumTileRows = 2;
+
+                ASSERT_EQ(
+                    CeilDiv(downscaledWidth, SB_SIZE) % pAV1Par->NumTileColumns,
+                    0
+                );
+
+                ASSERT_EQ(
+                    CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
+                    0
+                );
+
+                for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
+                    pAV1Par->TileWidthInSB[i] = CeilDiv(downscaledWidth, SB_SIZE) / pAV1Par->NumTileColumns;
+
+                for (auto i = 0; i < pAV1Par->NumTileRows; i++)
+                    pAV1Par->TileHeightInSB[i] = CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
+            }
+        };
+
+        FeatureBlocks FeatureBlocksTileMultiTileSuperres::blocks{};
+        Tile FeatureBlocksTileMultiTileSuperres::tile(FEATURE_TILE);
+        StorageRW FeatureBlocksTileMultiTileSuperres::strg{};
+
+        TEST_F(FeatureBlocksTileMultiTileSuperres, CheckTileWithParam)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_CheckAndFix });
+            auto& vp = Glob::VideoParam::Get(strg);
+
+            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
+            InitAV1Param(vp);
+            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+
+            // Maximum height exceeds spec limitation, but after superres, it's within the limitation
+            InitAV1Param(vp);
+            ASSERT_EQ(
+                block->Call(vp, vp, strg),
+                MFX_ERR_NONE
+            );
+        }
+
+        TEST_F(FeatureBlocksTileMultiTileSuperres, SetDefaults)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetDefaults });
+            auto& vp = Glob::VideoParam::Get(strg);
+
+            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            mfxU16 numTileColumns = pAV1Par->NumTileColumns;
+            mfxU16 numTileRows = pAV1Par->NumTileRows;
+
+            pAV1Par->NumTileColumns = 0;
+            pAV1Par->NumTileRows = 0;
+
+            block->Call(vp, strg, strg);
+
+            ASSERT_EQ(pAV1Par->NumTileColumns, numTileColumns);
+            ASSERT_EQ(pAV1Par->NumTileRows, numTileRows);
+        }
+
+        TEST_F(FeatureBlocksTileMultiTileSuperres, SetTileInfo)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileInfo });
+            auto& vp = Glob::VideoParam::Get(strg);
+
+            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            const auto& fh = Glob::FH::GetOrConstruct(strg);
+            pAV1Par->ContextUpdateTileIdPlus1 = 3;
+
+            ASSERT_EQ(
+                block->Call(strg, strg),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_EQ(
+                fh.sbCols,
+                CeilDiv(downscaledWidth, SB_SIZE)
+            );
+
+            ASSERT_EQ(
+                fh.sbRows,
+                CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+            );
+
+            ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);
+
+            for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
+            {
+                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], pAV1Par->TileWidthInSB[i]);
+            }
+
+            ASSERT_EQ(fh.tile_info.TileRows, pAV1Par->NumTileRows);
+
+            for (auto i = 0; i < pAV1Par->NumTileRows; i++)
+            {
+                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], pAV1Par->TileHeightInSB[i]);
+            }
+
+            ASSERT_EQ(
+                fh.tile_info.context_update_tile_id,
+                pAV1Par->ContextUpdateTileIdPlus1 - 1
+            );
+
+            ASSERT_EQ(fh.tile_info.TileColsLog2, 1);
+            ASSERT_EQ(fh.tile_info.TileRowsLog2, 1);
+            ASSERT_EQ(fh.tile_info.tileLimits.MaxTileHeightSb, 34); // Calculated by algorithm in Av1 spec
+        }
+
+        TEST_F(FeatureBlocksTileMultiTileSuperres, SetTileGroups)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileGroups });
+
+            ASSERT_EQ(
+                block->Call(strg, strg),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_TRUE(strg.Contains(Glob::TileGroups::Key));
+
+            const auto& infos = Glob::TileGroups::Get(strg);
+            ASSERT_EQ(
+                infos.size(),
+                1
+            );
+
+            ASSERT_EQ(infos[0].TgStart, 0);
+
+            const auto& fh = Glob::FH::Get(strg);
+            ASSERT_EQ(
+                infos[0].TgEnd,
+                fh.tile_info.TileCols * fh.tile_info.TileRows - 1
+            );
+        }
+
+        TEST_F(FeatureBlocksTileMultiTileSuperres, SetMultiTileGroups)
+        {
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileGroups });
+
+            auto& vp = Glob::VideoParam::Get(strg);
+            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            pAV1Par->NumTileGroups = 3;
+
+            ASSERT_EQ(
+                block->Call(strg, strg),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_TRUE(strg.Contains(Glob::TileGroups::Key));
+
+            const auto& infos = Glob::TileGroups::Get(strg);
+            ASSERT_EQ(
+                infos.size(),
+                pAV1Par->NumTileGroups
+            );
+
+            const TileGroupInfos tileGroups = { {0, 0}, {1, 1}, {2, 3} };
+            for (auto i = 0; i < infos.size(); i++)
+            {
+                ASSERT_EQ(infos[i].TgStart, tileGroups[i].TgStart);
+                ASSERT_EQ(infos[i].TgEnd, tileGroups[i].TgEnd);
+            }
+        }
     }
 }

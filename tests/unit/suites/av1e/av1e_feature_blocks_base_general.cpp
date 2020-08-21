@@ -177,8 +177,11 @@ namespace av1e {
             mfxExtCodingOption3& pCO3   = ExtBuffer::Get(vp);
             mfxExtAvcTemporalLayers& pTL= ExtBuffer::Get(vp);
 
+            av1Par.FrameHeight              = 480;
+            av1Par.FrameWidth               = 640;
             av1Par.StillPictureMode         = MFX_CODINGOPTION_OFF;
-            av1Par.EnableSuperres           = MFX_CODINGOPTION_OFF;
+            av1Par.EnableSuperres           = MFX_CODINGOPTION_ON;
+            av1Par.SuperresScaleDenominator = 11;
             av1Par.EnableCdef               = MFX_CODINGOPTION_OFF;
             av1Par.EnableRestoration        = MFX_CODINGOPTION_ON;
             av1Par.InterpFilter             = MFX_AV1_INTERP_EIGHTTAP;
@@ -200,6 +203,8 @@ namespace av1e {
             ASSERT_EQ(p_fh->lr_params.lr_unit_shift, 0);
             ASSERT_EQ(p_fh->lr_params.lr_unit_extra_shift, 0);
             ASSERT_EQ(p_fh->lr_params.lr_uv_shift, 1);
+            ASSERT_EQ(p_fh->RenderWidth, av1Par.FrameWidth);
+            ASSERT_EQ(p_fh->FrameWidth, GetActualEncodeWidth(av1Par));
         }
 
         TEST_F(FeatureBlocksGeneral, CheckTemporalLayers)
