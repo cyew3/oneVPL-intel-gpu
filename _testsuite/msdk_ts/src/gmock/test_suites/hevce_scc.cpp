@@ -205,7 +205,6 @@ namespace hevce_scc
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2 },
         } },
 
-#if !defined(OPEN_SOURCE)
         // 09 IBC mode on and Palette mode off
         { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
         QUERY | INIT | PALETTEOFF, {
@@ -235,7 +234,6 @@ namespace hevce_scc
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 1 },
         } },
-#endif
 /*
         // 04 Sequence of I B P B I frames
         { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
@@ -387,6 +385,11 @@ namespace hevce_scc
 
         if (tc.type & PALETTEOFF)
         {
+            if ((g_tsHWtype == MFX_HW_TGL || g_tsHWtype == MFX_HW_DG1) && g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+            {
+                g_tsLog << "[ SKIPPED ] SCC Separate Mode is a embargo feature.\n";
+                throw tsSKIP;
+            }
             m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
             mfxExtCodingOptionDDI *pCODDI = reinterpret_cast <mfxExtCodingOptionDDI*> (m_par.GetExtBuffer(MFX_EXTBUFF_DDI));
             pCODDI->IBC = MFX_CODINGOPTION_ON;
@@ -400,6 +403,11 @@ namespace hevce_scc
 
         if (tc.type & IBCOFF)
         {
+            if ((g_tsHWtype == MFX_HW_TGL || g_tsHWtype == MFX_HW_DG1) && g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+            {
+                g_tsLog << "[ SKIPPED ] SCC Separate Mode is a embargo feature.\n";
+                throw tsSKIP;
+            }
             m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
             mfxExtCodingOptionDDI *pCODDI = reinterpret_cast <mfxExtCodingOptionDDI*> (m_par.GetExtBuffer(MFX_EXTBUFF_DDI));
             pCODDI->IBC = MFX_CODINGOPTION_OFF;
@@ -413,6 +421,11 @@ namespace hevce_scc
 
         if (tc.type & SCCOFF)
         {
+            if ((g_tsHWtype == MFX_HW_TGL || g_tsHWtype == MFX_HW_DG1) && g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+            {
+                g_tsLog << "[ SKIPPED ] SCC Separate Mode is a embargo feature.\n";
+                throw tsSKIP;
+            }
             m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
             mfxExtCodingOptionDDI *pCODDI = reinterpret_cast <mfxExtCodingOptionDDI*> (m_par.GetExtBuffer(MFX_EXTBUFF_DDI));
             pCODDI->IBC = MFX_CODINGOPTION_OFF;
