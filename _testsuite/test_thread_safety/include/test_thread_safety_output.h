@@ -46,6 +46,7 @@ private:
     const mfxU32 m_numWriter;
     // number of currently registered writers
     mfxU32 m_numRegistered;
+    mfxU32 m_numUnregistered;
     bool m_isLastRegistered;
     mfxU32 m_compareStatus;
     vm_file* m_fdRef;

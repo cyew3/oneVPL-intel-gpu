@@ -19,6 +19,7 @@ OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file**
 , m_data(new Data[numWriter])
 , m_numWriter(numWriter)
 , m_numRegistered(0)
+, m_numUnregistered(0)
 , m_isLastRegistered(false)
 , m_compareStatus(OK)
 , m_fdRef(fdRef)
@@ -44,10 +45,12 @@ mfxHDL OutputRegistrator::Register()
     m_numRegistered++;
     mfxHDL m_handle = (mfxHDL)(mfxU64)(HandleBase + m_numRegistered);
 
-    if (m_syncOpt == SYNC_OPT_PER_WRITE) {
+    if (m_syncOpt == SYNC_OPT_PER_WRITE)
+    {
         if (m_numRegistered != m_numWriter)
             m_condVar.wait(guard, [this] { return m_isLastRegistered; });
-        else {
+        else
+        {
             m_isLastRegistered = true;
             m_condVar.notify_all();
         }
@@ -84,19 +87,33 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         if (m_numRegistered >= m_numWriter)
             VM_ASSERT(!"the number of registered threads is greater than the number of available threads");
 
-        if (ptr == 0)    // If thread was unregistered (e.g. due to gpu hang) there is no need to wait this thread
-            vm_file_fprintf(vm_stderr, VM_STRING("TEST: handle %p unregistered.\n"), handle);
+        m_numRegistered++;
+
+        //  m_numRegistered - counter of registered threads (range value from 0 to m_numWriter)
+        //  m_numUnregistered - number of threads that finished recording or hang (range value from 0 to m_numWriter)
+        //  wait until the counter value is less than the number of live threads
+
+        if (m_numRegistered < m_numWriter - m_numUnregistered)
+            m_condVar.wait(guard, [this]{ return !m_isLastRegistered; });
         else
-            m_numRegistered++;
+        {
+            m_isLastRegistered = false;
+            m_condVar.notify_all();    // allow to encode next frame for all threads
+        }
+
+        if (ptr == nullptr)    // If thread was unregistered (e.g. due to gpu hang) there is no need to wait this thread
+        {
+            vm_file_fprintf(vm_stderr, VM_STRING("TEST: handle %p unregistered.\n"), handle);
+            m_numUnregistered++;
+        }
     }
+
 
     mfxU32 intHdl = (mfxU32)((mfxU64)handle - HandleBase);
     if (m_fdOut[intHdl - 1] && ptr)
     {
         if (vm_file_write(ptr, 1, len, m_fdOut[intHdl - 1]) != len)
             return -1;
-        //flushfilebuffers is very slow for mapped memory, decided not to use that
-        //fflush((FILE*)m_fdOut[intHdl - 1]->fd);
     }
 
     return 0;
