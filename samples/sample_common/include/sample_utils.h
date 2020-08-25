@@ -363,10 +363,11 @@ template<>struct mfx_ext_buffer_id<mfxExtHEVCRegion> {
 template<>struct mfx_ext_buffer_id<mfxExtAVCRoundingOffset> {
     enum {id = MFX_EXTBUFF_AVC_ROUNDING_OFFSET};
 };
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 template<>struct mfx_ext_buffer_id<mfxExtEncToolsConfig> {
     enum { id = MFX_EXTBUFF_ENCTOOLS_CONFIG };
 };
-
+#endif
 template<>struct mfx_ext_buffer_id<mfxExtPartialBitstreamParam> {
     enum { id = MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM };
 };

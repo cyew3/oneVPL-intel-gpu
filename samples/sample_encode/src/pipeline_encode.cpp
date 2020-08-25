@@ -638,6 +638,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         codingOption->VuiNalHrdParameters = pInParams->nVuiNalHrdParameters;
     }
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (pInParams->bEncTools)
     {
         auto et_config = m_mfxEncParams.AddExtBuffer<mfxExtEncToolsConfig>();
@@ -652,6 +653,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         et_config->BRCBufferHints        = pInParams->etBRCHints;
         et_config->BRC                   = pInParams->etBRC;
     }
+#endif
 
     // configure the depth of the look ahead BRC if specified in command line
     if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType ||
