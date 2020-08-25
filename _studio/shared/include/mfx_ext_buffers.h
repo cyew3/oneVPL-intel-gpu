@@ -425,7 +425,8 @@ typedef struct {
     mfxU16       TargetKbps;
     mfxU8        LookAheadScaleX;
     mfxU8        LookAheadScaleY;
-    mfxU16       reserved[23];
+    mfxU16       GopRefDist;
+    mfxU16       reserved[22];
 } mfxExtLplaParam;
 
 #endif

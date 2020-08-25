@@ -22,6 +22,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_LP_LOOKAHEAD)
 
 #include "hevcehw_base_lpla_enc.h"
+#include "hevcehw_base_ddi_packer_win.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
@@ -75,6 +76,41 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         {
             lpla.bIsLpLookaheadEnabled = true;
         }
+        return MFX_ERR_NONE;
+    });
+
+    Push(BLK_UpdateLAInfo
+        , [this](StorageW& global, StorageW& /*s_task*/)->mfxStatus
+    {
+        auto& ddiCC = DDIPacker::CC::Get(global);
+        using TCC = DDIPacker::CallChains;
+
+        ddiCC.UpdateEncParam.Push([this](
+            TCC::TUpdateEncParam::TExt
+            , const StorageR& global
+            , const StorageR& s_task
+            , ENCODE_SET_PICTURE_PARAMETERS_HEVC& pps)
+        {
+            MFX_CHECK(global.Contains(Glob::LpLookAhead::Key), MFX_ERR_NONE);
+
+            const auto& lpla = Glob::LpLookAhead::Get(global);
+            MFX_CHECK(!lpla.bAnalysis, MFX_ERR_NONE);
+
+            const auto& task = Task::Common::Get(s_task);
+            if (task.LplaStatus.TargetFrameSize > 0)
+            {
+                pps.TargetFrameSize = task.LplaStatus.TargetFrameSize;
+                pps.QpModulationStrength = task.LplaStatus.QpModulation;
+            }
+            else
+            {
+                pps.TargetFrameSize = 0;
+                pps.QpModulationStrength = 0;
+            }
+
+            return MFX_ERR_NONE;
+        });
+
         return MFX_ERR_NONE;
     });
 }

@@ -249,6 +249,7 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         m_bResetBRC     = false;
 
         cc.UpdatePPS(global, s_task, m_sps, m_pps);
+        cc.UpdateEncParam(global, s_task, m_pps);
         FillSliceBuffer(sh, task.RefPicList, m_slices);
 
         m_pps.SkipFrameFlag  = bSkipCurr * 2 + (!bSkipCurr && !!m_numSkipFrames);
@@ -720,10 +721,6 @@ void DDIPacker::FillPpsBuffer(
 
     pps.StatusReportFeedbackNumber  = task.StatusReportId;
     pps.nal_unit_type               = task.SliceNUT;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    if (task.LplaStatus.TargetFrameSize > 0)
-        pps.TargetFrameSize = task.LplaStatus.TargetFrameSize;
-#endif
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

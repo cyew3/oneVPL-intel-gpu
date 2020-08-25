@@ -53,7 +53,7 @@ public:
 
     virtual mfxStatus Submit(mfxFrameSurface1 * surface);
 
-    virtual mfxStatus Query(mfxLplastatus* laStatus);
+    virtual mfxStatus Query(mfxLplastatus& laStatus);
 
     virtual mfxStatus SetStatus(mfxLplastatus *laStatus);
 

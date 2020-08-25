@@ -48,6 +48,12 @@ mfxStatus MfxLpLookAhead::Init(mfxVideoParam* param)
     m_pEnc = HEVCEHW::Create(*m_core, mfxRes);
     MFX_CHECK_NULL_PTR1(m_pEnc);
 
+    mfxExtLplaParam* extBufLPLA = HEVCEHW::ExtBuffer::Get(*param);
+    if (extBufLPLA)
+    {
+        extBufLPLA->GopRefDist = param->mfx.GopRefDist; // Save GopRefDist of encode pass because it will be overwritten
+    }
+
     // following configuration comes from HW recommendation
     mfxVideoParam par         = *param;
     par.AsyncDepth            = 1;
@@ -189,10 +195,8 @@ mfxStatus MfxLpLookAhead::Submit(mfxFrameSurface1 * surface)
     return mfxRes;
 }
 
-mfxStatus MfxLpLookAhead::Query(mfxLplastatus *laStatus)
+mfxStatus MfxLpLookAhead::Query(mfxLplastatus& laStatus)
 {
-    MFX_CHECK_NULL_PTR1(laStatus);
-
     if (!m_bInitialized)
     {
         return MFX_ERR_NOT_INITIALIZED;
@@ -203,9 +207,7 @@ mfxStatus MfxLpLookAhead::Query(mfxLplastatus *laStatus)
         return MFX_ERR_NOT_FOUND;
     }
 
-    laStatus->ValidInfo = m_lplastatus.front().ValidInfo;
-    laStatus->CqmHint = m_lplastatus.front().CqmHint;
-    laStatus->TargetFrameSize = m_lplastatus.front().TargetFrameSize;
+    laStatus = m_lplastatus.front();
     m_lplastatus.pop_front();
 
     return MFX_ERR_NONE;

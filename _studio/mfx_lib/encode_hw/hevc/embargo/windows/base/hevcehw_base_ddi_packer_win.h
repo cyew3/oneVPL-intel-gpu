@@ -102,6 +102,12 @@ public:
             , const LOOKAHEAD_INFO&>;
         TUpdateCqmHint UpdateCqmHint;
 
+        using TUpdateEncParam = CallChain<void
+            , const StorageR& //global
+            , const StorageR& //task
+            , ENCODE_SET_PICTURE_PARAMETERS_HEVC&>;
+        TUpdateEncParam UpdateEncParam;
+
         using TInitFeedback = CallChain<void
             , const StorageR&
             , mfxU16 //cacheSize

@@ -37,7 +37,8 @@ class LpLookAheadEnc
 {
 public:
 #define DECL_BLOCK_LIST\
-    DECL_BLOCK(Init)
+    DECL_BLOCK(Init)\
+    DECL_BLOCK(UpdateLAInfo)
 #define DECL_FEATURE_NAME "Base_LpLookAheadEnc"
 #include "hevcehw_decl_blocks.h"
 

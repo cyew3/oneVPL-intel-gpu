@@ -333,7 +333,7 @@ void TaskManager::AsyncRoutine(const FeatureBlocks& /*blocks*/, TPushAR Push)
                 {
                     auto& task = Task::Common::Get(s_task);
                     mfxLplastatus laStatus;
-                    mfxStatus sts = lpla.pLpLookAhead->Query(&laStatus);
+                    mfxStatus sts = lpla.pLpLookAhead->Query(laStatus);
                     if (sts == MFX_ERR_NONE)
                     {
                         task.LplaStatus = laStatus;

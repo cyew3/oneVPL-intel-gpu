@@ -2579,7 +2579,7 @@ void ImplementationAvc::OnLookaheadQueried()
     {
         mfxLplastatus laStatus;
         task.m_lplastatus = {};
-        mfxStatus sts = m_lpLookAhead->Query(&laStatus);
+        mfxStatus sts = m_lpLookAhead->Query(laStatus);
 
         if (sts == MFX_ERR_NONE)
         {

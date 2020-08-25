@@ -60,6 +60,7 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 sps.TargetBitRate = lpla->TargetKbps;
                 sps.LookaheadDepth = (UCHAR)lpla->LookAheadDepth;
                 sps.bLookAheadPhase= 1;
+                sps.GopRefDist = (UCHAR)lpla->GopRefDist;
             }
 
             // need to disable SAO for lowpower lookahead analysis since the alogrithm doesn't support
@@ -106,12 +107,14 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 task.LplaStatus.ValidInfo = pLPLA.ValidInfo;
                 task.LplaStatus.CqmHint = pLPLA.CqmHint;
                 task.LplaStatus.TargetFrameSize = pLPLA.TargetFrameSize;
+                task.LplaStatus.QpModulation = pLPLA.QpModulationStrength;
             }
             else
             {
                 task.LplaStatus.ValidInfo = 0;
                 task.LplaStatus.CqmHint = CQM_HINT_INVALID;
                 task.LplaStatus.TargetFrameSize = 0;
+                task.LplaStatus.QpModulation = 0;
             }
 
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
@@ -168,7 +171,7 @@ void LpLookAheadAnalysis::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(TargetKbps);
         MFX_COPY_FIELD(LookAheadScaleX);
         MFX_COPY_FIELD(LookAheadScaleY);
-
+        MFX_COPY_FIELD(GopRefDist);
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
@@ -197,7 +200,7 @@ void LpLookAheadAnalysis::SetInherited(ParamInheritance& par)
         InheritOption(src.TargetKbps, dst.TargetKbps);
         InheritOption(src.LookAheadScaleX, dst.LookAheadScaleX);
         InheritOption(src.LookAheadScaleY, dst.LookAheadScaleY);
-
+        InheritOption(src.GopRefDist, dst.GopRefDist);
     });
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
