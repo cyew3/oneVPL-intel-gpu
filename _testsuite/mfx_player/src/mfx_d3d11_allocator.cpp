@@ -606,9 +606,11 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 desc.BindFlags = D3D11_BIND_DECODER;
             }
             else if (desc.Format == DXGI_FORMAT_Y410 ||
-                desc.Format == DXGI_FORMAT_Y210 ||
-                desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
-                desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
+                     desc.Format == DXGI_FORMAT_Y210 ||
+                     desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
+                     desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM ||
+                     desc.Format == DXGI_FORMAT_YUY2 ||
+                     desc.Format == DXGI_FORMAT_AYUV)
             {
                 desc.BindFlags = 0;
             }
