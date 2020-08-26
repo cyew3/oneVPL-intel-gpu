@@ -102,13 +102,14 @@ namespace MfxHwH264Encode
         {
             mfxExtCodingOption2 *       extOpt2 = GetExtBuffer(par);
             mfxExtCodingOption3 *       extOpt3 = GetExtBuffer(par);
+            mfxU16 mctfFrames = IsMctfSupported(par) ? (par.AsyncDepth > 1 ? 0 : 1) : 0;
             mfxU32  adaptGopDelay = 0;
 #if defined(MFX_ENABLE_ENCTOOLS)
             adaptGopDelay = H264EncTools::GetPreEncDelay(par);
 #endif
             if (par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
             {
-                numFrameMin = (mfxU16)(par.mfx.GopRefDist + adaptGopDelay + par.AsyncDepth - 1);
+                numFrameMin = (mfxU16)(par.mfx.GopRefDist + adaptGopDelay + mctfFrames + par.AsyncDepth - 1);
             }
             else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
             {

@@ -20,6 +20,8 @@ include_directories( ${MSDK_LIB_ROOT}/fei/h264_preenc )
 include_directories( ${MSDK_LIB_ROOT}/fei/include )
 include_directories( ${MSDK_LIB_ROOT}/fei/h265/include )
 include_directories( ${MSDK_LIB_ROOT}/fs_det/include )
+include_directories( ${MSDK_LIB_ROOT}/cmrt_cross_platform/include )
+include_directories( ${MSDK_LIB_ROOT}/mctf_package/mctf/include )
 
 list( APPEND umc_dirs
   common
@@ -194,6 +196,7 @@ if( DEFINED H264LA_ENCODER_GUID )
     asc
     enctools_hw
     mfx
+    mctf_hw
     mfx_trace
     ${ITT_LIBRARIES}
     ${la_IPPLIBS}

@@ -822,12 +822,15 @@ namespace MfxHwH264Encode
         MfxVideoParam const & video,
         eMFXHWType            platform);
 
+    bool IsMctfSupported(
+        MfxVideoParam const & video);
+
    mfxU32 GetPPyrSize(
         MfxVideoParam const & video,
         mfxU32 miniGopSize,
         bool   bEncToolsLA);
 
-    bool  IsExtBrcSceneChangeSupported(
+    bool IsExtBrcSceneChangeSupported(
         MfxVideoParam const & video);
 
     bool IsCmNeededForSCD(

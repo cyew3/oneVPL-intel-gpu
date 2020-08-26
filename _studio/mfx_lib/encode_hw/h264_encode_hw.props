@@ -18,6 +18,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     $(MSDK_STUDIO_ROOT)\shared\asc\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mjpeg\include;

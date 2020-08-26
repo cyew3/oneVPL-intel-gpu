@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,5 +19,5 @@
 // SOFTWARE.
 #ifndef __mctf_me_gen9_isa__
 #define __mctf_me_gen9_isa__
-extern const unsigned char mctf_me_gen9_isa[27796];
+extern const unsigned char mctf_me_gen9_isa[32320];
 #endif

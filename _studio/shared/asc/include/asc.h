@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -215,7 +215,9 @@ private:
     void SubSampleASC_ImagePro(mfxU8 *frame, mfxI32 srcWidth, mfxI32 srcHeight, mfxI32 inputPitch, ASCLayers dstIdx, mfxU32 parity);
     void SubSampleASC_ImageInt(mfxU8 *frame, mfxI32 srcWidth, mfxI32 srcHeight, mfxI32 inputPitch, ASCLayers dstIdx, mfxU32 parity);
     bool CompareStats(mfxU8 current, mfxU8 reference);
+    bool DenoiseIFrameRec();
     bool FrameRepeatCheck();
+    bool DoMCTFFilteringCheck();
     void DetectShotChangeFrame();
     void GeneralBufferRotation();
     void Put_LTR_Hint();
@@ -299,9 +301,11 @@ public:
     bool   Get_GoPcorrected_frame_shot_Decision();
     mfxI32 Get_frame_Spatial_complexity();
     mfxI32 Get_frame_Temporal_complexity();
+    bool   Get_intra_frame_denoise_recommendation();
     mfxU32 Get_PDist_advice();
     bool   Get_LTR_advice();
     bool   Get_RepeatedFrame_advice();
+    bool   Get_Filter_advice();
     mfxStatus get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint);
 
     mfxStatus calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs);

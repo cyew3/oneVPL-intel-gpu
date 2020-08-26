@@ -439,6 +439,9 @@
             #endif
         #endif
     #endif
+    #if defined(MFX_ENABLE_MCTF) && defined(MFX_ENABLE_KERNELS)
+        #define MXF_ENABLE_MCTF_IN_AVC
+    #endif
 #endif
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)

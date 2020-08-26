@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -254,6 +254,8 @@ typedef struct ASCstats_structure {
         firstFrame,
         copyFrameDelay,
         fadeIn,
+        filterIntra_flag,
+        doFilter_flag,
         ltr_flag;
 }ASCTSCstat;
 
