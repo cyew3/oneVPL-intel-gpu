@@ -2626,6 +2626,12 @@ mfxStatus MFXDecPipeline::InitRenderParams()
     refInfoOut.CropY          = refInfoIn.CropY;
     refInfoOut.CropW          = refInfoIn.CropW;
     refInfoOut.CropH          = refInfoIn.CropH;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    refInfoOut.DecodeCropX    = refInfoIn.DecodeCropX;
+    refInfoOut.DecodeCropY    = refInfoIn.DecodeCropY;
+    refInfoOut.DecodeCropW    = refInfoIn.DecodeCropW;
+    refInfoOut.DecodeCropH    = refInfoIn.DecodeCropH;
+#endif
     refInfoOut.AspectRatioW   = (0 == refInfoOut.AspectRatioW) ? refInfoIn.AspectRatioW : refInfoOut.AspectRatioW;
     refInfoOut.AspectRatioH   = (0 == refInfoOut.AspectRatioH) ? refInfoIn.AspectRatioH : refInfoOut.AspectRatioH;
 
