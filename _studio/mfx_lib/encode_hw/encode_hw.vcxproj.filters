@@ -262,9 +262,6 @@
     <ClCompile Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf_caps.cpp">
       <Filter>hevc\embargo\agnostic\g11lkf</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc_mode.cpp">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClCompile>
     <ClCompile Include="hevc\embargo\linux\base\hevcehw_base_gpu_hang_lin.cpp">
       <Filter>hevc\embargo\linux\base</Filter>
     </ClCompile>
@@ -671,9 +668,6 @@
     </ClInclude>
     <ClInclude Include="hevc\embargo\linux\g11lkf\hevcehw_g11lkf_lin.h">
       <Filter>hevc\embargo\linux\g11lkf</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc_mode.h">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_blocking_sync_win.h">
       <Filter>hevc\embargo\windows\base</Filter>

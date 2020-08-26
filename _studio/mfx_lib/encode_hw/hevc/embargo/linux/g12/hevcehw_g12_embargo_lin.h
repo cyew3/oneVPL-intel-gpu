@@ -31,12 +31,6 @@ namespace Linux
 {
 namespace Gen12_Embargo
 {
-    enum eFeatureId
-    {
-        FEATURE_SCCMODE = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
-    };
-
     class MFXVideoENCODEH265_HW
         : public Linux::Base_Embargo::MFXVideoENCODEH265_HW
     {

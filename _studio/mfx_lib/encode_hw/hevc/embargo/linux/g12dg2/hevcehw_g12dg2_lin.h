@@ -24,7 +24,6 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12_embargo_lin.h"
-#include "hevcehw_g12_lin.h"
 
 namespace HEVCEHW
 {
@@ -34,7 +33,7 @@ namespace Gen12DG2
 {
     enum eFeatureId
     {
-        FEATURE_CAPS = HEVCEHW::Linux::Gen12::eFeatureId::NUM_FEATURES
+        FEATURE_CAPS = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
         , NUM_FEATURES
     };
 
@@ -48,8 +47,6 @@ namespace Gen12DG2
             VideoCORE& core
             , mfxStatus& status
             , eFeatureMode mode = eFeatureMode::INIT);
-
-        virtual mfxStatus Init(mfxVideoParam *par) override;
     };
 } //Gen12DG2
 } //Linux

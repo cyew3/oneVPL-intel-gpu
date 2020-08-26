@@ -69,16 +69,9 @@ protected:
                     , [](HEVCEHW::Base::DDIExecParam& ep) { return (ep.Function == VAEncSequenceParameterBufferType); });
                 MFX_CHECK(itSPS != std::end(ddiPar) && itSPS->In.pData, MFX_ERR_NOT_FOUND);
                 auto& ddiSPS    = *(VAEncSequenceParameterBufferHEVC*)itSPS->In.pData;
-                auto& sccflags = HEVCEHW::Gen12::Glob::SCCFlags::Get(global);
 
-                if (sccflags.IBCEnable)
-                {
-                    ddiPPS.scc_fields.bits.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;
-                }
-                if (sccflags.PaletteEnable)
-                {
-                    ddiSPS.scc_fields.bits.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;
-                }
+                ddiSPS.scc_fields.bits.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;
+                ddiPPS.scc_fields.bits.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;
             }
             return MFX_ERR_NONE;
         });

@@ -36,8 +36,7 @@ class Caps
 public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(SetDefaultsCallChain)\
-    DECL_BLOCK(CheckLowPower)\
-    DECL_BLOCK(HardcodeCaps)
+    DECL_BLOCK(CheckLowPower)
 #define DECL_FEATURE_NAME "G12DG2_Caps"
 #include "hevcehw_decl_blocks.h"
 
@@ -47,7 +46,6 @@ public:
 
 protected:
     virtual void Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
-    virtual void Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
 };
 
 } //Gen12DG2

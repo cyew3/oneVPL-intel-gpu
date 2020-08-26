@@ -26,11 +26,6 @@
 #include "hevcehw_g12dg2_caps.h"
 #include "hevcehw_base_legacy.h"
 #include "hevcehw_g12_qp_modulation_lin.h"
-#include "hevcehw_base_parser.h"
-#include "hevcehw_g12_scc_lin.h"
-#include "hevcehw_g12_caps.h"
-#include "hevcehw_base_iddi_packer.h"
-#include "hevcehw_base_iddi.h"
 
 namespace HEVCEHW
 {
@@ -50,7 +45,6 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
     newFeatures.emplace_back(new Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new HEVCEHW::Linux::Gen12::QpModulation(HEVCEHW::Gen12::FEATURE_QP_MODULATION));
-    newFeatures.emplace_back(new HEVCEHW::Linux::Gen12::SCC(HEVCEHW::Linux::Gen12::FEATURE_SCC));
 
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
@@ -67,49 +61,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             qnc
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
-        Reorder(
-            qnc
-            , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
-            , { HEVCEHW::Linux::Gen12::FEATURE_SCC, HEVCEHW::Linux::Gen12::SCC::BLK_SetLowPowerDefault });
-        Reorder(
-            qnc
-            , { HEVCEHW::Base::FEATURE_PARSER, HEVCEHW::Base::Parser::BLK_LoadSPSPPS }
-            , { HEVCEHW::Linux::Gen12::FEATURE_SCC, HEVCEHW::Linux::Gen12::SCC::BLK_LoadSPSPPS });
-
-        auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
-        Reorder(
-            qwc
-            , { HEVCEHW::Gen12::FEATURE_CAPS, HEVCEHW::Gen12::Caps::BLK_HardcodeCaps }
-            , { FEATURE_CAPS, Caps::BLK_HardcodeCaps }
-            , PLACE_AFTER);
     }
-
-    if (mode & INIT)
-    {
-        auto& iint = BQ<BQ_InitInternal>::Get(*this);
-        Reorder(
-            iint
-            , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetSPS }
-            , { HEVCEHW::Linux::Gen12::FEATURE_SCC, HEVCEHW::Linux::Gen12::SCC::BLK_SetSPSExt });
-        Reorder(
-            iint
-            , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetPPS }
-            , { HEVCEHW::Linux::Gen12::FEATURE_SCC, HEVCEHW::Linux::Gen12::SCC::BLK_SetPPSExt });
-    }
-}
-
-mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
-{
-    auto sts = TBaseImpl::Init(par);
-    MFX_CHECK_STS(sts);
-
-    auto& st = BQ<BQ_SubmitTask>::Get(*this);
-    Reorder(
-        st
-        , { HEVCEHW::Base::FEATURE_DDI, HEVCEHW::Base::IDDI::BLK_SubmitTask }
-        , { HEVCEHW::Linux::Gen12::FEATURE_SCC, HEVCEHW::Linux::Gen12::SCC::BLK_PatchDDITask });
-
-    return MFX_ERR_NONE;
 }
 
 }}} //namespace HEVCEHW::Linux::Gen12DG2

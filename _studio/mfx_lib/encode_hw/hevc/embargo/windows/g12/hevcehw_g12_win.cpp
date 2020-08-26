@@ -37,7 +37,6 @@
 #include "hevcehw_base_legacy.h"
 #include "hevcehw_base_parser.h"
 #include "hevcehw_base_recon_info_win.h"
-#include "hevcehw_g12_scc_mode.h"
 
 using namespace HEVCEHW::Gen12;
 
@@ -80,8 +79,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     newFeatures.emplace_back(new Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new SAO(FEATURE_SAO));
     newFeatures.emplace_back(new QpModulation(FEATURE_QP_MODULATION));
-    newFeatures.emplace_back(new SCCMode(FEATURE_SCCMODE));
-
+    
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
 
@@ -103,10 +101,6 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             qnc
             , { Base::FEATURE_PARSER, Base::Parser::BLK_LoadSPSPPS }
             , { FEATURE_SCC, SCC::BLK_LoadSPSPPS });
-        Reorder(
-            qnc
-            , { FEATURE_SCC, SCC::BLK_LoadSPSPPS }
-            , { FEATURE_SCCMODE, SCCMode::BLK_CheckAndFix });
 
         auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
         Reorder(

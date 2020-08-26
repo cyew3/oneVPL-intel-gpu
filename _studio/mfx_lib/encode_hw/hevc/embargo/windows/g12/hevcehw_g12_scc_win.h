@@ -69,16 +69,9 @@ namespace Gen12
 
                     auto& ddiSPS = Deref(Base::GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
                         ENCODE_ENC_PAK_ID, Base::DDIPar_In, vaType, par));
-                    auto& sccflags = Glob::SCCFlags::Get(global);
 
-                    if (sccflags.IBCEnable)
-                    {
-                        ddiPPS.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;
-                    }
-                    if (sccflags.PaletteEnable)
-                    {
-                        ddiSPS.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;
-                    }
+                    ddiSPS.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;
+                    ddiPPS.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;
                 }
 
                 return MFX_ERR_NONE;

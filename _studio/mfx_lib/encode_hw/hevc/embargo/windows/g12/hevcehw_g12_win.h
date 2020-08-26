@@ -35,7 +35,6 @@ namespace Gen12
     enum eFeatureId
     {
         FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , FEATURE_SCCMODE
         , NUM_FEATURES
     };
 
