@@ -213,7 +213,7 @@ void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType cons
             fi.FourCC = MFX_FOURCC_P010;
 #else
             fi.FourCC = MFX_FOURCC_NV12;
-            fi.Width = mfx::align2_value(fi.Width, 32) * 2;
+            fi.Width  = mfx::align2_value(fi.Width, 32) * 2;
 #endif // LINUX
         }
         else
