@@ -366,6 +366,7 @@ samples:
   - samples
   reviewers:
   - maria.pushkina@intel.com
+  - anton.grishin@intel.com
   - georgy.krivoruchko@intel.com
   - ilya.sergeev@intel.com
   - oleg.nabiullin@intel.com
