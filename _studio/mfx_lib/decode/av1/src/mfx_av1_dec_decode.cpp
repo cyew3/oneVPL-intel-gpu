@@ -197,7 +197,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
 
     m_first_par = *par;
-
+    m_video_par = m_first_par;
     MFX_CHECK(m_platform != MFX_PLATFORM_SOFTWARE, MFX_ERR_UNSUPPORTED);
 #if !defined (MFX_VA)
     MFX_RETURN(MFX_ERR_UNSUPPORTED);
@@ -228,6 +228,43 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     //mfxFrameAllocResponse response{};
     bool internal = ((m_platform == MFX_PLATFORM_SOFTWARE) ?
         (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    /* There are following conditions for post processing via HW fixed function engine:
+     * (1): Supported from MTL platform and above
+     * (2): Only video memory supported (so, OPAQ memory does not supported!)
+     * */
+    if (videoProcessing)
+    {
+        MFX_CHECK(m_core->GetHWType() >= MFX_HW_MTL &&
+            (m_video_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
+            MFX_ERR_UNSUPPORTED);
+
+        MFX_CHECK(par->mfx.FrameInfo.FourCC == videoProcessing->Out.FourCC, MFX_ERR_UNSUPPORTED);//This is to avoid CSC cases, will remove once CSC is fully tested
+        bool is_fourcc_supported = false;
+        is_fourcc_supported =
+            (videoProcessing->Out.FourCC == MFX_FOURCC_RGB4
+                || videoProcessing->Out.FourCC == MFX_FOURCC_NV12
+                || videoProcessing->Out.FourCC == MFX_FOURCC_P010
+                || videoProcessing->Out.FourCC == MFX_FOURCC_YUY2
+                || videoProcessing->Out.FourCC == MFX_FOURCC_AYUV
+#if (MFX_VERSION >= 1027)
+                || videoProcessing->Out.FourCC == MFX_FOURCC_Y410
+                || videoProcessing->Out.FourCC == MFX_FOURCC_Y210
+#endif
+#if (MFX_VERSION >= 1031)
+                || videoProcessing->Out.FourCC == MFX_FOURCC_Y216
+                || videoProcessing->Out.FourCC == MFX_FOURCC_Y416
+                || videoProcessing->Out.FourCC == MFX_FOURCC_P016
+#endif
+                );
+        
+        MFX_CHECK(is_fourcc_supported, MFX_ERR_UNSUPPORTED);
+        if (m_core->GetVAType() == MFX_HW_VAAPI)
+            internal = 1;
+    }
+#endif
 
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
     {
@@ -264,6 +301,15 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     UMC::Status umcSts = m_allocator->InitMfx(0, m_core, par, &m_request, &m_response, !internal, m_platform == MFX_PLATFORM_SOFTWARE);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    if (videoProcessing)
+    {
+        MFX_CHECK(internal || MFX_HW_D3D11 == m_core->GetVAType(), MFX_ERR_UNSUPPORTED);
+        m_allocator->SetSfcPostProcessingFlag(true);
+    }
+#endif
+
 
     UMC_AV1_DECODER::AV1DecoderParams vp{};
     vp.allocator = m_allocator.get();
@@ -382,6 +428,39 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
         }
     }
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * newVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    mfxExtDecVideoProcessing * oldVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+
+    if (((newVideoProcessing) && (!oldVideoProcessing)) ||
+        ((!newVideoProcessing) && (oldVideoProcessing)))
+        return false;
+    else if (newVideoProcessing && oldVideoProcessing)
+    {
+        if (newVideoProcessing->Out.Width > oldVideoProcessing->Out.Width)
+            return false;
+        if (newVideoProcessing->Out.Height > oldVideoProcessing->Out.Height)
+            return false;
+        /* Check Input cropping */
+        if (!((newVideoProcessing->In.CropX <= newVideoProcessing->In.CropW) &&
+            (newVideoProcessing->In.CropW <= newPar->mfx.FrameInfo.CropW) &&
+            (newVideoProcessing->In.CropY <= newVideoProcessing->In.CropH) &&
+            (newVideoProcessing->In.CropH <= newPar->mfx.FrameInfo.CropH)))
+            return false;
+
+        /* Check output cropping */
+        if (!((newVideoProcessing->Out.CropX <= newVideoProcessing->Out.CropW) &&
+            (newVideoProcessing->Out.CropW <= newVideoProcessing->Out.Width) &&
+            ((newVideoProcessing->Out.CropX + newVideoProcessing->Out.CropH)
+                <= newVideoProcessing->Out.Width) &&
+                (newVideoProcessing->Out.CropY <= newVideoProcessing->Out.CropH) &&
+            (newVideoProcessing->Out.CropH <= newVideoProcessing->Out.Height) &&
+            ((newVideoProcessing->Out.CropY + newVideoProcessing->Out.CropH)
+                <= newVideoProcessing->Out.Height)))
+            return false;
+    }
+#endif //MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+
     return true;
 }
 
@@ -397,6 +476,25 @@ mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     eMFXHWType type = m_core->GetHWType();
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(m_first_par.ExtParam, m_first_par.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+
+    if (videoProcessing != nullptr)
+    {
+        // hardware resize is enabled
+        bool hardwareUpscale =
+            videoProcessing->Out.Width >= par->mfx.FrameInfo.Width ||
+            videoProcessing->Out.Height >= par->mfx.FrameInfo.Height;
+
+        if (hardwareUpscale)
+        {
+            // for now only downscale is supported
+            // at least Windows DirectX 11 provides only downscale interface
+            // ID3D11VideoContext1->DecoderEnableDownsampling()
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+#endif
     eMFXPlatform platform = MFX_VPX_Utility::GetPlatform(m_core, par);
 
     MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -642,6 +740,15 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
     par->AsyncDepth = static_cast<mfxU16>(vp.async_depth);
     par->IOPattern = static_cast<mfxU16>(vp.io_pattern  & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY));
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        mfxExtDecVideoProcessing * videoProcessingInternal = m_video_par.GetExtendedBuffer<mfxExtDecVideoProcessing>(MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+        *videoProcessing = *videoProcessingInternal;
+    }
+#endif
+
     par->mfx.FrameInfo.FrameRateExtN = m_init_par.mfx.FrameInfo.FrameRateExtN;
     par->mfx.FrameInfo.FrameRateExtD = m_init_par.mfx.FrameInfo.FrameRateExtD;
 
@@ -716,7 +823,6 @@ mfxStatus VideoDECODEAV1::DecodeFrameCheck(mfxBitstream* bs, mfxFrameSurface1* s
     entry_point->pState = this;
     entry_point->requiredNumThreads = 1;
     entry_point->pParam = task;
-
     return sts;
 }
 
@@ -1250,6 +1356,17 @@ mfxStatus VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1** surf_out, mfxFram
     surface_out->Info.CropH = static_cast<mfxU16>(pFrame->GetFrameHeight());
     surface_out->Info.AspectRatioW = 1;
     surface_out->Info.AspectRatioH = 1;
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(m_video_par.ExtParam, m_video_par.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        surface_out->Info.CropH = videoProcessing->Out.CropH;
+        surface_out->Info.CropW = videoProcessing->Out.CropW;
+        surface_out->Info.CropX = videoProcessing->Out.CropX;
+        surface_out->Info.CropY = videoProcessing->Out.CropY;
+    }
+#endif
 
     bool isShouldUpdate = !(m_first_par.mfx.FrameInfo.FrameRateExtD || m_first_par.mfx.FrameInfo.FrameRateExtN);
 

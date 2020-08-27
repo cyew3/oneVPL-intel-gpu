@@ -109,10 +109,11 @@ UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* params)
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     if (dx_params->m_video_processing)
     {
-        // SFC is implemented for AVC,HEVC and VP9
+        // SFC is implemented for AVC,HEVC,VP9 and AV1
         UMC_CHECK(vi->stream_type == UMC::H264_VIDEO ||
                   vi->stream_type == UMC::VP9_VIDEO  ||
-                  vi->stream_type == UMC::HEVC_VIDEO, UMC_ERR_UNSUPPORTED);
+                  vi->stream_type == UMC::HEVC_VIDEO ||
+                  vi->stream_type == UMC::AV1_VIDEO , UMC_ERR_UNSUPPORTED);
 
         CComPtr<ID3D11Device1>       device1;
         hres = m_pVideoDevice->QueryInterface(&device1);

@@ -22,6 +22,7 @@
 #include "mfx_common_int.h"
 
 #include "umc_defs.h"
+#include "umc_video_decoder.h"
 #include <mutex>
 
 #ifndef _MFX_AV1_DEC_DECODE_H_

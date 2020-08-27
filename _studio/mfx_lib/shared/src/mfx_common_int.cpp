@@ -697,6 +697,13 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
     static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_JPEG_HUFFMAN,
                                                                MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
                                                                MFX_EXTBUFF_JPEG_QT};
+  
+
+    static const mfxU32 g_decoderSupportedExtBuffersAV1[] = {
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+                                                              MFX_EXTBUFF_DEC_VIDEO_PROCESSING
+#endif
+    };
 
     const mfxU32 *supported_buffers = 0;
     mfxU32 numberOfSupported = 0;
@@ -726,12 +733,16 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
         supported_buffers = g_decoderSupportedExtBuffersVP9;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersVP9) / sizeof(g_decoderSupportedExtBuffersVP9[0]);
     }
+    else if (par->mfx.CodecId == MFX_CODEC_AV1)
+    {
+        supported_buffers = g_decoderSupportedExtBuffersAV1;
+        numberOfSupported = sizeof(g_decoderSupportedExtBuffersAV1) / sizeof(g_decoderSupportedExtBuffersAV1[0]);
+    }
     else
     {
         supported_buffers = g_commonSupportedExtBuffers;
         numberOfSupported = sizeof(g_commonSupportedExtBuffers) / sizeof(g_commonSupportedExtBuffers[0]);
-    }
-
+    } 
     if (!supported_buffers)
         return MFX_ERR_NONE;
 
