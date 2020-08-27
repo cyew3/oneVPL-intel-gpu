@@ -8266,7 +8266,33 @@ This structure is used by AV1 SDK decoder to report film grain parameters for de
 | | |
 --- | ---
 `Header.BufferId` | Must be [MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM](#ExtendedBufferID)
-`Value`, `Scaling`, `Flags`, `GrainSeed`, `RefIdx`, `NumYPoints`, `NumCbPoints`, `NumCrPoints`, `PointY`, `PointCb`, `PointCr`, `GrainScalingMinus8`, `ArCoeffLag`, `ArCoeffsYPlus128`, `ArCoeffsCbPlus128`, `ArCoeffsCrPlus128`, `ArCoeffShiftMinus6`, `GrainScaleShift`, `CbMult`, `CbLumaMult`, `CbOffset`, `CrMult`, `CrLumaMult`, `CrOffset` | These parameters represent film grain syntax of AV1 codec. They are equivalent of film_grain_params() from uncompressed header syntax of AV1 frame.<br><br>Parameter `Flags` is a bit map with bit-ORed flags from enum [AV1FilmGrainFlags](#AV1FilmGrainFlags)<br><br>If syntax parameter isn't present in uncompressed header of particular frame, respective member of `mfxExtAV1FilmGrainParam` is zeroed by the SDK AV1 decoder.
+`Value` | The x coordinate for the i-th point of the piece-wise linear scaling function for luma/Cb/Cr component. The value is signaled on the scale of 0..255.
+`Scaling` | The scaling (output) value for the i-th point of the piecewise linear scaling function for luma/Cb/Cr component.
+`Flags` | Bit map with bit-ORed flags from enum [AV1FilmGrainFlags](#AV1FilmGrainFlags).
+`GrainSeed` | Starting value for pseudo-random numbers used during film grain synthesis.
+`RefIdx` | Indicate which reference frame contains the film grain parameters to be used for this frame.
+`NumYPoints` | The number of points for the piece-wise linear scaling function of the luma component.
+`NumCbPoints` | The number of points for the piece-wise linear scaling function of the Cb component.
+`NumCrPoints` | The number of points for the piece-wise linear scaling function of the Cr component.
+`PointY` | The array of points for luma component.
+`PointCb` | The array of points for Cb component.
+`PointCr` | The array of points for Cr component.
+`GrainScalingMinus8` | The shift – 8 applied to the values of the chroma component. The grain_scaling_minus_8 can take values of 0..3 and determines the range and quantization step of the standard deviation of film grain.
+`ArCoeffLag` | The number of auto-regressive coefficients for luma and chroma.
+`ArCoeffsYPlus128` | Auto-regressive coefficients used for the Y plane
+`ArCoeffsCbPlus128` | Auto-regressive coefficients used for the U plane
+`ArCoeffsCrPlus128` | Auto-regressive coefficients used for the V plane
+`ArCoeffShiftMinus6` | The range of the auto-regressive coefficients. Values of 0, 1, 2, and 3 correspond to the ranges for auto-regressive coefficients of [-2, 2), [-1, 1), [-0.5, 0.5) and [-0.25, 0.25) respectively.
+`GrainScaleShift` | How much the Gaussian random numbers should be scaled down during the grain synthesis process.
+`CbMult` | The multiplier for the cb component used in derivation of the input index to the Cb component scaling function.
+`CbLumaMult` | The multiplier for the average luma component used in derivation of the input index to the Cb component scaling function.
+`CbOffset` | The offset used in derivation of the input index to the Cb component scaling function.
+`CrMult` | The multiplier for the cr component used in derivation of the input index to the Cr component scaling function.
+`CrLumaMult` | The multiplier for the average luma component used in derivation of the input index to the Cr component scaling function.
+`CrOffset` | The offset used in derivation of the input index to the Cr component scaling function.
+
+These parameters represent film grain syntax of AV1 codec. They are equivalent of film_grain_params() from uncompressed header syntax of AV1 frame.<br><br>
+If syntax parameter isn't present in uncompressed header of particular frame, respective member of `mfxExtAV1FilmGrainParam` is zeroed by the SDK AV1 decoder.
 
 **Change History**
 
