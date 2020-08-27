@@ -113,8 +113,10 @@ DECL_START(ENCODE_CAPS_AV1)
     TRACE_AUTO(UserMaxFrameSizeSupport   );
     TRACE_AUTO(DirtyRectSupport          );
     TRACE_AUTO(MoveRectSupport           );
-    TRACE_AUTO(TileSizeBytesMinus1);
+    TRACE_AUTO(TileSizeBytesMinus1       );
     TRACE_AUTO(FrameOBUSupport           );
+    TRACE_AUTO(SuperResSupport           );
+    TRACE_AUTO(CDEFChannelStrengthSupport);
 
     TRACE_AUTO(EncodeFunc                );
     TRACE_AUTO(HybridPakFunc             );
@@ -153,6 +155,7 @@ DECL_START(ENCODE_CAPS_AV1)
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_superres           );
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_cdef               );
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_restoration        );
+    TRACE_AUTO(AV1ToolSupportFlags.fields.allow_intrabc             );
 
     TRACE_AUTO(ChromeSupportFlags.fields.i420                       );
     TRACE_AUTO(ChromeSupportFlags.fields.i422                       );
@@ -511,8 +514,14 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1)
     TRACE_AUTO(LoopFilterParamsBitOffset );
     TRACE_AUTO(CDEFParamsBitOffset       );
     TRACE_AUTO(CDEFParamsSizeInBits      );
+    TRACE_AUTO(FrameHdrOBUSizeInBits     );
     TRACE_AUTO(FrameHdrOBUSizeByteOffset );
     TRACE_AUTO(StatusReportFeedbackNumber);
+
+    TRACE_AUTO(TileGroupOBUHdrInfo.fields.obu_extension_flag       );
+    TRACE_AUTO(TileGroupOBUHdrInfo.fields.obu_has_size_field       );
+    TRACE_AUTO(TileGroupOBUHdrInfo.fields.temporal_id              );
+    TRACE_AUTO(TileGroupOBUHdrInfo.fields.spatial_id               );
 
     TRACE_AUTO(NumSkipFrames             );
     TRACE_AUTO(SkipFramesSizeInBytes     );
