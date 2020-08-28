@@ -1915,12 +1915,12 @@ inline void SetTaskRefList(
 }
 
 template <typename DPBIter>
-DPBIter FindOldestSTR(DPBIter dpbBegin, DPBIter dpbEnd)
+DPBIter FindOldestSTR(DPBIter dpbBegin, DPBIter dpbEnd, mfxU8 tid)
 {
     DPBIter oldestSTR = dpbEnd;
     for (auto it = dpbBegin; it != dpbEnd; ++it)
     {
-        if ((*it) && !(*it)->isLTR)
+        if ((*it) && !(*it)->isLTR && (*it)->TemporalID >= tid)
         {
             if (oldestSTR == dpbEnd)
                 oldestSTR = it;
@@ -1962,8 +1962,9 @@ inline void SetTaskDPBRefresh(
                     slotToRefresh = it;
 
             // If no duplicates, then find the oldest STR
+            // For temporal scalability frame must not overwrite frames from lower layers
             if (slotToRefresh == dpbEnd)
-                slotToRefresh = FindOldestSTR(dpbBegin, dpbEnd);
+                slotToRefresh = FindOldestSTR(dpbBegin, dpbEnd, task.TemporalID);
 
             // If failed, just do not refresh any reference frame.
             // This should not happend since we maintain at least 1 STR in DPB
