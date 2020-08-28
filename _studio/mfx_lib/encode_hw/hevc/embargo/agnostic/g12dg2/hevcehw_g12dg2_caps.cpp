@@ -84,4 +84,16 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 }
 
+void Caps::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+{
+    Push(BLK_HardcodeCaps
+        , [](const mfxVideoParam&, mfxVideoParam& par, StorageRW& strg) -> mfxStatus
+    {
+        auto& caps = HEVCEHW::Gen12::Glob::EncodeCaps::Get(strg);
+        caps.SliceIPOnly = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC);
+
+        return MFX_ERR_NONE;
+    });
+}
+
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
