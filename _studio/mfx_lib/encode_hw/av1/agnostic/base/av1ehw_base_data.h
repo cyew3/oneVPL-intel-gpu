@@ -109,91 +109,91 @@ namespace Base
 
     struct ScalingList
     {
-        mfxU8 scalingLists0[6][16];
-        mfxU8 scalingLists1[6][64];
-        mfxU8 scalingLists2[6][64];
-        mfxU8 scalingLists3[2][64];
-        mfxU8 scalingListDCCoefSizeID2[6];
-        mfxU8 scalingListDCCoefSizeID3[2];
+        mfxU8 scalingLists0[6][16]                        = { 0 };
+        mfxU8 scalingLists1[6][64]                        = { 0 };
+        mfxU8 scalingLists2[6][64]                        = { 0 };
+        mfxU8 scalingLists3[2][64]                        = { 0 };
+        mfxU8 scalingListDCCoefSizeID2[6]                 = { 0 };
+        mfxU8 scalingListDCCoefSizeID3[2]                 = { 0 };
     };
 
     struct TimingInfo
     {
-        uint32_t num_units_in_display_tick;
-        uint32_t time_scale;
-        uint32_t equal_picture_interval;
-        uint32_t num_ticks_per_picture_minus_1;
+        uint32_t num_units_in_display_tick                = 0;
+        uint32_t time_scale                               = 0;
+        uint32_t equal_picture_interval                   = 0;
+        uint32_t num_ticks_per_picture_minus_1            = 0;
     };
 
     struct DecoderModelInfo
     {
-        uint32_t buffer_delay_length_minus_1;
-        uint32_t num_units_in_decoding_tick;
-        uint32_t buffer_removal_time_length_minus_1;
-        uint32_t frame_presentation_time_length_minus_1;
+        uint32_t buffer_delay_length_minus_1              = 0;
+        uint32_t num_units_in_decoding_tick               = 0;
+        uint32_t buffer_removal_time_length_minus_1       = 0;
+        uint32_t frame_presentation_time_length_minus_1   = 0;
     };
 
     struct OperatingParametersInfo
     {
-        uint32_t decoder_buffer_delay;
-        uint32_t encoder_buffer_delay;
-        uint32_t low_delay_mode_flag;
+        uint32_t decoder_buffer_delay        = 0;
+        uint32_t encoder_buffer_delay        = 0;
+        uint32_t low_delay_mode_flag         = 0;
     };
 
     struct ColorConfig
     {
-        uint32_t BitDepth;
-        uint32_t mono_chrome;
-        uint32_t color_primaries;
-        uint32_t transfer_characteristics;
-        uint32_t matrix_coefficients;
-        uint32_t color_range;
-        uint32_t chroma_sample_position;
-        uint32_t subsampling_x;
-        uint32_t subsampling_y;
-        uint32_t separate_uv_delta_q;
+        uint32_t BitDepth                    = 0;
+        uint32_t mono_chrome                 = 0;
+        uint32_t color_primaries             = 0;
+        uint32_t transfer_characteristics    = 0;
+        uint32_t matrix_coefficients         = 0;
+        uint32_t color_range                 = 0;
+        uint32_t chroma_sample_position      = 0;
+        uint32_t subsampling_x               = 0;
+        uint32_t subsampling_y               = 0;
+        uint32_t separate_uv_delta_q         = 0;
     };
 
     struct SH
     {
         //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in sequence_header_obu()
         uint32_t seq_profile                        = AV1_SEQ_PROFILE_0_420_8or10bit;
-        uint32_t still_picture;
-        uint32_t reduced_still_picture_header;
+        uint32_t still_picture                      = 0;
+        uint32_t reduced_still_picture_header       = 0;
 
-        uint32_t timing_info_present_flag;
+        uint32_t timing_info_present_flag           = 0;
         TimingInfo timing_info;
 
-        uint32_t decoder_model_info_present_flag;
+        uint32_t decoder_model_info_present_flag    = 0;
         DecoderModelInfo decoder_model_info;
 
-        uint32_t operating_points_cnt_minus_1;
-        uint32_t operating_point_idc[MAX_NUM_OPERATING_POINTS];
-        uint32_t seq_level_idx[MAX_NUM_OPERATING_POINTS];
-        uint32_t seq_tier[MAX_NUM_OPERATING_POINTS];
-        uint32_t decoder_model_present_for_this_op[MAX_NUM_OPERATING_POINTS];
+        uint32_t operating_points_cnt_minus_1       = 0;
+        uint32_t operating_point_idc[MAX_NUM_OPERATING_POINTS]                                   = { 0 };
+        uint32_t seq_level_idx[MAX_NUM_OPERATING_POINTS]                                         = { 0 };
+        uint32_t seq_tier[MAX_NUM_OPERATING_POINTS]                                              = { 0 };
+        uint32_t decoder_model_present_for_this_op[MAX_NUM_OPERATING_POINTS]                     = { 0 };
         OperatingParametersInfo operating_parameters_info[MAX_NUM_OPERATING_POINTS];
-        uint32_t initial_display_delay_minus_1[MAX_NUM_OPERATING_POINTS];
+        uint32_t initial_display_delay_minus_1[MAX_NUM_OPERATING_POINTS]                         = { 0 };
 
-        uint32_t frame_width_bits;
-        uint32_t frame_height_bits;
-        uint32_t max_frame_width;
-        uint32_t max_frame_height;
-        uint32_t frame_id_numbers_present_flag;
-        uint32_t delta_frame_id_length;
-        uint32_t idLen;
-        uint32_t sbSize;
-        uint32_t enable_filter_intra;
-        uint32_t enable_intra_edge_filter;
-        uint32_t enable_interintra_compound;
-        uint32_t enable_masked_compound;
+        uint32_t frame_width_bits                   = 0;
+        uint32_t frame_height_bits                  = 0;
+        uint32_t max_frame_width                    = 0;
+        uint32_t max_frame_height                   = 0;
+        uint32_t frame_id_numbers_present_flag      = 0;
+        uint32_t delta_frame_id_length              = 0;
+        uint32_t idLen                              = 0;
+        uint32_t sbSize                             = 0;
+        uint32_t enable_filter_intra                = 0;
+        uint32_t enable_intra_edge_filter           = 0;
+        uint32_t enable_interintra_compound         = 0;
+        uint32_t enable_masked_compound             = 0;
         uint32_t enable_warped_motion               = 0; //not supported (DDI spec)
-        uint32_t enable_dual_filter;
-        uint32_t enable_order_hint;
-        uint32_t enable_jnt_comp;
-        uint32_t enable_ref_frame_mvs;
-        uint32_t seq_force_screen_content_tools;
-        uint32_t seq_force_integer_mv;
+        uint32_t enable_dual_filter                 = 0;
+        uint32_t enable_order_hint                  = 0;
+        uint32_t enable_jnt_comp                    = 0;
+        uint32_t enable_ref_frame_mvs               = 0;
+        uint32_t seq_force_screen_content_tools     = 0;
+        uint32_t seq_force_integer_mv               = 0;
         uint32_t order_hint_bits_minus1             = 0;
         uint32_t enable_superres                    = 0;
         uint32_t enable_cdef                        = 0;
@@ -201,7 +201,7 @@ namespace Base
 
         ColorConfig color_config;
 
-        uint32_t film_grain_param_present;
+        uint32_t film_grain_param_present           = 0;
     };
 
     enum FRAME_TYPE

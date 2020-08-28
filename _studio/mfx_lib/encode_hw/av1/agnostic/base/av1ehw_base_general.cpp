@@ -1901,7 +1901,8 @@ inline void SetTaskRefList(
     DpbIndexes bwd;
     FillSortedFwdBwd(task, &fwd, &bwd);
 
-    mfxU8 maxFwdRefs, maxBwdRefs;
+    mfxU8 maxFwdRefs = 0;
+    mfxU8 maxBwdRefs = 0;
     std::tie(maxFwdRefs, maxBwdRefs) = GetMaxRefs(task, par);
 
     if (IsP(task.FrameType))
@@ -2050,7 +2051,8 @@ namespace CModelRefLogic
         if (IsI(task.FrameType))
             return refList;
 
-        mfxU8 maxFwdRefs, maxBwdRefs;
+        mfxU8 maxFwdRefs = 0;
+        mfxU8 maxBwdRefs = 0;
         std::tie(maxFwdRefs, maxBwdRefs) = GetMaxRefs(task, par);
 
         DpbIndexes fwdToUse;
@@ -2651,12 +2653,19 @@ void SetDefaultGOP(
     par.mfx.GopPicSize = defPar.base.GetGopPicSize(defPar);
     par.mfx.GopRefDist = defPar.base.GetGopRefDist(defPar);
 
-    SetIf(pCO2->BRefType, pCO2 && !pCO2->BRefType, [&]() { return defPar.base.GetBRefType(defPar); });
-    SetIf(pCO3->PRefType, pCO3 && !pCO3->PRefType, [&]() { return defPar.base.GetPRefType(defPar); });
+    if (pCO2 != nullptr)
+    {
+        SetIf(pCO2->BRefType, !pCO2->BRefType, [&]() { return defPar.base.GetBRefType(defPar); });
+    }
+
+    if (pCO3 != nullptr)
+    {
+        SetIf(pCO3->PRefType, !pCO3->PRefType, [&]() { return defPar.base.GetPRefType(defPar); });
+    }
 
     SetDefault(par.mfx.NumRefFrame, defPar.base.GetNumRefFrames(defPar));
 
-    if (pCO3)
+    if (pCO3 != nullptr)
     {
         SetDefault<mfxU16>(pCO3->GPB, MFX_CODINGOPTION_OFF);
 
@@ -2897,7 +2906,8 @@ bool CheckBufferSizeInKB(
     }
     else if (!bCqpOrIcq)
     {
-        mfxU32 frN, frD;
+        mfxU32 frN = 0;
+        mfxU32 frD = 0;
 
         std::tie(frN, frD) = defPar.base.GetFrameRate(defPar);
         mfxU32 avgFS = Ceil((mfxF64)TargetKbps(par.mfx) * frD / frN / 8);
@@ -3258,10 +3268,13 @@ inline void CheckExtParam(
                 onesBuf.insert(onesBuf.end(), header.BufferSz - mfxU32(onesBuf.size()), 1);
 
             auto pSrc = (mfxExtBuffer*)onesBuf.data();
-            *pSrc = header;
 
-            for (auto& copy : it->second)
-                copy(pSrc, par.ExtParam[i]);
+            if (pSrc != nullptr)
+            {
+                *pSrc = header;
+                for (auto& copy : it->second)
+                    copy(pSrc, par.ExtParam[i]);
+            }
         }
     }
 }
@@ -3360,18 +3373,21 @@ mfxStatus General::CopyConfigurable(const ParamSupport& sprt, const mfxVideoPara
 
             std::vector<mfxU8> zeroBuf(header.BufferSz, 0);
             auto pSrc = (mfxExtBuffer*)zeroBuf.data();
-            *pSrc = header;
 
-            std::for_each(
-                copyIt->second.begin()
-                , copyIt->second.end()
-                , [&](const std::function<void(const mfxExtBuffer*, mfxExtBuffer*)>& copy)
+            if (pSrc != nullptr)
             {
-                copy(pEB, pSrc);
-            });
+                *pSrc = header;
 
-            std::copy((mfxU8*)pSrc, (mfxU8*)pSrc + pSrc->BufferSz, (mfxU8*)pEB);
+                std::for_each(
+                    copyIt->second.begin()
+                    , copyIt->second.end()
+                    , [&](const std::function<void(const mfxExtBuffer*, mfxExtBuffer*)>& copy)
+                {
+                    copy(pEB, pSrc);
+                });
 
+                std::copy((mfxU8*)pSrc, (mfxU8*)pSrc + pSrc->BufferSz, (mfxU8*)pEB);
+            }
         });
     }
     else
