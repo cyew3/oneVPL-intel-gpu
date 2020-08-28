@@ -201,6 +201,7 @@ void TranscodingSample::PrintHelp()
 
     msdk_printf(MSDK_STRING("  -ext_allocator    Force usage of external allocators\n"));
     msdk_printf(MSDK_STRING("  -sys          Force usage of external system allocator\n"));
+    msdk_printf(MSDK_STRING("  -dec::sys     Set dec output to system memory\n"));
     msdk_printf(MSDK_STRING("  -vpp::sys     Set vpp output to system memory\n"));
     msdk_printf(MSDK_STRING("  -vpp::vid     Set vpp output to video memory\n"));
     msdk_printf(MSDK_STRING("  -fps <frames per second>\n"));
@@ -1215,6 +1216,10 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
         InputParams.bPrefferdGfx = true;
     }
 #endif
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dec::sys")))
+    {
+        InputParams.DecOutPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    }
     else
     {
         // no matching argument was found
