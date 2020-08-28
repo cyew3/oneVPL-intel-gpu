@@ -81,6 +81,7 @@ public:
     virtual mfxStatus GetDownStream(IFile **ppFile);
     virtual mfxStatus SetDownStream(IFile *ppFile);
     virtual mfxStatus GetDevice(IHWDevice **pDevice);
+    virtual mfxStatus SetOutputFrameSize(mfxFrameInfo * pInfo);
 
 
 protected:
@@ -93,6 +94,8 @@ protected:
     bool                    m_bAutoView;
     mfxU32                  m_nViewId;         
     std::auto_ptr<IFile>    m_pFile;
+    mfxU16                  m_nFrameWidth;
+    mfxU16                  m_nFrameHeight;
 
     virtual mfxStatus LockFrame(mfxFrameSurface1 *surface);
     virtual mfxStatus UnlockFrame(mfxFrameSurface1 *surface);

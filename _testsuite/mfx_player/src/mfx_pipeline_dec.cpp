@@ -1300,6 +1300,10 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_components[eVPP].m_zoomy);
     ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropW);
     ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropH);
+    ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropX);
+    ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropY);
+    ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.Width);
+    ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.Height);
     ENABLE_VPP(m_components[eVPP].m_rotate)
     ENABLE_VPP(m_components[eVPP].m_mirroring)
     ENABLE_VPP(m_components[eVPP].m_InNominalRange)
@@ -1558,13 +1562,20 @@ mfxStatus MFXDecPipeline::CreateVPP()
 
     if (m_components[eVPP].m_params.vpp.Out.CropW != 0)
     {
-        m_inParams.FrameInfo.Width = m_components[eVPP].m_params.vpp.Out.CropW + m_inParams.FrameInfo.CropX;
+        //in none-colorfill cases, frame size will be equal to picture size.
+        if (m_components[eVPP].m_params.vpp.Out.Width == 0)
+            m_inParams.FrameInfo.Width = m_components[eVPP].m_params.vpp.Out.CropW;
+        else
+            m_inParams.FrameInfo.Width = m_components[eVPP].m_params.vpp.Out.Width;
         m_inParams.FrameInfo.CropW = m_components[eVPP].m_params.vpp.Out.CropW;
     }
 
     if (m_components[eVPP].m_params.vpp.Out.CropH != 0)
     {
-        m_inParams.FrameInfo.Height = m_components[eVPP].m_params.vpp.Out.CropH + m_inParams.FrameInfo.CropY;
+        if (m_components[eVPP].m_params.vpp.Out.Height == 0)
+            m_inParams.FrameInfo.Height = m_components[eVPP].m_params.vpp.Out.CropH;
+        else
+            m_inParams.FrameInfo.Height = m_components[eVPP].m_params.vpp.Out.Height;
         m_inParams.FrameInfo.CropH  = m_components[eVPP].m_params.vpp.Out.CropH;
     }
 
@@ -1579,6 +1590,16 @@ mfxStatus MFXDecPipeline::CreateVPP()
 
         m_inParams.FrameInfo.Height = (mfxU16)(m_components[eDEC].m_params.mfx.FrameInfo.Height * m_components[eVPP].m_zoomy) + m_inParams.FrameInfo.CropY;
         m_inParams.FrameInfo.CropH  = mfx_align((mfxU16)(m_components[eDEC].m_params.mfx.FrameInfo.CropH  * m_components[eVPP].m_zoomy),2);
+    }
+
+    if (m_components[eVPP].m_params.vpp.Out.CropX != 0)
+    {
+        m_inParams.FrameInfo.CropX = m_components[eVPP].m_params.vpp.Out.CropX;
+    }
+
+    if (m_components[eVPP].m_params.vpp.Out.CropY != 0)
+    {
+        m_inParams.FrameInfo.CropY = m_components[eVPP].m_params.vpp.Out.CropY;
     }
 
     if (0 != m_inParams.nAdvanceFRCAlgorithm)
@@ -1871,10 +1892,10 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     //NOTE: repeat mode fix bug 8405
     //NOTE: also affects some opaq suites bug 9636
     //NOTE: also affects cropped streams bug 9625
-    m_inParams.FrameInfo.Width  = info.CropW;
-    m_inParams.FrameInfo.Height = info.CropH;
-    m_inParams.FrameInfo.CropW  = info.CropW;
-    m_inParams.FrameInfo.CropH  = info.CropH;
+    m_inParams.FrameInfo.Width  = info.Width;
+    m_inParams.FrameInfo.Height = info.Height;
+    m_inParams.FrameInfo.CropW  = info.CropW ? info.CropW : info.Width;
+    m_inParams.FrameInfo.CropH  = info.CropH ? info.CropH : info.Height;
     //acpect ratio related bug 9897
     m_inParams.FrameInfo.AspectRatioW  = info.AspectRatioW;
     m_inParams.FrameInfo.AspectRatioH  = info.AspectRatioH;
@@ -2679,7 +2700,12 @@ mfxStatus MFXDecPipeline::InitRender()
 
     if (NULL == m_pRender) return MFX_ERR_NONE;
 
+    mfxFrameInfo info(m_inParams.FrameInfo);
+    if (m_components[eVPP].m_rotate == 90 || m_components[eVPP].m_rotate == 270)
+        std::swap(info.Width, info.Height);
+
     MFX_CHECK_STS(sts = m_pRender->Init(&m_components[eREN].m_params, m_inParams.strDstFile));
+    MFX_CHECK_STS(sts = m_pRender->SetOutputFrameSize(&info));
 
     if (m_components[eREN].m_bHWStrict && MFX_WRN_PARTIAL_ACCELERATION == sts)
     {
@@ -5225,6 +5251,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_INT_OPTION(m_components[eVPP].m_OutNominalRange, VM_STRING("-dsinr"), VM_STRING("specify YUV nominal range for output surface: 0 - unknown; 1 - [0...255]; 2 - [16...235]"))
             else HANDLE_INT_OPTION(m_components[eVPP].m_InTransferMatrix, VM_STRING("-ssitm"), VM_STRING("specify YUV<->RGB transfer matrix for input surface: 0 - unknown; 1 - BT709; 2 - BT601"))
             else HANDLE_INT_OPTION(m_components[eVPP].m_OutTransferMatrix, VM_STRING("-dsitm"), VM_STRING("specify YUV<->RGB transfer matrix for output surface: 0 - unknown; 1 - BT709; 2 - BT601"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.CropX, VM_STRING("-dcrx"), VM_STRING("video width at VPP output dst_leftx"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.CropY, VM_STRING("-dcry"), VM_STRING("video height at VPP output dst_topy"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.Width, VM_STRING("-target_w"), VM_STRING("video width at VPP target output"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_params.vpp.Out.Height, VM_STRING("-target_h"), VM_STRING("video height at VPP target output"))
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera"), VM_STRING("use camera pipe"), OPT_BOOL))
             {
                 m_inParams.bUseCameraPipe = true;
