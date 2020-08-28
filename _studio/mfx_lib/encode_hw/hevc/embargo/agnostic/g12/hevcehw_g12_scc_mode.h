@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,39 +21,37 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "hevcehw_base_win.h"
+#include "hevcehw_base.h"
 #include "hevcehw_g12_data.h"
 
 namespace HEVCEHW
 {
-namespace Windows
-{
 namespace Gen12
 {
-    enum eFeatureId
-    {
-        FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , FEATURE_SCCMODE
-        , NUM_FEATURES
-    };
+class SCCMode
+    : public FeatureBase
+{
+public:
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(CheckAndFix)\
+    DECL_BLOCK(SetDefaults)
+#define DECL_FEATURE_NAME "Gen12_SCCMode"
+#include "hevcehw_decl_blocks.h"
 
-    class MFXVideoENCODEH265_HW
-        : public Windows::Base::MFXVideoENCODEH265_HW
-    {
-    public:
-        using TBaseImpl = Windows::Base::MFXVideoENCODEH265_HW;
+    SCCMode(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
 
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
+protected:
+    virtual void Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
+    virtual void SetSupported(ParamSupport& par) override;
+    virtual void SetInherited(ParamInheritance& par) override;
+    virtual void SetDefaults(const FeatureBlocks& blocks, TPushSD Push) override;
+};
 
-        virtual mfxStatus Init(mfxVideoParam *par) override;
-    };
 } //Gen12
-} //Windows
-}// namespace HEVCEHW
+} //namespace HEVCEHW
 
-#endif
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

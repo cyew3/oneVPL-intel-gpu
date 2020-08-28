@@ -10,6 +10,7 @@ Copyright(c) 2018-2020 Intel Corporation. All Rights Reserved.
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "mfx_ext_buffers.h"
 
 // #define DEBUG_STREAM "gmock_scc.h265"
 
@@ -56,7 +57,10 @@ namespace hevce_scc
     enum TYPE {
         QUERY = 0x1,
         INIT = 0x2,
-        ENCODE = 0x4
+        ENCODE = 0x4,
+        PALETTEOFF = 0x8,
+        IBCOFF =0x10,
+        SCCOFF =0x20
     };
 
     struct tc_struct {
@@ -199,6 +203,39 @@ namespace hevce_scc
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2 },
+        } },
+
+        // 09 IBC mode on and Palette mode off
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | PALETTEOFF, {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 1 },
+        } },
+
+        // 10 IBC mode off and Palette mode on
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | IBCOFF,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2 },
+        } },
+
+        // 11 IBC mode off and Palette mode off
+        { { MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+        QUERY | INIT | SCCOFF,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 1 },
         } },
 /*
         // 04 Sequence of I B P B I frames
@@ -349,12 +386,66 @@ namespace hevce_scc
 
         m_filler = &reader;
 
+        if (tc.type & PALETTEOFF)
+        {
+            if ((g_tsHWtype <= MFX_HW_DG1) && g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+            {
+                g_tsLog << "[ SKIPPED ] SCC Separate Mode is a embargo feature.\n";
+                throw tsSKIP;
+            }
+            m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+            mfxExtCodingOptionDDI *pCODDI = reinterpret_cast <mfxExtCodingOptionDDI*> (m_par.GetExtBuffer(MFX_EXTBUFF_DDI));
+            pCODDI->IBC = MFX_CODINGOPTION_ON;
+            pCODDI->Palette = MFX_CODINGOPTION_OFF;
+            SETPARS(m_par, MFX_PAR);
+            mfxExtCodingOption2& co2 = m_par;
+            SETPARS(&co2, EXT_COD2);
+            mfxExtCodingOption3& co3 = m_par;
+            SETPARS(&co3, EXT_COD3);
+        }
+
+        if (tc.type & IBCOFF)
+        {
+            if ((g_tsHWtype <= MFX_HW_DG1) && g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+            {
+                g_tsLog << "[ SKIPPED ] SCC Separate Mode is a embargo feature.\n";
+                throw tsSKIP;
+            }
+            m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+            mfxExtCodingOptionDDI *pCODDI = reinterpret_cast <mfxExtCodingOptionDDI*> (m_par.GetExtBuffer(MFX_EXTBUFF_DDI));
+            pCODDI->IBC = MFX_CODINGOPTION_OFF;
+            pCODDI->Palette = MFX_CODINGOPTION_ON;
+            SETPARS(m_par, MFX_PAR);
+            mfxExtCodingOption2& co2 = m_par;
+            SETPARS(&co2, EXT_COD2);
+            mfxExtCodingOption3& co3 = m_par;
+            SETPARS(&co3, EXT_COD3);
+        }
+
+        if (tc.type & SCCOFF)
+        {
+            if ((g_tsHWtype <= MFX_HW_DG1) && g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+            {
+                g_tsLog << "[ SKIPPED ] SCC Separate Mode is a embargo feature.\n";
+                throw tsSKIP;
+            }
+            m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+            mfxExtCodingOptionDDI *pCODDI = reinterpret_cast <mfxExtCodingOptionDDI*> (m_par.GetExtBuffer(MFX_EXTBUFF_DDI));
+            pCODDI->IBC = MFX_CODINGOPTION_OFF;
+            pCODDI->Palette = MFX_CODINGOPTION_OFF;
+            SETPARS(m_par, MFX_PAR);
+            mfxExtCodingOption2& co2 = m_par;
+            SETPARS(&co2, EXT_COD2);
+            mfxExtCodingOption3& co3 = m_par;
+            SETPARS(&co3, EXT_COD3);
+        }
+
         if (tc.type & QUERY) {
             SETPARS(m_par, MFX_PAR);
             mfxExtCodingOption2& co2 = m_par;
             SETPARS(&co2, EXT_COD2);
             mfxExtCodingOption3& co3 = m_par;
-            SETPARS(&co3, EXT_COD3);            
+            SETPARS(&co3, EXT_COD3);
             g_tsStatus.expect(tc.sts.query);
             Query();
         }

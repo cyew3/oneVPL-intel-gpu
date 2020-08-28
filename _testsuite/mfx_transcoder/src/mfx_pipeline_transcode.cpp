@@ -649,6 +649,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(ChangeFrameContextIdxForTS, OPT_TRI_STATE, ""),
         HANDLE_DDI_OPTION(SuperFrameForTS,         OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(TMVP,                    OPT_TRI_STATE,  "on/off temporal MV predictor"),
+        HANDLE_DDI_OPTION(IBC,                     OPT_TRI_STATE,  "on/off SCC IBC Mode"),
+        HANDLE_DDI_OPTION(Palette,                 OPT_TRI_STATE,  "on/off SCC Palette Mode"),
 
         // EncTools
         //et_AdaptiveI

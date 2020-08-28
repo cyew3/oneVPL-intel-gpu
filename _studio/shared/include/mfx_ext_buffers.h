@@ -78,8 +78,8 @@ typedef struct {
 
     mfxU16 EarlySkip;       // 0=default (let driver choose), 1=enabled, 2=disabled
     mfxU16 LaScaleFactor;   // 0=default (let msdk choose), 1=1x, 2=2x, 4=4x; Deprecated for legacy H264 encoder, for legacy use mfxExtCodingOption2::LookAheadDS instead
-    mfxU16 reserved1;       //
-    mfxU16 reserved2;       //
+    mfxU16 IBC;             // on/off - SCC IBC Mode
+    mfxU16 Palette;         // on/off - SCC Palette Mode
     mfxU16 StrengthN;       // strength=StrengthN/100.0
     mfxU16 FractionalQP;    // 0=disabled (default), 1=enabled
 
