@@ -61,8 +61,8 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     m_yuvHeight        = infoIn.Height;
 
     //surface alignment requirements
-    info.Width         = mfx_align((mfxU16)(infoIn.Width  + infoIn.CropX), 0x10);
-    info.Height        = mfx_align((mfxU16)(infoIn.Height + infoIn.CropY), (info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)? 0x10 : 0x20);
+    info.Width         = mfx_align((mfxU16)infoIn.Width, 0x10);
+    info.Height        = mfx_align((mfxU16)infoIn.Height, (info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)? 0x10 : 0x20);
 
     std::unique_ptr <IBitstreamConverterFactory > bsfac(pFactory->CreateBitstreamCVTFactory(nullptr));
     m_pConverter.reset(bsfac->MakeConverter(nInFourCC, info.FourCC));

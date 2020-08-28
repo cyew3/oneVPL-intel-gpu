@@ -204,6 +204,14 @@ mfxStatus MFXVideoRender::GetDevice(IHWDevice **ppDevice)
     return MFX_ERR_NONE;
 }
 
+mfxStatus MFXVideoRender::SetOutputFrameSize(mfxFrameInfo * pInfo, bool bColorfill_flag)
+{
+    MFX_CHECK_POINTER(pInfo);
+    m_nFrameWidth = pInfo->Width;
+    m_nFrameHeight = pInfo->Height;
+    m_bColorfill = bColorfill_flag;
+    return MFX_ERR_NONE;
+}
 
 //////////////////////////////////////////////////////////////////////////
 #include <mfxplugin++.h>
@@ -701,7 +709,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
 #ifdef LUCAS_DLL
     lucas::CLucasCtx &lucasCtx = lucas::CLucasCtx::Instance();
-    int lucas_bufferSize = pInfo->CropW * pInfo->CropH * 3 / 2;
+    int lucas_bufferSize = m_nFrameWidth * m_nFrameHeight * 3 / 2;
     if(lucasCtx->output && NULL == m_lucas_buffer[pInfo->FrameId.ViewId]){
           // get buffer for corresponding MVC view ID 
           m_lucas_buffer[pInfo->FrameId.ViewId] = lucasCtx->output(lucasCtx->fmWrapperPtr, pInfo->FrameId.ViewId, 0, 0, lucas_bufferSize);
@@ -709,9 +717,15 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
     char *lucas_ptr = m_lucas_buffer[pInfo->FrameId.ViewId];
 #endif
     
-    Ipp32s crop_x = pInfo->CropX;
-    Ipp32s crop_y = pInfo->CropY;
+    Ipp32s crop_x = (!m_bColorfill) ? pInfo->CropX : 0;
+    Ipp32s crop_y = (!m_bColorfill) ? pInfo->CropY : 0;
     mfxU32 pitch = pData->PitchLow + ((mfxU32)pData->PitchHigh << 16);
+
+    if (!m_bColorfill)
+    {
+        m_nFrameWidth = pInfo->CropW;
+        m_nFrameHeight = pInfo->CropH;
+    }
 
     bool skipChroma = !m_params.alwaysWriteChroma && pConvertedSurface->Info.ChromaFormat == MFX_CHROMAFORMAT_YUV400;
 
@@ -727,10 +741,10 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
 
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW);
+                WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, m_nFrameWidth);
             }
 
             if (!skipChroma)
@@ -738,8 +752,8 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 crop_x >>= isHalfWidth;
                 crop_y >>= isHalfHeight;
 
-                mfxU32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
-                mfxU32 width = isHalfWidth ? ((pInfo->CropW + 1) >> 1) : pInfo->CropW;
+                mfxU32 height = isHalfHeight ? ((m_nFrameHeight + 1) >> 1) : m_nFrameHeight;
+                mfxU32 width = isHalfWidth ? ((m_nFrameWidth + 1) >> 1) : m_nFrameWidth;
                 if(isHalfWidth)
                     pitch /= 2;
 
@@ -767,13 +781,13 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
             crop_x <<= 1; // because of sample equals two bytes 
 
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
                 if (m_params.VpxDec16bFormat)
-                    XOR31((mfxU16 *)(pData->Y + (crop_y * pitch + crop_x) + i*pitch), pInfo->CropW);
+                    XOR31((mfxU16 *)(pData->Y + i*pitch), m_nFrameWidth);
 
-                WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW*2);
+                WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, m_nFrameWidth*2);
             }
 
             mfxU8 isHalfHeight = pInfo->FourCC == MFX_FOURCC_YUV420_16 ? 1 : 0;
@@ -786,8 +800,8 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 crop_x >>= isHalfWidth;
                 crop_y >>= isHalfHeight;
 
-                mfxU32 height = isHalfHeight ? ((pInfo->CropH + 1) / 2) : pInfo->CropH;
-                mfxU32 width = isHalfWidth ? ((pInfo->CropW + 1) / 2) : pInfo->CropW;
+                mfxU32 height = isHalfHeight ? ((m_nFrameHeight + 1) / 2) : m_nFrameHeight;
+                mfxU32 width = isHalfWidth ? ((m_nFrameWidth + 1) / 2) : m_nFrameWidth;
 
                 m_Current.m_comp = VM_STRING('U');
                 for (i = 0; i < height; i++)
@@ -814,19 +828,19 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW);
+                WRITE(pData->Y + (crop_y * pitch + crop_x) + i * pitch, m_nFrameWidth);
             }
 
             if (!skipChroma)
             {
                 m_Current.m_comp = VM_STRING('U');
-                for (i = 0; i < (mfxU16) ((pInfo->CropH + 1) / 2); i++)
+                for (i = 0; i < (mfxU16) ((m_nFrameHeight + 1) / 2); i++)
                 {
                     m_Current.m_pixY = i;
-                    WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
+                    WRITE(pData->UV + (crop_y * pitch / 2 + crop_x) + i * pitch, m_nFrameWidth);
 
                 }
             }
@@ -842,10 +856,10 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
             crop_x <<= 1; // sample - two bytes
 
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (pInfo->CropY * pitch + crop_x)+ i * pitch, pInfo->CropW * 2);
+                WRITE(pData->Y + (crop_y * pitch + crop_x) + i * pitch, m_nFrameWidth * 2);
             }
 
             if (!skipChroma)
@@ -853,10 +867,10 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 m_Current.m_comp = VM_STRING('U');
 
                 crop_y >>= 1;
-                for (i = 0; i < (mfxU16) ((pInfo->CropH + 1) / 2); i++)
+                for (i = 0; i < (mfxU16) ((m_nFrameHeight + 1) / 2); i++)
                 {
                     m_Current.m_pixY = i;
-                    WRITE(pData->UV + (crop_y*pitch + crop_x) + i * pitch, pInfo->CropW * 2);
+                    WRITE(pData->UV + (crop_y * pitch + crop_x) + i * pitch, m_nFrameWidth * 2);
                 }
             }
             break;
@@ -865,29 +879,29 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW * 2);
+                WRITE(pData->Y + (crop_y * pitch + crop_x) + i * pitch, m_nFrameWidth * 2);
             }
 
             if (!skipChroma)
             {
                 m_Current.m_comp = VM_STRING('U');
-                for (i = 0; i < pInfo->CropH; i++)
+                for (i = 0; i < m_nFrameHeight; i++)
                 {
                     m_Current.m_pixY = i;
-                    WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW * 2);
+                    WRITE(pData->UV + (crop_y * pitch / 2 + crop_x) + i * pitch, m_nFrameWidth * 2);
                 }
             }
             break;
         }
         case MFX_FOURCC_ARGB16:
         {
-            mfxU8 *plane = pData->B + pInfo->CropX * 4 + pInfo->CropY * pitch;
-            for (i = 0; i < pInfo->CropH; i++)
+            mfxU8 *plane = pData->B + crop_y * pitch + crop_x * 4;
+            for (i = 0; i < m_nFrameHeight; i++)
             {
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 8));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth * 8));
                 plane += pitch;
             }
             break;
@@ -897,12 +911,12 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('R');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->B + pInfo->CropX * 4;
+            mfxU8* plane = pData->B + crop_y * pitch + crop_x * 4;
 
-            for (i = 0; i <pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth * 4));
                 plane += pitch;
             }
             break;
@@ -911,12 +925,12 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('R');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->B + pInfo->CropX * 4;
+            mfxU8* plane = pData->B + crop_y * pitch + crop_x * 4;
 
-            for (i = 0; i <pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth * 4));
                 plane += pitch;
             }
             break;
@@ -926,12 +940,12 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('R');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->B + pInfo->CropX * 4;
+            mfxU8* plane = pData->B + crop_y * pitch + crop_x * 4;
 
-            for (i = 0; i <pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth * 4));
                 plane += pitch;
             }
             break;
@@ -941,13 +955,13 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->Y + pInfo->CropY * pitch + pInfo->CropX * 2;
+            mfxU8* plane = pData->Y + crop_y * pitch + crop_x * 2;
 
 
-            for (i = 0; i <pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 2));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth * 2));
                 plane += pitch;
             }
             break;
@@ -956,16 +970,16 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW);
+                WRITE(pData->Y + (crop_y * pitch + crop_x) + i * pitch, m_nFrameWidth);
             }
             m_Current.m_comp = VM_STRING('U');
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
+                WRITE(pData->UV + (crop_y * pitch / 2 + crop_x) + i * pitch, m_nFrameWidth);
             }
             break;
         }
@@ -977,10 +991,10 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
-            for (i = 0; i < pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (4*pInfo->CropY * pitch + 4*pInfo->CropX) + i * pitch, 4 * pInfo->CropW);
+                WRITE(pData->Y +(crop_y * pitch + crop_x * 4) + i * pitch, 4 * m_nFrameWidth);
             }
             break;
         }
@@ -988,12 +1002,12 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('U');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->U + pInfo->CropX * 4;
+            mfxU8* plane = pData->U + crop_y * pitch + crop_x * 4;
 
-            for (i = 0; i <pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth * 4));
                 plane += pitch;
             }
             break;
@@ -1004,12 +1018,12 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('U');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->U + pInfo->CropX * 8;
+            mfxU8* plane = pData->U + crop_y * pitch + crop_x * 8;
 
-            for (i = 0; i <pInfo->CropH; i++)
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 8));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth * 8));
                 plane += pitch;
             }
             break;
@@ -1020,27 +1034,27 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('R');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->R + pInfo->CropX;
-            for (i = 0; i <pInfo->CropH; i++)
+            mfxU8* plane = pData->R + (crop_y * pitch + crop_x);
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth));
                 plane += pitch;
             }
             m_Current.m_comp = VM_STRING('G');
-            plane = pData->G + pInfo->CropX;
-            for (i = 0; i <pInfo->CropH; i++)
+            plane = pData->G + (crop_y * pitch + crop_x);
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth));
                 plane += pitch;
             }
             m_Current.m_comp = VM_STRING('B');
-            plane = pData->B + pInfo->CropX;
-            for (i = 0; i <pInfo->CropH; i++)
+            plane = pData->B + (crop_y * pitch + crop_x);
+            for (i = 0; i < m_nFrameHeight; i++)
             {
                 m_Current.m_pixY = i;
-                MFX_CHECK_STS(PutData(plane, pInfo->CropW));
+                MFX_CHECK_STS(PutData(plane, m_nFrameWidth));
                 plane += pitch;
             }
             break;
