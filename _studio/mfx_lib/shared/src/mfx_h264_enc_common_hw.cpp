@@ -28,8 +28,6 @@
 #if defined (MFX_VA_LINUX)
 #include <va/va.h>
 #endif
-
-#include "ippi.h"
 #include "libmfx_core_interface.h"
 #include "libmfx_core_factory.h"
 
@@ -48,8 +46,6 @@ using namespace MfxHwH264Encode;
 
 const mfxU32 DEFAULT_CPB_IN_SECONDS = 2000;          //  BufferSizeInBits = DEFAULT_CPB_IN_SECONDS * MaxKbps
 const mfxU32 MAX_BITRATE_RATIO = mfxU32(1.5 * 1000); //  MaxBps = MAX_BITRATE_RATIO * TargetKbps;
-
-
 
 const mfxU32 DEFAULT_ASYNC_DEPTH_TO_WA_D3D9_128_SURFACE_LIMIT = 10; //  Use this value in case of d3d9 and when par.AsyncDepth parameter is set to a very big value
 
@@ -445,6 +441,18 @@ namespace
 
         mfxU16 profile = par.mfx.CodecProfile;
         mfxU32 kbps = par.calcParam.targetKbps;
+        if (
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
+        {
+            if (par.calcParam.maxKbps >= kbps)
+                kbps = par.calcParam.maxKbps;
+            else
+                kbps = par.calcParam.targetKbps * MAX_BITRATE_RATIO / 1000;
+        }
         mfxU16 levelBr = GetLevelLimitByMaxBitrate(profile, kbps);
 
         if (levelBr == 0 || levelBr == maxSupportedLevel)
@@ -743,19 +751,19 @@ namespace
     {
         mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
         mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(par);
-        bool changed = false;
-        bool unsupported = false;
 
         if (extOpt2.MaxFrameSize == 0 && extOpt3.MaxFrameSizeI == 0 && extOpt3.MaxFrameSizeP == 0)
             return MFX_ERR_NONE;
 
+        bool changed = false;
+        bool unsupported = false;
         bool IsEnabledSwBrc = false;
 #if !defined(MFX_EXT_BRC_DISABLE)
         IsEnabledSwBrc = isSWBRC(par);
 #else
         IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod);
 #endif
-        if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) || // max fram size suported only for VBR based methods
+        if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) || // max frame size supported only for VBR based methods
             (hwCaps.ddi_caps.UserMaxFrameSizeSupport == 0 && !IsEnabledSwBrc))
         {
             if (extOpt2.MaxFrameSize != 0 || extOpt3.MaxFrameSizeI != 0 || extOpt3.MaxFrameSizeP != 0)
@@ -2433,6 +2441,7 @@ mfxStatus MfxHwH264Encode::CheckAndFixRoiQueryLike(
         else if (roiMode == MFX_ROI_MODE_PRIORITY && !CheckRangeDflt(roi->ROIValue, -3, 3, 0))
             checkSts = MFX_ERR_UNSUPPORTED;
     }
+
     return checkSts;
 }
 
@@ -2740,8 +2749,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (extOpt2->MaxSliceSize &&
-        !(IsDriverSliceSizeControlEnabled(par, hwCaps) ||  //driver slice control condition
-          (hwCaps.ddi_caps.SliceStructure == 4 && laEnabled))) //sw slice control condition
+        !(IsDriverSliceSizeControlEnabled(par, hwCaps) ||      // driver slice control condition
+          (hwCaps.ddi_caps.SliceStructure == 4 && laEnabled))) // sw slice control condition
     {
         unsupported = true;
         extOpt2->MaxSliceSize = 0;
@@ -2760,7 +2769,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             par.mfx.GopRefDist = 1;
         }
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && !IsDriverSliceSizeControlEnabled(par, hwCaps))
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
+            !IsDriverSliceSizeControlEnabled(par, hwCaps))
         {
             par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
             changed = true;
@@ -3981,10 +3991,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                         par.calcParam.initialDelayInKB = par.calcParam.bufferSizeInKB / 2;
                     }
 
-                    if (avgFrameSizeInKB != 0 && par.calcParam.initialDelayInKB < avgFrameSizeInKB)
+                    if (avgFrameSizeInKB > 0 && par.calcParam.initialDelayInKB < mfxU32(avgFrameSizeInKB))
                     {
                         changed = true;
-                        par.calcParam.initialDelayInKB = mfxU16(std::min<mfxF64>(par.calcParam.bufferSizeInKB, avgFrameSizeInKB));
+                        par.calcParam.initialDelayInKB = std::min(par.calcParam.bufferSizeInKB, mfxU32(avgFrameSizeInKB));
                     }
                 }
             }
@@ -4473,7 +4483,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
-    if (IsOn(extOpt3->ExtBrcAdaptiveLTR) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod !=MFX_RATECONTROL_CBR && par.mfx.RateControlMethod !=MFX_RATECONTROL_VBR)
+    if (IsOn(extOpt3->ExtBrcAdaptiveLTR) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod != MFX_RATECONTROL_CBR && par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
         changed = true;
@@ -5343,6 +5353,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
             changed = true;
             par.calcParam.mvcPerViewPar.codecLevel = minLevel;
         }
+        if (par.calcParam.mvcPerViewPar.codecLevel == 0)
+            par.calcParam.mvcPerViewPar.codecLevel = minLevel;
     }
 
     if (extSps.vui.flags.timingInfoPresent   &&
@@ -5378,7 +5390,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
     }
 
     // check MVC per-view parameters (bitrates, buffer size, initial delay, level)
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.targetKbps != 0)
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.mvcPerViewPar.targetKbps != 0)
     {
         if (par.mfx.FrameInfo.Width         != 0 &&
             par.mfx.FrameInfo.Height        != 0 &&
@@ -5424,7 +5436,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
         {
-            if (par.calcParam.maxKbps != par.calcParam.targetKbps)
+            if (par.calcParam.mvcPerViewPar.maxKbps != par.calcParam.mvcPerViewPar.targetKbps)
             {
                 changed = true;
                 if (extSps.vui.flags.nalHrdParametersPresent || extSps.vui.flags.vclHrdParametersPresent)
@@ -5473,15 +5485,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
             return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     }
 
-    if (par.calcParam.bufferSizeInKB != 0)
+    if (par.calcParam.mvcPerViewPar.bufferSizeInKB != 0)
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         {
             mfxU32 uncompressedSizeInKb = GetMaxCodedFrameSizeInKB(par);
-            if (par.calcParam.bufferSizeInKB < uncompressedSizeInKb)
+            if (par.calcParam.mvcPerViewPar.bufferSizeInKB < uncompressedSizeInKb)
             {
                 changed = true;
-                par.calcParam.bufferSizeInKB = uncompressedSizeInKb;
+                par.calcParam.mvcPerViewPar.bufferSizeInKB = uncompressedSizeInKb;
             }
         }
         else
@@ -5490,7 +5502,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
             if (par.mfx.RateControlMethod       != MFX_RATECONTROL_AVBR &&
                 par.mfx.FrameInfo.FrameRateExtN != 0 &&
                 par.mfx.FrameInfo.FrameRateExtD != 0 &&
-                par.calcParam.targetKbps        != 0)
+                par.calcParam.mvcPerViewPar.targetKbps != 0)
             {
                 mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
                 avgFrameSizeInKB = par.calcParam.mvcPerViewPar.targetKbps / frameRate / 8;
@@ -5529,7 +5541,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
 
             if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
                 par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
-                par.calcParam.initialDelayInKB != 0)
+                par.calcParam.mvcPerViewPar.initialDelayInKB != 0)
             {
                 if (par.calcParam.mvcPerViewPar.initialDelayInKB > par.calcParam.mvcPerViewPar.bufferSizeInKB)
                 {
@@ -5587,6 +5599,7 @@ mfxStatus MfxHwH264Encode::CheckAndFixMVCSeqDesc(mfxExtMVCSeqDesc * mvcSeqDesc, 
     {
         return MFX_ERR_NULL_PTR;
     }
+
     bool unsupported = false;
     bool changed = false;
     if (mvcSeqDesc->NumView > 2 || mvcSeqDesc->NumView < 2)
@@ -5745,9 +5758,7 @@ void MfxHwH264Encode::InheritDefaultValues(
     }
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && parReset.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
-    {
         InheritOption(parInit.mfx.ICQQuality, parReset.mfx.ICQQuality);
-    }
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VCM && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
@@ -5811,9 +5822,7 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(extOpt3Init.NumSliceP, extOpt3Reset->NumSliceP);
     InheritOption(extOpt3Init.NumSliceB, extOpt3Reset->NumSliceB);
     if (!parResetIn || !(mfxExtCodingOption3 const *)GetExtBuffer(*parResetIn))
-    {
         InheritOption(extOpt3Init.IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
-    }
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
@@ -5888,12 +5897,11 @@ namespace
                     return false;
         return true;
     }
+
     bool IsPowerOf2(mfxU32 n)
     {
         return (n & (n - 1)) == 0;
     }
-
-
 };
 
 bool IsHRDBasedBRCMethod(mfxU16  RateControlMethod)
@@ -6417,7 +6425,7 @@ void MfxHwH264Encode::SetDefaults(
             ((IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
  #if defined(MFX_ENABLE_LP_LOOKAHEAD)
              || IsLpLookaheadSupported(extOpt3->ScenarioInfo, extOpt2->LookAheadDepth, par.mfx.RateControlMethod)
-#endif           
+#endif
             ))
             extOpt3->PRefType = MFX_P_REF_PYRAMID;
         else if (par.mfx.GopRefDist == 1)
@@ -6455,7 +6463,6 @@ void MfxHwH264Encode::SetDefaults(
             extOpt2->MaxQPB = 51;
     }
 
-
     extDdi->MaxMVs = 32;
     extDdi->SkipCheck = 1;
     extDdi->DirectCheck = 1;
@@ -6480,7 +6487,6 @@ void MfxHwH264Encode::SetDefaults(
 #if defined(MFX_ENABLE_ENCTOOLS)
                 || (!IsOff(extConfig->AdaptiveLTR))
 #endif
-
             ) ? 2 : 0;
         mfxU16 const nrfMin             = (par.mfx.GopRefDist > 1 ? 2 : 1) + nrfAdapt;
         mfxU16 const nrfDefault         = std::max<mfxU16>(nrfMin, GetDefaultNumRefFrames(par.mfx.TargetUsage) + nrfAdapt);
@@ -6534,7 +6540,7 @@ void MfxHwH264Encode::SetDefaults(
     }
 
     if (par.mfx.CodecLevel == MFX_LEVEL_UNKNOWN)
-        par.mfx.CodecLevel = MFX_LEVEL_AVC_1;
+        par.mfx.CodecLevel = GetMinLevelForAllParameters(par);
 
     if (extOpt2->BufferingPeriodSEI == MFX_BPSEI_DEFAULT
         && IsOn(extOpt->RecoveryPointSEI)
@@ -6636,9 +6642,6 @@ void MfxHwH264Encode::SetDefaults(
         }
     }
 
-    if (par.calcParam.mvcPerViewPar.codecLevel == MFX_LEVEL_UNKNOWN)
-        par.calcParam.mvcPerViewPar.codecLevel = MFX_LEVEL_AVC_1;
-
     if (extOpt3->EnableMBQP == MFX_CODINGOPTION_UNKNOWN) {
 #if defined(ENABLE_APQ_LQ)  && defined(MFX_ENABLE_ENCTOOLS)
         if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || (!IsOff(extConfig->BRC)))
@@ -6658,8 +6661,6 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_UNKNOWN)
         extOpt3->EnableMBForceIntra = MFX_CODINGOPTION_OFF;
 #endif
-
-    CheckVideoParamMvcQueryLike(par);
 
     if (par.calcParam.cqpHrdMode == 0)
     {
@@ -6685,26 +6686,6 @@ void MfxHwH264Encode::SetDefaults(
             }
         }
 
-        if (par.calcParam.mvcPerViewPar.maxKbps == 0)
-        {
-            if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-                par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR ||
-                par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
-            {
-                mfxU32 maxBps = par.calcParam.mvcPerViewPar.targetKbps * MAX_BITRATE_RATIO;
-                if (IsOn(extOpt->NalHrdConformance) ||
-                    IsOn(extOpt->VuiVclHrdParameters))
-                    maxBps = std::min(maxBps, GetMaxPerViewBitrate(par));
-
-                par.calcParam.mvcPerViewPar.maxKbps = maxBps / 1000;
-                assert(par.calcParam.mvcPerViewPar.maxKbps >= par.calcParam.mvcPerViewPar.targetKbps);
-            }
-            else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
-            {
-                par.calcParam.mvcPerViewPar.maxKbps = par.calcParam.mvcPerViewPar.targetKbps;
-            }
-        }
-
         if (par.calcParam.bufferSizeInKB == 0)
         {
             if (bRateControlLA(par.mfx.RateControlMethod) && (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD))
@@ -6713,13 +6694,9 @@ void MfxHwH264Encode::SetDefaults(
             }
             else
             {
-                // HRD buffer size can be different for the same level for AVC and MVC profiles.
-                // So in case of MVC we need to copy MVC-specific buffer size to calcParam.bufferSizeInKB to assure that application will get enough size for bitstream buffer allocation
-                mfxU32 maxKbps = IsMvcProfile( par.mfx.CodecProfile ) ? par.calcParam.mvcPerViewPar.maxKbps : par.calcParam.maxKbps;
-                mfxU32 maxBufferSize = IsMvcProfile( par.mfx.CodecProfile ) ? GetMaxPerViewBufferSize( par ) : GetMaxBufferSize( par );
                 mfxU32 bufferSizeInBits = std::min(
-                   maxBufferSize,                     // limit by spec
-                   maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
+                    GetMaxBufferSize(par),                           // limit by spec
+                    par.calcParam.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
 
                 par.calcParam.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
                         ? GetMaxCodedFrameSizeInKB(par)
@@ -6729,24 +6706,61 @@ void MfxHwH264Encode::SetDefaults(
 
         }
 
-        if (par.calcParam.mvcPerViewPar.bufferSizeInKB == 0)
-        {
-            mfxU32 bufferSizeInBits = std::min(
-                GetMaxPerViewBufferSize(par),                                  // limit by spec
-                par.calcParam.mvcPerViewPar.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
-
-            par.calcParam.mvcPerViewPar.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
-                    ? GetMaxCodedFrameSizeInKB(par)
-                    : bufferSizeInBits / 8000;
-            par.calcParam.mvcPerViewPar.bufferSizeInKB = std::max(par.calcParam.mvcPerViewPar.bufferSizeInKB, par.calcParam.mvcPerViewPar.initialDelayInKB);
-        }
-
         if (par.calcParam.initialDelayInKB == 0 && IsHRDBasedBRCMethod(par.mfx.RateControlMethod))
         {
             par.calcParam.initialDelayInKB = (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR && isSWBRC(par)) ?
                 3*par.calcParam.bufferSizeInKB / 4:
                 par.calcParam.bufferSizeInKB / 2;
-            par.calcParam.mvcPerViewPar.initialDelayInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB / 2;
+        }
+    }
+
+    if (IsMvcProfile(par.mfx.CodecProfile))
+    {
+        CheckVideoParamMvcQueryLike(par);
+
+        if (par.calcParam.cqpHrdMode == 0)
+        {
+            if (par.calcParam.mvcPerViewPar.maxKbps == 0)
+            {
+                if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+                    par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR ||
+                    par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
+                {
+                    mfxU32 maxBps = par.calcParam.mvcPerViewPar.targetKbps * MAX_BITRATE_RATIO;
+                    if (IsOn(extOpt->NalHrdConformance) ||
+                        IsOn(extOpt->VuiVclHrdParameters))
+                        maxBps = std::min(maxBps, GetMaxPerViewBitrate(par));
+
+                    par.calcParam.mvcPerViewPar.maxKbps = maxBps / 1000;
+                    assert(par.calcParam.mvcPerViewPar.maxKbps >= par.calcParam.mvcPerViewPar.targetKbps);
+                }
+                else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+                {
+                    par.calcParam.mvcPerViewPar.maxKbps = par.calcParam.mvcPerViewPar.targetKbps;
+                }
+            }
+
+            if (par.calcParam.mvcPerViewPar.bufferSizeInKB == 0)
+            {
+                mfxU32 bufferSizeInBits = std::min(
+                    GetMaxPerViewBufferSize(par),                                  // limit by spec
+                    par.calcParam.mvcPerViewPar.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
+
+                par.calcParam.mvcPerViewPar.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
+                    ? GetMaxCodedFrameSizeInKB(par)
+                    : bufferSizeInBits / 8000;
+                par.calcParam.mvcPerViewPar.bufferSizeInKB = std::max(par.calcParam.mvcPerViewPar.bufferSizeInKB,
+                    2 * par.calcParam.mvcPerViewPar.initialDelayInKB);
+            }
+            // HRD buffer size can be different for the same level for AVC and MVC profiles.
+            // So in case of MVC we need to copy MVC-specific buffer size to calcParam.bufferSizeInKB to assure that application will get enough size for bitstream buffer allocation
+            par.calcParam.bufferSizeInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB;
+            par.calcParam.initialDelayInKB = std::min(par.calcParam.initialDelayInKB, par.calcParam.bufferSizeInKB);
+
+            if (par.calcParam.mvcPerViewPar.initialDelayInKB == 0 && IsHRDBasedBRCMethod(par.mfx.RateControlMethod))
+            {
+                par.calcParam.mvcPerViewPar.initialDelayInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB / 2;
+            }
         }
     }
 
@@ -7285,12 +7299,12 @@ mfxStatus MfxHwH264Encode::CheckPayloads(
 }
 
 mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
-    MfxVideoParam const     & video,
-    mfxEncodeCtrl       * ctrl,
-    mfxFrameSurface1    * surface,
-    mfxBitstream        * bs,
+    MfxVideoParam const   & video,
+    mfxEncodeCtrl         * ctrl,
+    mfxFrameSurface1      * surface,
+    mfxBitstream          * bs,
     MFX_ENCODE_CAPS const & caps,
-    eMFXHWType            platform)
+    eMFXHWType              platform)
 {
     MFX_CHECK_NULL_PTR3(ctrl, surface, bs);
     mfxStatus checkSts = MFX_ERR_NONE;
@@ -8680,7 +8694,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
             {
                 // 'numTemporalLayers' is used as temporal fix for array bound violation (calcParam.tid[], calcParam.scale[])
                 // FIXME: need to implement correct checking for 'TemporalNum' (this param is used before calling CheckVideoParamQueryLike())
-                mfxU16 numTemporalLayers = IPP_MIN(m_extSvcSeqDescr.DependencyLayer[did - 1].TemporalNum, 8);
+                mfxU16 numTemporalLayers = std::min<mfxU16>(m_extSvcSeqDescr.DependencyLayer[did - 1].TemporalNum, 8);
                 for (mfxU32 tidx = 0; tidx < numTemporalLayers; tidx++)
                 {
                     mfxU32 tid = m_extSvcSeqDescr.DependencyLayer[did - 1].TemporalId[tidx];
@@ -9867,12 +9881,12 @@ void MfxHwH264Encode::WriteScalingList(
     const mfxU8* scalingList,
     mfxI32 sizeOfScalingList)
 {
-    Ipp16s lastScale, nextScale;
-    Ipp32s j;
+    int16_t lastScale, nextScale;
+    int32_t j;
 
-    Ipp16s delta_scale;
-    Ipp8s delta_code;
-    const Ipp32s* scan;
+    int16_t delta_scale;
+    int8_t delta_code;
+    const int32_t* scan;
 
     lastScale=nextScale=8;
 
@@ -9883,8 +9897,8 @@ void MfxHwH264Encode::WriteScalingList(
 
     for( j = 0; j<sizeOfScalingList; j++ ){
          if( nextScale != 0 ){
-            delta_scale = (Ipp16s)(scalingList[scan[j]]-lastScale);
-            delta_code = (Ipp8s)(delta_scale);
+            delta_scale = (int16_t)(scalingList[scan[j]]-lastScale);
+            delta_code = (int8_t)(delta_scale);
             writer.PutSe(delta_scale);
             nextScale = scalingList[scan[j]];
          }
@@ -10237,8 +10251,8 @@ void HeaderPacker::Init(
     mfxU32 additionalSpsForFirstSpatialLayer = (numQualityAtFirstDep > 1);
     mfxU32 additionalPpsForLastSpatialLayer  = (numQualityAtLastDep > 1);
 
-    numSpsHeaders = IPP_MAX(numDep + additionalSpsForFirstSpatialLayer, numViews);
-    numPpsHeaders = IPP_MAX(numDep + additionalPpsForLastSpatialLayer,  numViews);
+    numSpsHeaders = std::max<mfxU32>(numDep + additionalSpsForFirstSpatialLayer, numViews);
+    numPpsHeaders = std::max<mfxU32>(numDep + additionalPpsForLastSpatialLayer,  numViews);
 #endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
     mfxU32 maxNumSlices = GetMaxNumSlices(par);
