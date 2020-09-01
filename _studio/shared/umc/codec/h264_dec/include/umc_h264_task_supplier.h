@@ -674,6 +674,7 @@ private:
 inline int32_t CalculateDPBSize(uint8_t & level_idc, int32_t width, int32_t height, uint32_t num_ref_frames)
 {
     uint32_t dpbSize;
+    auto constexpr INTERNAL_MAX_LEVEL = H264VideoDecoderParams::H264_LEVEL_MAX + 1;
 
     num_ref_frames = std::min(16u, num_ref_frames);
 
@@ -729,7 +730,13 @@ inline int32_t CalculateDPBSize(uint8_t & level_idc, int32_t width, int32_t heig
             break;
 #endif
         default:
-            MaxDPBMbs = 184320; //get as much as we may
+            // Relax resolution constraints up to 4K when
+            // level_idc reaches 5.1+.  That is,
+            // use value 696320 which is from level 6+ for
+            // the calculation of the DPB size when level_idc
+            // reaches 5.1+ but dpbSize is still less
+            // than num_ref_frames
+            MaxDPBMbs = 696320;
             break;
         }
 
@@ -741,7 +748,7 @@ inline int32_t CalculateDPBSize(uint8_t & level_idc, int32_t width, int32_t heig
         uint32_t dpbLevel = MaxDPBMbs*256 / (width * height);
         dpbSize = std::min(16u, dpbLevel);
 
-        if (num_ref_frames <= dpbSize || level_idc == H264VideoDecoderParams::H264_LEVEL_MAX)
+        if (num_ref_frames <= dpbSize || level_idc == INTERNAL_MAX_LEVEL)
             break;
 
         switch (level_idc) // increase level_idc
@@ -778,25 +785,37 @@ inline int32_t CalculateDPBSize(uint8_t & level_idc, int32_t width, int32_t heig
         case H264VideoDecoderParams::H264_LEVEL_5:
             level_idc = H264VideoDecoderParams::H264_LEVEL_51;
             break;
+
+        // Set level_idc to INTERNAL_MAX_LEVEL so that MaxDPBMbs = 696320
+        // can be used to calculate the DPB size.
         case H264VideoDecoderParams::H264_LEVEL_51:
         case H264VideoDecoderParams::H264_LEVEL_52:
-            level_idc = H264VideoDecoderParams::H264_LEVEL_52;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            level_idc = H264VideoDecoderParams::H264_LEVEL_6;
+#else
+            level_idc = INTERNAL_MAX_LEVEL;
+#endif
             break;
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         case H264VideoDecoderParams::H264_LEVEL_6:
         case H264VideoDecoderParams::H264_LEVEL_61:
         case H264VideoDecoderParams::H264_LEVEL_62:
-            level_idc = H264VideoDecoderParams::H264_LEVEL_MAX;
+            level_idc = INTERNAL_MAX_LEVEL;
             break;
 #endif
+
         default:
             throw h264_exception(UMC_ERR_FAILED);
         }
     }
 
+    // Restore level_idc to H264_LEVEL_MAX
+    if (level_idc == INTERNAL_MAX_LEVEL)
+      level_idc = H264VideoDecoderParams::H264_LEVEL_MAX;
+
     return dpbSize;
 }
-
 
 inline H264DBPList *GetDPB(ViewList &views, int32_t viewId, int32_t dIdRev = 0)
 {
