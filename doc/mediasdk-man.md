@@ -226,7 +226,6 @@ Notice revision #20110804
   * [mfxExtVP9TemporalLayers](#mfxExtVP9TemporalLayers)
   * [mfxExtAV1Param](#mfxExtAV1Param)
   * [mfxExtAV1Segmentation](#mfxExtAV1Segmentation)
-  * [mfxExtAV1TemporalLayers](#mfxExtAV1TemporalLayers)
   * [mfxExtBRC](#mfxExtBRC)
     + [Init](#BRCInit)
     + [Reset](#BRCReset)
@@ -7576,47 +7575,6 @@ Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure
 
 
 **Change History**
-
-This structure is available since SDK API **TBD**.
-
-## <a id='mfxExtAV1TemporalLayers'>mfxExtAV1TemporalLayers</a>
-
-**Definition**
-
-```C
-typedef struct {
-    mfxU16 FrameRateScale;
-    mfxU16 TargetKbps
-    mfxU16 reserved[14];
-} mfxAV1TemporalLayer;
-
-typedef struct {
-    mfxExtBuffer        Header;
-    mfxAV1TemporalLayer Layer[8];
-    mfxU16              reserved[16];
-} mfxExtAV1TemporalLayers;
-```
-
-**Description**
-
-The SDK allows to encode AV1 bitstream that contains several subset bitstreams that differ in frame rates also called “temporal layers”. On decoder side each temporal layer can be extracted from coded stream and decoded separately.
-The `mfxExtAV1TemporalLayers` structure configures the temporal layers for SDK AV1 encoder. It can be attached to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) call. If `mfxExtAV1TemporalLayers` buffer isn’t attached during initialization, temporal scalability is disabled. If the buffer isn’t attached for [Reset](#MFXVideoENCODE_Reset) call, encoder continues to use temporal scalability configuration which was actual before this [Reset](#MFXVideoENCODE_Reset) call.
-In SDK API temporal layers are ordered by their frame rates in ascending order. Temporal layer 0 (having lowest frame rate) is called base layer. Each next temporal layer includes all previous layers.
-Temporal scalability feature has requirements for minimum number of allocated reference frames (controlled by SDK API parameter [NumRefFrame](#mfxInfoMFX)). If [NumRefFrame](#mfxInfoMFX) set by application isn’t enough to build reference structure for requested number of temporal layers, the SDK corrects [NumRefFrame](#mfxInfoMFX).
-Temporal layer structure is reset (re-started) after key-frames.
-
-**Members**
-
-| | |
---- | ---
-`FrameRateScale`  | The ratio between the frame rates of the current temporal layer and the base layer. The SDK treats particular temporal layer as “defined” if it has `FrameRateScale > 0`. If base layer defined, it must have `FrameRateScale` equal to 1. `FrameRateScale` of each next layer (if defined) must be multiple of and greater than `FrameRateScale` of previous layer.
-`TargetKbps`      | Target bitrate for current temporal layer (ignored if [RateControlMethod](#mfxInfoMFX) is CQP). If [RateControlMethod](#mfxInfoMFX) is not CQP, application must provide `TargetKbps` for every defined temporal layer. `TargetKbps` of each next layer (if defined) must be greater than TargetKbps of previous layer.
-`Header.BufferId` | Must be [MFX_EXTBUFF_AV1_TEMPORAL_LAYERS](#ExtendedBufferID).
-`Layer`           | The array of temporal layers. `Layer[0]` specifies base layer. The SDK reads layers from the array while they are defined (have `FrameRateScale>0`). All layers starting from first layer with `FrameRateScale=0` are ignored. Last layer which is not ignored is “highest layer”. Highest layer has frame rate specified in [mfxVideoParam](#mfxVideoParam). Frame rates of lower layers are calculated using their FrameRateScale. TargetKbps of highest layer should be equal to [TargetKbps](#mfxInfoMFX) specified in [mfxVideoParam](#mfxVideoParam). If it’s not true, `TargetKbps` of highest temporal layers has priority. If there are no defined layers in `Layer` array, temporal scalability feature is disabled. E.g. to disable temporal scalability in runtime, application should pass to [Reset](#MFXVideoENCODE_Reset) call `mfxExtAV1TemporalLayers` buffer with all `FrameRateScale` set to 0.
-
-**Change History**
-
-This structure is available since SDK API **TBD**.
 
 ## <a id='mfxExtEncToolsConfig'>mfxExtEncToolsConfig</a>
 

@@ -428,8 +428,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1AuxData             ,168  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1SegmentParam           ,46   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1Segmentation        ,464  )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1TemporalLayer          ,32   )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1TemporalLayers      ,296  )
 #endif
 #if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxComponentInfo             ,224  )
@@ -558,8 +556,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1AuxData             ,168  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1SegmentParam           ,46   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1Segmentation        ,464  )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1TemporalLayer          ,32   )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1TemporalLayers      ,296  )
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxComponentInfo             ,208 )
@@ -688,8 +684,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1AuxData             ,168  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1SegmentParam           ,46   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1Segmentation        ,464  )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1TemporalLayer          ,32   )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1TemporalLayers      ,296  )
 #endif
 #if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxComponentInfo             ,208 )
@@ -1932,12 +1926,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,NumSegmentIdAlloc             ,380  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,SegmentId                     ,384  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,TemporalUpdate                ,392  )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1TemporalLayer                ,FrameRateScale                ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1TemporalLayer                ,TargetKbps                    ,2    )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Layer                         ,8    )
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxComponentInfo                   ,Type                          ,0    )
@@ -2785,12 +2773,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,NumSegmentIdAlloc             ,380  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,SegmentId                     ,384  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,TemporalUpdate                ,392  )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1TemporalLayer                ,FrameRateScale                ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1TemporalLayer                ,TargetKbps                    ,2    )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Layer                         ,8    )
 #endif
 #if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxComponentInfo                   ,Type                          ,0    )
@@ -3637,12 +3619,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,NumSegmentIdAlloc             ,380  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,SegmentId                     ,384  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Segmentation              ,TemporalUpdate                ,392  )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1TemporalLayer                ,FrameRateScale                ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1TemporalLayer                ,TargetKbps                    ,2    )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Layer                         ,8    )
 #endif
 #if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxComponentInfo                   ,Type                          ,0    )

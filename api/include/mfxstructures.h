@@ -993,7 +993,8 @@ enum {
     MFX_EXTBUFF_AV1_SEGMENTATION                = MFX_MAKEFOURCC('1', 'S', 'E', 'G'),
     MFX_EXTBUFF_AV1_PARAM                       = MFX_MAKEFOURCC('1', 'P', 'A', 'R'),
     MFX_EXTBUFF_AV1_AUXDATA                     = MFX_MAKEFOURCC('1', 'A', 'U', 'X'),
-    MFX_EXTBUFF_AV1_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('1', 'T', 'M', 'L')
+    MFX_EXTBUFF_AV1_REFLIST_CTRL                = MFX_EXTBUFF_AVC_REFLIST_CTRL,
+    MFX_EXTBUFF_AV1_TEMPORAL_LAYERS             = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
 #endif
 };
 
@@ -2429,23 +2430,6 @@ MFX_PACK_END()
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
-    mfxU16 FrameRateScale;  /* Layer[n].FrameRateScale = Layer[n - 1].FrameRateScale * (uint)m */
-    mfxU16 TargetKbps;      /* affected by BRCParamMultiplier, Layer[n].TargetKbps > Layer[n - 1].TargetKbps */
-    mfxU16 reserved[14];
-} mfxAV1TemporalLayer;
-MFX_PACK_END()
-
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct {
-    mfxExtBuffer        Header;
-    mfxAV1TemporalLayer Layer[8];
-
-    mfxU16              reserved[16];
-} mfxExtAV1TemporalLayers;
-MFX_PACK_END()
-
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct {
     mfxExtBuffer Header;
 
     struct {
@@ -2613,6 +2597,9 @@ typedef struct {
     mfxU16              reserved[34];
 } mfxExtAV1Segmentation;
 MFX_PACK_END()
+
+typedef mfxExtAVCRefListCtrl mfxExtAV1RefListCtrl;
+typedef mfxExtAvcTemporalLayers mfxExtAV1TemporalLayers;
 #endif
 
 #if (MFX_VERSION >= 1031)

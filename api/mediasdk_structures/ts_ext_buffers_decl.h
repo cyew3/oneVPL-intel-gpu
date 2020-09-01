@@ -82,7 +82,6 @@ EXTBUF(mfxExtDPB                    , MFX_EXTBUFF_DPB)
 EXTBUF(mfxExtAV1Param               , MFX_EXTBUFF_AV1_PARAM)
 EXTBUF(mfxExtAV1AuxData             , MFX_EXTBUFF_AV1_AUXDATA)
 EXTBUF(mfxExtAV1Segmentation        , MFX_EXTBUFF_AV1_SEGMENTATION)
-EXTBUF(mfxExtAV1TemporalLayers      , MFX_EXTBUFF_AV1_TEMPORAL_LAYERS)
 #endif
 #endif //defined(__MFXSTRUCTURES_H__)
 

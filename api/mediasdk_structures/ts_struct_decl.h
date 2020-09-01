@@ -1653,17 +1653,6 @@ STRUCT(mfxExtAV1Segmentation,
     FIELD_T(mfxU8*, SegmentId)
     FIELD_T(mfxU16, TemporalUpdate)
 )
-
-STRUCT(mfxAV1TemporalLayer,
-    FIELD_T(mfxU16, FrameRateScale)
-    FIELD_T(mfxU16, TargetKbps)
-)
-
-STRUCT(mfxExtAV1TemporalLayers,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_S(mfxAV1TemporalLayer, Layer)
-)
-
 #endif
 
 #endif
