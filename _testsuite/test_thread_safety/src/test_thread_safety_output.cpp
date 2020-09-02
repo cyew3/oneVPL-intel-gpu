@@ -1,4 +1,4 @@
-﻿/* ****************************************************************************** *\
+/* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -16,11 +16,13 @@ File Name: test_thread_safety_output.cpp
 
 OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file** fdOut, mfxU32 syncOpt)
 : m_counterMutex()
+, m_allIn()
+, m_allOut()
 , m_data(new Data[numWriter])
 , m_numWriter(numWriter)
 , m_numRegistered(0)
 , m_numUnregistered(0)
-, m_isLastRegistered(false)
+, m_numCommit(0)
 , m_compareStatus(OK)
 , m_fdRef(fdRef)
 , m_fdOut(fdOut)
@@ -29,96 +31,117 @@ OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file**
     if (numWriter + HandleBase < 0)
     {
         vm_file_fprintf(vm_stderr, VM_STRING("TEST: numWriter %u is too big for HandleBase %llu\n"),
-            numWriter, HandleBase);
+                        numWriter, HandleBase);
         throw std::invalid_argument("numWriter is too big");
     }
+    m_allIn.Init(1, 0);
+    m_allOut.Init(1, 0);
+
     memset(&m_data[0], 0, numWriter * sizeof(m_data[0]));
 }
 
 mfxHDL OutputRegistrator::Register()
 {
-    std::unique_lock<std::mutex> guard(m_counterMutex);
-    m_isLastRegistered = false;
+    std::lock_guard<std::mutex> guard(m_counterMutex);
     if (m_numRegistered == m_numWriter)
         return 0;
 
     m_numRegistered++;
-    mfxHDL m_handle = (mfxHDL)(mfxU64)(HandleBase + m_numRegistered);
+    if (m_numRegistered == m_numWriter)
+        m_allOut.Set(); // allow commits
 
-    if (m_syncOpt == SYNC_OPT_PER_WRITE)
-    {
-        if (m_numRegistered != m_numWriter)
-            m_condVar.wait(guard, [this] { return m_isLastRegistered; });
-        else
-        {
-            m_isLastRegistered = true;
-            m_condVar.notify_all();
-        }
-    }
-    return m_handle;
+    return (mfxHDL)(mfxU64)(m_numRegistered + HandleBase);
 }
-
 mfxI32 OutputRegistrator::UnRegister(mfxHDL handle)
 {
     return CommitData(handle, nullptr, 0);
 }
-
 mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
 {
+    if (!IsRegistered(handle))
+    {
+        vm_file_fprintf(vm_stderr, VM_STRING("TEST: invalid handle %p is out of range [%p; %p]\n"),
+                        handle, (mfxHDL)(HandleBase + 1), (mfxHDL)(HandleBase + m_numWriter));
+        return -1;
+    }
     if (m_syncOpt == SYNC_OPT_PER_WRITE)
     {
-        std::unique_lock<std::mutex> guard(m_counterMutex);
-        m_numRegistered--;
-        m_isLastRegistered = false;
-        m_data[m_numRegistered].ptr = ptr;
-        m_data[m_numRegistered].len = len;
+        m_allOut.Wait(); // wait until all threads encode previous frame
 
-        if (m_numRegistered != 0)
-            m_condVar.wait(guard, [this]{ return m_isLastRegistered; });    // wait until all threads encode current frame
-        else
+	bool last = false;
+
+	{
+            std::lock_guard<std::mutex> guard(m_counterMutex);
+            if (m_numCommit >= m_numWriter)
+            {
+                vm_file_fprintf(vm_stderr, VM_STRING("TEST: attempt of invalid commit with "
+                                                     "handle %p: commit out of bound\n"), handle);
+                return -1;
+            }
+            m_data[m_numCommit].ptr = ptr;
+            m_data[m_numCommit].len = len;
+            m_numCommit++;
+            // If thread was unregistered (e.g. due to gpu hang) there is no need to wait this thread
+            // So, need to wait only alive threads (which is equal to m_numWriter - m_numUnregistered)
+            last = (m_numCommit >= (m_numWriter - m_numUnregistered));
+        }
+        if (last)
         {
             if (m_compareStatus == OK)
                 m_compareStatus = Compare();
             memset(&m_data[0], 0, m_numWriter * sizeof(m_data[0]));
-            m_isLastRegistered = true;
-            m_condVar.notify_all();    // all threads encode current frame
+            m_allOut.Reset();
+            m_allIn.Set(); // all threads encode current frame
         }
-
-        if (m_numRegistered >= m_numWriter)
-            VM_ASSERT(!"the number of registered threads is greater than the number of available threads");
-
-        m_numRegistered++;
-
-        //  m_numRegistered - counter of registered threads (range value from 0 to m_numWriter)
-        //  m_numUnregistered - number of threads that finished recording or hang (range value from 0 to m_numWriter)
-        //  wait until the counter value is less than the number of live threads
-
-        if (m_numRegistered < m_numWriter - m_numUnregistered)
-            m_condVar.wait(guard, [this]{ return !m_isLastRegistered; });
         else
         {
-            m_isLastRegistered = false;
-            m_condVar.notify_all();    // allow to encode next frame for all threads
+            m_allIn.Wait(); // wait until all threads encode current frame
         }
-
-        if (ptr == nullptr)    // If thread was unregistered (e.g. due to gpu hang) there is no need to wait this thread
         {
-            vm_file_fprintf(vm_stderr, VM_STRING("TEST: handle %p unregistered.\n"), handle);
-            m_numUnregistered++;
+            std::unique_lock<std::mutex> guard(m_counterMutex);
+            m_numCommit--;
+            last = (m_numCommit == 0);
+        }
+        if (last)
+        {
+            m_allIn.Reset();
+            m_allOut.Set(); // allow to encode next frame for all threads
         }
     }
+    {
+        std::unique_lock<std::mutex> guard(m_counterMutex);
+        if (ptr == 0)
+        {
+            // came here from UnRegister
+            if (m_numRegistered <= m_numUnregistered)
+            {
+                vm_file_fprintf(vm_stderr, VM_STRING(
+                                    "TEST: %u writers registred, while %u unregistred"
+                                    " already. Can't unregister another one.\n"),
+                                m_numRegistered, m_numUnregistered);
+                return -1;
+            }
 
-
+	    m_numUnregistered++;
+            vm_file_fprintf(vm_stderr, VM_STRING("TEST: handle %p unregistered.\n"), handle);
+            if (m_numUnregistered == m_numWriter)
+            {
+                // last writer unregistered, restore initial state
+                m_numUnregistered = 0;
+                m_numRegistered = 0;
+            }
+        }
+    }
     mfxU32 intHdl = (mfxU32)((mfxU64)handle - HandleBase);
     if (m_fdOut[intHdl - 1] && ptr)
     {
         if (vm_file_write(ptr, 1, len, m_fdOut[intHdl - 1]) != len)
             return -1;
+        //flushfilebuffers is very slow for mapped memory, decided not to use that
+        //fflush((FILE*)m_fdOut[intHdl - 1]->fd);
     }
-
     return 0;
 }
-
 mfxU32 OutputRegistrator::Compare() const
 {
     for (mfxU32 i = 1; i < m_numWriter; i++)
@@ -130,7 +153,6 @@ mfxU32 OutputRegistrator::Compare() const
         if ((m_data[0].ptr != 0) && memcmp(m_data[0].ptr, m_data[i].ptr, m_data[0].len) != 0)
             return ERR_CMP;
     }
-
     if (m_fdRef && m_data[0].ptr)
     {
         const mfxU32 BUF_SIZE = 100;
@@ -145,6 +167,11 @@ mfxU32 OutputRegistrator::Compare() const
                 return ERR_CMP;
         }
     }
-
     return OK;
+}
+bool OutputRegistrator::IsRegistered(mfxHDL handle) const
+{
+    // a <= x <= b is equivalent to x - a <= b - a for unsigned comparison,
+    // see Warren, Hacker's Delight (2nd Edition), 4 - 1
+    return  (mfxU64)handle > HandleBase && (mfxU64)handle - (HandleBase + 1) <= m_numWriter + HandleBase - (HandleBase + 1);
 }
