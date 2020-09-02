@@ -1303,13 +1303,12 @@ mfxStatus VAAPIEncoder::QueryStatus(
 #else
 
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
-
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     if (VASurfaceReady == surfSts)
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
         m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
-        guard.Unlock();
     }
 #endif
 
