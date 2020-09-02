@@ -2566,8 +2566,8 @@ public:
         extParams.push_back((mfxExtBuffer *)&extFrameQP);
 
         mfxEncToolsBRCHRDPos extHRDPos = {};
-        extFrameQP.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_HRD_POS;
-        extFrameQP.Header.BufferSz = sizeof(extFrameQP);
+        extHRDPos.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_HRD_POS;
+        extHRDPos.Header.BufferSz = sizeof(extHRDPos);
         extParams.push_back((mfxExtBuffer *)&extHRDPos);
 
         par.ExtParam = &extParams[0];
