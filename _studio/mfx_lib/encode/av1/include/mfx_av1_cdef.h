@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,11 +71,11 @@ namespace AV1Enc {
         PixType* aboveBorder = nullptr;
         PixType* aboveBorderY = nullptr;
         PixType* aboveBorderUv = nullptr;
-        int32_t pitchAbove;
+        int32_t pitchAbove = 0;
 
         PixType* leftBorder = nullptr;
         PixType* leftBorderUv = nullptr;
-        int32_t pitchLeft;
+        int32_t pitchLeft = 0;
     };
 
     void CdefParamInit(CdefParam &param);

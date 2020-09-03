@@ -174,6 +174,10 @@ public:
     Regression() {
         Zero(x);
         Zero(y);
+        windowSize=0;
+        normX=0;
+        sumxy=0;
+        sumxx=0;
     }
     void Reset(mfxU32 size, mfxF64 initX, mfxF64 initY) {
         windowSize = size;

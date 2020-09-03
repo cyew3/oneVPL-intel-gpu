@@ -855,8 +855,10 @@ namespace AV1Enc {
 #else
             const int32_t DZTW = 3;
 #endif
-            for (int i = 0; i < DZTW; i++) {
-                AV1_SafeFree(adzctx[i]);
+            if (adzctx) {
+                for (int i = 0; i < DZTW; i++) {
+                    AV1_SafeFree(adzctx[i]);
+                }
             }
             AV1_SafeFree(adzctx);
         }
