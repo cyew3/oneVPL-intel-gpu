@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿![](./pic/intel_logo.png)
 <br><br><br>
+=======
+![](./pic/intel_logo.png)
+
+>>>>>>> bae7b887a3... Updated brand logo in the documentation
 # **Media SDK Developer Reference**
 ## Media SDK API Version 1.32
 
