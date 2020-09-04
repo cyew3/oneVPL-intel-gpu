@@ -228,7 +228,7 @@ namespace hevce_scc
         } },
 
         // 11 IBC mode off and Palette mode off
-        { { MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+        { { MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, MFX_ERR_NONE },
         QUERY | INIT | SCCOFF,{
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
