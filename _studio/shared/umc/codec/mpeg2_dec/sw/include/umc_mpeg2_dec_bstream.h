@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2019 Intel Corporation
+// Copyright (c) 2001-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -82,7 +82,7 @@
   CODE |= video##_curr_ptr[2] << (8 + video##_bit_offset);
 
 #define SHOW_HI17BITS(video, CODE) \
-  CODE = (((video##_curr_ptr[0] << 24) | (video##_curr_ptr[1] << 16) | (video##_curr_ptr[3]<<8)) << video##_bit_offset);
+  CODE = (((video##_curr_ptr[0] << 24) | (video##_curr_ptr[1] << 16) | (video##_curr_ptr[2]<<8)) << video##_bit_offset);
 
 #define EXPAND_25BITS(video, CODE) \
   CODE |= video##_curr_ptr[3] << video##_bit_offset;

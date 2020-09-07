@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -956,7 +956,7 @@ extern const uint8_t  MPEG2_DCSIZE_TAB[];
 {                                                         \
   const uint8_t *pTab;                                      \
   int32_t dct_dc_size;                                     \
-  SHOW_HI9BITS(BS, code);                                 \
+  SHOW_HI17BITS(BS, code);                                \
   pTab = MPEG2_DCSIZE_TAB + (chromaFlag << 6);            \
   if (code < 0xf8000000) {                                \
     tbl = pTab[UHBITS(code, 5)];                          \
