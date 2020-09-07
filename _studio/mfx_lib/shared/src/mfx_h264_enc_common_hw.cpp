@@ -1461,6 +1461,7 @@ mfxU8 MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in)
 Setting default value for LowPower option.
 By default LowPower is OFF (using DualPipe)
 For LKF, JSL/EHL: use LowPower by default i.e. if LowPower is Unknown then LowPower is ON
+Starting from DG2 DualPipe is deprecated
 
 Return value:
 MFX_WRN_INCOMPATIBLE_VIDEO_PARAM - if initial value of par.mfx.LowPower is not equal to MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_UNKNOWN
@@ -1468,6 +1469,14 @@ MFX_ERR_NONE - if no errors
 */
 mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWType& platfrom)
 {
+#ifndef STRIP_EMBARGO
+    if (platfrom >= MFX_HW_DG2)
+    {   // DualPipe (aka VME) is not available
+        par.mfx.LowPower = MFX_CODINGOPTION_ON;
+        return MFX_ERR_NONE;
+    }
+#endif
+
     mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
     (void)platfrom; // fix wrn for non Gen11 build
 #if (MFX_VERSION >= 1031)

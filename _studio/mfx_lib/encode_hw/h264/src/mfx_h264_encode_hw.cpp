@@ -322,6 +322,7 @@ mfxStatus ImplementationAvc::Query(
     if (queryMode == 0)
         return MFX_ERR_UNDEFINED_BEHAVIOR; // input parameters are contradictory and don't allow to choose Query mode
 
+    eMFXHWType platfrom = core->GetHWType();
 
     if (queryMode == 1) // see MSDK spec for details related to Query mode 1
     {
@@ -333,6 +334,10 @@ mfxStatus ImplementationAvc::Query(
         out->mfx.CodecId           = 1;
 #if defined(LOWPOWERENCODE_AVC)
         out->mfx.LowPower          = 1;
+#ifndef STRIP_EMBARGO
+        if (platfrom >= MFX_HW_DG2)
+            out->mfx.LowPower      = 0;
+#endif
 #endif
         out->mfx.CodecLevel        = 1;
         out->mfx.CodecProfile      = 1;
@@ -441,9 +446,8 @@ mfxStatus ImplementationAvc::Query(
         MFX_ENCODE_CAPS hwCaps = { };
         MfxVideoParam tmp = *in; // deep copy, create all supported extended buffers
 
-        eMFXHWType platfrom = core->GetHWType();
         mfxStatus lpSts = SetLowPowerDefault(tmp, platfrom);
-        // let use dedault values if input resolution is 0x0
+        // let's use default values if input resolution is 0x0
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
         mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
         if (Width > 4096 || Height > 4096)
@@ -628,7 +632,6 @@ mfxStatus ImplementationAvc::Query(
             return MFX_ERR_UNDEFINED_BEHAVIOR; // can't return MB processing rate since mfxExtEncoderCapability isn't attached to "out"
 
         MfxVideoParam tmp = *in;
-        eMFXHWType platfrom = core->GetHWType();
         (void)SetLowPowerDefault(tmp, platfrom);
 
         // query MB processing rate from driver
