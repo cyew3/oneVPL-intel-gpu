@@ -3045,22 +3045,21 @@ mfxStatus General::CheckTemporalLayers(mfxVideoParam & par)
 
     MFX_CHECK(pTL, MFX_ERR_NONE);
     MFX_CHECK(!CheckOrZero<mfxU16>(pTL->Layer[0].Scale, 0, 1), MFX_ERR_UNSUPPORTED);
-    MFX_CHECK(!CheckOrZero<mfxU16>(pTL->Layer[7].Scale, 0), MFX_ERR_UNSUPPORTED);
 
     mfxU16 nTL = 1;
 
-    for (mfxU16 i = 1, prev = 0; i < 7; ++i)
+    for (mfxU16 curr = 1, prev = 0; curr < MAX_NUM_TEMPORAL_LAYERS; ++curr)
     {
-        if (!pTL->Layer[i].Scale)
+        if (!pTL->Layer[curr].Scale)
             continue;
 
-        auto& scaleCurr = pTL->Layer[i].Scale;
+        auto& scaleCurr = pTL->Layer[curr].Scale;
         auto  scalePrev = pTL->Layer[prev].Scale;
 
         MFX_CHECK(!CheckMinOrZero(scaleCurr, scalePrev + 1), MFX_ERR_UNSUPPORTED);
         MFX_CHECK(!CheckOrZero(scaleCurr, mfxU16(scaleCurr - (scaleCurr % scalePrev))), MFX_ERR_UNSUPPORTED);
 
-        prev = i;
+        prev = curr;
         ++nTL;
     }
 

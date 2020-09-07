@@ -201,5 +201,60 @@ namespace av1e {
             ASSERT_EQ(p_fh->lr_params.lr_unit_extra_shift, 0);
             ASSERT_EQ(p_fh->lr_params.lr_uv_shift, 1);
         }
+
+        TEST_F(FeatureBlocksGeneral, CheckTemporalLayers)
+        {
+            auto& vp = Glob::VideoParam::Get(storage);
+            vp.NewEB(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, false);
+            mfxExtAvcTemporalLayers& pTL = ExtBuffer::Get(vp);
+
+            // check zero TL
+            pTL.Layer[0].Scale = 0;
+            ASSERT_EQ(
+                general.CheckTemporalLayers(vp),
+                MFX_ERR_NONE);
+
+            // check base layer
+            pTL.Layer[0].Scale = 1;
+            ASSERT_EQ(
+                general.CheckTemporalLayers(vp),
+                MFX_ERR_NONE);
+
+            // check 2x ratio between the frame rates of the current temporal layer and the base layer
+            for (auto i = 1; i < MAX_NUM_TEMPORAL_LAYERS; i++)
+            {
+                pTL.Layer[i].Scale = pTL.Layer[i - 1].Scale << 1;
+                ASSERT_EQ(
+                    general.CheckTemporalLayers(vp),
+                    MFX_ERR_NONE);
+            }
+
+            // check flexible (but valid) ratio between the frame rates of the current temporal layer and the base layer
+            std::for_each(pTL.Layer, pTL.Layer + MAX_NUM_TEMPORAL_LAYERS, [](auto& t){ t.Scale = 0; });
+            mfxU16 const scale[] = { 1, 3, 6, 18, 72, 144, 720, 1440 };
+            for (auto i = 0; i < MAX_NUM_TEMPORAL_LAYERS; i++)
+            {
+                pTL.Layer[i].Scale = scale[i];
+                ASSERT_EQ(
+                    general.CheckTemporalLayers(vp),
+                    MFX_ERR_NONE);
+            }
+
+            // check invalid ratio between the frame rates of the current temporal layer and the base layer
+            // case with the same frame rate for both base and advanced layers
+            std::for_each(pTL.Layer, pTL.Layer + MAX_NUM_TEMPORAL_LAYERS, [](auto& t) { t.Scale = 0; });
+            pTL.Layer[0].Scale = 2;
+            pTL.Layer[1].Scale = 2;
+            ASSERT_EQ(
+                general.CheckTemporalLayers(vp),
+                MFX_ERR_UNSUPPORTED);
+
+            // case when base layer has higher frame rate than advanced one
+            pTL.Layer[0].Scale = 4;
+            pTL.Layer[1].Scale = 2;
+            ASSERT_EQ(
+                general.CheckTemporalLayers(vp),
+                MFX_ERR_UNSUPPORTED);
+        }
     }
 }
