@@ -23,14 +23,8 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12_embargo_lin.h"
-#include "hevcehw_g12_rext_lin.h"
-#include "hevcehw_g12_caps_lin.h"
-#include "hevcehw_base_iddi.h"
-#include "hevcehw_g12_sao.h"
-#include "hevcehw_base_data.h"
-#include "hevcehw_base_legacy.h"
-#include "hevcehw_base_parser.h"
-#include "hevcehw_base_iddi_packer.h"
+#include "hevcehw_base_extddi.h"
+
 
 using namespace HEVCEHW::Gen12;
 
@@ -48,40 +42,15 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     : TBaseImpl(core, status, mode)
 {
     TFeatureList newFeatures;
-
-    newFeatures.emplace_back(new Linux::Gen12::RExt(FEATURE_REXT));
-    newFeatures.emplace_back(new Linux::Gen12::Caps(FEATURE_CAPS));
-    newFeatures.emplace_back(new SAO(FEATURE_SAO));
+    newFeatures.emplace_back(new HEVCEHW::Base::ExtDDI(HEVCEHW::Base::FEATURE_EXTDDI));
 
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
 
     TBaseImpl::m_features.splice(TBaseImpl::m_features.end(), newFeatures);
 
-    if (mode & (QUERY1 | QUERY_IO_SURF | INIT))
-    {
-        auto& qnc = BQ<BQ_Query1NoCaps>::Get(*this);
-
-        Reorder(
-            qnc
-            , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
-            , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
-        auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
-        Reorder(
-            qwc
-            , { HEVCEHW::Base::FEATURE_DDI_PACKER, HEVCEHW::Base::IDDIPacker::BLK_HardcodeCaps }
-            , { FEATURE_REXT, RExt::BLK_HardcodeCaps });
-        Reorder(
-            qwc
-            , { HEVCEHW::Base::FEATURE_DDI_PACKER, HEVCEHW::Base::IDDIPacker::BLK_HardcodeCaps }
-            , { FEATURE_CAPS, Caps::BLK_HardcodeCaps });
-        FeatureBlocks::Reorder(
-            qwc
-            , { FEATURE_REXT, RExt::BLK_HardcodeCaps }
-            , { HEVCEHW::Base::FEATURE_DDI_PACKER, HEVCEHW::Base::IDDIPacker::BLK_HardcodeCaps });
-    }
 }
 
-}}} //namespace HEVCEHW::Linux::Gen12
+}}} //namespace HEVCEHW::Linux::Gen12_Embargo
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

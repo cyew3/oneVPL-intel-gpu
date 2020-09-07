@@ -22,8 +22,8 @@
 
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
-#include "hevcehw_base_embargo_lin.h"
 #include "hevcehw_g12_data.h"
+#include "hevcehw_g12_lin.h"
 
 namespace HEVCEHW
 {
@@ -32,10 +32,10 @@ namespace Linux
 namespace Gen12_Embargo
 {
     class MFXVideoENCODEH265_HW
-        : public Linux::Base_Embargo::MFXVideoENCODEH265_HW
+        : public Linux::Gen12::MFXVideoENCODEH265_HW
     {
     public:
-        using TBaseImpl = Linux::Base_Embargo::MFXVideoENCODEH265_HW;
+        using TBaseImpl = Linux::Gen12::MFXVideoENCODEH265_HW;
 
         MFXVideoENCODEH265_HW(
             VideoCORE& core

@@ -28,6 +28,7 @@
 #endif //defined(MFX_ENABLE_MFE)
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_iddi.h"
+#include "hevcehw_base_extddi.h"
 
 namespace HEVCEHW
 {
@@ -47,7 +48,8 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #if defined(MFX_ENABLE_MFE)
     newFeatures.emplace_back(new MFE(FEATURE_MFE));
 #endif //defined(MFX_ENABLE_MFE)
-    
+    newFeatures.emplace_back(new HEVCEHW::Base::ExtDDI(HEVCEHW::Base::FEATURE_EXTDDI));
+
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
 
