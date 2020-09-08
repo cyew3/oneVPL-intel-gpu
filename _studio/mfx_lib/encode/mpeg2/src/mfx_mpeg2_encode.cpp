@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2538,7 +2538,6 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
   else
     m_codec.curr_scan = m_codec.encodeInfo.altscan_tab[m_codec.picture_coding_type - 1];
 
-  UMC::MPEG2FrameType original_picture_coding_type = m_codec.picture_coding_type;
   m_codec.curr_intra_vlc_format = m_codec.encodeInfo.intraVLCFormat[m_codec.picture_coding_type - 1];
   for (ntry=0; ; ntry++) {
     // Save position after headers (only 0th thread)
@@ -2577,8 +2576,7 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
             m_codec.PutUserData(0);
           }
 
-          if (original_picture_coding_type == UMC::MPEG2_I_PICTURE)
-            m_codec.PutGOPHeader(m_codec.encodeInfo.numEncodedFrames);
+          m_codec.PutGOPHeader(m_codec.encodeInfo.numEncodedFrames);
 
           size = (32+7 + BITPOS(m_codec.threadSpec[0]))>>3;
         }
