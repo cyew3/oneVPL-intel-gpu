@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "ts_encoder.h"
@@ -114,6 +114,12 @@ namespace hevce_p_frame
         framesToEncode = tc.nframes;
         m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
         m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
+
+        if (g_tsHWtype > MFX_HW_ICL && cod3.GPB == MFX_CODINGOPTION_OFF)
+        {
+            g_tsLog << "\n\nICL+ does not support P frames\n\n";
+            throw tsSKIP;
+        }
         g_tsStatus.expect(tc.sts);
         Init();
         EncodeFrames(framesToEncode);
