@@ -379,6 +379,8 @@ public:
     {
         dll_handler::operator=(std::move(other));
 
+        session = other.session;
+
         std::copy(std::begin(other.callTable),      std::end(other.callTable),      std::begin(callTable));
         std::copy(std::begin(other.callAudioTable), std::end(other.callAudioTable), std::begin(callAudioTable));
 
@@ -389,7 +391,7 @@ public:
         return *this;
     }
 
-    mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
+    mfxStatus MFXInitEx(mfxInitParam par)
     {
         // Call old-style MFXInit init for older libraries and audio library
         bool callOldInit = (par.Implementation & MFX_IMPL_AUDIO) || !actual_table[eMFXInitEx]; // if true call eMFXInit, if false - eMFXInitEx
@@ -402,9 +404,11 @@ public:
             return MFX_ERR_INVALID_HANDLE;
         }
 
-        return callOldInit ? (*reinterpret_cast<mfxStatus(MFX_CDECL *) (mfxIMPL, mfxVersion *, mfxSession *)> (pFunc)) (par.Implementation, &par.Version, session)
-                           : (*reinterpret_cast<mfxStatus(MFX_CDECL *) (mfxInitParam,          mfxSession *)> (pFunc)) (par, session);
+        return callOldInit ? (*reinterpret_cast<mfxStatus(MFX_CDECL *) (mfxIMPL, mfxVersion *, mfxSession *)> (pFunc)) (par.Implementation, &par.Version, &session)
+                           : (*reinterpret_cast<mfxStatus(MFX_CDECL *) (mfxInitParam,          mfxSession *)> (pFunc)) (par, &session);
     }
+
+    mfxSession          session                         = nullptr;
 
     mfxFunctionPointer  callTable[eVideoFuncTotal]      = {};
     mfxFunctionPointer  callAudioTable[eAudioFuncTotal] = {};
@@ -487,9 +491,6 @@ public:
     mfxFunctionPointer MFXVideoCORE_QueryPlatform = nullptr;
 };
 
-// This is global instance of loaded MSDK library
-MSDK_lib_handler global_msdk_handle;
-
 bool GetAdapterTypeFromMsdkLibrary(adapter_vector& a_v)
 {
     bool ret = false;
@@ -552,10 +553,12 @@ static bool SetupAdaptersList(adapter_vector& a_v)
     return true;
 }
 
-static bool LoadMSDKLibary(adapter_vector& a_v, mfxIMPL impl)
+static std::unique_ptr<MSDK_lib_handler> LoadMSDKLibary(adapter_vector& a_v, mfxIMPL impl)
 {
+    std::unique_ptr<MSDK_lib_handler> msdk_handle;
+
     if (a_v.empty())
-        return false;
+        return msdk_handle;
 
     // If user requested specific adapter, load MSDK associated with given adapter
     mfxI32 preffered_adapter_number = -1;
@@ -587,7 +590,7 @@ static bool LoadMSDKLibary(adapter_vector& a_v, mfxIMPL impl)
         if (preffered_adapter_number != -1)
         {
             DISPATCHER_LOG_ERROR(("ERROR: Couldn't find user specified adapter with index: %d\n", preffered_adapter_number));
-            return false;
+            return msdk_handle;
         }
 
         // If no integrated Gfx (and used didn't request particular adapter), load first adapter from the list (discrete)
@@ -596,21 +599,19 @@ static bool LoadMSDKLibary(adapter_vector& a_v, mfxIMPL impl)
 
     try
     {
-        global_msdk_handle = std::move(MSDK_lib_handler(it_to_load->path_to_msdk, it_to_load->adapter_number, !!(impl & MFX_IMPL_AUDIO)));
+        msdk_handle.reset(new MSDK_lib_handler(it_to_load->path_to_msdk, it_to_load->adapter_number, !!(impl & MFX_IMPL_AUDIO)));
     }
     catch (const std::exception& ex)
     {
         std::ignore = ex;
         DISPATCHER_LOG_ERROR(("ERROR:Exception catched %s\n", ex.what()));
-        return false;
     }
     catch (...)
     {
         DISPATCHER_LOG_ERROR(("ERROR:Exception catched\n"));
-        return false;
     }
 
-    return true;
+    return msdk_handle;
 }
 
 //#define FUNC_EXPORT(ret_type) extern "C" __declspec(dllexport) ret_type MFX_CDECL
@@ -623,6 +624,10 @@ extern "C" mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session)
         return MFX_ERR_NULL_PTR;
     }
 
+    *session = nullptr;
+
+    std::unique_ptr<MSDK_lib_handler> msdk_handle;
+
     // Find all available adapters and corresponding MSDK libraries
     try
     {
@@ -634,8 +639,8 @@ extern "C" mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session)
         }
 
         // Load proper MSDK library
-
-        if (!LoadMSDKLibary(a_v, par.Implementation))
+        msdk_handle = LoadMSDKLibary(a_v, par.Implementation);
+        if (!msdk_handle)
         {
             DISPATCHER_LOG_ERROR(("ERROR: Failed to load MSDK library\n"));
             return MFX_ERR_UNSUPPORTED;
@@ -650,7 +655,7 @@ extern "C" mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session)
         case MFX_IMPL_HARDWARE_ANY:
             par.Implementation &= ~(0xf);
 
-            switch (global_msdk_handle.adapter_number)
+            switch (msdk_handle->adapter_number)
             {
             case 0:
                 par.Implementation |= MFX_IMPL_HARDWARE;
@@ -684,7 +689,17 @@ extern "C" mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session)
     }
 
     // Call init for loaded library
-    return global_msdk_handle.MFXInitEx(par, session);
+    mfxStatus sts = msdk_handle->MFXInitEx(par);
+    if (sts == MFX_ERR_NONE)
+    {
+        *session = reinterpret_cast<_mfxSession *>(msdk_handle.release());
+    }
+    else
+    {
+        DISPATCHER_LOG_ERROR(("ERROR: MSDK_lib_handler::MFXInitEx failed with sts = %d\n", sts));
+    }
+
+    return sts;
 }
 
 extern "C" mfxStatus MFX_CDECL MFXInit(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
@@ -713,12 +728,13 @@ extern "C" mfxStatus MFX_CDECL MFXClose(mfxSession session)
         return MFX_ERR_INVALID_HANDLE;
     }
 
-    if (!global_msdk_handle) {
+    MSDK_lib_handler *msdk_handle = reinterpret_cast<MSDK_lib_handler *>(session);
+    if (!(*msdk_handle)) {
         DISPATCHER_LOG_ERROR(("ERROR: MSDK lib wasn't loaded\n"));
         return MFX_ERR_INVALID_HANDLE;
     }
 
-    mfxFunctionPointer pFunc = global_msdk_handle.actual_table[eMFXClose];
+    mfxFunctionPointer pFunc = msdk_handle->actual_table[eMFXClose];
 
     if (!pFunc)
     {
@@ -726,9 +742,35 @@ extern "C" mfxStatus MFX_CDECL MFXClose(mfxSession session)
         return MFX_ERR_INVALID_HANDLE;
     }
 
-    return (*reinterpret_cast<mfxStatus(MFX_CDECL *) (mfxSession)> (pFunc)) (session);
+    mfxStatus sts = (*reinterpret_cast<mfxStatus(MFX_CDECL *) (mfxSession)> (pFunc)) (msdk_handle->session);
+
+    delete msdk_handle;
+    return sts;
 }
 
+extern "C" mfxStatus MFX_CDECL MFXJoinSession(mfxSession session, mfxSession child_session)
+{
+    MSDK_lib_handler *msdk_handle = reinterpret_cast<MSDK_lib_handler *>(session);
+    MSDK_lib_handler *child_msdk_handle = reinterpret_cast<MSDK_lib_handler *>(child_session);
+
+    if (!msdk_handle || !(*msdk_handle) || !child_msdk_handle || !(*child_msdk_handle))
+    {
+        DISPATCHER_LOG_ERROR(("ERROR: MSDK lib wasn't loaded\n"));
+        return MFX_ERR_INVALID_HANDLE;
+    }
+
+    mfxFunctionPointer pFunc = msdk_handle->actual_table[eMFXJoinSession];
+
+    if (!pFunc)
+    {
+        DISPATCHER_LOG_ERROR(("ERROR: Can't find required API function: MFXJoinSession\n"));
+        return MFX_ERR_INVALID_HANDLE;
+    }
+
+
+    return (*(mfxStatus(MFX_CDECL *) (mfxSession, mfxSession)) pFunc) (msdk_handle->session, child_msdk_handle->session);
+
+} // mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
 
 //
 //
@@ -741,13 +783,14 @@ extern "C" mfxStatus MFX_CDECL MFXClose(mfxSession session)
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list)                      \
 extern "C" return_value MFX_CDECL func_name formal_param_list                                        \
 {                                                                                                    \
-    if (!global_msdk_handle || !global_msdk_handle.actual_table)                                     \
+    MSDK_lib_handler *msdk_handle = reinterpret_cast<MSDK_lib_handler *>(session);                   \
+    if (!msdk_handle || !(*msdk_handle))                                                             \
     {                                                                                                \
         DISPATCHER_LOG_ERROR(("ERROR: MSDK lib wasn't loaded\n"));                                   \
         return MFX_ERR_INVALID_HANDLE;                                                               \
     }                                                                                                \
                                                                                                      \
-    mfxFunctionPointer pFunc = global_msdk_handle.actual_table[e##func_name];                        \
+    mfxFunctionPointer pFunc = msdk_handle->actual_table[e##func_name];                              \
                                                                                                      \
     if (!pFunc)                                                                                      \
     {                                                                                                \
@@ -755,6 +798,7 @@ extern "C" return_value MFX_CDECL func_name formal_param_list                   
         return MFX_ERR_INVALID_HANDLE;                                                               \
     }                                                                                                \
                                                                                                      \
+    session = msdk_handle->session;                                                                  \
     return (*reinterpret_cast<mfxStatus (MFX_CDECL *) formal_param_list> (pFunc)) actual_param_list; \
 }
 
@@ -764,7 +808,6 @@ FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), 
 // these functions are not necessary in LOADER part of dispatcher and
 // need to be included only in in SOLID dispatcher or PROCTABLE part of dispatcher
 
-FUNCTION(mfxStatus, MFXJoinSession, (mfxSession session, mfxSession child_session), (session, child_session))
 FUNCTION(mfxStatus, MFXCloneSession, (mfxSession session, mfxSession *clone), (session, clone))
 
 FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
@@ -775,13 +818,14 @@ FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority),
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list)                      \
 extern "C" return_value MFX_CDECL func_name formal_param_list                                        \
 {                                                                                                    \
-    if (!global_msdk_handle || !global_msdk_handle.callTable)                                        \
+    MSDK_lib_handler *msdk_handle = reinterpret_cast<MSDK_lib_handler *>(session);                   \
+    if (!msdk_handle || !(*msdk_handle))                                                             \
     {                                                                                                \
         DISPATCHER_LOG_ERROR(("ERROR: MSDK lib wasn't loaded\n"));                                   \
         return MFX_ERR_INVALID_HANDLE;                                                               \
     }                                                                                                \
                                                                                                      \
-    mfxFunctionPointer pFunc = global_msdk_handle.callTable[e##func_name];                           \
+    mfxFunctionPointer pFunc = msdk_handle->callTable[e##func_name];                                 \
                                                                                                      \
     if (!pFunc)                                                                                      \
     {                                                                                                \
@@ -789,6 +833,7 @@ extern "C" return_value MFX_CDECL func_name formal_param_list                   
         return MFX_ERR_INVALID_HANDLE;                                                               \
     }                                                                                                \
                                                                                                      \
+    session = msdk_handle->session;                                                                  \
     return (*reinterpret_cast<mfxStatus (MFX_CDECL *) formal_param_list> (pFunc)) actual_param_list; \
 }
 
@@ -797,13 +842,14 @@ extern "C" return_value MFX_CDECL func_name formal_param_list                   
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list)                      \
 extern "C" return_value MFX_CDECL func_name formal_param_list                                        \
 {                                                                                                    \
-    if (!global_msdk_handle || !global_msdk_handle.callAudioTable)                                   \
+    MSDK_lib_handler *msdk_handle = reinterpret_cast<MSDK_lib_handler *>(session);                   \
+    if (!msdk_handle || !(*msdk_handle))                                                             \
     {                                                                                                \
         DISPATCHER_LOG_ERROR(("ERROR: MSDK lib wasn't loaded\n"));                                   \
         return MFX_ERR_INVALID_HANDLE;                                                               \
     }                                                                                                \
                                                                                                      \
-    mfxFunctionPointer pFunc = global_msdk_handle.callAudioTable[e##func_name];                      \
+    mfxFunctionPointer pFunc = msdk_handle->callAudioTable[e##func_name];                            \
                                                                                                      \
     if (!pFunc)                                                                                      \
     {                                                                                                \
@@ -811,6 +857,7 @@ extern "C" return_value MFX_CDECL func_name formal_param_list                   
         return MFX_ERR_INVALID_HANDLE;                                                               \
     }                                                                                                \
                                                                                                      \
+    session = msdk_handle->session;                                                                  \
     return (*reinterpret_cast<mfxStatus (MFX_CDECL *) formal_param_list> (pFunc)) actual_param_list; \
 }
 
