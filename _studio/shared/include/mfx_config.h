@@ -153,6 +153,9 @@
     #endif
     #endif // #ifdef OPEN_SOURCE
 #endif
+#if !defined(ANDROID) && defined(__linux__)
+    #define MFX_ENABLE_MJPEG_ROTATE_VPP
+#endif
 #if !defined(OPEN_SOURCE) && !defined(ANDROID)
     #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
         #define PRE_SI_GEN 11
@@ -220,7 +223,6 @@
             #define MFX_ADAPTIVE_PLAYBACK_DISABLE
             #define MFX_FUTURE_FEATURE_DISABLE
         #endif
-        #define MFX_ENABLE_MJPEG_ROTATE_VPP
         #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
     #endif
     #if defined (MFX_VA_LINUX)
