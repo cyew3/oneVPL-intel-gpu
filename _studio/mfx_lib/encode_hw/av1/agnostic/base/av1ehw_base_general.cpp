@@ -2518,13 +2518,15 @@ void General::SetSH(
     if (sh.operating_points_cnt_minus_1)
     {
         // (1) Only temporal scalability is supported
-        // (2) Set operating_point_idc[] such that the i=0 point corresponds to the
-        // lowest quality operating point (only base layer), and subsequent
-        // operarting points (i > 0) are higher quality corresponding to
-        // add decoding enhancement  layers
+        // (2) Set operating_point_idc[] in the same way as reference AOM
+        // to decode by aomdec bitstreams w/ temporal scalability reset enabled
+        // It means that the i=0 point corresponds to the
+        // highest quality operating point(all layers), and subsequent
+        // operarting points (i > 0) are lower quality corresponding to
+        // skip decoding enhancement  layers
         for (mfxU8 i = 0; i <= sh.operating_points_cnt_minus_1; i++)
         {
-            sh.operating_point_idc[i] = (1u << 8) | ~(~0u << (i + 1));
+            sh.operating_point_idc[i] = (1u << 8) | ~(~0u << (sh.operating_points_cnt_minus_1 + 1 - i));
             sh.seq_level_idx[i] = 8;//TODO: implement functionality
         }
     }

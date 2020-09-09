@@ -920,7 +920,7 @@ void Packer::PackPPS(
         PackFrameHeader(tmpBitstream, tmp_offsets, sh, fh);
 
     if (sh.operating_points_cnt_minus_1 && !(insertHeaders & INSERT_SPS)) {
-        PackOBUHeader(bs, OBU_TEMPORAL_DELIMITER, 0, oeh);
+        PackOBUHeader(bs, OBU_TEMPORAL_DELIMITER, 1, oeh);
         PackOBUHeaderSize(bs, 0);
     }
 
