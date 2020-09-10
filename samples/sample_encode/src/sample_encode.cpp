@@ -83,7 +83,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 #ifdef MOD_ENC
     MOD_ENC_PRINT_HELP;
 #endif
-    msdk_printf(MSDK_STRING("   [-nv12|yuy2|ayuv|rgb4|p010|y210|y410|a2rgb10] - input color format (by default YUV420 is expected).\n"));
+    msdk_printf(MSDK_STRING("   [-nv12|yuy2|uyvy|ayuv|rgb4|p010|y210|y410|a2rgb10|p016|y216] - input color format (by default YUV420 is expected).\n"));
     msdk_printf(MSDK_STRING("   [-msb10] - 10-bit color format is expected to have data in Most Significant Bits of words.\n                 (LSB data placement is expected by default).\n                 This option also disables data shifting during file reading.\n"));
     msdk_printf(MSDK_STRING("   [-ec::p010] - force usage of P010 surfaces for encoder (conversion will be made if necessary). Use for 10 bit HEVC encoding\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
@@ -192,20 +192,20 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off,implicit>] - External BRC for AVC and HEVC encoders\n"));
 #endif
     msdk_printf(MSDK_STRING("   [-encTools]     - enables enctools for AVC encoder\n"));
-    msdk_printf(MSDK_STRING("   [-et:adaptiveI:<on,off>] - flag for configuring ìFrame type calculationî feature.\n"));
+    msdk_printf(MSDK_STRING("   [-et:adaptiveI:<on,off>] - flag for configuring ‚ÄúFrame type calculation‚Äù feature.\n"));
     msdk_printf(MSDK_STRING("                      Distance between Intra frames depends on the content.\n"));
-    msdk_printf(MSDK_STRING("   [-et:adaptiveB:<on,off>] - flag for configuring ìFrame type calculationî feature.\n"));
+    msdk_printf(MSDK_STRING("   [-et:adaptiveB:<on,off>] - flag for configuring ‚ÄúFrame type calculation‚Äù feature.\n"));
     msdk_printf(MSDK_STRING("                      Distance between nearest P (or I) frames depends on the content.\n"));
-    msdk_printf(MSDK_STRING("   [-et:arefP:<on,off>]     - flag for configuring ìReference frame list calculationî feature. \n"));
+    msdk_printf(MSDK_STRING("   [-et:arefP:<on,off>]     - flag for configuring ‚ÄúReference frame list calculation‚Äù feature. \n"));
     msdk_printf(MSDK_STRING("                      The most useful reference frames are calculated for P frames.\n"));
-    msdk_printf(MSDK_STRING("   [-et:arefB:<on,off>]     - flag for configuring ìReference frame list calculationî feature. \n"));
+    msdk_printf(MSDK_STRING("   [-et:arefB:<on,off>]     - flag for configuring ‚ÄúReference frame list calculation‚Äù feature. \n"));
     msdk_printf(MSDK_STRING("                      The most useful reference frames are calculated for B frames.\n"));
-    msdk_printf(MSDK_STRING("   [-et:sc:<on,off>]        - flag for enabling ìScene change analysisî feature\n"));
-    msdk_printf(MSDK_STRING("   [-et:aLTR:<on,off>]      - flag for configuring ìReference frame list calculationî feature.\n"));
+    msdk_printf(MSDK_STRING("   [-et:sc:<on,off>]        - flag for enabling ‚ÄúScene change analysis‚Äù feature\n"));
+    msdk_printf(MSDK_STRING("   [-et:aLTR:<on,off>]      - flag for configuring ‚ÄúReference frame list calculation‚Äù feature.\n"));
     msdk_printf(MSDK_STRING("                      The most useful reference frames are calculated as LTR.\n"));
-    msdk_printf(MSDK_STRING("   [-et:apyrQP:<on,off>]    - flag for configuring ìDelta QP hintsî feature. Delta QP is calculated for P frames.\n"));
-    msdk_printf(MSDK_STRING("   [-et:apyrQB:<on,off>]    - flag for configuring ìDelta QP hintsî feature. Delta QP is calculated for B frames.\n"));
-    msdk_printf(MSDK_STRING("   [-et:brchints:<on,off>]  - flag for enabling ìBRC buffer hintsî feature: calculation of optimal frame size, HRD buffer fullness, etc.\n"));
+    msdk_printf(MSDK_STRING("   [-et:apyrQP:<on,off>]    - flag for configuring ‚ÄúDelta QP hints‚Äù feature. Delta QP is calculated for P frames.\n"));
+    msdk_printf(MSDK_STRING("   [-et:apyrQB:<on,off>]    - flag for configuring ‚ÄúDelta QP hints‚Äù feature. Delta QP is calculated for B frames.\n"));
+    msdk_printf(MSDK_STRING("   [-et:brchints:<on,off>]  - flag for enabling ‚ÄúBRC buffer hints‚Äù feature: calculation of optimal frame size, HRD buffer fullness, etc.\n"));
     msdk_printf(MSDK_STRING("   [-et:brc:<on,off>]       - flag for enabling functionality: QP calculation for frame encoding, encoding status calculation after frame encoding\n"));
     msdk_printf(MSDK_STRING("   [-ScenarioInfo n] - Sets scenario info. 0=unknown, 7=MFX_SCENARIO_GAME_STREAMING, 8=MFX_SCENARIO_REMOTE_GAMING \n"));
 #if (MFX_VERSION >= 1026)
@@ -367,6 +367,18 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
             return MFX_ERR_UNSUPPORTED;
         }
     }
+#if (MFX_VERSION >= 1031)
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p016")))
+    {
+        pParams->FileInputFourCC = MFX_FOURCC_P016;
+        pParams->EncodeFourCC = MFX_FOURCC_P016;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y216")))
+    {
+        pParams->FileInputFourCC = MFX_FOURCC_Y216;
+        pParams->EncodeFourCC = MFX_FOURCC_Y216;
+    }
+#endif
     else
     {
         return MFX_ERR_NOT_FOUND;
