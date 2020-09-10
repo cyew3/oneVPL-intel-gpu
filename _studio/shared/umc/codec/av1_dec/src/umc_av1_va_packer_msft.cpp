@@ -379,7 +379,7 @@ namespace UMC_AV1_DECODER
         //tileControlParam.StartTileIdx = (USHORT)loc.startIdx;
         //tileControlParam.EndTileIdx = (USHORT)loc.endIdx;
 #if AV1D_DDI_VERSION >= 31
-        tileControlParam.anchor_frame = 0;
+        tileControlParam.anchor_frame = 255;
 #else
         tileControlParam.anchor_frame_idx.wPicEntry = 0;
 #endif
