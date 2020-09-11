@@ -1811,6 +1811,13 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+#if VA_CHECK_VERSION(1,9,0)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncBuffer");
+        vaSts = vaSyncBuffer(m_vaDisplay, codedBuffer, VA_TIMEOUT_INFINITE);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+#else
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
@@ -1822,6 +1829,7 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
             vaSts = VA_STATUS_SUCCESS;
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
+#endif
     surfSts = VASurfaceReady;
 #else
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
