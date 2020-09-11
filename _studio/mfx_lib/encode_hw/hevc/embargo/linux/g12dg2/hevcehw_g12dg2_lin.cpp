@@ -55,7 +55,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     {
         auto& qnc = BQ<BQ_Query1NoCaps>::Get(*this);
 
-        qnc.splice(qnc.begin(), qnc, Get(qnc, { FEATURE_CAPS, Caps::BLK_CheckLowPower }));
+        qnc.splice(qnc.begin(), qnc, Get(qnc, { FEATURE_CAPS, Caps::BLK_SetLowPower }));
 
         Reorder(
             qnc

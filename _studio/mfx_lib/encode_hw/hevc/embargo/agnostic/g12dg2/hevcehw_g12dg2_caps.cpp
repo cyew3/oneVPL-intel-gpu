@@ -31,10 +31,10 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     using Base::Glob;
     using Base::Defaults;
 
-    Push(BLK_CheckLowPower,
-        [](const mfxVideoParam& par, mfxVideoParam&, StorageRW& /*strg*/) -> mfxStatus
+    Push(BLK_SetLowPower,
+        [](const mfxVideoParam&, mfxVideoParam& par, StorageRW&) -> mfxStatus
     {
-        MFX_CHECK(par.mfx.LowPower != MFX_CODINGOPTION_OFF, MFX_ERR_UNSUPPORTED);
+        par.mfx.LowPower = MFX_CODINGOPTION_ON;
 
         return MFX_ERR_NONE;
     });
