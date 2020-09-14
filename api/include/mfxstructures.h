@@ -346,7 +346,7 @@ typedef struct {
             mfxU16  SliceGroupsPresent;
             mfxU16  MaxDecFrameBuffering;
             mfxU16  EnableReallocRequest;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1034)
             mfxU16  FilmGrain;
             mfxU16  IgnoreLevelConstrain;
             mfxU16  reserved2[5];
@@ -527,7 +527,7 @@ enum {
     MFX_PROFILE_VP9_2                       = 3,
     MFX_PROFILE_VP9_3                       = 4,
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1034)
     /* AV1 Profiles */
     MFX_PROFILE_AV1_MAIN                    = 1,
     MFX_PROFILE_AV1_HIGH                    = 2,
@@ -988,12 +988,7 @@ enum {
 #endif
     MFX_EXTBUFF_ENCODER_IPCM_AREA               = MFX_MAKEFOURCC('P', 'C', 'M', 'R'),
     MFX_EXTBUFF_INSERT_HEADERS                  = MFX_MAKEFOURCC('S', 'P', 'R', 'E'),
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
-    MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
-    MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
-    MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
-    MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
+#if (MFX_VERSION >= 1034)
     MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM            = MFX_MAKEFOURCC('A','1','F','G'),
     MFX_EXTBUFF_AV1_LST_PARAM                   = MFX_MAKEFOURCC('A', '1', 'L', 'S'),
     MFX_EXTBUFF_AV1_SEGMENTATION                = MFX_MAKEFOURCC('1', 'S', 'E', 'G'),
@@ -1001,6 +996,13 @@ enum {
     MFX_EXTBUFF_AV1_AUXDATA                     = MFX_MAKEFOURCC('1', 'A', 'U', 'X'),
     MFX_EXTBUFF_AV1_REFLIST_CTRL                = MFX_EXTBUFF_AVC_REFLIST_CTRL,
     MFX_EXTBUFF_AV1_TEMPORAL_LAYERS             = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
+    MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
+    MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
+    MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
+    MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
 #endif
 };
 
@@ -2400,7 +2402,50 @@ MFX_PACK_END()
 
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
+/* Multi-adapters Querying structs */
+typedef enum
+{
+    MFX_COMPONENT_ENCODE = 1,
+    MFX_COMPONENT_DECODE = 2,
+    MFX_COMPONENT_VPP    = 3
+} mfxComponentType;
+
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+typedef struct
+{
+    mfxComponentType Type;
+    mfxVideoParam    Requirements;
+
+    mfxU16           reserved[4];
+} mfxComponentInfo;
+MFX_PACK_END()
+
+/* Adapter description */
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct
+{
+    mfxPlatform Platform;
+    mfxU32      Number;
+
+    mfxU16      reserved[14];
+} mfxAdapterInfo;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+typedef struct
+{
+    mfxAdapterInfo * Adapters;
+    mfxU32           NumAlloc;
+    mfxU32           NumActual;
+
+    mfxU16           reserved[4];
+} mfxAdaptersInfo;
+MFX_PACK_END()
+
+#endif
+
+#if (MFX_VERSION >= 1034)
 /* FilmGrainFlags */
 enum {
     MFX_FILM_GRAIN_APPLY                    = (1 << 0),
@@ -2454,6 +2499,10 @@ typedef struct {
     mfxU16 reserved[43];
 } mfxExtAV1FilmGrainParam;
 MFX_PACK_END()
+
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 /* AnchorFramesSource */
 enum {
@@ -2647,49 +2696,6 @@ MFX_PACK_END()
 
 typedef mfxExtAVCRefListCtrl mfxExtAV1RefListCtrl;
 typedef mfxExtAvcTemporalLayers mfxExtAV1TemporalLayers;
-#endif
-
-#if (MFX_VERSION >= 1031)
-/* Multi-adapters Querying structs */
-typedef enum
-{
-    MFX_COMPONENT_ENCODE = 1,
-    MFX_COMPONENT_DECODE = 2,
-    MFX_COMPONENT_VPP    = 3
-} mfxComponentType;
-
-MFX_PACK_BEGIN_STRUCT_W_PTR()
-typedef struct
-{
-    mfxComponentType Type;
-    mfxVideoParam    Requirements;
-
-    mfxU16           reserved[4];
-} mfxComponentInfo;
-MFX_PACK_END()
-
-/* Adapter description */
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct
-{
-    mfxPlatform Platform;
-    mfxU32      Number;
-
-    mfxU16      reserved[14];
-} mfxAdapterInfo;
-MFX_PACK_END()
-
-MFX_PACK_BEGIN_STRUCT_W_PTR()
-typedef struct
-{
-    mfxAdapterInfo * Adapters;
-    mfxU32           NumAlloc;
-    mfxU32           NumActual;
-
-    mfxU16           reserved[4];
-} mfxAdaptersInfo;
-MFX_PACK_END()
-
 #endif
 
 #if (MFX_VERSION >= 1031)
