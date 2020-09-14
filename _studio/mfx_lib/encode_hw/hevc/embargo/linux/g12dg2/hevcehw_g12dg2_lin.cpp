@@ -26,6 +26,7 @@
 #include "hevcehw_g12dg2_caps.h"
 #include "hevcehw_base_legacy.h"
 #include "hevcehw_g12_qp_modulation_lin.h"
+#include "hevcehw_g12_caps.h"
 
 namespace HEVCEHW
 {
@@ -61,6 +62,14 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             qnc
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
+
+        auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
+
+        Reorder(
+            qwc
+            , { HEVCEHW::Gen12::FEATURE_CAPS, HEVCEHW::Gen12::Caps::BLK_HardcodeCaps }
+            , { FEATURE_CAPS, Caps::BLK_HardcodeCaps }
+        , PLACE_AFTER);
     }
 }
 
