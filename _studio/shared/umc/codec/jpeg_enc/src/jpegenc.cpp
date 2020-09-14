@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2019 Intel Corporation
+// Copyright (c) 2001-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include <string>
 
 #include "ippj.h"
-#if defined(OPEN_SOURCE)
+#if defined(MFX_DISABLE_SW_FALLBACK)
 #include "ippcc.h"
 #else
 #include "ippcc2mfx.h"

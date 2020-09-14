@@ -1,4 +1,4 @@
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   set(sources
       ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_ischeduler.cpp

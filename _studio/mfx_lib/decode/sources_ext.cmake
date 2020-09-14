@@ -1,4 +1,4 @@
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list( APPEND vdirs
     h264 h265 mjpeg mpeg2 vc1 vp8 vp9 av1
     )

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -235,7 +235,7 @@ inline int mfxCopyRect(const T* pSrc, int srcStep, T* pDst, int dstStep, IppiSiz
     return 0;
 }
 
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
 template<>
 inline int mfxCopyRect<mfxU8>(const mfxU8* pSrc, int srcStep, mfxU8* pDst, int dstStep, IppiSize roiSize, int flags)
 {

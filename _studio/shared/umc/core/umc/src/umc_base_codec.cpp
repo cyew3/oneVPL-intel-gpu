@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ Status BaseCodec::Init(BaseCodecParams *init)
 {
   if (init == 0)
     return UMC_ERR_NULL_PTR;
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
   // care about reentering as well
   if (init->lpMemoryAllocator) {
     if (m_bOwnAllocator && m_pMemoryAllocator != init->lpMemoryAllocator) {
@@ -78,7 +78,7 @@ Status BaseCodec::Init(BaseCodecParams *init)
   }
 #else
   m_pMemoryAllocator = init->lpMemoryAllocator;
-#endif // OPEN_SOURCE
+#endif // MFX_DISABLE_SW_FALLBACK
   return UMC_OK;
 }
 

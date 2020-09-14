@@ -185,10 +185,10 @@ else()
   set(GENX_LIB "")
 endif()
 
-if( MFX_ENABLE_SW_FALLBACK )
-  set(SW_FALLBACK_LIBS "jpeg_enc;color_space_converter_hw;ipp;encode")
+if( MFX_ENABLE_JPEG_SW_FALLBACK )
+  set(JPEG_SW_FALLBACK_LIBS "jpeg_enc;color_space_converter_hw;ipp;encode")
 else()
-  set(SW_FALLBACK_LIBS "")
+  set(JPEG_SW_FALLBACK_LIBS "")
 endif()
 set( LIBS "" )
 list( APPEND LIBS
@@ -198,7 +198,7 @@ list( APPEND LIBS
   h265_dec_hw
   jpeg_common
   jpeg_dec_hw
-  ${SW_FALLBACK_LIBS}
+  ${JPEG_SW_FALLBACK_LIBS}
   mpeg2_dec_hw
   vc1_common
   vc1_dec_hw

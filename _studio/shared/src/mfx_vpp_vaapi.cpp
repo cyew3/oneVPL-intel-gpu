@@ -46,7 +46,7 @@ bool SetPlaneROI(T value, T* pDst, int dstStep, IppiSize roiSize)
     return true;
 }
 
-#if !defined (OPEN_SOURCE)
+#ifndef MFX_DISABLE_SW_FALLBACK
 template<>
 bool SetPlaneROI<Ipp32u>(Ipp32u value, Ipp32u* pDst, int dstStep, IppiSize roiSize)
 {

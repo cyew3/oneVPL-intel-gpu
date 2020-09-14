@@ -47,7 +47,7 @@ set(sources
 set( sources.plus "" )
 
 set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list(APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_enc_common.cpp
     )

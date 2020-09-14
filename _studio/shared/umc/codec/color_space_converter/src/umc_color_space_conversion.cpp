@@ -20,7 +20,7 @@
 
 #include "umc_color_space_conversion.h"
 #include "umc_video_data.h"
-#if defined(OPEN_SOURCE)
+#ifdef MFX_DISABLE_SW_FALLBACK
 #include "ippi.h"
 #include "ippcc.h"
 #include "ippvc.h"
@@ -287,7 +287,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
   const uint8_t *(pYVU[3]) = {pSrc[0], pSrc[2], pSrc[1]};
   int32_t pYVUStep[3] = {pSrcStep[0], pSrcStep[2], pSrcStep[1]};
   int status;
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
   uint8_t *(pDstYVU[3]) = {pDst[0], pDst[2], pDst[1]};
   int32_t pDstStepYVU[3] = {pDstStep[0], pDstStep[2], pDstStep[1]};
 #endif
@@ -325,7 +325,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case YUY2:
       status = mfxiYCrCb420ToYCbCr422_8u_P3C2R(pYVU, pYVUStep, pDst[0], pDstStep[0], srcSize);
       break;
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case YUV411:
       status = mfxiYCbCr420To411_8u_P3R(pSrc, pSrcStep, pDst, pDstStep, srcSize);
       break;
@@ -370,7 +370,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case YUV444:
     switch (dstFormat) {
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case RGB32:
       status = mfxiYCbCrToBGR_8u_P3C4R(pSrc, pSrcStep[0], pDst[0], pDstStep[0], srcSize, 0xFF);
       break;
@@ -387,7 +387,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case YUV422:
       status = mfxiYCbCr422_8u_C2P3R( pSrc[0], pSrcStep[0], pDst, pDstStep, srcSize);
       break;
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case NV12:
       status = mfxiYCbCr422ToYCbCr420_8u_C2P2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
       break;
@@ -416,7 +416,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case UYVY:
     switch (dstFormat) {
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case YUV420:
       status = mfxiCbYCr422ToYCrCb420_8u_C2P3R(pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
@@ -442,7 +442,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case YUV420:
       status = mfxiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0], pSrc[1], pSrcStep[1], pDst, pDstStep, srcSize);
       break;
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case UYVY:
       status = mfxiYCbCr420ToCbYCr422_8u_P2C2R(pSrc[0], pSrcStep[0], pSrc[1], pSrcStep[1], pDst[0], pDstStep[0], srcSize);
       break;
@@ -456,7 +456,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB24:
     switch (dstFormat) {
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case YUV420:
       status = mfxiBGRToYCrCb420_8u_C3P3R(pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
@@ -476,7 +476,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB32:
     switch (dstFormat) {
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case YUV420:
       status = mfxiBGRToYCrCb420_8u_AC4P3R(pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
@@ -499,7 +499,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB555:
     switch (dstFormat) {
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case YUV420:
       status = mfxiBGR555ToYCrCb420_16u8u_C3P3R((const uint16_t*)pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
@@ -516,7 +516,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB565:
     switch (dstFormat) {
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     case YUV420:
       status = mfxiBGR565ToYCrCb420_16u8u_C3P3R((const uint16_t*)pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;

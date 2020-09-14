@@ -100,7 +100,7 @@ set( prefix ${MSDK_STUDIO_ROOT}/shared/src )
     ${prefix}/libmfx_core_vaapi.cpp
     ${prefix}/mfx_umc_alloc_wrapper.cpp
   )
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list( APPEND plugin_common_sources
     ${prefix}/fast_copy.cpp
     )
@@ -180,7 +180,7 @@ if( DEFINED H264LA_ENCODER_GUID )
     ${prefix}/mfx_h264la_plugin.cpp
   )
 
-  if(NOT OPEN_SOURCE)
+  if(NOT MFX_DISABLE_SW_FALLBACK)
     set(la_IPPLIBS ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l)
   endif()
 
@@ -224,7 +224,7 @@ if( DEFINED HEVC_DECODER_HW_GUID )
   ## plugin info: name, description and version
   set( HEVC_PRODUCT_NAME "Intel(R) Media SDK" )
   set( hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Decode Plug-in - Compatibility Stub" )
-  
+
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set( plugin_name mfx_hevcd_hw64 )
   else()

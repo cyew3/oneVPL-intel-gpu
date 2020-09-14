@@ -234,7 +234,7 @@ function( make_library name variant type )
 
   configure_build_variant( ${target} ${ARGV1} )
 
-  if( NOT OPEN_SOURCE AND NOT nosafestring )
+  if( NOT MFX_DISABLE_SW_FALLBACK AND NOT nosafestring )
     target_link_libraries( ${target} SafeString )
   endif()
 

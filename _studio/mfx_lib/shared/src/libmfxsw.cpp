@@ -294,7 +294,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
         ippInit();
 #endif
         break;
@@ -309,7 +309,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 #else // #if defined(_WIN32) || defined(_WIN64)
 void __attribute__ ((constructor)) dll_init(void)
 {
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
     ippInit();
 #endif
 }

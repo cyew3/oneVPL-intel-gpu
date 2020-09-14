@@ -53,7 +53,7 @@ function( mfx_include_dirs )
     ${MSDK_LIB_ROOT}/fei/include
     ${MSDK_LIB_ROOT}/fei/h264_la
   )
-  if (OPEN_SOURCE)
+  if (MFX_DISABLE_SW_FALLBACK)
     include_directories(
       ${CMAKE_HOME_DIRECTORY}/contrib/ipp/include
     )

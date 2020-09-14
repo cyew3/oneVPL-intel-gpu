@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 
 typedef char vm_char;
 
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 #if !defined(ANDROID)
 
 #ifdef __cplusplus
@@ -68,7 +68,7 @@ extern "C"
 #define vm_string_vsprintf  vsprintf
 #define vm_string_vsnprintf vsnprintf
 
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 #define vm_string_fprintf   vm_file_fprintf
 #define vm_string_vfprintf  vm_file_vfprintf
 #endif
@@ -87,7 +87,7 @@ extern "C"
 #define vm_string_strnicmp  strncmp
 #define vm_string_strrchr   strrchr
 
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 #define vm_string_sprintf_s sprintf
 #define vm_string_strcat_s  strcat_s
 #define vm_string_strncat   strncat_s
@@ -111,7 +111,7 @@ extern "C"
 #define vm_string_strnicmp  strncasecmp
 #define vm_string_strrchr   strrchr
 
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 /* The vm_strings_* macros parameters:
    dest     - pointer to the character array to copy to
    src      - pointer to the character array to copy from

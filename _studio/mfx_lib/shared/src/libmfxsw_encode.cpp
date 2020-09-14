@@ -38,7 +38,7 @@
 #if defined(MFX_VA)
 #include "mfx_h264_encode_hw.h"
 #endif
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
 #include "mfx_h264_enc_common.h"
 #include "mfx_h264_encode.h"
 #endif
@@ -53,7 +53,7 @@
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 #if defined(MFX_VA)
 #include "mfx_mpeg2_encode_hw.h"
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
 #include "mfx_mpeg2_encode.h"
 #endif
 #else
@@ -64,7 +64,7 @@
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #if defined(MFX_VA)
 #include "mfx_mjpeg_encode_hw.h"
-#if defined(MFX_ENABLE_SW_FALLBACK)
+#if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
 #include "mfx_mjpeg_encode.h"
 #endif
 #else
@@ -211,7 +211,7 @@ static const CodecId2Handlers codecId2Handlers =
             },
             // .fallback =
             {
-  #ifndef OPEN_SOURCE
+  #ifndef MFX_DISABLE_SW_FALLBACK
                 // .ctor =
                 [](VideoCORE* core, mfxU16 codecProfile, mfxStatus *mfxRes)
                 -> VideoENCODE*
@@ -247,7 +247,7 @@ static const CodecId2Handlers codecId2Handlers =
                         mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
                     return mfxRes;
                 }
-  #endif // OPEN_SOURCE
+  #endif // MFX_DISABLE_SW_FALLBACK
             }
 #else // MFX_VA
             // .primary =
@@ -323,7 +323,7 @@ static const CodecId2Handlers codecId2Handlers =
             },
             // .fallback =
             {
-  #ifndef OPEN_SOURCE
+  #ifndef MFX_DISABLE_SW_FALLBACK
                 // .ctor =
                 [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
                 -> VideoENCODE*
@@ -340,7 +340,7 @@ static const CodecId2Handlers codecId2Handlers =
                 {
                     return MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
                 }
-  #endif // OPEN_SOURCE
+  #endif // MFX_DISABLE_SW_FALLBACK
             }
 #else // MFX_VA
             // .primary =
@@ -397,7 +397,7 @@ static const CodecId2Handlers codecId2Handlers =
             },
             // .fallback =
             {
-  #if defined(MFX_ENABLE_SW_FALLBACK)
+  #if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
                 // .ctor =
                 [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
                 -> VideoENCODE*
@@ -724,7 +724,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
-#if defined(MFX_ENABLE_SW_FALLBACK)
+#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
 #else
         mfxRes = MFX_ERR_UNSUPPORTED;
@@ -824,7 +824,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
-#if defined(MFX_ENABLE_SW_FALLBACK)
+#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
 #else
         mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
@@ -864,7 +864,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             session->m_bIsHWENCSupport = false;
-#if defined(MFX_ENABLE_SW_FALLBACK)
+#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
 #if !defined (MFX_RT)
             session->m_pENCODE.reset(session->Create<VideoENCODE>(*par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
@@ -881,7 +881,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             !session->m_bIsHWENCSupport &&
             MFX_ERR_NONE <= mfxRes)
         {
-#if defined(MFX_ENABLE_SW_FALLBACK)
+#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
             mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
 #else
             mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;

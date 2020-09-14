@@ -77,7 +77,7 @@ set(sources
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_mfe_adapter.cpp
     )
 
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list(APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_h264_enc_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy.cpp
@@ -91,13 +91,13 @@ set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/libm
 
 get_mfx_version(mfx_version_major mfx_version_minor)
 
-if( MFX_ENABLE_SW_FALLBACK )
-    set(SW_FALLBACK_LIBS "encode;encode_sw;ipp")
+if( MFX_ENABLE_JPEG_SW_FALLBACK )
+    set(JPEG_SW_FALLBACK_LIBS "encode;encode_sw;ipp")
 else()
-  set(SW_FALLBACK_LIBS "")
+  set(JPEG_SW_FALLBACK_LIBS "")
 endif()
 
-if(OPEN_SOURCE)
+if(MFX_DISABLE_SW_FALLBACK)
   set(VARIANTS hw)
 else()
   set(VARIANTS sw hw)
@@ -114,10 +114,10 @@ foreach( variant ${VARIANTS} )
     endif()
   endif()
 
-  if(OPEN_SOURCE)
+  if(MFX_DISABLE_SW_FALLBACK)
     set(LIBS
       bitrate_control
-      ${SW_FALLBACK_LIBS}
+      ${JPEG_SW_FALLBACK_LIBS}
       umc
       vm
       vm_plus
@@ -129,7 +129,7 @@ foreach( variant ${VARIANTS} )
       h264_la
       genx
       mfx_common_${variant}
-      enctools_hw           ## open-source-cut-line
+      enctools_hw
       asc
       mctf_hw
       vpp_${variant}
@@ -155,7 +155,7 @@ foreach( variant ${VARIANTS} )
       genx
       decode_${variant}
       decode_ext_${variant}
-      encode_hw             ## open-source-cut-line
+      encode_hw
       enc_hw
       h264_la
       genx

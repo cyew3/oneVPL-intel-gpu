@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2019 Intel Corporation
+// Copyright (c) 2001-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 #include "ippj.h"
 #include "jpegbase.h"
 
-#if defined(MFX_ENABLE_SW_FALLBACK)
+#if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
 #define ALLOW_JPEG_SW_FALLBACK
 #endif
 

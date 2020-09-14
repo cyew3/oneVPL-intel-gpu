@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2019 Intel Corporation
+// Copyright (c) 2004-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include <cstdlib>
 using namespace UMC;
 
-#ifdef OPEN_SOURCE
+#ifdef MFX_DISABLE_SW_FALLBACK
 #define VLC_FORBIDDEN 0xf0f1
 
 static uint32_t bit_mask[33] =
@@ -320,7 +320,7 @@ void HuffmanTableFree(int32_t *pDecodeTable)
     free((void*)pDecodeTable);
 }
 
-#else // #ifdef OPEN_SOURCE
+#else // #ifdef MFX_DISABLE_SW_FALLBACK
 
 #include "ippvc.h"
 #if defined(__GNUC__)

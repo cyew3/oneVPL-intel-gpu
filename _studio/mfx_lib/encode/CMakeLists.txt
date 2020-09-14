@@ -7,7 +7,7 @@ list( APPEND cdirs
   jpeg_enc color_space_converter
   )
 
-if( NOT OPEN_SOURCE )
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list( APPEND vdirs
     h264 ih265 mpeg2
     )
@@ -35,7 +35,7 @@ endforeach()
 make_library( encode none static )
 set( defs "" )
 
-if( MFX_ENABLE_SW_FALLBACK )
+if( MFX_ENABLE_JPEG_SW_FALLBACK )
   ### JPEG Encoder
   include_directories( ${MSDK_UMC_ROOT}/codec/jpeg_common/include )
   include_directories( ${MSDK_UMC_ROOT}/codec/jpeg_enc/include )

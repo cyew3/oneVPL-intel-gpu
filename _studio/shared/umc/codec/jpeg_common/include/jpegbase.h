@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2019 Intel Corporation
+// Copyright (c) 2001-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#ifdef OPEN_SOURCE
+#ifdef MFX_DISABLE_SW_FALLBACK
 #include "ippcore.h"
 #include "ippi.h"
 #include "ippj.h"

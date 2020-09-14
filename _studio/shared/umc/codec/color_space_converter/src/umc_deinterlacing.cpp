@@ -20,7 +20,7 @@
 
 #include "umc_deinterlacing.h"
 #include "umc_video_data.h"
-#if defined(OPEN_SOURCE)
+#ifdef MFX_DISABLE_SW_FALLBACK
 #include "ippi.h"
 #include "ippvc.h"
 #else

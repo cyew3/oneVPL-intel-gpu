@@ -1364,7 +1364,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         m_cuqpMap.Init (par.m_ext.HEVCParam.PicWidthInLumaSamples, par.m_ext.HEVCParam.PicHeightInLumaSamples, m_caps.ddi_caps.BlockSize);
     }
 #endif
-#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
 
     if (par.m_ext.mfeParam.MaxNumFrames > 1)
     {

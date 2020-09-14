@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2019 Intel Corporation
+// Copyright (c) 2004-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 #ifndef _MFX_MJPEG_DEC_DECODE_H_
 #define _MFX_MJPEG_DEC_DECODE_H_
 
-#if defined(MFX_ENABLE_SW_FALLBACK)
+#if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
   #define ALLOW_SW_FALLBACK
 #endif
 

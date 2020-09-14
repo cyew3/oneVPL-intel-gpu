@@ -1,4 +1,4 @@
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   set(sources
       ${CMAKE_CURRENT_SOURCE_DIR}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw.cpp

@@ -35,6 +35,7 @@ project(mfx1
 include(CMakeDependentOption)
 
 set(OPEN_SOURCE ON)
+set(MFX_DISABLE_SW_FALLBACK ON)
 
 # Default to `release` build if nothing was specified
 if(NOT CMAKE_BUILD_TYPE)
@@ -111,7 +112,7 @@ if (BUILD_SAMPLES)
 endif()
 
 if (BUILD_RUNTIME)
-  if (MFX_ENABLE_SW_FALLBACK)
+  if (MFX_ENABLE_JPEG_SW_FALLBACK)
     add_subdirectory(${CMAKE_HOME_DIRECTORY}/contrib/ipp)
   endif()
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)

@@ -27,7 +27,7 @@
 #include "mfx_config.h"
 #endif
 
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 #define ALLOW_SW_VC1_FALLBACK
 #endif
 
@@ -108,7 +108,7 @@ namespace UMC
 
 #endif //__cplusplus
 
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 
     // readers/writers
     #define UMC_ENABLE_FILE_READER
@@ -151,7 +151,7 @@ namespace UMC
   #define MFX_MAX_64S  ( 9223372036854775807LL )
 #endif
 
-#ifndef OPEN_SOURCE
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 typedef IppiSize mfxSize;
 #else
 typedef struct {

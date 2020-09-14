@@ -35,7 +35,7 @@ set(sources
     ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_video_encoder.cpp
     )
 
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list(APPEND sources
       ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_audio_codec.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_audio_render.cpp
@@ -73,7 +73,7 @@ set(sources
     ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/umc_semaphore.cpp
     )
 
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list(APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/umc_mmap.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/umc_sys_info.cpp
@@ -102,7 +102,7 @@ set(sources
     ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_video_brc.cpp
     )
 
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list(APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_svc_brc.cpp
     )

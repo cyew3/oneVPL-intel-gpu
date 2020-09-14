@@ -150,7 +150,7 @@ list(APPEND sources
 set( sources.plus "" )
 
 set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   make_library( decode sw static )
 endif()
 

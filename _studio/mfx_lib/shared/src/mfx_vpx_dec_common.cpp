@@ -507,7 +507,7 @@ namespace MFX_VPX_Utility
         return MFX_ERR_NONE;
     }
 
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
     // the function is used only by SW VP8/VP9 decoder plugins. Isn't required for open source
     mfxStatus Convert_YV12_to_NV12(mfxFrameData const* inData,  mfxFrameInfo const* inInfo, mfxFrameData* outData, mfxFrameInfo const* outInfo)
     {

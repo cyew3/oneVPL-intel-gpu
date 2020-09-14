@@ -33,14 +33,18 @@ project(mfx1
 
 include(CMakeDependentOption)
 
-set(OPEN_SOURCE ON)
 set(STRIP_EMBARGO OFF)
+set(MFX_DISABLE_SW_FALLBACK ON)
+add_definitions(-DMFX_DISABLE_SW_FALLBACK)
 
-add_definitions(-DOPEN_SOURCE)
-add_definitions(-DMFX_PROTECTED_FEATURE_DISABLE)
-add_definitions(-DSYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+if(OPEN_SOURCE)
+  add_definitions(-DOPEN_SOURCE)
+  add_definitions(-DMFX_PROTECTED_FEATURE_DISABLE)
+  add_definitions(-DSYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+  add_definitions(-DMFX_ENABLE_HW_ONLY_MPEG2_DECODER)
+endif()
+
 add_definitions(-DMFX_ENABLE_HW_ONLY_VPP)
-add_definitions(-DMFX_ENABLE_HW_ONLY_MPEG2_DECODER)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -147,7 +151,7 @@ if (BUILD_SAMPLES)
 endif()
 
 if (BUILD_RUNTIME)
-  if (MFX_ENABLE_SW_FALLBACK)
+  if (MFX_ENABLE_JPEG_SW_FALLBACK)
     add_subdirectory(${CMAKE_HOME_DIRECTORY}/contrib/ipp)
   endif()
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)

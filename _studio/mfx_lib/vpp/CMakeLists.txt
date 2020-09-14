@@ -32,7 +32,7 @@ set(sources
     src/mfx_vpp_jpeg_d3d9.cpp
     )
 
-if(NOT OPEN_SOURCE)
+if(NOT MFX_DISABLE_SW_FALLBACK)
   list(APPEND sources
     src/mfx_color_space_conversion_vpp_avx2.cpp
     src/mfx_color_space_conversion_vpp.cpp

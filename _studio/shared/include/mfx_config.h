@@ -23,7 +23,7 @@
 
 #include "mfxdefs.h"
 
-#ifndef OPEN_SOURCE
+#ifndef MFX_DISABLE_SW_FALLBACK
 // disable additional features
 //#define MFX_FADE_DETECTION_FEATURE_DISABLE
 //#define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
@@ -45,7 +45,7 @@
 
 //#define MFX_ENABLE_SVC_VIDEO_DECODE
 #define MFX_ENABLE_VPP_SVC
-#endif // #ifndef OPEN_SOURCE
+#endif // #ifndef MFX_DISABLE_SW_FALLBACK
 
 #define MFX_ENABLE_ENCTOOLS
 
@@ -101,7 +101,7 @@
     #endif
 #endif
 
-#if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(OPEN_SOURCE)
+#if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(MFX_DISABLE_SW_FALLBACK)
     #define MFX_ENABLE_KERNELS
 
     #if ((MFX_VERSION >= 1026) && (!AS_CAMERA_PLUGIN))
@@ -131,7 +131,7 @@
         #define MFX_ENABLE_H265_VIDEO_ENCODE
     #endif
 
-    #define MFX_ENABLE_SW_FALLBACK
+    #define MFX_ENABLE_JPEG_SW_FALLBACK
 #elif defined(ANDROID)
     #include "mfx_android_defs.h"
 
@@ -141,7 +141,7 @@
     // enable defines
     #include "mfxconfig.h"
 
-    #ifdef OPEN_SOURCE
+    #ifdef MFX_DISABLE_SW_FALLBACK
     #if defined(AS_H264LA_PLUGIN)
         #define MFX_ENABLE_LA_H264_VIDEO_HW
         #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
@@ -151,7 +151,7 @@
         #endif
         #define MFX_ENABLE_VPP
     #endif
-    #endif // #ifdef OPEN_SOURCE
+    #endif // #ifdef MFX_DISABLE_SW_FALLBACK
 #endif
 #if !defined(ANDROID) && defined(__linux__)
     #define MFX_ENABLE_MJPEG_ROTATE_VPP
@@ -182,14 +182,16 @@
     #endif
 
     #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-    #define MFX_ENABLE_MPEG2_VIDEO_PAK
-    #define MFX_ENABLE_MPEG2_VIDEO_ENC
+    #ifndef MFX_DISABLE_SW_FALLBACK
+        #define MFX_ENABLE_MPEG2_VIDEO_PAK
+        #define MFX_ENABLE_MPEG2_VIDEO_ENC
+        // vpp
+        #define MFX_ENABLE_DENOISE_VIDEO_VPP
+        #define MFX_ENABLE_IMAGE_STABILIZATION_VPP
+        #define MFX_ENABLE_VPP
+        #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
+    #endif
 
-    // vpp
-    #define MFX_ENABLE_DENOISE_VIDEO_VPP
-    #define MFX_ENABLE_IMAGE_STABILIZATION_VPP
-    #define MFX_ENABLE_VPP
-    #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
 
     //#define MFX_ENABLE_H264_VIDEO_ENC_HW
     #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
@@ -406,8 +408,8 @@
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
-    #ifdef OPEN_SOURCE
-    #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
+    #ifdef MFX_DISABLE_SW_FALLBACK
+      #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #endif
     #if MFX_VERSION >= 1023
         #define MFX_ENABLE_H264_REPARTITION_CHECK
@@ -461,7 +463,7 @@
     #endif
 #endif
 
-#ifdef OPEN_SOURCE
+#ifdef MFX_DISABLE_SW_FALLBACK
 #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
     #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 #endif
@@ -473,7 +475,7 @@
 #if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 #endif
-#endif // #ifdef OPEN_SOURCE
+#endif // #ifdef MFX_DISABLE_SW_FALLBACK
 
 #if defined(MFX_ENABLE_VPP)
     #define MFX_ENABLE_VPP_COMPOSITION

@@ -86,7 +86,7 @@ bool swapChannels(const T* pSrc, int srcStep,
     return true;
 }
 
-#if !defined (OPEN_SOURCE)
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 #include "ipps.h"
 #include "ippi.h"
 
@@ -102,7 +102,7 @@ bool swapChannels<mfxU8>(const mfxU8* pSrc, int srcStep,
 {
     return ippiSwapChannels_8u_AC4R(pSrc, srcStep, pDst, dstStep, roiSize, dstOrder) == ippStsNoErr;
 }
-#endif // #if !defined (OPEN_SOURCE)
+#endif // #if !defined (MFX_DISABLE_SW_FALLBACK)
 
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
