@@ -153,6 +153,7 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", PFrameSupport                 );
     TRACE("%d", LookaheadAnalysisSupport      );
     TRACE("%d", LookaheadBRCSupport           );
+    TRACE("%d", TCBRCSupport                  );
     DECL_END
 #undef FIELD_FORMAT
 

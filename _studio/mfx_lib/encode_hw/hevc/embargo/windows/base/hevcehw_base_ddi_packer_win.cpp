@@ -238,6 +238,7 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
         m_sps.bResetBRC = m_bResetBRC;
         m_bResetBRC     = false;
+        m_bTCBRC        = task.TCBRCTargetFrameSize ? true : false;
 
         cc.UpdatePPS(global, s_task, m_sps, m_pps);
         cc.UpdateLPLAEncPPS(global, s_task, m_pps);
@@ -429,6 +430,10 @@ void DDIPacker::FillSpsBuffer(
     ENCODE_FRAMESIZE_TOLERANCE FSTByLDBRC[2] = { eFrameSizeTolerance_Normal, eFrameSizeTolerance_ExtremelyLow };
     sps.FrameSizeTolerance = FSTByLDBRC[IsOn(CO3.LowDelayBRC)];
 
+    if (IsOn(CO3.LowDelayBRC) && m_bTCBRC)
+    {
+        sps.FrameSizeTolerance = eFrameSizeTolerance_Normal;
+    }
     sps.ICQQualityFactor = mfxU8(
         par.mfx.ICQQuality * (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ) * (par.mfx.LowPower != MFX_CODINGOPTION_ON)
         + CO3.QVBRQuality * (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR));
@@ -705,6 +710,7 @@ void DDIPacker::FillPpsBuffer(
 
     pps.StatusReportFeedbackNumber  = task.StatusReportId;
     pps.nal_unit_type               = task.SliceNUT;
+    pps.TargetFrameSize             = task.TCBRCTargetFrameSize;
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

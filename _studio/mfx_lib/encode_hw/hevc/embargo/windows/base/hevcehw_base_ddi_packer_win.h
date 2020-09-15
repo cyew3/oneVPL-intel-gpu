@@ -152,6 +152,7 @@ protected:
         , ID_QUANTDATA        = D3DDDIFMT_INTELENCODE_QUANTDATA
         ;
     bool            m_bResetBRC         = false;
+    bool            m_bTCBRC            = false;
     mfxU32          m_numSkipFrames     = 0;
     mfxU32          m_sizeSkipFrames    = 0;
     eMFXHWType      m_hwType            = MFX_HW_UNKNOWN;

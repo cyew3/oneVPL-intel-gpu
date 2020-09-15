@@ -1525,6 +1525,61 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-TargetFrameSizePar"), VM_STRING("par-file for TCBRC per-frame TargetFrameSize. Par format - int values; Frame: <TargetFrameSizes> "), OPT_FILENAME))
+        {
+            MFX_CHECK(++argv != argvEnd);
+            MFX_CHECK(!m_bResetParamsStart);
+
+            vm_file* par_file = vm_file_fopen(argv[0], VM_STRING("r"));
+            MFX_CHECK(par_file != 0);
+
+            for (;;)
+            {
+                m_bResetParamsStart = true;
+
+                //coping current parameters to buffer
+                memcpy(&m_EncParamsOld, &m_EncParams, sizeof(m_EncParamsOld));
+
+                // move ext buffers to temp variable
+                m_ExtBuffersOld = m_ExtBuffers;
+                m_ExtBuffers.reset(new MFXExtBufferVector());
+
+                //mask is zeroed for each reset command
+                MFX_ZERO_MEM(m_EncParamsMask);
+
+                vm_char sbuf[1000], *pStr;
+                pStr = vm_file_fgets(sbuf, sizeof(sbuf), par_file);
+                if (!pStr)
+                    break;
+
+                mfxU32 TargetFrameSize;
+                MFX_CHECK(1 == vm_string_sscanf(pStr, VM_STRING("%u"), &TargetFrameSize));
+                pMFXParams->mfx.TargetKbps = TargetFrameSize * 8 * (m_components[eDEC].m_fFrameRate) / 1000;
+                FILL_MASK_FROM_FIELD(pMFXParams->mfx.TargetKbps, 0);
+
+                // attach ext buffers
+                if (!m_ExtBuffers.get()->empty())
+                {
+                    m_EncParams.ExtParam = &(m_ExtBuffers.get()->operator [](0));
+                    m_EncParams.NumExtParam = (mfxU16)m_ExtBuffers.get()->size();
+                    // move ext buffers to the container
+                    m_ExtBufferVectorsContainer.push_back(m_ExtBuffers.release());
+                    m_ExtBuffers = m_ExtBuffersOld;
+
+                    FILL_MASK_FROM_FIELD(m_EncParams.NumExtParam, 0);
+                    FILL_MASK_FROM_FIELD(m_EncParams.ExtParam, 0);
+                }
+
+                m_pFactories.push_back(new constnumFactory(1
+                    , new FrameBasedCommandActivator(new resetEncCommand(this), this)
+                    , new baseCmdsInitializer(m_nResetFrame, 0, 0, 0, m_pRandom, &m_EncParams, &m_EncParamsMask)));
+
+                //restoring params that were prior to reset_start
+                memcpy(&m_EncParams, &m_EncParamsOld, sizeof(m_EncParamsOld));
+                m_bResetParamsStart = false;
+                m_nResetFrame++;
+            }
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-reset_start"), VM_STRING("after reaching this frame, encoder will be reset with new parameters, followed after this command and before -reset_end"),OPT_SPECIAL, VM_STRING("frame number")))
         {
             MFX_CHECK(1 + argv != argvEnd);
