@@ -1422,9 +1422,7 @@ if (pParams->mirroringExt)
     }
 }
 
-// Additional parameters for interlaced cases on ATS
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    if (hwType >= MFX_HW_TGL_HP)
+    // Additional parameters for interlaced cases
     {
         if (pParams->targetSurface.frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF &&
             pRefSurf->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF)
@@ -1439,7 +1437,6 @@ if (pParams->mirroringExt)
             m_pipelineParam[0].output_surface_flag = VA_BOTTOM_FIELD_FIRST;
         }
     }
-#endif
 
     vaSts = vaCreateBuffer(m_vaDisplay,
                         m_vaContextVPP,
