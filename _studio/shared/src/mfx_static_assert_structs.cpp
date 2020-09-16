@@ -2911,7 +2911,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,SliceGroupsPresent            ,116  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,MaxDecFrameBuffering          ,118  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,EnableReallocRequest          ,120  )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1034)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,FilmGrain                     ,122  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,IgnoreLevelConstrain          ,124  )
 #endif

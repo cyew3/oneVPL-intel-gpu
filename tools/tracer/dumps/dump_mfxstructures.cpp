@@ -429,7 +429,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mf
     str += structName + ".SliceGroupsPresent=" + ToString(mfx.SliceGroupsPresent) + "\n";
     str += structName + ".MaxDecFrameBuffering=" + ToString(mfx.MaxDecFrameBuffering) + "\n";
     str += structName + ".EnableReallocRequest=" + ToString(mfx.EnableReallocRequest) + "\n";
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1034)
     str += structName + ".FilmGrain=" + ToString(mfx.FilmGrain) + "\n";
     str += structName + ".IgnoreLevelConstrain=" + ToString(mfx.IgnoreLevelConstrain) + "\n";
 #endif
