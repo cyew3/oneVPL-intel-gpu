@@ -1298,8 +1298,6 @@ int main(int argc, char *argv[])
     {
         pa = ParseInputString(args);
     }
-
-
     catch (const std::exception &e)
     {
         cout << "Troubles: " << e.what() << endl;
@@ -1316,40 +1314,27 @@ int main(int argc, char *argv[])
     mfx_disp_adapters* adapters = NULL;
     int adapters_num = mfx_init_adapters(&adapters);
 
-    // Search for the required display adapter
-    int i = 0, nFoundAdapters = 0;
-    int nodesNumbers[] = {0,0};
+    // Store valid adapters
+    std::vector<int> validAdapters;
 
-    while ((i < adapters_num) && (nFoundAdapters != numberOfRequiredIntelAdapter))
+    // Search for the required display adapter
+    mfxU32 nFoundAdapters = 0;
+    for(int i = 0; i < adapters_num; i++)
     {
         if (adapters[i].vendor_id == IntelVendorID)
         {
             nFoundAdapters++;
-            nodesNumbers[0] = i+128; //for render nodes
-            nodesNumbers[1] = i;     //for card
+            validAdapters.push_back(i);
         }
-        i++;
     }
+
     if (adapters_num) free(adapters);
     // If Intel adapter with specified number wasn't found, throws exception
-    if (nFoundAdapters != numberOfRequiredIntelAdapter)
+    if (nFoundAdapters < numberOfRequiredIntelAdapter)
         throw std::range_error("The Intel adapter with a specified number wasn't found");
-
-    // Initialization of paths to the device nodes
-    char** adapterPaths = new char* [2];
-    for (int i=0; i<2; i++)
-    {
-        /*if ((i == 0) && (type == MFX_LIBVA_DRM_MODESET)) {
-          adapterPaths[i] = NULL;
-          continue;
-        }*/
-        adapterPaths[i] = new char[sizeof(MFX_DRI_DIR) + sizeof(nodesNames[i]) + 3];
-        sprintf(adapterPaths[i], "%s%s%d", MFX_DRI_DIR, nodesNames[i], nodesNumbers[i]);
-    }
 #endif
 
     Composition composition(&pa);
-
     // Create output NV12 file
     std::unique_ptr<FILE, int(*)(FILE*)> fSink(fopen(pa.output.c_str(), "wb"), fclose);
     MSDK_CHECK_POINTER(fSink.get(), MFX_ERR_NULL_PTR);
@@ -1370,60 +1355,51 @@ int main(int argc, char *argv[])
 #if !(defined(_WIN32) || defined(_WIN64))
     if (!isActivatedSW)
     {
-        // Loading display. At first trying to open render nodes, then card.
-        for (int i=0; i<2; i++)
+        // Loading display. Only try to open card nodes.
+        char* adapterPath = new char[sizeof(MFX_DRI_DIR) + sizeof(nodesNames[1]) + 3];
+        for (size_t i = 0; i < validAdapters.size(); i++)
         {
-            if (!adapterPaths[i]) {
-              sts = MFX_ERR_UNSUPPORTED;
-              continue;
-            }
             sts = MFX_ERR_NONE;
-            m_card_fd = open(adapterPaths[i], O_RDWR);
 
+            sprintf(adapterPath, "%s%s%d", MFX_DRI_DIR, nodesNames[1], validAdapters[i]);
+            m_card_fd = open(adapterPath, O_RDWR);
             if (m_card_fd < 0)
             {
                 sts = MFX_ERR_NOT_INITIALIZED;
-                return sts;
+                continue;
+            }
+
+            m_va_display = m_vadrmlib->vaGetDisplayDRM(m_card_fd);
+            if (!m_va_display)
+            {
+                close(m_card_fd);
+                m_card_fd = -1;
+                sts = MFX_ERR_NULL_PTR;
+                continue;
+            }
+
+            va_res = m_libva->vaInitialize(m_va_display, &major_version, &minor_version);
+            sts = va_to_mfx_status(va_res);
+            if (MFX_ERR_NONE != sts)
+            {
+                close(m_card_fd);
+                m_card_fd = -1;
+                sts = MFX_ERR_NOT_INITIALIZED;
+                continue;
             }
 
             if (MFX_ERR_NONE == sts)
             {
-                m_va_display = m_vadrmlib->vaGetDisplayDRM(m_card_fd);
-
-                if (!m_va_display)
-                {
-                    close(m_card_fd);
-                    m_card_fd = -1;
-                    sts = MFX_ERR_NULL_PTR;
-                    return sts;
-                }
+                break;
             }
-
-            if (MFX_ERR_NONE == sts)
-            {
-                va_res = m_libva->vaInitialize(m_va_display, &major_version, &minor_version);
-                sts = va_to_mfx_status(va_res);
-                if (MFX_ERR_NONE != sts)
-                {
-                    close(m_card_fd);
-                    m_card_fd = -1;
-                    sts = MFX_ERR_NOT_INITIALIZED;
-                    return sts;
-                }
-
-            }
-
-            if (MFX_ERR_NONE == sts) break;
         }
 
-        for (int i=0; i<2; i++)
-        {
-            delete [] adapterPaths[i];
-        }
-        delete [] adapterPaths;
+        delete[] adapterPath;
 
         if (MFX_ERR_NONE != sts)
-            throw std::bad_alloc();
+        {
+            return sts;
+        }
 
          sts = mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, m_va_display);
          MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
