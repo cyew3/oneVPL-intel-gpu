@@ -709,6 +709,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(core, MFXICORE_GT_CONFIG_GUID);
     MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
     mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, platfrom, core->GetVAType(), *pMFXGTConfig);
+    MFX_CHECK(checkSts != MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED);
     if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION; // return immediately
     else if (checkSts == MFX_ERR_NONE && lpSts != MFX_ERR_NONE)
