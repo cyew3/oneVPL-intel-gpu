@@ -468,6 +468,7 @@ void AV1CmCtx::LoadPrograms(GPU_PLATFORM hwType)
         programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_bdw, sizeof(genx_av1_refine_me_p_64x64_bdw));
         break;
 #endif
+#if ENABLE_SKL
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_KBL:
     case PLATFORM_INTEL_GLK:
@@ -496,7 +497,7 @@ void AV1CmCtx::LoadPrograms(GPU_PLATFORM hwType)
         programAv1Intra = ReadProgram(device, genx_av1_intra_skl, sizeof(genx_av1_intra_skl));
         programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_skl, sizeof(genx_av1_refine_me_p_64x64_skl));
         break;
-
+#endif
 #if ENABLE_ICLLP
     case PLATFORM_INTEL_ICLLP:
         programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_icllp, sizeof(genx_av1_prepare_src_icllp));

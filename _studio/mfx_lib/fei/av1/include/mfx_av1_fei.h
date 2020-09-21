@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,8 @@
 #define NEWMVPRED 0
 #define ENABLE_HSW 0
 #define ENABLE_BDW 0
-#define ENABLE_ICLLP 1
+#define ENABLE_SKL 0
+#define ENABLE_ICLLP 0
 #define ENABLE_TGL 0
 #define ENABLE_TGLLP 1
 

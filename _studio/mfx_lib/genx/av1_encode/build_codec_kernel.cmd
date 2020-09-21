@@ -11,10 +11,10 @@ set OPTIONS=%~4
 
 set JIT_TARGET=
 if "%3"=="hsw" set JIT_TARGET=gen7_5 & set PLATFORM_NAME=hsw
-if "%3"=="bdw" set JIT_TARGET=gen8   & set PLATFORM_NAME=bdw
-if "%3"=="skl" set JIT_TARGET=gen9   & set PLATFORM_NAME=skl
-if "%3"=="cnl" set JIT_TARGET=gen9   & set PLATFORM_NAME=cnl
-if "%3"=="icl" set JIT_TARGET=gen9   & set PLATFORM_NAME=icl
+if "%3"=="bdw" set JIT_TARGET=gen8 & set PLATFORM_NAME=bdw
+if "%3"=="skl" set JIT_TARGET=gen9 & set PLATFORM_NAME=skl
+if "%3"=="cnl" set JIT_TARGET=gen9 & set PLATFORM_NAME=cnl
+if "%3"=="icl" set JIT_TARGET=gen9 & set PLATFORM_NAME=icl
 if "%JIT_TARGET%"=="" goto HELP
 
 set CURDIR=%cd%
@@ -45,7 +45,7 @@ SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%MSVSINCL%;%INCLUDE%
 
 echo === Run CM compiler ===
 del /Q %ISA_FILENAME_FINAL%.isa %ISA_FILENAME_BUILD%.isa
-set CM_COMPILER_OPTIONS=/c /Qunroll1 /Qxcm /Qxcm_jit_target=%JIT_TARGET% .\src\genx_%CODEC%_%KERNEL%.cpp /mGLOB_override_limits /mCM_print_asm_count /mCM_printregusage /Dtarget_%JIT_TARGET% %OPTIONS%
+set CM_COMPILER_OPTIONS=/c /Qunroll1 /Qxcm_jit_target=%JIT_TARGET% /Qxcm /mGLOB_override_limits /mCM_print_asm_count /mCM_printregusage /Dtarget_%JIT_TARGET% %OPTIONS% .\src\genx_%CODEC%_%KERNEL%.cpp
 echo CM compiler options: %CM_COMPILER_OPTIONS%
 icl %CM_COMPILER_OPTIONS%
 if not EXIST %ISA_FILENAME_BUILD%.isa goto :BUILD_KERNEL_FAILED
@@ -61,9 +61,9 @@ if not ERRORLEVEL 0 goto :EMBED_ISA_FAILED
 
 echo === Copy embedded ISA ===
 
-copy /Y %ISA_FILENAME_FINAL%_isa.cpp %CURDIR%\src\%ISA_FILENAME_FINAL%_isa.cpp
+copy /Y %ISA_FILENAME_FINAL%.cpp %CURDIR%\src\%ISA_FILENAME_FINAL%_isa.cpp
 if not ERRORLEVEL 0 goto :COPY_ISA_FAILED
-copy /Y %ISA_FILENAME_FINAL%_isa.h %CURDIR%\include\%ISA_FILENAME_FINAL%_isa.h
+copy /Y %ISA_FILENAME_FINAL%.h %CURDIR%\include\%ISA_FILENAME_FINAL%_isa.h
 if not ERRORLEVEL 0 goto :COPY_ISA_FAILED
 
 cd %CURDIR%
