@@ -77,7 +77,7 @@ namespace Base
             using TUpdateTask = CallChain<mfxStatus
                 , StorageW& /*srcTask*/
                 , StorageW* /*dstTask*/>;
-            TUpdateTask UpdateTask;
+            TUpdateTask UpdateTask = {};
         };
 
         using TMInterface = StorageVar<Base::Glob::TaskManagerKey, ExtTMInterface>;
