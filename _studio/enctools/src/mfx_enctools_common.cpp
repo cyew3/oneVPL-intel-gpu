@@ -300,7 +300,10 @@ mfxStatus EncTools::InitVPP(mfxEncToolsCtrl const & ctrl)
     sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, VppRequest);
     MFX_CHECK_STS(sts);
 
+    VppRequest[1].Type |= MFX_MEMTYPE_FROM_DECODE; // ffmpeg's qsv allocator requires MFX_MEMTYPE_FROM_DECODE or MFX_MEMTYPE_FROM_ENCODE
+
     sts = m_pAllocator->Alloc(m_pAllocator->pthis, &(VppRequest[1]), &m_VppResponse);
+    MFX_CHECK_STS(sts);
 
     m_pIntSurfaces.resize(m_VppResponse.NumFrameActual);
     for (mfxU32 i = 0; i < (mfxU32)m_pIntSurfaces.size(); i++)
