@@ -126,18 +126,28 @@ namespace Base
 
             //select proper GUID for encoder
             general.Init(AV1EHW::INIT, blocks);
-            auto guid = FeatureBlocks::Get(
+            auto blkQuery1NoCaps = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks),
-                { FEATURE_GENERAL, General::BLK_SetGUID }
+                { FEATURE_GENERAL, General::BLK_Query1NoCaps }
             );
 
             ASSERT_EQ(
-                guid->Call(vp, storage, storage),
+                blkQuery1NoCaps->Call(vp, storage, storage),
                 MFX_ERR_NONE
             );
 
             //create AUX device
             ddi_d3d11.Init(AV1EHW::INIT | AV1EHW::RUNTIME, blocks);
+            auto setCallChains = FeatureBlocks::Get(
+                FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks),
+                { FEATURE_DDI, IDDI::BLK_SetCallChains }
+            );
+
+            ASSERT_EQ(
+                setCallChains->Call(vp, vp, storage),
+                MFX_ERR_NONE
+            );
+
             auto create = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks),
                 { FEATURE_DDI, IDDI::BLK_CreateDevice }
@@ -159,24 +169,7 @@ namespace Base
         }
     };
 
-    TEST_F(FeatureBlocksDDI_D3D11, QueryWithNoGUID)
-    {
-        auto& queueQ1WC = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueQ1WC, { FEATURE_DDI, IDDI::BLK_QueryCaps });
-
-        storage.Erase(Glob::GUID::Key);
-        ASSERT_TRUE(
-            !storage.Contains(Glob::GUID::Key)
-        );
-
-        auto& vp = Glob::VideoParam::GetOrConstruct(storage);
-        ASSERT_EQ(
-            block->Call(vp, vp, storage),
-            MFX_ERR_UNSUPPORTED
-        );
-    }
-
-    TEST_F(FeatureBlocksDDI_D3D11, QueryWithGUID)
+    TEST_F(FeatureBlocksDDI_D3D11, QueryCaps)
     {
         auto& queueQ1WC = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
         auto block = FeatureBlocks::Get(queueQ1WC, { FEATURE_DDI, IDDI::BLK_QueryCaps });
@@ -186,6 +179,7 @@ namespace Base
         );
 
         auto& vp = Glob::VideoParam::GetOrConstruct(storage);
+        Glob::DDI_Execute::GetOrConstruct(storage);
         ASSERT_EQ(
             block->Call(vp, vp, storage),
             MFX_ERR_NONE
@@ -360,6 +354,7 @@ namespace Base
         );
 
         auto& params = Glob::DDI_SubmitParam::Get(storage);
+        Glob::DDI_Execute::GetOrConstruct(storage);
         ASSERT_TRUE(
             params.empty()
         );
