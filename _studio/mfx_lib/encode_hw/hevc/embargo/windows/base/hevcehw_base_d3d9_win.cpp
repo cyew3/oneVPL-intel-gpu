@@ -237,6 +237,8 @@ void DDI_D3D9::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
     Push(BLK_SubmitTask
         , [this](StorageW& global, StorageW& s_task) -> mfxStatus
     {
+        MFX_CHECK(m_pDevice->IsValid(), MFX_ERR_NOT_INITIALIZED);
+
         auto& task = Task::Common::Get(s_task);
 
         if (!(task.SkipCMD & SKIPCMD_NeedDriverCall))
