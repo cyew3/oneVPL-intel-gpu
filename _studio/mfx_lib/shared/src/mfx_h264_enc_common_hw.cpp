@@ -5721,8 +5721,6 @@ void MfxHwH264Encode::InheritDefaultValues(
         TCBRCTargetFrameSize = GetAvgFrameSizeInBytes(parReset, false);
         if (extOpt2Reset->MaxFrameSize == 0 && parReset.mfx.MaxKbps != 0)
             extOpt2Reset->MaxFrameSize = GetAvgFrameSizeInBytes(parReset, true);
-        parReset.mfx.TargetKbps = 0;
-        parReset.mfx.MaxKbps = 0;
     }
 
     InheritOption(parInit.AsyncDepth,             parReset.AsyncDepth);
