@@ -110,7 +110,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , const StorageR& global
             , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps)
         {
-            MFX_CHECK(!bAnalysis, MFX_ERR_NONE);
+            MFX_CHECK(!bAnalysis && bIsLpLookaheadEnabled, MFX_ERR_NONE);
 
             auto& par = Glob::VideoParam::Get(global);
             const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
@@ -126,7 +126,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , const StorageR& s_task
             , ENCODE_SET_PICTURE_PARAMETERS_HEVC& pps)
         {
-            MFX_CHECK(!bAnalysis, MFX_ERR_NONE);
+            MFX_CHECK(!bAnalysis && bIsLpLookaheadEnabled, MFX_ERR_NONE);
 
             const auto& task = Task::Common::Get(s_task);
             if (task.LplaStatus.TargetFrameSize > 0)
@@ -266,7 +266,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , StorageW& srcTask
             , StorageW* dstTask) -> mfxStatus
         {
-            MFX_CHECK(bIsLpLookAheadSupported, MFX_ERR_NONE);
+            MFX_CHECK(bIsLpLookaheadEnabled, MFX_ERR_NONE);
             auto& src_task = Task::Common::Get(srcTask);
 
             if (dstTask)
