@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2019 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,18 +57,14 @@
     struct sExtTask2 : public sExtTask1
     {
         mfxU32            m_nInternalTask;
-        //vm_event          m_submitted_frame_event;
 
         sExtTask2(): 
             sExtTask1(), 
             m_nInternalTask(0)  
         {
-            //vm_event_set_invalid(&m_submitted_frame_event);
-            //vm_event_init(&m_submitted_frame_event,0,0);
         }
         virtual ~sExtTask2()
         {
-            //vm_event_destroy(&m_submitted_frame_event);
         }
     };
 
@@ -107,7 +103,9 @@
                 }
                 pTask->m_pInput_surface = input_surface;
                 pTask->m_pBs = bs;
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
                 vm_event_signal (&pTask->m_new_frame_event);
+#endif
                 *pOutTask = pTask;
                 m_numTasks ++;
                 return MFX_ERR_NONE;
@@ -193,7 +191,9 @@
                 pTask->m_pBs = bs;
                 pTask->m_nInternalTask = 0;
 
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
                 vm_event_signal (&pTask->m_new_frame_event);
+#endif
                 *pOutTask = pTask;
                 m_numTasks ++;
                 return MFX_ERR_NONE;
