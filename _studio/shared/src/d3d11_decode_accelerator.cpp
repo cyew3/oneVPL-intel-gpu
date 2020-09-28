@@ -123,8 +123,8 @@ UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* params)
         inputCSC = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
 
         D3D11_VIDEO_SAMPLE_DESC outputDesc{};
-        outputDesc.Width  = dx_params->m_video_processing->Out.CropW;
-        outputDesc.Height = dx_params->m_video_processing->Out.CropH;
+        outputDesc.Width  = dx_params->m_video_processing->Out.Width;
+        outputDesc.Height = dx_params->m_video_processing->Out.Height;
         outputDesc.Format = mfxDefaultAllocatorD3D11::MFXtoDXGI(dx_params->m_video_processing->Out.FourCC);
         outputDesc.ColorSpace = inputCSC;
 
