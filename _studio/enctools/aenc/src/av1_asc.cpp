@@ -542,7 +542,9 @@ namespace aenc {
         ImageDiffHistogram(),
         ME_SAD_8x8_Block_Search(),
         Calc_RaCa_pic(),
-        resizeFunc()
+        resizeFunc(),
+        m_TSC0(0),
+        m_TSC_APQ(0)
     {}
 
     void ASC::Setup_Environment() {
@@ -1396,9 +1398,6 @@ namespace aenc {
             m_support->logic[ASCcurrent_frame_data]->SCindex    = TableLookUp(NumSC, lmt_sc2, m_support->logic[ASCcurrent_frame_data]->SC);
             m_support->logic[ASCcurrent_frame_data]->pdist      = m_support->PDistanceTable[(m_support->logic[ASCcurrent_frame_data]->TSCindex * NumSC) +
                                                                   m_support->logic[ASCcurrent_frame_data]->SCindex];
-
-            m_tCorr   = m_videoData[ASCCurrent_Frame]->layer.tcor;
-            m_mctCorr = m_videoData[ASCCurrent_Frame]->layer.mcTcor;
 
             m_support->logic[ASCcurrent_frame_data]->TSC        >>= 5;
             m_support->logic[ASCcurrent_frame_data]->tcor         = m_videoData[ASCCurrent_Frame]->layer.tcor;

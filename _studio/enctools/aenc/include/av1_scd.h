@@ -405,8 +405,6 @@ namespace aenc {
 
         mfxStatus SetInterlaceMode(ASCFTS interlaceMode);
     public:
-        mfxI32 m_tCorr;
-        mfxI32 m_mctCorr;
 
         mfxU16 ML_SelectGoPSize();
         mfxU16 GetFrameGopSize();

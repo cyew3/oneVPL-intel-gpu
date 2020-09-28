@@ -952,7 +952,7 @@ namespace aenc {
         };
         uint32_t MiniGopType[4] = { 1, 2, 4, 8 };
 
-        if (MiniGopSize == 0 || MiniGopSize > sizeof(GopTableIdx)/sizeof(GopTableIdx[0])) {
+        if (MiniGopSize == 0 || MiniGopSize >= sizeof(GopTableIdx)/sizeof(GopTableIdx[0])) {
             throw Error("wrong MiniGopSize");
         }
 
