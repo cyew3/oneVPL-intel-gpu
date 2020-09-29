@@ -26,6 +26,7 @@
 #ifdef UMC_VA_LINUX
 
 #include <mutex>
+#include <set>
 
 namespace UMC
 {
@@ -152,7 +153,6 @@ protected:
     bool*         m_pKeepVAState;
     lvaFrameState m_FrameState;
 
-    int32_t   m_NumOfFrameBuffers;
     uint32_t   m_uiCompBuffersNum;
     uint32_t   m_uiCompBuffersUsed;
     std::mutex m_SyncMutex;
@@ -162,6 +162,8 @@ protected:
     const char * m_sDecodeTraceEnd;
 
     GUID m_guidDecoder;
+private:
+    std::set<VASurfaceID> m_associatedIds;
 };
 
 }; // namespace UMC

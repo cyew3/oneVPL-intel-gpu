@@ -38,7 +38,6 @@
 #include "cm_mem_copy.h"
 
 #include "mfx_session.h"
-#define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 //#define MFX_GUID_CHECKING
 using namespace std;
 using namespace UMC;
@@ -362,9 +361,9 @@ void D3D9VideoCORE::Close()
 
     if (!m_bUseExtManager || m_pDirect3DDeviceManager != m_hdl)
     {
-        SAFE_RELEASE(m_pDirect3DDeviceManager);
         SAFE_RELEASE(m_pSystemMemorySurface);
     }
+    SAFE_RELEASE(m_pDirect3DDeviceManager);
 }
 
 mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
@@ -372,18 +371,20 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
     UMC::AutomaticUMCMutex guard(m_guard);
     try
     {
+        if (type != MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9)
+            return MFX_ERR_INVALID_HANDLE;
+
+        MFX_CHECK_HDL(hdl);
+
+        // If device manager already set, return error
+        MFX_CHECK(!m_hdl, MFX_ERR_UNDEFINED_BEHAVIOR);
+
         // SetHandle should be first since 1.6 version
         bool isRequeredEarlySetHandle = (m_session->m_version.Major > 1 ||
             (m_session->m_version.Major == 1 && m_session->m_version.Minor >= 6));
 
-        if (type != MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9)
-            return MFX_ERR_INVALID_HANDLE;
-
         if (isRequeredEarlySetHandle && m_pDirect3DDeviceManager)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-        mfxStatus sts = CommonCORE::SetHandle(type, hdl);
-        MFX_CHECK_STS(sts);
 
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
         m_vpp_hw_resmng.Close();
@@ -392,7 +393,13 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
         if (m_pDirect3DDeviceManager)
             Close();
 
+        m_hdl = hdl;
+
         m_pDirect3DDeviceManager = (IDirect3DDeviceManager9 *)m_hdl;
+        m_pDirect3DDeviceManager->AddRef();
+
+        m_bUseExtManager = true;
+
         HANDLE DirectXHandle;
         IDirect3DDevice9* pD3DDevice;
         D3DDEVICE_CREATION_PARAMETERS pParameters;
@@ -1073,7 +1080,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             mfxMemId saveMemId = pSrc->Data.MemId;
             pSrc->Data.MemId = 0;
 
-            sts = CoreDoSWFastCopy(pDst, pSrc, COPY_VIDEO_TO_SYS); // sw copy
+            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_VIDEO_TO_SYS); // sw copy
             MFX_CHECK_STS(sts);
 
             pSrc->Data.MemId = saveMemId;
@@ -1088,7 +1095,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
         // system memories were passed
         // use common way to copy frames
 
-        sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_SYS); // sw copy
+        sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_SYS); // sw copy
         MFX_CHECK_STS(sts);
     }
     else if (NULL != srcPtr && NULL != pDst->Data.MemId)
@@ -1118,7 +1125,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             mfxMemId saveMemId = pDst->Data.MemId;
             pDst->Data.MemId = 0;
 
-            sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_VIDEO); // sw copy
+            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
             MFX_CHECK_STS(sts);
 
             pDst->Data.MemId = saveMemId;

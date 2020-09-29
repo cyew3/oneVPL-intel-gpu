@@ -335,7 +335,6 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     m_FrameState = lvaBeforeBegin;
 
     m_pCompBuffers  = NULL;
-    m_NumOfFrameBuffers = 0;
     m_uiCompBuffersNum  = 0;
     m_uiCompBuffersUsed = 0;
 
@@ -390,7 +389,6 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         m_pKeepVAState      = pParams->m_pKeepVAState;
         width               = pParams->m_pVideoStreamInfo->clip_info.width;
         height              = pParams->m_pVideoStreamInfo->clip_info.height;
-        m_NumOfFrameBuffers = pParams->m_iNumberSurfaces;
         m_allocator         = pParams->m_allocator;
         m_FrameState        = lvaBeforeBegin;
 
@@ -407,20 +405,6 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     }
     if ((UMC_OK == umcRes) && (UNKNOWN == m_Profile))
         umcRes = UMC_ERR_INVALID_PARAMS;
-
-    bool needAllocatedSurfaces =    (((m_Profile & VA_CODEC) != UMC::VA_H264)
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_H265)
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_VP8)
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_VP9)
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_VC1)
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_MPEG2)
-#if defined (MFX_ENABLE_AV1_VIDEO_DECODE)
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_AV1)
-#endif
-#ifndef ANDROID
-                                  && ((m_Profile & VA_CODEC) != UMC::VA_JPEG)
-#endif
-                                    );
 
     SetTraceStrings(m_Profile & VA_CODEC);
 
@@ -613,16 +597,8 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
 
-            if (needAllocatedSurfaces)
-            {
-                VM_ASSERT(pParams->m_surf && "render targets tied to the context shoul not be NULL");
-                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, pParams->m_CreateFlags, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, m_pContext);
-            }
-            else
-            {
-                VM_ASSERT(!pParams->m_surf && "render targets tied to the context shoul be NULL");
-                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, pParams->m_CreateFlags, NULL, 0, m_pContext);
-            }
+            VM_ASSERT(!pParams->m_surf && "render targets tied to the context shoul be NULL");
+            va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, pParams->m_CreateFlags, NULL, 0, m_pContext);
 
             umcRes = va_to_umc_res(va_res);
         }
@@ -681,35 +657,37 @@ Status LinuxVideoAccelerator::Close(void)
     m_uiCompBuffersNum  = 0;
     m_uiCompBuffersUsed = 0;
 
+    m_associatedIds.clear();
+
     return VideoAccelerator::Close();
 }
 
 Status LinuxVideoAccelerator::BeginFrame(int32_t FrameBufIndex)
 {
-    Status   umcRes = UMC_OK;
-    VAStatus va_res = VA_STATUS_SUCCESS;
+    Status umcRes = UMC_OK;
 
-    if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
-        umcRes = UMC_ERR_INVALID_PARAMS;
+    MFX_CHECK(FrameBufIndex >= 0, UMC_ERR_INVALID_PARAMS);
 
     VASurfaceID *surface;
     Status sts = m_allocator->GetFrameHandle(FrameBufIndex, &surface);
-    if (sts != UMC_OK)
-        return sts;
+    MFX_CHECK(sts == UMC_OK, sts);
 
-    if (UMC_OK == umcRes)
+    if (lvaBeforeBegin == m_FrameState)
     {
-        if (lvaBeforeBegin == m_FrameState)
         {
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
-                MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, m_sDecodeTraceStart, "%d|%d", *m_pContext, 0);
-                va_res = vaBeginPicture(m_dpy, *m_pContext, *surface);
-            }
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
+            MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, m_sDecodeTraceStart, "%d|%d", *m_pContext, 0);
+            VAStatus va_res = vaBeginPicture(m_dpy, *m_pContext, *surface);
             umcRes = va_to_umc_res(va_res);
-            if (UMC_OK == umcRes) m_FrameState = lvaBeforeEnd;
+        }
+
+        if (UMC_OK == umcRes)
+        {
+            m_FrameState = lvaBeforeEnd;
+            m_associatedIds.insert(*surface);
         }
     }
+
     return umcRes;
 }
 
@@ -986,17 +964,11 @@ uint16_t LinuxVideoAccelerator::GetDecodingError()
     // NOTE: at the moment there is no such support for Android, so no need to execute...
     VAStatus va_sts;
 
-    // TODO: to reduce number of checks we can cache all used render targets
-    // during vaBeginPicture() call. For now check all render targets binded to context
-    for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
+    for(VASurfaceID surface : m_associatedIds)
     {
         VASurfaceDecodeMBErrors* pVaDecErr = NULL;
-        VASurfaceID *surface;
-        Status sts = m_allocator->GetFrameHandle(cnt, &surface);
-        if (sts != UMC_OK)
-            return sts;
 
-        va_sts = vaQuerySurfaceError(m_dpy, *surface, VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
+        va_sts = vaQuerySurfaceError(m_dpy, surface, VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
 
         if (VA_STATUS_SUCCESS == va_sts)
         {
@@ -1060,7 +1032,7 @@ void LinuxVideoAccelerator::SetTraceStrings(uint32_t umc_codec)
 Status LinuxVideoAccelerator::QueryTaskStatus(int32_t FrameBufIndex, void * status, void * error)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "QueryTaskStatus");
-    if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
+    if (FrameBufIndex < 0)
         return UMC_ERR_INVALID_PARAMS;
 
     VASurfaceID *surface;
@@ -1104,7 +1076,7 @@ Status LinuxVideoAccelerator::QueryTaskStatus(int32_t FrameBufIndex, void * stat
 
 Status LinuxVideoAccelerator::SyncTask(int32_t FrameBufIndex, void *surfCorruption)
 {
-    if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
+    if (FrameBufIndex < 0)
         return UMC_ERR_INVALID_PARAMS;
 
     VASurfaceID *surface;

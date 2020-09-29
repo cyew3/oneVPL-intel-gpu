@@ -47,14 +47,15 @@
 class CmCopyWrapper;
 
 // DX11 support
-class D3D11VideoCORE : public CommonCORE
+template <class Base>
+class D3D11VideoCORE_T : public Base
 {
     friend class FactoryCORE;
     friend class D3D11Adapter;
     class D3D11Adapter : public D3D11Interface
     {
     public:
-        D3D11Adapter(D3D11VideoCORE *pD3D11Core) 
+        D3D11Adapter(D3D11VideoCORE_T *pD3D11Core)
             : m_pD3D11Core(pD3D11Core)
         {
         }
@@ -83,91 +84,84 @@ class D3D11VideoCORE : public CommonCORE
             return m_pD3D11Core->m_pD11VideoContext;
         }
     protected:
-        D3D11VideoCORE *m_pD3D11Core;
+        D3D11VideoCORE_T *m_pD3D11Core;
     };
 
     class CMEnabledCoreAdapter : public CMEnabledCoreInterface
     {
     public:
-        CMEnabledCoreAdapter(D3D11VideoCORE *pD3D11Core): m_pD3D11Core(pD3D11Core)
+        CMEnabledCoreAdapter(D3D11VideoCORE_T *pD3D11Core): m_pD3D11Core(pD3D11Core)
         {
-        };
-        virtual mfxStatus SetCmCopyStatus(bool enable)
+        }
+        virtual mfxStatus SetCmCopyStatus(bool enable) override
         {
             return m_pD3D11Core->SetCmCopyStatus(enable);
-        };
+        }
     protected:
-        D3D11VideoCORE *m_pD3D11Core;
+        D3D11VideoCORE_T *m_pD3D11Core;
     };
-
 
 public:
 
-    virtual ~D3D11VideoCORE();
+    virtual ~D3D11VideoCORE_T();
 
+    virtual mfxStatus CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator) override;
 
-    virtual mfxStatus  CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator);
+    virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, bool isNeedCopy = true)                             override;
 
-   
-    // Get the current working adapter's number
-    //virtual mfxU32 GetAdapterNumber(void) {return m_adapterNum;}
-    
+            mfxStatus ReallocFrame(mfxFrameSurface1 *surf);
 
-
-    //virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
-    virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, 
-                                      mfxFrameAllocResponse *response, bool isNeedCopy = true);
-
-    virtual mfxStatus ReallocFrame(mfxFrameSurface1 *surf);
-
-    virtual void          GetVA(mfxHDL* phdl, mfxU16 type) 
+    virtual void      GetVA(mfxHDL* phdl, mfxU16 type) override
     {
+        if (!phdl) return;
+
         if (type & MFX_MEMTYPE_FROM_DECODE)
             (*phdl = m_pAccelerator.get());
-        else if ((type & MFX_MEMTYPE_FROM_VPPIN) || (type & MFX_MEMTYPE_FROM_VPPOUT))
+        else if (type & (MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_FROM_VPPOUT))
             (*phdl = &m_vpp_hw_resmng);
         else
             (*phdl = 0);
     };
-    
-    virtual eMFXPlatform  GetPlatformType() {return  MFX_PLATFORM_HARDWARE;}
-    
-    virtual eMFXVAType   GetVAType() const {return MFX_HW_D3D11; };
-    #if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
-    virtual void  GetVideoProcessing(mfxHDL* phdl) 
+
+    virtual eMFXPlatform GetPlatformType() override { return  MFX_PLATFORM_HARDWARE; }
+
+    virtual eMFXVAType   GetVAType() const override { return MFX_HW_D3D11; }
+#if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
+    virtual void         GetVideoProcessing(mfxHDL* phdl) override
     {
+        if (!phdl) return;
+
         *phdl = &m_vpp_hw_resmng;
-    };
-    #endif
-    mfxStatus  CreateVideoProcessing(mfxVideoParam * param);
+    }
+#endif
+    virtual mfxStatus    CreateVideoProcessing(mfxVideoParam * param) override;
 
-    virtual void* QueryCoreInterface(const MFX_GUID &guid);
+    virtual void*        QueryCoreInterface(const MFX_GUID &guid)     override;
 
-    virtual eMFXHWType     GetHWType();
-    
-    virtual mfxStatus IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false);
-    mfxStatus GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config);
+    virtual eMFXHWType   GetHWType()                                  override;
 
-    virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
-    virtual mfxStatus     GetHandle(mfxHandleType type, mfxHDL *handle);
-    void ReleaseHandle();
+    virtual mfxStatus    IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false) override;
+    mfxStatus  GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config);
 
-    virtual mfxU16 GetAutoAsyncDepth() {return MFX_AUTO_ASYNC_DEPTH_VALUE;}; //it can be platform based
+    virtual mfxStatus    SetHandle(mfxHandleType type, mfxHDL  handle) override;
+    virtual mfxStatus    GetHandle(mfxHandleType type, mfxHDL *handle) override;
 
-    virtual bool IsCompatibleForOpaq();
+    virtual mfxU16       GetAutoAsyncDepth() override { return MFX_AUTO_ASYNC_DEPTH_VALUE; }; //it can be platform based
+
+    virtual bool         IsCompatibleForOpaq() override;
 
 private:
-    D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session = NULL);
+    D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session = nullptr);
 
     mfxStatus InternalInit();
-    mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
-    mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType);
+    virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)                                      override;
+    virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType) override;
 
     std::unique_ptr<D3D11Adapter> m_pid3d11Adapter;
 
     mfxStatus InitializeDevice(bool isTemporal = false);
     mfxStatus InternalCreateDevice();
-    virtual mfxStatus DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)                      override;
     mfxStatus ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
     // this function should not be virtual
     mfxStatus SetCmCopyStatus(bool enable);
@@ -175,45 +169,45 @@ private:
     D3D11_VIDEO_DECODER_CONFIG* GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid);
 
     bool                                                               m_bUseExtAllocForHWFrames;
-    std::unique_ptr<mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator> m_pcHWAlloc; 
+    std::unique_ptr<mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator> m_pcHWAlloc;
 
     // D3D11 services
-    CComPtr<ID3D11Device>            m_pD11Device;
-    CComPtr<ID3D11DeviceContext>     m_pD11Context;
-    CComPtr<IDXGIFactory>            m_pFactory;
-    CComPtr<IDXGIAdapter>            m_pAdapter;
+    CComPtr<ID3D11Device>                   m_pD11Device;
+    CComPtr<ID3D11DeviceContext>            m_pD11Context;
+    CComPtr<IDXGIFactory>                   m_pFactory;
+    CComPtr<IDXGIAdapter>                   m_pAdapter;
 
-    CComQIPtr<ID3D11VideoDevice>     m_pD11VideoDevice;
-    CComQIPtr<ID3D11VideoContext>    m_pD11VideoContext;
-    
+    CComQIPtr<ID3D11VideoDevice>            m_pD11VideoDevice;
+    CComQIPtr<ID3D11VideoContext>           m_pD11VideoContext;
 
     // D3D11 VideoAccelrator which works with decode components on MFX/UMC levels
     // and providing HW capabilities
     std::unique_ptr<MFXD3D11Accelerator>    m_pAccelerator;
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
-    VPPHWResMng                          m_vpp_hw_resmng;
+    VPPHWResMng                             m_vpp_hw_resmng;
     #endif
-    eMFXHWType                           m_HWType;
-    eMFXGTConfig                         m_GTConfig;
+    eMFXHWType                              m_HWType;
+    eMFXGTConfig                            m_GTConfig;
     // Ordinal number of adapter to work
-    const mfxU32                         m_adapterNum;
-    ComPtrCore<ID3D11VideoDecoder>       m_comptr;
+    const mfxU32                            m_adapterNum;
+    ComPtrCore<ID3D11VideoDecoder>          m_comptr;
 #if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-    ComPtrCore<MFEDXVAEncoder>           m_mfeAvc;
-    ComPtrCore<MFEDXVAEncoder>           m_mfeHevc;
+    ComPtrCore<MFEDXVAEncoder>              m_mfeAvc;
+    ComPtrCore<MFEDXVAEncoder>              m_mfeHevc;
 #endif
-    bool m_bCmCopy;
-    bool m_bCmCopySwap;
-    bool m_bCmCopyAllowed;
-    std::unique_ptr<CmCopyWrapper>        m_pCmCopy;
-    std::unique_ptr<CMEnabledCoreAdapter> m_pCmAdapter;
-    mfxU32                                m_VideoDecoderConfigCount;
-    std::vector<D3D11_VIDEO_DECODER_CONFIG>     m_Configs;
+    bool                                    m_bCmCopy;
+    bool                                    m_bCmCopySwap;
+    bool                                    m_bCmCopyAllowed;
+    std::unique_ptr<CmCopyWrapper>          m_pCmCopy;
+    std::unique_ptr<CMEnabledCoreAdapter>   m_pCmAdapter;
+    mfxU32                                  m_VideoDecoderConfigCount;
+    std::vector<D3D11_VIDEO_DECODER_CONFIG> m_Configs;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    bool m_bIsBlockingTaskSyncEnabled;
+    bool                                    m_bIsBlockingTaskSyncEnabled;
 #endif
 };
 
+using D3D11VideoCORE = D3D11VideoCORE_T<CommonCORE>;
 
 #endif
 #endif

@@ -42,8 +42,11 @@
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
             0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
-D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
-    :   CommonCORE(numThreadsAvailable, session)
+template class D3D11VideoCORE_T<CommonCORE  >;
+
+template <class Base>
+D3D11VideoCORE_T<Base>::D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
+    :   Base(numThreadsAvailable, session)
     ,   m_pid3d11Adapter(nullptr)
     ,   m_bUseExtAllocForHWFrames(false)
     ,   m_pAccelerator(nullptr)
@@ -65,7 +68,8 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
 {
 }
 
-D3D11VideoCORE::~D3D11VideoCORE()
+template <class Base>
+D3D11VideoCORE_T<Base>::~D3D11VideoCORE_T()
 {
     if (m_bCmCopy)
     {
@@ -73,11 +77,12 @@ D3D11VideoCORE::~D3D11VideoCORE()
         m_bCmCopy = false;
         m_bCmCopySwap = false;
     }
-};
+}
 
-mfxStatus D3D11VideoCORE::InternalInit()
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::InternalInit()
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::InternalInit");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::InternalInit");
     if (m_HWType != MFX_HW_UNKNOWN)
         return MFX_ERR_NONE;
 
@@ -105,25 +110,31 @@ mfxStatus D3D11VideoCORE::InternalInit()
     return MFX_ERR_NONE;
 }
 
-eMFXHWType D3D11VideoCORE::GetHWType()
+template <class Base>
+eMFXHWType D3D11VideoCORE_T<Base>::GetHWType()
 {
-    InternalInit();
+    std::ignore = MFX_STS_TRACE(InternalInit());
+
     return m_HWType;
 }
 
-
-D3D11_VIDEO_DECODER_CONFIG* D3D11VideoCORE::GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid)
+template <class Base>
+D3D11_VIDEO_DECODER_CONFIG* D3D11VideoCORE_T<Base>::GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid)
 {
     HRESULT hr;
     for (mfxU32 i = start; i < end; i++)
     {
-        D3D11_VIDEO_DECODER_CONFIG Config = {0};
+        D3D11_VIDEO_DECODER_CONFIG Config = {};
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfig");
             hr = m_pD11VideoDevice->GetVideoDecoderConfig(video_desc, i, &Config);
         }
+
         if (FAILED(hr))
-            return NULL;
+        {
+            std::ignore = MFX_STS_TRACE(MFX_ERR_UNDEFINED_BEHAVIOR);
+            return nullptr;
+        }
 
         m_Configs.push_back(Config);
 
@@ -132,30 +143,22 @@ D3D11_VIDEO_DECODER_CONFIG* D3D11VideoCORE::GetConfig(D3D11_VIDEO_DECODER_DESC *
             return &m_Configs[i];
         }
     }
-    return NULL;
+    return nullptr;
 }
 
-mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::GetIntelDataPrivateReport");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::GetIntelDataPrivateReport");
     mfxStatus mfxRes = InternalCreateDevice();
     MFX_CHECK_STS(mfxRes);
 
     D3D11_VIDEO_DECODER_DESC video_desc = {0};
-    video_desc.Guid = DXVADDI_Intel_Decode_PrivateData_Report;
-    video_desc.SampleWidth = par ? par->mfx.FrameInfo.Width : 640;
-    video_desc.SampleHeight = par ? par->mfx.FrameInfo.Height : 480;
+    video_desc.Guid         = DXVADDI_Intel_Decode_PrivateData_Report;
+    video_desc.SampleWidth  = par && par->mfx.FrameInfo.Width  ? par->mfx.FrameInfo.Width  : 640;
+    video_desc.SampleHeight = par && par->mfx.FrameInfo.Height ? par->mfx.FrameInfo.Height : 480;
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
 
-    if (!video_desc.SampleWidth)
-    {
-        video_desc.SampleWidth = 640;
-    }
-
-    if (!video_desc.SampleHeight)
-    {
-        video_desc.SampleHeight = 480;
-    }
     mfxU32 cDecoderProfiles = 0;
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
@@ -184,11 +187,9 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
             isIntelGuidPresent = true;
     }
 
-    if (!isRequestedGuidPresent)
-        return MFX_ERR_NOT_FOUND;
-
-    if (!isIntelGuidPresent) // if no required GUID - no acceleration at all
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(isRequestedGuidPresent, MFX_ERR_NOT_FOUND);
+    // if no required GUID - no acceleration at all
+    MFX_CHECK(isIntelGuidPresent,     MFX_WRN_PARTIAL_ACCELERATION);
 
     UMC::AutomaticUMCMutex lock(m_guard); // protects m_Configs
 
@@ -198,43 +199,35 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
         HRESULT hr = m_pD11VideoDevice->GetVideoDecoderConfigCount(&video_desc, &m_VideoDecoderConfigCount);
-        if (FAILED(hr))
-            return MFX_WRN_PARTIAL_ACCELERATION;
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
-    D3D11_VIDEO_DECODER_CONFIG *video_config = NULL;
+    auto it = std::find_if(std::begin(m_Configs), std::end(m_Configs),
+        [&guid](const D3D11_VIDEO_DECODER_CONFIG& config) { return config.guidConfigBitstreamEncryption == guid; });
 
-    for (mfxU32 i=0; i < m_Configs.size(); ++i)
-    {
-        if (m_Configs[i].guidConfigBitstreamEncryption == guid)
-        {
-            video_config = &m_Configs[i];
-            break;
-        }
-    }
+    D3D11_VIDEO_DECODER_CONFIG *video_config = it != std::end(m_Configs) ?
+        &(*it) : GetConfig(&video_desc, (mfxU32)m_Configs.size(), m_VideoDecoderConfigCount, guid);
 
-    if (!video_config)
-    {
-        video_config = GetConfig(&video_desc, (mfxU32)m_Configs.size(), m_VideoDecoderConfigCount, guid);
-        if (!video_config)
-            return MFX_WRN_PARTIAL_ACCELERATION;
-    }
+    MFX_CHECK(video_config, MFX_WRN_PARTIAL_ACCELERATION);
 
     config = *video_config;
 
     if (guid == DXVA2_Intel_Encode_AVC && video_config->ConfigSpatialResid8 != INTEL_AVC_ENCODE_DDI_VERSION)
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        MFX_RETURN(MFX_WRN_PARTIAL_ACCELERATION);
     }
-    else if (guid == DXVA2_Intel_Encode_MPEG2 && video_config->ConfigSpatialResid8 != INTEL_MPEG2_ENCODE_DDI_VERSION)
+
+    if (guid == DXVA2_Intel_Encode_MPEG2 && video_config->ConfigSpatialResid8 != INTEL_MPEG2_ENCODE_DDI_VERSION)
     {
-        return  MFX_WRN_PARTIAL_ACCELERATION;
+        MFX_RETURN(MFX_WRN_PARTIAL_ACCELERATION);
     }
-    else if (guid == DXVA2_Intel_Encode_JPEG  && video_config->ConfigSpatialResid8 != INTEL_MJPEG_ENCODE_DDI_VERSION)
+
+    if (guid == DXVA2_Intel_Encode_JPEG  && video_config->ConfigSpatialResid8 != INTEL_MJPEG_ENCODE_DDI_VERSION)
     {
-        return  MFX_WRN_PARTIAL_ACCELERATION;
+        MFX_RETURN(MFX_WRN_PARTIAL_ACCELERATION);
     }
-    /*else if (guid == DXVA2_Intel_Encode_HEVC_Main)
+
+    /*if (guid == DXVA2_Intel_Encode_HEVC_Main)
     {
     m_HEVCEncodeDDIVersion = video_config->ConfigSpatialResid8;
     }*/
@@ -242,46 +235,38 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     return  MFX_ERR_NONE;
 }
 
-mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncode)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncode)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::IsGuidSupported");
-    if (!par)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::IsGuidSupported");
+    MFX_CHECK(par, MFX_WRN_PARTIAL_ACCELERATION);
 
     mfxStatus sts = InternalInit();
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     sts = InternalCreateDevice();
-    if (sts < MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts >= MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     D3D11_VIDEO_DECODER_CONFIG config;
     sts = GetIntelDataPrivateReport(guid, par, config);
-
-    if (sts < MFX_ERR_NONE || sts == MFX_WRN_PARTIAL_ACCELERATION)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts >= MFX_ERR_NONE && sts != MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION);
 
     if (sts == MFX_ERR_NONE && !isEncode)
     {
         return CheckIntelDataPrivateReport<D3D11_VIDEO_DECODER_CONFIG>(&config, par);
     }
-    else
-    {
-        return MFX_ERR_NONE;
-    }
-}
-// DX11 support
 
-mfxStatus D3D11VideoCORE::InitializeDevice(bool isTemporal)
+    return MFX_ERR_NONE;
+}
+
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::InitializeDevice(bool isTemporal)
 {
     mfxStatus sts = InternalInit();
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     sts = InternalCreateDevice();
-    if (sts < MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     if (m_pD11Device && !m_hdl && !isTemporal)
     {
@@ -290,9 +275,10 @@ mfxStatus D3D11VideoCORE::InitializeDevice(bool isTemporal)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11VideoCORE::InternalCreateDevice()
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::InternalCreateDevice()
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::InternalCreateDevice");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::InternalCreateDevice");
     if (m_pD11Device)
         return MFX_ERR_NONE;
 
@@ -301,118 +287,143 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
     D3D_FEATURE_LEVEL pFeatureLevelsOut;
 
     D3D_DRIVER_TYPE type = D3D_DRIVER_TYPE_HARDWARE;
-    m_pAdapter = NULL;
+    m_pAdapter = nullptr;
 
     if (m_adapterNum != 0) // not default
     {
-        CreateDXGIFactory(__uuidof(IDXGIFactory), (void**) (&m_pFactory));
-        m_pFactory->EnumAdapters(m_adapterNum, &m_pAdapter);
+        IDXGIFactory * pFactory = nullptr;
+        hres = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**) (&pFactory));
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+
+        // Release owned factory (if exists) and take ownership without Addref
+        m_pFactory.Attach(pFactory);
+
+        IDXGIAdapter* pAdapter = nullptr;
+        hres = m_pFactory->EnumAdapters(m_adapterNum, &pAdapter);
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+
+        // Release owned adapter (if exists) and take ownership without Addref
+        m_pAdapter.Attach(pAdapter);
+
         type = D3D_DRIVER_TYPE_UNKNOWN; // !!!!!! See MSDN, how to create device using not default device
     }
 
-    hres =  D3D11CreateDevice(m_pAdapter,    // provide real adapter
+    CComPtr<ID3D11Device>         pD11Device;
+    CComPtr<ID3D11DeviceContext>  pD11Context;
+
+    hres = D3D11CreateDevice(m_pAdapter,    // provide real adapter
         type,
-        NULL,
+        nullptr,
         0,
         FeatureLevels,
         sizeof(FeatureLevels)/sizeof(D3D_FEATURE_LEVEL),
         D3D11_SDK_VERSION,
-        &m_pD11Device,
+        &pD11Device,
         &pFeatureLevelsOut,
-        &m_pD11Context);
+        &pD11Context);
+
     if (FAILED(hres))
     {
+        pD11Device.Release();
+        pD11Context.Release();
+
         // lets try to create dx11 device with d9 feature level
         static D3D_FEATURE_LEVEL FeatureLevels9[] = {
             D3D_FEATURE_LEVEL_9_1,
             D3D_FEATURE_LEVEL_9_2,
             D3D_FEATURE_LEVEL_9_3 };
 
-        hres =  D3D11CreateDevice(m_pAdapter,    // provide real adapter
+        hres = D3D11CreateDevice(m_pAdapter,    // provide real adapter
             D3D_DRIVER_TYPE_HARDWARE,
-            NULL,
+            nullptr,
             0,
             FeatureLevels9,
             sizeof(FeatureLevels9)/sizeof(D3D_FEATURE_LEVEL),
             D3D11_SDK_VERSION,
-            &m_pD11Device,
+            &pD11Device,
             &pFeatureLevelsOut,
-            &m_pD11Context);
+            &pD11Context);
 
-        if (FAILED(hres))
-            return MFX_ERR_DEVICE_FAILED;
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
     }
+
+    // At this point following pointers should be valid, so store them at class variables
+    m_pD11Device  = pD11Device;
+    m_pD11Context = pD11Context;
 
     // default device should be thread safe
     CComQIPtr<ID3D10Multithread> p_mt(m_pD11Context);
-    if (p_mt)
-        p_mt->SetMultithreadProtected(true);
-    else
-        return MFX_ERR_DEVICE_FAILED;
+    MFX_CHECK(p_mt, MFX_ERR_DEVICE_FAILED);
 
-    if (NULL == (m_pD11VideoDevice = m_pD11Device) ||
-        NULL == (m_pD11VideoContext = m_pD11Context))
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
+    p_mt->SetMultithreadProtected(true);
+
+    m_pD11VideoDevice = m_pD11Device;
+    MFX_CHECK(m_pD11VideoDevice, MFX_ERR_DEVICE_FAILED);
+
+    m_pD11VideoContext = m_pD11Context;
+    MFX_CHECK(m_pD11VideoContext, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 
-} // mfxStatus D3D11VideoCORE::CreateDevice()
+} // mfxStatus D3D11VideoCORE_T<Base>::CreateDevice()
 
-mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::AllocFrames(mfxFrameAllocRequest *request,
                                       mfxFrameAllocResponse *response, bool isNeedCopy)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::AllocFrames");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::AllocFrames");
+
+    MFX_CHECK_NULL_PTR2(request, response);
+
     UMC::AutomaticUMCMutex guard(m_guard);
     try
     {
-        MFX_CHECK_NULL_PTR2(request, response);
-        mfxStatus sts = MFX_ERR_NONE;
-        //mfxFrameAllocRequest temp_request = *request;
-
         // external allocator doesn't know how to allocate opaque surfaces
         // we can treat opaque as internal
-        if (request->Type & MFX_MEMTYPE_OPAQUE_FRAME || request->Info.FourCC == MFX_FOURCC_P8)
-        {
-            request->Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-        }
+        if ((request->Type & MFX_MEMTYPE_OPAQUE_FRAME) || request->Info.FourCC == MFX_FOURCC_P8
 
-        if (IsBayerFormat(request->Info.FourCC))
+        // use internal allocator for R16 since creating requires
+        // Intel's internal resource extensions that are not
+        // exposed for external application
+            || IsBayerFormat(request->Info.FourCC))
         {
-            // use internal allocator for R16 since creating requires
-            // Intel's internal resource extensions that are not
-            // exposed for external application
+            request->Type &= ~MFX_MEMTYPE_EXTERNAL_FRAME;
             request->Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
 
         // Create Service - first call
-        sts = InitializeDevice();
+        mfxStatus sts = InitializeDevice();
         MFX_CHECK_STS(sts);
 
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
-            if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device)){
+
+            if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device))
+            {
                 //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
                 //if failed to create CM device, continue without CmCopy
-                m_bCmCopy = false;
+                m_bCmCopy        = false;
                 m_bCmCopyAllowed = false;
-                m_pCmCopy->Release();
+
                 m_pCmCopy.reset();
                 //return MFX_ERR_DEVICE_FAILED;
-            }else{
+            }
+            else
+            {
                 sts = m_pCmCopy->Initialize(GetHWType());
                 MFX_CHECK_STS(sts);
                 m_bCmCopy = true;
             }
-        }else if(m_bCmCopy){
-            if(m_pCmCopy)
+        }
+        else if (m_bCmCopy)
+        {
+            if (m_pCmCopy)
                 m_pCmCopy->ReleaseCmSurfaces();
             else
                 m_bCmCopy = false;
         }
-        if(m_pCmCopy && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_P010))
+        if (m_pCmCopy && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_P010))
         {
             sts = m_pCmCopy->InitializeSwapKernels(GetHWType());
             m_bCmCopySwap = true;
@@ -420,7 +431,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
         // use common core for sw surface allocation
         if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-            return CommonCORE::AllocFrames(request, response);
+            return Base::AllocFrames(request, response);
         else
         {
             // make 'fake' Alloc call to retrieve memId's of surfaces already allocated by app
@@ -452,14 +463,14 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             }
         }
     }
-    catch(...)
+    catch (...)
     {
-        return MFX_ERR_MEMORY_ALLOC;
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
     }
+} // mfxStatus D3D11VideoCORE_T<Base>::AllocFrames
 
-} // mfxStatus D3D11VideoCORE::AllocFrames
-
-mfxStatus D3D11VideoCORE::ReallocFrame(mfxFrameSurface1 *surf)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::ReallocFrame(mfxFrameSurface1 *surf)
 {
     MFX_CHECK_NULL_PTR1(surf);
 
@@ -477,7 +488,8 @@ mfxStatus D3D11VideoCORE::ReallocFrame(mfxFrameSurface1 *surf)
     return mfxDefaultAllocatorD3D11::ReallocFrameHW(pFrameAlloc->pthis, memid, &(surf->Info));
 }
 
-mfxStatus D3D11VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -511,17 +523,17 @@ mfxStatus D3D11VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxF
     }
     else
     {
-        return CommonCORE::DefaultAllocFrames(request, response);
+        return Base::DefaultAllocFrames(request, response);
     }
     ++m_NumAllocators;
     return sts;
 }
 
-mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::CreateVA");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::CreateVA");
     mfxStatus sts = MFX_ERR_NONE;
-    param; request;
 
     UMC::VideoStreamInfo vi{};
     ConvertMFXParamsToUMC(param, &vi);
@@ -552,6 +564,7 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     auto pScheduler = (MFXIScheduler2 *)m_session->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
     MFX_CHECK(pScheduler, MFX_ERR_UNDEFINED_BEHAVIOR);
+
     m_pAccelerator->SetGlobalHwEvent(pScheduler->GetHwEvent());
     pScheduler->Release();
 #endif
@@ -563,13 +576,12 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
         if (sts != MFX_ERR_NONE)
         {
             m_pAccelerator->Close();
+            MFX_RETURN(sts);
         }
-
-        MFX_CHECK_STS(sts);
     }
     else
 #endif
-        m_DXVA2DecodeHandle = NULL;
+        m_DXVA2DecodeHandle = nullptr;
 
     m_pAccelerator->GetVideoDecoder(&m_D3DDecodeHandle);
     m_pAccelerator->m_HWPlatform = m_HWType;
@@ -577,113 +589,131 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
     return sts;
 }
 
-mfxStatus D3D11VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::CreateVideoProcessing(mfxVideoParam *)
 {
-    mfxStatus sts = MFX_ERR_NONE;
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     if (!m_vpp_hw_resmng.GetDevice()){
-        sts = m_vpp_hw_resmng.CreateDevice(this);
+        return m_vpp_hw_resmng.CreateDevice(this);
     }
+    return MFX_ERR_NONE;
 #else
-    param;
-    sts = MFX_ERR_UNSUPPORTED;
+    MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #endif
-    return sts;
 }
 
-mfxStatus D3D11VideoCORE::ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc)
 {
     RegisterMids(response, request->Type, !m_bUseExtAllocForHWFrames, pAlloc);
     m_pcHWAlloc.release();
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11VideoCORE::SetCmCopyStatus(bool enable)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::SetCmCopyStatus(bool enable)
 {
     m_bCmCopyAllowed = enable;
     if (!enable)
     {
-        if (m_pCmCopy)
-        {
-            m_pCmCopy->Release();
-        }
+        m_pCmCopy.reset();
+
         m_bCmCopy = false;
     }
     return MFX_ERR_NONE;
 }
 
-void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
+template <class Base>
+void* D3D11VideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
 {
-    // single instance
-    if (MFXIVideoCORE_GUID == guid)
-    {
-        return (void*) this;
-    }
     if (MFXICORED3D11_GUID == guid)
     {
-        if (!m_pid3d11Adapter.get())
+        if (!m_pid3d11Adapter)
         {
+            UMC::AutomaticUMCMutex guard(m_guard);
+
             m_pid3d11Adapter.reset(new D3D11Adapter(this));
         }
         return (void*)m_pid3d11Adapter.get();
     }
-    else if (MFXICORE_GT_CONFIG_GUID == guid)
+
+    if (MFXICORE_GT_CONFIG_GUID == guid)
     {
         return (void*)&m_GTConfig;
     }
-    else if (MFXIHWCAPS_GUID == guid)
+
+    if (MFXIHWCAPS_GUID == guid)
     {
         return (void*) &m_encode_caps;
     }
-    else if (MFXIHWMBPROCRATE_GUID == guid)
+
+    if (MFXIHWMBPROCRATE_GUID == guid)
     {
         return (void*) &m_encode_mbprocrate;
     }
-    else if (MFXID3D11DECODER_GUID == guid)
+
+    if (MFXID3D11DECODER_GUID == guid)
     {
         return (void*)&m_comptr;
     }
 #if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-    else if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
+    if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
     {
         if (!m_mfeAvc.get())
         {
+            UMC::AutomaticUMCMutex guard(m_guard);
+
             m_mfeAvc = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEAVCENCODER_GUID);
             if (m_mfeAvc.get())
                 m_mfeAvc.get()->AddRef();
         }
         return (void*)&m_mfeAvc;
     }
-    else if (MFXMFEAVCENCODER_GUID == guid)
+
+    if (MFXMFEAVCENCODER_GUID == guid)
     {
         return (void*)&m_mfeAvc;
     }
-    else if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
+
+    if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
     {
         if (!m_mfeHevc.get())
         {
+            UMC::AutomaticUMCMutex guard(m_guard);
+
             m_mfeHevc = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEHEVCENCODER_GUID);
             if (m_mfeHevc.get())
                 m_mfeHevc.get()->AddRef();
         }
         return (void*)&m_mfeHevc;
     }
-    else if (MFXMFEHEVCENCODER_GUID == guid)
+
+    if (MFXMFEHEVCENCODER_GUID == guid)
     {
         return (void*)&m_mfeHevc;
     }
 #endif
-    else if (MFXICORECM_GUID == guid)
+
+    if (MFXICORECM_GUID == guid)
     {
-        CmDevice* pCmDevice = NULL;
+        CmDevice* pCmDevice = nullptr;
         if (!m_bCmCopy)
         {
+            UMC::AutomaticUMCMutex guard(m_guard);
+
             m_pCmCopy.reset(new CmCopyWrapper);
             pCmDevice = m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device);
+
             if (!pCmDevice)
-                return NULL;
-            if (MFX_ERR_NONE != m_pCmCopy->Initialize(GetHWType()))
-                return NULL;
+            {
+                std::ignore = MFX_STS_TRACE(MFX_ERR_NULL_PTR);
+                return nullptr;
+            }
+
+            mfxStatus sts = m_pCmCopy->Initialize(GetHWType());
+            if (MFX_ERR_NONE != MFX_STS_TRACE(sts))
+                return nullptr;
+
             m_bCmCopy = true;
         }
         else
@@ -692,58 +722,62 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         }
         return (void*)pCmDevice;
     }
-    else if (MFXICORECMCOPYWRAPPER_GUID == guid)
+
+    if (MFXICORECMCOPYWRAPPER_GUID == guid)
     {
         if (!m_pCmCopy)
         {
+            UMC::AutomaticUMCMutex guard(m_guard);
+
             m_pCmCopy.reset(new CmCopyWrapper);
+
             if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device)){
                 //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
                 //if failed to create CM device, continue without CmCopy
-                m_bCmCopy = false;
+                m_bCmCopy        = false;
                 m_bCmCopyAllowed = false;
-                m_pCmCopy->Release();
+
                 m_pCmCopy.reset();
-                return NULL;
-            }else{
-                if(MFX_ERR_NONE != m_pCmCopy->Initialize(GetHWType()))
-                    return NULL;
-                else
-                    m_bCmCopy = true;
+
+                return nullptr;
             }
+
+            mfxStatus sts = m_pCmCopy->Initialize(GetHWType());
+            if (MFX_ERR_NONE != MFX_STS_TRACE(sts))
+                return nullptr;
+
+            m_bCmCopy = true;
         }
+
         return (void*)m_pCmCopy.get();
     }
-    else if (MFXICMEnabledCore_GUID == guid)
+
+    if (MFXICMEnabledCore_GUID == guid)
     {
         if (!m_pCmAdapter)
         {
+            UMC::AutomaticUMCMutex guard(m_guard);
+
             m_pCmAdapter.reset(new CMEnabledCoreAdapter(this));
         }
         return (void*)m_pCmAdapter.get();
     }
-    else if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
-        return &m_FrameAllocator.frameAllocator;
-    else if (MFXICORE_API_1_19_GUID == guid)
-    {
-        return &m_API_1_19;
-    }
+
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    else if (MFXBlockingTaskSyncEnabled_GUID == guid)
+    if (MFXBlockingTaskSyncEnabled_GUID == guid)
     {
         m_bIsBlockingTaskSyncEnabled = m_HWType > MFX_HW_SCL;
         return &m_bIsBlockingTaskSyncEnabled;
     }
 #endif
-    else if (MFXIFEIEnabled_GUID == guid)
-        return const_cast<bool*>(&s_bHEVCFEIEnabled);
 
-    return NULL;
+    return Base::QueryCoreInterface(guid);
 }
 
-mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::DoFastCopyWrapper");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::DoFastCopyWrapper");
     mfxStatus sts;
 
     mfxHDLPair srcHandle = {}, dstHandle = {};
@@ -906,7 +940,8 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
     return fcSts;
 }
 
-mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU8* srcPtr;
@@ -1030,7 +1065,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             if (pDst->Info.FourCC == DXGI_FORMAT_AYUV)
                 pDst->Info.FourCC = MFX_FOURCC_AYUV;
 
-            sts = CoreDoSWFastCopy(pDst, pSrc, COPY_VIDEO_TO_SYS); // sw copy
+            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_VIDEO_TO_SYS); // sw copy
             MFX_CHECK_STS(sts);
 
             pSrc->Data.MemId = saveMemId;
@@ -1049,7 +1084,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         if (pDst->Info.FourCC == DXGI_FORMAT_AYUV)
             pDst->Info.FourCC = MFX_FOURCC_AYUV;
 
-        sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_SYS); // sw copy
+        sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_SYS); // sw copy
         MFX_CHECK_STS(sts);
 
     }
@@ -1061,7 +1096,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
         if ( IsBayerFormat(pSrc->Info.FourCC) )
         {
-            // Only one plane is used for Bayer and vertial pitch calulation is not correct for it.
+            // Only one plane is used for Bayer and vertical pitch calculation is not correct for it.
             verticalPitch = pDst->Info.Height;
         }
 
@@ -1133,7 +1168,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                     if (pDst->Info.FourCC == DXGI_FORMAT_AYUV)
                         pDst->Info.FourCC = MFX_FOURCC_AYUV;
 
-                    sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_VIDEO); // sw copy
+                    sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
                     MFX_CHECK_STS(sts);
 
                     pDst->Data.MemId = saveMemId;
@@ -1158,95 +1193,79 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     return sts;
 }
 
-mfxStatus D3D11VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::SetHandle(mfxHandleType type, mfxHDL handle)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
     try
     {
-        // SetHandle should be first since 1.6 version
-        bool isRequeredEarlySetHandle = (m_session->m_version.Major > 1 ||
-            (m_session->m_version.Major == 1 && m_session->m_version.Minor >= 6));
-
-        if (type != MFX_HANDLE_D3D11_DEVICE)
-            return MFX_ERR_INVALID_HANDLE;
-
-        if (isRequeredEarlySetHandle && m_pD11Device)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-        mfxStatus sts = CommonCORE::SetHandle(type, handle);
-        MFX_CHECK_STS(sts);
-
-        m_pD11Device = (ID3D11Device*)m_hdl;
-        CComPtr<ID3D11DeviceContext> pImmediateContext;
-        m_pD11Device->GetImmediateContext(&pImmediateContext);
-        m_pD11Context = pImmediateContext;
-
-        m_pD11VideoDevice = m_pD11Device;
-        m_pD11VideoContext = m_pD11Context;
-
-
-        if (!m_pD11Context)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-        CComQIPtr<ID3D10Multithread> p_mt(m_pD11Context);
-        if (p_mt)
+        switch (type)
         {
-            if (!p_mt->GetMultithreadProtected())
-            {
-                ReleaseHandle();
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            }
+        case MFX_HANDLE_D3D11_DEVICE:
+        {
+            // SetHandle should be first since 1.6 version
+            bool isRequeredEarlySetHandle = (m_session->m_version.Major > 1 ||
+                (m_session->m_version.Major == 1 && m_session->m_version.Minor >= 6));
+
+            MFX_CHECK(!isRequeredEarlySetHandle || !m_pD11Device, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            MFX_CHECK_HDL(handle);
+
+            // If device manager already set, return error
+            MFX_CHECK(!m_hdl, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            CComPtr<ID3D11Device> tmp_device = reinterpret_cast<ID3D11Device*>(handle);
+
+            CComPtr<ID3D11DeviceContext> pImmediateContext;
+            tmp_device->GetImmediateContext(&pImmediateContext);
+
+            MFX_CHECK(pImmediateContext, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            CComQIPtr<ID3D10Multithread> p_mt(pImmediateContext);
+            MFX_CHECK(p_mt && p_mt->GetMultithreadProtected(), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            m_hdl = handle;
+
+            m_pD11Device  = tmp_device;
+            m_pD11Context = pImmediateContext;
+
+            m_pD11VideoDevice  = m_pD11Device;
+            m_pD11VideoContext = m_pD11Context;
+
+            m_bUseExtManager = true;
+
+            return MFX_ERR_NONE;
         }
-        else {
-            ReleaseHandle();
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        default:
+            return Base::SetHandle(type, handle);
         }
     }
-    catch(...)
+    catch (...)
     {
-        ReleaseHandle();
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
+        MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
     }
-
-    return MFX_ERR_NONE;
-
 }
 
-mfxStatus D3D11VideoCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::GetHandle(mfxHandleType type, mfxHDL *handle)
 {
     MFX_CHECK_NULL_PTR1(handle);
     if (type == MFX_HANDLE_D3D11_DEVICE)
     {
         UMC::AutomaticUMCMutex guard(m_guard);
-        if (m_hdl)
-        {
-            *handle = m_hdl;
-            return MFX_ERR_NONE;
-        }
-        // not exist handle yet
-        else
-            return MFX_ERR_NOT_FOUND;
-    }
-    else
-    {
-        mfxStatus sts = CommonCORE::GetHandle(type, handle);
-        MFX_CHECK_STS(sts);
+
+        // not existing handle yet
+        MFX_CHECK(m_hdl, MFX_ERR_NOT_FOUND);
+
+        *handle = m_hdl;
         return MFX_ERR_NONE;
     }
+
+    return Base::GetHandle(type, handle);
 }
 
-void D3D11VideoCORE::ReleaseHandle()
-{
-    if (m_hdl)
-    {
-        ((IUnknown*)m_hdl)->Release();
-        m_bUseExtManager = false;
-        m_hdl = 0;
-    }
-}
-
-bool D3D11VideoCORE::IsCompatibleForOpaq()
+template <class Base>
+bool D3D11VideoCORE_T<Base>::IsCompatibleForOpaq()
 {
     if (!m_bUseExtManager)
     {
@@ -1254,6 +1273,5 @@ bool D3D11VideoCORE::IsCompatibleForOpaq()
     }
     return true;
 }
-
 #endif
 #endif

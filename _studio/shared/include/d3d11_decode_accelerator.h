@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,6 @@
 #include "umc_va_dxva2.h"
 #include "mfxvideo.h"
 
-class  D3D11VideoCORE;
 class mfx_UMC_FrameAllocator;
 
 struct MFXD3D11AcceleratorParams

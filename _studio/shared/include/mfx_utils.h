@@ -67,11 +67,13 @@ static inline T mfx_print_err(T sts, const char *file, int line, const char *fun
 #define MFX_CHECK_STS_ALLOC(pointer)    MFX_CHECK(pointer, MFX_ERR_MEMORY_ALLOC)
 #define MFX_CHECK_COND(cond)            MFX_CHECK(cond, MFX_ERR_UNSUPPORTED)
 #define MFX_CHECK_INIT(InitFlag)        MFX_CHECK(InitFlag, MFX_ERR_MORE_DATA)
+#define MFX_CHECK_HDL(hdl)              MFX_CHECK(hdl,      MFX_ERR_INVALID_HANDLE)
 
 #define MFX_CHECK_UMC_ALLOC(err)     { if (err != true) {return MFX_ERR_MEMORY_ALLOC;} }
 #define MFX_CHECK_EXBUF_INDEX(index) { if (index == -1) {return MFX_ERR_MEMORY_ALLOC;} }
 
-#define MFX_CHECK_WITH_ASSERT(EXPR, ERR) {assert(EXPR); MFX_CHECK(EXPR,ERR); }
+#define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR,ERR); }
+#define MFX_CHECK_WITH_THROW(EXPR, ERR, EXP)  { if (!(EXPR)) { std::ignore = MFX_STS_TRACE(ERR); throw EXP; } }
 
 static const mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000; // will go to mfxdefs.h
 static const mfxU64 MFX_TIME_STAMP_INVALID = (mfxU64)-1; // will go to mfxdefs.h
@@ -85,15 +87,15 @@ mfxStatus ConvertStatusUmc2Mfx(UMC::Status umcStatus)
 {
     switch (umcStatus)
     {
-    case UMC::UMC_OK: return MFX_ERR_NONE;
-    case UMC::UMC_ERR_NULL_PTR: return MFX_ERR_NULL_PTR;
-    case UMC::UMC_ERR_UNSUPPORTED: return MFX_ERR_UNSUPPORTED;
-    case UMC::UMC_ERR_ALLOC: return MFX_ERR_MEMORY_ALLOC;
-    case UMC::UMC_ERR_LOCK: return MFX_ERR_LOCK_MEMORY;
+    case UMC::UMC_OK:                    return MFX_ERR_NONE;
+    case UMC::UMC_ERR_NULL_PTR:          return MFX_ERR_NULL_PTR;
+    case UMC::UMC_ERR_UNSUPPORTED:       return MFX_ERR_UNSUPPORTED;
+    case UMC::UMC_ERR_ALLOC:             return MFX_ERR_MEMORY_ALLOC;
+    case UMC::UMC_ERR_LOCK:              return MFX_ERR_LOCK_MEMORY;
     case UMC::UMC_ERR_NOT_ENOUGH_BUFFER: return MFX_ERR_NOT_ENOUGH_BUFFER;
-    case UMC::UMC_ERR_NOT_ENOUGH_DATA: return MFX_ERR_MORE_DATA;
-    case UMC::UMC_ERR_SYNC: return MFX_ERR_MORE_DATA; // need to skip bad frames
-    default: return MFX_ERR_ABORTED; // need general error code here
+    case UMC::UMC_ERR_NOT_ENOUGH_DATA:   return MFX_ERR_MORE_DATA;
+    case UMC::UMC_ERR_SYNC:              return MFX_ERR_MORE_DATA; // need to skip bad frames
+    default:                             return MFX_ERR_UNKNOWN;   // need general error code here
     }
 }
 

@@ -45,23 +45,21 @@
 #include "va/va.h"
 #include <va/va_backend.h>
 
-#define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
-
 typedef struct drm_i915_getparam {
     int param;
     int *value;
 } drm_i915_getparam_t;
 
-#define I915_PARAM_CHIPSET_ID            4
-#define DRM_I915_GETPARAM   0x06
+#define I915_PARAM_CHIPSET_ID   4
+#define DRM_I915_GETPARAM       0x06
 #define DRM_IOCTL_BASE          'd'
-#define DRM_COMMAND_BASE                0x40
+#define DRM_COMMAND_BASE        0x40
 #define DRM_IOWR(nr,type)       _IOWR(DRM_IOCTL_BASE,nr,type)
-#define DRM_IOCTL_I915_GETPARAM         DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GETPARAM, drm_i915_getparam_t)
+#define DRM_IOCTL_I915_GETPARAM DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GETPARAM, drm_i915_getparam_t)
 
 typedef struct {
-    int device_id;
-    eMFXHWType platform;
+    int          device_id;
+    eMFXHWType   platform;
     eMFXGTConfig config;
 } mfx_device_item;
 
@@ -470,29 +468,28 @@ mfx_device_item getDeviceItem(VADisplay pVaDisplay)
 {
     /* This is value by default */
     mfx_device_item retDeviceItem = { 0x0000, MFX_HW_UNKNOWN, MFX_GT_UNKNOWN };
-    int fd = 0, i = 0, listSize = 0;
-    int devID = 0;
-    int ret = 0;
-    drm_i915_getparam_t gp;
-    VADisplayContextP pDisplayContext_test = NULL;
-    VADriverContextP  pDriverContext_test = NULL;
 
-    pDisplayContext_test = (VADisplayContextP)pVaDisplay;
-    pDriverContext_test = pDisplayContext_test->pDriverContext;
-    fd = *(int*)pDriverContext_test->drm_state;
+    VADisplayContextP pDisplayContext_test = reinterpret_cast<VADisplayContextP>(pVaDisplay);
+    VADriverContextP  pDriverContext_test  = pDisplayContext_test->pDriverContext;
+
+    int fd = *(int*)pDriverContext_test->drm_state;
 
     /* Now as we know real authenticated fd of VAAPI library,
     * we can call ioctl() to kernel mode driver,
     * get device ID and find out platform type
     * */
+    int devID = 0;
+    drm_i915_getparam_t gp;
     gp.param = I915_PARAM_CHIPSET_ID;
     gp.value = &devID;
 
-    ret = ioctl(fd, DRM_IOCTL_I915_GETPARAM, &gp);
+    int ret = ioctl(fd, DRM_IOCTL_I915_GETPARAM, &gp);
+
     if (!ret)
     {
-        listSize = (sizeof(listLegalDevIDs) / sizeof(mfx_device_item));
-        for (i = 0; i < listSize; ++i)
+        mfxU32 listSize = (sizeof(listLegalDevIDs) / sizeof(mfx_device_item));
+
+        for (mfxU32 i = 0; i < listSize; ++i)
         {
             if (listLegalDevIDs[i].device_id == devID)
             {
@@ -505,12 +502,14 @@ mfx_device_item getDeviceItem(VADisplay pVaDisplay)
     return retDeviceItem;
 } // eMFXHWType getDeviceItem (VADisplay pVaDisplay)
 
+template class VAAPIVideoCORE_T<CommonCORE  >;
 
-VAAPIVideoCORE::VAAPIVideoCORE(
+template <class Base>
+VAAPIVideoCORE_T<Base>::VAAPIVideoCORE_T(
     const mfxU32 adapterNum,
     const mfxU32 numThreadsAvailable,
-    const mfxSession session) :
-            CommonCORE(numThreadsAvailable, session)
+    const mfxSession session)
+          : Base(numThreadsAvailable, session)
           , m_Display(0)
           , m_VAConfigHandle((mfxHDL)VA_INVALID_ID)
           , m_VAContextHandle((mfxHDL)VA_INVALID_ID)
@@ -534,64 +533,54 @@ VAAPIVideoCORE::VAAPIVideoCORE(
 #endif
 #endif
 {
-} // VAAPIVideoCORE::VAAPIVideoCORE(...)
+} // VAAPIVideoCORE_T<Base>::VAAPIVideoCORE_T(...)
 
-
-VAAPIVideoCORE::~VAAPIVideoCORE()
+template <class Base>
+VAAPIVideoCORE_T<Base>::~VAAPIVideoCORE_T()
 {
-    if (m_bCmCopy)
-    {
-        m_pCmCopy->Release();
-        m_bCmCopy = false;
-    }
-
     Close();
+}
 
-} // VAAPIVideoCORE::~VAAPIVideoCORE()
-
-
-void VAAPIVideoCORE::Close()
+template <class Base>
+void VAAPIVideoCORE_T<Base>::Close()
 {
     m_KeepVAState = false;
     m_pVA.reset();
-} // void VAAPIVideoCORE::Close()
+}
 
-
-mfxStatus
-VAAPIVideoCORE::GetHandle(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::GetHandle(
     mfxHandleType type,
     mfxHDL *handle)
 {
     MFX_CHECK_NULL_PTR1(handle);
-    UMC::AutomaticUMCMutex guard(m_guard);
+    UMC::AutomaticUMCMutex guard(this->m_guard);
 
 #if (defined (MFX_ENABLE_CPLIB)) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
 #if (MFX_VERSION >= 1030)
-    if (MFX_HANDLE_VA_CONTEXT_ID == (mfxU32)type )
+    if (MFX_HANDLE_VA_CONTEXT_ID == (mfxU32)type)
     {
-        if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
-        {
-            *handle = m_VAContextHandle;
-            return MFX_ERR_NONE;
-        }
         // not exist handle yet
-        else
-            return MFX_ERR_NOT_FOUND;
+        MFX_CHECK(m_VAContextHandle != (mfxHDL)VA_INVALID_ID, MFX_ERR_NOT_FOUND);
+
+        *handle = m_VAContextHandle;
+        return MFX_ERR_NONE;
     }
     else
 #endif
 #endif
-        return CommonCORE::GetHandle(type, handle);
+        return Base::GetHandle(type, handle);
 
-} // mfxStatus VAAPIVideoCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
+} // mfxStatus VAAPIVideoCORE_T<Base>::GetHandle(mfxHandleType type, mfxHDL *handle)
 
-mfxStatus
-VAAPIVideoCORE::SetHandle(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
     mfxHandleType type,
     mfxHDL hdl)
 {
-    MFX_CHECK_NULL_PTR1(hdl);
-    UMC::AutomaticUMCMutex guard(m_guard);
+    MFX_CHECK_HDL(hdl);
+
+    UMC::AutomaticUMCMutex guard(this->m_guard);
     try
     {
         switch ((mfxU32)type)
@@ -600,26 +589,30 @@ VAAPIVideoCORE::SetHandle(
 #if (MFX_VERSION >= 1030)
         case MFX_HANDLE_VA_CONFIG_ID:
             // if device manager already set
-            if (m_VAConfigHandle != (mfxHDL)VA_INVALID_ID)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            MFX_CHECK(m_VAConfigHandle == (mfxHDL)VA_INVALID_ID, MFX_ERR_UNDEFINED_BEHAVIOR);
+
             // set external handle
             m_VAConfigHandle = hdl;
             m_KeepVAState = true;
             break;
+
         case MFX_HANDLE_VA_CONTEXT_ID:
             // if device manager already set
-            if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            MFX_CHECK(m_VAContextHandle == (mfxHDL)VA_INVALID_ID, MFX_ERR_UNDEFINED_BEHAVIOR);
+
             // set external handle
             m_VAContextHandle = hdl;
             m_KeepVAState = true;
             break;
 #endif
 #endif
-        default:
-            mfxStatus sts = CommonCORE::SetHandle(type, hdl);
-            MFX_CHECK_STS(sts);
-            m_Display = (VADisplay)m_hdl;
+        case MFX_HANDLE_VA_DISPLAY:
+        {
+            // If device manager already set, return error
+            MFX_CHECK(!this->m_hdl, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            this->m_hdl = hdl;
+            m_Display   = (VADisplay)this->m_hdl;
 
             /* As we know right VA handle (pointer),
             * we can get real authenticated fd of VAAPI library(display),
@@ -628,22 +621,26 @@ VAAPIVideoCORE::SetHandle(
             */
             const auto devItem = getDeviceItem(m_Display);
             MFX_CHECK_WITH_ASSERT(MFX_HW_UNKNOWN != devItem.platform, MFX_ERR_UNDEFINED_BEHAVIOR);
-            m_HWType   = devItem.platform;
-            m_GTConfig = devItem.config;
-            m_deviceId = mfxU16(devItem.device_id);
+
+            m_HWType         = devItem.platform;
+            m_GTConfig       = devItem.config;
+            this->m_deviceId = mfxU16(devItem.device_id);
+        }
+            break;
+
+        default:
+            return Base::SetHandle(type, hdl);
         }
         return MFX_ERR_NONE;
     }
     catch (...)
     {
-        ReleaseHandle();
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
     }
-}// mfxStatus VAAPIVideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
+}// mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(mfxHandleType type, mfxHDL handle)
 
-
-mfxStatus
-VAAPIVideoCORE::TraceFrames(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::TraceFrames(
     mfxFrameAllocRequest* request,
     mfxFrameAllocResponse* response,
     mfxStatus sts)
@@ -654,16 +651,18 @@ VAAPIVideoCORE::TraceFrames(
     return sts;
 }
 
-mfxStatus
-VAAPIVideoCORE::AllocFrames(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::AllocFrames(
     mfxFrameAllocRequest* request,
     mfxFrameAllocResponse* response,
     bool isNeedCopy)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    MFX_CHECK_NULL_PTR2(request, response);
+
+    UMC::AutomaticUMCMutex guard(this->m_guard);
+
     try
     {
-        MFX_CHECK_NULL_PTR2(request, response);
         mfxStatus sts = MFX_ERR_NONE;
         mfxFrameAllocRequest temp_request = *request;
 
@@ -678,18 +677,23 @@ VAAPIVideoCORE::AllocFrames(
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy && m_Display)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
-            if (!m_pCmCopy->GetCmDevice(m_Display)){
-                m_bCmCopy = false;
+
+            if (!m_pCmCopy->GetCmDevice(m_Display))
+            {
+                m_bCmCopy        = false;
                 m_bCmCopyAllowed = false;
-                m_pCmCopy->Release();
                 m_pCmCopy.reset();
-            }else{
+            }
+            else
+            {
                 sts = m_pCmCopy->Initialize(GetHWType());
                 MFX_CHECK_STS(sts);
                 m_bCmCopy = true;
             }
-        }else if(m_bCmCopy){
-            if(m_pCmCopy)
+        }
+        else if (m_bCmCopy)
+        {
+            if (m_pCmCopy)
                 m_pCmCopy->ReleaseCmSurfaces();
             else
                 m_bCmCopy = false;
@@ -699,7 +703,7 @@ VAAPIVideoCORE::AllocFrames(
         // use common core for sw surface allocation
         if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            sts = CommonCORE::AllocFrames(request, response);
+            sts = Base::AllocFrames(request, response);
             return TraceFrames(request, response, sts);
         } else
         {
@@ -707,26 +711,25 @@ VAAPIVideoCORE::AllocFrames(
                 (request->Type & MFX_MEMTYPE_FROM_DECODE)) || // 'fake' Alloc call to retrieve memId's of surfaces already allocated by app
                 (request->Type & (MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_FROM_PAK)); // 'fake' Alloc call for FEI ENC/PAC cases to get reconstructed surfaces
             // external allocator
-            if (m_bSetExtFrameAlloc && isExtAllocatorCallAllowed)
+            if (this->m_bSetExtFrameAlloc && isExtAllocatorCallAllowed)
             {
-                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
+                sts = (*this->m_FrameAllocator.frameAllocator.Alloc)(this->m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
 
                 m_bUseExtAllocForHWFrames = false;
                 MFX_CHECK_STS(sts);
 
                 // let's create video accelerator
                 // Checking for unsupported mode - external allocator exist but Device handle doesn't set
-                if (!m_Display)
-                    return MFX_ERR_UNSUPPORTED;
+                MFX_CHECK(m_Display, MFX_ERR_UNSUPPORTED)
 
                 if (response->NumFrameActual < request->NumFrameMin)
                 {
-                    (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
-                    return MFX_ERR_MEMORY_ALLOC;
+                    (*this->m_FrameAllocator.frameAllocator.Free)(this->m_FrameAllocator.frameAllocator.pthis, response);
+                    MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
                 }
 
                 m_bUseExtAllocForHWFrames = true;
-                sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
+                sts = ProcessRenderTargets(request, response, &this->m_FrameAllocator);
                 MFX_CHECK_STS(sts);
 
                 return TraceFrames(request, response, sts);
@@ -735,7 +738,7 @@ VAAPIVideoCORE::AllocFrames(
             {
                 // Default Allocator is used for internal memory allocation and all coded buffers allocation
                 m_bUseExtAllocForHWFrames = false;
-                sts = DefaultAllocFrames(request, response);
+                sts = this->DefaultAllocFrames(request, response);
                 MFX_CHECK_STS(sts);
 
                 return TraceFrames(request, response, sts);
@@ -747,10 +750,10 @@ VAAPIVideoCORE::AllocFrames(
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-} // mfxStatus VAAPIVideoCORE::AllocFrames(...)
+} // mfxStatus VAAPIVideoCORE_T<Base>::AllocFrames(...)
 
-
-mfxStatus VAAPIVideoCORE::ReallocFrame(mfxFrameSurface1 *surf)
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::ReallocFrame(mfxFrameSurface1 *surf)
 {
     MFX_CHECK_NULL_PTR1(surf);
 
@@ -761,23 +764,22 @@ mfxStatus VAAPIVideoCORE::ReallocFrame(mfxFrameSurface1 *surf)
          (surf->Data.MemType & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))))
         return MFX_ERR_MEMORY_ALLOC;
 
-    mfxFrameAllocator *pFrameAlloc = GetAllocatorAndMid(memid);
-   if (!pFrameAlloc)
-       return MFX_ERR_MEMORY_ALLOC;
+    mfxFrameAllocator *pFrameAlloc = this->GetAllocatorAndMid(memid);
+    if (!pFrameAlloc)
+        return MFX_ERR_MEMORY_ALLOC;
 
-   mfxHDL srcHandle;
-   if (MFX_ERR_NONE == GetFrameHDL(surf->Data.MemId, &srcHandle))
-   {
-       VASurfaceID *va_surf = (VASurfaceID*)srcHandle;
-       return mfxDefaultAllocatorVAAPI::ReallocFrameHW(pFrameAlloc->pthis, surf, va_surf);
-   }
+    mfxHDL srcHandle;
+    if (MFX_ERR_NONE == this->GetFrameHDL(surf->Data.MemId, &srcHandle))
+    {
+        VASurfaceID *va_surf = (VASurfaceID*)srcHandle;
+        return mfxDefaultAllocatorVAAPI::ReallocFrameHW(pFrameAlloc->pthis, surf, va_surf);
+    }
 
     return MFX_ERR_MEMORY_ALLOC;
 }
 
-
-mfxStatus
-VAAPIVideoCORE::DefaultAllocFrames(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::DefaultAllocFrames(
     mfxFrameAllocRequest* request,
     mfxFrameAllocResponse* response)
 {
@@ -789,7 +791,7 @@ VAAPIVideoCORE::DefaultAllocFrames(
         if (!m_Display)
             return MFX_ERR_NOT_INITIALIZED;
 
-        mfxBaseWideFrameAllocator* pAlloc = GetAllocatorByReq(request->Type);
+        mfxBaseWideFrameAllocator* pAlloc = this->GetAllocatorByReq(request->Type);
         // VPP, ENC, PAK can request frames for several times
         if (pAlloc && (request->Type & MFX_MEMTYPE_FROM_DECODE))
             return MFX_ERR_MEMORY_ALLOC;
@@ -810,93 +812,58 @@ VAAPIVideoCORE::DefaultAllocFrames(
     }
     else
     {
-        return CommonCORE::DefaultAllocFrames(request, response);
+        return Base::DefaultAllocFrames(request, response);
     }
-    ++m_NumAllocators;
+    ++this->m_NumAllocators;
 
     return sts;
 
-} // mfxStatus VAAPIVideoCORE::DefaultAllocFrames(...)
+} // mfxStatus VAAPIVideoCORE_T<Base>::DefaultAllocFrames(...)
 
-
-mfxStatus
-VAAPIVideoCORE::CreateVA(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::CreateVA(
     mfxVideoParam* param,
     mfxFrameAllocRequest* request,
     mfxFrameAllocResponse* response,
     UMC::FrameAllocator *allocator)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR3(param, request, response);
 
     if (!(request->Type & MFX_MEMTYPE_FROM_DECODE) ||
         !(request->Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
         return MFX_ERR_NONE;
 
     auto const profile = ChooseProfile(param, GetHWType());
-    if (!profile)
-        return MFX_ERR_UNSUPPORTED;
-
-    bool init_render_targets =
-#if defined(ANDROID)
-        true
-#else
-        param->mfx.CodecId != MFX_CODEC_MPEG2 &&
-        param->mfx.CodecId != MFX_CODEC_AVC   &&
-        param->mfx.CodecId != MFX_CODEC_HEVC
-#endif
-        ;
-
-    VASurfaceID* RenderTargets = NULL;
-    std::vector<VASurfaceID> rt_pool;
-    if (init_render_targets)
-    {
-        rt_pool.resize(response->NumFrameActual);
-        RenderTargets = &rt_pool[0];
-
-        for (mfxU32 i = 0; i < response->NumFrameActual; i++)
-        {
-            mfxMemId InternalMid = response->mids[i];
-            mfxFrameAllocator* pAlloc = GetAllocatorAndMid(InternalMid);
-            VASurfaceID *pSurface = NULL;
-            if (pAlloc)
-                pAlloc->GetHDL(pAlloc->pthis, InternalMid, (mfxHDL*)&pSurface);
-            else
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-            rt_pool[i] = *pSurface;
-        }
-    }
+    MFX_CHECK(profile != UMC::UNKNOWN, MFX_ERR_UNSUPPORTED);
 
 #ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
-    if(GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK))
+    if (GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK))
         m_KeepVAState = true;
     else
 #endif
         m_KeepVAState = false;
 
-    sts = CreateVideoAccelerator(param, profile, response->NumFrameActual, RenderTargets, allocator);
+    return CreateVideoAccelerator(param, profile, 0, nullptr, allocator);
+} // mfxStatus VAAPIVideoCORE_T<Base>::CreateVA(...)
 
-    return sts;
-
-} // mfxStatus VAAPIVideoCORE::CreateVA(...)
-
-mfxStatus VAAPIVideoCORE::CreateVideoProcessing(mfxVideoParam * param)
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::CreateVideoProcessing(mfxVideoParam * param)
 {
     (void)param;
 
-    mfxStatus sts = MFX_ERR_NONE;
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     if (!m_vpp_hw_resmng.GetDevice()){
-        sts = m_vpp_hw_resmng.CreateDevice(this);
+        return m_vpp_hw_resmng.CreateDevice(this);
     }
+
+    return MFX_ERR_NONE;
 #else
-    sts = MFX_ERR_UNSUPPORTED;
+    MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #endif
-    return sts;
 }
 
-mfxStatus
-VAAPIVideoCORE::ProcessRenderTargets(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::ProcessRenderTargets(
     mfxFrameAllocRequest* request,
     mfxFrameAllocResponse* response,
     mfxBaseWideFrameAllocator* pAlloc)
@@ -906,78 +873,76 @@ VAAPIVideoCORE::ProcessRenderTargets(
         return MFX_ERR_UNSUPPORTED;
 #endif
 
-    RegisterMids(response, request->Type, !m_bUseExtAllocForHWFrames, pAlloc);
+    this->RegisterMids(response, request->Type, !m_bUseExtAllocForHWFrames, pAlloc);
     m_pcHWAlloc.release();
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VAAPIVideoCORE::ProcessRenderTargets(
+} // mfxStatus VAAPIVideoCORE_T<Base>::ProcessRenderTargets(...)
 
-mfxStatus
-VAAPIVideoCORE::GetVAService(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::GetVAService(
     VADisplay*  pVADisplay)
 {
     // check if created already
-    if (m_Display)
+    MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
+
+    if (pVADisplay)
     {
-        if (pVADisplay)
-        {
-            *pVADisplay = m_Display;
-        }
-        return MFX_ERR_NONE;
+        *pVADisplay = m_Display;
     }
 
-    return MFX_ERR_NOT_INITIALIZED;
+    return MFX_ERR_NONE;
+} // mfxStatus VAAPIVideoCORE_T<Base>::GetVAService(...)
 
-} // mfxStatus VAAPIVideoCORE::GetVAService(...)
-
-mfxStatus
-VAAPIVideoCORE::SetCmCopyStatus(bool enable)
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::SetCmCopyStatus(bool enable)
 {
+    UMC::AutomaticUMCMutex guard(this->m_guard);
+
     m_bCmCopyAllowed = enable;
-    if (!enable)
+
+    if (!m_bCmCopyAllowed)
     {
-        if (m_pCmCopy)
-        {
-            m_pCmCopy->Release();
-        }
+        m_pCmCopy.reset();
+
         m_bCmCopy = false;
     }
-    return MFX_ERR_NONE;
-} // mfxStatus VAAPIVideoCORE::SetCmCopyStatus(...)
 
-mfxStatus
-VAAPIVideoCORE::CreateVideoAccelerator(
+    return MFX_ERR_NONE;
+} // mfxStatus VAAPIVideoCORE_T<Base>::SetCmCopyStatus(...)
+
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::CreateVideoAccelerator(
     mfxVideoParam* param,
     int profile,
     int NumOfRenderTarget,
     VASurfaceID* RenderTargets,
     UMC::FrameAllocator *allocator)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(param);
+    MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
 
-    Status st;
+    UMC::AutomaticUMCMutex guard(this->m_guard);
+
     UMC::LinuxVideoAcceleratorParams params;
     mfxFrameInfo *pInfo = &(param->mfx.FrameInfo);
 
-    if (!m_Display)
-        return MFX_ERR_NOT_INITIALIZED;
-
     UMC::VideoStreamInfo VideoInfo;
-    VideoInfo.clip_info.width = pInfo->Width;
+    VideoInfo.clip_info.width  = pInfo->Width;
     VideoInfo.clip_info.height = pInfo->Height;
 
     // Init Accelerator
-    params.m_Display = m_Display;
-    params.m_pConfigId = (VAConfigID*)&m_VAConfigHandle;
-    params.m_pContext = (VAContextID*)&m_VAContextHandle;
-    params.m_pKeepVAState = &m_KeepVAState;
+    params.m_Display          = m_Display;
+    params.m_pConfigId        = (VAConfigID*)&m_VAConfigHandle;
+    params.m_pContext         = (VAContextID*)&m_VAContextHandle;
+    params.m_pKeepVAState     = &m_KeepVAState;
     params.m_pVideoStreamInfo = &VideoInfo;
-    params.m_iNumberSurfaces = NumOfRenderTarget;
-    params.m_allocator = allocator;
-    params.m_surf = (void **)RenderTargets;
+    params.m_iNumberSurfaces  = NumOfRenderTarget;
+    params.m_allocator        = allocator;
+    params.m_surf             = (void **)RenderTargets;
 
-    params.m_protectedVA = param->Protected;
+    params.m_protectedVA      = param->Protected;
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     /* There are following conditions for post processing via HW fixed function engine:
@@ -998,38 +963,32 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     //check 'StreamOut' feature is requested
     {
         mfxExtBuffer* ext = GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-        if (ext)
-            params.m_CreateFlags |= reinterpret_cast<mfxExtFeiParam*>(ext)->Func == MFX_FEI_FUNCTION_DEC ? VA_DECODE_STREAM_OUT_ENABLE : 0;
+        if (ext && reinterpret_cast<mfxExtFeiParam*>(ext)->Func == MFX_FEI_FUNCTION_DEC)
+            params.m_CreateFlags |= VA_DECODE_STREAM_OUT_ENABLE;
     }
 
     m_pVA.reset((params.m_CreateFlags & VA_DECODE_STREAM_OUT_ENABLE) ? new FEIVideoAccelerator() : new LinuxVideoAccelerator());
-    m_pVA->m_Platform = UMC::VA_LINUX;
-    m_pVA->m_Profile = (VideoAccelerationProfile)profile;
+    m_pVA->m_Platform   = UMC::VA_LINUX;
+    m_pVA->m_Profile    = (VideoAccelerationProfile)profile;
     m_pVA->m_HWPlatform = m_HWType;
 
-    st = m_pVA->Init(&params);
+    Status st = m_pVA->Init(&params);
+    MFX_CHECK(st == UMC_OK, MFX_ERR_UNSUPPORTED);
 
-    if(UMC_OK != st)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
+    return MFX_ERR_NONE;
+} // mfxStatus VAAPIVideoCORE_T<Base>::CreateVideoAccelerator(...)
 
-    return sts;
-
-} // mfxStatus VAAPIVideoCORE::CreateVideoAccelerator(...)
-
-
-mfxStatus
-VAAPIVideoCORE::DoFastCopyWrapper(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(
     mfxFrameSurface1* pDst,
     mfxU16 dstMemType,
     mfxFrameSurface1* pSrc,
     mfxU16 srcMemType)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoCORE::DoFastCopyWrapper");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoCORE_T<Base>::DoFastCopyWrapper");
     mfxStatus sts;
 
-    mfxHDLPair srcHandle = {}, dstHandle = {};
+    mfxHDL srcHandle = {}, dstHandle = {};
     mfxMemId srcMemId, dstMemId;
 
     mfxFrameSurface1 srcTempSurface, dstTempSurface;
@@ -1056,7 +1015,7 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         {
             if (NULL == srcPtr)
             {
-                sts = LockExternalFrame(srcMemId, &srcTempSurface.Data);
+                sts = this->LockExternalFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);
 
                 isSrcLocked = true;
@@ -1069,19 +1028,19 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetExternalFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
+            sts = this->GetExternalFrameHDL(srcMemId, &srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = &srcHandle;
+            srcTempSurface.Data.MemId = srcHandle;
         }
     }
     else if (srcMemType & MFX_MEMTYPE_INTERNAL_FRAME)
     {
         if (srcMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == srcPtr)
+            if (nullptr == srcPtr)
             {
-                sts = LockFrame(srcMemId, &srcTempSurface.Data);
+                sts = this->LockFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);
 
                 isSrcLocked = true;
@@ -1094,10 +1053,10 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
+            sts = this->GetFrameHDL(srcMemId, &srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = &srcHandle;
+            srcTempSurface.Data.MemId = srcHandle;
         }
     }
 
@@ -1105,9 +1064,9 @@ VAAPIVideoCORE::DoFastCopyWrapper(
     {
         if (dstMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == dstPtr)
+            if (nullptr == dstPtr)
             {
-                sts = LockExternalFrame(dstMemId, &dstTempSurface.Data);
+                sts = this->LockExternalFrame(dstMemId, &dstTempSurface.Data);
                 MFX_CHECK_STS(sts);
 
                 isDstLocked = true;
@@ -1120,19 +1079,19 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetExternalFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
+            sts = this->GetExternalFrameHDL(dstMemId, &dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = &dstHandle;
+            dstTempSurface.Data.MemId = dstHandle;
         }
     }
     else if (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME)
     {
         if (dstMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == dstPtr)
+            if (nullptr == dstPtr)
             {
-                sts = LockFrame(dstMemId, &dstTempSurface.Data);
+                sts = this->LockFrame(dstMemId, &dstTempSurface.Data);
                 MFX_CHECK_STS(sts);
 
                 isDstLocked = true;
@@ -1145,10 +1104,10 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
+            sts = this->GetFrameHDL(dstMemId, &dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = &dstHandle;
+            dstTempSurface.Data.MemId = dstHandle;
         }
     }
 
@@ -1165,13 +1124,13 @@ VAAPIVideoCORE::DoFastCopyWrapper(
     {
         if (srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
         {
-            sts = UnlockExternalFrame(srcMemId, &srcTempSurface.Data);
+            sts = this->UnlockExternalFrame(srcMemId, &srcTempSurface.Data);
             MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
         else if (srcMemType & MFX_MEMTYPE_INTERNAL_FRAME)
         {
-            sts = UnlockFrame(srcMemId, &srcTempSurface.Data);
+            sts = this->UnlockFrame(srcMemId, &srcTempSurface.Data);
             MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
@@ -1181,13 +1140,13 @@ VAAPIVideoCORE::DoFastCopyWrapper(
     {
         if (dstMemType & MFX_MEMTYPE_EXTERNAL_FRAME)
         {
-            sts = UnlockExternalFrame(dstMemId, &dstTempSurface.Data);
+            sts = this->UnlockExternalFrame(dstMemId, &dstTempSurface.Data);
             MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
         else if (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME)
         {
-            sts = UnlockFrame(dstMemId, &dstTempSurface.Data);
+            sts = this->UnlockFrame(dstMemId, &dstTempSurface.Data);
             MFX_CHECK_STS(fcSts);
             MFX_CHECK_STS(sts);
         }
@@ -1195,11 +1154,10 @@ VAAPIVideoCORE::DoFastCopyWrapper(
 
     return fcSts;
 
-} // mfxStatus VAAPIVideoCORE::DoFastCopyWrapper(...)
+} // mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(...)
 
-
-mfxStatus
-VAAPIVideoCORE::DoFastCopyExtended(
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyExtended(
     mfxFrameSurface1* pDst,
     mfxFrameSurface1* pSrc)
 {
@@ -1215,8 +1173,8 @@ VAAPIVideoCORE::DoFastCopyExtended(
     // check that only memId or pointer are passed
     // otherwise don't know which type of memory copying is requested
     if (
-        (NULL != dstPtr && NULL != pDst->Data.MemId) ||
-        (NULL != srcPtr && NULL != pSrc->Data.MemId)
+        (nullptr != dstPtr && nullptr != pDst->Data.MemId) ||
+        (nullptr != srcPtr && nullptr != pSrc->Data.MemId)
         )
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1243,8 +1201,8 @@ VAAPIVideoCORE::DoFastCopyExtended(
         {
             MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
 
-            VASurfaceID *va_surf_src = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
-            VASurfaceID *va_surf_dst = (VASurfaceID*)(((mfxHDLPair *)pDst->Data.MemId)->first);
+            VASurfaceID *va_surf_src = (VASurfaceID*)(pSrc->Data.MemId);
+            VASurfaceID *va_surf_dst = (VASurfaceID*)(pDst->Data.MemId);
             MFX_CHECK(va_surf_src != va_surf_dst, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             VAImage va_img_src = {};
@@ -1265,7 +1223,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
         }
     }
-    else if (NULL != pSrc->Data.MemId && NULL != dstPtr)
+    else if (nullptr != pSrc->Data.MemId && nullptr != dstPtr)
     {
         MFX_CHECK(m_Display,MFX_ERR_NOT_INITIALIZED);
 
@@ -1278,7 +1236,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             }
             else
             {
-                VASurfaceID *va_surface = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
+                VASurfaceID *va_surface = (VASurfaceID*)(pSrc->Data.MemId);
                 VAImage va_image;
                 VAStatus va_sts;
                 void *pBits = NULL;
@@ -1300,7 +1258,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
                     mfxMemId saveMemId = pSrc->Data.MemId;
                     pSrc->Data.MemId = 0;
 
-                    sts = CoreDoSWFastCopy(pDst, pSrc, COPY_VIDEO_TO_SYS); // sw copy
+                    sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_VIDEO_TO_SYS); // sw copy
                     MFX_CHECK_STS(sts);
 
                     pSrc->Data.MemId = saveMemId;
@@ -1321,15 +1279,15 @@ VAAPIVideoCORE::DoFastCopyExtended(
         }
 
     }
-    else if (NULL != srcPtr && NULL != dstPtr)
+    else if (nullptr != srcPtr && nullptr != dstPtr)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy_sys2sys");
         // system memories were passed
         // use common way to copy frames
-        sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_SYS); // sw copy
+        sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_SYS); // sw copy
         MFX_CHECK_STS(sts);
     }
-    else if (NULL != srcPtr && NULL != pDst->Data.MemId)
+    else if (nullptr != srcPtr && nullptr != pDst->Data.MemId)
     {
         if (canUseCMCopy)
         {
@@ -1339,7 +1297,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         else
         {
             VAStatus va_sts = VA_STATUS_SUCCESS;
-            VASurfaceID *va_surface = (VASurfaceID*)(size_t)((mfxHDLPair *)pDst->Data.MemId)->first;
+            VASurfaceID *va_surface = (VASurfaceID*)(size_t)pDst->Data.MemId;
             VAImage va_image;
             void *pBits = NULL;
 
@@ -1363,7 +1321,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 mfxMemId saveMemId = pDst->Data.MemId;
                 pDst->Data.MemId = 0;
 
-                sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_VIDEO); // sw copy
+                sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
                 MFX_CHECK_STS(sts);
 
                 pDst->Data.MemId = saveMemId;
@@ -1389,18 +1347,13 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VAAPIVideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
-
-
-void VAAPIVideoCORE::ReleaseHandle()
-{
-
-} // void VAAPIVideoCORE::ReleaseHandle()
+} // mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 
 // On linux/android specific function!
 // correct work since libva 1.2 (libva 2.2.1.pre1)
 // function checks profile and entrypoint and video resolution support
-mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
+template <class Base>
+mfxStatus VAAPIVideoCORE_T<Base>::IsGuidSupported(const GUID guid,
                                          mfxVideoParam *par, bool /* isEncoder */)
 {
     MFX_CHECK(par, MFX_WRN_PARTIAL_ACCELERATION);
@@ -1421,7 +1374,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
     {
         vector <VAProfile> va_profiles (va_max_num_profiles, VAProfileNone);
 
-        //ask from driver about profile support
+        //ask driver about profile support
         VAStatus va_sts = vaQueryConfigProfiles(m_Display,
                             va_profiles.data(), &va_max_num_profiles);
         MFX_CHECK(va_sts == VA_STATUS_SUCCESS, MFX_ERR_UNSUPPORTED);
@@ -1433,7 +1386,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
 
     vector <VAEntrypoint> va_entrypoints (va_max_num_entrypoints, static_cast<VAEntrypoint> (0));
 
-    //ask from driver about entrypoint support
+    //ask driver about entrypoint support
     VAStatus va_sts = vaQueryConfigEntrypoints(m_Display, req_profile,
                     va_entrypoints.data(), &va_max_num_entrypoints);
     MFX_CHECK(va_sts == VA_STATUS_SUCCESS, MFX_ERR_UNSUPPORTED);
@@ -1442,10 +1395,10 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
     auto it_entrypoint = find(va_entrypoints.begin(), va_entrypoints.end(), req_entrypoint);
     MFX_CHECK(it_entrypoint != va_entrypoints.end(), MFX_ERR_UNSUPPORTED);
 
-    VAConfigAttrib attr[] = {{VAConfigAttribMaxPictureWidth, 0},
+    VAConfigAttrib attr[] = {{VAConfigAttribMaxPictureWidth,  0},
                              {VAConfigAttribMaxPictureHeight, 0}};
 
-    //ask from driver about support
+    //ask driver about support
     va_sts = vaGetConfigAttributes(m_Display, req_profile,
                                    req_entrypoint,
                                    attr, sizeof(attr)/sizeof(*attr));
@@ -1483,7 +1436,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
         MFX_CHECK(m_HWType >= MFX_HW_BDW, MFX_ERR_UNSUPPORTED);
         break;
     default:
-        return MFX_ERR_UNSUPPORTED;
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
 
     MFX_CHECK(MFX_CODEC_JPEG == par->mfx.CodecId || MFX_CODEC_HEVC == par->mfx.CodecId ||
@@ -1495,67 +1448,79 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
 #endif
 }
 
-void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
+template <class Base>
+void* VAAPIVideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
 {
-    if(MFXIVideoCORE_GUID == guid)
-    {
-        return (void*) this;
-    }
-    else if( MFXICOREVAAPI_GUID == guid )
+    if (MFXICOREVAAPI_GUID == guid)
     {
         return (void*) m_pAdapter.get();
     }
-    else if (MFXICORE_GT_CONFIG_GUID == guid)
+
+    if (MFXICORE_GT_CONFIG_GUID == guid)
     {
         return (void*)&m_GTConfig;
     }
-    else if (MFXIHWCAPS_GUID == guid)
+
+    if (MFXIHWCAPS_GUID == guid)
     {
-        return (void*) &m_encode_caps;
+        return (void*) &this->m_encode_caps;
     }
 #ifdef MFX_ENABLE_MFE
-    else if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
+
+    if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
     {
         if (!m_mfeAvc.get())
         {
-            m_mfeAvc = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEAVCENCODER_GUID);
+            UMC::AutomaticUMCMutex guard(this->m_guard);
+
+            m_mfeAvc = reinterpret_cast<MFEVAAPIEncoder*>(this->m_session->m_pOperatorCore->template QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEAVCENCODER_GUID));
             if (m_mfeAvc.get())
                 m_mfeAvc.get()->AddRef();
         }
         return (void*)&m_mfeAvc;
     }
-    else if (MFXMFEAVCENCODER_GUID == guid)
+
+    if (MFXMFEAVCENCODER_GUID == guid)
     {
         return (void*)&m_mfeAvc;
     }
 #ifndef STRIP_EMBARGO
-    else if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
+
+    if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
     {
         if (!m_mfeHevc.get())
         {
-            m_mfeHevc = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEHEVCENCODER_GUID);
+            UMC::AutomaticUMCMutex guard(this->m_guard);
+
+            m_mfeHevc = reinterpret_cast<MFEVAAPIEncoder*>(this->m_session->m_pOperatorCore->template QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEHEVCENCODER_GUID));
             if (m_mfeHevc.get())
                 m_mfeHevc.get()->AddRef();
         }
         return (void*)&m_mfeHevc;
     }
-    else if (MFXMFEHEVCENCODER_GUID == guid)
+
+    if (MFXMFEHEVCENCODER_GUID == guid)
     {
         return (void*)&m_mfeHevc;
     }
 #endif
 #endif
-    else if (MFXICORECM_GUID == guid)
+    if (MFXICORECM_GUID == guid)
     {
-        CmDevice* pCmDevice = NULL;
+        CmDevice* pCmDevice = nullptr;
         if (!m_bCmCopy)
         {
+            UMC::AutomaticUMCMutex guard(this->m_guard);
+
             m_pCmCopy.reset(new CmCopyWrapper);
             pCmDevice = m_pCmCopy->GetCmDevice(m_Display);
+
             if (!pCmDevice)
-                return NULL;
+                return nullptr;
+
             if (MFX_ERR_NONE != m_pCmCopy->Initialize(GetHWType()))
-                return NULL;
+                return nullptr;
+
             m_bCmCopy = true;
         }
         else
@@ -1564,59 +1529,54 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         }
         return (void*)pCmDevice;
     }
-    else if (MFXICORECMCOPYWRAPPER_GUID == guid)
+
+    if (MFXICORECMCOPYWRAPPER_GUID == guid)
     {
         if (!m_pCmCopy)
         {
+            UMC::AutomaticUMCMutex guard(this->m_guard);
+
             m_pCmCopy.reset(new CmCopyWrapper);
             if (!m_pCmCopy->GetCmDevice(m_Display))
             {
-                m_bCmCopy = false;
+                m_bCmCopy        = false;
                 m_bCmCopyAllowed = false;
-                m_pCmCopy->Release();
+
                 m_pCmCopy.reset();
-                return NULL;
+                return nullptr;
             }
-            else
-            {
-                if (MFX_ERR_NONE != m_pCmCopy->Initialize(GetHWType()))
-                    return NULL;
-                else
-                    m_bCmCopy = true;
-            }
+
+            if (MFX_ERR_NONE != m_pCmCopy->Initialize(GetHWType()))
+                return nullptr;
+
+            m_bCmCopy = true;
         }
         return (void*)m_pCmCopy.get();
     }
-    else if (MFXICMEnabledCore_GUID == guid)
+
+    if (MFXICMEnabledCore_GUID == guid)
     {
         if (!m_pCmAdapter)
         {
+            UMC::AutomaticUMCMutex guard(this->m_guard);
+
             m_pCmAdapter.reset(new CMEnabledCoreAdapter(this));
         }
         return (void*)m_pCmAdapter.get();
     }
-    else if (MFXIHWMBPROCRATE_GUID == guid)
+
+    if (MFXIHWMBPROCRATE_GUID == guid)
     {
-        return (void*) &m_encode_mbprocrate;
+        return (void*) &this->m_encode_mbprocrate;
     }
-    else if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
-    {
-        return &m_FrameAllocator.frameAllocator;
-    }
-    else if (MFXICORE_API_1_19_GUID == guid)
-    {
-        return &m_API_1_19;
-    }
-    else if (MFXIFEIEnabled_GUID == guid)
+
+    if (MFXIFEIEnabled_GUID == guid)
     {
         return &m_bHEVCFEIEnabled;
     }
-    else
-    {
-        return NULL;
-    }
 
-} // void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
+    return Base::QueryCoreInterface(guid);
+} // void* VAAPIVideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
 
 bool IsHwMvcEncSupported()
 {
