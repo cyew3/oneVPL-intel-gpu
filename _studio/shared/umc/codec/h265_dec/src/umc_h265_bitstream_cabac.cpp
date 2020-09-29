@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,10 @@ const uint8_t cabacInitTable[3][NUM_CTX] =
       140, 152, 138, 139, 153,  74, 149,  92, 139, 107, 122, 152, 140, 179, 166, 182, 140, 227, 122, 197, 138, 153, 136, 167, 152,
       152, 154, 154, 153, 200, 153, 138, 138, 139, 139, 154, 154, 154 }
 };
+
+#if defined(_DEBUG) && defined(__linux__)
+uint8_t *transIdxLPSH265 = transIdxLPSH265Impl;
+#endif
 
 // Initialize one CABAC context
 void InitializeContext(uint8_t *pContext, uint8_t initVal, int32_t SliceQPy)

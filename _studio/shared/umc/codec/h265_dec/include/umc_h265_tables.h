@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -333,8 +333,17 @@ uint8_t transIdxMPSH265[] =
 };
 
 // State transition table for LPS path. HEVC spec 9.3.4.3.2.2
+#if defined(_DEBUG) && defined(__linux__)
+// workaround for ICC in -O0 mode: referencies to transIdxLPSH265 in inline assemly
+// are processed incorrectly
+extern uint8_t *transIdxLPSH265;
+
+static
+uint8_t transIdxLPSH265Impl[] =
+#else
 const
 uint8_t transIdxLPSH265[] =
+#endif // defined(_DEBUG)
 {
     1,   0,   DECL( 0), DECL( 1), DECL( 2), DECL( 2), DECL( 4), DECL( 4), DECL( 5),
     DECL( 6), DECL( 7), DECL( 8), DECL( 9), DECL( 9), DECL(11), DECL(11), DECL(12),
@@ -345,6 +354,7 @@ uint8_t transIdxLPSH265[] =
     DECL(33), DECL(33), DECL(34), DECL(34), DECL(35), DECL(35), DECL(35), DECL(36),
     DECL(36), DECL(36), DECL(37), DECL(37), DECL(37), DECL(38), DECL(38), DECL(63)
 };
+
 #endif
 
 } // namespace UMC_HEVC_DECODER
