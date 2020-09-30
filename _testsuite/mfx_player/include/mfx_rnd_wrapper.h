@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -81,11 +81,6 @@ public:
         MFX_CHECK_POINTER(m_pTarget.get());
         //get handle used by mfx_player and handle abses isn't and actual error indicator
         return m_pTarget->GetDevice(ppDevice);
-    }
-    mfxStatus SetOutputFrameSize(mfxFrameInfo * pInfo, bool bColorfill_flag)
-    {
-        MFX_CHECK_STS(m_pTarget->SetOutputFrameSize(pInfo, bColorfill_flag));
-        return MFX_ERR_NONE;
     }
     mfxStatus WaitTasks(mfxU32 nMilisecconds)
     {

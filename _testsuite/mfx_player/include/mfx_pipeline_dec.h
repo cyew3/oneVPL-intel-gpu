@@ -521,16 +521,6 @@ protected:
     mfxU32                   m_YUV_CropW;
     mfxU32                   m_YUV_CropH;
 
-    bool                     m_bColorfill;
-
-    enum
-    {
-        ROTATE_ANGLE_0   = 0,
-        ROTATE_ANGLE_90  = 90,
-        ROTATE_ANGLE_180 = 180,
-        ROTATE_ANGLE_270 = 270,
-    };
-
 #if defined(_WIN32) || defined(_WIN64)
     virtual mfxStatus        RegKeySet();
 
