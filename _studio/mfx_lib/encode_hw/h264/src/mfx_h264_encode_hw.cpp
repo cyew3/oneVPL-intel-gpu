@@ -2167,6 +2167,11 @@ mfxStatus ImplementationAvc::GetVideoParam(mfxVideoParam *par)
                               / std::max<mfxU32>(par->mfx.BRCParamMultiplier, 1)
                               * (mfxF64(par->mfx.FrameInfo.FrameRateExtN) / par->mfx.FrameInfo.FrameRateExtD));
 
+#ifndef STRIP_EMBARGO
+    if (m_currentPlatform >= MFX_HW_DG2)
+        par->mfx.LowPower = 0; // deprecated parameter
+#endif
+
     return MFX_ERR_NONE;
 }
 
