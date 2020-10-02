@@ -96,6 +96,8 @@ mfxStatus MFXHEVCEncoderPlugin::PluginInit(mfxCoreInterface *core)
     m_mfxCore = *core;
 
     mfxStatus sts;
+#ifdef MFX_VA
+    // check supported platforms for HW case
     mfxPlatform platform;
 
     sts = m_mfxCore.m_core.QueryPlatform(m_mfxCore.m_core.pthis, &platform);
@@ -107,6 +109,7 @@ mfxStatus MFXHEVCEncoderPlugin::PluginInit(mfxCoreInterface *core)
     {
         return MFX_ERR_UNSUPPORTED; //GACC is deprecated for TGL and all upcoming platforms
     }
+#endif // MFX_VA
 
     m_encoder = new MFXVideoENCODEH265(&m_mfxCore, &sts);
 
