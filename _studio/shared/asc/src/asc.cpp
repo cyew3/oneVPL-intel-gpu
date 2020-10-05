@@ -35,6 +35,7 @@
 #include "motion_estimation_engine.h"
 #include <limits.h>
 #include <algorithm>
+#include <cmath>
 
 using std::min;
 using std::max;
