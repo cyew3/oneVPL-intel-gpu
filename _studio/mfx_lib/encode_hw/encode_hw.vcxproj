@@ -286,6 +286,7 @@
     <ClInclude Include="hevc\linux\g12\hevcehw_g12_rext_lin.h" />
     <ClInclude Include="hevc\linux\g12\hevcehw_g12_scc_lin.h" />
     <ClInclude Include="shared\ehw_resources_pool.h" />
+    <ClInclude Include="shared\embargo\ehw_platforms.h" />
     <ClInclude Include="shared\embargo\ehw_resources_pool_dx11.h" />
     <ClInclude Include="shared\ehw_task_manager.h" />
     <ClInclude Include="shared\ehw_device.h" />

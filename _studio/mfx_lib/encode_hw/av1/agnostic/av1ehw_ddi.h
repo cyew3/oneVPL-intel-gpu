@@ -26,6 +26,8 @@
 #include "mfx_platform_headers.h"
 #endif
 
+#define tagENCODE_CAPS_AV1 tagENCODE_CAPS_STRUCT
+
 typedef struct tagENCODE_CAPS_AV1
 {
     union
@@ -532,6 +534,8 @@ typedef struct tagENCODE_SET_TILE_GROUP_HEADER_AV1
     USHORT reserved16b;
     UINT reserved32b[9];
 } ENCODE_SET_TILE_GROUP_HEADER_AV1;
+
+#define tagENCODE_QUERY_STATUS_PARAMS_AV1 tagENCODE_QUERY_STATUS_PARAMS_STRUCT
 
 typedef struct tagENCODE_QUERY_STATUS_PARAMS_AV1
 {

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,37 +20,7 @@
 
 #pragma once
 
-#include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
+#define Gen12ATS PlatformK
+#define Gen12DG2 PlatformL
+#define Gen13    PlatformM
 
-#include "hevcehw_g12_embargo_lin.h"
-#include "ehw_platforms.h"
-
-namespace HEVCEHW
-{
-namespace Linux
-{
-namespace Gen12DG2
-{
-    enum eFeatureId
-    {
-        FEATURE_CAPS = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
-    };
-
-    class MFXVideoENCODEH265_HW
-        : public Linux::Gen12_Embargo::MFXVideoENCODEH265_HW
-    {
-    public:
-        using TBaseImpl = Linux::Gen12_Embargo::MFXVideoENCODEH265_HW;
-
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
-    };
-} //Gen12DG2
-} //Linux
-}// namespace HEVCEHW
-
-#endif

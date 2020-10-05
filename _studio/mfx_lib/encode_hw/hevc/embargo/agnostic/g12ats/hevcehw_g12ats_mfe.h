@@ -25,6 +25,7 @@
 
 #include "hevcehw_base.h"
 #include "hevcehw_g12_data.h"
+#include "ehw_platforms.h"
 
 namespace HEVCEHW
 {

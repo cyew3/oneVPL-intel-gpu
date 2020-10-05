@@ -957,6 +957,8 @@ namespace Base
         //NotNull<DpbArray*> DPB;
     };
 
+#define EncodeCapsAv1 EncodeCapsClass
+
     class EncodeCapsAv1
         : public ENCODE_CAPS_AV1
         , public Storable

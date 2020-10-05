@@ -24,6 +24,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12_win.h"
+#include "ehw_platforms.h"
 
 namespace HEVCEHW
 {

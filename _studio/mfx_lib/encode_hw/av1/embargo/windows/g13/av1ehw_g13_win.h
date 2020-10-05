@@ -25,6 +25,7 @@
 
 #include "av1ehw_g13.h"
 #include "av1ehw_base_win.h"
+#include "ehw_platforms.h"
 
 namespace AV1EHW
 {

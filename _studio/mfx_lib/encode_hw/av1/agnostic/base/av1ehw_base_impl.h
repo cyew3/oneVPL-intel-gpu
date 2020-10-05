@@ -27,6 +27,8 @@
 #include "mfx_task.h"
 #include "av1ehw_base.h"
 
+#define MFXVideoENCODEAV1_HW MFXVideoENCODEClass_HW
+
 namespace AV1EHW
 {
 namespace Base

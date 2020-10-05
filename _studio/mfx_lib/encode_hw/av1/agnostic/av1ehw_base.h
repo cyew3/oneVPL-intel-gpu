@@ -54,7 +54,7 @@ namespace ExtBuffer
 #if defined(AV1E_LOGGING) && (defined(WIN32) || defined(WIN64))
 //#define AV1E_LOG(string, ...) do { printf("(AV1E) %s ",__FUNCTION__); printf(string, ##__VA_ARGS__); printf("\n"); fflush(0); } \
 //                              while (0)
-#define AV1E_LOG(string, ...) do { printf("[AV1E] "); printf(string, ##__VA_ARGS__); fflush(0); } \
+#define AV1E_LOG(string, ...) do { printf(string, ##__VA_ARGS__); fflush(0); } \
                               while (0)
 #else
 #define AV1E_LOG(string, ...)
