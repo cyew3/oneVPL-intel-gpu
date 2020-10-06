@@ -507,13 +507,6 @@ mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, const mfxFrameInfo* pF
     pSurface->Info.CropW = (pFrameInfo->CropW != 0)? pFrameInfo->CropW : pFrameInfo->Width;
     pSurface->Info.CropH = (pFrameInfo->CropH != 0)? pFrameInfo->CropH : pFrameInfo->Height;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    pSurface->Info.DecodeCropX = padding;
-    pSurface->Info.DecodeCropY = padding;
-    pSurface->Info.DecodeCropW = (pFrameInfo->DecodeCropW != 0) ? pFrameInfo->DecodeCropW : pFrameInfo->Width;
-    pSurface->Info.DecodeCropH = (pFrameInfo->DecodeCropH != 0) ? pFrameInfo->DecodeCropH : pFrameInfo->Height;
-#endif
-
     /*-------- Color format parameters---------------------*/
 
     switch(pFrameInfo->FourCC) {

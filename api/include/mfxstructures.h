@@ -51,15 +51,7 @@ MFX_PACK_END()
 MFX_PACK_BEGIN_USUAL_STRUCT()
 /* Frame Info */
 typedef struct {
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    mfxU32  reserved[2];
-    mfxU16  DecodeCropX;
-    mfxU16  DecodeCropY;
-    mfxU16  DecodeCropW;
-    mfxU16  DecodeCropH;
-#else
     mfxU32  reserved[4];
-#endif
     mfxU16  reserved4;
     mfxU16  BitDepthLuma;
     mfxU16  BitDepthChroma;
