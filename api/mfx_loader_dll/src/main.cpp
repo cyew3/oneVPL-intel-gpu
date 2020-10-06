@@ -271,6 +271,14 @@ static bool UpdateInfoFromDXVAenumeration(adapter_vector& a_v)
         if (it == std::end(a_v))
             continue;
 
+        if (it->adapter_number != 0xffffffff) // adapter with the same DeviceId enumerated by DXGI second time (RDP case)
+        {
+            adapter_description adapter_duplicate(*it);
+            adapter_duplicate.adapter_number = adapter_n;
+            a_v.emplace_back(std::move(adapter_duplicate));
+            continue;
+        }
+
         it->device_id      = device_id;
         it->adapter_number = adapter_n;
 
