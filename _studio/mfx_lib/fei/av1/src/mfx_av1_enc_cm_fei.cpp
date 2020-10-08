@@ -552,7 +552,9 @@ void AV1CmCtx::LoadPrograms(GPU_PLATFORM hwType)
         break;
 #endif // ENABLE_TGL
 
-#if ENABLE_TGLLP
+    case PLATFORM_INTEL_ADL_P:
+    case PLATFORM_INTEL_ADL_S:
+    case PLATFORM_INTEL_RKL:
     case PLATFORM_INTEL_DG1:
     case PLATFORM_INTEL_TGLLP:
         programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_tgllp, sizeof(genx_av1_prepare_src_tgllp));
@@ -576,7 +578,6 @@ void AV1CmCtx::LoadPrograms(GPU_PLATFORM hwType)
         programAv1Intra = ReadProgram(device, genx_av1_intra_tgllp, sizeof(genx_av1_intra_tgllp));
         programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_tgllp, sizeof(genx_av1_refine_me_p_64x64_tgllp));
         break;
-#endif // ENABLE_TGLLP
 
     default:
         throw CmRuntimeError();

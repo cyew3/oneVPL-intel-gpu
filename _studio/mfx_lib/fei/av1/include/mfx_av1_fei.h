@@ -43,7 +43,6 @@
 #define ENABLE_SKL 0
 #define ENABLE_ICLLP 0
 #define ENABLE_TGL 0
-#define ENABLE_TGLLP 1
 
     //============================== begin of patch for mfxstructures.h ==============================
     /* required buffer sizes - returned from call to Query() */

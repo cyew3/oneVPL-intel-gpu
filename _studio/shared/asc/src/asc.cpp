@@ -353,16 +353,14 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
         res = m_device->LoadProgram((void *)asc_gen12_isa, sizeof(asc_gen12_isa), m_program, "nojitter");
         break;
 #endif
+#ifndef STRIP_EMBARGO
+    case PLATFORM_INTEL_ADL_S:
+    case PLATFORM_INTEL_RKL:
+#endif
     case PLATFORM_INTEL_TGLLP:
     case PLATFORM_INTEL_DG1:
         res = m_device->LoadProgram((void *)asc_gen12lp_isa, sizeof(asc_gen12lp_isa), m_program, "nojitter");
         break;
-#ifndef STRIP_EMBARGO
-    case PLATFORM_INTEL_ADL_S:
-    case PLATFORM_INTEL_ADL_UH:
-        res = m_device->LoadProgram((void *)asc_gen12lp_isa, sizeof(asc_gen12lp_isa), m_program, "nojitter");
-        break;
-#endif
     default:
         res = CM_NOT_IMPLEMENTED;
     }
