@@ -2421,29 +2421,37 @@ mfxStatus MfxHwH264Encode::CheckAndFixOpenRectQueryLike(
     if (!CheckMbAlignmentAndUp(rect->Right))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     if (!CheckMbAlignmentAndUp(rect->Bottom))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-    // check that rectangle dimensions don't conflict with each other and don't exceed frame size
+    // check that rectangle dimensions don't conflict with each other
     if (par.mfx.FrameInfo.Width)
     {
-        if (!CheckRangeDflt(rect->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width - 16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-        if (!CheckRangeDflt(rect->Right, mfxU32(rect->Left + 16), mfxU32(par.mfx.FrameInfo.Width), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        MFX_CHECK(CheckRangeDflt(rect->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width - 16), mfxU32(0)), MFX_ERR_UNSUPPORTED);
+        if (rect->Right > par.mfx.FrameInfo.Width)
+        {
+            rect->Right = par.mfx.FrameInfo.Width;
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
     }
 
     if (rect->Right && rect->Right < rect->Left)
     {
-        checkSts = MFX_ERR_UNSUPPORTED;
         rect->Right = 0;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     if (par.mfx.FrameInfo.Height)
     {
-        if (!CheckRangeDflt(rect->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height - 16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-        if (!CheckRangeDflt(rect->Bottom, mfxU32(rect->Top + 16), mfxU32(par.mfx.FrameInfo.Height), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        MFX_CHECK(CheckRangeDflt(rect->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height - 16), mfxU32(0)), MFX_ERR_UNSUPPORTED);
+        if (rect->Bottom > par.mfx.FrameInfo.Height)
+        {
+            rect->Bottom = par.mfx.FrameInfo.Height;
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
     }
 
     if (rect->Bottom && rect->Bottom <= rect->Top)
     {
-        checkSts = MFX_ERR_UNSUPPORTED;
         rect->Bottom = 0;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     return checkSts;
