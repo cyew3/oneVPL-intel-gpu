@@ -5735,6 +5735,10 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(parInit.mfx.FrameInfo.FrameRateExtD, parReset.mfx.FrameInfo.FrameRateExtD);
     InheritOption(parInit.mfx.BRCParamMultiplier, parReset.mfx.BRCParamMultiplier);
 
+    InheritOption(extOpt3Init.ScenarioInfo, extOpt3Reset->ScenarioInfo);
+    InheritOption(parInit.mfx.LowPower, parReset.mfx.LowPower);
+    InheritOption(extOpt2Init.LookAheadDepth, extOpt2Reset->LookAheadDepth);
+
     if (IsTCBRC(parReset, hwCaps))
     {
         // old bitrate is used in TCBRC case
