@@ -97,4 +97,15 @@ void Caps::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 }
 
+void Caps::GetVideoParam(const FeatureBlocks& /*blocks*/, TPushGVP Push)
+{
+    Push(BLK_FixParam
+        , [](mfxVideoParam& par, StorageR& /*global*/) -> mfxStatus
+    {
+        par.mfx.LowPower = MFX_CODINGOPTION_UNKNOWN;
+
+        return MFX_ERR_NONE;
+    });
+}
+
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

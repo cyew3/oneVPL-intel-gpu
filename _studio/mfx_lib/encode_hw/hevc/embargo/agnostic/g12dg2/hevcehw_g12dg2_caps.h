@@ -38,7 +38,8 @@ public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(SetDefaultsCallChain)\
     DECL_BLOCK(SetLowPower)\
-    DECL_BLOCK(HardcodeCaps)
+    DECL_BLOCK(HardcodeCaps)\
+    DECL_BLOCK(FixParam)
 #define DECL_FEATURE_NAME "G12DG2_Caps"
 #include "hevcehw_decl_blocks.h"
 
@@ -49,6 +50,7 @@ public:
 protected:
     virtual void Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
     virtual void Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
+    virtual void GetVideoParam(const FeatureBlocks& /*blocks*/, TPushGVP Push) override;
 };
 
 } //Gen12DG2
