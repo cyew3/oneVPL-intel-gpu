@@ -309,10 +309,7 @@ void Tile::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         MFX_CHECK(pAV1Par, MFX_ERR_NONE);
 
         mfxU16 frameWidth = pAV1Par->FrameWidth ? pAV1Par->FrameWidth : out.mfx.FrameInfo.Width;
-        if (pAV1Par->EnableSuperres != MFX_CODINGOPTION_UNKNOWN)
-        {
-            frameWidth = GetActualEncodeWidth(frameWidth, CO2Flag(pAV1Par->EnableSuperres), pAV1Par->SuperresScaleDenominator);
-        }
+        frameWidth        = GetActualEncodeWidth(frameWidth, IsOn(pAV1Par->EnableSuperres), pAV1Par->SuperresScaleDenominator);
 
         const mfxU16 frameHeight = pAV1Par->FrameHeight ? pAV1Par->FrameHeight : out.mfx.FrameInfo.Height;
         const mfxU16 sbCols = CeilDiv<mfxU16>(frameWidth, SB_SIZE);

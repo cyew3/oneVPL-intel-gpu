@@ -28,9 +28,6 @@ using namespace AV1EHW::Base;
 
 namespace AV1EHW
 {
-constexpr mfxU8 DEFAULT_DENOM_FOR_SUPERRES_ON = 16;
-constexpr mfxU8 DEFAULT_DENOM_FOR_SUPERRES_OFF = 8;
-
 void Superres::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckAndFix

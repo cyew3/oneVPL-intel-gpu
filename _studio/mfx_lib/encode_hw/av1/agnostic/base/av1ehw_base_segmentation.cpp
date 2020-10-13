@@ -108,7 +108,7 @@ static mfxU32 CheckSegmentMap(
     SetDefaultFrameInfo(frameWidthTemp, frameHeightTemp, fiTemp);
 
     mfxU16 frameWidth = frameWidthTemp ? frameWidthTemp : fiTemp.Width;
-    frameWidth        = GetActualEncodeWidth(frameWidth, CO2Flag(av1Par.EnableSuperres), av1Par.SuperresScaleDenominator);
+    frameWidth        = GetActualEncodeWidth(frameWidth, IsOn(av1Par.EnableSuperres), av1Par.SuperresScaleDenominator);
 
     const mfxU16 frameHeight = frameHeightTemp ? frameHeightTemp : fiTemp.Height;
 

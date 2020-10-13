@@ -625,6 +625,9 @@ namespace Base
     constexpr mfxU8 CODING_TYPE_B1 = 4; //B1, reference to only I, P or regular B frames
     constexpr mfxU8 CODING_TYPE_B2 = 5; //B2, references include B1
 
+    constexpr mfxU8 DEFAULT_DENOM_FOR_SUPERRES_ON = 16;
+    constexpr mfxU8 DEFAULT_DENOM_FOR_SUPERRES_OFF = 8;
+
     // Min frame params required for Reorder, RPL/DPB management
     struct FrameBaseInfo
         : Storable
@@ -742,8 +745,12 @@ namespace Base
 
     inline mfxU16 GetActualEncodeWidth(mfxU16 upscaledWidth, bool use_superres, mfxU16 SuperresDenom)
     {
-        if (use_superres && SuperresDenom >= 9 && SuperresDenom <= 16)
-            return ((upscaledWidth << 3) + (SuperresDenom >> 1)) / SuperresDenom;
+        if (use_superres)
+        {
+            mfxU16 denom = SuperresDenom != 0 ? SuperresDenom : DEFAULT_DENOM_FOR_SUPERRES_ON;
+
+            return ((upscaledWidth << 3) + (denom >> 1)) / denom;
+        }
 
         return upscaledWidth;
     }
