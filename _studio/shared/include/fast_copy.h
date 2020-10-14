@@ -277,8 +277,11 @@ public:
             return MFX_ERR_NULL_PTR;
         }
 
+        // Temporary multiply width by 2, since we will cast 2-byte ptrs to byte ptrs
+        roi.width <<= 1;
         mfxCopyRect<mfxU8>((mfxU8*)pSrc, srcPitch, (mfxU8*)pDst, dstPitch, roi, flag);
 
+        // Return back width to operate with 2-byte ptrs
         roi.width >>= 1;
         if(rshift)
             ippiRShiftC_16u_C1IR(rshift, (mfxU16*)pDst, dstPitch,roi);
