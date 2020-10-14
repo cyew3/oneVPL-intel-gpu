@@ -2665,6 +2665,12 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
         mfxStatus mfxSts = InitializeSwapKernels(hwtype);
         MFX_CHECK_STS(mfxSts);
     }
+
+#ifndef STRIP_EMBARGO
+    if (hwtype == MFX_HW_ATS)
+        cmSts = m_pCmDevice->CreateQueueEx(m_pCmQueue, CM_COMPUTE_QUEUE_CREATE_OPTION);
+    else
+#endif
     cmSts = m_pCmDevice->CreateQueue(m_pCmQueue);
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
     m_tableCmRelations2.clear();

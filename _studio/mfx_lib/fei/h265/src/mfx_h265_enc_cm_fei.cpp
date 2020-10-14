@@ -473,11 +473,17 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     size_t size = sizeof(mfxU32);
     device->GetCaps(CAP_GPU_PLATFORM, size, &hwType);
 
-    INT res = 0;
+    auto res = CM_SUCCESS;
+#ifndef STRIP_EMBARGO
+    if (hwType == PLATFORM_INTEL_TGL)
+        res = device->CreateQueueEx(queue, CM_COMPUTE_QUEUE_CREATE_OPTION);
+    else
+#endif
     if (hwType == PLATFORM_INTEL_ICL || hwType == PLATFORM_INTEL_ICLLP)
         res = device->CreateQueueEx(queue, CM_VME_QUEUE_CREATE_OPTION);
     else
         res = device->CreateQueue(queue);
+    if (res != CM_SUCCESS) return MFX_ERR_DEVICE_FAILED;
 
     switch (hwType)
     {

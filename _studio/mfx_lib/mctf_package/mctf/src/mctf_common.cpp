@@ -780,13 +780,16 @@ mfxStatus CMC::MCTF_SET_ENV(
     hwSize = 4;
     res = device->GetCaps(CAP_GPU_PLATFORM, hwSize, &hwType);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-
+#ifndef STRIP_EMBARGO
+    if (core->GetHWType() == MFX_HW_ATS)
+        res = device->CreateQueueEx(queue, CM_COMPUTE_QUEUE_CREATE_OPTION);
+    else
+#endif
     if (core->GetHWType() >= MFX_HW_ICL)
         res = device->CreateQueueEx(queue, CM_VME_QUEUE_CREATE_OPTION);
     else
         res = device->CreateQueue(queue);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    
 
     task = 0;
     // --- bitrate

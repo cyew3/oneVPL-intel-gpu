@@ -2431,6 +2431,11 @@ mfxStatus  VideoVPPHW::Init(
 
         if (NULL == m_pCmQueue)
         {
+#ifndef STRIP_EMBARGO
+            if (m_pCore->GetHWType() == MFX_HW_ATS)
+                res = m_pCmDevice->CreateQueueEx(m_pCmQueue, CM_COMPUTE_QUEUE_CREATE_OPTION);
+            else
+#endif
             res = m_pCmDevice->CreateQueue(m_pCmQueue);
             if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
         }
@@ -3721,10 +3726,6 @@ int RunGpu(
 
     res = task->AddKernel(kernel);
     CHECK_CM_ERR(res);
-
-    //CmQueue *queue = 0;
-    //res = device->CreateQueue(queue);
-    //CHECK_CM_ERR(res);
 
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);

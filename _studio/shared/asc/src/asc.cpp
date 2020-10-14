@@ -316,12 +316,17 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     Set_ASCCmDevice();
 
-    res = m_device->CreateQueue(m_queue);
-    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-
     mfxU32 hwType = 0;
     size_t hwSize = sizeof(hwType);
     res = m_device->GetCaps(CAP_GPU_PLATFORM, hwSize, &hwType);
+    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+
+#ifndef STRIP_EMBARGO
+    if (hwType == PLATFORM_INTEL_TGL)
+        res = m_device->CreateQueueEx(m_queue, CM_COMPUTE_QUEUE_CREATE_OPTION);
+    else
+#endif
+    res = m_device->CreateQueue(m_queue);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     switch (hwType)

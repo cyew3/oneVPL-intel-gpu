@@ -715,10 +715,17 @@ mfxStatus AV1CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     size_t size = sizeof(mfxU32);
     device->GetCaps(CAP_GPU_PLATFORM, size, &hwType);
 
-    if (hwType == PLATFORM_INTEL_ICLLP)
-        device->CreateQueueEx(queue, CM_VME_QUEUE_CREATE_OPTION);
+    auto res = CM_SUCCESS;
+#ifndef STRIP_EMBARGO
+    if (hwType == PLATFORM_INTEL_TGL)
+        res = device->CreateQueueEx(queue, CM_COMPUTE_QUEUE_CREATE_OPTION);
     else
-        device->CreateQueue(queue);
+#endif
+    if (hwType == PLATFORM_INTEL_ICLLP)
+        res = device->CreateQueueEx(queue, CM_VME_QUEUE_CREATE_OPTION);
+    else
+        res = device->CreateQueue(queue);
+    if (res != CM_SUCCESS) return MFX_ERR_DEVICE_FAILED;
 
     LoadPrograms(hwType);
 

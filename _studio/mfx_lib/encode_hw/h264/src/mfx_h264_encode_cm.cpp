@@ -862,6 +862,15 @@ void CmContext::Setup(
     assert(core);
     m_video  = video;
     m_device = cmDevice;
+
+#ifndef STRIP_EMBARGO
+    if (core->GetHWType() == MFX_HW_ATS)
+    {
+        if (m_device->CreateQueueEx(m_queue, CM_COMPUTE_QUEUE_CREATE_OPTION) != CM_SUCCESS)
+            throw CmRuntimeError();
+    }
+    else
+#endif
     if (core->GetHWType() >= MFX_HW_ICL)
     {
         if (m_device->CreateQueueEx(m_queue, CM_VME_QUEUE_CREATE_OPTION) != CM_SUCCESS)
