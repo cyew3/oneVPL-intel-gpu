@@ -808,6 +808,17 @@ namespace
         }
 
 #if MFX_VERSION >= 1023
+
+        if (extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && (extOpt2.MaxFrameSize != 0 ||
+                                                                    extOpt3.MaxFrameSizeI != 0 ||
+                                                                    extOpt3.MaxFrameSizeP != 0 ))
+        {
+            changed = true;
+            extOpt2.MaxFrameSize = 0;
+            extOpt3.MaxFrameSizeI = 0;
+            extOpt3.MaxFrameSizeP = 0;
+        }
+
         if (!CheckTriStateOption(extOpt3.AdaptiveMaxFrameSize)) changed = true;
 
         if(!hwCaps.AdaptiveMaxFrameSizeSupport && IsOn(extOpt3.AdaptiveMaxFrameSize))
