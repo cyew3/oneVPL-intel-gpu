@@ -24,6 +24,7 @@
 #include "av1ehw_base_impl.h"
 #include "av1ehw_base_data.h"
 #include "av1ehw_base_general.h"
+#include "av1ehw_base_superres.h"
 #include "av1ehw_base_packer.h"
 #include "av1ehw_base_alloc.h"
 #include "av1ehw_base_task.h"
@@ -53,6 +54,11 @@ void MFXVideoENCODEAV1_HW::InternalInitFeatures(
 
     if (mode & INIT)
     {
+        Reorder(
+            BQ<BQ_SetDefaults>::Get(*this)
+            , { FEATURE_GENERAL, AV1EHW::Base::General::BLK_SetDefaults }
+            , { FEATURE_SUPERRES, AV1EHW::Base::Superres::BLK_SetDefaults });
+
         Reorder(
             BQ<BQ_SetDefaults>::Get(*this)
             , { FEATURE_GENERAL, General::BLK_SetDefaults }

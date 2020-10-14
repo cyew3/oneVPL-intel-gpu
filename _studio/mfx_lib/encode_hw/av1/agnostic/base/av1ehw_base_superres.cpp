@@ -31,7 +31,7 @@ namespace AV1EHW
 void Superres::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckAndFix
-        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
+        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW& strg) -> mfxStatus
     {
         mfxExtAV1Param* pAV1Par = ExtBuffer::Get(out);
         MFX_CHECK(pAV1Par, MFX_ERR_NONE);
@@ -51,6 +51,9 @@ void Superres::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
                              pAV1Par->SuperresScaleDenominator !=
                                  DEFAULT_DENOM_FOR_SUPERRES_OFF,
                          DEFAULT_DENOM_FOR_SUPERRES_OFF);
+
+        auto& caps = Glob::EncodeCaps::Get(strg);
+        MFX_CHECK(!(!caps.SuperResSupport && IsOn(pAV1Par->EnableSuperres)), MFX_ERR_UNSUPPORTED);
 
         MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 

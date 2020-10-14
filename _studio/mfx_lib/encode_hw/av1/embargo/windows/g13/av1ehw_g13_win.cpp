@@ -24,9 +24,7 @@
 #include "av1ehw_g13_win.h"
 #include "av1ehw_base_data.h"
 #include "av1ehw_base_general.h"
-#include "av1ehw_base_tile.h"
 #include "av1ehw_base_segmentation.h"
-#include "av1ehw_base_superres.h"
 
 using namespace AV1EHW;
 
@@ -39,24 +37,10 @@ Windows::Gen13::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
 
     TFeatureList newFeatures;
 
-    newFeatures.emplace_back(new AV1EHW::Base::Superres(AV1EHW::Base::FEATURE_SUPERRES));
     newFeatures.emplace_back(new AV1EHW::Base::Segmentation(AV1EHW::Base::FEATURE_SEGMENTATION));
 
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
-
-    Reorder(
-        BQ<BQ_Query1WithCaps>::Get(*this)
-        , { AV1EHW::Base::FEATURE_TILE, AV1EHW::Base::Tile::BLK_CheckAndFix }
-        , { AV1EHW::Base::FEATURE_SUPERRES, AV1EHW::Base::Superres::BLK_CheckAndFix });
-
-    if (mode & INIT)
-    {
-        Reorder(
-            BQ<BQ_SetDefaults>::Get(*this)
-            , { AV1EHW::Base::FEATURE_GENERAL, AV1EHW::Base::General::BLK_SetDefaults }
-            , { AV1EHW::Base::FEATURE_SUPERRES, AV1EHW::Base::Superres::BLK_SetDefaults });
-    }
 
     TBaseImpl::m_features.splice(TBaseImpl::m_features.end(), newFeatures);
 }
