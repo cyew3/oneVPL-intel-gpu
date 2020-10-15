@@ -92,6 +92,13 @@ public:
             , ENCODE_SET_PICTURE_PARAMETERS_HEVC&>;
         TUpdatePPS UpdatePPS;
 
+        using TUpdateSPS = CallChain<void
+            , const StorageR& //global
+            , const StorageR& //task
+            , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC&
+            , const ENCODE_SET_PICTURE_PARAMETERS_HEVC&>;
+        TUpdateSPS UpdateSPS;
+
         using TUpdateLPLAAnalysisSPS = CallChain<void
             , const StorageR& //global
             , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC&>;
@@ -184,6 +191,11 @@ protected:
         , const Slice & sh
         , const ENCODE_CAPS_HEVC & caps
         , ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
+
+    void FillSpsBuffer(
+        const TaskCommonPar & task
+        , const ENCODE_CAPS_HEVC & caps
+        , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps);
 
     void FillSliceBuffer(
         const Slice & sh

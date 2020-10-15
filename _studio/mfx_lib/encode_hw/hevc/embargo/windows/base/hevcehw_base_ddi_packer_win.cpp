@@ -83,6 +83,16 @@ void DDIPacker::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         {
             FillPpsBuffer(Task::Common::Get(s_task), Task::SSH::Get(s_task), Glob::EncodeCaps::Get(global), pps);
         });
+        cc.UpdateSPS.Push([this](
+            CallChains::TUpdateSPS::TExt
+            , const StorageR& global
+            , const StorageR& s_task
+            , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps
+            , const ENCODE_SET_PICTURE_PARAMETERS_HEVC& /*pps*/)
+        {
+            FillSpsBuffer(Task::Common::Get(s_task), Glob::EncodeCaps::Get(global), sps);
+        });
+
         cc.InitFeedback.Push([this](
             CallChains::TInitFeedback::TExt
             , const StorageR&
@@ -238,9 +248,9 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
         m_sps.bResetBRC = m_bResetBRC;
         m_bResetBRC     = false;
-        m_bTCBRC        = task.TCBRCTargetFrameSize ? true : false;
 
         cc.UpdatePPS(global, s_task, m_sps, m_pps);
+        cc.UpdateSPS(global, s_task, m_sps, m_pps);
         cc.UpdateLPLAEncPPS(global, s_task, m_pps);
         FillSliceBuffer(sh, task.RefPicList, m_slices);
 
@@ -430,10 +440,6 @@ void DDIPacker::FillSpsBuffer(
     ENCODE_FRAMESIZE_TOLERANCE FSTByLDBRC[2] = { eFrameSizeTolerance_Normal, eFrameSizeTolerance_ExtremelyLow };
     sps.FrameSizeTolerance = FSTByLDBRC[IsOn(CO3.LowDelayBRC)];
 
-    if (IsOn(CO3.LowDelayBRC) && m_bTCBRC)
-    {
-        sps.FrameSizeTolerance = eFrameSizeTolerance_Normal;
-    }
     sps.ICQQualityFactor = mfxU8(
         par.mfx.ICQQuality * (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ) * (par.mfx.LowPower != MFX_CODINGOPTION_ON)
         + CO3.QVBRQuality * (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR));
@@ -713,4 +719,15 @@ void DDIPacker::FillPpsBuffer(
     pps.TargetFrameSize             = task.TCBRCTargetFrameSize;
 }
 
+void DDIPacker::FillSpsBuffer(
+    const TaskCommonPar & task
+    , const ENCODE_CAPS_HEVC & /*caps*/
+    , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps)
+{
+    if(task.TCBRCTargetFrameSize)
+    {
+        sps.FrameSizeTolerance = eFrameSizeTolerance_Normal;
+    }
+
+}
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

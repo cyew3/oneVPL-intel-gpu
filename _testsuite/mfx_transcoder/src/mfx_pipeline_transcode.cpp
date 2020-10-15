@@ -1533,11 +1533,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             vm_file* par_file = vm_file_fopen(argv[0], VM_STRING("r"));
             MFX_CHECK(par_file != 0);
-
+            m_bResetParamsStart = true;
             for (;;)
             {
-                m_bResetParamsStart = true;
-
                 //coping current parameters to buffer
                 memcpy(&m_EncParamsOld, &m_EncParams, sizeof(m_EncParamsOld));
 
@@ -1577,9 +1575,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
                 //restoring params that were prior to reset_start
                 memcpy(&m_EncParams, &m_EncParamsOld, sizeof(m_EncParamsOld));
-                m_bResetParamsStart = false;
                 m_nResetFrame++;
             }
+            m_bResetParamsStart = false;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-reset_start"), VM_STRING("after reaching this frame, encoder will be reset with new parameters, followed after this command and before -reset_end"),OPT_SPECIAL, VM_STRING("frame number")))
         {
