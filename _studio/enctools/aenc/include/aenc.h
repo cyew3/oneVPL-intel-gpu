@@ -22,7 +22,9 @@
 #define __AENC_H__
 #include "mfxstructures.h"
 
+#if !defined(OPEN_SOURCE) || defined(MFX_ENABLE_AENC)
 #define ENABLE_ADAPTIVE_ENCODE
+#endif
 
 #ifdef __cplusplus
 extern "C" {

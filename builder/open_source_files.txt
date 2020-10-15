@@ -25,13 +25,7 @@ builder/FindITT.cmake
 builder/FindOpenCL.cmake
 _studio/enctools/CMakeLists.txt
 _studio/enctools/enctools.cpp
-_studio/enctools/aenc/include/aenc++.h
 _studio/enctools/aenc/include/aenc.h
-_studio/enctools/aenc/include/av1_scd.h
-_studio/enctools/aenc/src/aenc.cpp
-_studio/enctools/aenc/src/av1_asc.cpp
-_studio/enctools/aenc/src/av1_asc_agop_tree.cpp
-_studio/enctools/aenc/src/av1_asc_tree.cpp
 _studio/enctools/include/mfx_enctools.h
 _studio/enctools/include/mfx_enctools_aenc.h
 _studio/enctools/include/mfx_enctools_brc.h

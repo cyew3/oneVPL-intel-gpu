@@ -15,8 +15,6 @@ set(sources
     )
 set( sources.plus "" )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-make_library(enctools hw static )
 set( defs "" )
 
 if (OPEN_SOURCE)
@@ -34,6 +32,13 @@ if (OPEN_SOURCE)
     endif()
   endif()
 endif()
+
+if (MFX_ENABLE_AENC)
+set( defs "-DMFX_ENABLE_AENC ${API_FLAGS} ${WARNING_FLAGS}" )
+else()
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
+endif()
+make_library(enctools hw static )
 
 if (MFX_ENABLE_AENC)
   target_link_libraries(enctools_hw PUBLIC aenc)

@@ -60,6 +60,14 @@ class MfxLpLookAhead;
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
 
+
+#if defined(AS_H264LA_PLUGIN) && defined(MFX_ENABLE_ENCTOOLS)
+#undef MFX_ENABLE_ENCTOOLS
+#ifdef MFX_ENABLE_ENCTOOLS_LPLA
+#undef MFX_ENABLE_ENCTOOLS_LPLA
+#endif
+#endif
+
 #include <unordered_map>
 #include <queue>
 #include <mutex>
@@ -2497,7 +2505,7 @@ public:
         {
             *cqmHint = {};
             cqmHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX;
-            cqmHint->Header.BufferSz = sizeof(gopHint);
+            cqmHint->Header.BufferSz = sizeof(cqmHint);
             extParams.push_back((mfxExtBuffer *)cqmHint);
         }
 
