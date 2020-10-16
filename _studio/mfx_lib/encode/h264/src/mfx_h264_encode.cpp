@@ -1774,7 +1774,7 @@ MFXVideoENCODEH264::MFXVideoENCODEH264(VideoCORE *core, mfxStatus *stat)
     memset(&m_temporalLayers, 0, sizeof(AVCTemporalLayers));
     *stat = MFX_ERR_NONE;
 
-    memset(&m_base, 0, sizeof(m_base));
+    m_base = {};
     m_layer = &m_base;
     for(int i=0; i<MAX_DEP_LAYERS; i++) m_svc_layers[i]=0;
     m_svc_count = 0;
@@ -3429,7 +3429,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
                 UMC::Status res;
                 m_svc_layers[i0] = (h264Layer *)H264_Malloc( sizeof(h264Layer));
                 if( m_svc_layers[i0] == NULL ) return MFX_ERR_MEMORY_ALLOC;
-                memset(m_svc_layers[i0], 0, sizeof(h264Layer));
+                m_svc_layers[i0] = {};
 
 #define H264ENC_MAKE_NAME(NAME) NAME##_8u16s
                 H264ENC_CALL_NEW(res, H264CoreEncoder, m_svc_layers[i0]->enc);
@@ -4570,7 +4570,7 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
                 UMC::Status res;
                 m_svc_layers[i0] = (h264Layer *)H264_Malloc( sizeof(h264Layer));
                 if( m_svc_layers[i0] == NULL ) return MFX_ERR_MEMORY_ALLOC;
-                memset(m_svc_layers[i0], 0, sizeof(h264Layer));
+                m_svc_layers[i0] = {};
 
 #define H264ENC_MAKE_NAME(NAME) NAME##_8u16s
                 H264ENC_CALL_NEW(res, H264CoreEncoder, m_svc_layers[i0]->enc);
@@ -10862,7 +10862,7 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
 
     // to set profile/level and related vars
     // first copy fields which could have been changed from TU
-    memset(&checkedSetByTU, 0, sizeof(mfxVideoParam));
+    checkedSetByTU  = mfxVideoParam();
     if (par->mfx.CodecProfile == MFX_PROFILE_UNKNOWN && videoParams.transform_8x8_mode_flag)
         par->mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
     if (par->mfx.GopRefDist == 0) {
@@ -10915,7 +10915,7 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
                     }
 
                     if (lowerHRDParams) {
-                        memset(&par->calcParam, 0, sizeof(par->calcParam));
+                        par->calcParam = {};
 
                         if (m_HRDparams[did][qid][tid].TargetKbps)
                             par->calcParam.TargetKbps       = m_HRDparams[did][qid][tid].TargetKbps - lowerHRDParams->TargetKbps;
@@ -10976,7 +10976,7 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
                     lowerHRDParams =  &m_HRDparams[did-1][m_svc_layers[did-1]->enc->QualityNum-1][0];
 
                 if (lowerHRDParams) {
-                    memset(&par->calcParam, 0, sizeof(par->calcParam));
+                    par->calcParam = {};
 
                     if (m_HRDparams[did][qid][0].TargetKbps)
                         par->calcParam.TargetKbps       = m_HRDparams[did][qid][0].TargetKbps - lowerHRDParams->TargetKbps;

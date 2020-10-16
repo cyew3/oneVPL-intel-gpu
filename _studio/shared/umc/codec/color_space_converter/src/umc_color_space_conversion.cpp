@@ -259,13 +259,13 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
       return CopyImage(in, out, flag_OnlyCopy, bSrcSwapUV ^ bDstSwapUV);
   }
 
-  const uint8_t *(pSrc[3]) = {(uint8_t*)in->GetPlanePointer(0),
+  const uint8_t *pSrc[3] = {(uint8_t*)in->GetPlanePointer(0),
                             (uint8_t*)in->GetPlanePointer(1),
                             (uint8_t*)in->GetPlanePointer(2)};
   int32_t pSrcStep[3] = {(int32_t)in->GetPlanePitch(0),
                         (int32_t)in->GetPlanePitch(1),
                         (int32_t)in->GetPlanePitch(2)};
-  uint8_t *(pDst[3]) = {(uint8_t*)out->GetPlanePointer(0),
+  uint8_t *pDst[3] = {(uint8_t*)out->GetPlanePointer(0),
                       (uint8_t*)out->GetPlanePointer(1),
                       (uint8_t*)out->GetPlanePointer(2)};
   int32_t pDstStep[3] = {(int32_t)out->GetPlanePitch(0),
@@ -284,11 +284,11 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     pSrcStep[2] *= 2;
     srcFormat = YUV420;
   }
-  const uint8_t *(pYVU[3]) = {pSrc[0], pSrc[2], pSrc[1]};
+  const uint8_t *pYVU[3] = {pSrc[0], pSrc[2], pSrc[1]};
   int32_t pYVUStep[3] = {pSrcStep[0], pSrcStep[2], pSrcStep[1]};
   int status;
 #ifndef MFX_DISABLE_SW_FALLBACK
-  uint8_t *(pDstYVU[3]) = {pDst[0], pDst[2], pDst[1]};
+  uint8_t *pDstYVU[3] = {pDst[0], pDst[2], pDst[1]};
   int32_t pDstStepYVU[3] = {pDstStep[0], pDstStep[2], pDstStep[1]};
 #endif
 

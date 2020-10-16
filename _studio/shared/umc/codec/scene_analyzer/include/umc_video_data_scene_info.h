@@ -62,7 +62,7 @@ public:
 
 protected:
 
-    const UMC_SCENE_INFO *(m_pData[SA_TYPES_OF_DATA]);
+    const UMC_SCENE_INFO *m_pData[SA_TYPES_OF_DATA];
 };
 
 inline

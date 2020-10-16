@@ -528,12 +528,12 @@ no_more_coefficients_label:
 
     } // void ResidualBlock4x4_CABAC(H264BitStream *pBitStream,
 
-    static IppVCHuffmanSpec_32s *(m_tblCoeffToken[5]);
-    static IppVCHuffmanSpec_32s *(m_tblRunBefore [16]);
-    static IppVCHuffmanSpec_32s *(m_tblTotalZeros[16]);
+    static IppVCHuffmanSpec_32s *m_tblCoeffToken[5];
+    static IppVCHuffmanSpec_32s *m_tblRunBefore [16];
+    static IppVCHuffmanSpec_32s *m_tblTotalZeros[16];
 
-    static IppVCHuffmanSpec_32s *(m_tblTotalZerosCR[4]);
-    static IppVCHuffmanSpec_32s *(m_tblTotalZerosCR422[8]);
+    static IppVCHuffmanSpec_32s *m_tblTotalZerosCR[4];
+    static IppVCHuffmanSpec_32s *m_tblTotalZerosCR422[8];
 
     void SetIdx (int32_t x, int32_t y)
     {

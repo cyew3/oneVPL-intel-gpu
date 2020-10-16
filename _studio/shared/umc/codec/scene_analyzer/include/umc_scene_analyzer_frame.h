@@ -49,7 +49,7 @@ public:
     Status SetPointer(const uint8_t *pPic, size_t picStep,
                       int32_t srcWidth, int32_t srcHeight);
 
-    const uint8_t *(m_pPic[3]);                                   // (const uint8_t *([])) pointer to the picture's buffer
+    const uint8_t *m_pPic[3];                                   // (const uint8_t *[]) pointer to the picture's buffer
     size_t m_picSize;                                           // (size_t) size of allocated picture
     size_t m_picStep;                                           // (int32_t) picture's buffer's step
     mfxSize m_picDim;                                          // (mfxSize) picture's dimensions

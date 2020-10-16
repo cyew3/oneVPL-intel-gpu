@@ -270,7 +270,7 @@ Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
             return UMC_ERR_NOT_ENOUGH_DATA;
         }
     }
-    catch(h264_exception ex)
+    catch(const h264_exception & ex)
     {
         return ex.GetStatus();
     }

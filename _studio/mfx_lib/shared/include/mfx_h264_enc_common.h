@@ -48,7 +48,8 @@ struct AVCTemporalLayers;
 class mfxVideoInternalParam : public mfxVideoParam
 {
 public:
-    mfxVideoInternalParam();
+    mfxVideoInternalParam() = default;
+
     mfxVideoInternalParam(mfxVideoParam const &);
 
     mfxVideoInternalParam & operator = (mfxVideoParam const &);
@@ -59,9 +60,9 @@ public:
 
     struct CalculableParam
     {
-        mfxU32 BufferSizeInKB;
-        mfxU32 InitialDelayInKB;
-        mfxU32 TargetKbps;
+        mfxU32 BufferSizeInKB   = 0;
+        mfxU32 InitialDelayInKB = 0;
+        mfxU32 TargetKbps       = 0;
         mfxU32 MaxKbps;
     } calcParam;
 };

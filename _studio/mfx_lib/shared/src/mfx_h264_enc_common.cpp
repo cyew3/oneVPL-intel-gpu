@@ -3283,11 +3283,6 @@ void mfxVideoInternalParam::GetCalcParams( mfxVideoParam *parMFX) {
     }
 }
 
-mfxVideoInternalParam::mfxVideoInternalParam()
-{
-    memset(this, 0, sizeof(*this));
-}
-
 mfxVideoInternalParam::mfxVideoInternalParam(mfxVideoParam const & par)
 {
     mfxVideoParam & base = *this;

@@ -1271,8 +1271,8 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, 
     if (use16BitPlane)
     {
         Ipp32s pYVUStep[3] = {(Ipp32s)fd->GetPlaneMemoryInfo(0)->m_pitch >> 1, (Ipp32s)fd->GetPlaneMemoryInfo(1)->m_pitch >> 1, (Ipp32s)fd->GetPlaneMemoryInfo(2)->m_pitch >> 1};
-        const mfxU16 *(pYVU[3]) = {(mfxU16*)fd->GetPlaneMemoryInfo(0)->m_planePtr, (mfxU16*)fd->GetPlaneMemoryInfo(1)->m_planePtr, (mfxU16*)fd->GetPlaneMemoryInfo(2)->m_planePtr};
-        mfxU16 *(pDst[2]) = {data->Y16,
+        const mfxU16 *pYVU[3] = {(mfxU16*)fd->GetPlaneMemoryInfo(0)->m_planePtr, (mfxU16*)fd->GetPlaneMemoryInfo(1)->m_planePtr, (mfxU16*)fd->GetPlaneMemoryInfo(2)->m_planePtr};
+        mfxU16 *pDst[2] = {data->Y16,
                             data->U16};
 
         ippiYCbCr422_8u_P3P2R<mfxU16>(pYVU, pYVUStep, pDst[0], pDstStep[0] >> 1, pDst[1], pDstStep[1] >> 1, srcSize, fd->GetInfo()->GetColorFormat() == UMC::YUV422);
@@ -1280,8 +1280,8 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, 
     else
     {
         Ipp32s pYVUStep[3] = {(Ipp32s)fd->GetPlaneMemoryInfo(0)->m_pitch, (Ipp32s)fd->GetPlaneMemoryInfo(1)->m_pitch, (Ipp32s)fd->GetPlaneMemoryInfo(2)->m_pitch};
-        const Ipp8u *(pYVU[3]) = {fd->GetPlaneMemoryInfo(0)->m_planePtr, fd->GetPlaneMemoryInfo(1)->m_planePtr, fd->GetPlaneMemoryInfo(2)->m_planePtr};
-        Ipp8u *(pDst[2]) = {data->Y,
+        const Ipp8u *pYVU[3] = {fd->GetPlaneMemoryInfo(0)->m_planePtr, fd->GetPlaneMemoryInfo(1)->m_planePtr, fd->GetPlaneMemoryInfo(2)->m_planePtr};
+        Ipp8u *pDst[2] = {data->Y,
                             data->U};
 
         IppStatus sts = (fd->GetInfo()->GetColorFormat() == UMC::YUV422) ? ippiYCbCr422_8u_P3P2R<mfxU8>(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize, true) :

@@ -33,7 +33,7 @@ VideoRenderParams::VideoRenderParams(void)
     disp.left = 0;
     disp.right = 0;
     disp.top = 0;
-    memset(&range, 0, sizeof(range));
+    range = {};
     lFlags = 0;
 
 } // VideoRenderParams::VideoRenderParams(void)

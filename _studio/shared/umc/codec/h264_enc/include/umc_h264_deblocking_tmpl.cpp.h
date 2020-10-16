@@ -72,7 +72,7 @@ static IppStatus H264ENC_MAKE_NAME(FilterDeblockingLuma_HorEdge)(
     return(ippiFilterDeblockingLuma_HorEdge_H264_8u_C1IR(pSrcDst, srcDstStep, pAlpha, pBeta, pThresholds, pBS));
 }
 
-IppStatus (*(EncoderIppLumaDeblocking_8u[])) (Ipp8u *, Ipp32s, Ipp8u *, Ipp8u *, Ipp8u *, Ipp8u *) =
+IppStatus (*EncoderIppLumaDeblocking_8u[]) (Ipp8u *, Ipp32s, Ipp8u *, Ipp8u *, Ipp8u *, Ipp8u *) =
 {
     &(H264ENC_MAKE_NAME(FilterDeblockingLuma_VerEdge)),
     &(H264ENC_MAKE_NAME(FilterDeblockingLuma_HorEdge))
@@ -434,7 +434,7 @@ static IppStatus H264ENC_MAKE_NAME(FilterDeblockingChroma422_HorEdge)(
 }
 
 // implement array of IPP optimized chroma deblocking functions
-IppStatus (*(EncoderIppChromaDeblocking_8u[])) (Ipp8u *, Ipp32s, Ipp8u *, Ipp8u *, Ipp8u *, Ipp8u *) =
+IppStatus (*EncoderIppChromaDeblocking_8u[]) (Ipp8u *, Ipp32s, Ipp8u *, Ipp8u *, Ipp8u *, Ipp8u *) =
 {
     &(H264ENC_MAKE_NAME(FilterDeblockingChroma_VerEdge)),
     &(H264ENC_MAKE_NAME(FilterDeblockingChroma_HorEdge)),
@@ -444,7 +444,7 @@ IppStatus (*(EncoderIppChromaDeblocking_8u[])) (Ipp8u *, Ipp32s, Ipp8u *, Ipp8u 
 
 #ifdef USE_NV12
 // implement array of IPP optimized chroma deblocking functions
-IppStatus (__STDCALL *(EncoderIppChromaDeblocking_NV12_8u[])) (Ipp8u *, Ipp32u, const Ipp8u *, const Ipp8u *, const Ipp8u *, const Ipp8u *) =
+IppStatus (__STDCALL *EncoderIppChromaDeblocking_NV12_8u[]) (Ipp8u *, Ipp32u, const Ipp8u *, const Ipp8u *, const Ipp8u *, const Ipp8u *) =
 {
     &(ippiFilterDeblockingChroma_VerEdge_H264_8u_C2IR),
     &(ippiFilterDeblockingChroma_HorEdge_H264_8u_C2IR),
@@ -3542,7 +3542,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersBSlice8x16)(
         {
             Ipp32u idx;
             Ipp32s iRefQFrw[2], iRefQBck[2];
-            const H264MotionVector *(pVectorQFrw[2]), *(pVectorQBck[2]);
+            const H264MotionVector *pVectorQFrw[2], *pVectorQBck[2];
 
             // in following calculations we avoided multiplication on 15
             // by using formulae a * 15 = a * 16 - a

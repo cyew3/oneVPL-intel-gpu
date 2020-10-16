@@ -70,9 +70,9 @@ public:
     {
     public:
         // prediction pointers
-        H264DecoderMotionVector *(m_pMV[2]);                    // (H264DecoderMotionVector * []) array of pointers to motion vectors
-        int32_t m_iRefIndex[2];                                  // (int32_t) current reference index
-        int8_t *(m_pRefIndex[2]);                                // (int8_t * []) pointer to array of reference indexes
+        H264DecoderMotionVector *m_pMV[2];                    // (H264DecoderMotionVector * []) array of pointers to motion vectors
+        int32_t m_iRefIndex[2];                               // (int32_t) current reference index
+        int8_t *m_pRefIndex[2];                               // (int8_t * []) pointer to array of reference indexes
 
         IppVCInterpolateBlock_16u m_lumaInterpolateInfo;
         IppVCInterpolateBlock_16u m_chromaInterpolateInfo;

@@ -141,7 +141,7 @@ protected:
     std::vector<std::unique_ptr<CJPEGDecoder>> m_dec;
 
     // Pointer to the last buffer decoded. It is required to check if header was already decoded.
-    const CJpegTaskBuffer *(m_pLastPicBuffer[JPEG_MAX_THREADS]);
+    const CJpegTaskBuffer *m_pLastPicBuffer[JPEG_MAX_THREADS];
 
     double                  m_local_frame_time;
     double                  m_local_delta_frame_time;

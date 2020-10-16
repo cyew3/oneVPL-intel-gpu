@@ -35,12 +35,12 @@
 namespace UMC
 {
 
-IppVCHuffmanSpec_32s *(H264Bitstream::m_tblCoeffToken[5]);
-IppVCHuffmanSpec_32s *(H264Bitstream::m_tblRunBefore [16]);
-IppVCHuffmanSpec_32s *(H264Bitstream::m_tblTotalZeros[16]);
+IppVCHuffmanSpec_32s *H264Bitstream::m_tblCoeffToken[5];
+IppVCHuffmanSpec_32s *H264Bitstream::m_tblRunBefore [16];
+IppVCHuffmanSpec_32s *H264Bitstream::m_tblTotalZeros[16];
 
-IppVCHuffmanSpec_32s *(H264Bitstream::m_tblTotalZerosCR[4]);
-IppVCHuffmanSpec_32s *(H264Bitstream::m_tblTotalZerosCR422[8]);
+IppVCHuffmanSpec_32s *H264Bitstream::m_tblTotalZerosCR[4];
+IppVCHuffmanSpec_32s *H264Bitstream::m_tblTotalZerosCR422[8];
 
 bool H264Bitstream::m_bTablesInited = false;                      // (bool) tables have been allocated
 

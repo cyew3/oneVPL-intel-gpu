@@ -2559,7 +2559,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(uint32_t dir)
             H264DecoderMacroblockLocalInfo *pNeighbour;
             int32_t idx;
             size_t iRefQFrw[2], iRefQBck[2];
-            H264DecoderMotionVector *(pVectorQFrw[2]), *(pVectorQBck[2]);
+            H264DecoderMotionVector *pVectorQFrw[2], *pVectorQBck[2];
 
             // in following calculations we avoided multiplication on 15
             // by using formulae a * 15 = a * 16 - a

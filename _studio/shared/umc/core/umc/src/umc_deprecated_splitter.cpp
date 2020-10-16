@@ -31,9 +31,9 @@ void SplitterInfo::DeprecatedSplitterInfo()
     m_video_info_aux = NULL;
     number_audio_tracks = 0;
     number_video_tracks = 0;
-    memset(&m_audio_info, 0, sizeof(m_audio_info));
-    memset(&m_video_info, 0, sizeof(m_video_info));
-    memset(&m_system_info, 0, sizeof(m_system_info));
+    m_audio_info  = {};
+    m_video_info  = {};
+    m_system_info = {};
 } // SplitterInfo::SplitterInfo()
 
 void Splitter::DeprecatedSplitter()
@@ -175,7 +175,7 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
       pInfo->m_audio_info_aux = (sAudioStreamInfo*)malloc(buff_size);
 
       if(pInfo->m_audio_info_aux) {
-        memset(pInfo->m_audio_info_aux, 0, buff_size);
+        memset(reinterpret_cast<void*>(pInfo->m_audio_info_aux), 0, buff_size);
       } else {
         vm_debug_trace(VM_DEBUG_PROGRESS, VM_STRING("MP4 Splitter: Not Enough Mem"));
         return UMC_ERR_FAILED;
@@ -206,7 +206,7 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
       uint32_t buff_size = (pInfo->number_video_tracks - 1) * sizeof(sVideoStreamInfo);
       pInfo->m_video_info_aux = (sVideoStreamInfo*)malloc(buff_size);
       if (pInfo->m_video_info_aux) {
-          memset(pInfo->m_video_info_aux, 0, buff_size);
+          memset(reinterpret_cast<void*>(pInfo->m_video_info_aux), 0, buff_size);
       } else {
         vm_debug_trace(VM_DEBUG_PROGRESS, VM_STRING("MP4 Splitter: Not Enough Mem"));
         return UMC_ERR_FAILED;

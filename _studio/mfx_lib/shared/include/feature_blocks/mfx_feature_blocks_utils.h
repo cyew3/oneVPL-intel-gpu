@@ -265,12 +265,14 @@ mfxStatus RunBlocks(TPred stopAtSts, TQ& queue, TArgs&&... args)
             , queue.begin(), queue.end(), RunBlock
         );
     }
-    catch (std::exception ex)
+    catch (const std::exception & ex)
     {
         sts = MFX_ERR_UNKNOWN;
 #if defined(_DEBUG)
         printf("EHW Exception: %s\n", ex.what());
         fflush(stdout);
+#else
+        std::ignore = ex;
 #endif
     }
 

@@ -52,8 +52,8 @@ class TaskBroker;
 //
 struct Context
 {
-    ReferenceFlags *(m_pFields[2]);
-    H264DecoderFrame **(m_pRefPicList[2]);
+    ReferenceFlags *m_pFields[2];
+    H264DecoderFrame **m_pRefPicList[2];
 
     bool m_IsUseConstrainedIntra;
     bool m_IsUseDirect8x8Inference;

@@ -235,14 +235,14 @@ enum PredType
 
 #define TRUNCATE_LO(val, lim) \
 { \
-    Ipp32s (tmp) = (lim); \
+    Ipp32s tmp = (lim); \
     if ((tmp) < (val)) \
         (val) = (Ipp16s) (tmp); \
 }
 
 #define TRUNCATE_HI(val, lim) \
 { \
-    Ipp32s (tmp) = (lim); \
+    Ipp32s tmp = (lim); \
     if ((tmp) > (val)) \
         (val) = (Ipp16s) (tmp); \
 }

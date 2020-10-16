@@ -1625,19 +1625,12 @@ Status LocalResources::Init(int32_t numberOfBuffers, MemoryAllocator *pMemoryAll
     m_pMemoryAllocator = pMemoryAllocator;
 
     m_pMBInfo = new H264DecoderLocalMacroblockDescriptor[numberOfBuffers];
-    if (NULL == m_pMBInfo)
-        return UMC_ERR_ALLOC;
 
     m_ppMBIntraTypes = new uint32_t *[numberOfBuffers];
-    if (NULL == m_ppMBIntraTypes)
-        return UMC_ERR_ALLOC;
     memset(m_ppMBIntraTypes, 0, sizeof(uint32_t *)*numberOfBuffers);
 
     // allocate intra MB types array's sizes
     m_piMBIntraProp = new H264IntraTypesProp[numberOfBuffers];
-    if (NULL == m_piMBIntraProp)
-        return UMC_ERR_ALLOC;
-    memset(m_piMBIntraProp, 0, sizeof(H264IntraTypesProp) * numberOfBuffers);
 
     next_mb_tables = new H264DecoderMBAddr *[numberOfBuffers + 1];
     return UMC_OK;

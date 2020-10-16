@@ -424,7 +424,7 @@ public:
     // Allocate decoding data
     bool Allocate(int32_t iMBCount, MemoryAllocator *pMemoryAllocator);
 
-    H264DecoderMacroblockMVs *(MVDeltas[2]);                    // (H264DecoderMacroblockMVs * ([])) motionVectors Deltas L0 and L1
+    H264DecoderMacroblockMVs *MVDeltas[2];                      // (H264DecoderMacroblockMVs * []) motionVectors Deltas L0 and L1
     H264DecoderMacroblockCoeffsInfo *MacroblockCoeffsInfo;      // (H264DecoderMacroblockCoeffsInfo *) info about num_coeffs in each block in the current  picture
     H264DecoderMacroblockLocalInfo *mbs;                        // (H264DecoderMacroblockLocalInfo *) reconstuction info
     H264DecoderMBAddr *active_next_mb_table;                    // (H264DecoderMBAddr *) current "next addres" table

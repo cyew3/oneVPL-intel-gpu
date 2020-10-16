@@ -111,7 +111,7 @@ public:
     H264DecoderMBAddr **next_mb_tables;//0 linear scan, 1,.. - bitstream defined scan (slice groups)
 
 private:
-    IntraType *(*m_ppMBIntraTypes);
+    IntraType **m_ppMBIntraTypes;
     H264IntraTypesProp *m_piMBIntraProp;
 
     H264DecoderLocalMacroblockDescriptor *m_pMBInfo;
