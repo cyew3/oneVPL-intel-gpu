@@ -864,29 +864,6 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.FourCC)
-        {
-            // mfxFrameInfo
-            if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 ||
-                in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
-                in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
-                in->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2 ||
-                in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV
-#if (MFX_VERSION >= 1027)
-                || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
-                || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
-#endif
-#if (MFX_VERSION >= 1031)
-                || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
-                || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
-                || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
-#endif
-                )
-                out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
-            else
-                sts = MFX_ERR_UNSUPPORTED;
-        }
-
         if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400 ||
             CheckChromaFormat(profile, in->mfx.FrameInfo.ChromaFormat))
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
@@ -970,11 +947,15 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.FourCC &&
-            !CheckFourcc(in->mfx.FrameInfo.FourCC, profile, &in->mfx.FrameInfo))
+        if (in->mfx.FrameInfo.FourCC)
         {
-            out->mfx.FrameInfo.FourCC = 0;
-            sts = MFX_ERR_UNSUPPORTED;
+            if(CheckFourcc(in->mfx.FrameInfo.FourCC, profile, &in->mfx.FrameInfo))
+                out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
+            else
+            {
+                out->mfx.FrameInfo.FourCC = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
         }
 
         out->mfx.FrameInfo.Shift = in->mfx.FrameInfo.Shift;
