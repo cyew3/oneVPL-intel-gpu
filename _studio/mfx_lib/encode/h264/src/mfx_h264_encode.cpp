@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -6124,8 +6124,7 @@ mfxStatus MFXVideoENCODEH264::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReque
             break;
         }
     }
-    request->NumFrameMin = nFrames;
-    request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
+    request->NumFrameSuggested = request->NumFrameMin = nFrames + std::max<mfxU16>(par->AsyncDepth, 1) - 1;
 #ifdef USE_PSYINFO
     //if ( (core_enc->m_Analyse_ex & ANALYSE_PSY_AHEAD) )
     request->NumFrameSuggested += 1;
