@@ -107,6 +107,7 @@ public:
     virtual void         SetResetFileName(const tstring &new_file_name);
     virtual void         SetResetInputFileName(const tstring &new_file_name);
     virtual void         SetVppResizing(bool bUseResize);
+    virtual void         SetDisableSurfaceAlign(bool bDisableSurfaceAlign);
 protected:
 
     mfxVideoParam        m_NewParams;//encoder will be reset with this parameters
@@ -114,6 +115,7 @@ protected:
     tstring              m_NewFileName;
     tstring              m_NewInputFileName;
     bool                 m_bUseResizing;
+    bool                 m_bDisableSurfaceAlign;
 };
 
 class addExtBufferCommand : public commandBase
@@ -123,7 +125,7 @@ class addExtBufferCommand : public commandBase
 
 public:
     addExtBufferCommand(IPipelineControl *pHolder);
-    
+
     //ICommand
     virtual mfxStatus    Execute();
     virtual void         RegisterExtBuffer(const mfxExtBuffer & refBuf );

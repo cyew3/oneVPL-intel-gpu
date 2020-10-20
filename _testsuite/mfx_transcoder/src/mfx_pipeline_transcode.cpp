@@ -1042,6 +1042,10 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             if(!m_extCodingOptions2->SkipFrame)
             m_extCodingOptions2->SkipFrame = 1;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-disable_surface_align"), VM_STRING("Disable surface size alignment")))
+        {
+            m_inParams.bDisableSurfaceAlign = true;
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-linear_input"), VM_STRING("create raw input surface as linear format")))
         {
             m_inParams.isRawSurfaceLinear = true;
@@ -1099,7 +1103,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(m_EncParams.mfx.FrameInfo.CropW, argv[1]);
-            m_EncParams.mfx.FrameInfo.Width = mfx_align(m_EncParams.mfx.FrameInfo.CropW, 0x10);
+            if (!m_inParams.bDisableSurfaceAlign)
+                m_EncParams.mfx.FrameInfo.Width = mfx_align(m_EncParams.mfx.FrameInfo.CropW, 0x10);
+            else
+                m_EncParams.mfx.FrameInfo.Width = m_EncParams.mfx.FrameInfo.CropW;
+
             FILL_MASK_FROM_FIELD(m_EncParams.mfx.FrameInfo.CropW, 0);
             FILL_MASK_FROM_FIELD(m_EncParams.mfx.FrameInfo.Width, 0);
 
@@ -1623,6 +1631,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             pCmd->SetResetFileName(m_FileAfterReset);
             pCmd->SetResetInputFileName(m_inFileAfterReset);
             pCmd->SetVppResizing(m_bUseResizing);
+            pCmd->SetDisableSurfaceAlign(m_inParams.bDisableSurfaceAlign);
 
             // attach ext buffers
             if (!m_ExtBuffers.get()->empty())

@@ -1,4 +1,4 @@
-/* ****************************************************************************** *\
+﻿/* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -473,8 +473,11 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         bool bProg = m_components[eDEC].m_nOverPS == MFX_PICSTRUCT_PROGRESSIVE;
 
         refInfo.PicStruct   = m_components[eDEC].m_nOverPS;
-        refInfo.Width       = mfx_align(refInfo.Width, 0x10);
-        refInfo.Height      = mfx_align(refInfo.Height,(bProg) ? 0x10 : 0x20);
+        if (!m_inParams.bDisableSurfaceAlign)
+        {
+            refInfo.Width  = mfx_align(refInfo.Width, 0x10);
+            refInfo.Height = mfx_align(refInfo.Height,(bProg) ? 0x10 : 0x20);
+        }
     }
 
     //cmd line params should be modified for par file
@@ -1691,8 +1694,16 @@ mfxStatus MFXDecPipeline::InitPluginVppParams(mfxFrameInfo & pluginInfo,
         bool bProgressive
             = (pluginInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE);
 
-        pluginInfo.Width  =  mfx_align(pluginInfo.CropW, 0x10);
-        pluginInfo.Height =  mfx_align(pluginInfo.CropH, bProgressive ? 0x10 : 0x20);
+        if (!m_inParams.bDisableSurfaceAlign)
+        {
+            pluginInfo.Width  =  mfx_align(pluginInfo.CropW, 0x10);
+            pluginInfo.Height =  mfx_align(pluginInfo.CropH, bProgressive ? 0x10 : 0x20);
+        }
+        else
+        {
+            pluginInfo.Width  =  pluginInfo.CropW;
+            pluginInfo.Height =  pluginInfo.CropH;
+        }
     }
 
     return MFX_ERR_NONE;
@@ -1738,8 +1749,17 @@ mfxStatus MFXDecPipeline::DecodeHeader()
 
     if (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_CAPTURE)
     {
-        m_components[eDEC].m_params.mfx.FrameInfo.Width = mfx_align((mfxU16)(m_inParams.FrameInfo.Width), 0x10);
-        m_components[eDEC].m_params.mfx.FrameInfo.Height = mfx_align((mfxU16)(m_inParams.FrameInfo.Height), 0x10);
+        if (!m_inParams.bDisableSurfaceAlign)
+        {
+            m_components[eDEC].m_params.mfx.FrameInfo.Width  = mfx_align((mfxU16)(m_inParams.FrameInfo.Width), 0x10);
+            m_components[eDEC].m_params.mfx.FrameInfo.Height = mfx_align((mfxU16)(m_inParams.FrameInfo.Height), 0x10);
+        }
+        else
+        {
+            m_components[eDEC].m_params.mfx.FrameInfo.Width  = (mfxU16)(m_inParams.FrameInfo.Width);
+            m_components[eDEC].m_params.mfx.FrameInfo.Height = (mfxU16)(m_inParams.FrameInfo.Height);
+        }
+
         m_components[eDEC].m_params.mfx.FrameInfo.CropW = m_inParams.FrameInfo.Width;
         m_components[eDEC].m_params.mfx.FrameInfo.CropH = m_inParams.FrameInfo.Height;
         FrameRate2Code(m_components[eDEC].m_fFrameRate, &m_components[eDEC].m_params.mfx.FrameInfo);
@@ -2617,9 +2637,17 @@ mfxStatus MFXDecPipeline::InitRenderParams()
     refInfoOut.PicStruct = m_inParams.FrameInfo.PicStruct;
 
     bool bProg = refInfoOut.PicStruct == MFX_PICSTRUCT_PROGRESSIVE;
+    if (!m_inParams.bDisableSurfaceAlign)
+    {
+        refInfoOut.Width  = mfx_align(refInfoIn.Width, 0x10);
+        refInfoOut.Height = mfx_align(refInfoIn.Height,(bProg) ? 0x10 : 0x20);
+    }
+    else
+    {
+        refInfoOut.Width  = refInfoIn.Width;
+        refInfoOut.Height = refInfoIn.Height;
+    }
 
-    refInfoOut.Width        = mfx_align(refInfoIn.Width, 0x10);
-    refInfoOut.Height       = mfx_align(refInfoIn.Height,(bProg) ? 0x10 : 0x20);
     //TODO: cropx cropy settings may affect suites that expect encoder to set the crops, we don't have such test cases YET
     //before modifying zero to something please check VCSD100004870
     refInfoOut.CropX          = refInfoIn.CropX;
@@ -2744,6 +2772,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
             , yuvDecParam
             , m_components[eDEC].m_fFrameRate
             , m_inParams.FrameInfo.FourCC
+            , m_inParams.bDisableSurfaceAlign
             , m_pFactory.get()
             , m_inParams.strOutlineInputFile));
         bGenerateViewIds = true;
@@ -3602,8 +3631,18 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
 
             inSurface.pSurface->Info.CropW = param.mfx.FrameInfo.CropW;
             inSurface.pSurface->Info.CropH = param.mfx.FrameInfo.CropH;
-            m_YUV_Width = mfx_align<mfxU16>(std::max(param.mfx.FrameInfo.Width, (mfxU16)m_YUV_Width), 0x10);
-            m_YUV_Height = mfx_align<mfxU16>(std::max(param.mfx.FrameInfo.Height, (mfxU16)m_YUV_Height), 0x10);
+
+            if (!m_inParams.bDisableSurfaceAlign)
+            {
+                m_YUV_Width  = mfx_align<mfxU16>(std::max(param.mfx.FrameInfo.Width, (mfxU16)m_YUV_Width), 0x10);
+                m_YUV_Height = mfx_align<mfxU16>(std::max(param.mfx.FrameInfo.Height, (mfxU16)m_YUV_Height), 0x10);
+            }
+            else
+            {
+                m_YUV_Width  = std::max(param.mfx.FrameInfo.Width, (mfxU16)m_YUV_Width);
+                m_YUV_Height = std::max(param.mfx.FrameInfo.Height, (mfxU16)m_YUV_Height);
+            }
+
             inSurface.pSurface->Info.Width = m_YUV_Width;
             inSurface.pSurface->Info.Height = m_YUV_Height;
 

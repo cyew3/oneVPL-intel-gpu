@@ -39,7 +39,7 @@ MFXAV1AnchorsDecoder::MFXAV1AnchorsDecoder(
     {
         vm_string_strcpy_s(m_srcFile, MFX_ARRAY_SIZE(m_srcFile), anchorsFileInput);
     }
-    m_pAnchorsYUVSource.reset(new MFXYUVDecoder(session, frameParam, 30.0, frameParam.mfx.FrameInfo.FourCC, pFactory, nullptr));
+    m_pAnchorsYUVSource.reset(new MFXYUVDecoder(session, frameParam, 30.0, frameParam.mfx.FrameInfo.FourCC, false, pFactory, nullptr));
 }
 
 MFXAV1AnchorsDecoder::MFXAV1AnchorsDecoder(

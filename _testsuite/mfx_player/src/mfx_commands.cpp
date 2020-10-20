@@ -185,6 +185,7 @@ mfxStatus skipCommand::Execute()
 resetEncCommand::resetEncCommand(IPipelineControl *pHolder)
 : commandBase(pHolder)
 , m_bUseResizing()
+, m_bDisableSurfaceAlign(false)
 {
 }
 
@@ -201,6 +202,11 @@ void resetEncCommand::SetResetInputFileName(const tstring &new_file_name)
 void resetEncCommand::SetVppResizing(bool bUseResize)
 {
     m_bUseResizing = bUseResize;
+}
+
+void resetEncCommand::SetDisableSurfaceAlign(bool bDisableSurfaceAlign)
+{
+    m_bDisableSurfaceAlign = bDisableSurfaceAlign;
 }
 
 void    resetEncCommand::SetResetParams(mfxVideoParam * vParam, mfxVideoParam * vParamMask)
@@ -240,7 +246,8 @@ mfxStatus    resetEncCommand::Execute()
     MFX_CHECK_STS_SKIP(rnd->RenderFrame(NULL), MFX_ERR_MORE_DATA);
 
     //also should align height here with current PS
-    newParams.mfx.FrameInfo.Height = mfx_align(newParams.mfx.FrameInfo.CropH, (newParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 0x10 : 0x20));
+    if (!m_bDisableSurfaceAlign)
+        newParams.mfx.FrameInfo.Height = mfx_align(newParams.mfx.FrameInfo.CropH, (newParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 0x10 : 0x20));
 
     //resolution also may change
     if (newParams.mfx.FrameInfo.CropW != currentParams.mfx.FrameInfo.CropW ||

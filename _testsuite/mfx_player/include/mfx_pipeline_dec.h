@@ -126,6 +126,7 @@ struct sCommandlineParams
   bool           bMediaSDKSplitter;
   bool           bAdaptivePlayback;
   bool           bVP9_DRC;
+  bool           bDisableSurfaceAlign;
   bool           isRawSurfaceLinear;
   vm_char        extractedAudioFile[MAX_FILE_PATH];
   mfxU16         nAdvanceFRCAlgorithm;//if non zero then directly specifies advanced FRC algorithm

@@ -27,6 +27,7 @@ public:
                   mfxVideoParam &frameParam,
                   mfxF64 dFramerate,
                   mfxU32 nInFourCC,
+                  bool   bDisableSurfaceAlign,
                   IMFXPipelineFactory * pFactory,
                   const vm_char * outlineInput);
     virtual ~MFXYUVDecoder();
