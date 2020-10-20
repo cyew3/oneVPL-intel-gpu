@@ -48,7 +48,7 @@ namespace av1e {
 
             void SetUp() override
             {
-                srand(time(NULL));
+                srand(time(nullptr));
 
                 ASSERT_EQ(
                     session.InitEx(
