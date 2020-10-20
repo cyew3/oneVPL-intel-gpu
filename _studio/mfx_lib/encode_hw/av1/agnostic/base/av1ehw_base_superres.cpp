@@ -39,6 +39,8 @@ void Superres::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         MFX_CHECK(pAV1Par->SuperresScaleDenominator != 0, MFX_ERR_NONE);
 
         mfxU32 changed = 0;
+        mfxU32 invalid = 0;
+        auto&  caps    = Glob::EncodeCaps::Get(strg);
 
         changed += SetIf(pAV1Par->SuperresScaleDenominator,
                          IsOn(pAV1Par->EnableSuperres) &&
@@ -52,9 +54,9 @@ void Superres::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
                                  DEFAULT_DENOM_FOR_SUPERRES_OFF,
                          DEFAULT_DENOM_FOR_SUPERRES_OFF);
 
-        auto& caps = Glob::EncodeCaps::Get(strg);
-        MFX_CHECK(!(!caps.SuperResSupport && IsOn(pAV1Par->EnableSuperres)), MFX_ERR_UNSUPPORTED);
+        invalid += !caps.SuperResSupport && IsOn(pAV1Par->EnableSuperres);
 
+        MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
         MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
         return MFX_ERR_NONE;

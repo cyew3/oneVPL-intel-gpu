@@ -60,12 +60,12 @@ Windows::Base::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
 
     m_features.emplace_back(new DDIPacker(FEATURE_DDI_PACKER));
     m_features.emplace_back(new General(FEATURE_GENERAL));
-    m_features.emplace_back(new Superres(FEATURE_SUPERRES));
     m_features.emplace_back(new TaskManager(FEATURE_TASK_MANAGER));
     m_features.emplace_back(new Packer(FEATURE_PACKER));
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     m_features.emplace_back(new BlockingSync(FEATURE_BLOCKING_SYNC));
 #endif
+    m_features.emplace_back(new Superres(FEATURE_SUPERRES));
     m_features.emplace_back(new Tile(FEATURE_TILE));
     m_features.emplace_back(new DirtyRect(FEATURE_DIRTY_RECT));
 
