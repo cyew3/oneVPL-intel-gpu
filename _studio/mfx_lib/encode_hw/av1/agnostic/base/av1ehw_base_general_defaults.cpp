@@ -988,9 +988,7 @@ public:
     {
         auto&  W        = par.mfx.FrameInfo.Width;
         auto&  H        = par.mfx.FrameInfo.Height;
-        auto   AW       = mfx::align2_value(W, HW_SURF_ALIGN_W);
-        auto   AH       = mfx::align2_value(H, HW_SURF_ALIGN_H);
-        mfxU32 changed  = 0;
+
         mfxU16 MaxW     = mfxU16(dpar.caps.MaxPicWidth);
         mfxU16 MaxH     = mfxU16(dpar.caps.MaxPicHeight);
         mfxU16 MinW     = mfxU16(SB_SIZE);
@@ -999,14 +997,9 @@ public:
         MFX_CHECK(W, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(H, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        changed += (W != AW) + (H != AH);
-        W = AW;
-        H = AH;
-
         MFX_CHECK(!CheckRangeOrSetDefault<mfxU16>(W, MinW, MaxW, 0), MFX_ERR_UNSUPPORTED);
         MFX_CHECK(!CheckRangeOrSetDefault<mfxU16>(H, MinH, MaxH, 0), MFX_ERR_UNSUPPORTED);
 
-        MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         return MFX_ERR_NONE;
     }
 
