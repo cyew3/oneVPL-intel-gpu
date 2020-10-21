@@ -1013,7 +1013,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(
     {
         if (srcMemType & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            if (NULL == srcPtr)
+            if (nullptr == srcPtr)
             {
                 sts = this->LockExternalFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);

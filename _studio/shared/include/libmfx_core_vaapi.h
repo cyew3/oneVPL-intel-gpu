@@ -139,7 +139,7 @@ public:
         CMEnabledCoreAdapter(VAAPIVideoCORE_T *pVAAPICore): m_pVAAPICore(pVAAPICore)
         {
         };
-        virtual mfxStatus SetCmCopyStatus(bool enable)
+        virtual mfxStatus SetCmCopyStatus(bool enable) override
         {
             return m_pVAAPICore->SetCmCopyStatus(enable);
         };

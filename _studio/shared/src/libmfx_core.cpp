@@ -978,7 +978,7 @@ mfxStatus CommonCORE::IncreasePureReference(mfxU16& Locked)
 
     MFX_CHECK(Locked <= 65534, MFX_ERR_LOCK_MEMORY);
 
-    vm_interlocked_inc16((volatile Ipp16u*)&Locked);
+    vm_interlocked_inc16((volatile uint16_t*)&Locked);
     return MFX_ERR_NONE;
 }// CommonCORE::IncreasePureReference(mfxFrameData *ptr)
 
@@ -989,7 +989,7 @@ mfxStatus CommonCORE::DecreasePureReference(mfxU16& Locked)
 
     MFX_CHECK(Locked != 0, MFX_ERR_LOCK_MEMORY);
 
-    vm_interlocked_dec16((volatile Ipp16u*)&Locked);
+    vm_interlocked_dec16((volatile uint16_t*)&Locked);
     return MFX_ERR_NONE;
 }// CommonCORE::IncreasePureReference(mfxFrameData *ptr)
 
@@ -1010,8 +1010,8 @@ mfxStatus CommonCORE::IncreaseReference(mfxFrameData *ptr, bool ExtendedSearch)
                 OpqTbl_FrameData::iterator opq_it = m_OpqTbl_FrameData.find(ptr);
                 if (m_OpqTbl_FrameData.end() != opq_it)
                 {
-                    vm_interlocked_inc16((volatile Ipp16u*)&(opq_it->second->Data.Locked));
-                    vm_interlocked_inc16((volatile Ipp16u*)&ptr->Locked);
+                    vm_interlocked_inc16((volatile uint16_t*)&(opq_it->second->Data.Locked));
+                    vm_interlocked_inc16((volatile uint16_t*)&ptr->Locked);
                     return MFX_ERR_NONE;
                 }
             }
@@ -1050,8 +1050,8 @@ mfxStatus CommonCORE::DecreaseReference(mfxFrameData *ptr, bool ExtendedSearch)
                 OpqTbl_FrameData::iterator opq_it = m_OpqTbl_FrameData.find(ptr);
                 if (m_OpqTbl_FrameData.end() != opq_it)
                 {
-                    vm_interlocked_dec16((volatile Ipp16u*)&(opq_it->second->Data.Locked));
-                    vm_interlocked_dec16((volatile Ipp16u*)&ptr->Locked);
+                    vm_interlocked_dec16((volatile uint16_t*)&(opq_it->second->Data.Locked));
+                    vm_interlocked_dec16((volatile uint16_t*)&ptr->Locked);
                     return MFX_ERR_NONE;
                 }
             }
@@ -1335,9 +1335,9 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src,
             mfxU8 lshift = 0;
             mfxU8 rshift = 0;
             if (src.Info.Shift != 0)
-                rshift = (mfxU8)(16 - dst.Info.BitDepthLuma);
+                rshift = (uint8_t)(16 - dst.Info.BitDepthLuma);
             else
-                lshift = (mfxU8)(16 - dst.Info.BitDepthLuma);
+                lshift = (uint8_t)(16 - dst.Info.BitDepthLuma);
 
             // CopyAndShift operates with 2-byte words, no need to multiply width by 2
             MFX_SAFE_CALL(FastCopy::CopyAndShift((mfxU16*)(dst.Data.Y), dstPitch, (mfxU16 *)src.Data.Y, srcPitch, roi, lshift, rshift, copyFlag));
