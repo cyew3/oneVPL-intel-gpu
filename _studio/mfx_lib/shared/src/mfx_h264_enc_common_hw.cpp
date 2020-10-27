@@ -1445,6 +1445,8 @@ bool MfxHwH264Encode::IsMctfSupported(
         (video.mfx.FrameInfo.BitDepthLuma == 0 || video.mfx.FrameInfo.BitDepthLuma == 8) &&
         (video.mfx.GopRefDist == 8) &&
         !video.mfx.EncodedOrder);
+#else
+    video;
 #endif
     return isSupported;
 }
