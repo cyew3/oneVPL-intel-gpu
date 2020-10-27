@@ -1490,6 +1490,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     if (IsMctfSupported(m_video))
     {
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
         if (!m_cmDevice)
         {
             m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
@@ -1502,8 +1503,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         sts = amtMctf->MCTF_INIT(m_core, m_cmDevice, m_video.mfx.FrameInfo, NULL, IsCmNeededForSCD(m_video), true, true, true);
         MFX_CHECK_STS(sts);
+#endif
     }
-
 #if USE_AGOP
     if (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)//AGOP
     {
@@ -2842,7 +2843,7 @@ void ImplementationAvc::BrcPreEnc(
 
     m_brc.PreEnc(task.m_brcFrameParams, m_tmpVmeData);
 }
-
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
 mfxStatus ImplementationAvc::SubmitToMctf(DdiTask * pTask, bool isSceneChange, bool doIntraFiltering)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::SubmitToMctf");
@@ -2924,7 +2925,7 @@ mfxStatus ImplementationAvc::QueryFromMctf(void *pParam, bool bEoF)
     }
     return MFX_ERR_NONE;
 }
-
+#endif
 using namespace ns_asc;
 mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & task)
 {
@@ -3930,8 +3931,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_START_MCTF");
         if (IsMctfSupported(m_video))
         {
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
             DdiTask & task = m_MctfStarted.back();
             MFX_CHECK_STS(SubmitToMctf(&task, amtScd.Get_frame_shot_Decision(), amtScd.Get_intra_frame_denoise_recommendation()));
+#endif
         }
         OnMctfQueried();
     }
@@ -3941,8 +3944,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_WAIT_MCTF");
         if (IsMctfSupported(m_video))
         {
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
             DdiTask & task = m_MctfFinished.front();
             MFX_CHECK_STS(QueryFromMctf(&task, false));
+#endif
         }
         OnMctfFinished();
     }
