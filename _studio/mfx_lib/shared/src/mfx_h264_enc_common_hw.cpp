@@ -1430,6 +1430,7 @@ bool MfxHwH264Encode::IsCmNeededForSCD(
 bool MfxHwH264Encode::IsMctfSupported(
     MfxVideoParam const & video)
 {
+    (void)video;
     bool
         isSupported = false;
 #if defined(MXF_ENABLE_MCTF_IN_AVC)
@@ -1443,8 +1444,6 @@ bool MfxHwH264Encode::IsMctfSupported(
         (video.mfx.FrameInfo.BitDepthLuma == 0 || video.mfx.FrameInfo.BitDepthLuma == 8) &&
         (video.mfx.GopRefDist == 8) &&
         !video.mfx.EncodedOrder);
-#else
-    video;
 #endif
     return isSupported;
 }
