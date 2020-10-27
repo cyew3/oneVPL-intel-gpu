@@ -107,6 +107,12 @@ if (input != MFX_CODINGOPTION_OFF &&      \
     (corcnt) ++;                          \
 } else output = input;
 
+#define CHECK_UNSUPPORTED_TRI_OPTION(input, corcnt) \
+    if (input != MFX_CODINGOPTION_UNKNOWN) { \
+        input = MFX_CODINGOPTION_UNKNOWN;    \
+        (corcnt)++;                          \
+    }
+
 #define CORRECT_FLAG(flag, value, corcnt) \
   if ( flag != 0 && flag != 1 ) { \
     flag = value;      \
@@ -2643,6 +2649,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
     mfxExtPictureTimingSEI* picTimingSei = (mfxExtPictureTimingSEI*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_PICTURE_TIMING_SEI );
     mfxExtAvcTemporalLayers* tempLayers = (mfxExtAvcTemporalLayers*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_AVC_TEMPORAL_LAYERS );
     mfxExtCodingOption2* opts2 = (mfxExtCodingOption2*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_CODING_OPTION2 );
+    mfxExtCodingOption3* opts3 = (mfxExtCodingOption3*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_CODING_OPTION3 );
     if(GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_VPP_AUXDATA ))
         return MFX_ERR_INVALID_VIDEO_PARAM;
     mfxExtCodingOptionDDI* extOptDdi = NULL;
@@ -2683,6 +2690,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
     mfxExtSVCSeqDesc checked_svcLayers;
     mfxExtSVCRateControl checked_svcRC;
     mfxExtCodingOption2 checked_ext2;
+    mfxExtCodingOption3 checked_ext3;
     mfxExtBuffer *ptr_checked_ext[9] = {0,};
     mfxU16 ext_counter = 0;
     checked = *par_in;
@@ -2733,6 +2741,10 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
     if (opts2) {
         checked_ext2 = *opts2;
         ptr_checked_ext[ext_counter++] = &checked_ext2.Header;
+    }
+    if (opts3) {
+        checked_ext3 = *opts3;
+        ptr_checked_ext[ext_counter++] = &checked_ext3.Header;
     }
     checked.ExtParam = ptr_checked_ext;
     checked.NumExtParam = ext_counter;
@@ -4988,6 +5000,8 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         mfxExtSVCRateControl*     svcRC_out = (mfxExtSVCRateControl*)GetExtBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_SVC_RATE_CONTROL );
         mfxExtCodingOption2*      opts2_in = (mfxExtCodingOption2*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_CODING_OPTION2 );
         mfxExtCodingOption2*      opts2_out = (mfxExtCodingOption2*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_CODING_OPTION2 );
+        mfxExtCodingOption3*      opts3_in = (mfxExtCodingOption3*)GetExtBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
+        mfxExtCodingOption3*      opts3_out = (mfxExtCodingOption3*)GetExtBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
 
         if (opts_in            ) CHECK_EXTBUF_SIZE( *opts_in,             isInvalid)
         if (opts_out           ) CHECK_EXTBUF_SIZE( *opts_out,            isInvalid)
@@ -5005,6 +5019,8 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         if (svcRC_out          ) CHECK_EXTBUF_SIZE( *svcRC_out,           isInvalid)
         if (opts2_in           ) CHECK_EXTBUF_SIZE( *opts2_in,            isInvalid)
         if (opts2_out          ) CHECK_EXTBUF_SIZE( *opts2_out,           isInvalid)
+        if (opts3_in           ) CHECK_EXTBUF_SIZE( *opts3_in,            isInvalid)
+        if (opts3_out          ) CHECK_EXTBUF_SIZE( *opts3_out,           isInvalid)
         if (isInvalid)
             return MFX_ERR_UNSUPPORTED;
 
@@ -5014,6 +5030,7 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             (tempLayers_in == 0) != (tempLayers_out == 0) ||
             (svcRC_in == 0) != (svcRC_out == 0) ||
             (opts2_in == 0) != (opts2_out == 0) ||
+            (opts3_in == 0) != (opts3_out == 0) ||
             (svcinfo_in == 0) != (svcinfo_out == 0))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -5248,6 +5265,101 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 opts2_out->Trellis = 0;
                 isCorrected ++;
             }
+        }
+
+        if (opts3_in) {
+            // SW encode only supports default values of the options
+            *opts3_out = *opts3_in;
+
+            CHECK_ZERO(opts3_out->NumSliceI, isCorrected);
+            CHECK_ZERO(opts3_out->NumSliceP, isCorrected);
+            CHECK_ZERO(opts3_out->NumSliceB, isCorrected);
+
+            CHECK_ZERO(opts3_out->WinBRCMaxAvgKbps, isCorrected);
+            CHECK_ZERO(opts3_out->WinBRCSize, isCorrected);
+
+            CHECK_ZERO(opts3_out->QVBRQuality, isCorrected);
+            CHECK_ZERO(opts3_out->EnableMBQP, isCorrected);
+            CHECK_ZERO(opts3_out->IntRefCycleDist, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->DirectBiasAdjustment, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->GlobalMotionBiasAdjustment, isCorrected);
+            CHECK_ZERO(opts3_out->MVCostScalingFactor, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->MBDisableSkipMap, isCorrected);
+
+            CHECK_ZERO(opts3_out->WeightedPred, isCorrected);
+            CHECK_ZERO(opts3_out->WeightedBiPred, isCorrected);
+
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->AspectRatioInfoPresent, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->OverscanInfoPresent, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->OverscanAppropriate, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->TimingInfoPresent, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->BitstreamRestriction, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->LowDelayHrd, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->MotionVectorsOverPicBoundaries, isCorrected);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            CHECK_ZERO(opts3_out->Log2MaxMvLengthHorizontal, isCorrected);
+            CHECK_ZERO(opts3_out->Log2MaxMvLengthVertical, isCorrected);
+#endif
+
+            CHECK_ZERO(opts3_out->ScenarioInfo, isCorrected);
+            CHECK_ZERO(opts3_out->ContentInfo, isCorrected);
+
+            CHECK_ZERO(opts3_out->PRefType, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->FadeDetection, isCorrected);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            CHECK_ZERO(opts3_out->DeblockingAlphaTcOffset, isCorrected);
+            CHECK_ZERO(opts3_out->DeblockingBetaOffset, isCorrected);
+#endif
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->GPB, isCorrected);
+
+            CHECK_ZERO(opts3_out->MaxFrameSizeI, isCorrected);
+            CHECK_ZERO(opts3_out->MaxFrameSizeP, isCorrected);
+
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->EnableQPOffset, isCorrected);
+            for (unsigned i = 0; i < sizeof(opts3_out->QPOffset)/ sizeof(opts3_out->QPOffset[0]); i++) {
+                CHECK_ZERO(opts3_out->QPOffset[i], isCorrected);
+            }
+
+            for (unsigned i = 0; i < sizeof(opts3_out->NumRefActiveP) / sizeof(opts3_out->NumRefActiveP[0]); i++) {
+                CHECK_ZERO(opts3_out->NumRefActiveP[i], isCorrected);
+            }
+            for (unsigned i = 0; i < sizeof(opts3_out->NumRefActiveBL0) / sizeof(opts3_out->NumRefActiveBL0[0]); i++) {
+                CHECK_ZERO(opts3_out->NumRefActiveBL0[i], isCorrected);
+            }
+            for (unsigned i = 0; i < sizeof(opts3_out->NumRefActiveBL1) / sizeof(opts3_out->NumRefActiveBL1[0]); i++) {
+                CHECK_ZERO(opts3_out->NumRefActiveBL1[i], isCorrected);
+            }
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->ConstrainedIntraPredFlag, isCorrected);
+#endif
+#if (MFX_VERSION >= 1026)
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->TransformSkip, isCorrected);
+#endif
+#if (MFX_VERSION >= 1027)
+            CHECK_ZERO(opts3_out->TargetChromaFormatPlus1, isCorrected);
+            CHECK_ZERO(opts3_out->TargetBitDepthLuma, isCorrected);
+            CHECK_ZERO(opts3_out->TargetBitDepthChroma, isCorrected);
+#endif
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->BRCPanicMode, isCorrected);
+
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->LowDelayBRC, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->EnableMBForceIntra, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->AdaptiveMaxFrameSize, isCorrected);
+
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->RepartitionCheckEnable, isCorrected);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            CHECK_ZERO(opts3_out->QuantScaleType, isCorrected);
+            CHECK_ZERO(opts3_out->IntraVLCFormat, isCorrected);
+            CHECK_ZERO(opts3_out->ScanType, isCorrected);
+#endif
+#if (MFX_VERSION >= 1025)
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->EncodedUnitsInfo, isCorrected);
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->EnableNalUnitType, isCorrected);
+#endif
+#if (MFX_VERSION >= 1026)
+            CHECK_UNSUPPORTED_TRI_OPTION(opts3_out->ExtBrcAdaptiveLTR, isCorrected);
+#endif
         }
 
         mfxU16 RCMethod = (in->mfx.RateControlMethod == MFX_RATECONTROL_CBR || in->mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
