@@ -1032,6 +1032,23 @@ mfxStatus CDecodingPipeline::InitVppParams()
         m_VppSurfaceExtParams.push_back((mfxExtBuffer*)&m_VppVideoSignalInfo);
     }
 
+    // P010 video surfaces should be shifted
+    if (m_memType != SYSTEM_MEMORY &&
+        (  m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_P010
+#if (MFX_VERSION >= 1027)
+        || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_Y210
+#endif
+#if (MFX_VERSION >= 1331)
+        || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_P016
+        || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_Y216
+        || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_Y416
+#endif
+        )
+    )
+    {
+        m_mfxVppVideoParams.vpp.Out.Shift = 1;
+    }
+
     return MFX_ERR_NONE;
 }
 
