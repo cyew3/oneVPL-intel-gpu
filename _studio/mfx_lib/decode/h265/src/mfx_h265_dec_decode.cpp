@@ -39,6 +39,7 @@
     #endif
 #include "umc_va_video_processing.h"
 #endif
+#include "mfx_session.h"
 
 using namespace UMC_HEVC_DECODER;
 
@@ -1142,7 +1143,10 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         m_va->GetVideoProcessingVA()->SetOutputSurface(surfHDL);
     }
 #endif // !MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-#endif
+
+    //gpu session priority
+    m_va->m_ContextPriority = m_core->GetSession()->m_priority;
+#endif // #if defined(MFX_VA)
 
     try
     {

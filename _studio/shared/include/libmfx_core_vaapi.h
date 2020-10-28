@@ -240,6 +240,7 @@ private:
     ComPtrCore<MFEVAAPIEncoder>                 m_mfeHevc;
 #endif
 #endif
+    mfxU32                                      m_maxContextPriority;
 };
 
 using VAAPIVideoCORE = VAAPIVideoCORE_T<CommonCORE>;

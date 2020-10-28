@@ -286,6 +286,8 @@ public:
         m_Profile(UNKNOWN),
         m_Platform(VA_UNKNOWN_PLATFORM),
         m_HWPlatform(MFX_HW_UNKNOWN),
+        m_MaxContextPriority(0),
+        m_ContextPriority(MFX_PRIORITY_LOW),
         m_protectedVA(nullptr),
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         m_videoProcessingVA(0),
@@ -425,6 +427,8 @@ public:
     VideoAccelerationProfile    m_Profile;          // entry point
     VideoAccelerationPlatform   m_Platform;         // DXVA, LinuxVA, etc
     eMFXHWType                  m_HWPlatform;
+    uint32_t                    m_MaxContextPriority;
+    mfxPriority                 m_ContextPriority;
 
 protected:
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,13 @@
 
 #include "umc_defs.h"
 
-#if defined MFX_ENABLE_MPEG2_VIDEO_DECODE
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #include "umc_va_base.h"
 
+
 #if defined(LINUX32) || defined(LINUX64)
 #include <va/va.h>
-
 
 namespace UMC
 { class MediaData; }
@@ -59,7 +59,7 @@ namespace UMC_MPEG2_DECODER
     protected:
         virtual void PackPicParams(const MPEG2DecoderFrame&, uint8_t) = 0;
         virtual void PackQmatrix(const MPEG2DecoderFrameInfo&) = 0;
-        virtual void PackSliceParams(const MPEG2DecoderFrameInfo &) = 0;
+        virtual void PackSliceParams(const MPEG2Slice&, uint32_t) = 0;
 
     protected:
 
@@ -97,14 +97,16 @@ namespace UMC_MPEG2_DECODER
         // Pack matrix parameters
         void PackQmatrix(const MPEG2DecoderFrameInfo&) override;
         // Pack slice parameters
-        void PackSliceParams(const MPEG2DecoderFrameInfo &) override;
+        void PackSliceParams(const MPEG2Slice&, uint32_t) override;
+        // Pack gpu priority
+        void PackPriorityParams();
 
     private:
         void CreateSliceDataBuffer(const MPEG2DecoderFrameInfo&);
         void CreateSliceParamBuffer(const MPEG2DecoderFrameInfo&);
     };
 
-
 }
+
 #endif // defined(LINUX32) || defined(LINUX64)
 #endif // MFX_ENABLE_MPEG2_VIDEO_DECODE

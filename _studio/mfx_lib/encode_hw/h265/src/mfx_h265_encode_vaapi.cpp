@@ -31,7 +31,7 @@
 #include "mfx_h265_encode_vaapi.h"
 #include "mfx_h265_encode_hw_utils.h"
 #include <unordered_map>
-
+#include "mfx_session.h"
 //#define PARALLEL_BRC_support
 
 namespace MfxHwH265Encode
@@ -913,12 +913,14 @@ VAAPIEncoder::VAAPIEncoder()
 , m_vaConfig(VA_INVALID_ID)
 , m_sps()
 , m_pps()
+, m_priorityBuffer()
 , m_width(0)
 , m_height(0)
 , m_caps()
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
 , m_pMfeAdapter(nullptr)
 #endif
+, m_MaxContextPriority(0)
 {
 }
 
@@ -1051,7 +1053,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAConfigAttribEncSliceStructure,
         VAConfigAttribEncROI,
         VAConfigAttribEncTileSupport,
-        VAConfigAttribEncDirtyRect
+        VAConfigAttribEncDirtyRect,
+        VAConfigAttribContextPriority
     };
     std::vector<VAConfigAttrib> attrs;
 
@@ -1196,13 +1199,15 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.ddi_caps.TileSupport = (attrs[idx_map[VAConfigAttribEncTileSupport]].value == 1);
 
-
     if (attrs[ idx_map[VAConfigAttribEncDirtyRect] ].value != VA_ATTRIB_NOT_SUPPORTED &&
         attrs[ idx_map[VAConfigAttribEncDirtyRect] ].value != 0)
     {
         m_caps.ddi_caps.DirtyRectSupport = 1;
         m_caps.ddi_caps.MaxNumOfDirtyRect = attrs[ idx_map[VAConfigAttribEncDirtyRect] ].value;
     }
+
+    if (attrs[ idx_map[VAConfigAttribContextPriority] ].value != VA_ATTRIB_NOT_SUPPORTED)
+        m_MaxContextPriority = attrs[ idx_map[VAConfigAttribContextPriority] ].value;
 
     sts = HardcodeCaps(m_caps, core, par);
     MFX_CHECK_STS(sts);
@@ -1622,6 +1627,37 @@ mfxStatus SetSkipFrame(
     return MFX_ERR_NONE;
 }
 
+mfxStatus VAAPIEncoder::FillPriorityBuffer(mfxPriority& priority)
+{
+    VAStatus vaSts;
+    memset(&m_priorityBuffer, 0, sizeof(VAContextParameterUpdateBuffer));
+    m_priorityBuffer.flags.bits.context_priority_update = 1;   //need to set by parameter
+
+    if(priority == MFX_PRIORITY_LOW)
+    {
+        m_priorityBuffer.context_priority.bits.priority = 0;
+    }
+    else if (priority == MFX_PRIORITY_HIGH)
+    {
+        m_priorityBuffer.context_priority.bits.priority = m_MaxContextPriority;
+    }
+    else
+    {
+        m_priorityBuffer.context_priority.bits.priority = m_MaxContextPriority/2;
+    }
+
+    vaSts = vaCreateBuffer(m_vaDisplay,
+        m_vaContextEncode,
+        VAContextParameterUpdateBufferType,
+        sizeof(m_priorityBuffer),
+        1,
+        &m_priorityBuffer,
+        &VABufferNew(VABID_PriorityBufferId, 0));
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDLPair pair)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Execute");
@@ -1957,6 +1993,14 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDLPair pair)
         VABufferID &m_rirId = VABufferNew(VABID_RIR, 0);
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRollingIntraRefresh(task.m_IRState, m_vaDisplay,
             m_vaContextEncode, m_rirId), MFX_ERR_DEVICE_FAILED);
+    }
+
+    //Gpu priority
+    if(m_MaxContextPriority)
+    {
+        mfxPriority contextPriority = m_core->GetSession()->m_priority;
+        mfxStatus mfxSts = FillPriorityBuffer(contextPriority);
+        MFX_CHECK(mfxSts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
     }
 
     mfxU32 storedSize = 0;
