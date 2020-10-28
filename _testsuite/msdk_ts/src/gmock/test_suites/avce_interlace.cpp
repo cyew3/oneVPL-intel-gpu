@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_interlace.cpp
 \* ****************************************************************************** */
@@ -148,7 +148,10 @@ namespace avce_interlace{
         m_pFrameAllocator = &allocator;
 
 #if defined(_WIN32) || defined(_WIN64)
-        setHandle();
+        if (g_tsImpl != MFX_IMPL_SOFTWARE)
+        {
+            setHandle();
+        }
 #endif
 
         g_tsStatus.expect(tc.expected_sts);

@@ -192,7 +192,10 @@ namespace avce_trellis_cavlc
         TS_CHECK_MFX;
 
 #if defined(_WIN32) || defined(_WIN64)
-        setHandle();
+        if (g_tsImpl != MFX_IMPL_SOFTWARE)
+        {
+            setHandle();
+        }
 #endif
 
         g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
