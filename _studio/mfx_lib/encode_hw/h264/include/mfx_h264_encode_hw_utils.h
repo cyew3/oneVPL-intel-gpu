@@ -1070,6 +1070,11 @@ namespace MfxHwH264Encode
 #if USE_AGOP
             , m_cmEventAGOP(0)
 #endif
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
+            , m_midMCTF(mfxMemId(MID_INVALID))
+            , m_idxMCTF(NO_INDEX)
+            , m_cmMCTF(0)
+#endif
             , m_cmRaw(0)
             , m_cmRawLa(0)
             , m_cmMb(0)
@@ -1082,7 +1087,6 @@ namespace MfxHwH264Encode
             , m_vmeData(0)
             , m_fwdRef(0)
             , m_bwdRef(0)
-            , m_cmRawForMCTF(0)
             , m_fieldPicFlag(0)
             , m_singleFieldMode(false)
             , m_fieldCounter(0)
@@ -1115,6 +1119,9 @@ namespace MfxHwH264Encode
             , m_hwType(MFX_HW_UNKNOWN)
             , m_TCBRCTargetFrameSize(0)
             , m_SceneChange(0)
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
+            , m_doMCTFIntraFiltering(0)
+#endif
             , m_LowDelayPyramidLayer(0)
             , m_frameLtrOff(1)
             , m_frameLtrReassign(0)
@@ -1150,6 +1157,9 @@ namespace MfxHwH264Encode
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
             Zero(m_handleRaw);
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
+            Zero(m_handleMCTF);
+#endif
             Zero(m_fid);
             Zero(m_pwt);
             Zero(m_brcFrameParams);
@@ -1332,7 +1342,12 @@ namespace MfxHwH264Encode
         mfxMemId        m_midRec;       // reconstruction
         Pair<mfxMemId>  m_midBit;       // output bitstream
         mfxHDLPair      m_handleRaw;    // native handle to raw surface (self-allocated or given by app)
-
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
+        mfxMemId        m_midMCTF;
+        mfxHDLPair      m_handleMCTF;   // Handle to MCTF denoised surface
+        mfxU32          m_idxMCTF;
+        CmSurface2D *   m_cmMCTF;
+#endif
 #if USE_AGOP
         CmSurface2D *   m_cmRaw4X;      // down-sized input surface for AGOP
         CmEvent*        m_cmEventAGOP;
@@ -1352,8 +1367,6 @@ namespace MfxHwH264Encode
         VmeData *       m_vmeData;
         DdiTask const * m_fwdRef;
         DdiTask const * m_bwdRef;
-
-        CmSurface2D *   m_cmRawForMCTF; // CM surface made of m_handleRaw for MCTF
 
         mfxU8   m_fieldPicFlag;    // true for frames with interlaced content
         bool    m_singleFieldMode; // true for FEI single-field processing mode
@@ -1419,6 +1432,9 @@ namespace MfxHwH264Encode
 #endif
         mfxU32 m_TCBRCTargetFrameSize;
         mfxU32 m_SceneChange;
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
+        mfxU32 m_doMCTFIntraFiltering;
+#endif
         mfxU32 m_LowDelayPyramidLayer;
         mfxU32 m_frameLtrOff;
         mfxU32 m_frameLtrReassign;
@@ -3119,13 +3135,10 @@ private:
             amtMctf;
 
         mfxStatus SubmitToMctf(
-            DdiTask * pTask,
-            bool      isSceneChange,
-            bool      doIntraFiltering
+            DdiTask * pTask
         );
         mfxStatus QueryFromMctf(
-            void *pParam,
-            bool bEoF
+            void *pParam
         );
 #endif
         ASC       amtScd;
@@ -3334,6 +3347,9 @@ private:
         MfxFrameAllocResponse   m_raw4X;
         MfxFrameAllocResponse   m_mbAGOP;
         MfxFrameAllocResponse   m_curbeAGOP;
+#endif
+#if defined(MXF_ENABLE_MCTF_IN_AVC)
+        MfxFrameAllocResponse   m_mctf;
 #endif
         MfxFrameAllocResponse   m_scd;
         MfxFrameAllocResponse   m_raw;
