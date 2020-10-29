@@ -157,7 +157,8 @@ static mfxU32 CheckNumSegments(mfxExtAV1Segmentation& seg)
     return invalid;
 }
 
-static mfxU32 CheckHWLimitations(mfxExtAV1Segmentation& seg)
+//this function not needed for Silicon
+mfxU32 CheckHWLimitations(mfxExtAV1Segmentation& seg)
 {
     mfxU32 invalid = 0;
 
@@ -206,8 +207,6 @@ mfxStatus CheckAndFixSegmentBuffers(
     {
         changed += CheckAndFixSegmentParam(caps, pSeg->Segment[i]);
     }
-
-    invalid += CheckHWLimitations(*pSeg);
 
     // clean out per-segment parameters for segments with numbers exceeding seg.NumSegments
     for (mfxU16 i = pSeg->NumSegments; i < AV1_MAX_NUM_OF_SEGMENTS; ++i)
