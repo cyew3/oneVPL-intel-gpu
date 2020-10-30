@@ -332,7 +332,7 @@ typedef struct {
     { 0x5A44, MFX_HW_CNL, MFX_GT1 },
     { 0x5A49, MFX_HW_CNL, MFX_GT2 },
 
-    /* ICL */
+    /* ICL LP */
     { 0xFF05, MFX_HW_ICL_LP, MFX_GT1 },
     { 0x8A50, MFX_HW_ICL_LP, MFX_GT2 },
     { 0x8A51, MFX_HW_ICL_LP, MFX_GT2 },

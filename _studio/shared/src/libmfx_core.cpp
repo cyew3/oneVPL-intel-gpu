@@ -838,9 +838,9 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
 #ifndef STRIP_EMBARGO
     case MFX_HW_LKF    : platform.CodeName = MFX_PLATFORM_LAKEFIELD;     break;
     case MFX_HW_RYF    :
-    case MFX_HW_RKL    :
 #endif
 #if (MFX_VERSION >= 1031)
+    case MFX_HW_RKL    :
     case MFX_HW_TGL_LP : platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
     case MFX_HW_DG1    :
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
@@ -1320,8 +1320,8 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src,
     // check that region of interest is valid
     MFX_CHECK(roi.width && roi.height, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    Ipp32u srcPitch = src.Data.PitchLow + ((mfxU32)src.Data.PitchHigh << 16);
-    Ipp32u dstPitch = dst.Data.PitchLow + ((mfxU32)dst.Data.PitchHigh << 16);
+    uint32_t srcPitch = src.Data.PitchLow + ((mfxU32)src.Data.PitchHigh << 16);
+    uint32_t dstPitch = dst.Data.PitchLow + ((mfxU32)dst.Data.PitchHigh << 16);
 
     switch (dst.Info.FourCC)
     {
