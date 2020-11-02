@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2014-2020 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -27,21 +27,49 @@
 
 if (Linux)
 
-	pkg_check_modules(PKG_LIBVAUTIL libavutil>=52.38.100)
-	pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
-	pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
+  pkg_check_modules(PKG_LIBVAUTIL libavutil>=52.38.100)
+  pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
+  pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
 
-	if(PKG_LIBVAUTIL_FOUND AND
-	   PKG_LIBAVCODEC_FOUND AND
-	   PKG_LIBAVFORMAT_FOUND)
-	    set( FFMPEG_FOUND TRUE )
-	    message( STATUS "FFmpeg headers and libraries were found." )
-	endif()
+  if(PKG_LIBVAUTIL_FOUND AND
+    PKG_LIBAVCODEC_FOUND AND
+    PKG_LIBAVFORMAT_FOUND)
+    set( FFMPEG_FOUND TRUE )
+      message( STATUS "FFmpeg headers and libraries were found." )
+  endif()
 
-	if(NOT DEFINED FFMPEG_FOUND)
-	  message( STATUS "FFmpeg headers and libraries were not found (optional). The following will not be built: sample_spl_mux." )
-	endif()
+elseif (Windows)
 
-else()
-   message( STATUS "FFmpeg headers and libraries were serached at all (optional). The following will not be built: sample_spl_mux." )
+  if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set( ffmpeg_arch x64 )
+  else()
+    set( ffmpeg_arch win32)
+  endif()
+
+  set ( windows_ffmpeg_hint ENV{INTELMEDIASDK_FFMPEG_ROOT}/lib/${ffmpeg_arch} )
+
+  find_library(LIBAVUTIL_LIBRARY NAMES libavutil HINTS ${windows_ffmpeg_hint})
+  find_library(LIBAVCODEC_LIBRARY NAMES libavcodec HINTS ${windows_ffmpeg_hint})
+  find_library(LIBAVFORMAT_LIBRARY NAMES libavformat HINTS ${windows_ffmpeg_hint})
+
+  if(LIBAVUTIL_LIBRARY_FOUND AND
+     LIBAVCODEC_LIBRARY_FOUND AND
+     LIBAVFORMAT_LIBRARY)
+     set( FFMPEG_FOUND TRUE )
+
+     foreach (lib_name avutil avcodec avformat)
+       add_library(${lib_name} STATIC IMPORTED)
+       set_target_properties(${lib_name} PROPERTIES IMPORTED_LOCATION "${windows_ffmpeg_hint}/${lib_name}.lib")
+       target_include_directories(${lib_name} INTERFACE $ENV{INTELMEDIASDK_FFMPEG_ROOT}/include)
+     endforeach()
+
+     message( STATUS "FFmpeg headers and libraries were found." )
+  endif()
+
+else ( )
+   message( STATUS "FFmpeg headers and libraries were not searched at all." )
+endif()
+
+if(NOT DEFINED FFMPEG_FOUND)
+  message( STATUS "FFmpeg headers and libraries were not found (optional). The following will not be built: sample_spl_mux." )
 endif()

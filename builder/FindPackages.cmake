@@ -1,29 +1,22 @@
-##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
-##
-##  The source code, information  and  material ("Material") contained herein is
-##  owned  by Intel Corporation or its suppliers or licensors, and title to such
-##  Material remains  with Intel Corporation  or its suppliers or licensors. The
-##  Material  contains proprietary information  of  Intel or  its  suppliers and
-##  licensors. The  Material is protected by worldwide copyright laws and treaty
-##  provisions. No  part  of  the  Material  may  be  used,  copied, reproduced,
-##  modified, published, uploaded, posted, transmitted, distributed or disclosed
-##  in any way  without Intel's  prior  express written  permission. No  license
-##  under  any patent, copyright  or  other intellectual property rights  in the
-##  Material  is  granted  to  or  conferred  upon  you,  either  expressly,  by
-##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
-##  intellectual  property  rights must  be express  and  approved  by  Intel in
-##  writing.
-##
-##  *Third Party trademarks are the property of their respective owners.
-##
-##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
-##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
-##  suppliers or licensors in any way.
-##
-##******************************************************************************
-##  Content: Intel(R) Media SDK Samples projects creation and build
-##******************************************************************************
+# Copyright (c) 2017-2020 Intel Corporation
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 #
 # Usage: check_variant( <variant> )
@@ -267,11 +260,11 @@ function(configure_universal_target target)
 endfunction()
 
 function(configure_dl_target target)
-  set(SCOPE_LIBS ${SCOPE_LIBS} dl PARENT_SCOPE)
+  set(SCOPE_LIBS ${SCOPE_LIBS} ${CMAKE_DL_LIBS} PARENT_SCOPE)
 endfunction()
 
 function(configure_pthread_target target)
-  set(SCOPE_LIBS ${SCOPE_LIBS} pthread PARENT_SCOPE)
+  set(SCOPE_LIBS ${SCOPE_LIBS} Threads::Threads PARENT_SCOPE)
 endfunction()
 
 function(configure_libavutil_target target)
@@ -485,16 +478,23 @@ function( configure_build_variant_darwin target variant )
 endfunction()
 
 if( Linux )
+  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+  set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+endif()
+
+find_package(Threads REQUIRED)
+
+if( Linux )
   find_package(PkgConfig REQUIRED)
 
   # required:
-  pkg_check_modules(PKG_LIBVA     REQUIRED libva>=0.33)
-  pkg_check_modules(PKG_LIBDRM    REQUIRED libdrm)
-  pkg_check_modules(PKG_LIBVA_DRM REQUIRED libva-drm>=0.33)
-  
+  pkg_check_modules(PKG_LIBVA     REQUIRED libva>=1.9)
+  pkg_check_modules(PKG_LIBDRM    REQUIRED libdrm>=2.4)
+  pkg_check_modules(PKG_LIBVA_DRM REQUIRED libva-drm>=1.9)
+
   # optional:
   pkg_check_modules( PKG_X11       x11 )
-  pkg_check_modules( PKG_LIBVA_X11 libva-x11>=0.33 )
+  pkg_check_modules( PKG_LIBVA_X11 libva-x11>=1.9 )
 
   if ( PKG_X11_FOUND AND PKG_LIBVA_X11_FOUND )
     set( ENABLE_X11 true )

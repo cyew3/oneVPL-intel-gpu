@@ -22,7 +22,7 @@
 ##  suppliers or licensors in any way.
 ##
 ##******************************************************************************
-##  Content: Intel(R) Media SDK Samples projects creation and build
+##  Content: Intel(R) Media SDK projects creation and build
 ##******************************************************************************
 
 set_property( GLOBAL PROPERTY USE_FOLDERS ON )

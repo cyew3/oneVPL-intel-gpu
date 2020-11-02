@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2020 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -22,53 +22,108 @@
 ##  suppliers or licensors in any way.
 ##
 ##******************************************************************************
-##  Content: Intel(R) Media SDK Samples projects creation and build
+##  Content: Intel(R) Media SDK projects creation and build
 ##******************************************************************************
 
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
   set( ipp_arch em64t )
 else()
-  set( ipp_arch ${__ARCH})
+  set( ipp_arch ia32)
 endif()
 
-set( ipp_root $ENV{MEDIASDK_ROOT}/ipp )
-if( Windows )
-  set( ipp_root ${ipp_root}/ipp81goldGuard/windows/${ipp_arch} )
-elseif( Linux )
-  set( ipp_root ${ipp_root}/linux/${ipp_arch} )
-elseif( Darwin )
-  set( ipp_root ${ipp_root}/darwin/${ipp_arch} )
-endif()
+if (NOT MFX_BUNDLED_IPP)
 
-message( STATUS "Search IPP in ${ipp_root}" )
+  set( ipp_root $ENV{MEDIASDK_ROOT}/ipp )
+  if( Windows )
+    set( ipp_root ${ipp_root}/ipp81goldGuard/windows/${ipp_arch} )
+    set( lib_suffix "_s_y8.lib" )
+    set( lib_prefix "" )
+  elseif( Linux )
+    set( ipp_root ${ipp_root}/linux/${ipp_arch} )
+    set( lib_suffix "_l.a" )
+    set( lib_prefix "lib" )
 
-find_path( IPP_INCLUDE ippcore.h PATHS ${ipp_root}/include )
-if( Windows )
-  find_library( IPP_LIBRARY ippcoremt PATHS ${ipp_root}/lib )
+  endif()
+
+  message( STATUS "Search IPP in ${ipp_root}" )
+
+  find_path( IPP_INCLUDE ippcore.h PATHS ${ipp_root}/include )
+  if( Windows )
+    find_library( IPP_LIBRARY ippcoremt PATHS ${ipp_root}/lib )
+  else()
+    find_library( IPP_LIBRARY ippcore_l PATHS ${ipp_root}/lib )
+  endif()
+
+  if ( Windows )
+    set( IPP_LIBRRARY_LIST s vc i cc cv j msdk ) # core/dc/vm use different suffix 'mt'
+  else()
+    set( IPP_LIBRRARY_LIST dc core vm s cp vc i cc cv j msdk )
+  endif()
+
+  if(NOT IPP_INCLUDE MATCHES NOTFOUND)
+    if(NOT IPP_LIBRARY MATCHES NOTFOUND)
+      set( IPP_FOUND TRUE )
+
+      get_filename_component( IPP_LIBRARY_PATH ${IPP_LIBRARY} PATH )
+      foreach (lib_name ${IPP_LIBRRARY_LIST})
+        add_library(IPP::${lib_name} STATIC IMPORTED)
+        set_target_properties(IPP::${lib_name} PROPERTIES IMPORTED_LOCATION "${ipp_root}/lib/${lib_prefix}ipp${lib_name}${lib_suffix}")
+        target_include_directories(IPP::${lib_name} INTERFACE ${ipp_root}/include)
+        target_compile_definitions(IPP::${lib_name} INTERFACE MSDK_USE_EXTERNAL_IPP)
+
+        if ( __IPP AND Linux )
+          target_sources( IPP::${lib_name} INTERFACE "${ipp_root}/tools/staticlib/ipp_${__IPP}.h" )
+        endif()
+      endforeach()
+
+      if ( Windows )
+        foreach (lib_name vm core)
+          add_library(IPP::${lib_name} STATIC IMPORTED)
+          set_target_properties(IPP::${lib_name} PROPERTIES IMPORTED_LOCATION "${ipp_root}/lib/ipp${lib_name}mt.lib")
+          target_include_directories(IPP::${lib_name} INTERFACE ${ipp_root}/include)
+          target_compile_definitions(IPP::${lib_name} INTERFACE MSDK_USE_EXTERNAL_IPP)
+        endforeach()
+
+        foreach (lib_name dc cp)
+          add_library(IPP::${lib_name} STATIC IMPORTED)
+          set_target_properties(IPP::${lib_name} PROPERTIES IMPORTED_LOCATION $ENV{MEDIASDK_ROOT}/ipp/ipp81gold/windows/${ipp_arch}/lib/ipp${lib_name}mt.lib)
+          target_include_directories(IPP::${lib_name} INTERFACE $ENV{MEDIASDK_ROOT}/ipp/ipp81gold/windows/${ipp_arch}/include)
+          target_compile_definitions(IPP::${lib_name} INTERFACE MSDK_USE_EXTERNAL_IPP)
+        endforeach()
+        link_directories( ${IPP_LIBRARY_PATH} )  # w/a for erroneus dependency on svml_disp.lib in IPP 8.1
+      
+      else()
+          # FIXME: to be deleted once cmake_for_windows merged
+          include_directories( ${IPP_INCLUDE} )
+          link_directories( ${IPP_LIBRARY_PATH} )
+      endif()
+    endif()
+  endif()
+
+  if(NOT DEFINED IPP_FOUND)
+    message( FATAL_ERROR "Intel(R) IPP was not found (required)! Set/check MEDIASDK_ROOT environment variable!" )
+  else ()
+    message( STATUS "Intel(R) IPP was found here $ENV{MEDIASDK_ROOT}" )
+    target_link_libraries(mfx_static_lib INTERFACE IPP::core)
+  endif()
+
+  # FIXME: to be deleted once cmake_for_windows merged
+  if( __IPP )
+    if( Linux )
+      append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_C_FLAGS)
+      append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_CXX_FLAGS)
+    endif()
+  endif()
 else()
-  find_library( IPP_LIBRARY ippcore_l PATHS ${ipp_root}/lib )
-endif()
+  set( IPP_FOUND TRUE )
+  # set( IPP_INCLUDE ${CMAKE_HOME_DIRECTORY}/contrib/ipp/include )
 
-if(NOT IPP_INCLUDE MATCHES NOTFOUND)
-  if(NOT IPP_LIBRARY MATCHES NOTFOUND)
-    set( IPP_FOUND TRUE )
-    include_directories( ${IPP_INCLUDE} )
+  message( STATUS "Using built-in subset of Intel(R)" )
 
-    get_filename_component( IPP_LIBRARY_PATH ${IPP_LIBRARY} PATH )
-    link_directories( ${IPP_LIBRARY_PATH} )
-  endif()
-endif()
+  #include_directories( ${IPP_INCLUDE} )
 
-if(NOT DEFINED IPP_FOUND)
-  message( FATAL_ERROR "Intel(R) IPP was not found (required)! Set/check MEDIASDK_ROOT environment variable!" )
-else ()
-  message( STATUS "Intel(R) IPP was found here $ENV{MEDIASDK_ROOT}" )
-endif()
+  add_subdirectory(${CMAKE_HOME_DIRECTORY}/contrib/ipp)
 
-if( __IPP )
-  if( Linux )
-    append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_C_FLAGS)
-    append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_CXX_FLAGS)
-  endif()
+  target_link_libraries(mfx_static_lib INTERFACE ipp)
 endif()
 

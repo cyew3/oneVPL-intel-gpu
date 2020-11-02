@@ -20,7 +20,9 @@
 
 message( STATUS "Global Configuration of Targets" )
 if(__TARGET_PLATFORM)
+  if (CMAKE_SYSTEM_NAME MATCHES Linux)
     add_definitions( -DLINUX_TARGET_PLATFORM_${__TARGET_PLATFORM} )
+  endif()
 endif()
 #
 set( T_ARCH "sse4.2" )
@@ -36,7 +38,9 @@ if ((CMAKE_C_COMPILER MATCHES icc) OR ENABLE_HEVC_ON_GCC )
     message( STATUS "  Enabling HEVC plugins build!")
 endif()
 
-append("-std=c++11" CMAKE_CXX_FLAGS)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # SW HEVC decoder & encoder require SSE4.2
   if (CMAKE_C_COMPILER MATCHES icc)
@@ -81,17 +85,9 @@ if (BUILD_KERNELS)
   endif()
 endif()
 
-if ( ${API_VERSION} VERSION_GREATER 1.25 )
-  set ( MFX_1_26_OPTIONS_ALLOWED ON )
-else()
-  set ( MFX_1_26_OPTIONS_ALLOWED OFF )
-endif()
+set ( MFX_1_26_OPTIONS_ALLOWED ON )
 
-if ( ${API_VERSION} VERSION_GREATER 1.33 )
-  set ( MFX_1_34_OPTIONS_ALLOWED ON )
-else()
-  set ( MFX_1_34_OPTIONS_ALLOWED OFF )
-endif()
+set ( MFX_1_34_OPTIONS_ALLOWED ON )
 
 option( MFX_ENABLE_AENC "Enabled AENC extension?" ON)
 
