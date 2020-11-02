@@ -1261,21 +1261,29 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
-        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-LowDelayBRC"), VM_STRING("0 - OFF, 1 - ON")))
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-LowDelayBRC"), VM_STRING("")))
         {
-            mfxU32 on;
-            //file name that will be used for input after reseting encoder
             MFX_CHECK(1 + argv != argvEnd);
-            MFX_PARSE_INT(on, argv[1]);
 
-            mfxExtCodingOption3 *pExt = NULL;
-            if (1 == on || 0 == on)
-                pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
+            mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
+            if (!vm_string_stricmp(argv[1], VM_STRING("on")) || !vm_string_stricmp(argv[1], VM_STRING("1")) || !vm_string_stricmp(argv[1], VM_STRING("16")))
+            {
+                value = MFX_CODINGOPTION_ON;
+            }
+            else if (!vm_string_stricmp(argv[1], VM_STRING("off")) || !vm_string_stricmp(argv[1], VM_STRING("0")) || !vm_string_stricmp(argv[1], VM_STRING("32")))
+            {
+                value = MFX_CODINGOPTION_OFF;
+            }
             else
-                return MFX_ERR_UNKNOWN;
+            {
+                MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
+            }
 
-            pExt->LowDelayBRC = (mfxU16)(on ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+            mfxExtCodingOption3* pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
+
+            pExt->LowDelayBRC = value;
             m_ExtBuffers.get()->push_back(pExt);
+
             argv++;
         }
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-AdaptiveMaxFrameSize"), VM_STRING("on/1/16, off/0/32")))
