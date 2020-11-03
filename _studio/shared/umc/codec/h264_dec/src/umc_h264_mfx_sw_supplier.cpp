@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -434,7 +434,11 @@ H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
 
     H264DBPList *pDPB = view.GetDPBList(0);
 
-    H264DecoderFrame *pFrame = pDPB->GetDisposable();
+    H264DecoderFrame *pFrame = nullptr;
+   
+    // use DPB size as a limit
+    if (pDPB->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
+        pFrame = pDPB->GetDisposable();
 
     VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
 

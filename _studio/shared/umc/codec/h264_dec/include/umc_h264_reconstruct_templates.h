@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -129,24 +129,13 @@ public:
         if (is_field && pParams->is_mbaff)
             iRefIndex >>= 1;
 
-        if (iRefIndex < 0 || !pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex])
+        H264DecoderFrame *currRef = CheckRefList(pParams, iDir, interpolateInfo, iRefIndex, /*luma=*/true);
+        if (!currRef)
         {
-            pParams->m_bidirLuma.pSrc[iDir] = interpolateInfo->pDst[0];
-            pParams->m_bidirLuma.srcStep[iDir] = interpolateInfo->dstStep;
-
-            if (sizeof(PlaneY) == 1)
-            {
-                ippiSet_8u_C1R(0, (uint8_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-            }
-            else
-            {
-                ippiSet_16u_C1R(0, interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-            }
             return;
         }
 
-        // get reference frame & pitch
-        interpolateInfo->pSrc[0] = (uint16_t*) pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane;
+        interpolateInfo->pSrc[0] = (uint16_t*)currRef->m_pYPlane;
 
         VM_ASSERT(interpolateInfo->pSrc[0]);
 
@@ -216,26 +205,14 @@ public:
         if (is_field && pParams->is_mbaff)
             iRefIndex >>= 1;
 
-        if (iRefIndex < 0 || !pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex])
+        H264DecoderFrame *currRef = CheckRefList(pParams, iDir, interpolateInfo, iRefIndex, /*luma=*/false);
+        if (!currRef)
         {
-            // save pointers for optimized interpolation
-            pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
-
-            pParams->m_bidirChroma[0].srcStep[iDir] = interpolateInfo->dstStep;
-
-            if (sizeof(PlaneUV) == 1)
-            {
-                ippiSet_16u_C1R(0, (uint16_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-            }
-            else
-            {
-                ippiSet_32s_C1R(0, (int32_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-            }
             return;
         }
 
         // get reference frame & pitch
-        interpolateInfo->pSrc[0] = (uint16_t*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUVPlane;
+        interpolateInfo->pSrc[0] = (uint16_t*)currRef->m_pUVPlane;
         VM_ASSERT(interpolateInfo->pSrc[0]);
 
         if (is_field)
@@ -1121,6 +1098,86 @@ public:
             ConvertYV12ToNV12(pSrcDstUPlane, pSrcDstVPlane, 8, pDstUV, pitch_chroma, roi);
         }
     } // void ReconstructPCMMB(
+
+private:
+    void ZerofillLuma(ReconstructParams *pParams, int32_t iDir, IppVCInterpolateBlock_16u *interpolateInfo)
+    {
+        pParams->m_bidirLuma.pSrc[iDir] = interpolateInfo->pDst[0];
+        pParams->m_bidirLuma.srcStep[iDir] = interpolateInfo->dstStep;
+
+        if (sizeof(PlaneY) == 1)
+        {
+            ippiSet_8u_C1R(0, (uint8_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
+        }
+        else
+        {
+            ippiSet_16u_C1R(0, interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
+        }
+    }
+
+    void ZerofillChroma(ReconstructParams *pParams, int32_t iDir, IppVCInterpolateBlock_16u *interpolateInfo)
+    {
+        // save pointers for optimized interpolation
+        pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
+
+        pParams->m_bidirChroma[0].srcStep[iDir] = interpolateInfo->dstStep;
+
+        if (sizeof(PlaneUV) == 1)
+        {
+            ippiSet_16u_C1R(0, (uint16_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
+        }
+        else
+        {
+            ippiSet_32s_C1R(0, (int32_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
+        }
+    }
+
+    H264DecoderFrame *CheckRefList(ReconstructParams *pParams, int32_t iDir, IppVCInterpolateBlock_16u *interpolateInfo,
+        int32_t iRefIndex, bool luma)
+    {
+        if (iRefIndex < 0 || !pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex])
+        {
+            if (luma)
+            {
+                ZerofillLuma(pParams, iDir, interpolateInfo);
+            }
+            else
+            {
+                ZerofillChroma(pParams, iDir, interpolateInfo);
+            }
+            return nullptr;
+        }
+
+        // get reference frame & pitch
+        H264DecoderFrame *currRef = pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex];
+
+        // Access to non-exiting frame is "unintentional picture loss" situation,
+        // try to use some previous as a reference.
+        if (!currRef->IsFrameExist())
+        {
+            // search frame for reference, do not call IsFrameExist(), as sliding window
+            // cleaning the status
+            while (!(luma ? currRef->m_pYPlane : currRef->m_pUVPlane) && currRef->previous())
+            {
+                currRef = currRef->previous();
+            }
+            if (!(luma ? currRef->m_pYPlane : currRef->m_pUVPlane))
+            {
+                // frameNumGap is limited by maxDecFrameBuffering, so this is unexpected
+                VM_ASSERT(0);
+                if (luma)
+                {
+                    ZerofillLuma(pParams, iDir, interpolateInfo);
+                }
+                else
+                {
+                    ZerofillChroma(pParams, iDir, interpolateInfo);
+                }
+                return nullptr;
+            }
+        }
+        return currRef;
+    } // CheckRefList
 };
 
 // restore the "conditional expression is constant" warning
