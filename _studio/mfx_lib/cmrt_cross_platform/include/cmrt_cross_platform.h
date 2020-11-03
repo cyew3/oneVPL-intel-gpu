@@ -748,8 +748,8 @@ typedef enum _GPU_PLATFORM {
     PLATFORM_INTEL_CFL = 17,  //CofeeLake
 #ifndef STRIP_EMBARGO
     PLATFORM_INTEL_EHL = 18, //ElkhartLake
-    PLATFORM_INTEL_RKL = 19, //RocketLake
 #endif
+    PLATFORM_INTEL_RKL = 19,  //RocketLake
     PLATFORM_INTEL_DG1 = 20,  //DG1
 #ifndef STRIP_EMBARGO
     PLATFORM_INTEL_ADL_S = 21,  //AlderLake
