@@ -448,7 +448,7 @@
         #endif
     #endif
     #if defined(MFX_ENABLE_MCTF) && defined(MFX_ENABLE_KERNELS)
-        //#define MXF_ENABLE_MCTF_IN_AVC
+        //#define MFX_ENABLE_MCTF_IN_AVC
     #endif
 #endif
 
