@@ -218,21 +218,6 @@ struct sInputParams
     msdk_char strPlgGuid[MSDK_MAX_FILENAME_LEN];
     bool    need_plugin;
 
-#ifdef ENABLE_VPP_RUNTIME_HSBC
-    /* run-time ProcAmp parameters */
-    typedef struct {
-        bool   isEnabled;
-        mfxU32 interval;
-        mfxF64 value1;
-        mfxF64 value2;
-    } sRtProcAmpParam;
-
-    sRtProcAmpParam rtHue;
-    sRtProcAmpParam rtSaturation;
-    sRtProcAmpParam rtBrightness;
-    sRtProcAmpParam rtContrast;
-#endif
-
     /* ********************** */
     /* input\output streams   */
     /* ********************** */
@@ -294,12 +279,6 @@ struct sInputParams
         bChromaSiting = false;
         fccSource = 0;
 
-#ifdef ENABLE_VPP_RUNTIME_HSBC
-        rtHue = {};
-        rtSaturation = {};
-        rtBrightness = {};
-        rtContrast = {};
-#endif
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
         bPrefferdGfx = false;
         bPrefferiGfx = false;
