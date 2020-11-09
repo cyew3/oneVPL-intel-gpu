@@ -85,7 +85,7 @@ static
         return MSDK_STRING("RGB3");
     case MFX_FOURCC_RGB4:
         return MSDK_STRING("RGB4");
-#if (MFX_VERSION >= 1028)
+#if !(defined(_WIN32) || defined(_WIN64))
     case MFX_FOURCC_RGBP:
         return MSDK_STRING("RGBP");
 #endif
@@ -119,7 +119,7 @@ static
     case MFX_FOURCC_Y410:
         return MSDK_STRING("Y410");
 #endif
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
         return MSDK_STRING("P016");
     case MFX_FOURCC_Y216:
@@ -327,7 +327,7 @@ mfxStatus ParseGUID(msdk_char strPlgGuid[MSDK_MAX_FILENAME_LEN], mfxU8 DataGUID[
     return MFX_ERR_NONE;
 }
 
-mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 paramID)
+mfxStatus InitParamsVPP(MfxVideoParamsWrapper* pParams, sInputParams* pInParams, mfxU32 paramID)
 {
     MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
@@ -340,9 +340,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
         vppPrintHelp(MSDK_STRING("sample_vpp"), MSDK_STRING("ERROR: Source height is not defined.\n"));
         return MFX_ERR_UNSUPPORTED;
     }
-
-    memset(pParams, 0, sizeof(mfxVideoParam));
-
+    *pParams = MfxVideoParamsWrapper();
     /* input data */
     pParams->vpp.In.Shift           = pInParams->frameInfoIn[paramID].Shift;
     pParams->vpp.In.BitDepthLuma    = pInParams->frameInfoIn[paramID].BitDepthLuma;
@@ -622,34 +620,18 @@ mfxStatus InitSurfaces(
     mfxU16    nFrames, i;
 
     mfxFrameAllocResponse& response = isInput ? pAllocator->responseIn[streamIndex] : pAllocator->responseOut;
-    mfxFrameSurface1*& pSurfaces = isInput ? pAllocator->pSurfacesIn[streamIndex] : pAllocator->pSurfacesOut;
+    mfxFrameSurfaceWrap*& pSurfaces = isInput ? pAllocator->pSurfacesIn[streamIndex] : pAllocator->pSurfacesOut;
 
     sts = pAllocator->pMfxAllocator->Alloc(pAllocator->pMfxAllocator->pthis, pRequest, &response);
     MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pMfxAllocator->Alloc failed", {WipeMemoryAllocator(pAllocator);});
 
     nFrames = response.NumFrameActual;
-    pSurfaces = new mfxFrameSurface1 [nFrames];
-
-#ifdef ENABLE_MCTF
-    if (isInput)
-    {
-        pAllocator->pExtBuffersStorageSurfaceIn[streamIndex].resize(nFrames * MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE);
-    }
-#endif
+    pSurfaces = new mfxFrameSurfaceWrap [nFrames];
 
     for (i = 0; i < nFrames; i++)
     {
-        memset(&(pSurfaces[i]), 0, sizeof(mfxFrameSurface1));
         pSurfaces[i].Info = pRequest->Info;
-
         pSurfaces[i].Data.MemId = response.mids[i];
-#ifdef ENABLE_MCTF
-        if (isInput)
-        {
-            pSurfaces[i].Data.ExtParam = &(pAllocator->pExtBuffersStorageSurfaceIn[streamIndex].at(i * MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE));
-            pSurfaces[i].Data.NumExtParam = 0;
-        }
-#endif
     }
 
     return sts;
@@ -756,7 +738,6 @@ mfxStatus InitMemoryAllocator(
         if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(impl))
         {
             pAllocator->pDevice = CreateVAAPIDevice(pInParams->strDevicePath);
-
             if (!pAllocator->pDevice) sts = MFX_ERR_MEMORY_ALLOC;
             MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pDevice creation failed", WipeMemoryAllocator(pAllocator));
 
@@ -1282,11 +1263,11 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
-#ifdef ENABLE_PS
-    else if( pInfo->FourCC == MFX_FOURCC_P010 || pInfo->FourCC == MFX_FOURCC_P016 )
-#else
-    else if( pInfo->FourCC == MFX_FOURCC_P010 )
+    else if( pInfo->FourCC == MFX_FOURCC_P010
+#if (MFX_VERSION >= 1031)
+          || pInfo->FourCC == MFX_FOURCC_P016
 #endif
+            )
     {
         ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
 
@@ -1435,7 +1416,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
     }
 #if (MFX_VERSION >= 1027)
     else if (pInfo->FourCC == MFX_FOURCC_Y210
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= 1031)
     || pInfo->FourCC == MFX_FOURCC_Y216
 #endif
 )
@@ -1459,7 +1440,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         }
     }
 #endif
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= 1031)
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {
         ptr = (mfxU8*)(pData->U16 + pInfo->CropX * 4) + pInfo->CropY * pitch;
@@ -1480,7 +1461,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
 }
 
 
-mfxStatus CRawVideoReader::GetNextInputFrame(sMemoryAllocator* pAllocator, mfxFrameInfo* pInfo, mfxFrameSurface1** pSurface, mfxU16 streamIndex)
+mfxStatus CRawVideoReader::GetNextInputFrame(sMemoryAllocator* pAllocator, mfxFrameInfo* pInfo, mfxFrameSurfaceWrap** pSurface, mfxU16 streamIndex)
 {
     mfxStatus sts;
     if (!m_isPerfMode)
@@ -1488,7 +1469,7 @@ mfxStatus CRawVideoReader::GetNextInputFrame(sMemoryAllocator* pAllocator, mfxFr
         sts = GetFreeSurface(pAllocator->pSurfacesIn[streamIndex], pAllocator->responseIn[streamIndex].NumFrameActual, pSurface);
         MSDK_CHECK_STATUS(sts,"GetFreeSurface failed");
 
-        mfxFrameSurface1* pCurSurf = *pSurface;
+        mfxFrameSurfaceWrap* pCurSurf = *pSurface;
         if (pCurSurf->Data.MemId || pAllocator->bUsedAsExternalAllocator)
         {
             // get YUV pointers
@@ -1521,7 +1502,7 @@ mfxStatus CRawVideoReader::GetNextInputFrame(sMemoryAllocator* pAllocator, mfxFr
  }
 
 
-mfxStatus  CRawVideoReader::GetPreAllocFrame(mfxFrameSurface1 **pSurface)
+mfxStatus  CRawVideoReader::GetPreAllocFrame(mfxFrameSurfaceWrap **pSurface)
 {
     if (m_it == m_SurfacesList.end())
     {
@@ -1549,7 +1530,7 @@ mfxStatus  CRawVideoReader::PreAllocateFrameChunk(mfxVideoParam* pVideoParam,
     mfxStatus sts;
     mfxFrameAllocRequest  request;
     mfxFrameAllocResponse response;
-    mfxFrameSurface1      surface;
+    mfxFrameSurfaceWrap      surface;
     m_isPerfMode = true;
     m_Repeat = pParams->numRepeat;
     request.Info = pVideoParam->vpp.In;
@@ -1624,7 +1605,7 @@ void CRawVideoWriter::Close()
 mfxStatus CRawVideoWriter::PutNextFrame(
     sMemoryAllocator* pAllocator,
     mfxFrameInfo* pInfo,
-    mfxFrameSurface1* pSurface)
+    mfxFrameSurfaceWrap* pSurface)
 {
     mfxStatus sts;
     if (m_fDst)
@@ -1933,7 +1914,11 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_P010 )
+    else if(    pInfo->FourCC == MFX_FOURCC_P010
+#if (MFX_VERSION >= 1031)
+             || pInfo->FourCC == MFX_FOURCC_P016
+#endif
+           )
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
 
@@ -2018,7 +2003,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-#if (MFX_VERSION >= 1028)
+#if !(defined(_WIN32) || defined(_WIN64))
     else if (pInfo->FourCC == MFX_FOURCC_RGBP)
     {
         MSDK_CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -2052,6 +2037,41 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
+#if (MFX_VERSION >= 1027)
+    else if (pInfo->FourCC == MFX_FOURCC_Y210
+#if (MFX_VERSION >= 1031)
+    || pInfo->FourCC == MFX_FOURCC_Y216
+#endif
+)
+    {
+        ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
+
+        for(i = 0; i < h; i++)
+        {
+            MSDK_CHECK_NOT_EQUAL(fwrite(ptr + i * pitch, 1, 4*w, m_fDst), w * 4u, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+    }
+    else if (pInfo->FourCC == MFX_FOURCC_Y410)
+    {
+        ptr = (mfxU8*)pData->Y410 + pInfo->CropX + pInfo->CropY * pitch;
+
+        for(i = 0; i < h; i++)
+        {
+            MSDK_CHECK_NOT_EQUAL(fwrite(ptr + i * pitch, 1, 4*w, m_fDst), w * 4u, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+    }
+#endif
+#if (MFX_VERSION >= 1031)
+    else if (pInfo->FourCC == MFX_FOURCC_Y416)
+    {
+        ptr = (mfxU8*)(pData->U16 + pInfo->CropX * 4) + pInfo->CropY * pitch;
+
+        for (i = 0; i < h; i++)
+        {
+            MSDK_CHECK_NOT_EQUAL(fwrite(ptr + i * pitch, 1, 8 * w, m_fDst), w * 8u, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+    }
+#endif
     else
     {
         return MFX_ERR_UNSUPPORTED;
@@ -2150,7 +2170,7 @@ mfxStatus GeneralWriter::Init(
 mfxStatus  GeneralWriter::PutNextFrame(
     sMemoryAllocator* pAllocator,
     mfxFrameInfo* pInfo,
-    mfxFrameSurface1* pSurface)
+    mfxFrameSurfaceWrap* pSurface)
 {
     mfxU32 did = (m_svcMode) ? pSurface->Info.FrameId.DependencyId : 0;//aya: for MVC we have 1 out file only
 
@@ -2161,7 +2181,7 @@ mfxStatus  GeneralWriter::PutNextFrame(
 
 /* ******************************************************************* */
 
-mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFrameSurface1* pSurface)
+mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFrameSurfaceWrap* pSurface)
 {
     MSDK_CHECK_POINTER(pSurface,     MFX_ERR_NULL_PTR);
     if (pSurface)
@@ -2174,7 +2194,7 @@ mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFram
     return MFX_ERR_NONE;
 }
 
-mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxFrameSurface1** ppSurface)
+mfxStatus GetFreeSurface(mfxFrameSurfaceWrap* pSurfacesPool, mfxU16 nPoolSize, mfxFrameSurfaceWrap** ppSurface)
 {
     MSDK_CHECK_POINTER(pSurfacesPool, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(ppSurface,     MFX_ERR_NULL_PTR);

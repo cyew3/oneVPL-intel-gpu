@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -74,11 +74,7 @@ msdk_printf(MSDK_STRING("   [-scrY  y]                  - cropY  of src video (d
 msdk_printf(MSDK_STRING("   [-scrW  w]                  - cropW  of src video (def: width)\n"));
 msdk_printf(MSDK_STRING("   [-scrH  h]                  - cropH  of src video (def: height)\n"));
 msdk_printf(MSDK_STRING("   [-sf   frameRate]           - frame rate of src video (def: 30.0)\n"));
-#if (MFX_VERSION >= 1027)
-msdk_printf(MSDK_STRING("   [-scc  format]              - format (FourCC) of src video (def: nv12. support i420|nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy|ayuv|p010|y210|y410)\n"));
-#else
-msdk_printf(MSDK_STRING("   [-scc  format]              - format (FourCC) of src video (def: nv12. support i420|nv12|yv12|yuy2|rgb565|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy|ayuv|p010)\n"));
-#endif
+msdk_printf(MSDK_STRING("   [-scc  format]              - format (FourCC) of src video (def: nv12. support i420|nv12|yv12|yuy2|rgb565|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy|ayuv|p010|y210|y410|p016|y216|y416)\n"));
 msdk_printf(MSDK_STRING("   [-sbitshift 0|1]            - shift data to right or keep it the same way as in Microsoft's P010\n"));
 msdk_printf(MSDK_STRING("   [-sbitdepthluma value]      - shift luma channel to right to \"16 - value\" bytes\n"));
 msdk_printf(MSDK_STRING("   [-sbitdepthchroma value]    - shift chroma channel to right to \"16 - value\" bytes\n"));
@@ -97,10 +93,12 @@ msdk_printf(MSDK_STRING("   [-dcrY  y]                  - cropY  of dst video (d
 msdk_printf(MSDK_STRING("   [-dcrW  w]                  - cropW  of dst video (def: width)\n"));
 msdk_printf(MSDK_STRING("   [-dcrH  h]                  - cropH  of dst video (def: height)\n"));
 msdk_printf(MSDK_STRING("   [-df  frameRate]            - frame rate of dst video (def: 30.0)\n"));
-#if (MFX_VERSION >= 1027)
-msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support i420|nv12|yuy2|rgb4|yv12|ayuv|a2rgb10|y210|y410)\n"));
+#if (MFX_VERSION >= 1031)
+msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support i420|nv12|yuy2|rgb4|rgbp|yv12|ayuv|a2rgb10|y210|y410|p016|y216|y416)\n"));
+#elif (MFX_VERSION >= 1027)
+msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support i420|nv12|yuy2|rgb4|rgbp|yv12|ayuv|a2rgb10|y210|y410)\n"));
 #else
-msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support i420|nv12|yuy2|rgb4|yv12|ayuv|a2rgb10)\n"));
+msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support i420|nv12|yuy2|rgb4|rgbp|yv12|ayuv|a2rgb10)\n"));
 #endif
 msdk_printf(MSDK_STRING("   [-dbitshift 0|1]            - shift data to right or keep it the same way as in Microsoft's P010\n"));
 msdk_printf(MSDK_STRING("   [-dbitdepthluma value]      - shift luma channel to left to \"16 - value\" bytes\n"));
@@ -368,7 +366,7 @@ mfxU32 Str2FourCC( msdk_char* strInput )
     {
         fourcc = MFX_FOURCC_RGB4;
     }
-#if (MFX_VERSION >= 1028)
+#if !(defined(_WIN32) || defined(_WIN64))
     else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgbp")) )
     {
         fourcc = MFX_FOURCC_RGBP;
@@ -426,24 +424,36 @@ mfxU32 Str2FourCC( msdk_char* strInput )
     {
         fourcc = MFX_FOURCC_UYVY;
     }
-    else if (0 == msdk_stricmp(strInput, MSDK_STRING("i420")))
+#if (MFX_VERSION >= 1027)
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("y210")) )
     {
-        fourcc = MFX_FOURCC_I420;
+        fourcc = MFX_FOURCC_Y210;
     }
-#ifdef ENABLE_PS
-    else if (0 == msdk_stricmp(strInput, MSDK_STRING("p016")))
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("y410")) )
+    {
+        fourcc = MFX_FOURCC_Y410;
+    }
+#endif
+#if (MFX_VERSION >= 1031)
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("p016")) )
     {
         fourcc = MFX_FOURCC_P016;
     }
-    else if (0 == msdk_stricmp(strInput, MSDK_STRING("y216")))
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("y216")) )
     {
         fourcc = MFX_FOURCC_Y216;
     }
-    else if (0 == msdk_stricmp(strInput, MSDK_STRING("y416")))
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("y416")) )
     {
         fourcc = MFX_FOURCC_Y416;
     }
 #endif
+    else if (0 == msdk_stricmp(strInput, MSDK_STRING("i420")))
+    {
+        fourcc = MFX_FOURCC_I420;
+    } else if (0 == msdk_stricmp(strInput, MSDK_STRING("ayuv"))) {
+        fourcc = MFX_FOURCC_AYUV;
+    }
 
     return fourcc;
 
@@ -1671,6 +1681,11 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 //    pParams->frameInfoIn[0].FourCC = MFX_FOURCC_YV12; // I420 input is implemented using YV12 internally
                 //}
 
+                if(!pParams->frameInfoIn[0].FourCC)
+                {
+                    vppPrintHelp(strInput[0], MSDK_STRING("Invalid -scc format\n"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dcc")))
             {
@@ -1682,6 +1697,12 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 {
                     pParams->forcedOutputFourcc = pParams->frameInfoOut[0].FourCC;
                     pParams->frameInfoOut[0].FourCC = MFX_FOURCC_NV12; // I420 output is implemented using NV12 internally
+                }
+
+                if(!pParams->frameInfoOut[0].FourCC)
+                {
+                    vppPrintHelp(strInput[0], MSDK_STRING("Invalid -dcc format\n"));
+                    return MFX_ERR_UNSUPPORTED;
                 }
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-dbitshift")))
@@ -2014,13 +2035,13 @@ bool CheckInputParams(msdk_char* strInput[], sInputParams* pParams )
 
 // trim from start
 static inline std::string &ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char c){ return !std::isspace(c); }));
     return s;
 }
 
 // trim from end
 static inline std::string &rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char c){ return !std::isspace(c); }).base(), s.end());
     return s;
 }
 
