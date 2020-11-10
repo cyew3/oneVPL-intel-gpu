@@ -179,30 +179,6 @@ mfxStatus TargetViewsDecoder::Init(mfxVideoParam *par)
 
         viewTargets2->TemporalId = m_TemporalId;
     }
-     //-------------------------------------MUST FIX-------------------------------------
-    //TODO: workaround issue with opaq buffer not passed 
-    mfxExtOpaqueSurfaceAlloc *popaq = NULL;
-    for (size_t i = 0; i < par->NumExtParam; i++)
-    {
-        if (par->ExtParam[i]->BufferId == BufferIdOf<mfxExtOpaqueSurfaceAlloc>::id)
-        {
-            popaq = (mfxExtOpaqueSurfaceAlloc*)par->ExtParam[i];
-        }
-    }
-    if (NULL != popaq)
-    {
-        MFXExtBufferPtr<mfxExtOpaqueSurfaceAlloc> extOpaqTest(m_TargetExtParams);
-        if (NULL == extOpaqTest.get())
-        {
-            m_TargetExtParams.push_back(new mfxExtOpaqueSurfaceAlloc());
-        }
-
-        MFXExtBufferPtr<mfxExtOpaqueSurfaceAlloc> extOpaq(m_TargetExtParams);
-        MFX_CHECK_POINTER(extOpaq.get());
-        
-        extOpaq->Out = popaq->Out;
-    }
-    //-------------------------------------MUST FIX-------------------------------------
 
     vParamForInit.NumExtParam = (mfxU16)m_TargetExtParams.size();
     vParamForInit.ExtParam = &m_TargetExtParams;

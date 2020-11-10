@@ -1889,7 +1889,6 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     //m_inParams.FrameInfo = info;
 
     //NOTE: repeat mode fix bug 8405
-    //NOTE: also affects some opaq suites bug 9636
     //NOTE: also affects cropped streams bug 9625
     m_inParams.FrameInfo.Width  = info.CropW;
     m_inParams.FrameInfo.Height = info.CropH;
@@ -3164,11 +3163,6 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         MFX_CHECK_STS(m_pRender->QueryIOSurf(&m_components[eREN].m_params, _request[eREN]));
 
         numRenSfr = IPP_MAX(_request[eREN]->NumFrameSuggested, 1);
-
-        if (m_components[eREN].m_bufType == MFX_BUF_OPAQ)
-        {
-            PrintInfo(VM_STRING("Encode.Surface Type"), VM_STRING("OPAQ=>%s"), (_request[eREN]->Type & MFX_MEMTYPE_SYSTEM_MEMORY) ? VM_STRING("system"):VM_STRING("D3D"));
-        }
     }
 
     if (NULL != m_pVPP)
@@ -3177,12 +3171,6 @@ mfxStatus MFXDecPipeline::CreateAllocator()
 
         numVppSfrIn  = _request[eVPP][0].NumFrameSuggested;
         numVppSfrOut = _request[eVPP][1].NumFrameSuggested;
-
-        if (m_components[eVPP].m_bufType == MFX_BUF_OPAQ)
-        {
-            PrintInfo(VM_STRING("Vpp.In.Surface Type"),  VM_STRING("OPAQ=>%s"), (_request[eVPP][0].Type & MFX_MEMTYPE_SYSTEM_MEMORY) ? VM_STRING("system"):VM_STRING("D3D"));
-            PrintInfo(VM_STRING("Vpp.Out.Surface Type"), VM_STRING("OPAQ=>%s"), (_request[eVPP][1].Type & MFX_MEMTYPE_SYSTEM_MEMORY) ? VM_STRING("system"):VM_STRING("D3D"));
-        }
     }
     //always true
     if (m_pYUVSource.get())
@@ -3190,11 +3178,6 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         MFX_CHECK_STS(m_pYUVSource->QueryIOSurf(&m_components[eDEC].m_params, _request[eDEC]));
 
         numDecSfr = _request[eDEC]->NumFrameSuggested;
-
-        if (m_components[eDEC].m_bufType == MFX_BUF_OPAQ)
-        {
-            PrintInfo(VM_STRING("Decode.Surface Type"), VM_STRING("OPAQ=>%s"), (_request[eDEC]->Type & MFX_MEMTYPE_SYSTEM_MEMORY) ? VM_STRING("system"):VM_STRING("D3D"));
-        }
 
         if (m_inParams.nDecoderSurfs)
             numDecSfr = m_inParams.nDecoderSurfs;
@@ -3217,9 +3200,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         request->Info.CropH = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
         request->Info.CropW = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
 
-        //request type for opaq memory should be used from decoder queryiosurface return value
-        if (m_components[eDEC].m_bufType != MFX_BUF_OPAQ &&
-            m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
+        if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
         {
             request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_ENCODE;
         }
@@ -3250,15 +3231,6 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         m_components[eDEC].m_bAdaptivePlayback = m_inParams.bAdaptivePlayback;
         MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, m_inParams.isRawSurfaceLinear, false));
 
-        if (m_components[eDEC].m_bufType == MFX_BUF_OPAQ)
-        {
-            //points on just registered surfaces
-            ComponentParams::SurfacesAllocated & srf_alloc = m_components[eDEC].RegisterAlloc(*request);
-
-            m_components[eDEC].AttachOpaqBuffer(true,  request->Type, srf_alloc.surfacesLinear);
-            m_components[eREN].AttachOpaqBuffer(false, request->Type, srf_alloc.surfacesLinear);
-        }
-
         // Set frame allocator
         if (m_components[eREN].m_bExternalAlloc)
         {
@@ -3278,9 +3250,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         request->Info.CropH = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
         request->Info.CropW = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
 
-        //request type for opaq memory should be used from decoder qoeryiosurface return value
-        if (m_components[eDEC].m_bufType != MFX_BUF_OPAQ &&
-            m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
+        if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
         {
             request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
         }
@@ -3303,15 +3273,6 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         //setting-up allocator and alloc frames in here
         MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, m_inParams.isRawSurfaceLinear, false));
 
-        //attaching buffer with opaq memory info to decoder and vpp extparams
-        if (m_components[eDEC].m_bufType == MFX_BUF_OPAQ)
-        {
-            ComponentParams::SurfacesAllocated & srf_alloc = m_components[eDEC].RegisterAlloc(*request);
-
-            m_components[eDEC].AttachOpaqBuffer(true, request->Type, srf_alloc.surfacesLinear);
-            m_components[eVPP].AttachOpaqBuffer(false, request->Type, srf_alloc.surfacesLinear);
-        }
-
         nSurfaces = (numRenSfr + numVppSfrOut - 1 )
             + (IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1)
             + (IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1);
@@ -3330,33 +3291,15 @@ mfxStatus MFXDecPipeline::CreateAllocator()
             , IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1
             , IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1);
 
-        //in case of opaq memory we may selects vpp or renedr request type
-        if (m_components[eREN].m_bufType != MFX_BUF_OPAQ)
-        {
-            request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_FROM_ENCODE;
-        }
-        else
-        {
-            request->Type = _request[eREN]->Type;
-        }
+        request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_FROM_ENCODE;
 
         //setuping allocator and alloc frames in here
-        //for OPAQ memory we dont have allocator pointer
         if (m_components[eDEC].m_bufType == m_components[eVPP].m_bufType)
         {
             m_components[eVPP].m_pAllocator = m_components[eDEC].m_pAllocator;
         }
 
         MFX_CHECK_STS(m_components[eVPP].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, m_inParams.isRawSurfaceLinear, true));
-
-        //attaching buffer with opaq memory info to vpp and encode extparams
-        if (m_components[eREN].m_bufType == MFX_BUF_OPAQ)
-        {
-            ComponentParams::SurfacesAllocated & srf_alloc =  m_components[eVPP].RegisterAlloc(*request);
-
-            m_components[eVPP].AttachOpaqBuffer(true, request->Type, srf_alloc.surfacesLinear);
-            m_components[eREN].AttachOpaqBuffer(false, request->Type, srf_alloc.surfacesLinear);
-        }
 
         if (m_components[eREN].m_bExternalAlloc)
         {
@@ -4231,7 +4174,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         int nPattern = 0;
         int nPattern1 =0;
         int nPattern2 =0;
-        int nPattern3 =0;
         int nForDeprecatedParams;
         bool bUnhandled = false;
 
@@ -4477,7 +4419,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 #endif
     else if (m_OptProc.Check(argv[0], VM_STRING("-opaq"), VM_STRING("Mediasdk will decide target memory for video frames. It is D3D or system memory")))
     {
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_OPAQ));
+        vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Opaque memory support is disabled in opeVPL."), argv[0]);
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-NumberFrames|-n|--frames"), VM_STRING("number frames to process"), OPT_UINT_32))
     {
@@ -4726,8 +4668,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else HANDLE_INT_OPTION(m_inParams.nDecodeInAdvance, VM_STRING("-dec:advance"), VM_STRING("decode specified number frames in advance before passing to VPP/Encode"))
         else if (0 != (nPattern  = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):sys"),  VM_STRING("Use system memory for decoder,or VPP output frames"))) ||
         0 != (nPattern1 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):d3d"),  VM_STRING("Use D3D for decoder,or VPP output frames"))) ||
-        0 != (nPattern2 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):d3d11"),  VM_STRING("Use D3D11 for decoder,or VPP output frames"))) ||
-        0 != (nPattern3 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):opaq"), VM_STRING("Mediasdk selects prefered memory for decoder,or VPP output frames"))))
+        0 != (nPattern2 = m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):d3d11"),  VM_STRING("Use D3D11 for decoder,or VPP output frames"))))
         {
             // encoder output frames are always system memory
 
@@ -4735,7 +4676,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             bType = nPattern  ? MFX_BUF_SW      : bType;
             bType = nPattern1 ? MFX_BUF_HW      : bType;
             bType = nPattern2 ? MFX_BUF_HW_DX11 : bType;
-            bType = nPattern3 ? MFX_BUF_OPAQ    : bType;
 
             ComponentsContainer::iterator component;
             component = std::find_if(m_components.begin(), m_components.end(),
@@ -5264,6 +5204,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_INT_OPTION(m_components[eVPP].m_OutNominalRange, VM_STRING("-dsinr"), VM_STRING("specify YUV nominal range for output surface: 0 - unknown; 1 - [0...255]; 2 - [16...235]"))
             else HANDLE_INT_OPTION(m_components[eVPP].m_InTransferMatrix, VM_STRING("-ssitm"), VM_STRING("specify YUV<->RGB transfer matrix for input surface: 0 - unknown; 1 - BT709; 2 - BT601"))
             else HANDLE_INT_OPTION(m_components[eVPP].m_OutTransferMatrix, VM_STRING("-dsitm"), VM_STRING("specify YUV<->RGB transfer matrix for output surface: 0 - unknown; 1 - BT709; 2 - BT601"))
+            else if (m_OptProc.Check(argv[0], VM_STRING("-(dec|vpp|enc):opaq"), VM_STRING("Mediasdk selects prefered memory for decoder,or VPP output frames")))
+            {
+                vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Opaque memory support is disabled in opeVPL."), argv[0]);
+            }
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera"), VM_STRING("use camera pipe"), OPT_BOOL))
             {
                 m_inParams.bUseCameraPipe = true;

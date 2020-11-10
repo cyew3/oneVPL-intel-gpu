@@ -839,7 +839,6 @@ void MFXStructureRef <MFXBufType>::ConstructValues () const
     {
         case MFX_BUF_HW:   stream<<VM_STRING("D3D surface"); break;
         case MFX_BUF_SW:   stream<<VM_STRING("system memory"); break;
-        case MFX_BUF_OPAQ: stream<<VM_STRING("OPAQ memory"); break;
         case MFX_BUF_HW_DX11: stream<<VM_STRING("D3D11 surface"); break;
         default:           stream<<VM_STRING("Unknown"); break;
     }
