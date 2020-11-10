@@ -40,7 +40,6 @@
         #include "umc_va_linux_protected.h"
     #endif
 #include "umc_va_video_processing.h"
-
 #else
 #include "umc_h264_mfx_sw_supplier.h"
 #endif
@@ -48,8 +47,6 @@
 #if defined (MFX_VA_OSX)
 #include "umc_h264_vda_supplier.h"
 #endif
-
-#include "mfx_session.h"
 
 inline bool IsNeedToUseHWBuffering(eMFXHWType /*type*/)
 {
@@ -1336,9 +1333,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         m_va->GetVideoProcessingVA()->SetOutputSurface(surfHDL);
     }
 #endif // !MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-
-    //gpu session priority
-    m_va->m_ContextPriority = m_core->GetSession()->m_priority;
 #endif // #if defined(MFX_VA)
 
     try

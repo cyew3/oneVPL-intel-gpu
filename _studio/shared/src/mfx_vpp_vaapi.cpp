@@ -23,7 +23,6 @@
 #if defined (MFX_ENABLE_VPP)
 #if defined (MFX_VA_LINUX)
 
-#include "mfx_session.h"
 #include <math.h>
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_vaapi.h"
@@ -113,13 +112,11 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
 , m_deintFilterID(VA_INVALID_ID)
 , m_procampFilterID(VA_INVALID_ID)
 , m_frcFilterID(VA_INVALID_ID)
-, m_gpuPriorityID(VA_INVALID_ID)
 , m_deintFrameCount(0)
 #ifdef MFX_ENABLE_VPP_FRC
 , m_frcCyclicCounter(0)
 #endif
 , m_numFilterBufs(0)
-, m_MaxContextPriority(0)
 , m_primarySurface4Composition(NULL)
 {
 
@@ -535,17 +532,6 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     {
         caps.uChromaSiting = m_core->GetHWType() >= MFX_HW_SCL ? 1 : 0;
     }
-
-    std::vector<VAConfigAttrib> attrib(1);
-    attrib[0].type = VAConfigAttribContextPriority;
-    vaSts = vaGetConfigAttributes(m_vaDisplay,
-                                  VAProfileNone,
-                                  VAEntrypointVideoProc,
-                                  attrib.data(),
-                                  attrib.size());
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    if (attrib[0].value != VA_ATTRIB_NOT_SUPPORTED)
-        m_MaxContextPriority = attrib[0].value;
 
     return MFX_ERR_NONE;
 
@@ -1499,35 +1485,6 @@ if (pParams->mirroringExt)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 #endif
 
-    //create gpu priority buffer and bufferID
-    if(m_MaxContextPriority)
-    {
-        mfxPriority contextPriority = m_core->GetSession()->m_priority;
-        VAContextParameterUpdateBuffer GpuPriorityBuf_vpp;
-        memset(&GpuPriorityBuf_vpp, 0, sizeof(VAContextParameterUpdateBuffer));
-
-        GpuPriorityBuf_vpp.flags.bits.context_priority_update = 1;
-        if(contextPriority == MFX_PRIORITY_LOW)
-        {
-            GpuPriorityBuf_vpp.context_priority.bits.priority = 0;
-        }
-        else if (contextPriority == MFX_PRIORITY_HIGH)
-        {
-            GpuPriorityBuf_vpp.context_priority.bits.priority = m_MaxContextPriority;
-        }
-        else
-        {
-            GpuPriorityBuf_vpp.context_priority.bits.priority = m_MaxContextPriority/2;
-        }
-
-        vaSts = vaCreateBuffer((void*)m_vaDisplay,
-                            m_vaContextVPP,
-                            VAContextParameterUpdateBufferType,
-                            sizeof(GpuPriorityBuf_vpp), 1,
-                            &GpuPriorityBuf_vpp, &m_gpuPriorityID);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    }
-
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|VPP|FILTER|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
@@ -1555,13 +1512,6 @@ if (pParams->mirroringExt)
     }
 #endif
 
-    if(m_MaxContextPriority)
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture_gpuPriority");
-        vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_gpuPriorityID, 1);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    }
-
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[0], 1);
@@ -1585,12 +1535,6 @@ if (pParams->mirroringExt)
     vaSts = vaDestroyBuffer(m_vaDisplay, outputParamBuf);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 #endif
-
-    if(m_MaxContextPriority)
-    {
-        mfxSts = CheckAndDestroyVAbuffer(m_vaDisplay, m_gpuPriorityID);
-        MFX_CHECK_STS(mfxSts);
-    }
 
     mfxSts = RemoveBufferFromPipe(m_deintFilterID);
     MFX_CHECK_STS(mfxSts);

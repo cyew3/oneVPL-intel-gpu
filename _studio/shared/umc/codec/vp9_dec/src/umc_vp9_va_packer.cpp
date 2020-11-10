@@ -1,4 +1,5 @@
 // Copyright (c) 2013-2019 Intel Corporation
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -30,8 +31,6 @@
 #include "umc_va_base.h"
 #include "umc_va_dxva2_protected.h"
 #endif
-
-#include "mfx_session.h"
 
 using namespace UMC;
 
@@ -498,36 +497,6 @@ void PackerVA::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
 
     std::copy(data + offset, data + offset + length, bistreamData);
     pCompBuf->SetDataSize(length);
-
-    if(m_va->m_MaxContextPriority)
-        PackPriorityParams();
-}
-
-void PackerVA::PackPriorityParams()
-{
-    mfxPriority priority = m_va->m_ContextPriority;
-    UMCVACompBuffer *GpuPriorityBuf;
-    VAContextParameterUpdateBuffer* GpuPriorityBuf_Vp9Decode = (VAContextParameterUpdateBuffer *)m_va->GetCompBuffer(VAContextParameterUpdateBufferType, &GpuPriorityBuf, sizeof(VAContextParameterUpdateBuffer));
-    if (!GpuPriorityBuf_Vp9Decode)
-        throw vp9_exception(MFX_ERR_MEMORY_ALLOC);;
-
-    memset(GpuPriorityBuf_Vp9Decode, 0, sizeof(VAContextParameterUpdateBuffer));
-    GpuPriorityBuf_Vp9Decode->flags.bits.context_priority_update = 1;
-
-    if(priority == MFX_PRIORITY_LOW)
-    {
-        GpuPriorityBuf_Vp9Decode->context_priority.bits.priority = 0;
-    }
-    else if (priority == MFX_PRIORITY_HIGH)
-    {
-        GpuPriorityBuf_Vp9Decode->context_priority.bits.priority = m_va->m_MaxContextPriority;
-    }
-    else
-    {
-    GpuPriorityBuf_Vp9Decode->context_priority.bits.priority = m_va->m_MaxContextPriority/2;
-    }
-
-    GpuPriorityBuf->SetDataSize(sizeof(VAContextParameterUpdateBuffer));
 }
 
 void PackerVA::PackPicParams(VADecPictureParameterBufferVP9* picParam, VP9DecoderFrame const* info)
