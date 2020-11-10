@@ -576,12 +576,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         MFX_PARS(/*PicStruct*/ TFF, /*GopPicSize*/ 0, /*GopRefDist*/ 6, /*NumRefFrame*/ 5, /*TU*/ 1),
         {
             { 84, { 75, -1 },                     { -1 } },    //check P(P/I) pic behind P/I
-            { 82, { 78, 79, 76, 77, -1 },     { 84, -1 } },    //check B pics between two P/I
-            { 83, { 79 , 82, 77, 78, -1 },    { 84, -1 } },    //including both ref and unref B pics
-            { 80, { 78, 79, 76, 77, -1 }, { 82, 83, -1 } },
-            { 81, { 79, 78, 77, 76, -1 }, { 83, 82, -1 } },
-            { 78, { 75, -1 },                 { 84, -1 } },
-            { 79, { 75, 78, -1 },             { 84, -1 } },
+            { 82, { 80, 81, 78, 79, -1 },     { 84, -1 } },    //check B pics between two P/I
+            { 83, { 81, 80, 79, 78, -1 },     { 84, -1 } },    //including both ref and unref B pics
+            { 80, { 75, -1 },                 { 84, -1 } },
+            { 81, { 75, 80, -1 },             { 84, -1 } },
+            { 78, { 75, -1 },             { 80, 81, -1 } },
+            { 79, { 75, 78, -1 },         { 81, 80, -1 } },
             { 76, { 75, -1 },             { 78, 79, -1 } },
             { 77, { 75, 76, -1 },         { 79, 78, -1 } },
         }
