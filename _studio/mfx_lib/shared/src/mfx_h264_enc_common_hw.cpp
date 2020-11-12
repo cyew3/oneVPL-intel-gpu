@@ -1027,7 +1027,10 @@ namespace
             { 0, 8, 6, 3, 3, 3, 1, 1 }, // VME progressive < 4k or interlaced (platform > MFX_HW_HSW_ULT)
             { 0, 4, 4, 4, 3, 2, 1, 1 }, // VME progressive >= 4k (platform <= MFX_HW_HSW_ULT)
             { 0, 4, 4, 3, 3, 3, 1, 1 }, // VME progressive >= 4k (platform > MFX_HW_HSW_ULT)
-            { 0, 3, 3, 2, 2, 2, 1, 1 }  // VDEnc
+            { 0, 3, 3, 2, 2, 2, 1, 1 }, // VDEnc
+#ifndef STRIP_EMBARGO
+            { 0, 2, 2, 2, 2, 2, 1, 1 }  // VDEnc DG2+
+#endif
         };
 
         if (!isLowPower)
@@ -1044,6 +1047,10 @@ namespace
         }
         else
         {
+#ifndef STRIP_EMBARGO
+            if (platform >= MFX_HW_DG2)
+                return DEFAULT_BY_TU[5][targetUsage];
+#endif
             return DEFAULT_BY_TU[4][targetUsage];
         }
     }
