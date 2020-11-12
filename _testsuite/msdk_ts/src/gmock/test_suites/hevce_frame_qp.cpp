@@ -116,9 +116,27 @@ namespace hevce_frame_qp
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE, MFX_PAR, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1}},
-        {/*02*/ MFX_ERR_NONE, MFX_PAR, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 15}},
-        {/*03*/ MFX_ERR_NONE, RESET,   {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 15}},
+        {/*00*/ MFX_ERR_NONE, MFX_PAR, {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  704 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 576 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  704 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  576 } }
+        },
+        {/*02*/ MFX_ERR_NONE, MFX_PAR, {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  15 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  704 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 576 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  704 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  576 } }
+        },
+        {/*03*/ MFX_ERR_NONE, RESET,   {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  15 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  704 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 576 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  704 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  576 } }
+        },
         {/*04*/ MFX_ERR_NONE, HUGE_SIZE_4K,{
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },

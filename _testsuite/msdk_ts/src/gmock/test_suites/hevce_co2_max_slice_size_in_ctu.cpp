@@ -229,6 +229,9 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         return 0;
     }
 
+    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 704;
+    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
+
     //This calculation is based on SKL limitation that LCU is always 32x32.
     //If LCU can be configured, the calcuation should be updated with the
     //following values configured at initialization.
