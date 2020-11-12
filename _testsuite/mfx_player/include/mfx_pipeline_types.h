@@ -41,6 +41,7 @@ enum MFXBufType
     MFX_BUF_UNSPECIFIED = 0,
     MFX_BUF_HW,
     MFX_BUF_SW,
+    MFX_BUF_OPAQ,
     MFX_BUF_HW_DX11,
 };
 
