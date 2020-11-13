@@ -442,6 +442,9 @@
     <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_mfe_lin.cpp">
       <Filter>hevc\embargo\linux\g12ats</Filter>
     </ClCompile>
+    <ClCompile Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_caps.cpp">
+      <Filter>hevc\embargo\agnostic\g12ats</Filter>
+    </ClCompile>
     <ClCompile Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.cpp">
       <Filter>hevc\embargo\agnostic\g12dg2</Filter>
     </ClCompile>
@@ -880,6 +883,9 @@
       <Filter>hevc\open\linux\g12</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_mfe.h">
+      <Filter>hevc\embargo\agnostic\g12ats</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_caps.h">
       <Filter>hevc\embargo\agnostic\g12ats</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\g12ats\hevcehw_g12ats_mfe_win.h">

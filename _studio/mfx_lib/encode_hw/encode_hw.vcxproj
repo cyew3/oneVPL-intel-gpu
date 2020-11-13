@@ -77,6 +77,7 @@
     <ClCompile Include="hevc\embargo\agnostic\base\hevcehw_base_extddi.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc_mode.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_mfe.cpp" />
+    <ClCompile Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_caps.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.cpp" />
     <ClCompile Include="hevc\embargo\linux\base\hevcehw_base_gpu_hang_lin.cpp" />
     <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_lin.cpp" />
@@ -232,6 +233,7 @@
     <ClInclude Include="hevc\embargo\agnostic\base\hevcehw_base_dump_files.h" />
     <ClInclude Include="hevc\embargo\agnostic\base\hevcehw_base_extddi.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_mfe.h" />
+    <ClInclude Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_caps.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc_mode.h" />
     <ClInclude Include="hevc\embargo\linux\g11lkf\hevcehw_g11lkf_lin.h" />

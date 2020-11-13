@@ -26,9 +26,13 @@
 #if defined(MFX_ENABLE_MFE)
 #include "hevcehw_g12ats_mfe_lin.h"
 #endif //defined(MFX_ENABLE_MFE)
+#include "hevcehw_g12ats_caps.h"
+#include "hevcehw_g12_caps.h"
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_iddi.h"
+#include "hevcehw_base_iddi_packer.h"
 #include "hevcehw_base_extddi.h"
+#include "hevcehw_base_legacy.h"
 
 namespace HEVCEHW
 {
@@ -48,12 +52,25 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #if defined(MFX_ENABLE_MFE)
     newFeatures.emplace_back(new MFE(FEATURE_MFE));
 #endif //defined(MFX_ENABLE_MFE)
+
+    newFeatures.emplace_back(new HEVCEHW::Gen12ATS::Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new HEVCEHW::Base::ExtDDI(HEVCEHW::Base::FEATURE_EXTDDI));
 
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
 
     m_features.splice(m_features.end(), newFeatures);
+
+    if (mode & (QUERY1 | QUERY_IO_SURF | INIT))
+    {
+        auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
+
+        Reorder(
+            qwc
+            , { HEVCEHW::Gen12::FEATURE_CAPS, HEVCEHW::Gen12::Caps::BLK_HardcodeCaps }
+            , { FEATURE_CAPS, HEVCEHW::Gen12ATS::Caps::BLK_HardcodeCaps }
+        , PLACE_AFTER);
+    }
 }
 
 mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
