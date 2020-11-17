@@ -1012,7 +1012,7 @@ namespace
         return mfxU32((mfxU64)info.FrameRateExtD * 1000000 / info.FrameRateExtN);
     }
 #endif
-    mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage,
+    mfxU16 GetMaxNumRefActivePL0(mfxU32 targetUsage,
                                         eMFXHWType platform,
                                         bool isLowPower,
                                         const mfxFrameInfo& info)
@@ -1055,7 +1055,7 @@ namespace
         }
     }
 
-    mfxU16 GetDefaultMaxNumRefActiveBL0(mfxU32 targetUsage,
+    mfxU16 GetMaxNumRefActiveBL0(mfxU32 targetUsage,
                                         eMFXHWType platform,
                                         bool isLowPower)
     {
@@ -1073,7 +1073,7 @@ namespace
         }
     }
 
-    mfxU16 GetDefaultNumRefActiveBL1(mfxU32 targetUsage,
+    mfxU16 GetMaxNumRefActiveBL1(mfxU32 targetUsage,
                                      eMFXHWType platform,
                                      mfxU16 picStruct,
                                      bool isLowPower)
@@ -6242,7 +6242,8 @@ void MfxHwH264Encode::SetDefaults(
         }
         else
         {
-            extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform, IsOn(par.mfx.LowPower), par.mfx.FrameInfo);
+            mfxU16 maxNumActivePL0 = GetMaxNumRefActivePL0(par.mfx.TargetUsage, platform, IsOn(par.mfx.LowPower), par.mfx.FrameInfo);
+            extDdi->NumActiveRefP = extOpt3->NumRefActiveP[0] ? std::min(maxNumActivePL0, extOpt3->NumRefActiveP[0]) : maxNumActivePL0;
         }
     }
 
@@ -6262,7 +6263,8 @@ void MfxHwH264Encode::SetDefaults(
             }
             else
             {
-                extDdi->NumActiveRefBL0 = GetDefaultMaxNumRefActiveBL0(par.mfx.TargetUsage, platform, IsOn(par.mfx.LowPower));
+                mfxU16 maxNumActiveBL0 = GetMaxNumRefActiveBL0(par.mfx.TargetUsage, platform, IsOn(par.mfx.LowPower));
+                extDdi->NumActiveRefBL0 = extOpt3->NumRefActiveBL0[0] ? std::min(maxNumActiveBL0, extOpt3->NumRefActiveBL0[0]) : maxNumActiveBL0;
             }
         } /* if (extDdi->NumActiveRefBL0 == 0) */
 
@@ -6281,7 +6283,8 @@ void MfxHwH264Encode::SetDefaults(
             }
             else
             {
-                extDdi->NumActiveRefBL1 = GetDefaultNumRefActiveBL1(par.mfx.TargetUsage, platform, par.mfx.FrameInfo.PicStruct, IsOn(par.mfx.LowPower));
+                mfxU16 maxNumActiveBL1 = GetMaxNumRefActiveBL1(par.mfx.TargetUsage, platform, par.mfx.FrameInfo.PicStruct, IsOn(par.mfx.LowPower));
+                extDdi->NumActiveRefBL1 = extOpt3->NumRefActiveBL1[0] ? std::min(maxNumActiveBL1, extOpt3->NumRefActiveBL1[0]) : maxNumActiveBL1;
             }
         } /* if (extDdi->NumActiveRefBL1 == 0) */
     }
