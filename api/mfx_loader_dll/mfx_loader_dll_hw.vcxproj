@@ -186,6 +186,10 @@
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher_log.h" />
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dxva2_device.h" />
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_load_dll.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mfx_loader_dll_hw.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

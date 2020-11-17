@@ -47,5 +47,13 @@
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher_log.h">
       <Filter>Source Files\dispatcher_log</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mfx_loader_dll_hw.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
