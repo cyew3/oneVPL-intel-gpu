@@ -36,6 +36,8 @@
 #include <algorithm>
 #include <sstream>
 #include <regex>
+#include <fstream>
+
 
 const TCHAR * default_MSDK_dll_name =
 
@@ -43,6 +45,14 @@ const TCHAR * default_MSDK_dll_name =
     _T("libmfxhw64.dll");
 #else
     _T("libmfxhw32.dll");
+#endif
+
+const TCHAR * default_VPL_dll_name =
+
+#ifdef _WIN64
+_T("onevpl-gen64.dll");
+#else
+_T("onevpl-gen32.dll");
 #endif
 
 // This string switches type according to UNICODE define
@@ -216,8 +226,14 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
                 continue;
             }
             curr_descr.path_to_msdk = intel_dll_path;
-            append_lib_name(curr_descr.path_to_msdk, default_MSDK_dll_name);
 
+			tstring exist_dll_path = intel_dll_path;
+			append_lib_name(exist_dll_path, default_VPL_dll_name);
+            std::ifstream file(exist_dll_path);
+            if (file.good())
+                append_lib_name(curr_descr.path_to_msdk, default_VPL_dll_name);
+            else
+                append_lib_name(curr_descr.path_to_msdk, default_MSDK_dll_name);
 
             // Extract description string
             path_size = sizeof(intel_dll_path);
