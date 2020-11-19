@@ -1037,6 +1037,7 @@ namespace Base
         : CallChain<TTaskIt, const DpbArray&, TTaskIt, TTaskIt, bool>
     {
         mfxU16 BufferSize = 0;
+        mfxU16 MaxReorder = 0;
         NotNull<DpbArray*> DPB;
 
         using TBaseCC = CallChain<TTaskIt, const DpbArray&, TTaskIt, TTaskIt, bool>;
