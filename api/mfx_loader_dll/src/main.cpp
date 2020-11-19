@@ -50,9 +50,9 @@ const TCHAR * default_MSDK_dll_name =
 const TCHAR * default_VPL_dll_name =
 
 #ifdef _WIN64
-_T("onevpl-gen64.dll");
+_T("libmfx64-gen.dll");
 #else
-_T("onevpl-gen32.dll");
+_T("libmfx32-gen.dll");
 #endif
 
 // This string switches type according to UNICODE define
