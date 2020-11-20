@@ -42,6 +42,8 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf_caps.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_caps.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_caps.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_mfe.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_mfe.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12dg2/hevcehw_g12dg2_caps.cpp
