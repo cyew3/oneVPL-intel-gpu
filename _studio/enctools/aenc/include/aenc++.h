@@ -24,6 +24,7 @@
 #include <vector>
 #include <array>
 #include <deque>
+#include <iterator>
 
 #include "av1_scd.h"
 #include "aenc.h"

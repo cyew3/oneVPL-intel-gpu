@@ -22,7 +22,7 @@
 ##  suppliers or licensors in any way.
 ##
 ##******************************************************************************
-##  Content: Intel(R) Media SDK Samples projects creation and build
+##  Content: Intel(R) Media SDK projects creation and build
 ##******************************************************************************
 
 set( CMAKE_LIB_DIR ${CMAKE_BINARY_DIR}/__lib )
@@ -61,7 +61,26 @@ function( create_build )
   foreach( component ${components} )
     get_filename_component( path ${component} PATH )
     if(NOT path MATCHES ".*/deprecated/.*")
+      message(STATUS "Adding subdir: ${path}")
       add_subdirectory( ${path} )
+    endif()
+  endforeach()
+endfunction()
+
+# .....................................................
+# Usage:
+#  create_build_outside_tree(current_repo|<name>)
+#    - current_repo|<name>: the alias of the folder for which the built components will be placed
+#
+function( create_build_outside_tree current_repo)
+
+  file( GLOB_RECURSE components "${CMAKE_SOURCE_DIR}/*/CMakeLists.txt" )
+  foreach( component ${components} )
+    get_filename_component(path ${component} PATH)
+    get_filename_component(folder_name ${path} NAME)
+    if(NOT path MATCHES ".*/deprecated/.*")
+      message(STATUS "Adding subdir: ${path} ./${current_repo}/${folder_name}")
+      add_subdirectory(${path} ./${current_repo}/${folder_name})
     endif()
   endforeach()
 endfunction()
@@ -166,7 +185,7 @@ endfunction()
 #    - static|shared: build static or shared library
 #    - nosafestring|<true|false>: any value evaluated as True by CMake to disable link against SafeString
 #
-function( make_library name variant type )
+function( make_library_obsolete name variant type )
   set( nosafestring ${ARGV3} )
   if( Windows )
     set( nosafestring TRUE )
@@ -199,6 +218,7 @@ function( make_library name variant type )
 
   elseif( ARGV2 MATCHES shared )
     add_library( ${target} SHARED ${include} ${sources} )
+    message (STATUS "Adding ${target} shared library")
 
     if( Linux )
       target_link_libraries( ${target} PRIVATE "-Xlinker --start-group" )
@@ -206,16 +226,13 @@ function( make_library name variant type )
 
     foreach( lib ${LIBS_VARIANT} )
       if(ARGV1 MATCHES none OR ARGV1 MATCHES universal)
-        add_dependencies( ${target} ${lib} )
         target_link_libraries( ${target} PRIVATE ${lib} )
       else()
-        add_dependencies( ${target} ${lib}_${ARGV1} )
         target_link_libraries( ${target}  PRIVATE ${lib}_${ARGV1} )
       endif()
     endforeach()
 
     foreach( lib ${LIBS_NOVARIANT} )
-      add_dependencies( ${target} ${lib} )
       target_link_libraries( ${target} PRIVATE ${lib} )
     endforeach()
 
@@ -261,7 +278,7 @@ endfunction()
 #    or without variant if none was specified
 #    - nosafestring|<true|false>: any value evaluated as True by CMake to disable link against SafeString
 #
-function( make_executable name variant )
+function( make_executable_obsolete name variant )
   set( nosafestring ${ARGV2} )
   if( Windows )
     set( nosafestring TRUE )
@@ -289,6 +306,7 @@ function( make_executable name variant )
   if( defs )
     append_property( ${target} COMPILE_FLAGS ${defs} )
   endif()
+
   set_target_properties( ${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
 
   if( Linux )
@@ -297,16 +315,13 @@ function( make_executable name variant )
 
   foreach( lib ${LIBS_VARIANT} )
     if(ARGV1 MATCHES none OR ARGV1 MATCHES universal)
-      add_dependencies( ${target} ${lib} )
       target_link_libraries( ${target} PRIVATE ${lib} )
     else()
-      add_dependencies( ${target} ${lib}_${ARGV1} )
       target_link_libraries( ${target} PRIVATE ${lib}_${ARGV1} )
     endif()
   endforeach()
 
   foreach( lib ${LIBS_NOVARIANT} )
-    add_dependencies( ${target} ${lib} )
     target_link_libraries( ${target} PRIVATE ${lib} )
   endforeach()
 
@@ -340,7 +355,7 @@ function( make_executable name variant )
 endfunction()
 
 function( set_file_and_product_version input_version version_defs )
-  if( Linux OR Darwin )
+  if( Linux )
     execute_process(
       COMMAND echo
       COMMAND cut -f 1 -d.
@@ -353,8 +368,8 @@ function( set_file_and_product_version input_version version_defs )
     set( git_commit "" )
     git_describe( git_commit )
 
-    set( version_defs " -DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}${git_commit}\"\\\"" )
-    set( version_defs "${version_defs} -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${input_version}\"\\\"" PARENT_SCOPE )
+    set( version_defs "MFX_PLUGIN_FILE_VERSION=\"\"\\\"${ver}${cur_date}${git_commit}\"\\\"\"" )
+    set( version_defs "${version_defs};MFX_PLUGIN_PRODUCT_VERSION=\"\"\\\"${input_version}\"\\\"\"" PARENT_SCOPE )
 
   endif()
 endfunction()
@@ -364,7 +379,7 @@ function( git_describe git_commit )
     COMMAND git rev-parse --short HEAD
     OUTPUT_VARIABLE git_commit
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/mdp_msdk-lib"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
   )
   if( NOT ${git_commit} MATCHES "^$" )
     set( git_commit "${git_commit}" PARENT_SCOPE )
@@ -380,6 +395,16 @@ function(msdk_install target dir)
 endfunction()
 
 function(disable_werror)
+
+  foreach(var
+    CMAKE_C_FLAGS CMAKE_CXX_FLAGS
+    CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELWITHDEBINFO
+    CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+
+
+    string(REPLACE "-Werror" ""  ${var} "${${var}}")
+  endforeach()
+
     string(REPLACE " -Werror" "" TMP_C_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
     string(REPLACE " -Werror" "" TMP_CXX_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
     string(REPLACE " -Werror" "" TMP_C_RELEASE "${CMAKE_C_FLAGS_RELEASE}")

@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE) && defined(MFX_VA_LINUX)
 
 #include "mfx_h265_fei_encode_vaapi.h"
 #include "mfx_h265_encode_hw.h"

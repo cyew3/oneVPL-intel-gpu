@@ -31,6 +31,10 @@
 #include "mfx_h265_encode_api.h"
 #include "mfx_h265_encode.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable:4244)
+#endif
+
 using namespace H265Enc;
 using namespace H265Enc::MfxEnumShortAliases;
 

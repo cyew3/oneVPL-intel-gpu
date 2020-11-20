@@ -22,6 +22,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include <memory.h>
 #include <iostream>
+#include <algorithm>
 
 #include "mfxdefs.h"
 #include "vm/strings_defs.h"
@@ -44,7 +45,7 @@ enum {MCTF_BITRATE_MULTIPLIER = 100000};
 #endif
 
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
 enum {
     MFX_HANDLE_DEVICEWINDOW  = 0x101 /* A handle to the render window */
@@ -61,8 +62,8 @@ enum {
 #else
     #define MFX_D3D11_SUPPORT 0
 #endif
-#endif // #if defined(WIN32) && !defined(MFX_D3D11_SUPPORT)
-#endif // #if defined(WIN32) || defined(WIN64)
+#endif // #if defined(_WIN32) && !defined(MFX_D3D11_SUPPORT)
+#endif // #if defined(_WIN32) || defined(_WIN64)
 
 enum
 {

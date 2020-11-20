@@ -49,6 +49,11 @@
 #define CM_ALIGNED_FREE(...)
 #endif
 
+#ifdef _MSVC_LANG
+#pragma warning(disable:4553)
+#pragma warning(disable:4804)
+#endif
+
 namespace H265Enc {
 
     using namespace MfxEnumShortAliases;
@@ -351,7 +356,14 @@ namespace H265Enc {
         m_bitDepthChroma = par->bitDepthChroma;
         m_bdLumaFlag = par->bitDepthLuma > 8;
         m_bdChromaFlag = par->bitDepthChroma > 8;
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable:4244)
+#endif
         m_chromaFormatIdc = par->chromaFormatIdc;
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
         m_mad.resize(numCtbs, 0);
         m_slices.resize(par->NumSlices);
 

@@ -48,6 +48,10 @@
 #include "mfx_procamp_vpp.h"
 #include "mfx_detail_enhancement_vpp.h"
 
+#if defined(MFX_ENABLE_VPP) && defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
+#include "mfx_image_stabilization_vpp.h"
+#endif
+
 #if !defined (MFX_ENABLE_HW_ONLY_VPP)
 #include "mfx_gamut_compression_vpp.h"
 #include "mfx_image_stabilization_vpp.h"
@@ -987,7 +991,7 @@ mfxStatus GetExternalFramesCount(VideoCORE* core,
                 break;
             }
 
-#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
+#if defined(MFX_ENABLE_VPP) && defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
                 // fake for SW compatibility
@@ -1150,7 +1154,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     {
         sts = MFXVideoVPPFrameRateConversion::Query( pHint );
     }
-#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
+#if defined(MFX_ENABLE_VPP) && defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
     else if( MFX_EXTBUFF_VPP_IMAGE_STABILIZATION == filterName )
     {
         if (false == bLinuxAndIVB_HSW_BDW)

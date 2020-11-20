@@ -1,74 +1,87 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
-
-mfx_include_dirs( )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mctf_package/mctf/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h264/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h264_common )
 
 # =============================================================================
-set( sources "" )
-set( sources.plus "" )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h264_la )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
 
-set( defs "-DMFX_VA -DAS_H264LA_PLUGIN ${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( h264_la none static )
+add_library(h264_common STATIC
+  h264_common/fei_common.h
+  h264_common/fei_common.cpp
+  )
 
-set( defs "" )
+target_include_directories(h264_common
+  PUBLIC
+    include
+    h264_common
+  )
 
-# =============================================================================
-set( sources "" )
-set( sources.plus "" )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h264_common )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-set( defs "-DMFX_VA ${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( h264_common none static )
+target_compile_definitions(h264_common
+  PRIVATE
+    MFX_VA
+  )
 
-set( defs "" )
+target_link_libraries(h264_common PUBLIC mfx_static_lib umc_va_hw encode_hw)
 
 # =============================================================================
-set( sources "" )
-set( sources.plus "" )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h264_enc )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-set( defs "-DMFX_VA ${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( h264_enc none static )
 
-set( defs "" )
+add_library(h264_la STATIC
+  h264_la/mfx_h264_la.h
+  h264_la/mfx_h264_la.cpp
+  )
 
-# =============================================================================
-set( sources "" )
-set( sources.plus "" )
-include_directories ( ${CMAKE_CURRENT_SOURCE_DIR}/h264_preenc )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h264_preenc )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-set( defs "-DMFX_VA ${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( h264_preenc none static )
+target_include_directories(h264_la PUBLIC h264_la)
 
-set( defs "" )
+target_compile_definitions(h264_la
+  PRIVATE
+    AS_H264LA_PLUGIN
+    MFX_VA
+  )
+
+target_link_libraries(h264_la PUBLIC h264_common)
 
 # =============================================================================
-set( sources "" )
-set( sources.plus "" )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h264_pak )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h264_pak )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-set( defs "-DMFX_VA ${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( h264_pak none static )
 
-set( defs "" )
+add_library(h264_enc STATIC
+  h264_enc/mfx_h264_enc.h
+  h264_enc/mfx_h264_enc.cpp
+  )
 
+target_include_directories(h264_enc PUBLIC h264_enc)
 
+target_compile_definitions(h264_enc
+  PRIVATE
+    MFX_VA
+  )
+
+target_link_libraries(h264_enc PUBLIC h264_common)
+
+# =============================================================================
+
+add_library(h264_preenc STATIC
+  h264_preenc/mfx_h264_preenc.h
+  h264_preenc/mfx_h264_preenc.cpp
+)
+
+target_include_directories(h264_preenc PUBLIC h264_preenc)
+
+target_compile_definitions(h264_preenc
+  PRIVATE
+    MFX_VA
+  )
+
+target_link_libraries(h264_preenc PUBLIC h264_common)
+
+# =============================================================================
+
+add_library(h264_pak STATIC
+  h264_pak/mfx_h264_fei_pak.h
+  h264_pak/mfx_h264_fei_pak.cpp
+)
+
+target_include_directories(h264_pak PUBLIC h264_pak)
+
+target_compile_definitions(h264_pak
+  PRIVATE
+    MFX_VA
+  )
+
+target_link_libraries(h264_pak PUBLIC h264_common)
+
+include(sources_ext.cmake OPTIONAL)

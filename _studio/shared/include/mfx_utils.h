@@ -34,6 +34,15 @@
 #include <va/va.h>
 #endif
 
+#if defined _WIN32
+  #if defined min
+    #undef min
+  #endif
+  #if defined max
+    #undef max
+  #endif
+#endif
+
 #include <cassert>
 #include <cstddef>
 

@@ -538,13 +538,13 @@ Status CodecPipeline::SelectSplitter(SourceInfo *lpSourceInfo,
     if (NULL != (lpCamInfo = DynamicCast<SourceInfoCam> (lpSourceInfo)))
     {
 
-#if defined(WIN32) && !defined(_WIN32_WCE) && defined (UMC_ENABLE_TRANSCODING)
+#if defined(_WIN32) && !defined(_WIN32_WCE) && defined (UMC_ENABLE_TRANSCODING)
         lpSplParams = new SplitterParams();
         if (NULL == lpSplParams)
             umcRes = UMC::UMC_ERR_FAILED;
 
         rpSplitter = new CaptureEx();
-#endif // defined(WIN32) && !defined(_WIN32_WCE)
+#endif // defined(_WIN32) && !defined(_WIN32_WCE)
 
         if (NULL == rpSplitter)
             umcRes = UMC::UMC_ERR_FAILED;
@@ -788,14 +788,14 @@ CodecPipeline::SelectVideoRender(VideoRenderParams& rVideoRenderParams,
     }
 #endif  //  defined(SDL_ON)
 
-#if defined(WIN32)
+#if defined(_WIN32)
     HWNDModuleContext* pHWNDContext = NULL;
     if (NULL == rpRender) {
         pHWNDContext =
             DynamicCast<HWNDModuleContext,ModuleContext>(&rContext);
         if (NULL == pHWNDContext) { umcRes = UMC_ERR_INIT;    }
     }
-#endif // defined(WIN32)
+#endif // defined(_WIN32)
 
 #if defined(UMC_ENABLE_DX_VIDEO_RENDER)
     if (NULL == rpRender &&

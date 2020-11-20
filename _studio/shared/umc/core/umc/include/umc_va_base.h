@@ -66,6 +66,7 @@
 
 #ifdef _MSVC_LANG
 #pragma warning(disable : 4201)
+#pragma warning(disable : 26812)
 #endif
 
 #ifdef UMC_VA_LINUX
@@ -141,13 +142,17 @@ enum VideoAccelerationProfile
     VA_VLD          = 0x00400,
 
     VA_PROFILE                  = 0xff000,
-#ifndef OPEN_SOURCE
+#ifndef MFX_VA_LINUX
     VA_PROFILE_SVC_HIGH         = 0x02000,
     VA_PROFILE_SVC_BASELINE     = 0x03000,
-    VA_PROFILE_MVC              = 0x04000,
+#endif
+	VA_PROFILE_MVC              = 0x04000,
     VA_PROFILE_MVC_MV           = 0x05000,
     VA_PROFILE_MVC_STEREO       = 0x06000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x07000,
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    VA_PROFILE_WIDEVINE         = 0x09000,
 #endif
     VA_PROFILE_422              = 0x0a000,
     VA_PROFILE_444              = 0x0b000,
@@ -190,7 +195,7 @@ enum VideoAccelerationProfile
     H265_10_VLD_422             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_422,
     H265_10_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_444,
 
-#ifndef OPEN_SOURCE
+#ifndef MFX_VA_LINUX
     H264_VLD_MVC                = VA_H264 | VA_VLD | VA_PROFILE_MVC,
     H264_VLD_SVC_BASELINE       = VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE,
     H264_VLD_SVC_HIGH           = VA_H264 | VA_VLD | VA_PROFILE_SVC_HIGH,
@@ -458,6 +463,7 @@ public:
         FirstMb = -1;
         NumOfMB = -1;
         FirstSlice = -1;
+        memset(PVPStateBuf, 0, sizeof(PVPStateBuf));
     }
     virtual ~UMCVACompBuffer(){}
 

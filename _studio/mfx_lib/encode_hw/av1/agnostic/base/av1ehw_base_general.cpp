@@ -30,6 +30,7 @@
 #include <iterator>
 #include <numeric>
 #include <set>
+#include <iterator>
 
 using namespace AV1EHW::Base;
 
@@ -1799,7 +1800,7 @@ inline void MarkLTR(TaskCommonPar& task)
     // Count how many unique STR left in DPB so far
     // We need to keep at least 1 STR
     decltype(task.DPB) tmpDPB(task.DPB);
-    std::unique(tmpDPB.begin(), tmpDPB.end());
+    std::ignore = std::unique(tmpDPB.begin(), tmpDPB.end());
     auto numberOfUniqueSTRs = std::count_if(
         tmpDPB.begin()
         , tmpDPB.end()

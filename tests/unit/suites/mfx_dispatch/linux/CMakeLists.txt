@@ -21,7 +21,7 @@
 # This test hooks dlopen and dlsym calls, i.e. it provides mock mediasdk
 # library implementation inside. A key thing for the trick to work is
 # avoiding non-default symbol versioning, i.e. -Wl,--default-symver which
-# is propagated by mediasdk test system should be avoided. 
+# is propagated by mediasdk test system should be avoided.
 
 if( NOT DEFINED MFX_MODULES_DIR )
   set( MFX_MODULES_DIR ${CMAKE_INSTALL_FULL_LIBDIR} )
@@ -37,7 +37,7 @@ add_executable(mfx_dispatch_test
   mfx_dispatch_test_mocks.cpp
   mfx_dispatch_test_fixtures.cpp)
 
-target_link_libraries( mfx_dispatch_test mfx gtest gmock pthread )
+target_link_libraries( mfx_dispatch_test mfx gtest gmock pthread mfx_common_properties)
 
 target_include_directories( mfx_dispatch_test PUBLIC ${MFX_API_HOME}/mfx_dispatch/linux )
 

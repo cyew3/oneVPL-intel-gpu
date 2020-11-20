@@ -42,7 +42,7 @@ namespace UMC
 #define __ALIGN16(type, name, size) \
   type __attribute__((aligned(0x10))) name[size]
 #else
-#if defined(_WIN64) || defined(WIN64)
+#if defined(_WIN64) || defined(_WIN64)
 #define __ALIGN16(type, name, size) \
   uint8_t _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((long long)(_a16_##name) + 15) & ~15)
 #else

@@ -836,7 +836,14 @@ Status MP4Splitter::FillAudioInfo(T_trak_data *pTrak, Ipp32u nTrack)
 //        T_mdia_data m_Mdia = m_headerMPEG4.moov.trak[nTrack]->mdia;
 
         INIT_BITSTREAM(&bs, m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo->GetDataPointer())
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 4267)
+#endif
         bs.nDataLen = m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo->GetDataSize();
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
         if (!dec_audio_specific_config(&audio_config_data,&bs)) {
           //dec_audio_specific_config returns 0, if everything is OK.
 //          pAudioInfo->stream_type = AudioObjectTypeID(audio_config_data.audioObjectType);

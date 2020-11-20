@@ -173,7 +173,9 @@ namespace HEVCEHW
     };
 #endif
 
-#ifndef STRIP_EMBARGO
+
+#if !defined(STRIP_EMBARGO)
+
 #if defined(MFX_VA_LINUX)
     #include "hevcehw_g12ats_lin.h"
     #include "hevcehw_g12dg2_lin.h"

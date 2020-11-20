@@ -20,7 +20,7 @@
 #include "vm/file_defs.h"
 #include "vm/time_defs.h"
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #ifndef D3D_SURFACES_SUPPORT
 #define D3D_SURFACES_SUPPORT 1
 #endif
@@ -32,8 +32,8 @@
 #else
     #define MFX_D3D11_SUPPORT 0
 #endif
-#endif // #if defined(WIN32) && !defined(MFX_D3D11_SUPPORT)
-#endif // #if defined(WIN32) || defined(WIN64)
+#endif // #if defined(_WIN32) && !defined(MFX_D3D11_SUPPORT)
+#endif // #if defined(_WIN32) || defined(_WIN64)
 
 //affects win32 winnt version macro
 #include "vm/time_defs.h"

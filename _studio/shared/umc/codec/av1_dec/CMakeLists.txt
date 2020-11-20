@@ -1,7 +1,5 @@
 if( NOT MFX_LIB_ONLY )
 
-mfx_include_dirs( )
-
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../core/umc/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../core/vm/include )

@@ -178,7 +178,6 @@ if( DEFINED H264LA_ENCODER_GUID )
     asc
     mctf_hw
     mfx_trace
-    ${ITT_LIBRARIES}
     pthread
     dl
   )

@@ -1,13 +1,8 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
-mfx_include_dirs( )
+add_library(cmrt_cross_platform_hw STATIC
+  include/cmrt_cross_platform.h
+  src/cmrt_cross_platform.cpp)
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
+target_include_directories(cmrt_cross_platform_hw PUBLIC include)
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-set( sources.plus "" )
-file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs})
-make_library( cmrt_cross_platform hw static )
-set( defs "" )
+target_link_libraries(cmrt_cross_platform_hw PUBLIC mfx_static_lib vm)

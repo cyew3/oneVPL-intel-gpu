@@ -147,8 +147,6 @@ Ipp32s  sfb_offset_short_window_8[] = {
   128
 };
 
-#define NULL 0
-
 sSfbTableElement sfb_tables[] = {
 /*
  * sampling_frequency, #long sfb, long sfb, #Ipp16s sfb, Ipp16s sfb

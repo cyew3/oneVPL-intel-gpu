@@ -82,7 +82,7 @@ const
 wchar_t  * const IntelGFXAPIDLLName = { L"intel_gfx_api-x64_d.dll" };
 #endif
 
-#elif defined(WIN32)
+#elif defined(_WIN32)
 const
 wchar_t * const defaultDLLName[2] = {L"libmfxhw32_d.dll",
                                      L"libmfxsw32_d.dll"};

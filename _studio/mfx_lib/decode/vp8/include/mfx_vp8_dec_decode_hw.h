@@ -23,7 +23,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && defined(MFX_VA)
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 
 #include "mfx_common_int.h"
 #include "mfx_umc_alloc_wrapper.h"
@@ -271,6 +271,6 @@ private:
     UMC::Mutex              m_mGuard;
 };
 
-#endif // _MFX_VP8_DECODE_HW_H_
-#endif // MFX_ENABLE_VP8_VIDEO_DECODE_HW && MFX_VA
-/* EOF */
+#endif //MFX_ENABLE_VP8_VIDEO_DECODE
+#endif //_MFX_VP8_DECODE_HW_H_
+

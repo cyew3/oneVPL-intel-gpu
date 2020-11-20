@@ -23,8 +23,9 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW) && defined(MFX_VA)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
 
+#include "mfx_vp9_dec_decode.h"
 #include "mfx_vp9_dec_decode_utils.h"
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_task.h"
@@ -160,5 +161,5 @@ private:
     mfxI32 m_baseQIndex;
 };
 
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE
 #endif // _MFX_VP9_DECODE_HW_H_
-#endif // MFX_VA

@@ -41,7 +41,7 @@
     #include <va/va_enc_mpeg2.h>
 #endif
 
-#if defined (WIN32)
+#if defined (_WIN32)
 #pragma warning (push)
 #pragma warning (disable:4351)  // value initialization is intended and disabling this warning recommended by MS: https://msdn.microsoft.com/en-us/en-en/library/1ywe7hcy.aspx
 #endif
@@ -257,7 +257,7 @@ namespace MfxHwMpeg2Encode
 }; // namespace
 
 
-#if defined (WIN32)
+#if defined (_WIN32)
 #pragma warning (pop)
 #endif
 

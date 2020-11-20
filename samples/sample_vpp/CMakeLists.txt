@@ -1,11 +1,26 @@
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+add_executable(sample_vpp)
+set_property(TARGET sample_vpp PROPERTY FOLDER "samples")
 
-list( APPEND LIBS_VARIANT sample_common )
+target_include_directories(sample_vpp PRIVATE include)
+target_link_libraries(sample_vpp PRIVATE MFX::mfx sample_common)
 
-set(DEPENDENCIES libmfx dl pthread)
-make_executable( shortname universal "nosafestring" )
+target_sources(sample_vpp
+  PRIVATE
+    include/sample_vpp_config.h
+    include/sample_vpp_frc_adv.h
+    include/sample_vpp_frc.h
+    include/sample_vpp_pts.h
+    include/sample_vpp_roi.h
+    include/sample_vpp_utils.h
 
-install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+    src/sample_vpp_config.cpp
+    src/sample_vpp.cpp
+    src/sample_vpp_frc_adv.cpp
+    src/sample_vpp_frc.cpp
+    src/sample_vpp_parser.cpp
+    src/sample_vpp_pts.cpp
+    src/sample_vpp_roi.cpp
+    src/sample_vpp_utils.cpp
+  )
+
+install( TARGETS sample_vpp RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

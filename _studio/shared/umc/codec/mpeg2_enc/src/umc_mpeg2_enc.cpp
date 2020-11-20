@@ -45,7 +45,7 @@ static const Ipp64f ratetab[8]=
 //#pragma warning(disable:2259)
 #endif
 
-#if defined (WIN32)
+#if defined (_WIN32)
 #pragma warning (push)
 #pragma warning (disable:4351)  // value initialization is intended and disabling this warning recommended by MS: https://msdn.microsoft.com/en-us/en-en/library/1ywe7hcy.aspx
 #endif
@@ -2229,6 +2229,6 @@ Status MPEG2VideoEncoderBase::ComputeTS(VideoData *in, MediaData *out)
 #endif // UMC_ENABLE_MPEG2_VIDEO_ENCODER
 
 
-#if defined (WIN32)
+#if defined (_WIN32)
 #pragma warning (pop)
 #endif

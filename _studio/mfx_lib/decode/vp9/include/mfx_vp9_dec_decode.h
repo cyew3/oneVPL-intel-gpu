@@ -18,14 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "mfx_common.h"
-
-#include "umc_defs.h"
-
 #ifndef _MFX_VP9_DEC_DECODE_H_
 #define _MFX_VP9_DEC_DECODE_H_
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#include "mfx_common.h"
+
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
+
+#include "umc_defs.h"
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
 
@@ -38,7 +38,7 @@ namespace MFX_VP9_Utility
     void FillVideoParam(eMFXPlatform platform, UMC_VP9_DECODER::VP9DecoderFrame const& frame, mfxVideoParam &params);
 };
 
-#endif // #if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE
 
 #endif // _MFX_VP9_DEC_DECODE_H_
 

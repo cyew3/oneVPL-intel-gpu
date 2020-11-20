@@ -101,7 +101,13 @@
     #endif
 #endif
 
-#if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(MFX_DISABLE_SW_FALLBACK)
+#if defined(_WIN32) || defined(_WIN64) || (!defined(ANDROID) && !defined(MFX_DISABLE_SW_FALLBACK))
+    // mfxconfig.h is auto-generated file containing mediasdk per-component
+    // enable defines
+    #ifdef MFX_HAVE_EXTERNAL_CONFIG
+        #include "mfxconfig.h"
+    #endif
+
     #define MFX_ENABLE_KERNELS
 
     #if ((MFX_VERSION >= 1026) && (!AS_CAMERA_PLUGIN))
@@ -116,22 +122,39 @@
     #define MFX_ENABLE_MPEG2_VIDEO_DECODE
     #define MFX_ENABLE_MJPEG_VIDEO_DECODE
     #define MFX_ENABLE_H264_VIDEO_DECODE
+    #define MFX_ENABLE_VP8_VIDEO_DECODE
+    #define MFX_ENABLE_VP9_VIDEO_DECODE
+
     #if defined(MFX_VA)
         #define MFX_ENABLE_H265_VIDEO_DECODE
-        #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-        #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+        #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
+    #else
+        // explicitly turn off all codecs w/o sw fallback
+        #undef MFX_ENABLE_AV1_VIDEO_DECODE
+        #undef MFX_ENABLE_AV1_VIDEO_ENCODE
+        #undef MFX_ENABLE_VP9_VIDEO_DECODE
+        #undef MFX_ENABLE_H265_VIDEO_DECODE
+        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE 
+        #undef MFX_ENABLE_VP9_VIDEO_ENCODE 
     #endif
     #define MFX_ENABLE_VC1_VIDEO_DECODE
 
     #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
     #define MFX_ENABLE_MJPEG_VIDEO_ENCODE
     #define MFX_ENABLE_H264_VIDEO_ENCODE
-    #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
         #define MFX_ENABLE_H265_VIDEO_ENCODE
     #endif
 
+    #if defined(AS_H264LA_PLUGIN)
+       #define MFX_ENABLE_LA_H264_VIDEO_HW
+       #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+    #endif
+
     #define MFX_ENABLE_JPEG_SW_FALLBACK
+
+
+
 #elif defined(ANDROID)
     #include "mfx_android_defs.h"
 
@@ -146,7 +169,7 @@
         #define MFX_ENABLE_LA_H264_VIDEO_HW
         #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
     #else
-        #if MFX_VERSION >= 1025
+        #if (MFX_VERSION >= 1025) && defined(MFX_VA_LINUX)
             #define MFX_ENABLE_MFE
         #endif
         #define MFX_ENABLE_VPP
@@ -269,11 +292,10 @@
         #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_AV1_VIDEO_DECODE
+        #undef MFX_ENABLE_VP9_VIDEO_DECODE
         #undef MFX_ENABLE_MFE
+        #undef MFX_ENABLE_VP8_VIDEO_DECODE
         #if defined(__linux__) // for MFX_RT
-            #undef MFX_ENABLE_VP8_VIDEO_DECODE
-            #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
-            #undef MFX_ENABLE_VP9_VIDEO_DECODE_HW
             #undef MFX_ENABLE_VP9_VIDEO_ENCODE_HW
         #endif
     #endif // #if defined(AS_HEVCD_PLUGIN)
@@ -292,22 +314,12 @@
         #define MFX_ENABLE_AV1_VIDEO_ENCODE
     #endif
 
-    #if defined(AS_VP8DHW_PLUGIN)
+    #if defined(AS_VP8DHW_PLUGIN) || defined(AS_VP8D_PLUGIN)
         #define MFX_ENABLE_VP8_VIDEO_DECODE
-        #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-    #endif
-
-    #if defined(AS_VP8D_PLUGIN)
-        #define MFX_ENABLE_VP8_VIDEO_DECODE
-        #ifdef MFX_VA
-            #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-        #endif
     #endif
 
     #if defined(AS_VP9D_PLUGIN)
-        #ifdef MFX_VA
-            #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
-        #endif
+        #define MFX_ENABLE_VP9_VIDEO_DECODE
     #endif
 
     #if defined(AS_VP9E_PLUGIN)
@@ -394,11 +406,7 @@
     #endif
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) || defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-#define VP_OPERATION_TIMEOUT 120000
-#else
 #define VP_OPERATION_TIMEOUT 5000
-#endif
 
 
 #endif//#if defined(_WIN32) || defined(_WIN64)
@@ -433,7 +441,7 @@
             #define MFX_ENABLE_AVCE_VDENC_B_FRAMES
         #endif
         #if (MFX_VERSION >= MFX_VERSION_NEXT)
-            #ifdef _WIN32
+            #ifdef MFX_VA_WIN
                 #define MFX_ENABLE_AVC_CUSTOM_QMATRIX
                 #define MFX_ENABLE_GPU_BASED_SYNC
             #endif
@@ -456,7 +464,7 @@
         #define MFX_ENABLE_HEVCE_HDR_SEI
         #if (MFX_VERSION >= MFX_VERSION_NEXT)
             #define MFX_ENABLE_HEVCE_UNITS_INFO
-            #ifdef _WIN32
+            #ifdef MFX_VA_WIN
                 #define MFX_ENABLE_HEVC_CUSTOM_QMATRIX
             #endif
         #endif
@@ -467,23 +475,60 @@
 #endif
 
 #ifdef MFX_DISABLE_SW_FALLBACK
-#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
-    #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-#endif
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
-#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
-#endif
+    #define MFX_PROTECTED_FEATURE_DISABLE
+//    #define VP_OPERATION_TIMEOUT 5000
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
-#define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-#endif
-#endif // #ifdef MFX_DISABLE_SW_FALLBACK
+    #if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
+        #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
+    #endif
+
+    #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
+        #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+#endif //  MFX_DISABLE_SW_FALLBACK
+
+    #if defined(MFX_VA_WIN)
+        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+    
+        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
+        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D
+        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
+
+        #if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_MPEG2D) || \
+            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D)  || \
+            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VC1D)   || \
+            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD)  || \
+            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)   || \
+            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D)  || \
+            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
+
+            #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+        #endif
+    #endif
+
+    #if defined (MFX_VA_LINUX)
+        #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
+        #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+    #endif
+
+#endif // #if defined(OPEN_SOURCE)
 
 #if defined(MFX_ENABLE_VPP)
     #define MFX_ENABLE_VPP_COMPOSITION
     #define MFX_ENABLE_VPP_ROTATION
     #define MFX_ENABLE_VPP_VIDEO_SIGNAL
+
+    #if defined(OPEN_SOURCE)
+        #define MFX_ENABLE_DENOISE_VIDEO_VPP
+        #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
+        #define MFX_ENABLE_MJPEG_ROTATE_VPP
+        #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
+        #define MFX_ENABLE_HW_ONLY_VPP
+        #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
+    #endif
+
     #if MFX_VERSION >= MFX_VERSION_NEXT
         #define MFX_ENABLE_VPP_RUNTIME_HSBC
     #endif

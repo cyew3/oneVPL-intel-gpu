@@ -31,6 +31,10 @@
 
 //#define SVC_DUMP_RECON
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4996)
+#endif
+
 // #include "talx.h"
 
 #include "umc_defs.h"

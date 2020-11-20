@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX) && defined(MFX_ENABLE_HEVCE_SCC)
 
 #include "hevcehw_g12_scc.h"
 #include "hevcehw_base_ddi_packer_win.h"

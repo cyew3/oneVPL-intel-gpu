@@ -17,6 +17,8 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
+#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT) || defined(LIBVA_WAYLAND_SUPPORT)
+
 #include "pipeline_fei.h"
 #include "version.h"
 #include <thread>
@@ -1543,3 +1545,5 @@ mfxStatus CheckDRCParams(AppConfig* pConfig)
 
     return MFX_ERR_NONE;
 }
+
+#endif

@@ -182,7 +182,7 @@ mfxStatus CARGB16VideoReader::Init(sInputParams* pParams)
 {
     Close();
 
-#if defined (WIN32) || defined(WIN64)
+#if defined (_WIN32) || defined(_WIN64)
     WIN32_FILE_ATTRIBUTE_DATA ffi;
     if ( GetFileAttributesEx(pParams->strSrcFile, GetFileExInfoStandard, &ffi) )
     {
@@ -426,7 +426,7 @@ mfxStatus CRawVideoReader::Init(sInputParams* pParams)
 {
     Close();
 
-#if defined (WIN32) || defined(WIN64)
+#if defined (_WIN32) || defined(_WIN64)
     WIN32_FILE_ATTRIBUTE_DATA ffi;
     if ( GetFileAttributesEx(pParams->strSrcFile, GetFileExInfoStandard, &ffi) )
     {

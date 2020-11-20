@@ -29,6 +29,11 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4661)
+#endif
+
 namespace H265Enc {
 
 const Ipp8u h265_basicAvailMask32[(64/32)*(64/32)] = {

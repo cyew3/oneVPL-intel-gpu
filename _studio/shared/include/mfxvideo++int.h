@@ -34,6 +34,10 @@
 #include "mfxplugin.h"
 #include "mfxprivate.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable:26812)
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <guiddef.h>
@@ -595,5 +599,9 @@ public:
 
     virtual void GetPlugin(mfxPlugin& plugin) = 0;
 };
+
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 
 #endif // __MFXVIDEOPLUSPLUS_INTERNAL_H

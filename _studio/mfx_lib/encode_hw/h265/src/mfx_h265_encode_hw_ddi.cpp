@@ -99,7 +99,7 @@ DriverEncoder* CreatePlatformH265Encoder(VideoCORE* core, ENCODER_TYPE type)
     return nullptr;
 }
 
-#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
 #if defined(MFX_VA_WIN)
 MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core)
 {
@@ -151,9 +151,7 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
     caps.ddi_caps.TUSupport               = 73; // 1,
     caps.ddi_caps.SliceStructure          = 4;
     caps.ddi_caps.BRCReset                = 1;  // = 0 on Win (no bitrate resolution control); to clarify!!!
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     caps.ddi_caps.HRDConformanceSupport   = platform >= MFX_HW_TGL_LP ? 1 : 0;
-#endif
     // Below caps are correct on Windows
     if (!caps.ddi_caps.BitDepth8Only && !caps.ddi_caps.MaxEncodedBitDepth)
         caps.ddi_caps.MaxEncodedBitDepth = 1;    // 8/10b
@@ -167,7 +165,7 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
     if (!caps.ddi_caps.Color420Only && !(caps.ddi_caps.YUV422ReconSupport) &&
         IsOff(par.mfx.LowPower) && (platform >= MFX_HW_TGL_LP))
         caps.ddi_caps.YUV422ReconSupport = 1;    // Win VME is not fixed yet
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if !defined(STRIP_EMBARGO) && !defined(STRIP_EMBARGO)
     if (platform >= MFX_HW_ATS && IsOn(par.mfx.LowPower))
     {
         // For now the driver reports in caps 8 pipes for ATS while in fact there are 2
@@ -176,7 +174,7 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
         if (caps.ddi_caps.NumScalablePipesMinus1 > 1)
             caps.ddi_caps.NumScalablePipesMinus1 = 1;
     }
-#endif // defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#endif
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -1241,12 +1239,14 @@ void FillPpsBuffer(
     }
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtAVCEncoderWiDiUsage* extWiDi = ExtBuffer::Get(task.m_ctrl);
 
     if (extWiDi)
         pps.InputType = eType_DRM_SECURE;
     else
         pps.InputType = eType_DRM_NONE;
+#endif
     pps.nal_unit_type = task.m_shNUT;
 }
 

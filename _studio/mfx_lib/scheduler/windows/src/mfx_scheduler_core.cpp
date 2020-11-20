@@ -128,7 +128,7 @@ void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
     // because Linux scheduler ensures socket affinity by itself
 #if defined(_WIN32_WCE)
     return;
-#elif (defined(WIN32) || defined(WIN64))/* && !defined(MFX_VA)*/
+#elif (defined(_WIN32) || defined(_WIN64))/* && !defined(MFX_VA)*/
 
     mfxU64 cpuMasks[16], mask;
     mfxU32 numNodeCpus[16];

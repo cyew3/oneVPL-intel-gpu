@@ -447,9 +447,9 @@ void PipelineBuildTime( const vm_char *&platformName
                       , int &minute
                       , int &sec)
 {
-#if defined (WIN64)
+#if defined (_WIN64)
     static const vm_char platform []= VM_STRING("win64");
-#elif defined (WIN32)
+#elif defined (_WIN32)
     static const vm_char platform []= VM_STRING("win32");
 #elif defined (LINUX64)
     static const vm_char platform []= VM_STRING("linux64");

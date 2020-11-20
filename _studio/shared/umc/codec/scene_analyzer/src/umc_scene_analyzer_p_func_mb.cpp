@@ -157,7 +157,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const uint8_t *pRef, int32_t refStep,
         }
         catch(...)
         {
-#if defined(WIN32) && !defined(WIN64)
+#if defined(_WIN32) && !defined(_WIN64)
             __asm int 3;
 #endif
         }

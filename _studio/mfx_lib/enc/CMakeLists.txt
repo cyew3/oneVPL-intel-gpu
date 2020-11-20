@@ -1,21 +1,26 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
-list( APPEND vdirs
-  h264 mpeg2
+add_library(enc STATIC)
+set_property(TARGET enc PROPERTY FOLDER "sw_fallback")
+
+target_include_directories(enc
+  PUBLIC
+    mpeg2/include
+    h264/include
+    ${MSDK_UMC_ROOT}/codec/mpeg2_enc/include
   )
-mfx_include_dirs( )
-foreach( dir ${vdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
-endforeach()
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/mpeg2_enc/include )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-set( sources.plus "" )
-foreach( dir ${vdirs} )
-  file( GLOB_RECURSE srcs "${dir}/src/*.c" "${dir}/src/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
+target_sources(enc
+  PRIVATE
+    h264/include/mfx_h264_enc_enc.h
+    h264/src/mfx_h264_enc_enc.cpp
 
-make_library( enc none static )
-set( defs "" )
+    mpeg2/include/mfx_mpeg2_enc_defs.h
+    mpeg2/include/mfx_mpeg2_enc.h
+    mpeg2/include/mfx_mpeg2_enc_me.h
+    mpeg2/src/mfx_mpeg2_enc.cpp
+    mpeg2/src/mfx_mpeg2_enc_me.cpp
+  )
+
+target_link_libraries(enc PRIVATE mfx_static_lib)
+
+include(sources_ext.cmake OPTIONAL)

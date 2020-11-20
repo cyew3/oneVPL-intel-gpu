@@ -1,11 +1,29 @@
-mfx_include_dirs( )
+add_library(jpeg_common STATIC)
 
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(jpeg_common
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-set( sources "" )
-file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs})
+target_sources(jpeg_common
+  PRIVATE
+    include/basestream.h
+    include/basestreamin.h
+    include/basestreamout.h
+    include/bitstreamin.h
+    include/bitstreamout.h
+    include/colorcomp.h
+    include/jpegbase.h
+    include/membuffin.h
+    include/membuffout.h
+    src/bitstreamin.cpp
+    src/bitstreamout.cpp
+    src/colorcomp.cpp
+    src/jpegbase.cpp
+    src/membuffin.cpp
+    src/membuffout.cpp
+)
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-make_library( jpeg_common none static )
-set( defs "" )
+target_link_libraries(jpeg_common PUBLIC mfx_static_lib umc_va_hw)
+
+set_property(TARGET jpeg_common PROPERTY FOLDER "umc")

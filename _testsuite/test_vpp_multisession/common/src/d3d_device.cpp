@@ -4,11 +4,11 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
 //prefast singnature used in combaseapi.h
 #ifndef _PREFAST_
@@ -18,6 +18,7 @@ Copyright(c) 2011 - 2013 Intel Corporation. All Rights Reserved.
 #include "d3d_device.h"
 #include "sample_defs.h"
 #include "igfx_s3dcontrol.h"
+#include <algorithm>
 
 CD3D9Device::CD3D9Device()
 {
@@ -329,8 +330,8 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
                (m_targetRect.right - m_targetRect.left > (LONG)m_backBufferDesc.Width || 
                 m_targetRect.bottom - m_targetRect.top > (LONG)m_backBufferDesc.Height))
             {
-                m_targetRect.right = min(m_targetRect.right, m_targetRect.left + (LONG)m_backBufferDesc.Width);
-                m_targetRect.bottom = min(m_targetRect.bottom, m_targetRect.top + (LONG)m_backBufferDesc.Height);
+                m_targetRect.right = std::min(m_targetRect.right, m_targetRect.left + (LONG)m_backBufferDesc.Width);
+                m_targetRect.bottom = std::min(m_targetRect.bottom, m_targetRect.top + (LONG)m_backBufferDesc.Height);
             }
         }
 
@@ -456,4 +457,4 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
    return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;   
 }
 
-#endif // #if defined(WIN32) || defined(WIN64)
+#endif // #if defined(_WIN32) || defined(_WIN64)

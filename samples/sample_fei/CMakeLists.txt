@@ -1,17 +1,42 @@
+
 find_path( FEI_INCLUDE mfxfei.h PATHS ${MFX_INCLUDE} )
 
 if(FEI_INCLUDE MATCHES NOTFOUND)
-  set(skipping _force_skipping)
+  message (STATUS "mfxfei.h was not found, the following will not be built: sample_fei.")
+  return()
 endif()
 
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+add_executable(sample_fei)
+set_property(TARGET sample_fei PROPERTY FOLDER "samples")
 
-list( APPEND LIBS_VARIANT sample_common )
+target_include_directories(sample_fei PUBLIC include)
+target_link_libraries(sample_fei PRIVATE MFX::mfx sample_common)
 
-set(DEPENDENCIES ${skipping} itt libmfx dl pthread)
-make_executable( shortname universal "nosafestring" )
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+  target_compile_definitions(sample_fei PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)
+endif()
 
-install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+target_sources(sample_fei
+  PRIVATE
+    include/auxiliary_interfaces.h
+    include/encoding_task.h
+    include/encoding_task_pool.h
+    include/fei_encode.h
+    include/fei_encpak.h
+    include/fei_preenc.h
+    include/pipeline_fei.h
+    include/predictors_repacking.h
+    include/refListsManagement_fei.h
+    include/sample_fei_defs.h
+    
+    src/auxiliary_interfaces.cpp
+    src/fei_encode.cpp
+    src/fei_encpak.cpp
+    src/fei_preenc.cpp
+    src/fei_streamout_pak_repacking.cpp
+    src/pipeline_fei.cpp
+    src/refListsManagement_fei.cpp
+    src/sample_fei.cpp   
+  )
+
+install( TARGETS sample_fei RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

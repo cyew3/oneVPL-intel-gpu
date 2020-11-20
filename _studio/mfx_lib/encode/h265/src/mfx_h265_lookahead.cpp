@@ -40,6 +40,13 @@
 #include <vector>
 #endif
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4305)
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4554)
+#endif
+
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)
     #pragma warning (disable:1478)
@@ -1238,7 +1245,7 @@ enum {
 template <class PixType>
 void CalcRsCs_OneRow(FrameData* data, Statistics* stat, H265VideoParam& par, Ipp32s row)
 {
-    Ipp32s locx, locy;
+    Ipp32s locx = 0, locy = 0;
 
     const Ipp32s RsCsSIZE = BLOCK_SIZE*BLOCK_SIZE;
     Ipp32s hblocks = (Ipp32s)data->height / BLOCK_SIZE;

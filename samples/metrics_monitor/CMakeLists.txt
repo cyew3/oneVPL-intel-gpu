@@ -1,66 +1,92 @@
 # metrics_monitor library
 
-if( PKG_LIBDRM_FOUND AND
-   (${PKG_LIBDRM_VERSION} VERSION_GREATER 2.4.91))
+pkg_check_modules(PKG_LIBDRM REQUIRED libdrm>=2.4.91 IMPORTED_TARGET)
 
-    include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include/)
+# ================================= cttmetrics =============================================
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include/)
 
-    set( sources "" )
+set(sources 
+    include/cttmetrics.h
+    include/cttmetrics_utils.h
 
-    file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
-    list( APPEND sources ${srcs})
+    src/cttmetrics.cpp
+    src/cttmetrics_i915_custom.cpp
+    src/cttmetrics_i915_pmu.cpp
+    src/cttmetrics_utils.cpp
+    )
 
-    set(DEPENDENCIES libdrm )
+file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
+list( APPEND sources ${srcs})
 
-    make_library( cttmetrics none shared "nosafestring" )
-    make_library( cttmetrics_static none static "nosafestring" )
+set(DEPENDENCIES libdrm )
 
-    install( TARGETS cttmetrics LIBRARY DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+add_library(cttmetrics SHARED ${sources})
+set_property(TARGET cttmetrics PROPERTY FOLDER "samples")
 
-    # metrics_monitor sample
+target_include_directories(cttmetrics PUBLIC include )
+target_link_libraries(cttmetrics PRIVATE PkgConfig::PKG_LIBDRM)
 
-    set( sources "" )
+target_compile_definitions(cttmetrics PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)
 
-    file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/sample/*.cpp" )
-    list( APPEND sources ${srcs})
-    list( APPEND LIBS cttmetrics)
+# ================================= cttmetrics_static =============================================
+add_library(cttmetrics_static STATIC ${sources})
+set_property(TARGET cttmetrics_static PROPERTY FOLDER "samples")
 
-    make_executable( metrics_monitor none "nosafestring" )
+target_include_directories(cttmetrics_static PUBLIC include)
+target_link_libraries(cttmetrics_static PUBLIC PkgConfig::PKG_LIBDRM)
 
-    install( TARGETS metrics_monitor RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+install( TARGETS cttmetrics LIBRARY DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
 
-    # test_monitor
+target_compile_definitions(cttmetrics_static PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)
 
-    pkg_check_modules(PKG_PCIACCESS pciaccess)
+# ================================= cttmetrics_static =============================================
+# metrics_monitor sample
 
-    if( PKG_PCIACCESS_FOUND AND
-        BUILD_TESTS)
+set(sources
+    sample/cttmetrics_sample.cpp)
 
-        file( GLOB_RECURSE test_srcs "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/test/*.c" )
+file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/sample/*.cpp" )
 
-        add_executable( test_monitor ${test_srcs})
-        target_include_directories( test_monitor PRIVATE ./include ${PKG_LIBDRM_INCLUDE_DIRS})
-        target_link_libraries( test_monitor pthread rt gtest cttmetrics ${PKG_LIBDRM_LIBRARIES})
+add_executable(metrics_monitor ${sources})
+set_property(TARGET metrics_monitor PROPERTY FOLDER "samples")
 
-        set_target_properties(test_monitor PROPERTIES
+target_link_libraries(metrics_monitor PUBLIC cttmetrics)
+
+target_compile_definitions(metrics_monitor PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)
+
+install( TARGETS metrics_monitor RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+
+# test_monitor
+
+pkg_check_modules(PKG_PCIACCESS pciaccess)
+
+# ================================= test_monitor =============================================
+
+if( PKG_PCIACCESS_FOUND AND
+    BUILD_TESTS)
+
+    set(test_srcs
+        test/device_info.h
+        test/i915_pciids.h
+        test/igt_load.c
+        test/igt_load.h
+        test/cttmetrics_gtest.cpp
+        test/device_info.c
+    )
+
+    add_executable( test_monitor ${test_srcs})
+    set_property(TARGET test_monitor PROPERTY FOLDER "samples")
+
+    target_include_directories( test_monitor PRIVATE ./include)
+    target_link_libraries( test_monitor PRIVATE pthread rt gtest cttmetrics PkgConfig::PKG_LIBDRM)
+
+    set_target_properties(test_monitor PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
-
-    else()
-
-        if( NOT PKG_PCIACCESS_FOUND )
-            message( STATUS "pciaccess was not found (optional), the following will not be built: test_monitor." )
-        endif()
-
-    endif()
-
 else()
 
-    if( NOT PKG_LIBDRM_FOUND )
-        message( STATUS "libdrm was not found, the following will not be built: metrics_monitor, test_monitor." )
-    endif()
-
-    if( NOT ${PKG_LIBDRM_VERSION} VERSION_GREATER 2.4.91 )
-        message( STATUS "libdrm version older than 2.4.92, the following will not be built: metrics_monitor, test_monitor." )
+    if( NOT PKG_PCIACCESS_FOUND )
+        message( STATUS "pciaccess was not found (optional), the following will not be built: test_monitor." )
     endif()
 
 endif()
+

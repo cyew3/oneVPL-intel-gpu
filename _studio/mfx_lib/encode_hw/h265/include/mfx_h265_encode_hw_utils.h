@@ -402,7 +402,7 @@ struct Task : DpbFrame
 
     mfxU16            m_SkipMode                      = 0;
 
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     mfxU32             m_mfeTimeToWait                 = 0;
     bool               m_flushMfe                      = false;
 #ifdef MFX_VA_WIN
@@ -490,7 +490,7 @@ namespace ExtBuffer
          MFX_EXTBUFF_MBQP,
          MFX_EXTBUFF_ENCODER_ROI,
          MFX_EXTBUFF_DIRTY_RECTANGLES,
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
          MFX_EXTBUFF_MULTI_FRAME_PARAM,
          MFX_EXTBUFF_MULTI_FRAME_CONTROL,
 #endif
@@ -556,7 +556,7 @@ namespace ExtBuffer
 #endif
         EXTBUF(mfxExtAVCEncodedFrameInfo, MFX_EXTBUFF_ENCODED_FRAME_INFO);
 
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
         EXTBUF(mfxExtMultiFrameParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
         EXTBUF(mfxExtMultiFrameControl, MFX_EXTBUFF_MULTI_FRAME_CONTROL);
 #endif
@@ -907,7 +907,7 @@ public:
 #if !defined(MFX_EXT_BRC_DISABLE)
         mfxExtBRC                   extBRC;
 #endif
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
         mfxExtMultiFrameParam       mfeParam;
         mfxExtMultiFrameControl     mfeControl;
 #endif

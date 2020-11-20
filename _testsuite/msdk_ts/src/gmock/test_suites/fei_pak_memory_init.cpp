@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ts_pak.h"
 #include "ts_struct.h"
+#include "sample_defs.h"
 
 namespace fei_pak_memory_init
 {

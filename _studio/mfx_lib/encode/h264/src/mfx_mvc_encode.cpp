@@ -89,6 +89,10 @@
 #endif
 //////////////////////////////////////////////////////////////////////////
 
+#ifdef _MSVC_LANG
+#pragma warning(disable:4996)
+#endif
+
 #define CHECK_OPTION(input, output, corcnt) \
   if ( input != MFX_CODINGOPTION_OFF &&     \
       input != MFX_CODINGOPTION_ON  &&      \

@@ -497,6 +497,7 @@ namespace MfxHwH264Encode
         return lhs == rhs;
     }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     struct mfxExtSpsSvcHeader
     {
         mfxExtBuffer Header;
@@ -515,6 +516,7 @@ namespace MfxHwH264Encode
         mfxU8   adaptiveTcoeffLevelPredictionFlag;
         mfxU8   sliceHeaderRestrictionFlag;
     };
+#endif
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     struct mfxExtSpecialEncodingModes
@@ -1561,7 +1563,7 @@ namespace MfxHwH264Encode
 
     inline mfxStatus Error(mfxStatus sts)
     {
-#if defined(_DEBUG) && defined(WIN32)
+#if defined(_DEBUG) && defined(_WIN32)
         //__asm { int 3 }
 #endif // _DEBUG
         return sts;

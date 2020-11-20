@@ -203,7 +203,7 @@ namespace hevce_qp_report
 
     void TestSuite::check_qp_msg(Bs32s expected, Bs32s reported, const char* msg)
     {
-#if defined (WIN32)||(WIN64)
+#if defined (_WIN32)||(_WIN64)
         if ((m_impl & MFX_IMPL_HARDWARE) && (m_impl & MFX_IMPL_VIA_D3D11)) {
             EXPECT_EQ(expected, reported) << msg;
         }

@@ -1,11 +1,43 @@
-mfx_include_dirs( )
+# Copyright (c) 2020 Intel Corporation
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_library(color_space_converter STATIC)
+set_property(TARGET color_space_converter PROPERTY FOLDER "umc")
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs})
-make_library( color_space_converter sw static )
-make_library( color_space_converter hw static )
-set( defs "" )
+target_sources(color_space_converter
+  PRIVATE
+    include/umc_color_space_conversion.h
+    include/umc_data_pointers_copy.h
+    include/umc_deinterlacing.h
+    include/umc_video_processing.h
+    include/umc_video_resizing.h
+
+    src/umc_color_space_conversion.cpp
+    src/umc_deinterlacing.cpp
+    src/umc_video_processing.cpp
+    src/umc_video_resizing.cpp
+  )
+
+target_include_directories(color_space_converter
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+  )
+
+target_link_libraries(color_space_converter PUBLIC vm_plus)

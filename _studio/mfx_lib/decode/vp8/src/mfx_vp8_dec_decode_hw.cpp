@@ -32,7 +32,7 @@
 #include "mfx_common.h"
 #include "mfxvideo++int.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && (defined(MFX_VA_WIN) || defined(MFX_VA))
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 
 #include "mfx_session.h"
 #include "mfx_common_decode_int.h"
@@ -1536,4 +1536,4 @@ const int MFX_VP8_BoolDecoder::range_normalization_shift[64] =
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-#endif
+#endif //MFX_ENABLE_VP8_VIDEO_DECODE

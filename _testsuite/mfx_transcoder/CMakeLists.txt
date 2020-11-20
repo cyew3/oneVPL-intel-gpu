@@ -1,80 +1,138 @@
-mfx_include_dirs( )
+if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR MFX_DISABLE_SW_FALLBACK)
+  return()
+endif()
 
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_player/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
-  ${MSDK_SAMPLES_ROOT}/deprecated/sample_spl_mux/api
-#  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
+
+set(common_sources
+  include/mfx_encode_decode_quality.h
+  include/mfx_encode_pipeline_config.h
+  include/mfx_encode_query_mod4.h
+  include/mfx_encoded_frame_info_encoder.h
+  include/mfx_encodeorder_encode.h
+  include/mfx_encoder_protected.h
+  include/mfx_encoder_wrap.h
+  include/mfx_factory_transcode.h
+  include/mfx_field_output_encode.h
+  include/mfx_frame_reorderer.h
+  include/mfx_ip_field_pair_disable_encoder.h
+  include/mfx_jpeg_encode_wrap.h
+  include/mfx_latency_encode.h
+  include/mfx_per_frame_ext_buf_encode.h
+  include/mfx_pipeline_transcode.h
+  include/mfx_protected_transcoding_pipeline.h
+  include/mfx_ref_list_control_encode.h
+  include/mfx_ref_list_control_encoded_order.h
+
+  src/mfx_encode_decode_quality.cpp
+  src/mfx_encode_pipeline_config.cpp
+  src/mfx_encode_wrap.cpp
+  src/mfx_encoder_protected.cpp
+  src/mfx_factory_transcode.cpp
+  src/mfx_frame_reorderer.cpp
+  src/mfx_latency_encode.cpp
+  src/mfx_pipeline_transcode.cpp
+  src/mfx_protected_transcoding_pipeline.cpp
+  src/mfx_ref_list_control_encode.cpp
+  src/mfx_ref_list_control_encoded_order.cpp
 )
 
-# =============================================================================
+add_library(mfx_trans_pipeline STATIC ${common_sources})
 
-set( defs "" )
-set( sources "" )
-set( sources.plus "" )
-file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
-list( APPEND sources ${srcs})
-
-list( REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp)
-
-set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
-make_library( mfx_trans_pipeline universal static )
-
-set( defs "-DMFX_VERSION_USE_LATEST -DLUCAS_DLL ${WARNING_FLAGS}" )
-make_library( mfx_trans_pipeline_lucas universal static )
-
-# =============================================================================
-
-set( defs "" )
-set( sources "" )
-set( sources.plus "" )
-list( APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp
+target_include_directories(mfx_trans_pipeline
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
 )
 
-set( LIBS "" )
-list( APPEND LIBS
-    mfx_trans_pipeline
+target_link_libraries(mfx_trans_pipeline
+  PUBLIC
+    mfx_static_lib
     mfx_pipeline
-#        vpp_plugin
-    shared_utils
-#        sample_common
-    umc_splmux_merged
-    media_buffers
-    umc_io
-    umc
-    vm
-    vm_plus
-    mfx_trace
-    ${ITT_LIBRARIES}
-    mfx
-    sample_spl_mux_dispatcher
-    ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-    pthread dl
+    IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
 )
-set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
-make_executable( mfx_transcoder universal static )
 
-set( defs "-DMFX_VERSION_USE_LATEST -DLUCAS_DLL ${WARNING_FLAGS}" )
-set( LIBS "" )
-list( APPEND LIBS
-    mfx_trans_pipeline_lucas
+target_compile_definitions(mfx_trans_pipeline
+  PRIVATE
+    MFX_VERSION_USE_LATEST
+)
+
+add_library(mfx_trans_pipeline_lucas STATIC ${common_sources})
+
+target_include_directories(mfx_trans_pipeline_lucas
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+)
+
+target_link_libraries(mfx_trans_pipeline_lucas
+  PUBLIC
+    mfx_static_lib
     mfx_pipeline_lucas
-#        vpp_plugin
-    shared_utils_lucas
-#        sample_common_${variant}
-    umc_splmux_merged
-    media_buffers
-    umc_io
+    IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
+)
+
+target_compile_definitions(mfx_trans_pipeline_lucas
+  PRIVATE
+    MFX_VERSION_USE_LATES
+    LUCAS_DLL
+)
+
+set_property(TARGET mfx_trans_pipeline mfx_trans_pipeline_lucas PROPERTY FOLDER "testsuite")
+
+add_executable(mfx_transcoder)
+
+target_sources(mfx_transcoder
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp
+)
+
+target_link_libraries(mfx_transcoder
+  PUBLIC
+    mfx_trans_pipeline
+    mfx_shared_lib
+    shared_utils
     umc
     vm
     vm_plus
     mfx_trace
+    IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
     ${ITT_LIBRARIES}
-    mfx
-    sample_spl_mux_dispatcher
-    ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-    pthread dl
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
 )
-make_library( mfx_transcoder_lucas universal shared )
+
+target_compile_definitions(mfx_transcoder
+  PRIVATE
+    MFX_VERSION_USE_LATEST
+)
+
+
+add_library(mfx_transcoder_lucas SHARED)
+
+target_sources(mfx_transcoder_lucas
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp
+)
+
+target_link_libraries(mfx_transcoder_lucas
+  PUBLIC
+    mfx_trans_pipeline_lucas
+    mfx_shared_lib
+    shared_utils_lucas
+    umc
+    vm
+    vm_plus
+    mfx_trace
+    IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
+    ${ITT_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
+)
+
+target_compile_definitions(mfx_transcoder_lucas
+  PRIVATE
+    MFX_VERSION_USE_LATEST
+    LUCAS_DLL
+)
+
+set_property(TARGET mfx_transcoder mfx_transcoder_lucas PROPERTY FOLDER "testsuite")

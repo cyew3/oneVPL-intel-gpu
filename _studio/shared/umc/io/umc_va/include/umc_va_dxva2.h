@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <atlbase.h>
+#include <sdkddkver.h>
 
 #include "umc_jpeg_ddi.h"
 #include "umc_svc_ddi.h"
@@ -88,9 +89,11 @@ DEFINE_GUID(DXVA_Intel_ModeAV1_VLD,
 DEFINE_GUID(DXVA_Intel_ModeAV1_VLD_420_10b,
     0xf9a16190, 0x3fb4, 0x4dc5, 0x98, 0x46, 0xc8, 0x75, 0x1f, 0x83, 0xd6, 0xd7);
 
+#if !defined(NTDDI_WIN10_FE) || (WDK_NTDDI_VERSION < NTDDI_WIN10_FE)
 // {B8BE4CCB-CF53-46BA-8D59-D6B8A6DA5D2A}
 DEFINE_GUID(DXVA_ModeAV1_VLD_Profile0,
     0xb8be4ccb, 0xcf53, 0x46ba, 0x8d, 0x59, 0xd6, 0xb8, 0xa6, 0xda, 0x5d, 0x2a);
+#endif
 #endif
 
 // {1D5C4D76-B55A-4430-904C-3383A7AE3B16}

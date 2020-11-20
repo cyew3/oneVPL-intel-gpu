@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if defined(MFX_VA_WIN)
+
 #pragma once
 #include "ehw_device.h"
 #include "auxiliary_device.h"
@@ -60,3 +62,4 @@ protected:
 };
 
 } //namespace MfxEncodeHW
+#endif //defined(MFX_VA_WIN)

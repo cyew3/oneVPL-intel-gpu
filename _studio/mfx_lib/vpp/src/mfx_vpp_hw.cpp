@@ -4452,7 +4452,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         m_executeParams.bFMDEnable = false;
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if !defined(STRIP_EMBARGO)
     if ((imfxFPMode - 1 == FIELD2TFF || imfxFPMode - 1 == FIELD2BFF) && m_pCore->GetHWType() >= MFX_HW_TGL_HP)
     {
         m_executeParams.bFieldWeavingExt = true;
@@ -6557,7 +6557,7 @@ mfxStatus ConfigureExecuteParams(
         }
     }
 
-#if defined(WIN64) || defined (WIN32)
+#if defined(_WIN64) || defined (_WIN32)
     if ( (0 == memcmp(&videoParam.vpp.In, &videoParam.vpp.Out, sizeof(mfxFrameInfo))) &&
          executeParams.IsDoNothing() )
     {

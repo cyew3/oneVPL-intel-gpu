@@ -1,20 +1,5 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
-
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-
-list( APPEND cdirs
-  scene_analyzer
-  )
-mfx_include_dirs( )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
-endforeach( )
 
 #==============MCTF========================================================
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mctf_package/mctf/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
 
 set(sources
     src/mfx_denoise_vpp.cpp
@@ -32,41 +17,20 @@ set(sources
     src/mfx_vpp_jpeg_d3d9.cpp
     )
 
-if(NOT MFX_DISABLE_SW_FALLBACK)
-  list(APPEND sources
-    src/mfx_color_space_conversion_vpp_avx2.cpp
-    src/mfx_color_space_conversion_vpp.cpp
-    src/mfx_color_space_conversion_vpp_sse.cpp
-    src/mfx_deinterlace_vpp.cpp
-    src/mfx_gamut_compression_vpp_config.cpp
-    src/mfx_gamut_compression_vpp.cpp
-    src/mfx_image_stabilization_vpp.cpp
-    src/mfx_range_map_vc1_vpp.cpp
-    src/mfx_resize_vpp.cpp
-    src/mfx_shift_vpp.cpp
-    src/mfx_video_analysis_vpp.cpp
-    src/mfx_video_signal_conversion_vpp.cpp
-    src/mfx_vpp_svc.cpp
-    src/mfx_vpp_sw_threading.cpp
-    src/vme/meforgen7_5_avs.cpp
-    src/vme/meforgen7_5_bme.cpp
-    src/vme/meforgen7_5.cpp
-    src/vme/meforgen7_5_fme.cpp
-    src/vme/meforgen7_5_ime.cpp
-    src/vme/meforgen7_5_intra.cpp
-    src/vme/meforgen7_5_sad.cpp
-    src/vme/videovme.cpp
-    )
-  make_library( vpp sw static )
-endif()
+add_library(vpp_hw STATIC ${sources})
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/field_copy/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/asc/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/copy_kernels/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmut )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/include )
+target_compile_definitions(vpp_hw PRIVATE MFX_VA)
 
-make_library( vpp hw static )
-set( defs "" )
+target_include_directories(vpp_hw
+  PUBLIC
+    include)
+
+target_link_libraries(vpp_hw
+  PUBLIC
+    mfx_static_lib umc_va_hw cmrt_cross_platform_hw asc mctf_hw
+  PRIVATE
+    genx
+    IPP::core
+  )
+
+include(sources_ext.cmake OPTIONAL)

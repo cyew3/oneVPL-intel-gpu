@@ -2,21 +2,21 @@ if(OPEN_SOURCE)
   return()
 endif()
 
-mfx_include_dirs( )
-
 set(sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/aenc/src/aenc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/aenc/src/av1_asc_agop_tree.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/aenc/src/av1_asc_tree.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/aenc/src/av1_asc.cpp
+    aenc/src/aenc.cpp
+    aenc/src/av1_asc_agop_tree.cpp
+    aenc/src/av1_asc_tree.cpp
+    aenc/src/av1_asc.cpp
+    aenc/include/aenc.h
+    aenc/include/aenc++.h
+    aenc/include/av1_scd.h
 )
-set( sources.plus "" )
 
-set( defs "${WARNING_FLAGS}" )
-
-make_library(aenc none static)
+add_library(aenc STATIC ${sources})
 
 target_include_directories(aenc
   PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    aenc/include
 )
+
+target_link_libraries(aenc PRIVATE mfx_static_lib)

@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@
  */
 #ifndef VM_FILE_UNIX_H
 #  define VM_FILE_UNIX_H
+
+#if defined(__linux__)
 #  include <stdio.h>
 #  include <stdarg.h>
 #  include <sys/types.h>
@@ -74,6 +76,6 @@ typedef DIR vm_dir;
 # define vm_file_tmpnam       tmpnam
 # define vm_file_tmpnam_r     tmpnam_r
 # define vm_file_tempnam      tempnam
-
+#endif // __linux__
 #endif //VM_FILE_UNIX_H
 

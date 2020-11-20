@@ -88,7 +88,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*11*/ MFX_ERR_NONE, 1,
             {MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO}
     },
-#if defined (WIN32) || (WIN64)
+#if defined (_WIN32) || (_WIN64)
     {/*12*/ MFX_ERR_NONE, 1,
             { MFX_EXTBUFF_VPP_COLOR_CONVERSION }
     },

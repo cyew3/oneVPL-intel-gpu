@@ -45,6 +45,10 @@ namespace MfxHwH264Encode
 {
     class OutputBitstream;
 
+#if defined(MFX_PROTECTED_FEATURE_DISABLE)
+    struct mfxExtPAVPOption;
+#endif
+
 
     class D3D11Encoder : public D3DXCommonEncoder
     {

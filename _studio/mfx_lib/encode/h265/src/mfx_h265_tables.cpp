@@ -26,6 +26,10 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_tables.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4305)
+#endif
+
 namespace H265Enc {
 
 const Ipp8u h265_type2idx[4] = { 0, 1, 1, 2 };

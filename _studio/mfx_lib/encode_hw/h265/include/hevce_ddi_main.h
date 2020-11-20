@@ -138,7 +138,7 @@ struct MFX_ENCODE_CAPS_HEVC
     bool PSliceSupport;
 };
 
-#if !defined(OPEN_SOURCE)
+#if defined(MFX_VA_WIN)
 typedef struct tagFRAMERATE
 {
     UINT    Numerator;
@@ -397,11 +397,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     USHORT      NumMoveRects;
     MOVE_RECT   *pMoveRect;
 
-#if defined(OPEN_SOURCE)
-    UINT reserved;
-#else
     ENCODE_INPUT_TYPE   InputType;
-#endif //defined(OPEN_SOURCE)
 
     union
     {
@@ -551,4 +547,4 @@ typedef struct tagENCODE_SET_CUDATA_HEVC
     BYTE*   pBuffer;
 } ENCODE_SET_CUDATA_HEVC;
 
-#endif // #if !defined(OPEN_SOURCE)
+#endif // #if defined(MFX_VA_WIN)

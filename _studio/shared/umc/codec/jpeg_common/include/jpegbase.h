@@ -26,7 +26,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#ifdef MFX_DISABLE_SW_FALLBACK
+#if !defined(MSDK_USE_EXTERNAL_IPP)
 #include "ippcore.h"
 #include "ippi.h"
 #include "ippj.h"

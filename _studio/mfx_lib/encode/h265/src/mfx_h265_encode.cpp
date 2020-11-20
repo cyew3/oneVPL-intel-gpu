@@ -3944,7 +3944,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         Throw(std::runtime_error(""));
     }
 
-    mfxFEISyncPoint syncpoint;
+    mfxFEISyncPoint syncpoint = nullptr;
     if (H265FEI_ProcessFrameAsync(m_fei, &in, &out, &syncpoint) != MFX_ERR_NONE)
         Throw(std::runtime_error(""));
 

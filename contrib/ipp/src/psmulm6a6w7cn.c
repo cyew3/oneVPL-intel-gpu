@@ -27,8 +27,8 @@
 //      mfxownsMul_16s_I
 //
 *M*/
-#include <emmintrin.h> // __m128i etc
 
+#include <emmintrin.h> // __m128i etc
 #include "precomp.h"
 
 #if !defined(__OWNS_H__)
@@ -53,7 +53,11 @@
 /* Caller = ippsMul_16s_I, ippsMul_16s_ISfs, mfxiMul_16s_C1IRSfs */
 void mfxownsMul_16s_I(const Ipp16s* pSrc, Ipp16s* pSrcDst, int len)
 {
-  _Alignas(16)
+#if defined(_WIN32)
+	__declspec(align(16))
+#else
+	_Alignas(16))
+#endif
   __m64 t0, t1, t2, t3, t4, t5, t6, t7, mmxZero;
   Ipp32s  tmpValue;
   int     tmp;
@@ -110,7 +114,11 @@ void mfxownsMul_16s_I(const Ipp16s* pSrc, Ipp16s* pSrcDst, int len)
 /* Caller = ippsMulC_16s_I, ippsMulC_16s_ISfs, mfxiMulC_16s_C1IRSfs */
 void mfxownsMulC_16s_I(Ipp16s val, Ipp16s* pSrcDst, int len)
 {
-  _Alignas(16)
+#if defined(_WIN32)
+	__declspec(align(16))
+#else
+	_Alignas(16))
+#endif
   __m64  t0, t1, t2, t3, mmxVal;
   Ipp32s tmpVal;
   int    tmp;
@@ -182,7 +190,11 @@ void mfxownsMulC_16s_I(Ipp16s val, Ipp16s* pSrcDst, int len)
 /* Caller = ippsMul_16s_I, ippsMul_16s_ISfs, mfxiMul_16s_C1IRSfs */
 void mfxownsMul_16s_I(const Ipp16s* pSrc, Ipp16s* pSrcDst, int len)
 {
+#if defined(_WIN32)
+  __declspec(align(16))
+#else
   _Alignas(16)
+#endif
   __m128i t0, t1, t2, t3, t4, t5, t6, t7, emmZero;
   Ipp32s  tmpValue;
   int     tmp;
@@ -324,7 +336,11 @@ void mfxownsMul_16s_I(const Ipp16s* pSrc, Ipp16s* pSrcDst, int len)
 /* Caller = ippsMulC_16s_I, ippsMulC_16s_ISfs, mfxiMulC_16s_C1IRSfs */
 void mfxownsMulC_16s_I(Ipp16s val, Ipp16s* pSrcDst, int len)
 {
-  _Alignas(16)
+#if defined(_WIN32)
+	__declspec(align(16))
+#else
+	_Alignas(16)
+#endif
   __m128i t0, t1, t2, t3, emmValue;
   Ipp32s  tmpVal;
   int     tmp;
@@ -394,7 +410,11 @@ void mfxownsMulC_16s_I(Ipp16s val, Ipp16s* pSrcDst, int len)
 void mfxownsMul_16u16s_PosSfs(const Ipp16u* pSrcU, const Ipp16s* pSrcS, Ipp16s* pDst, int len,
                            int scaleFactor)
 {
-  _Alignas(16)
+#if defined(_WIN32)
+	__declspec(align(16))
+#else
+	_Alignas(16)
+#endif
   __m128i t0, t1, t2, t3, t4, t5, t6, const0, const01, const11, constW, sFactor;
   const   Ipp32s const1 = (1 << (scaleFactor - 1)) - 1;
   Ipp32s  tmpVal;

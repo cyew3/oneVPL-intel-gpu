@@ -2128,7 +2128,9 @@ mfxStatus GeneralWriter::Init(
                 ext);
 
             vm_char out_buf[1024];
+#if !defined(MFX_DISABLE_SW_FALLBACK)
             vm_string_sprintf_s(out_buf, VM_STRING("%s%s%s_layer%i.yuv"), drive, dir, fname, did);
+#endif
 
             sts = m_ofile[did]->Init(
                 (1 == didCount) ? strFileName : out_buf,

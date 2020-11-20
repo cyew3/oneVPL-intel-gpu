@@ -340,7 +340,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -525,7 +525,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyGPUtoCPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -707,7 +707,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftGPUtoCPU(CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
         pLinearAddressAligned = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
         pLinearAddressAligned = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -889,7 +889,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -1076,7 +1076,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyCPUtoGPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -1261,7 +1261,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftCPUtoGPU(CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
         pLinearAddressAligned = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
         pLinearAddressAligned = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -1616,7 +1616,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -1805,7 +1805,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -1984,7 +1984,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -2173,7 +2173,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -2362,7 +2362,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010GPUtoCPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;
@@ -2549,7 +2549,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010CPUtoGPU(   CmSurface2D* pSurface,
 
     while (totalBufferUPSize > 0)
     {
-#if defined(WIN64) || defined(LINUX64)//64-bit
+#if defined(_WIN64) || defined(LINUX64)//64-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
 #else  //32-bit
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X86;

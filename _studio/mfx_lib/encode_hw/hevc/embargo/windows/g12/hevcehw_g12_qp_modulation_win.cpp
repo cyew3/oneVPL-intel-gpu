@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA_WIN)
 
 #include "hevcehw_g12_qp_modulation_win.h"
 #include "hevcehw_g12_data.h"
@@ -97,5 +97,4 @@ void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/,
         return MFX_ERR_NONE;
     });
 }
-
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA_WIN)

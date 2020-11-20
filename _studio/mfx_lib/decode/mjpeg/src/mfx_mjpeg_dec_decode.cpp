@@ -46,6 +46,9 @@
 #include "umc_va_dxva2_protected.h"
 #endif
 
+
+#include "ippcore.h" // MfxIppInit in case of bundled IPP
+
 // Declare skipping constants
 enum
 {
@@ -2547,6 +2550,11 @@ VideoDECODEMJPEGBase_SW::VideoDECODEMJPEGBase_SW()
 
 mfxStatus VideoDECODEMJPEGBase_SW::Init(mfxVideoParam *decPar, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxFrameAllocRequest *, bool isUseExternalFrames, VideoCORE *core)
 {
+#if !defined(MSDK_USE_EXTERNAL_IPP)
+    auto ippSt = MfxIppInit();
+    MFX_CHECK(ippSt == ippStsNoErr, MFX_ERR_UNSUPPORTED);
+#endif
+
     UMC::Status umcSts = m_FrameAllocator->InitMfx(0, core, decPar, request, response, isUseExternalFrames, true);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 

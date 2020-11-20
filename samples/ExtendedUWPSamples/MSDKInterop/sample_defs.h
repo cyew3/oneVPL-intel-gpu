@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,7 @@ This sample was distributed or derived from the Intel's Media Samples package.
     #define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
 enum {
     MFX_HANDLE_DEVICEWINDOW  = 0x101 /* A handle to the render window */
@@ -49,8 +49,8 @@ enum {
 #else
     #define MFX_D3D11_SUPPORT 0
 #endif
-#endif // #if defined(WIN32) && !defined(MFX_D3D11_SUPPORT)
-#endif // #if defined(WIN32) || defined(WIN64)
+#endif // #if defined(_WIN32) && !defined(MFX_D3D11_SUPPORT)
+#endif // #if defined(_WIN32) || defined(_WIN64)
 
 enum
 {

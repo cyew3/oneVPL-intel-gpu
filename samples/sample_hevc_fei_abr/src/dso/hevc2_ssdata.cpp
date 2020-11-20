@@ -31,13 +31,13 @@ using namespace BsReader2;
 
 SDParser::SDParser(bool report_TC)
     : Reader()
+    , CABAC((Reader&)*this)
     , IntraSplitFlag()
     , MaxTrafoDepth()
     , CuQpDeltaVal()
     , qPY_PREV()
     , IsCuQpDeltaCoded()
     , IsCuChromaQpOffsetCoded()
-    , CABAC((Reader&)*this)
     , report_TCLevels(report_TC)
     , m_pAllocator(nullptr)
 {

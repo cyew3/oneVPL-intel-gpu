@@ -1,14 +1,33 @@
-if(0)
-include_directories (
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_camera/include
+if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
+  return()
+endif()
+add_executable(sample_camera)
+set_property(TARGET sample_camera PROPERTY FOLDER "samples")
+
+target_include_directories(sample_camera PRIVATE include)
+target_link_libraries(sample_camera
+  PRIVATE
+    MFX::mfx
+    sample_common
+    mfx_static_lib
+    mfx_shared_lib
+    $<$<PLATFORM_ID:Windows>:Dwmapi>
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
 )
 
-list( APPEND LIBS_NOVARIANT sample_common )
+target_sources(sample_camera
+  PRIVATE
+    include/camera_render.h
+    include/camera_sysmem_allocator.h
+    include/pipeline_camera.h
+    include/sample_camera_utils.h
 
-set(DEPENDENCIES libmfx dl pthread)
-make_executable( shortname none "nosafestring" )
+    src/camera_render.cpp
+    src/camera_sysmem_allocator.cpp
+    src/pipeline_camera.cpp
+    src/sample_camera_utils.cpp
+    src/sample_camera.cpp
+  )
 
-install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
-
-endif(0)
+install( TARGETS sample_camera RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

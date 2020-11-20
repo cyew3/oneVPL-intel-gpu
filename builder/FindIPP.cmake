@@ -36,7 +36,11 @@ if (NOT MFX_BUNDLED_IPP)
   set( ipp_root $ENV{MEDIASDK_ROOT}/ipp )
   if( Windows )
     set( ipp_root ${ipp_root}/ipp81goldGuard/windows/${ipp_arch} )
-    set( lib_suffix "_s_y8.lib" )
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      set( lib_suffix "_s_y8.lib" )
+    else()
+      set( lib_suffix "_s_p8.lib" )
+    endif()
     set( lib_prefix "" )
   elseif( Linux )
     set( ipp_root ${ipp_root}/linux/${ipp_arch} )
@@ -65,6 +69,7 @@ if (NOT MFX_BUNDLED_IPP)
       set( IPP_FOUND TRUE )
 
       get_filename_component( IPP_LIBRARY_PATH ${IPP_LIBRARY} PATH )
+    
       foreach (lib_name ${IPP_LIBRRARY_LIST})
         add_library(IPP::${lib_name} STATIC IMPORTED)
         set_target_properties(IPP::${lib_name} PROPERTIES IMPORTED_LOCATION "${ipp_root}/lib/${lib_prefix}ipp${lib_name}${lib_suffix}")
@@ -92,10 +97,6 @@ if (NOT MFX_BUNDLED_IPP)
         endforeach()
         link_directories( ${IPP_LIBRARY_PATH} )  # w/a for erroneus dependency on svml_disp.lib in IPP 8.1
       
-      else()
-          # FIXME: to be deleted once cmake_for_windows merged
-          include_directories( ${IPP_INCLUDE} )
-          link_directories( ${IPP_LIBRARY_PATH} )
       endif()
     endif()
   endif()
@@ -104,26 +105,22 @@ if (NOT MFX_BUNDLED_IPP)
     message( FATAL_ERROR "Intel(R) IPP was not found (required)! Set/check MEDIASDK_ROOT environment variable!" )
   else ()
     message( STATUS "Intel(R) IPP was found here $ENV{MEDIASDK_ROOT}" )
-    target_link_libraries(mfx_static_lib INTERFACE IPP::core)
   endif()
 
-  # FIXME: to be deleted once cmake_for_windows merged
-  if( __IPP )
-    if( Linux )
-      append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_C_FLAGS)
-      append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_CXX_FLAGS)
-    endif()
-  endif()
+
 else()
   set( IPP_FOUND TRUE )
   # set( IPP_INCLUDE ${CMAKE_HOME_DIRECTORY}/contrib/ipp/include )
 
-  message( STATUS "Using built-in subset of Intel(R)" )
+  message( STATUS "Using built-in subset of Intel(R) IPP" )
 
   #include_directories( ${IPP_INCLUDE} )
 
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/contrib/ipp)
 
-  target_link_libraries(mfx_static_lib INTERFACE ipp)
+  foreach(lib_name dc core vm s cp vc i cc cv j msdk)
+    add_library(IPP::${lib_name} ALIAS ipp)
+  endforeach()
+  
 endif()
 

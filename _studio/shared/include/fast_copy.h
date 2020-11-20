@@ -266,7 +266,7 @@ public:
 
         return MFX_ERR_NONE;
     }
-#if defined(_WIN32) || defined(_WIN64)
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(OPEN_SOURCE)
     // copy memory by streaming with shifting
     static mfxStatus CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU8 lshift, mfxU8 rshift, int flag)
     {
@@ -283,10 +283,18 @@ public:
 
         // Return back width to operate with 2-byte ptrs
         roi.width >>= 1;
+
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
         if(rshift)
             ippiRShiftC_16u_C1IR(rshift, (mfxU16*)pDst, dstPitch,roi);
         if(lshift)
             ippiLShiftC_16u_C1IR(lshift, (mfxU16*)pDst, dstPitch,roi);
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 
         return MFX_ERR_NONE;
     }

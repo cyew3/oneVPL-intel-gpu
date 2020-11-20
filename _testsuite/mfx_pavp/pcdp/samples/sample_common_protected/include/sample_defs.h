@@ -32,7 +32,7 @@
 #else
     #define MFX_D3D11_SUPPORT 0
 #endif
-#endif //defined(WIN32) || defined(WIN64)
+#endif //defined(_WIN32) || defined(_WIN64)
 
 #define MSDK_DEC_WAIT_INTERVAL 60000
 #define MSDK_ENC_WAIT_INTERVAL 10000

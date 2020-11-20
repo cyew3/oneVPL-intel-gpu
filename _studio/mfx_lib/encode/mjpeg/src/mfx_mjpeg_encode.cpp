@@ -32,6 +32,8 @@
 #include "mfx_enc_common.h"
 #include "umc_video_processing.h"
 
+#include "ippcore.h" // MfxIppInit in case of bundled IPP
+
 #define CHECK_VERSION(ver)
 #define CHECK_CODEC_ID(id, myid)
 #define CHECK_FUNCTION_ID(id, myid)
@@ -1107,11 +1109,13 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     mfxStatus st = MFX_ERR_NONE, QueryStatus = MFX_ERR_NONE;
     mfxVideoParam* par = par_in;
 
-    if(m_isInitialized)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(!m_isInitialized, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK_NULL_PTR1(par);
 
-    if(par == NULL)
-        return MFX_ERR_NULL_PTR;
+#if !defined(MSDK_USE_EXTERNAL_IPP)
+    auto ippSt = MfxIppInit();
+    MFX_CHECK(ippSt == ippStsNoErr, MFX_ERR_UNSUPPORTED);
+#endif
 
     MFX_CHECK(CheckExtBuffers(par->ExtParam, par->NumExtParam)== MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 

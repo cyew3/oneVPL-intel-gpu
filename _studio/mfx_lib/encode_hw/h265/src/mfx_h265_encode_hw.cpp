@@ -300,7 +300,7 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
 
     m_ddi.reset( CreateHWh265Encoder(m_core, ddiType) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12) && defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO) && defined(MFX_VA_WIN)
     bool mfeEnabled = (m_vpar.m_ext.mfeParam.MaxNumFrames > 1) || (m_vpar.m_ext.mfeParam.MFMode >= MFX_MF_AUTO);
     GUID encoder_guid = mfeEnabled ? DXVA2_Intel_MFE : GetGUID(m_vpar);
 #else

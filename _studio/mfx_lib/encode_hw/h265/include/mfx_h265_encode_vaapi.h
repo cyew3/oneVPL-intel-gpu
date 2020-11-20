@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA_LINUX)
 
 #pragma once
 
@@ -33,7 +33,7 @@
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include "mfx_h265_encode_hw_ddi_trace.h"
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
 #include "mfx_mfe_adapter.h"
 #endif
 #include <vector>
@@ -333,7 +333,7 @@ mfxStatus SetSkipFrame(
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
         MFEVAAPIEncoder *m_pMfeAdapter;
 #endif
     };

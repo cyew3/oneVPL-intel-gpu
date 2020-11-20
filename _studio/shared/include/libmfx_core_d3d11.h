@@ -117,8 +117,10 @@ public:
 
         if (type & MFX_MEMTYPE_FROM_DECODE)
             (*phdl = m_pAccelerator.get());
+#if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
         else if (type & (MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_FROM_VPPOUT))
             (*phdl = &m_vpp_hw_resmng);
+#endif
         else
             (*phdl = 0);
     };

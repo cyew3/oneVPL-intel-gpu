@@ -34,8 +34,14 @@ void Trace(vm_char const* format, ...)
     va_start(arglist, format);
 
     vm_char cStr[256];
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
     vm_string_vsnprintf(cStr, sizeof(cStr)-1, format, arglist);
-
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
     //OutputDebugString(cStr);
     vm_string_printf(VM_STRING("%s"), cStr);
     //fflush(stdout);

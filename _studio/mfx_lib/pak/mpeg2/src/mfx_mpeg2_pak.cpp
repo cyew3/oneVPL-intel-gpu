@@ -34,7 +34,7 @@
 #include "mfx_utils.h"
 #include "vm_sys_info.h"
 
-#if defined (WIN32)
+#if defined (_WIN32)
 #pragma warning (push)
 #pragma warning (disable:4351)  // value initialization is intended and disabling this warning recommended by MS: https://msdn.microsoft.com/en-us/en-en/library/1ywe7hcy.aspx
 #endif
@@ -405,8 +405,15 @@ MFXVideoPAKMPEG2::MFXVideoPAKMPEG2(VideoCORE *core, mfxStatus *sts)
   *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
 }
 MFXVideoPAKMPEG2::~MFXVideoPAKMPEG2() {
-  ippiHuffmanTableFree_32s(vlcTableB15);
-  ippiHuffmanTableFree_32s(vlcTableB5c_e);
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+    ippiHuffmanTableFree_32s(vlcTableB15);
+    ippiHuffmanTableFree_32s(vlcTableB5c_e);
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 }
 
 
@@ -2863,6 +2870,6 @@ mfxStatus MFXVideoPAKMPEG2::putQMatrices( int mode, bitBuffer* outbb )
 
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENCODER
 
-#if defined (WIN32)
+#if defined (_WIN32)
 #pragma warning (pop)
 #endif

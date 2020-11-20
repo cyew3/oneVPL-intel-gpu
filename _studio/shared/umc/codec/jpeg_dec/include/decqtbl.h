@@ -27,7 +27,10 @@
 #include "jpegbase.h"
 
 #if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-#define ALLOW_JPEG_SW_FALLBACK
+  #define ALLOW_JPEG_SW_FALLBACK
+  #if defined(MSDK_USE_EXTERNAL_IPP)
+    #include "ipp2mfx.h"
+  #endif
 #endif
 
 class CJPEGDecoderQuantTable

@@ -1,5 +1,27 @@
 if(NOT MFX_DISABLE_SW_FALLBACK)
-  set(sources
+  set( USE_STRICT_NAME TRUE )
+
+  if( MFX_ENABLE_KERNELS )
+    set(MCTF_LIB "mctf_hw")
+  else()
+    set(MCTF_LIB "")
+  endif()
+
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    set( mfxlibname mfxaudiosw64 )
+  else()
+    set( mfxlibname mfxaudiosw32 )
+  endif()
+
+  add_library( ${mfxlibname} SHARED )
+
+  target_link_options(${mfxlibname}
+    PRIVATE
+      $<$<PLATFORM_ID:Linux>:-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxaudio.map>
+    )
+
+  target_sources(${mfxlibname}
+    PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_ischeduler.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_iunknown.cpp
@@ -23,53 +45,46 @@ if(NOT MFX_DISABLE_SW_FALLBACK)
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_search_dll.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_timing.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_static_assert_structs.cpp
-      )
-  set(sources.plus "")
-
-  set( USE_STRICT_NAME TRUE )
-  set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxaudio.map" )
-
-  if( MFX_ENABLE_KERNELS )
-    set(MCTF_LIB "mctf_hw")
-  else()
-    set(MCTF_LIB "")
-  endif()
-
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( mfxlibname mfxaudiosw64 )
-  else()
-    set( mfxlibname mfxaudiosw32 )
-  endif()
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    enc
-    encode
-    pak
-    decode_sw
-    asc
-    ${MCTF_LIB}
-    vpp_sw
-    cmrt_cross_platform_hw
-    genx
-    audio_decode
-    audio_encode
-    umc_acodecs_merged
-    umc_codecs_merged
-    media_buffers
-    umc_va_hw
-    umc_io
-    umc
-    vm
-    vm_plus
-    mfx_trace
-    ${ITT_LIBRARIES}
-    ippcc_l ippdc_l ippac_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
     )
 
-  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  make_library( ${mfxlibname} sw shared)
-  set( defs "")
+  set(IPP_LIBS "")
+  if (NOT CMAKE_SYSTEM_NAME MATCHES Windows AND MFX_BUNDLED_IPP)
+      set(IPPLIBS ipp)
+  else()
+      set(IPPLIBS IPP::cc IPP::dc IPP::ac IPP::i IPP::s IPP::core)
+  endif()
+
+  target_link_libraries(${mfxlibname}
+    PUBLIC
+      mfx_shared_lib
+      enc
+      encode
+      pak
+      decode_sw
+      asc
+      ${MCTF_LIB}
+      vpp_sw
+      cmrt_cross_platform_hw
+      genx
+      audio_decode
+      audio_encode
+      umc_acodecs_merged
+      umc_codecs_merged
+      media_buffers
+      umc_va_hw
+      umc_io
+      umc
+      vm
+      vm_plus
+      mfx_trace
+      ${ITT_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      ${CMAKE_DL_LIBS}
+      ${IPP_LIBS}
+    )
+
+  target_compile_definitions(${mfxlibname}
+    PRIVATE
+      ${defs}
+    )
 endif()

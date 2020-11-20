@@ -617,9 +617,9 @@ mfxStatus mfxDefaultAllocatorD3D11::ReallocFrameHW(mfxHDL pthis, const mfxMemId 
         desc.BindFlags           = 0;
         desc.CPUAccessFlags      = D3D11_CPU_ACCESS_READ;
         desc.MiscFlags           = 0;
-        desc.StructureByteStride = 0;/*
+        desc.StructureByteStride = 0;
 
-        /*ID3D11Buffer * buffer = 0;
+        ID3D11Buffer * buffer = 0;
         hRes = m_initParams.pDevice->CreateBuffer(&desc, 0, &buffer);
         if (FAILED(hRes))
             return MFX_ERR_MEMORY_ALLOC;

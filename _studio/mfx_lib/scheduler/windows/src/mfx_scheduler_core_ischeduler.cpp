@@ -35,7 +35,7 @@
 #endif
 
 #if defined(MFX_SCHEDULER_LOG)
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #elif defined(LINUX32) || defined(LINUX64)
 #include <unistd.h>
@@ -88,7 +88,7 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
 #if defined(MFX_SCHEDULER_LOG)
     {
         char cPath[256];
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         SYSTEMTIME time;
 
         GetLocalTime(&time);
@@ -261,7 +261,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWai
 
     Ipp32u stop = vm_time_get_current_time();
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     mfxLogWriteA(m_hLog,
                  "[% u4] WAIT task - %u, job - %u took %u msec (priority - %d)\n",
                  GetCurrentThreadId(),
@@ -310,7 +310,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         mfxStatus task_sts = MFX_ERR_NONE;
         mfxU64 start = vm_time_get_tick();
         mfxU64 frequency = vm_time_get_frequency();
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
         DWORD tid = GetCurrentThreadId();
         {
@@ -359,7 +359,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                 }
             }
         }
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         {
             // lock
             std::lock_guard<std::mutex> guard(m_guard);
@@ -458,7 +458,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
 mfxStatus mfxSchedulerCore::GetTimeout(mfxU32& maxTimeToRun)
 {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     if (MFX_SINGLE_THREAD != m_param.flags)
         return MFX_ERR_UNSUPPORTED;
 
@@ -937,7 +937,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         RegisterTaskDependencies(m_pFreeTasks);
 
 #if defined(MFX_SCHEDULER_LOG)
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         mfxLogWriteA(m_hLog,
                      "[% 4u]  ADD %s task - %u, job - %u (priority - %d)\n",
                      GetCurrentThreadId(),

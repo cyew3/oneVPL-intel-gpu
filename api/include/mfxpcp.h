@@ -36,7 +36,6 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#if !defined(OPEN_SOURCE)
 enum {
     MFX_HANDLE_DECODER_DRIVER_HANDLE            =2,       /* Driver's handle for a video decoder that can be used to configure content protection*/
     MFX_HANDLE_DXVA2_DECODER_DEVICE             =MFX_HANDLE_DECODER_DRIVER_HANDLE,      /* A handle to the DirectX Video Acceleration 2 (DXVA-2) decoder device*/
@@ -47,7 +46,6 @@ enum {
 enum {
     MFX_MEMTYPE_PROTECTED   =   0x0080
 };
-#endif
 
 #if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
 /* Protected in mfxVideoParam */

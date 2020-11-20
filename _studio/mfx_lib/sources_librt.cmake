@@ -1,5 +1,25 @@
 if(NOT MFX_DISABLE_SW_FALLBACK)
-  set(sources
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    set( mfxrtlibname mfxrt64 )
+  else()
+    set( mfxrtlibname mfxrt32 )
+  endif()
+
+  if( MFX_ENABLE_KERNELS )
+    set(GENX_LIB "genx")
+  else()
+    set(GENX_LIB "")
+  endif()
+
+  add_library( ${mfxrtlibname} SHARED )
+
+  target_link_options(${mfxrtlibname}
+    PRIVATE
+      $<$<PLATFORM_ID:Linux>:-Wl,--version-script=${MSDK_LIB_ROOT}/libmfxhw.map>
+    )
+
+  target_sources(${mfxrtlibname}
+    PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_async.cpp
@@ -38,42 +58,35 @@ if(NOT MFX_DISABLE_SW_FALLBACK)
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_umc_mjpeg_vpp.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vpp_vaapi.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_static_assert_structs.cpp
+    )
+
+  set(IPP_LIBS "")
+  if (NOT CMAKE_SYSTEM_NAME MATCHES Windows AND MFX_BUNDLED_IPP)
+      set(IPPLIBS ipp)
+  else()
+      set(IPPLIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
+  endif()
+
+  target_link_libraries(${mfxrtlibname}
+      PUBLIC
+        vmedia_buffers
+        umc_io
+        umc_va_hw
+        umc
+        vm
+        vm_plus
+        ${GENX_LIB}
+        mfx_common_hw
+        mfx_trace
+        ${ITT_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${CMAKE_DL_LIBS}
+        ${IPP_LIBS}
       )
-  set( sources.plus "" )
 
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( mfxrtlibname mfxrt64 )
-  else()
-    set( mfxrtlibname mfxrt32 )
-  endif()
-
-  if( MFX_ENABLE_KERNELS )
-    set(GENX_LIB "genx")
-  else()
-    set(GENX_LIB "")
-  endif()
-
-  # libmfxrt reuse the same .map file as full library
-  set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/libmfxhw.map" )
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    media_buffers
-    umc_io
-    umc_va_hw
-    umc
-    vm
-    vm_plus
-    ${GENX_LIB}
-    mfx_common_hw
-    mfx_trace
-    ${ITT_LIBRARIES}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl )
-
-  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  make_library( ${mfxrtlibname} hw shared)
-  append_property( ${mfxrtlibname} COMPILE_FLAGS " -DMFX_RT" )
-  set( defs "")
+  target_compile_definitions(${mfxrtlibname}
+    PRIVATE
+      MFX_RT
+      ${defs}
+    )
 endif()

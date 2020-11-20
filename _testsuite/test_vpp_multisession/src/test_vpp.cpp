@@ -264,6 +264,7 @@ int main(int argc, vm_char *argv[])
         sts = ConfigVideoEnhancementFilters(Params[i], Resources[i]);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(Resources[i]);});
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
         // allocate needed number of aux vpp data    
         //-----------------------------------------------------
         mfxExtVppReport *extVPPAuxData = new mfxExtVppReport[Params[i]->asyncNum * Params[i]->multiViewParam.viewCount];
@@ -292,7 +293,7 @@ int main(int argc, vm_char *argv[])
             }
         }
 
-
+#endif
         //-----------------------------------------------------
         sts = InitResources(Resources[i], &Resources[i]->m_mfxParamsVideo, Params[i]);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(Resources[i]);});
@@ -384,7 +385,9 @@ int main(int argc, vm_char *argv[])
 
     WipeResources(&Resources);
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
     SAFE_DELETE_ARRAY(extVPPAuxData);
+#endif
 #endif
     return 0; /* OK */
 } // int _tmain(int argc, vm_char *argv[])

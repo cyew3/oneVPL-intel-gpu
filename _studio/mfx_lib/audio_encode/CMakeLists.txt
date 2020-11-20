@@ -6,7 +6,7 @@ list( APPEND vdirs
 list( APPEND cdirs
   aac_enc common
   )
-mfx_include_dirs( )
+
 foreach( dir ${vdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach()

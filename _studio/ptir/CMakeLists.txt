@@ -1,103 +1,157 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 # Plugin version info
-set(ptir_version_defs  "-DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${MEDIA_VERSION_STR}\"\\\"")
+set(ptir_version_defs MFX_PLUGIN_PRODUCT_VERSION=\"\\\"${MEDIA_VERSION_STR}\"\\\")
 
-
-# =============================================================================
-
-mfx_include_dirs( )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/ptir_plugin/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pa )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pa/deinterlacer )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pa/pfc )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pa/telecine )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pacm )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pacm/cmut )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pacm/kernels )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/cmrt_cross_platform/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
 
 # =============================================================================
 
 #PA (originally PA_cmd system reference application) static lib
-set( sources "" )
-set( sources.plus "" )
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/pa/deinterlacer )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/pa/pfc )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
+add_library( pa STATIC )
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/pa/telecine )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
+target_include_directories(mfx_vpp_scd64
+  PUBLIC
+    ptir_plugin/include
+    pa
+    pa/deinterlacer
+    pa/pfc
+    pa/telecine
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/pa )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
+    pacm
+    pacm/cmut
+    pacm/kernels
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( pa none static )
-set( defs "" )
+    ../mfx_lib/cmrt_cross_platform/include
+    ../mfx_lib/shared/include
+  )
+
+target_sources(pa
+  PRIVATE
+    pa/deinterlacer/deinterlacer.c
+    pa/pfc/pfc.c
+    pa/telecine/model.c
+    pa/telecine/telecine.c
+    pa/common.c
+    pa/log_debug.c
+  )
+
+target_link_libraries(pa PRIVATE mfx_static_lib)
 
 ####################################################################
 
 #PACM (originally CM-ported reference application) static lib
-set( sources "" )
-set( sources.plus "" )
 
+add_library( pacm STATIC )
 
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/kernels/deinterlace_genx_hsw.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/kernels/deinterlace_genx_bdw.cpp )
+target_include_directories(pacm
+  PUBLIC
+    ptir_plugin/include
+    pa
+    pa/deinterlacer
+    pa/pfc
+    pa/telecine
 
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/deinterlacer.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/utilities.cpp )
+    pacm
+    pacm/cmut
+    pacm/kernels
 
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp )
+    ../mfx_lib/cmrt_cross_platform/include
+    ../mfx_lib/shared/include
+  )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+target_sources(pacm
+  PRIVATE
+    pa/deinterlacer/deinterlacer.c
+    pa/pfc/pfc.c
+    pa/telecine/model.c
+    pa/telecine/telecine.c
+    pa/common.c
+    pa/log_debug.c
+    pacm/kernels/deinterlace_genx_hsw.cpp
+    pacm/kernels/deinterlace_genx_bdw.cpp
+    pacm/deinterlacer.cpp
+    pacm/utilities.cpp
+    ../mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+  )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( pacm none static )
-set( defs "" )
+target_link_libraries(pacm PRIVATE mfx_static_lib)
+
+target_compile_options(pacm
+  PUBLIC
+    ${CMAKE_CXX_FLAGS}
+    -std=c++0x
+  )
 
 ####################################################################
 
 #ptir_plugin shared lib
-set( sources "" )
-set( sources.plus "" )
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/plugin/libmfxsw_plugin.map" )
 
+add_library( mfx_ptir_hw64 SHARED )
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/ptir_plugin/src )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-  set( LIBS "" )
-  list( APPEND LIBS
+target_include_directories(mfx_ptir_hw64
+  PUBLIC
+    ptir_plugin/include
     pa
+    pa/deinterlacer
+    pa/pfc
+    pa/telecine
     pacm
-    umc
-    vm
-    vm_plus
-    pthread
-    dl
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pacm/cmut
+    pacm/kernels
+    ../mfx_lib/cmrt_cross_platform/include
+    ../mfx_lib/shared/include
   )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs} ${ptir_version_defs}" )
-make_library( mfx_ptir_hw64 hw shared )
-set( defs "" )
+target_link_options(mfx_ptir_hw64
+  PRIVATE
+    $<$<PLATFORM_ID:Linux>:-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/plugin/libmfxsw_plugin.map>
+  )
+
+target_sources(mfx_ptir_hw64
+  PRIVATE
+    pa/deinterlacer/deinterlacer.c
+    pa/pfc/pfc.c
+    pa/telecine/model.c
+    pa/telecine/telecine.c
+    pa/common.c
+    pa/log_debug.c
+    pacm/kernels/deinterlace_genx_hsw.cpp
+    pacm/kernels/deinterlace_genx_bdw.cpp
+    pacm/deinterlacer.cpp
+    pacm/utilities.cpp
+    ../mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+    ptir_plugin/src/hw_utils.cpp
+    ptir_plugin/src/mfx_ptir_utils.cpp
+    ptir_plugin/src/plg_frame_supply.cpp
+    ptir_plugin/src/ptir_cm_wrap.cpp
+    ptir_plugin/src/ptir_cpu_wrap.cpp
+    ptir_plugin/src/ptir_vpp_plugin.cpp
+  )
+
+set(IPP_LIBS "")
+if (NOT CMAKE_SYSTEM_NAME MATCHES Windows AND MFX_BUNDLED_IPP)
+    set(IPPLIBS ipp)
+else()
+    set(IPPLIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
+endif()
+
+target_link_libraries(mfx_ptir_hw64
+    PUBLIC
+      mfx_shared_lib
+      pa
+      pacm
+      umc
+      vm
+      vm_plus
+      ${CMAKE_DL_LIBS}
+      ${IPP_LIBS}
+    )
+
+target_compile_definitions(mfx_ptir_hw64
+  PRIVATE
+    ${defs}
+    ${ptir_version_defs}
+  )

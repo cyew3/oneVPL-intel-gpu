@@ -31,6 +31,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxcommon.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
+#include "mfxvideo++.h"
+#include "mfxvideo.h"
+
 
 
 msdk_tick CTimer::frequency = 0;

@@ -261,6 +261,7 @@ mfxStatus OutputProcessFrame(
                         Resources.pExtVPPAuxData[counter].TemporalComplexity,
                         Resources.pExtVPPAuxData[counter].SceneChangeRate);
                 }
+#if defined(MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT)
                 else if(VPP_FILTER_DISABLED != Resources.pParams->varianceParam[paramID].mode)
                 {
                     mfxExtVppReport* pReport = reinterpret_cast<mfxExtVppReport*>(&Resources.pExtVPPAuxData[counter]);
@@ -273,6 +274,7 @@ mfxStatus OutputProcessFrame(
 
                     vm_string_printf(VM_STRING("\n"));
                 }
+#endif
                 else if(VPP_FILTER_DISABLED != Resources.pParams->idetectParam[paramID].mode)
                 {
                     vm_string_printf(
@@ -326,7 +328,9 @@ int main(int argc, vm_char *argv[])
     bool                bFrameNumLimit = false;
     mfxU32              numGetFrames = 0;
 
+#if defined(MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT)
     mfxExtVppReport    *extVPPAuxData = NULL;
+#endif
 
     SurfaceVPPStore     surfStore;
 
@@ -495,6 +499,7 @@ int main(int argc, vm_char *argv[])
 
     Resources.pAllocator->bUsedAsExternalAllocator = !Params.bDefAlloc;
 
+#if defined(MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT)
     // allocate needed number of aux vpp data
     //-----------------------------------------------------
     extVPPAuxData = new mfxExtVppReport[Params.asyncNum * Params.multiViewParam[0].viewCount];
@@ -523,6 +528,7 @@ int main(int argc, vm_char *argv[])
         }
     }
     //-----------------------------------------------------
+#endif
 
     sts = InitResources(&Resources, &mfxParamsVideo, &Params);
     if(MFX_WRN_FILTER_SKIPPED == sts)
@@ -729,12 +735,14 @@ int main(int argc, vm_char *argv[])
             }
 
             mfxExtVppAuxData* pExtData = NULL;
+#if defined(MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT)
             if( VPP_FILTER_DISABLED != Params.vaParam[0].mode ||
                 VPP_FILTER_DISABLED != Params.varianceParam[0].mode ||
                 VPP_FILTER_DISABLED != Params.idetectParam[0].mode)
             {
                 pExtData = reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[surfStore.m_SyncPoints.size()]);
             }
+#endif
 
             if ( Params.use_extapi )
             {
@@ -912,6 +920,7 @@ int main(int argc, vm_char *argv[])
                         &syncPoint );
                 }
             }
+#if defined(MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT)
             else
             {
                 sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
@@ -920,6 +929,7 @@ int main(int argc, vm_char *argv[])
                     (VPP_FILTER_DISABLED != Params.vaParam[paramID].mode || VPP_FILTER_DISABLED != Params.varianceParam[0].mode)? reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[paramID]) : NULL,
                     &syncPoint );
             }
+#endif
             IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
             BREAK_ON_ERROR(sts);
 
@@ -960,6 +970,7 @@ int main(int argc, vm_char *argv[])
                         vm_string_printf(VM_STRING("."));
                 }
             }
+#if defined(MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT)
             else
             {
                 if (!Params.bPerf)
@@ -974,6 +985,7 @@ int main(int argc, vm_char *argv[])
 
                 }
             }
+#endif
         }
     } while (bNeedReset);
 
@@ -1008,7 +1020,9 @@ int main(int argc, vm_char *argv[])
     WipeResources(&Resources);
     WipeParams(&Params);
 
+#if defined(MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT)
     SAFE_DELETE_ARRAY(extVPPAuxData);
+#endif
 
     return 0; /* OK */
 

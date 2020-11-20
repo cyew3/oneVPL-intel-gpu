@@ -21,6 +21,11 @@
 #ifndef __UMC_STRUCTURES_H__
 #define __UMC_STRUCTURES_H__
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable:26812)
+#endif
+
 #include <vm_types.h>
 #include <vm_debug.h>
 
@@ -719,5 +724,9 @@ namespace UMC
 } // namespace UMC
 
 #endif /* __cplusplus */
+
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 
 #endif /* __UMC_STRUCTURES_H__ */

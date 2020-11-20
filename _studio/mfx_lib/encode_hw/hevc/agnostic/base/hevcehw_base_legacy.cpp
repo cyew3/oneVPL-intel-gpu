@@ -32,6 +32,7 @@
 #include <numeric>
 #include <set>
 #include <cmath>
+#include <iterator>
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;

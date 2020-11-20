@@ -574,7 +574,12 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     // FIXME: need this until production driver moves to DDI 0.87
     m_encodeExecuteParams.pCipherCounter                     = 0;
     m_encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     m_encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
+#else
+    m_encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1; // none
+#endif
 
 #if defined(MFX_ENABLE_MFE)
     if (m_pMFEAdapter != nullptr)
@@ -1222,6 +1227,7 @@ mfxStatus D3D11Encoder::Init(
     // ENCRYPTION
     if(extPavp)
     {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         D3D11_AES_CTR_IV         initialCounter = { extPavp->CipherCounter.IV, extPavp->CipherCounter.Count };
         PAVP_ENCRYPTION_MODE  encryptionMode = { extPavp->EncryptionType,   extPavp->CounterType         };
         ENCODE_ENCRYPTION_SET encryptSet     = { extPavp->CounterIncrement, &initialCounter, &encryptionMode};
@@ -1239,6 +1245,9 @@ mfxStatus D3D11Encoder::Init(
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCRYPTION");
             hRes = DecoderExtension(m_pVideoContext, m_pDecoder, encryptParam);
         }
+#else
+        hRes = ERROR_UNSUPPORTED_TYPE;
+#endif
         CHECK_HRES(hRes);
     }
 #if defined(MFX_ENABLE_MFE)
@@ -1406,8 +1415,10 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::CreateAccelerationService");
     mfxExtSpsHeader *  extSps = GetExtBuffer(par);
     mfxExtPpsHeader *  extPps = GetExtBuffer(par);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     mfxExtSVCSeqDesc * extSvc = GetExtBuffer(par);
     m_extSvc = *extSvc;
+#endif
 
     //m_numdl = par.calcParam.numDependencyLayer;
     //m_numql = par.calcParam.maxNumQualityLayer;
@@ -1425,6 +1436,7 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
     Zero(m_packedSpsPps);
     Zero(m_packedPps);
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     for (mfxU32 d = 0; d < m_numdl; d++)
     {
         //::FillSpsBuffer(par, m_sps[d], d); // BUILD DX11 FIX
@@ -1443,6 +1455,7 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
             }
         }
     }
+#endif
 
     ::FillConstPartOfSliceBuffer(par, m_slice);
 
@@ -1459,10 +1472,11 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
     for (mfxU32 i = 0; i < par.calcParam.numDependencyLayer; i++)
     {
         copySps.seqParameterSetId         = mfxU8((copySps.seqParameterSetId + 1) % 32);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         copySps.picWidthInMbsMinus1       = extSvc->DependencyLayer[par.calcParam.did[i]].Width / 16 - 1;
         copySps.picHeightInMapUnitsMinus1 = extSvc->DependencyLayer[par.calcParam.did[i]].Height / 16 / (2 - copySps.frameMbsOnlyFlag) - 1;
 
-        mfxExtSpsSvcHeader extSvcHead = { 0 };
+        mfxExtSpsSvcHeader extSvcHead = {};
         InitExtBufHeader(extSvcHead);
 
         extSvcHead.interLayerDeblockingFilterControlPresentFlag = 1;
@@ -1480,6 +1494,7 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
         extSvcHead.seqTcoeffLevelPredictionFlag                 = mfxU8(extSvc->DependencyLayer[i].QualityLayer[0].TcoeffPredictionFlag);
         extSvcHead.adaptiveTcoeffLevelPredictionFlag            = 1;
         WriteSpsHeader(obs, *extSps, extSvcHead.Header);
+#endif
     }
 
     mfxU32 spsHeaderLength = (obs.GetNumBits() + 7) / 8;
@@ -1675,7 +1690,11 @@ mfxStatus D3D11SvcEncoder::Execute(
     // FIXME: need this until production driver moves to DDI 0.87
     encodeExecuteParams.pCipherCounter                     = 0;
     encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
+#else
+    encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1; // none
+#endif
 
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 

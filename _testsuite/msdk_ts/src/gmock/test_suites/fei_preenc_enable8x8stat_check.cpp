@@ -14,6 +14,8 @@
 
 ******************************************************************************/
 
+#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT)
+
 #include "ts_struct.h"
 #include "ts_preenc.h"
 
@@ -337,3 +339,4 @@ int TestSuite::RunTest(unsigned int id)
 TS_REG_TEST_SUITE_CLASS(fei_preenc_enable8x8stat_check);
 };
 
+#endif // defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT)

@@ -19,14 +19,15 @@
 // SOFTWARE.
 
 #include <limits>
-#include "mfx_vp9_dec_decode.h"
 
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_vpx_dec_common.h"
 #include "mfx_enc_common.h"
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
+
+#include "mfx_vp9_dec_decode.h"
 
 #include "umc_vp9_utils.h"
 #include "umc_vp9_bitstream.h"
@@ -270,4 +271,4 @@ void FillVideoParam(eMFXPlatform platform, UMC_VP9_DECODER::VP9DecoderFrame cons
 
 } //MFX_VP9_Utility
 
-#endif // #if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE

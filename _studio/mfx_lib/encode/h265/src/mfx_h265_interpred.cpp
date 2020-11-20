@@ -29,6 +29,11 @@
 
 using namespace MFX_HEVC_PP;
 
+#ifdef _MSVC_LANG
+#pragma warning(disable:4661)
+#pragma warning(disable:4804)
+#endif
+
 namespace H265Enc {
 
 template <typename PixType>

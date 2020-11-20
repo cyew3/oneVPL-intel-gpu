@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #include "asc_avx2_impl.h"
+#include <memory>
+#include <algorithm>
 
 #if defined(__AVX2__)
 
@@ -297,7 +299,7 @@ void RsCsCalc_bound_AVX2(
 
 #ifdef __INTEL_COMPILER
     _mm_storeu_si32(pRsFrame, t);
-    _mm_storeu_si32(pCsFrame, _mm_shuffle_epi32(t), _MM_SHUFFLE(0, 0, 0, 1));
+    _mm_storeu_si32(pCsFrame, _mm_shuffle_epi32(t, _MM_SHUFFLE(0, 0, 0, 1)));
 #else
     *pRsFrame = ((t).m128i_u32)[0];
     *pCsFrame = ((t).m128i_u32)[1];
@@ -367,7 +369,7 @@ void ImageDiffHistogram_AVX2(
         h0   = _mm256_setzero_si256(),
         h1   = _mm256_setzero_si256(),
         h2   = _mm256_setzero_si256(),
-        h3   = _mm256_setzero_si256();,
+        h3   = _mm256_setzero_si256(),
         zero = _mm256_setzero_si256();
 
     for (mfxU32 i = 0; i < height; i++)
@@ -524,7 +526,7 @@ void GainOffset_AVX2(
         {
             mfxI16
                 val = ss[j] - gainDiff;
-            dd[j] = (mfxU8)min(max(val, 0), 255);
+            dd[j] = (mfxU8)std::min(std::max(val, (mfxI16)0), (mfxI16)255);
         }
         ss += pitch;
         dd += pitch;

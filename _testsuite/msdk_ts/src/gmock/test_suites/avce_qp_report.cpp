@@ -123,7 +123,7 @@ namespace avce_qp_report
 
     void TestSuite::check_qp_msg(Bs32s expected, Bs32s reported, const char* msg)
     {
-#if defined (WIN32)||(WIN64)
+#if defined (_WIN32)||(_WIN64)
         if ((m_impl & MFX_IMPL_HARDWARE) && (m_impl & MFX_IMPL_VIA_D3D11)) {
             EXPECT_EQ(expected, reported) << msg;
         }
@@ -368,7 +368,7 @@ namespace avce_qp_report
 
             if(frame_found) {
                 g_tsLog << "Frame: " << f << "\nReported QP = " << reported_qp[f] << ", Encoded QP = " << average_qp << "\n";
-#if defined (WIN32) || (WIN64)
+#if defined (_WIN32) || (_WIN64)
                 if(average_qp + 1 < reported_qp[f] || average_qp - 1 > reported_qp[f]) {
                     g_tsLog << "ERROR: Reported QP much bigger/much smaller than average Encoded QP";
                     check_qp(qp, reported_qp[f]);

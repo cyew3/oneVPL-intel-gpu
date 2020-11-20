@@ -995,7 +995,7 @@ protected:
             if ( key.compare("stream") == 0 || key.compare("primarystream") == 0){
                 if (value.find("background") != string::npos)
                 {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
                     if (!sscanf_s(value.c_str(), "background(%hu,%hu,%hu)", &m_Color.Y, &m_Color.U, &m_Color.V))
 #else
                     if (!sscanf(value.c_str(), "background(%hu,%hu,%hu)", &m_Color.Y, &m_Color.U, &m_Color.V))

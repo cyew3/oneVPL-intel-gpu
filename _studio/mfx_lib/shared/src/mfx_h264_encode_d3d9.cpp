@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
 
 #include "mfx_h264_encode_d3d9.h"
 #include "libmfx_core_interface.h"
@@ -43,7 +43,11 @@ void Dump(ENCODE_EXECUTE_PARAMS const & params, GUID guid);
 
 mfxU8 ConvertProfileMfx2Ddi(mfxU32 profile)
 {
-    return IsAvcHighProfile(profile) || IsMvcProfile(profile) || IsSvcProfile(profile)
+    return IsAvcHighProfile(profile) 
+        || IsMvcProfile(profile) 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+        || IsSvcProfile(profile)
+#endif
         ? mfxU8(MFX_PROFILE_AVC_HIGH)
         : IsAvcBaseProfile(profile)
             ? mfxU8(MFX_PROFILE_AVC_BASELINE)
@@ -764,6 +768,7 @@ namespace
     }
 }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 namespace
 {
     mfxU32 PrevDepId(mfxExtSVCSeqDesc const & extSvc, mfxU32 did)
@@ -781,8 +786,8 @@ namespace
             did     == par.calcParam.did[par.calcParam.numDependencyLayer - 1] &&
             qid + 1 == extSvc->DependencyLayer[did].QualityNum;
     }
-};
-
+}
+#endif
 
 mfxStatus MfxHwH264Encode::FillSpsBuffer(
     MfxVideoParam const &                par,
@@ -792,6 +797,7 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
     mfxU32                               tid)
 {
     mfxExtSpsHeader const *  extSps = GetExtBuffer(par);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
     //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
     mfxExtSVCRateControl const *  extRc  = GetExtBuffer(par);
@@ -800,10 +806,17 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
     if (rcIdx == IDX_NOT_FOUND)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
+#endif
+
     Zero(sps);
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     sps.FrameWidth           = extSvc->DependencyLayer[did].Width;
     sps.FrameHeight          = extSvc->DependencyLayer[did].Height;
+#else
+    sps.FrameWidth           = par.mfx.FrameInfo.Width;
+    sps.FrameHeight          = par.mfx.FrameInfo.Height;
+#endif
     sps.Profile              = (qid == 0 && qid == 0) ? 100 : mfxU8(par.mfx.CodecProfile);
     sps.Level                = mfxU8(par.mfx.CodecLevel);
     sps.GopPicSize           = par.mfx.GopPicSize;
@@ -824,6 +837,7 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
     //sps.frame_crop_right_offset  = (sps.FrameWidth - cropW - cropX) / cropUnitX;
     //sps.frame_crop_top_offset    = (cropY / cropUnitY);
     //sps.frame_crop_bottom_offset = (sps.FrameHeight - cropH - cropY) / cropUnitY;
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (extRc->RateControlMethod != MFX_RATECONTROL_CQP)
     {
         sps.RateControlMethod                 = mfxU8(extRc->RateControlMethod);
@@ -833,6 +847,7 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
         sps.InitVBVBufferFullnessInBit        = mfxU32(extRc->Layer[rcIdx].CbrVbr.InitialDelayInKB) * 8000;
     }
     sps.VBVBufferSizeInBit              = mfxU32(extRc->Layer[rcIdx].CbrVbr.BufferSizeInKB) * 8000;
+#endif
     sps.bResetBRC                         = 0;
     //sps.UserMaxFrameSize                = 0;
     sps.AVBRAccuracy                      = par.mfx.Accuracy;
@@ -883,18 +898,21 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     //mfxExtSpsHeader const *       extSps = GetExtBuffer(par);
     mfxExtPpsHeader const *       extPps = GetExtBuffer(par);
     //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     mfxExtSVCSeqDesc const *      extSvc = GetExtBuffer(par);
+#endif
     //mfxExtSVCRateControl const *  extRc  = GetExtBuffer(par);
 
     //mfxU32 rcIdx = FindLayerBrcParam(*extRc, did, qid, tid);
     //assert(rcIdx != 0xffffffff);
 
     Zero(pps);
-
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     pps.scaled_ref_layer_left_offset   = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[0];
     pps.scaled_ref_layer_top_offset    = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[1];
     pps.scaled_ref_layer_right_offset  = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[2];
     pps.scaled_ref_layer_bottom_offset = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[3];
+#endif
     for (mfxU32 i = 0; i < 16; i++)
     {
         pps.refPicScaledRefLayerLeftOffset[i]   = pps.scaled_ref_layer_left_offset;
@@ -907,6 +925,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.quality_id    = qid;
     pps.temporal_id   = tid;
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     if (did > 0 || qid > 0)
     {
         pps.ref_layer_dependency_id = qid > 0 ? did     : PrevDepId(*extSvc, did);
@@ -914,11 +933,16 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     }
 
     pps.tcoeff_level_prediction_flag              = extSvc->DependencyLayer[did].QualityLayer[qid].TcoeffPredictionFlag;
+#endif
     pps.disable_inter_layer_deblocking_filter_idc = did || qid ? 0 : 1;
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     pps.next_layer_resolution_change_flag =
         (qid + 1 == extSvc->DependencyLayer[did].QualityNum) &&
         (did != par.calcParam.did[par.calcParam.numDependencyLayer - 1]);
+#else
+    pps.next_layer_resolution_change_flag = (did != par.calcParam.did[par.calcParam.numDependencyLayer - 1]);
+#endif
 
     pps.inter_layer_slice_alpha_c0_offset_div2         = 0;
     pps.inter_layer_slice_beta_offset_div2             = 0;
@@ -949,7 +973,11 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.entropy_coding_mode_flag          = extPps->entropyCodingModeFlag;
     pps.weighted_pred_flag                = extPps->weightedPredFlag;
     pps.weighted_bipred_idc               = extPps->weightedBipredIdc;
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     pps.constrained_intra_pred_flag       = LastLayer(par, did, qid) ? extPps->constrainedIntraPredFlag : 1;
+#else
+    pps.constrained_intra_pred_flag       = extPps->constrainedIntraPredFlag;
+#endif
     pps.transform_8x8_mode_flag           = extPps->transform8x8ModeFlag;
     pps.pic_scaling_matrix_present_flag   = extPps->picScalingMatrixPresentFlag;
     pps.pic_scaling_list_present_flag     = extPps->picScalingMatrixPresentFlag;
@@ -964,7 +992,11 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     //pps.bit_rate_value_minus1             = extSps->vui.nalHrdParameters.bitRateValueMinus1[0];
     //pps.cpb_size_value_minus1             = extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0];
     pps.bEmulationByteInsertion           = 1;
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     pps.bLastLayerInPicture               = LastLayer(par, did, qid);
+#else
+    pps.bLastLayerInPicture               = 1;
+#endif
 }
 
 void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
@@ -1574,7 +1606,11 @@ mfxStatus D3D9Encoder::ExecuteImpl(
     encodeExecuteParams.pCompressedBuffers                 = Begin(m_compBufDesc);
     encodeExecuteParams.pCipherCounter                     = 0;
     encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
+#else
+    encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1; // none
+#endif
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
     UCHAR  SkipFlag = task.SkipFlag();
     mfxU32 skipMode = m_skipMode;
@@ -1750,6 +1786,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(
     {
         if (task.m_did == 0 && task.m_qid == 0)
         {
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
             if (task.m_insertSps[fieldId] && m_headerPacker.GetScalabilitySei().DataLength > 0)
             {
                 m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
@@ -1757,6 +1794,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(
                 m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.GetScalabilitySei());
                 bufCnt++;
             }
+#endif
 
             if (task.m_insertAud[fieldId])
             {
@@ -2052,6 +2090,7 @@ mfxStatus D3D9Encoder::Destroy()
     return MFX_ERR_NONE;
 }
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 namespace
 {
     mfxU32 GetPpsId(MfxVideoParam const & video, mfxU32 did, mfxU32 qid, mfxU32 tid)
@@ -2059,8 +2098,10 @@ namespace
         mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(video);
         return video.calcParam.numLayerOffset[did] + qid * extSvc->DependencyLayer[did].TemporalNum + tid;
     }
-};
+}
+#endif
 
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 D3D9SvcEncoder::D3D9SvcEncoder()
 : m_core(0)
 , m_headerPacker()
@@ -3149,7 +3190,11 @@ mfxStatus D3D9SvcEncoder::Execute(
     encodeExecuteParams.pCompressedBuffers                 = Begin(compBufferDesc);
     encodeExecuteParams.pCipherCounter                     = 0;
     encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
+#else
+    encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1; // none
+#endif
 
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 
@@ -3215,6 +3260,7 @@ mfxStatus D3D9SvcEncoder::Execute(
             compBufferDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackAud(task, fieldId));
             bufCnt++;
         }
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         if (task.m_insertSps[fieldId])
         {
             compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA);
@@ -3223,6 +3269,7 @@ mfxStatus D3D9SvcEncoder::Execute(
             bufCnt++;
             //printf("scalable info sei attached\n");
         }
+#endif
 
         if (task.m_insertSps[fieldId])
         {
@@ -3391,5 +3438,7 @@ mfxStatus D3D9SvcEncoder::Destroy()
     return MFX_ERR_NONE;
 }
 
-#endif // (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+#endif
+
+#endif // (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
 /* EOF */

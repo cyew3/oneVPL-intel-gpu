@@ -27,6 +27,10 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4661)
+#endif
+
 namespace H265Enc {
 
 static const Ipp32s ctxIndMap[16] =

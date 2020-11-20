@@ -304,7 +304,7 @@ namespace avce_mbbrc
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,       1000 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,          1500 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } } },
-#if defined (WIN32)||(WIN64)
+#if defined (_WIN32)||(_WIN64)
         {/*06*/ 7,{ { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,    MFX_RATECONTROL_QVBR },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  720 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },

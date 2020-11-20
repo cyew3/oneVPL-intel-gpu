@@ -1,5 +1,5 @@
 ##******************************************************************************
-## Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+## Copyright (C) 2016-2020 Intel Corporation.  All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -24,8 +24,10 @@
 ## THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##******************************************************************************
 
-cmake_minimum_required( VERSION 2.8.5 FATAL_ERROR )
-project( mfx )
+cmake_minimum_required( VERSION 3.14 FATAL_ERROR )
+cmake_policy(SET CMP0048 NEW) # version handled by project()
+
+project(mfx VERSION ${MEDIA_VERSION} LANGUAGES CXX)
 
 set( MFX_API_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/../../include )
 
@@ -53,60 +55,58 @@ include( GNUInstallDirs )
 if( NOT DEFINED MFX_PLUGINS_CONF_DIR )
   set( MFX_PLUGINS_CONF_DIR ${CMAKE_INSTALL_FULL_DATADIR}/mfx )
 endif( )
-add_definitions( -DMFX_PLUGINS_CONF_DIR="${MFX_PLUGINS_CONF_DIR}" )
+
 message( STATUS "MFX_PLUGINS_CONF_DIR=${MFX_PLUGINS_CONF_DIR}" )
 
 if( NOT DEFINED MFX_MODULES_DIR )
   set( MFX_MODULES_DIR ${CMAKE_INSTALL_FULL_LIBDIR} )
 endif( )
-add_definitions( -DMFX_MODULES_DIR="${MFX_MODULES_DIR}" )
 message( STATUS "MFX_MODULES_DIR=${MFX_MODULES_DIR}" )
 
-add_definitions(-DUNIX)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if( CMAKE_SYSTEM_NAME MATCHES Linux )
-  add_definitions(-D__USE_LARGEFILE64 -D_FILE_OFFSET_BITS=64 -DLINUX -DLINUX32)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -fPIC ${warnings} ${no_warnings}")
 
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_definitions(-DLINUX64)
-  endif( )
-endif( )
-
-if( CMAKE_SYSTEM_NAME MATCHES Darwin )
-  add_definitions(-DOSX)
-  add_definitions(-DOSX32)
-
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_definitions(-DOSX64)
-  endif( )
-endif( )
-
-set(no_warnings "-Wno-unknown-pragmas -Wno-unused")
-set(warnings "-Wall -Wformat -Wformat-security")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -fPIC -std=c++11 ${warnings} ${no_warnings}")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
-
-if (DEFINED CMAKE_FIND_ROOT_PATH)
-  append("--sysroot=${CMAKE_FIND_ROOT_PATH} " LINK_FLAGS)
-endif (DEFINED CMAKE_FIND_ROOT_PATH)
-
-list(APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/mfxloader.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/mfxparser.cpp
+add_library(mfx SHARED 
+  mfxloader.cpp
+  mfxparser.cpp
 )
 
-include_directories (
-  ${MFX_API_FOLDER}
-)
+target_compile_features(mfx PRIVATE cxx_std_11)
 
-add_library(mfx SHARED ${sources})
+target_include_directories(mfx PUBLIC ${MFX_API_FOLDER})
+
 target_link_libraries(mfx PRIVATE  ${CMAKE_DL_LIBS})
+
+target_compile_definitions(mfx PRIVATE
+  __USE_LARGEFILE64
+  _FILE_OFFSET_BITS=64
+  LINUX
+  LINUX32
+  $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:LINUX64>
+  MFX_PLUGINS_CONF_DIR="${MFX_PLUGINS_CONF_DIR}"
+  MFX_MODULES_DIR="${MFX_MODULES_DIR}"
+  $<$<CONFIG:Debug>:_DEBUG>
+  )
+
+target_compile_options(mfx PRIVATE
+  -pipe
+  -Wall 
+  -Wformat 
+  -Wformat-security
+  -Wno-unknown-pragmas
+  -Wno-unused
+  )
 
 get_api_version(MFX_VERSION_MAJOR MFX_VERSION_MINOR)
 
-set_target_properties( mfx PROPERTIES LINK_FLAGS
-  "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx.map -fstack-protector")
+target_link_options(mfx PRIVATE
+  LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx.map
+  LINKER:--no-undefined,-z,relro,-z,now,-z,noexecstack
+  -fstack-protector
+  )
+
+set_target_properties( mfx PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties( mfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE} FOLDER mfx )
 set_target_properties( mfx PROPERTIES   VERSION ${MFX_VERSION_MAJOR}.${MFX_VERSION_MINOR})
 set_target_properties( mfx PROPERTIES SOVERSION ${MFX_VERSION_MAJOR})

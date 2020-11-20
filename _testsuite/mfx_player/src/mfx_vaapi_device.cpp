@@ -4,13 +4,15 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)
 
 #include "mfx_vaapi_device.h"
+#include "mfx_ihw_device.h"
+#include "vaapi_utils.h"
 
 IHWDevice* CreateVAAPIDevice(const std::string& devicePath, int type)
 {

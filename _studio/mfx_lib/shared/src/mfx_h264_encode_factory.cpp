@@ -122,7 +122,7 @@ MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
 
 } // MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder( VideoCORE* core )
 
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#elif !defined(STRIP_EMBARGO)
 
 MFEDXVAEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
 {

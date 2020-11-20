@@ -483,6 +483,10 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
         dstRect.width = m_dstSize.width;
         dstRect.height= m_dstSize.height;
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
         ippSts = ippiResizeSqrPixel_8u_C1R(
             m_pPic[0], 
             srcDim, 
@@ -499,7 +503,9 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
             yShift, 
             interpolation, 
             m_workBuff.get());
-
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
         if( ippSts != 0 )
         {
             return UMC_ERR_ALLOC;

@@ -1,20 +1,51 @@
-mfx_include_dirs( )
+set(common_sources
+  include/dechtbl.h
+  include/decqtbl.h
+  include/jpegdec_base.h
+  include/umc_jpeg_frame_constructor.h
+  include/umc_mjpeg_mfx_decode_base.h
+  src/dechtbl.cpp
+  src/decqtbl.cpp
+  src/jpegdec.cpp
+  src/jpegdec_base.cpp
+  src/mfx_mjpeg_task.cpp
+  src/umc_jpeg_frame_constructor.cpp
+  src/umc_mjpeg_mfx_decode.cpp
+  src/umc_mjpeg_mfx_decode_base.cpp
+  src/umc_mjpeg_mfx_decode_hw.cpp
+)
 
-list( APPEND cdirs
-  jpeg_common
-  )
-foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
-endforeach( )
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_library(jpeg_dec_hw STATIC)
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs}) 
+target_include_directories(jpeg_dec_hw
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-make_library( jpeg_dec hw static )
+target_sources(jpeg_dec_hw
+  PRIVATE
+    include/umc_mjpeg_mfx_decode_hw.h
+    src/umc_mjpeg_mfx_decode_hw.cpp
+    ${common_sources}
+)
 
-list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/umc_mjpeg_mfx_decode_hw.cpp)
-make_library( jpeg_dec sw static )
-set( defs "" )
+target_link_libraries(jpeg_dec_hw PUBLIC mfx_static_lib jpeg_common)
+
+set_property(TARGET jpeg_dec_hw PROPERTY FOLDER "umc")
+
+
+add_library(jpeg_dec_sw STATIC)
+
+target_include_directories(jpeg_dec_sw
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_sources(jpeg_dec_sw
+  PRIVATE
+    ${common_sources}
+)
+
+target_link_libraries(jpeg_dec_sw PUBLIC mfx_static_lib jpeg_common)
+
+set_property(TARGET jpeg_dec_sw PROPERTY FOLDER "umc")

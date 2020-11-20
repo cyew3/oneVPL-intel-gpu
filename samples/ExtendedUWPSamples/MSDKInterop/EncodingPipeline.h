@@ -36,7 +36,6 @@ using namespace Windows::Foundation;
 
 class CEncodingPipeline
 {
-	friend class std::_Ref_count_obj<CEncodingPipeline>;
 private:
 
 public:

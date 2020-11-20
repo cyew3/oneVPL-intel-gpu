@@ -144,5 +144,5 @@ vm_char* UMC::umc_file_fgets_ascii(vm_char* str, int nchar, vm_file* fd)
   return rtv;
 #else
   return vm_file_fgets(str, nchar, fd);
-#endif //#if defined(WIN32) || defined(WIN64)
+#endif //#if defined(_WIN32) || defined(_WIN64)
 } /* vm_file_fgets_ascii() */

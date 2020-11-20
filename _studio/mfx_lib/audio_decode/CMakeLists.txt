@@ -6,7 +6,7 @@ list( APPEND vdirs
 list( APPEND cdirs
   mp3_common aac_dec common mp3_dec aac_common
   )
-mfx_include_dirs( )
+
 foreach( dir ${vdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach()

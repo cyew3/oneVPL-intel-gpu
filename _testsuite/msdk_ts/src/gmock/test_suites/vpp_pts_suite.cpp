@@ -267,7 +267,7 @@ namespace vpp_pts_suite
                                              frame_allocator::OpaqueAllocMode::ALLOC_EMPTY);
 
         mfxFrameAllocator* p_Allocator;
-#if defined (WIN32) || (WIN64)
+#if defined (_WIN32) || (_WIN64)
         mfxHDL hdl;
         mfxHandleType hdl_type;
         m_pFrameAllocator = &al;

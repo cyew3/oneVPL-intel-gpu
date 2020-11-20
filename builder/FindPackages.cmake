@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2020 Intel Corporation
+##  Copyright(C) 2012-2020 Intel Corporation. All Rights Reserved.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -145,7 +145,10 @@ function(configure_target target cflags libdirs)
 endfunction()
 
 function(configure_libmfx_target target)
-  configure_target(${ARGV0} "${LIBMFX_CFLAGS}" "${LIBMFX_LIBRARY_DIRS}")
+  # prefer local Dispatcher sources to preinstalled
+  if (NOT TARGET mfx)
+     configure_target(${ARGV0} "${PKG_MFX_CFLAGS}" "${PKG_MFX_LIBRARY_DIRS}")
+  endif()
 
   set(SCOPE_CFLAGS ${SCOPE_CFLAGS} PARENT_SCOPE)
   set(SCOPE_LINKFLAGS "${SCOPE_LINKFLAGS} -Wl,--default-symver" PARENT_SCOPE)
@@ -488,13 +491,23 @@ if( Linux )
   find_package(PkgConfig REQUIRED)
 
   # required:
-  pkg_check_modules(PKG_LIBVA     REQUIRED libva>=1.9)
-  pkg_check_modules(PKG_LIBDRM    REQUIRED libdrm>=2.4)
-  pkg_check_modules(PKG_LIBVA_DRM REQUIRED libva-drm>=1.9)
+  pkg_check_modules(PKG_LIBVA     REQUIRED libva>=1.9 IMPORTED_TARGET)
+  pkg_check_modules(PKG_LIBDRM    REQUIRED libdrm>=2.4 IMPORTED_TARGET)
+  pkg_check_modules(PKG_LIBVA_DRM REQUIRED libva-drm>=1.9 IMPORTED_TARGET)
 
   # optional:
+  pkg_check_modules( PKG_MFX       libmfx>=1.28 )
+
   pkg_check_modules( PKG_X11       x11 )
   pkg_check_modules( PKG_LIBVA_X11 libva-x11>=1.9 )
+
+  add_library(va INTERFACE)
+  target_link_libraries(va
+    INTERFACE
+      PkgConfig::PKG_LIBVA
+      PkgConfig::PKG_LIBDRM
+      PkgConfig::PKG_LIBVA_DRM
+  )
 
   if ( PKG_X11_FOUND AND PKG_LIBVA_X11_FOUND )
     set( ENABLE_X11 true )
@@ -503,6 +516,10 @@ if( Linux )
     endif()
   else()
     message( STATUS "x11 modules not found (optional). Samples will be built without x11 support" )
+  endif()
+
+  if( ENABLE_X11_DRI3 )
+    pkg_check_modules(PKG_XCB REQUIRED xcb xcb-dri3 x11-xcb xcb-present)
   endif()
 
   if( ENABLE_WAYLAND )

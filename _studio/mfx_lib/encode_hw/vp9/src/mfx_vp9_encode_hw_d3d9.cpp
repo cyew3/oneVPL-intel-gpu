@@ -511,7 +511,7 @@ D3D9Encoder::~D3D9Encoder()
 void HardcodeCaps(ENCODE_CAPS_VP9& caps, VideoCORE* pCore, VP9MfxVideoParam const & par)
 {
 //WA because of Direct3D 11 limitation
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if !defined(STRIP_EMBARGO)
     eMFXHWType platform = pCore->GetHWType();
     eMFXVAType vatype = pCore->GetVAType();
 
@@ -532,7 +532,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, VideoCORE* pCore, VP9MfxVideoParam cons
     caps;
     pCore;
     par;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif // !defined(STRIP_EMBARGO)
 }
 
 mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
@@ -732,7 +732,11 @@ mfxStatus D3D9Encoder::Execute(
     encodeExecuteParams.pCompressedBuffers                 = &compBufferDesc[0];
     encodeExecuteParams.pCipherCounter                     = 0;
     encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
+#else
+	encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1;
+#endif
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;

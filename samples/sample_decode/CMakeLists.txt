@@ -1,12 +1,15 @@
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_misc/wayland/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+add_executable(sample_decode)
+set_property(TARGET sample_decode PROPERTY FOLDER "samples")
 
-list( APPEND LIBS_VARIANT sample_common )
+target_include_directories(sample_decode PRIVATE include)
+target_link_libraries(sample_decode PRIVATE MFX::mfx sample_common)
 
-set(DEPENDENCIES libmfx dl pthread)
-make_executable( shortname universal "nosafestring" )
+target_sources(sample_decode
+  PRIVATE
+    include/pipeline_decode.h
 
-install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+    src/pipeline_decode.cpp
+    src/sample_decode.cpp
+  )
+
+install( TARGETS sample_decode RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

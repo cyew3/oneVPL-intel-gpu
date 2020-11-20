@@ -32,10 +32,6 @@
 
 #include "mediasdk_version.h"
 
-#if (MFX_VERSION_MAJOR == 1) && (MFX_VERSION_MINOR >= 10)
-  #define MFX_USE_VERSIONED_SESSION
-#endif
-
 
 // static section of the file
 namespace
@@ -67,11 +63,8 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
-#if defined(MFX_USE_VERSIONED_SESSION)
     _mfxSession_1_10 * pSession = 0;
-#else
-    _mfxSession * pSession = 0;
-#endif
+
     (void)g_hModule;
     mfxStatus mfxRes;
     int adapterNum = 0;
@@ -128,7 +121,9 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     if (!(implInterface & MFX_IMPL_AUDIO) &&
 #if defined(MFX_VA_WIN)
-        !(implInterface & MFX_IMPL_EXTERNAL_THREADING)&&
+    #if (MFX_VERSION >= MFX_VERSION_NEXT)
+        !(implInterface & MFX_IMPL_EXTERNAL_THREADING) &&
+    #endif
         (MFX_IMPL_VIA_D3D11 != implInterface) &&
         (MFX_IMPL_VIA_D3D9 != implInterface) &&
 #elif defined(MFX_VA_LINUX)
@@ -167,11 +162,8 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         // prepare initialization parameters
 
         // create new session instance
-#if defined(MFX_USE_VERSIONED_SESSION)
         pSession = new _mfxSession_1_10(adapterNum);
-#else
-        pSession = new _mfxSession(adapterNum);
-#endif
+
         mfxInitParam init_param = par;
         init_param.Implementation = implInterface;
 
@@ -261,12 +253,8 @@ mfxStatus MFXClose(mfxSession session)
         }
 
         // deallocate the object
-#if defined(MFX_USE_VERSIONED_SESSION)
         _mfxSession_1_10 *newSession  = (_mfxSession_1_10 *)session;
         delete newSession;
-#else
-        delete session;
-#endif
     }
     // handle error(s)
     catch(...)

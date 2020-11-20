@@ -471,7 +471,7 @@ protected:
 #endif
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     std::map<DWORD, mfxU32> m_timeToRunMap;
 #endif
 

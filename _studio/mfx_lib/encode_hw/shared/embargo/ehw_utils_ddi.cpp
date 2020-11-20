@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if defined(MFX_VA_WIN)
+
 #include "ehw_utils_ddi.h"
 
 namespace MfxEncodeHW
@@ -39,3 +41,4 @@ mfxStatus QueryFeedbackStatus(Device& dev, DDIFeedback& ddiFB, mfxU32 id)
 }
 
 } //namespace MfxEncodeHW
+#endif // defined(MFX_VA_WIN)

@@ -374,22 +374,22 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_CopyWeighted_S16U16)(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp8u isChroma422, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
     typedef void (* PTR_CopyWeightedBidi_S16U16)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp8u isChroma422, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
 
-    typedef Ipp32s (* PTR_SSE_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp32s,Ipp32s,Ipp32s);
-    typedef Ipp32s (* PTR_SSE_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp32s,Ipp32s,Ipp32s);
+    typedef Ipp32s (H265_FASTCALL* PTR_SSE_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp32s,Ipp32s,Ipp32s);
+    typedef Ipp32s (H265_FASTCALL* PTR_SSE_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp32s,Ipp32s,Ipp32s);
 
-    typedef void (* PTR_Diff_8u)(const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s);
-    typedef void (* PTR_Diff_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s);
-    typedef void (* PTR_DiffNv12_8u)(const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
-    typedef void (* PTR_DiffNv12_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
+    typedef void (H265_FASTCALL* PTR_Diff_8u)(const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s);
+    typedef void (H265_FASTCALL* PTR_Diff_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s);
+    typedef void (H265_FASTCALL* PTR_DiffNv12_8u)(const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
+    typedef void (H265_FASTCALL* PTR_DiffNv12_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
 
-    typedef void (* PTR_SplitChromaCtb_8u)(const Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp32s,Ipp32s);
-    typedef void (* PTR_SplitChromaCtb_16u)(const Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp32s,Ipp32s);
+    typedef void (H265_FASTCALL* PTR_SplitChromaCtb_8u)(const Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp32s,Ipp32s);
+    typedef void (H265_FASTCALL* PTR_SplitChromaCtb_16u)(const Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp32s,Ipp32s);
 
-    typedef void (* PTR_ImageDiffHistogram_8u)(Ipp8u*, Ipp8u*, Ipp32s, Ipp32s, Ipp32s, Ipp32s histogram[5], Ipp64s*, Ipp64s*);
+    typedef void (H265_FASTCALL* PTR_ImageDiffHistogram_8u)(Ipp8u*, Ipp8u*, Ipp32s, Ipp32s, Ipp32s, Ipp32s histogram[5], Ipp64s*, Ipp64s*);
 
-    typedef void (* PTR_SearchBestBlock8x8_8u)(Ipp8u*, Ipp8u*, Ipp32s, Ipp32s, Ipp32s, Ipp32u*, Ipp32s*, Ipp32s*);
-    typedef void (* PTR_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff);
-    typedef void (* PTR_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs);
+    typedef void (H265_FASTCALL* PTR_SearchBestBlock8x8_8u)(Ipp8u*, Ipp8u*, Ipp32s, Ipp32s, Ipp32s, Ipp32u*, Ipp32s*, Ipp32s*);
+    typedef void (H265_FASTCALL* PTR_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff);
+    typedef void (H265_FASTCALL* PTR_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs);
 
     /* ******************************************************** */
     /*                    Interface Wrapper                     */

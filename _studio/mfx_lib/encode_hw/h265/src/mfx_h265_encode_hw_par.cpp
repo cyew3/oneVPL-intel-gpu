@@ -893,7 +893,7 @@ mfxU32 GetDefaultLCUSize(MfxVideoParam const & par,
 
     return LCUSize;
 }
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
 mfxU16 GetDefaultMFECount(MfxVideoParam const & par,
     ENCODE_CAPS_HEVC const & hwCaps)
 {
@@ -1658,10 +1658,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     mfxExtDirtyRect* DirtyRect = &par.m_ext.DirtyRect;
 #endif // MFX_ENABLE_HEVCE_DIRTY_RECT
 
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     mfxExtMultiFrameParam* mfeParam = &par.m_ext.mfeParam;
     mfxExtMultiFrameControl* mfeControl = &par.m_ext.mfeControl;
-#endif // MFX_ENABLE_MFE && PRE_SI_TARGET_PLATFORM_GEN12
+#endif // MFX_ENABLE_MFE && !defined(STRIP_EMBARGO)
     changed += CheckTriStateOption(par.mfx.LowPower);
 
 #if (MFX_VERSION >= 1025)
@@ -2865,7 +2865,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 
     changed += CheckTriStateOption(par.m_ext.DDI.QpAdjust);
 
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     if (mfeParam && mfeParam->MaxNumFrames > 1)
     {
         if (mfeParam->MFMode == MFX_MF_DEFAULT)

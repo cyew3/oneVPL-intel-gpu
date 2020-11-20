@@ -1,12 +1,24 @@
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_plugins/rotate_cpu/include
-)
+add_executable(sample_encode)
+set_property(TARGET sample_encode PROPERTY FOLDER "samples")
 
-list( APPEND LIBS_VARIANT sample_common )
+target_include_directories(sample_encode
+  PRIVATE
+    include
+    ${MSDK_SAMPLES_ROOT}/sample_plugins/rotate_cpu/include
+  )
 
-set(DEPENDENCIES libva libmfx dl pthread)
-make_executable( shortname universal "nosafestring" )
+target_link_libraries(sample_encode PRIVATE MFX::mfx sample_common)
 
-install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+target_sources(sample_encode
+  PRIVATE
+    include/pipeline_encode.h
+    include/pipeline_region_encode.h
+    include/pipeline_user.h
+
+    src/pipeline_encode.cpp
+    src/pipeline_region_encode.cpp
+    src/pipeline_user.cpp
+    src/sample_encode.cpp
+  )
+
+install( TARGETS sample_encode RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

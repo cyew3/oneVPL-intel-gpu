@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required( VERSION 3.6 )
+cmake_minimum_required( VERSION 3.14 )
 
 cmake_policy(SET CMP0048 NEW) # version handled by project()
 
@@ -27,92 +27,52 @@ cmake_policy(SET CMP0048 NEW) # version handled by project()
 set(MEDIA_VERSION 20.4.0)
 set(MEDIA_VERSION_STR "${MEDIA_VERSION}${MEDIA_VERSION_EXTRA}" CACHE STRING "" FORCE)
 
-project(mfx1
-  VERSION ${MEDIA_VERSION}
-  LANGUAGES CXX C ASM)
-
-include(CMakeDependentOption)
-
-set(STRIP_EMBARGO OFF)
-set(MFX_DISABLE_SW_FALLBACK ON)
-add_definitions(-DMFX_DISABLE_SW_FALLBACK)
-
-if(OPEN_SOURCE)
-  add_definitions(-DOPEN_SOURCE)
-  add_definitions(-DMFX_PROTECTED_FEATURE_DISABLE)
-  add_definitions(-DSYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-  add_definitions(-DMFX_ENABLE_HW_ONLY_MPEG2_DECODER)
+if(CMAKE_SYSTEM_NAME MATCHES WindowsStore)
+  if(NOT VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION)
+    set(VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION $ENV{MINIDDK_VERSION})
+  endif()
 endif()
 
-add_definitions(-DMFX_ENABLE_HW_ONLY_VPP)
+project(mfx1
+  VERSION ${MEDIA_VERSION}
+  LANGUAGES CXX C)
+
+include(CMakeDependentOption)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Default to `release` build if nothing was specified
-if(NOT CMAKE_BUILD_TYPE)
+if((NOT CMAKE_BUILD_TYPE) AND (CMAKE_SYSTEM_NAME MATCHES Linux))
   message(STATUS "No build type selected, default to release")
   set(CMAKE_BUILD_TYPE release)
 endif()
 
 set( BUILDER_ROOT "${CMAKE_HOME_DIRECTORY}/builder" )
 
-if( NOT DEFINED CMAKE_MFX_HOME )
-  set( CMAKE_MFX_HOME "${CMAKE_HOME_DIRECTORY}/api" )
-endif()
-
-if(NOT DEFINED $ENV{MFX_HOME} )
-  set( MFX_HOME ${CMAKE_HOME_DIRECTORY} )
+if(NOT DEFINED ENV{MFX_HOME} )
+  set( MFX_HOME "${CMAKE_HOME_DIRECTORY}" )
+  set( MFX_API_HOME "${CMAKE_HOME_DIRECTORY}/api" )
 else()
   set( MFX_HOME $ENV{MFX_HOME} )
+  set( MFX_API_HOME "${MFX_HOME}/api")
 endif()
-
-option( ENABLE_OPENCL "Build targets dependent on OpenCL?" ON )
-
-# -DENABLE_ALL will enable all the dependencies and features unless user did not
-# explicitly switched some of them OFF, i.e. configuring in the following way
-# is possible:
-#   cmake -DENABLE_ALL=ON -DENABLE_TEXTLOG=OFF
-# and it will configure all targets except samples.
-#
-# TODO: As of now ENABLE_ALL is not fully implemented, it will not affect all
-#   of the ENABLE_* options. Those options it don't affect are placed above
-#   ENABLE_ALL definition and require some rework and/or pending CI adoption.
-#
-option( ENABLE_ALL "Enable all dependencies and features?" OFF )
-
-if( CMAKE_SYSTEM_NAME MATCHES Linux )
-  option( ENABLE_X11_DRI3 "Build X11 DRI3 versions of the targets?" ${ENABLE_ALL} )
-  option( ENABLE_WAYLAND "Build WAYLAND versions of the targets?" ${ENABLE_ALL} )
-endif()
-
-option( ENABLE_ITT "Build targets with ITT instrumentation support (requires VTune)?" ${ENABLE_ALL} )
-
-option( ENABLE_TEXTLOG "Enable textlog tracing?" "${ENABLE_ALL}")
-option( ENABLE_STAT "Enable stat tracing?" "${ENABLE_ALL}")
-
-# -DBUILD_ALL will enable all the build targets unless user did not explicitly
-# switched some targets OFF, i.e. configuring in the following way is possible:
-#   cmake -DBUILD_ALL=ON -DBUILD_SAMPLES=OFF
-# and it will configure all targets except samples.
-option( BUILD_ALL "Build all the targets?" OFF )
-
-option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
-option( BUILD_DISPATCHER "Build dispatcher?" ON )
-cmake_dependent_option(BUILD_SAMPLES "Build samples?" ON "BUILD_DISPATCHER" OFF )
-# Tools depend on samples (sample_common) and can't be built without it. The
-# following BUILD_TOOLS option declaration assures that.
-cmake_dependent_option(BUILD_TOOLS "Build tools?" "${BUILD_ALL}" "BUILD_SAMPLES" OFF)
-option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
-option(USE_SYSTEM_GTEST "Use system installed gtest?" OFF)
 
 include( ${BUILDER_ROOT}/FindFunctions.cmake )
-include( ${BUILDER_ROOT}/ConfTargets.cmake )
+include( ${BUILDER_ROOT}/BuildOptions.cmake )
 include( ${BUILDER_ROOT}/FindGlobals.cmake )
-include( ${BUILDER_ROOT}/FindInternals.cmake )
-include( ${BUILDER_ROOT}/FindMFX.cmake )
 include( ${BUILDER_ROOT}/FindITT.cmake )
+include( ${BUILDER_ROOT}/FindIPP.cmake )
 include( ${BUILDER_ROOT}/FindPackages.cmake )
 include( ${BUILDER_ROOT}/FindOpenCL.cmake )
+include( ${BUILDER_ROOT}/FindMFX.cmake )
+include( ${BUILDER_ROOT}/FindInternals.cmake )
+
+
+if(CMAKE_SYSTEM_NAME MATCHES WindowsStore)
+  message(STATUS "UWP build enabled. Another components will not be built!")
+  include(sources_uwp.cmake OPTIONAL)
+  return()
+endif()
 
 if (BUILD_TESTS)
   if (NOT USE_SYSTEM_GTEST)
@@ -128,10 +88,16 @@ if (BUILD_TESTS)
     # generated inside the Gtest code at a call to fwrite. Since Gtest sets -Werror
     # internally the only way to make it compile without modifying its source is to disable the
     # unused-result warnings for Gtest/Gmock only.
-    target_compile_options (gtest PRIVATE "-Wno-unused-result")
-    target_compile_options (gmock PRIVATE "-Wno-unused-result")
-    target_compile_options (gtest_main PRIVATE "-Wno-unused-result")
-    target_compile_options (gmock_main PRIVATE "-Wno-unused-result")
+    if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
+      target_compile_options (gtest PRIVATE "-Wno-unused-result")
+      target_compile_options (gmock PRIVATE "-Wno-unused-result")
+      target_compile_options (gtest_main PRIVATE "-Wno-unused-result")
+      target_compile_options (gmock_main PRIVATE "-Wno-unused-result")
+    endif()
+    set_property(TARGET gtest PROPERTY FOLDER "contrib")
+    set_property(TARGET gmock PROPERTY FOLDER "contrib")
+    set_property(TARGET gtest_main PROPERTY FOLDER "contrib")
+    set_property(TARGET gmock_main PROPERTY FOLDER "contrib")
   endif()
 
   enable_testing()
@@ -139,7 +105,11 @@ endif()
 
 # should prepend others to define target mfx
 if (BUILD_DISPATCHER)
-  add_subdirectory(api/mfx_dispatch/linux)
+  if (CMAKE_SYSTEM_NAME MATCHES Linux)
+    add_subdirectory(api/mfx_dispatch/linux)
+  else()
+    add_subdirectory(api/mfx_dispatch/windows)
+  endif()
 endif()
 
 if (BUILD_TOOLS)
@@ -151,15 +121,18 @@ if (BUILD_SAMPLES)
 endif()
 
 if (BUILD_RUNTIME)
-  if (MFX_ENABLE_JPEG_SW_FALLBACK)
-    add_subdirectory(${CMAKE_HOME_DIRECTORY}/contrib/ipp)
-  endif()
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)
 endif()
 
 if (BUILD_TESTS)
   add_subdirectory(tests)
 endif()
+
+if (ENABLE_ITT)
+  target_link_libraries(mfx_common_properties INTERFACE itt)
+endif()
+
+add_subdirectory(api/mfx_loader_dll)
 
 create_plugins_cfg(${CMAKE_BINARY_DIR})
 
@@ -223,5 +196,8 @@ message("  BUILD_DISPATCHER                        : ${BUILD_DISPATCHER}")
 message("  BUILD_SAMPLES                           : ${BUILD_SAMPLES}")
 message("  BUILD_TESTS                             : ${BUILD_TESTS}")
 message("  BUILD_TOOLS                             : ${BUILD_TOOLS}")
+message("  BUILD_VAL_TOOLS                         : ${BUILD_VAL_TOOLS}")
 message("  BUILD_KERNELS                           : ${BUILD_KERNELS}")
 message("*****************************************************************************")
+
+include(sources_ext.cmake OPTIONAL)

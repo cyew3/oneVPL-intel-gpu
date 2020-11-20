@@ -27,6 +27,11 @@
 #include "mfx_h265_frame.h"
 //#include "mfx_h265_optimization.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable:4244)
+#pragma warning(disable:4661)
+#endif
+
 namespace H265Enc {
 
 #define VERT_FILT 0

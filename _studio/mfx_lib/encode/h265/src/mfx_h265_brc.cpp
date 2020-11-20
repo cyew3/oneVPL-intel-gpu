@@ -27,6 +27,11 @@
 #include "mfx_h265_brc.h"
 #include "mfx_h265_tables.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4305)
+#endif
 
 namespace {
 
@@ -1670,9 +1675,9 @@ Ipp32s estimateNewIntraQP(Ipp32s GopRefDist, Ipp32s ltrConfidenceLevel, Ipp32s m
 
 Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 {
-    Frame *frame;
-    Ipp32s i, j;
-    Ipp32s qp;
+    Frame *frame = nullptr;
+    Ipp32s i = 0, j = 0;
+    Ipp32s qp = 0;
 
     if (video->AnalyzeCmplx) {
         if (!frames || numFrames <= 0) {
@@ -1700,7 +1705,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 #endif
 
         Ipp64f scCmplx = -1;
-        Ipp32s rfo = -1, reo = -1, ri = -1, rso;
+        Ipp32s rfo = -1, reo = -1, ri = -1, rso = 0;
         Ipp32s eso = -1, ei = -1;
         for (i = 0; i < len; i++) {
             if (frames[i] && (frames[i]->m_stats[mLowres]->m_sceneCut > 0)) { // enc order scene cut frame

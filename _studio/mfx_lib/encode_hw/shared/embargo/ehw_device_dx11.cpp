@@ -18,6 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+#if defined (MFX_VA_WIN)
+
 #include "ehw_device_dx11.h"
 #include "ehw_utils_ddi.h"
 #include <algorithm>
@@ -320,3 +323,4 @@ mfxStatus DeviceDX11::QueryStatus(DDIFeedback& fb, mfxU32 id)
 }
 
 } //namespace MfxEncodeHW
+#endif //defined (MFX_VA_WIN)

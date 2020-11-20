@@ -18,7 +18,7 @@ Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 /*
 // required for registry manipulations
-#if defined (WIN32)||(WIN64)
+#if defined (_WIN32)||(_WIN64)
 #include "windows.h"
 #endif
 */
@@ -1215,7 +1215,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 /*
 // NB: Registry "magic" not relevant anymore, but keeped for future utilization
 
-#if defined (WIN32)||(WIN64)
+#if defined (_WIN32)||(_WIN64)
 #define FAIL_ON_ERROR(STS)                                                   \
 {                                                                            \
     if (STS != ERROR_SUCCESS)                                                \
@@ -1465,7 +1465,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
 /*
 // NB: Registry "magic" not relevant anymore, but keeped for future utilization
-#if defined (WIN32)|(WIN64)
+#if defined (_WIN32)|(_WIN64)
         // do "magic" with registry to unblock scalable and non-scalable encoding for tiles
         // can help with tests when:
         // (1) working of scalable pipeline together with HuC NOT SUPPORTED in the driver ("VP9 Encode HUC Enable" eliminated)

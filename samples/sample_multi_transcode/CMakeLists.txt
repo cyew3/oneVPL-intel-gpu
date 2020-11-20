@@ -1,16 +1,30 @@
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_misc/wayland/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_plugins/vpp_plugin/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_plugins/rotate_cpu/include
-)
+add_executable(sample_multi_transcode)
+set_property(TARGET sample_multi_transcode PROPERTY FOLDER "samples")
 
-list( APPEND LIBS_VARIANT sample_common )
-list( APPEND LIBS_NOVARIANT vpp_plugin )
+target_include_directories(sample_multi_transcode
+  PRIVATE
+    include
+    ${MSDK_SAMPLES_ROOT}/sample_misc/wayland/include
+    ${MSDK_SAMPLES_ROOT}/sample_plugins/rotate_cpu/include
+    ${MSDK_SAMPLES_ROOT}/sample_plugins/vpp_plugin/include
+  )
 
-set(DEPENDENCIES itt libmfx dl pthread)
+target_link_libraries(sample_multi_transcode
+	PRIVATE	  
+    MFX::mfx
+    sample_common
+    vpp_plugin
+	)
 
-make_executable( shortname universal "nosafestring" )
+target_sources(sample_multi_transcode
+  PRIVATE
+    include/pipeline_transcode.h
+    include/sample_multi_transcode.h
+    include/transcode_utils.h
 
-install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+    src/pipeline_transcode.cpp
+    src/sample_multi_transcode.cpp
+    src/transcode_utils.cpp
+  )
+
+install( TARGETS sample_multi_transcode RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

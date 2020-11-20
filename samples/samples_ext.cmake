@@ -18,10 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-if(NOT OPEN_SOURCE)
-  add_subdirectory(sample_mondello)
-  add_subdirectory(sample_camera)
-  add_subdirectory(DONT_RELEASE/sample_encode_mod)
-  add_subdirectory(DONT_RELEASE/sample_multi_transcode_mod)
-  add_subdirectory(deprecated/sample_spl_mux/dispatcher)
+if (MFX_DISABLE_SW_FALLBACK)
+  return()
 endif()
+
+add_subdirectory(deprecated/sample_spl_mux/dispatcher)
+
+if (NOT BUILD_SAMPLES)
+  return()
+endif()
+
+add_subdirectory(sample_mondello)
+add_subdirectory(sample_camera)
+add_subdirectory(DONT_RELEASE/sample_encode_mod)
+add_subdirectory(DONT_RELEASE/sample_multi_transcode_mod)

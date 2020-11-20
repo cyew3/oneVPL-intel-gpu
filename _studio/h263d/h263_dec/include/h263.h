@@ -57,7 +57,7 @@ extern "C" {
     #define __ALIGN16(type, name, size) \
         __declspec (align(16)) type name[size]
 #else
-    #if defined(_WIN64) || defined(WIN64) || defined(LINUX64)
+    #if defined(_WIN64) || defined(_WIN64) || defined(LINUX64)
         #define __ALIGN16(type, name, size) \
             Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp64s)(_a16_##name) + 15) & ~15)
     #else
@@ -73,7 +73,7 @@ extern "C" {
 
 /* Timer Info */
 
-#if defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32) || defined(_WIN64)
 
     #include <windows.h>
 

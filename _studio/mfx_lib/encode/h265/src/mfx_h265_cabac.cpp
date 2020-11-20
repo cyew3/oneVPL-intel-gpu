@@ -25,6 +25,16 @@
 #include "mfx_h265_quant.h"
 #include "mfx_h265_enc.h"
 
+#if defined(__linux__)
+    #include <emmintrin.h>
+    #include <tmmintrin.h>
+    static inline char _BitScanReverse(unsigned int* index, Ipp32u mask)
+    {
+        *index =  63 - __builtin_clzl((unsigned long)mask & 0xffffffff);
+        return (mask & 0xffffffff) ? '1' : '0';
+    }
+#endif
+
 namespace H265Enc {
 
 template <class H265Bs>
@@ -751,7 +761,7 @@ inline void H265_FASTCALL Rast2Scan4x4(const Ipp16s *src, Ipp32s pitch, Ipp16s *
 static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, Ipp32s num_sig, Ipp32s qp, bool isIntra, Ipp16s *nzcoeffs)
 {
     CoeffsType d;
-    Ipp32s z;
+    Ipp32s z=0;
     Ipp32s c=0, zero_run=0;
     Ipp32u i=0;
     const Ipp32s incVlc[] = {0,4,8,12,24,48,32768};      // maximum vlc = 6!
@@ -1600,8 +1610,8 @@ void H265CU<PixType>::EncodeCU(H265Bs *bs, Ipp32s abs_part_idx, Ipp32s depth, Ip
     if (m_par->transquantBypassEnableFlag)
         h265_code_transquant_bypass_flag(bs, pCU, abs_part_idx );
 
-    Ipp8u skipped_flag;
-    Ipp32u i, num_parts;
+    Ipp8u skipped_flag = 0;
+    Ipp32u i = 0, num_parts = 0;
     if(m_cslice->slice_type != I_SLICE)
     {
         skipped_flag = m_data[abs_part_idx].predMode == MODE_INTER &&

@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+#if defined(_WIN32) || defined(_WIN64)
 #pragma once
 #include "ehw_device.h"
 #include "encoding_ddi.h"
@@ -520,3 +522,4 @@ void DDIParPacker<T>::GetFeedbackInterface(DDIFeedback& fb)
 mfxStatus QueryFeedbackStatus(Device& dev, DDIFeedback& ddiFB, mfxU32 id);
 
 } //namespace MfxEncodeHW
+#endif //defined(_WIN32) || defined(_WIN64)

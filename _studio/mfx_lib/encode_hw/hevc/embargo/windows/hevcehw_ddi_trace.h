@@ -72,7 +72,9 @@ public:
     void Trace(ENCODE_CREATEDEVICE const & b, mfxU32 idx);
     void Trace(DXVADDI_VIDEODESC const & b, mfxU32 idx);
     void Trace(ENCODE_QUERY_STATUS_PARAMS_DESCR const & b, mfxU32 idx);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     void Trace(ENCODE_ENCRYPTION_SET const & b, mfxU32 idx);
+#endif
 #endif
 
     inline void Trace(GUID const & guid, mfxU32) { TraceGUID(guid, m_log); };

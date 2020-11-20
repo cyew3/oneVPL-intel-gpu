@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x86">
+      <Configuration>Debug</Configuration>
+      <Platform>x86</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x86">
+      <Configuration>Release</Configuration>
+      <Platform>x86</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{148d7cc5-938a-44aa-9aa6-6821280b4e03}</ProjectGuid>
+    <Keyword>Linux</Keyword>
+    <RootNamespace>asg_hevc_vs2017_linux</RootNamespace>
+    <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
+    <ApplicationType>Linux</ApplicationType>
+    <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
+    <TargetLinuxPlatform>Generic</TargetLinuxPlatform>
+    <LinuxProjectType>{2238F9CD-F817-4ECC-BD14-2524D2669B35}</LinuxProjectType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>/root/projects</RemoteRootDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\..\..\mdp_msdk-lib\api\include;$(ProjectDir)\..\..\..\mdp_msdk-lib\samples\sample_common\include\vm;$(ProjectDir)\..\..\..\mdp_msdk-lib\samples\sample_common\include;$(ProjectDir)\..\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <RemoteBuildCommandLine>cd $(RemoteRootDir); bash build_asg-hevc.sh debug</RemoteBuildCommandLine>
+    <RemoteCleanCommandLine>cd $(RemoteRootDir); bash clean_asg-hevc.sh</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>$(RemoteRootDir)/bin/lin_x64/asg-hevc</RemoteBuildOutputs>
+    <AdditionalSourcesToCopyMapping>$(ProjectDir)build_asg-hevc.sh:=$(RemoteRootDir)/build_asg-hevc.sh;$(ProjectDir)clean_asg-hevc.sh:=$(RemoteRootDir)/clean_asg-hevc.sh;$(ProjectDir)\..\CMakeLists.txt:=$(RemoteRootDir)/mdp_msdk-val-tools/asg-hevc/CMakeLists.txt</AdditionalSourcesToCopyMapping>
+    <RemoteProjectDir>$(RemoteRootDir)</RemoteProjectDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\avc_bitstream.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\avc_nal_spl.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\avc_spl.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\base_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\sample_utils.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\sysmem_allocator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vaapi_device.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vaapi_utils.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vaapi_utils_android.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vaapi_utils_drm.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vaapi_utils_x11.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\atomic.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\atomic_linux.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\shared_object.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\shared_object_linux.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\thread.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\thread_linux.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\thread_windows.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\time.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-lib\samples\sample_common\src\vm\time_linux.cpp" />
+    <ClCompile Include="..\src\asg-hevc.cpp" />
+    <ClCompile Include="..\src\frame_processor.cpp" />
+    <ClCompile Include="..\src\inputparameters.cpp" />
+    <ClCompile Include="..\src\test_processor.cpp" />
+    <ClCompile Include="..\src\util_defs.cpp" />
+	<ClCompile Include="..\src\block_structures.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\abstract_splitter.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\avc_bitstream.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\avc_headers.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\avc_nal_spl.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\avc_spl.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\avc_structures.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\base_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\brc_routines.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\current_date.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\d3d11_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\d3d11_device.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\d3d_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\d3d_device.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\decode_render.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\general_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\hw_device.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\intrusive_ptr.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\mfx_buffering.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\mfx_itt_trace.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\mfx_plugin_base.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\mfx_plugin_module.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\mfx_samples_config.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\parameters_dumper.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\plugin_loader.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\plugin_utils.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\sample_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\sample_types.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\sample_utils.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\shared_ptr.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\surface_auto_lock.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\sysmem_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\time_statistics.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\v4l2_util.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vaapi_allocator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vaapi_device.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vaapi_utils.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vaapi_utils_android.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vaapi_utils_drm.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vaapi_utils_x11.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\version.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vm\atomic_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vm\file_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vm\so_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vm\strings_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vm\thread_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vm\time_defs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-lib\samples\sample_common\include\vpp_ex.h" />
+    <ClInclude Include="..\include\block_structures.h" />
+    <ClInclude Include="..\include\frame_processor.h" />
+    <ClInclude Include="..\include\hevc_defs.h" />
+    <ClInclude Include="..\include\inputparameters.h" />
+    <ClInclude Include="..\include\inter_test.h" />
+    <ClInclude Include="..\include\intra_test.h" />
+    <ClInclude Include="..\include\test_processor.h" />
+    <ClInclude Include="..\include\util_defs.h" />
+    <ClInclude Include="..\include\asglog.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="build_asg-hevc.sh" />
+    <None Include="clean_asg-hevc.sh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);..\..\..\mdp_msdk-lib\samples\sample_common\include;..\..\..\mdp_msdk-lib\samples\sample_common\include\vm;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);..\..\..\mdp_msdk-lib\samples\sample_common\include;..\..\..\mdp_msdk-lib\samples\sample_common\include\vm;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);..\..\..\mdp_msdk-lib\samples\sample_common\include;..\..\..\mdp_msdk-lib\samples\sample_common\include\vm;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);..\..\..\mdp_msdk-lib\samples\sample_common\include;..\..\..\mdp_msdk-lib\samples\sample_common\include\vm;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);..\..\..\mdp_msdk-lib\samples\sample_common\include;..\..\..\mdp_msdk-lib\samples\sample_common\include\vm;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(StlIncludeDirectories);..\..\..\mdp_msdk-lib\samples\sample_common\include;..\..\..\mdp_msdk-lib\samples\sample_common\include\vm;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

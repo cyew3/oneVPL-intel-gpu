@@ -1,4 +1,4 @@
-/* ****************************************************************************** *\
+ /* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -8,6 +8,7 @@ Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
+#include <string>
 #include "ts_bitstream.h"
 #include "bs_parser.h"
 

@@ -12,6 +12,7 @@
 #include "ts_session.h"
 #include "ts_ext_buffers.h"
 #include "ts_surface.h"
+#include "ts_utils.h"
 #include <memory>
 
 #if defined(_WIN32) || defined(_WIN64)

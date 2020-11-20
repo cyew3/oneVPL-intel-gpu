@@ -149,7 +149,6 @@ namespace hevcd_close
     char const* query_stream(unsigned int id, std::integral_constant<unsigned, fourcc>, std::integral_constant<unsigned, profile>)
     { return query_stream(id, std::integral_constant<unsigned, fourcc>{}); }
 
-#if !defined(OPEN_SOURCE)
     /* SCC */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
     { return "forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265"; }
@@ -159,7 +158,6 @@ namespace hevcd_close
     { return "forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
     { return "forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265"; }
-#endif
 
     template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
     struct TestSuiteEx
@@ -189,10 +187,8 @@ namespace hevcd_close
     TS_REG_TEST_SUITE(hevcd_12b_422_y216_close, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
     TS_REG_TEST_SUITE(hevcd_12b_444_y416_close, TestSuiteEx<MFX_FOURCC_Y416>::RunTest, TestSuiteEx<MFX_FOURCC_Y416>::n_cases);
 
-#if !defined(OPEN_SOURCE)
     TS_REG_TEST_SUITE(hevcd_8b_420_nv12_scc_close,  (TestSuiteEx<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
     TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_scc_close,  (TestSuiteEx<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
     TS_REG_TEST_SUITE(hevcd_10b_420_p010_scc_close, (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
     TS_REG_TEST_SUITE(hevcd_10b_444_y410_scc_close, (TestSuiteEx<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
-#endif
 };

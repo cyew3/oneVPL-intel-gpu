@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN) && !defined(AS_MFX_LA_PLUGIN) && !defined(STRIP_EMBARGO)
 
 #include "hevcehw_g12ats_mfe.h"
 #include "mfx_mfe_adapter_dxva.h"
@@ -57,4 +57,4 @@ protected:
 } //namespace Windows
 } //namespace HEVCEHW
 
-#endif
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN) && !defined(AS_MFX_LA_PLUGIN) && !defined(STRIP_EMBARGO)

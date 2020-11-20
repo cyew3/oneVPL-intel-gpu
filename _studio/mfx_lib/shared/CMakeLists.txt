@@ -1,60 +1,98 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
+# ====================================== mfx_common_hw ======================================
 
-mfx_include_dirs( )
+#make_library( mfx_common hw static )
+add_library(mfx_common_hw STATIC)
 
-list( APPEND decdirs
-  vc1 h264 mpeg2/hw mpeg2/sw mjpeg
+target_sources(mfx_common_hw
+  PUBLIC
+    include/encoder_ddi.hpp
+    include/encoding_ddi.h
+    include/libmfxsw.h
+    include/mediasdk_version.h
+    include/mfx_brc_common.h
+    include/mfx_check_hardware_support.h
+    include/mfx_common_decode_int.h
+    include/mfx_common_int.h
+    include/mfx_critical_error_handler.h
+    include/mfx_ddi_enc_dump.h
+    include/mfx_enc_common.h
+    include/mfx_frames.h
+    include/mfx_h264_enc_common.h
+    include/mfx_h264_enc_common_hw.h
+    include/mfx_h264_encode_d3d11.h
+    include/mfx_h264_encode_d3d9.h
+    include/mfx_h264_encode_d3d_common.h
+    include/mfx_h264_encode_interface.h
+    include/mfx_h264_encode_struct_vaapi.h
+    include/mfx_h264_encode_vaapi.h
+    include/mfx_interface.h
+    include/mfx_interface_scheduler.h
+    include/mfx_log.h
+    include/mfx_mpeg2_dec_common.h
+    include/mfx_mpeg2_enc_common.h
+    include/mfx_mpeg2_enc_common_hw.h
+    include/mfx_mpeg2_encode_d3d11.h
+    include/mfx_mpeg2_encode_d3d9.h
+    include/mfx_mpeg2_encode_d3d_common.h
+    include/mfx_mpeg2_encode_interface.h
+    include/mfx_mpeg2_encode_vaapi.h
+    include/mfx_msg.h
+    include/mfx_platform_headers.h
+    include/mfx_session.h
+    include/mfx_task.h
+    include/mfx_task_threading_policy.h
+    include/mfx_thread_task.h
+    include/mfx_tools.h
+    include/mfx_user_plugin.h
+    include/mfx_vc1_dec_common.h
+    include/mfx_vpx_dec_common.h
+    include/mfx_win_event_cache.h
+
+    src/mfx_brc_common.cpp
+    src/mfx_common_decode_int.cpp
+    src/mfx_common_int.cpp
+    src/mfx_enc_common.cpp
+    src/mfx_mpeg2_dec_common.cpp
+    src/mfx_vc1_dec_common.cpp
+    src/mfx_critical_error_handler.cpp
+    src/mfx_ddi_enc_dump.cpp
+    src/mfx_h264_enc_common_hw.cpp
+    src/mfx_h264_encode_factory.cpp
+    src/mfx_h264_encode_vaapi.cpp
+    src/mfx_h264_encode_d3d11.cpp
+    src/mfx_h264_encode_d3d9.cpp
+    src/mfx_h264_encode_d3d_common.cpp
+
+    src/mfx_mpeg2_encode_vaapi.cpp
+    src/mfx_mpeg2_encode_d3d11.cpp
+    src/mfx_mpeg2_encode_d3d9.cpp
+    src/mfx_mpeg2_encode_factory.cpp
+    src/mfx_mpeg2_encode_d3d_common.cpp
+    src/mfx_mpeg2_enc_common_hw.cpp
+    src/mfx_vpx_dec_common.cpp
+    src/mfx_win_event_cache.cpp
   )
-list( APPEND cdirs
-  vc1_dec vc1_common h264 h264_enc brc mpeg2_dec/hw mpeg2_dec/sw common mp3_dec
-  color_space_converter aac_enc aac_dec aac_common mp3_common
+
+target_compile_definitions(mfx_common_hw PRIVATE MFX_VA)
+
+target_include_directories(mfx_common_hw
+  PUBLIC
+    include
+    ${MSDK_LIB_ROOT}/cmrt_cross_platform/include
+    ${MSDK_LIB_ROOT}/encode_hw/h264/include
+    ${MSDK_UMC_ROOT}/codec/brc/include
+    ${MSDK_UMC_ROOT}/codec/vc1_common/include
+    ${MSDK_UMC_ROOT}/codec/vc1_dec/include
+    ${MSDK_UMC_ROOT}/codec/h264_enc/include
+    ${MSDK_STUDIO_ROOT}/shared/asc/include
   )
-foreach( dir ${decdirs})
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../decode/${dir}/include )
-endforeach()
-foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
-endforeach( )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../audio_encode/aac/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h264/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h265/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../audio_decode/aac/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../audio_decode/mp3/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mctf_package/mctf/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../vpp/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../brc/mpeg2/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../end/mpeg2/include )
 
-set(sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_brc_common.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_common_decode_int.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_common_int.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_enc_common.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_dec_common.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vc1_dec_common.cpp                ## open-source-cut-line
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_critical_error_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_ddi_enc_dump.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_enc_common_hw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_encode_vaapi.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_encode_factory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_enc_common_hw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_encode_vaapi.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_encode_factory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vpx_dec_common.cpp                ## open-source-cut-line
-    )
-set( sources.plus "" )
+target_link_libraries(mfx_common_hw 
+  PUBLIC
+    mfx_static_lib
+    umc_va_hw
+  PRIVATE
+    mfx_require_sse4_properties
+  )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-if(NOT MFX_DISABLE_SW_FALLBACK)
-  list(APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_enc_common.cpp
-    )
-  make_library( mfx_common sw static )
-  append_property( mfx_common_sw COMPILE_FLAGS " -DMFX_RT" )
-endif()
-
-make_library( mfx_common hw static )
-set( defs "" )
+include(sources_ext.cmake)

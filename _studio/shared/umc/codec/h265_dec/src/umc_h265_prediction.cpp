@@ -29,6 +29,11 @@
 
 using namespace MFX_HEVC_PP;
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4146)
+#pragma warning(disable : 4804)
+#endif
+
 namespace UMC_HEVC_DECODER
 {
 

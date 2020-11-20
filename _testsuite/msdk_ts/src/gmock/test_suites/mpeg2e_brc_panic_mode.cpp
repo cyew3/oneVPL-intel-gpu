@@ -4,11 +4,13 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 File Name: mpeg2e_brc_panic_mode.cpp
 
 \* ****************************************************************************** */
+#if (defined(LINUX32) || defined(LINUX64))
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
@@ -47,7 +49,6 @@ namespace mpeg2e_brc_panic_mode
 
     const tc_struct TestSuite::test_case[] =
     {
-#if (defined(LINUX32) || defined(LINUX64))
         {/*00*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_OFF }} },
@@ -124,7 +125,6 @@ namespace mpeg2e_brc_panic_mode
         {/*21*/ MFX_ERR_UNSUPPORTED, /* QVBR is unsupported in MPEG2e */
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} }
-#endif
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(tc_struct);
@@ -154,3 +154,4 @@ namespace mpeg2e_brc_panic_mode
 
     TS_REG_TEST_SUITE_CLASS(mpeg2e_brc_panic_mode);
 }
+#endif

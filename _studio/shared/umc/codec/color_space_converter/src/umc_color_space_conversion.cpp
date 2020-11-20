@@ -20,7 +20,7 @@
 
 #include "umc_color_space_conversion.h"
 #include "umc_video_data.h"
-#ifdef MFX_DISABLE_SW_FALLBACK
+#if !defined(MSDK_USE_EXTERNAL_IPP)
 #include "ippi.h"
 #include "ippcc.h"
 #include "ippvc.h"

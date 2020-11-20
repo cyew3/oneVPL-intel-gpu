@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2019 Intel Corporation
+# Copyright (c) 2017-2020 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,37 +18,41 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-if(API_VERSION VERSION_LESS "1.27")
-  message("Skipping HEVC FEI plugin due to API restriction")
+set(HEVC_FEI_Encoder_HW_GUID "5418a70666f94d5cb4f7b1caee86339b")
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set( plugin_name mfx_hevc_fei_hw64 )
 else()
-  set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
+  set( plugin_name mfx_hevc_fei_hw32 )
+endif()
 
-  mfx_include_dirs( )
+add_library(${plugin_name} SHARED)
 
-  set(HEVC_FEI_Encoder_HW_GUID "5418a70666f94d5cb4f7b1caee86339b")
+# Plugin version info
+set(version_defs "")
+set_file_and_product_version( ${MEDIA_VERSION_STR} version_defs )
 
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set( plugin_name mfx_hevc_fei_hw64 )
-  else()
-    set( plugin_name mfx_hevc_fei_hw32 )
-  endif()
+target_include_directories(${plugin_name}
+  PRIVATE
+    h265_fei/include
+    ${MSDK_LIB_ROOT}/shared/include
+  )
 
-  # Plugin version info
-  set_file_and_product_version( ${MEDIA_VERSION_STR} version_defs )
+target_sources(${plugin_name}
+  PRIVATE
+    h265_fei/include/mfx_h265_fei_encode_plugin_hw.h
+    h265_fei/src/export.cpp
+  )
 
-  set( sources "" )
-  set( sources.plus "" )
-  set( LIBS "" )
-  set( defs "" )
+target_link_libraries(${plugin_name} PUBLIC mfx_shared_lib mfx_plugin_properties)
 
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265_fei/include )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
-  list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/h265_fei/src/export.cpp)
+gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_FEI_Encoder_HW_GUID} ${plugin_name} "02" "HEVC")
 
-  set( USE_STRICT_NAME TRUE )
-  set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map" )
-  set( defs "${defs} ${version_defs}" )
-  gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_FEI_Encoder_HW_GUID} ${plugin_name} "02" "HEVC")
-  make_library( ${plugin_name} hw shared )
-  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
-endif( )
+target_compile_definitions(${plugin_name}
+  PUBLIC
+    ${version_defs}
+  )
+
+install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+
+include(sources_ext.cmake)

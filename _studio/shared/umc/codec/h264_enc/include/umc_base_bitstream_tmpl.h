@@ -280,7 +280,7 @@ Ipp32u H264ENC_MAKE_NAME(H264BsFake_PutVLCCode)(
     Ipp32s i = 0;
 #if defined(__i386__) && defined(__GNUC__) && (__GNUC__ > 3) && !defined(__INTEL_COMPILER)
     i = 31 - __builtin_clz(NN);
-#elif defined(__INTEL_COMPILER) && (defined(__i386__) || defined(WIN32)) && !defined(WIN64)
+#elif defined(__INTEL_COMPILER) && (defined(__i386__) || defined(_WIN32)) && !defined(_WIN64)
     i = _bit_scan_reverse(NN);
 #elif defined(_MSC_VER) && (_MSC_FULL_VER >= 140050110) && !defined(__INTEL_COMPILER)
     unsigned long idx;

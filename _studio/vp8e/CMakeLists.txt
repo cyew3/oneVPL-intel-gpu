@@ -1,36 +1,12 @@
 
-mfx_include_dirs( )
-
 # =============================================================================
 # VP8E
 # =============================================================================
 
-set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2019 - SDK VP8 Pack")
-set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2019 - SDK VP8 Hardware Encode Plug-in")
+set (VP8_PRODUCT_NAME "Intel(R) Media SDK")
+set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media SDK - VP8 Hardware Encode Plug-in")
 
 set( vp8_version ${MEDIA_VERSION_STR} )
-
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources ${plugin_common_sources} )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/linux/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/include )
-
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src/mfx_enc_common.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src/mfx_common_int.cpp )
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx_vp8e_plugin.map" )
-
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/src )
-  list( APPEND sources.plus
-    ${prefix}/vp8e_plugin.cpp
-  )
-endforeach()
 
 foreach( variant hw )
 
@@ -40,48 +16,63 @@ foreach( variant hw )
     set( plugin_name mfx_vp8e_${variant}32 )
   endif()
 
-  set (description_name ${${variant}_VP8_ENCODER_DESCRIPTION})
+  add_library(${plugin_name} SHARED)
 
-  set( LIBS "" )
-
-  list( APPEND LIBS va )
-
-  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/src )
-  list( APPEND sources
-    ${prefix}/mfx_vp8_enc_common_hw.cpp
-    ${prefix}/mfx_vp8_encode_ddi_hw.cpp
-    ${prefix}/mfx_vp8_encode_hybrid_bse.cpp
-    ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp
-  )
-  endforeach()
-
-
-  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src )
-  list( APPEND sources
-    ${prefix}/umc_va_linux.cpp
-  )
-  endforeach()
-
-  set( defs "-DAS_VP8E_PLUGIN -DMFX_VA -DMFX_ENABLE_VP8_VIDEO_ENCODE_HW -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
-
-  list( APPEND LIBS
-    color_space_converter_sw
-    umc
-    vm
-    vm_plus
-    media_buffers
-    umc_io
-    umc_va_hw
-    mfx_trace
-    ${ITT_LIBRARIES}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
+  target_sources(${plugin_name}
+    PRIVATE
+      ${plugin_common_sources}
+      ../mfx_lib/shared/src/mfx_enc_common.cpp
+      ../mfx_lib/shared/src/mfx_common_int.cpp
+      ../shared/umc/io/umc_va/src/umc_va_linux.cpp
+      vp8e_plugin/src/mfx_vp8_enc_common_hw.cpp
+      vp8e_plugin/src/mfx_vp8_encode_ddi_hw.cpp
+      vp8e_plugin/src/mfx_vp8_encode_hybrid_bse.cpp
+      vp8e_plugin/src/mfx_vp8_encode_utils_hybrid_hw.cpp
+      vp8e_plugin/src/vp8e_plugin.cpp
     )
 
-  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  make_library( ${plugin_name} ${variant} shared)
-  set( defs "" )
+  target_include_directories(${plugin_name}
+    PRIVATE
+      ../mfx_lib/scheduler/linux/include
+      ../mfx_lib/shared/include
+      vp8e_plugin/include
+    )
+
+  target_link_libraries(${plugin_name}
+    PUBLIC
+      "${IPPLIBS}"
+      mfx_shared_lib
+      mfx_plugin_properties
+      color_space_converter_sw
+      umc
+      vm
+      vm_plus
+      media_buffers
+      umc_io
+      umc_va_hw
+      mfx_trace
+      ${ITT_LIBRARIES}
+      pthread
+      dl
+      va
+    )
+
+  target_link_libraries(${plugin_name}
+    PUBLIC
+      ${API_FLAGS}
+      ${WARNING_FLAGS}
+    )
+
+  set (description_name ${${variant}_VP8_ENCODER_DESCRIPTION})
+  target_compile_definitions(${plugin_name}
+    PUBLIC
+      AS_VP8E_PLUGIN
+      MFX_VA
+      MFX_ENABLE_VP8_VIDEO_ENCODE_HW
+      "MFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\""
+      "MFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\""
+      "${vp8_version_defs}"
+    )
 
 endforeach()
 

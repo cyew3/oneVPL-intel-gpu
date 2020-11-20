@@ -36,7 +36,7 @@
 /*
 // Windows
 */
-#if defined(WIN64) || defined (WIN32)
+#if defined(_WIN64) || defined (_WIN32)
 
     // video decoders
     //#define UMC_ENABLE_VP8_VIDEO_DECODER
@@ -122,8 +122,9 @@ namespace UMC
     #define UMC_ENABLE_VC1_SPLITTER
     #define UMC_ENABLE_H264_SPLITTER
 
-#include "ipps.h"
 #endif
+
+#include <ipps.h>
 
 #include <stdint.h>
 
@@ -151,14 +152,14 @@ namespace UMC
   #define MFX_MAX_64S  ( 9223372036854775807LL )
 #endif
 
-#if !defined(MFX_DISABLE_SW_FALLBACK)
+//#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MSDK_USE_EXTERNAL_IPP)
 typedef IppiSize mfxSize;
-#else
-typedef struct {
-    int width;
-    int height;
-} mfxSize;
-#endif
+//#else
+//typedef struct {
+//    int width;
+//    int height;
+//} mfxSize;
+//#endif
 
 #if defined( _WIN32 ) || defined ( _WIN64 )
   #define __STDCALL  __stdcall

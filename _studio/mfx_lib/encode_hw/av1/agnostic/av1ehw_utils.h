@@ -33,6 +33,11 @@
 #include <assert.h>
 #include "feature_blocks/mfx_feature_blocks_utils.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 26812)
+#endif
+
 namespace AV1EHW
 {
 using namespace MfxFeatureBlocks;
@@ -631,5 +636,9 @@ inline mfxU16 CountTL(const mfxExtAvcTemporalLayers& tl)
         tl.Layer, tl.Layer + Size(tl.Layer), [](TRLayer l) { return !!l.Scale; }));
 }
 } //namespace AV1EHW
+
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 
 #endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

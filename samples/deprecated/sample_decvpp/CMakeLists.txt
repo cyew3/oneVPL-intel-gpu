@@ -1,9 +1,14 @@
-include_directories (
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_decvpp/include
-)
+add_executable( sample_decvpp )
 
-list( APPEND LIBS_VARIANT sample_common )
+target_include_directories (sample_decvpp
+  PUBLIC
+    ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
+    ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_decvpp/include
+  )
 
-set(DEPENDENCIES libmfx dl pthread)
-make_executable( shortname universal )
+target_link_libraries( sample_decvpp
+  PRIVATE
+    libmfx
+    dl
+    pthread
+  )

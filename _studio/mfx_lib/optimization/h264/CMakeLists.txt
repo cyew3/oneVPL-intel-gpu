@@ -1,57 +1,77 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
+if (MFX_DISABLE_SW_FALLBACK)
+  return()
+endif()
 
-# =============================================================================
-
-mfx_include_dirs( )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
+set(IPPLIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
 
 # =============================================================================
 set ( H264PP_LIBS "" )
 # =============================================================================
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-set( sources.plus "" )
+add_library(h264_dispatcher STATIC)
 
-list( APPEND sources 
-  src/mfx_h264_dispatcher.cpp
-)
+target_sources(h264_dispatcher
+  PRIVATE
+    include/mfx_h264_dispatcher.h
+    src/mfx_h264_dispatcher.cpp
+  )
 
-make_library( h264_dispatcher none static )
-set( defs "" )
+target_include_directories(h264_dispatcher PUBLIC include)
 
-# =============================================================================
+target_link_libraries(h264_dispatcher
+  PUBLIC
+    mfx_static_lib
+  PRIVATE
+    ${IPPLIBS}
+    h264_px
+    h264_sse3
+  )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-set( sources.plus "" )
+# ==================================== h264_px ====================================
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/src/px )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
+add_library(h264_px STATIC)
 
-make_library( h264_px none static )
-set( defs "" )
+target_include_directories(h264_px PUBLIC include)
+
+target_sources(h264_px
+  PRIVATE
+    src/px/mfx_h264_deblocking_px.cpp
+    src/px/mfx_h264_interpolate_boundary_px.cpp
+    src/px/mfx_h264_interpolate_chroma_px.cpp
+    src/px/mfx_h264_reconstruct_chroma_px.cpp
+  )
+
+target_link_libraries(h264_px
+  PUBLIC
+    mfx_static_lib
+  PRIVATE
+    ${IPPLIBS}
+  )
+
 list( APPEND H264PP_LIBS h264_px )
 
-# =============================================================================
+# ==================================== h264_sse3 ====================================
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-set( sources.plus "" )
+add_library(h264_sse3 STATIC)
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/src/sse )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs} )
-endforeach()
+target_include_directories(h264_sse3 PUBLIC include)
 
-make_library( h264_sse3 none static )
-append_property( h264_sse3 COMPILE_FLAGS "-mssse3")
-append_property( h264_sse3 LINK_FLAGS "-mssse3" )
-set( defs "" )
+target_sources(h264_sse3
+  PRIVATE
+    src/sse/mfx_h264_deblocking_sse.cpp
+  )
+
+target_link_libraries(h264_sse3
+  PUBLIC
+    mfx_static_lib
+  PRIVATE
+    ${IPPLIBS}
+    mfx_require_ssse3_properties
+  )
+
 list( APPEND H264PP_LIBS h264_sse3 )
+
+set_property(TARGET h264_sse3 h264_px h264_dispatcher PROPERTY FOLDER "optimization/avc")
 
 # =============================================================================
 set ( H264PP_LIBS ${H264PP_LIBS} PARENT_SCOPE )

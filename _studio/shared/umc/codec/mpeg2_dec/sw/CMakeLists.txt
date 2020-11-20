@@ -1,17 +1,31 @@
-mfx_include_dirs( )
+add_library(mpeg2_dec_sw STATIC)
 
-list( APPEND cdirs
-  color_space_converter
-  )
-foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
-endforeach( )
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(mpeg2_dec_sw
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-set( sources "" )
-file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs})
+target_sources(mpeg2_dec_sw
+  PRIVATE
+    src/umc_mpeg1_dec.cpp
+    src/umc_mpeg2_dec.cpp
+    src/umc_mpeg2_dec_blk.cpp
+    src/umc_mpeg2_dec_defs.cpp
+    src/umc_mpeg2_dec_mb.cpp
+    src/umc_mpeg2_dec_mb422.cpp
+    src/umc_mpeg2_dec_mc.cpp
+    src/umc_mpeg2_dec_mv.cpp
+    src/umc_mpeg2_dec_pic.cpp
+    src/umc_mpeg2_dec_slice.cpp
+    src/umc_mpeg2_dec_tbl.cpp
+    include/umc_mpeg2_dec_base.h
+    include/umc_mpeg2_dec_bstream.h
+    include/umc_mpeg2_dec_defs.h
+    include/umc_mpeg2_dec_defs_sw.h
+    include/umc_mpeg2_dec_sw.h
+    include/umc_mpeg2_dec_tbl.h
+)
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( mpeg2_dec sw static )
-set( defs "" )
+target_link_libraries(mpeg2_dec_sw PUBLIC mfx_static_lib color_space_converter media_buffers)
+
+set_property(TARGET mpeg2_dec_sw PROPERTY FOLDER "umc")

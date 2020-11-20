@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2020 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -33,21 +33,42 @@ endif()
 
 set( ipp_ts_root $ENV{MEDIASDK_ROOT}/tools/ts )
 if( Windows )
-  set( ipp_ts_lib ${ipp_ts_root}/lib/windows${ipp_ts_arch} )
+  set( ipp_ts_lib ${ipp_ts_root}/lib/win${ipp_ts_arch} )
+  set( lib_suffix ".lib" )
+  set( lib_prefix "" )
 elseif( Linux )
   set( ipp_ts_lib ${ipp_ts_root}/lib/linux${ipp_ts_arch} )
-elseif( Darwin )
-  set( ipp_ts_lib ${ipp_ts_root}/lib/darwin${ipp_arch} )
+  set( lib_suffix ".a" )
+  set( lib_prefix "lib" )
+endif()
+
+
+if ( Windows )
+  set( IPP_TS_LIBS vc2015 vc2015_debug)
+else()
+  set( IPP_TS_LIBS gcc345 gcc345_debug)
 endif()
 
 find_path( IPPTS_INCLUDE ts.h PATHS ${ipp_ts_root}/include )
 
+message( STATUS "Search Intel(R) IPP TS in ${ipp_ts_root}!" )
+
 if(NOT IPPTS_INCLUDE MATCHES NOTFOUND)
   set( IPPTS_FOUND TRUE)
-  include_directories( ${IPPTS_INCLUDE} )
-  link_directories( ${ipp_ts_lib} )
+  foreach(ipp_ts_libname ${IPP_TS_LIBS})
+
+    if(${ipp_ts_libname} MATCHES debug)
+      set(postfix "_d")
+    endif()
+
+    add_library(IPPTS::ts${postfix} STATIC IMPORTED)
+    set_target_properties(IPPTS::ts${postfix} PROPERTIES IMPORTED_LOCATION "${ipp_ts_lib}/${lib_prefix}ts_${ipp_ts_libname}${lib_suffix}")
+    target_include_directories(IPPTS::ts${postfix} INTERFACE ${IPPTS_INCLUDE})
+  endforeach()
 endif()
 
 if(NOT DEFINED IPPTS_FOUND)
   message( STATUS "Intel(R) IPP TS was not found (optional)!" )
+else()
+  message( STATUS "Intel(R) IPP TS was found here ${ipp_ts_lib}" )
 endif()

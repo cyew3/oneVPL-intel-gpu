@@ -152,15 +152,18 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_ICL;
     case IGFX_ICELAKE_LP:
         return MFX_HW_ICL_LP;
+#if !defined(STRIP_EMBARGO)
     case IGFX_CNX_G:
         return MFX_HW_CNX_G;
     case IGFX_LAKEFIELD:
     case IGFX_LAKEFIELD_R:
         return MFX_HW_LKF;
+#endif
     case IGFX_JASPERLAKE:
         return MFX_HW_JSL;
     case IGFX_TIGERLAKE_LP:
         return MFX_HW_TGL_LP;
+#if !defined(STRIP_EMBARGO)
     case IGFX_RYEFIELD:
         return MFX_HW_RYF;
     case IGFX_ROCKETLAKE:
@@ -179,6 +182,7 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_PVC;
     case IGFX_METEORLAKE:
         return MFX_HW_MTL;
+#endif
     default:
         break;
     }

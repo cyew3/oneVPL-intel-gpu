@@ -33,7 +33,6 @@ STRUCT(mfxStructVersion,
     FIELD_T(mfxU16, Version)
 )
 
-
 STRUCT(mfxBitstream,
     FIELD_T(mfxEncryptedData*, EncryptedData  )
     FIELD_T(mfxExtBuffer **  , ExtParam       )

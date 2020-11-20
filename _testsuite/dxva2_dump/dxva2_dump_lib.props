@@ -14,7 +14,7 @@
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     </MfxIncludes>
-    <MfxDefinitions>MFX_VA;PSAPI_VERSION=1;</MfxDefinitions>
+    <MfxDefinitions>_CRT_SECURE_NO_WARNINGS;MFX_VA;PSAPI_VERSION=1;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
     <MfxTreatWarningAsError>false</MfxTreatWarningAsError>

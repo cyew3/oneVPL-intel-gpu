@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 #include "asc_defs.h"
-#include "../include/motion_estimation_engine.h"
-#include "../include/me_asc.h"
-#include "../include/asc_structures.h"
+#include "motion_estimation_engine.h"
+#include "me_asc.h"
+#include "asc_structures.h"
 #include <iostream>
 #include <vector>
 #include <sstream>

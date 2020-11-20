@@ -117,7 +117,7 @@
 //#undef SLICE_THREADING_LOAD_BALANCING
 
 #undef INTRINSIC_OPT
-#if !defined(WIN64) && (defined (WIN32) || defined (_WIN32) || defined (WIN32E) || defined (_WIN32E) || defined(__i386__) || defined(__x86_64__))
+#if !defined(_WIN64) && (defined (_WIN32) || defined (_WIN32) || defined (WIN32E) || defined (_WIN32E) || defined(__i386__) || defined(__x86_64__))
     #if defined(__INTEL_COMPILER) || (_MSC_VER >= 1300) || (defined(__GNUC__) && defined(__SSE2__) && (__GNUC__ > 3))
         #define INTRINSIC_OPT
         #include "emmintrin.h"

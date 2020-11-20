@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && (defined(MFX_VA_WIN) || defined(MFX_VA))
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 
 #include "mfx_session.h"
 #include "mfx_common_decode_int.h"
@@ -349,4 +349,4 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
 #endif
 
-#endif
+#endif //MFX_ENABLE_VP8_VIDEO_DECODE

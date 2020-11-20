@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
 
 #include <stdexcept>
 #include <string>
@@ -68,4 +68,4 @@ namespace MfxVP9Decode
 
 }; // namespace MfxVP9Decode
 
-#endif // _MFX_VP9_DECODE_UTILS_H_
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE

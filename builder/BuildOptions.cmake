@@ -19,56 +19,69 @@
 # SOFTWARE.
 
 message( STATUS "Global Configuration of Targets" )
-if(__TARGET_PLATFORM)
-  if (CMAKE_SYSTEM_NAME MATCHES Linux)
-    add_definitions( -DLINUX_TARGET_PLATFORM_${__TARGET_PLATFORM} )
-  endif()
-endif()
-#
-set( T_ARCH "sse4.2" )
-message( STATUS "Target Architecture to compile: ${T_ARCH}" )
-
-# HEVC plugins disabled by default
-set( ENABLE_HEVC FALSE )
-set( ENABLE_HEVC_FEI FALSE )
-
-if ((CMAKE_C_COMPILER MATCHES icc) OR ENABLE_HEVC_ON_GCC )
-    set(ENABLE_HEVC TRUE)
-    set(ENABLE_HEVC_FEI TRUE)
-    message( STATUS "  Enabling HEVC plugins build!")
-endif()
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-# SW HEVC decoder & encoder require SSE4.2
-  if (CMAKE_C_COMPILER MATCHES icc)
-    append("-xSSE4.2 -static-intel" CMAKE_C_FLAGS)
-  else()
-    append("-m${T_ARCH}" CMAKE_C_FLAGS)
-  endif()
-
-  if (CMAKE_CXX_COMPILER MATCHES icpc)
-    append("-xSSE4.2 -static-intel" CMAKE_CXX_FLAGS)
-  else()
-    append("-m${T_ARCH}" CMAKE_CXX_FLAGS)
-  endif()
 
 include(CMakeDependentOption)
 
-if (ENABLE_TEXTLOG)
-  append("-DMFX_TRACE_ENABLE_TEXTLOG" CMAKE_C_FLAGS)
-  append("-DMFX_TRACE_ENABLE_TEXTLOG" CMAKE_CXX_FLAGS)
-endif()
-
-if (ENABLE_STAT)
-  append("-DMFX_TRACE_ENABLE_STAT" CMAKE_C_FLAGS)
-  append("-DMFX_TRACE_ENABLE_STAT" CMAKE_CXX_FLAGS)
-endif()
-
 option( MFX_ENABLE_KERNELS "Build with advanced media kernels support?" ON )
-option( MFX_ENABLE_JPEG_SW_FALLBACK "Enabled software fallback for codecs?" ON )
+option( MFX_ENABLE_JPEG_SW_FALLBACK "Enabled software fallback for JPEG ?" ON )
+
+if(CMAKE_SYSTEM_NAME MATCHES Windows)
+  set(OPEN_SOURCE OFF)
+  set(STRIP_EMBARGO OFF)
+  set(sw_fallback_default OFF) # inverted semantics!
+else()
+  set(sw_fallback_default ON)
+endif()
+
+option(MFX_DISABLE_SW_FALLBACK "Build only HW-accelerated code path" ${sw_fallback_default})
+
+option( MFX_BUNDLED_IPP "Use bundled contrib/ipp sources" OFF )
+if (OPEN_SOURCE OR (NOT DEFINED ENV{MEDIASDK_ROOT}))
+  set(MFX_BUNDLED_IPP ON)
+endif()
+
+option( ENABLE_OPENCL "Build targets dependent on OpenCL?" ON )
+
+# -DENABLE_ALL will enable all the dependencies and features unless user did not
+# explicitly switched some of them OFF, i.e. configuring in the following way
+# is possible:
+#   cmake -DENABLE_ALL=ON -DENABLE_TEXTLOG=OFF
+# and it will configure all targets except samples.
+#
+# TODO: As of now ENABLE_ALL is not fully implemented, it will not affect all
+#   of the ENABLE_* options. Those options it don't affect are placed above
+#   ENABLE_ALL definition and require some rework and/or pending CI adoption.
+#
+option( ENABLE_ALL "Enable all dependencies and features?" OFF )
+
+if( CMAKE_SYSTEM_NAME MATCHES Linux )
+  option( ENABLE_X11_DRI3 "Build X11 DRI3 versions of the targets?" ${ENABLE_ALL} )
+  option( ENABLE_WAYLAND "Build WAYLAND versions of the targets?" ${ENABLE_ALL} )
+endif()
+
+option( ENABLE_ITT "Build targets with ITT instrumentation support (requires VTune)?" ${ENABLE_ALL} )
+
+option( ENABLE_TEXTLOG "Enable textlog tracing?" "${ENABLE_ALL}")
+option( ENABLE_STAT "Enable stat tracing?" "${ENABLE_ALL}")
+
+# -DBUILD_ALL will enable all the build targets unless user did not explicitly
+# switched some targets OFF, i.e. configuring in the following way is possible:
+#   cmake -DBUILD_ALL=ON -DBUILD_SAMPLES=OFF
+# and it will configure all targets except samples.
+option( BUILD_ALL "Build all the targets?" OFF )
+
+option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
+option( BUILD_DISPATCHER "Build dispatcher?" ON )
+cmake_dependent_option(BUILD_SAMPLES "Build samples?" ON "BUILD_DISPATCHER" OFF )
+# Tools depend on samples (sample_common) and can't be built without it. The
+# following BUILD_TOOLS option declaration assures that.
+cmake_dependent_option(BUILD_TOOLS "Build tools?" "${BUILD_ALL}" "BUILD_SAMPLES" OFF)
+cmake_dependent_option(BUILD_VAL_TOOLS "Build validation tools?" "${BUILD_ALL}" "NOT MFX_BUNDLED_IPP" OFF)
+
+option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
+option(USE_SYSTEM_GTEST "Use system installed gtest?" OFF)
+
+option(ENABLE_HEVC_ON_GCC "Build SW versions of HEVC plugins using GCC?" OFF )
 
 cmake_dependent_option(
   BUILD_KERNELS "Rebuild kernels (shaders)?" OFF
@@ -96,7 +109,8 @@ option( MFX_ENABLE_USER_ENCODE "Enabled user encode plugins?" ON)
 option( MFX_ENABLE_USER_ENC "Enabled user ENC plugins?" ON)
 option( MFX_ENABLE_USER_VPP "Enabled user VPP plugins?" ON)
 
-option( MFX_ENABLE_AV1_VIDEO_DECODE "Enabled AV1 decoder?" ${MFX_1_34_OPTIONS_ALLOWED})
+option( MFX_ENABLE_AV1_VIDEO_DECODE "Enabled AV1 decoder?" ON)
+option( MFX_ENABLE_AV1_VIDEO_ENCODE "Enabled AV1 encoder?" ON)
 option( MFX_ENABLE_VP8_VIDEO_DECODE "Enabled VP8 decoder?" ON)
 option( MFX_ENABLE_VP9_VIDEO_DECODE "Enabled VP9 decoder?" ON)
 option( MFX_ENABLE_H264_VIDEO_DECODE "Enabled AVC decoder?" ON)
@@ -125,16 +139,21 @@ cmake_dependent_option(
   MFX_ENABLE_MCTF "Build with MCTF support?"  ${MFX_1_26_OPTIONS_ALLOWED}
   "MFX_ENABLE_ASC;MFX_ENABLE_KERNELS" OFF)
 
+option( MFX_ENABLE_SPECTRE_MITIGATIONS "Enable Spectre mitigations on Windows" ON )
 # Now we will include config file which may overwrite default values of the
 # options and options which user provided in a command line.
 # It is critically important to include config file _after_ definition of
 # all options. Otherwise rewrite of options in a config file will not take
 # effect!
 if (DEFINED MFX_CONFIG_FILE)
-    # Include user provided cmake config file of the format:
-    # set( VARIABLE VALUE )
-    include(${MFX_CONFIG_FILE})
+  # Include user provided cmake config file of the format:
+  # set( VARIABLE VALUE )
+  message ( "Loading user-supplied config file ${MFX_CONFIG_FILE}" )
+  include(${MFX_CONFIG_FILE})
+elseif ( CMAKE_SYSTEM_NAME MATCHES Windows )
+  message ( "Loading default win_x64 profile on Windows" )
+  include(${BUILDER_ROOT}/profiles/win_x64.cmake)
 endif()
 
 configure_file(${BUILDER_ROOT}/mfxconfig.h.in mfxconfig.h)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+add_definitions( -DMFX_HAVE_EXTERNAL_CONFIG )

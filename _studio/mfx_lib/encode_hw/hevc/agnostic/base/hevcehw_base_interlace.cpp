@@ -26,6 +26,7 @@
 #include "hevcehw_base_legacy.h"
 #include <iterator>
 #include <numeric>
+#include <iterator>
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
@@ -174,8 +175,8 @@ void Interlace::Query1NoCaps(const FeatureBlocks& , TPushQ1 Push)
                 L0.resize(std::min<mfxU16>(maxL0, l0));
                 L1.resize(std::min<mfxU16>(maxL1, l1));
 
-                std::remove_if(RPL[0], RPL[0] + l0, IsNotInL0);
-                std::remove_if(RPL[1], RPL[1] + l1, IsNotInL1);
+                std::ignore = std::remove_if(RPL[0], RPL[0] + l0, IsNotInL0);
+                std::ignore = std::remove_if(RPL[1], RPL[1] + l1, IsNotInL1);
 
                 l0 = mfxU8(L0.size());
                 l1 = mfxU8(L1.size());

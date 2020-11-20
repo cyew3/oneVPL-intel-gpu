@@ -1865,7 +1865,7 @@ AV1Encoder::AV1Encoder(MFXCoreInterface1 &core)
     , m_brc(NULL)
     , m_fei(NULL)
 {
-    ippStaticInit();
+    ippInit();
     Zero(m_videoParam);
     Zero(m_stat);
     Zero(m_nextFrameDpbVP9);

@@ -24,6 +24,7 @@
 #include "hevcehw_base_packer.h"
 #include <iterator>
 #include <numeric>
+#include <iterator>
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;

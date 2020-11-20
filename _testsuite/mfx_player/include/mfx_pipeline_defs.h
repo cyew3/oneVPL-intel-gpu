@@ -61,9 +61,9 @@ enum {
 };
 
 //////////////////////////////////////////////////////////////////////////
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #define PAVP_BUILD
-#endif // defined(WIN32) || defined(WIN64)
+#endif // defined(_WIN32) || defined(_WIN64)
 
 //////////////////////////////////////////////////////////////////////////
 //custom error codes - to separate errors from MFX components from errors in pipeline level

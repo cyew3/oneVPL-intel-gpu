@@ -42,6 +42,12 @@
 #include "FSapi.h"
 #endif
 
+#ifdef _MSVC_LANG
+#pragma warning(disable:4305)
+#pragma warning(disable:4244)
+#pragma warning(disable:4554)
+#endif
+
 using namespace H265Enc;
 using namespace MfxEnumShortAliases;
 
@@ -1122,7 +1128,7 @@ namespace H265Enc {
     void ApplyRoiDeltaQp(Frame* frame, const H265VideoParam & par)
     {
         Ipp32s numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
-        H265Slice slice;
+        H265Slice slice = {};
         
         for (Ipp32s i = par.numRoi - 1; i >= 0; i--) {
             Ipp32s start = par.roi[i].left / par.MaxCUSize + par.roi[i].top / par.MaxCUSize * par.PicWidthInCtbs;
@@ -2924,7 +2930,7 @@ template <typename PixType>
 mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col_orig)
 {
     H265VideoParam *pars = &m_videoParam;
-    Ipp8u nz[2];
+    Ipp8u nz[2] = {};
     // assign local thread id
     Ipp32s ithread = -1;
     for(Ipp32u idx = 0; idx < m_videoParam.num_thread_structs; idx++) {

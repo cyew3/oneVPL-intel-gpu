@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "sample_defs.h"
 
 namespace fei_encode_memory_init
 {

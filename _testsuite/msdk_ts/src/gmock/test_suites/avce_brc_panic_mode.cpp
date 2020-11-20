@@ -9,6 +9,8 @@ Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 File Name: avce_brc_panic_mode.cpp
 
 \* ****************************************************************************** */
+#if (defined(LINUX32) || defined(LINUX64))
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
@@ -47,7 +49,6 @@ namespace avce_brc_panic_mode
 
     const tc_struct TestSuite::test_case[] =
     {
-#if (defined(LINUX32) || defined(LINUX64))
         {/*00*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_OFF }} },
@@ -126,7 +127,6 @@ namespace avce_brc_panic_mode
         {/*21*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} }
-#endif
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(tc_struct);
@@ -156,3 +156,4 @@ namespace avce_brc_panic_mode
 
     TS_REG_TEST_SUITE_CLASS(avce_brc_panic_mode);
 }
+#endif

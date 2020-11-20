@@ -115,8 +115,15 @@ public:
     virtual mfxStatus CreateVA(mfxVideoParam *, mfxFrameAllocRequest *, mfxFrameAllocResponse *, UMC::FrameAllocator *) override { MFX_RETURN(MFX_ERR_UNSUPPORTED); }
     // Get the current working adapter's number
     virtual mfxU32 GetAdapterNumber()                           override { return 0; }
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 26812)
+#endif
     //
     virtual eMFXPlatform GetPlatformType()                      override { return MFX_PLATFORM_SOFTWARE; }
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 
     // Get Video Processing
     virtual void  GetVideoProcessing(mfxHDL* phdl)              override { *phdl = 0; }

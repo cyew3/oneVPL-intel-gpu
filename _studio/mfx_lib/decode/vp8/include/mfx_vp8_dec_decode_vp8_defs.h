@@ -18,13 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "mfx_common.h"
-
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
-
 #ifndef _MFX_VP8_DEC_DECODE_VP8_DEFS_H_
 #define _MFX_VP8_DEC_DECODE_VP8_DEFS_H_
 
+#include "mfx_common.h"
+
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 
 #include "umc_defs.h"
 #include "umc_structures.h"
@@ -294,7 +293,7 @@ typedef struct _vp8_QuantInfo
 #define __ALIGN16(type, name, size) \
   type __attribute__((aligned(0x10))) name[size]
 #else
-#if defined(_WIN64) || defined(WIN64)
+#if defined(_WIN64) || defined(_WIN64)
 #define __ALIGN16(type, name, size) \
   uint8_t _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((long long)(_a16_##name) + 15) & ~15)
 #else
@@ -421,6 +420,6 @@ typedef struct _vp8_FrameData
 
 } // namespace UMC
 
-#endif // __VP8_DEC_H__
+#endif // MFX_ENABLE_VP8_VIDEO_DECODE
 
 #endif // _MFX_VP8_DEC_DECODE_VP8_DEFS_H_

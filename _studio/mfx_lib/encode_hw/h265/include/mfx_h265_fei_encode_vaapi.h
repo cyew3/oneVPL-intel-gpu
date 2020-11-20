@@ -20,7 +20,7 @@
 
 #pragma once
 #include "mfx_config.h"
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE) && defined(MFX_VA_LINUX)
 
 #include "mfxfeihevc.h"
 #include "mfx_h265_encode_vaapi.h"

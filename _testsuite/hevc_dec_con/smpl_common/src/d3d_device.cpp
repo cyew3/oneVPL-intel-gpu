@@ -10,7 +10,7 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 
 #include "mfx_samples_config.h"
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
 //prefast singnature used in combaseapi.h
 #ifndef _PREFAST_
@@ -436,4 +436,4 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
    return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
 }
 
-#endif // #if defined(WIN32) || defined(WIN64)
+#endif // #if defined(_WIN32) || defined(_WIN64)

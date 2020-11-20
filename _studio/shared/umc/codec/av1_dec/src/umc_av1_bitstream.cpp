@@ -30,7 +30,7 @@
 #include "umc_av1_frame.h"
 
 //#define AV1D_LOGGING
-#if defined(AV1D_LOGGING) && (defined(WIN32) || defined(WIN64))
+#if defined(AV1D_LOGGING) && (defined(_WIN32) || defined(_WIN64))
 #define AV1D_LOG(string, ...) do { printf("(AV1D log) %s ",__FUNCTION__); printf(string, ##__VA_ARGS__); printf("\n"); fflush(0); } \
                               while (0)
 #else

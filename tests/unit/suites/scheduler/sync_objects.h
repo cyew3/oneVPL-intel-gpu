@@ -49,6 +49,10 @@ struct SleepSyncObject: public ISyncObject
         std::this_thread::sleep_for(dur_);
     }
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
     virtual bool get_synctime(mfxU32 & msec) {
         msec = std::chrono::duration_cast<std::chrono::milliseconds>(dur_).count();
         return true;
@@ -58,6 +62,9 @@ struct SleepSyncObject: public ISyncObject
         // TODO this may vary on the OS... consider another value for Windows
         return std::chrono::milliseconds(10).count();
     }
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 
 protected:
     std::chrono::duration<int, std::micro> dur_;

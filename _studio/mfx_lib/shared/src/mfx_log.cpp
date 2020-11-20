@@ -24,7 +24,7 @@
 
 #include <umc_mutex.h>
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #elif defined(LINUX32) || defined(LINUX64)
 #error Overlappped I/O mechanism is not implemented in Unix version.
@@ -72,13 +72,13 @@ public:
     // Default constructor
     mfxLogObject(void)
     {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         m_file = INVALID_HANDLE_VALUE;
 #elif defined(LINUX32) || defined(LINUX64)
         m_file = NULL;
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         memset(m_overlapped, 0, sizeof(m_overlapped));
 #elif defined(LINUX32) || defined(LINUX64)
 #       error Overlappped I/O mechanism is not implemented in Unix version.
@@ -128,7 +128,7 @@ public:
         Release();
 
         // open the destination file
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         m_file = CreateFileA(pLogPath, GENERIC_WRITE, FILE_SHARE_READ, NULL,
                              CREATE_ALWAYS,
                              FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
@@ -145,7 +145,7 @@ public:
         }
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         // initialize overlapped structures
         for (i = 0; i < MFX_LOG_NUM_PARTS; i += 1)
         {
@@ -193,7 +193,7 @@ public:
         }
 
         // render current call number
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         callNumLen = sprintf_s(cStr, sizeof(cStr), "[% 8u]", m_callNumber += 1);
 #elif defined(LINUX32) || defined(LINUX64)
         callNumLen = sprintf(cStr, "[% 8u]", m_callNumber += 1);
@@ -214,7 +214,7 @@ protected:
         dword_t i;
         DWORD nWritten;
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         for (i = 0; i < MFX_LOG_NUM_PARTS; i += 1)
         {
             if (m_overlapped[i].hEvent)
@@ -228,7 +228,7 @@ protected:
 #       error Overlappped I/O mechanism is not implemented in Unix version.
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         if (INVALID_HANDLE_VALUE != m_file)
         {
             CloseHandle(m_file);
@@ -247,7 +247,7 @@ protected:
             delete [] m_pAlloc;
         }
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         memset(m_overlapped, 0, sizeof(m_overlapped));
 #elif defined(LINUX32) || defined(LINUX64)
 #       error Overlappped I/O mechanism is not implemented in Unix version.
@@ -307,7 +307,7 @@ protected:
             return;
         }
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         // wait until the next buffer get free
         bRes = GetOverlappedResult(m_file,
                                    m_overlapped + newLogIdx,
@@ -331,7 +331,7 @@ protected:
 #       error Overlappped I/O mechanism is not implemented in Unix version.
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
         // start writing operation
         bRes = WriteFile(m_file,
                          m_pBuf[m_logIdx], MFX_LOG_DEF_SIZE,
@@ -364,13 +364,13 @@ protected:
     Mutex m_guard;
 
     // Output file
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     HANDLE m_file;
 #elif defined(LINUX32) || defined(LINUX64)
     FILE *m_file;
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     // array of overlapped structures
     OVERLAPPED m_overlapped[MFX_LOG_NUM_PARTS];
 #else
@@ -467,7 +467,7 @@ void mfxLogWriteA(const log_t log, const char *pString, ...)
     // create argument list
     va_start(argList, pString);
     // render the string
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     strLen = vsprintf_s(cStr, sizeof(cStr), pString, argList);
 #else
     strLen = vsprintf(cStr, pString, argList);

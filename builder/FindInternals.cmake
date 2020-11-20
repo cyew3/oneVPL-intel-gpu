@@ -26,7 +26,7 @@
 ##******************************************************************************
 
 if(NOT DEFINED BUILDER_ROOT)
-  set( BUILDER_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/builder )
+  set( BUILDER_ROOT ${CMAKE_HOME_DIRECTORY}/builder )
 endif()
 
 get_filename_component( MSDK_BUILD_ROOT_MINUS_ONE "${BUILDER_ROOT}/.." ABSOLUTE )
@@ -59,20 +59,15 @@ function( mfx_include_dirs )
     include_directories(
       ${CMAKE_HOME_DIRECTORY}/contrib/ipp/include
     )
-  else()
-    include_directories (
-      ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/SafeStringStaticLibrary/include
-    )
   endif()
 endfunction()
 
 #================================================
 
-add_library(mfx_common_properties INTERFACE)
-
 add_library(mfx_static_lib INTERFACE)
 target_include_directories(mfx_static_lib
   INTERFACE
+    ${MFX_API_HOME}/include
     ${MSDK_STUDIO_ROOT}/shared/include
     ${MSDK_LIB_ROOT}/shared/include
     )
@@ -88,7 +83,12 @@ target_compile_definitions(mfx_static_lib
     ${WARNING_FLAGS}
   )
 
-target_link_libraries(mfx_static_lib INTERFACE mfx_common_properties)
+target_link_libraries(mfx_static_lib
+  INTERFACE
+    mfx_common_properties
+    $<$<PLATFORM_ID:Linux>:va>  #fixme: break down to real dependencies
+    IPP::core
+  )
 
 #================================================
 
@@ -97,6 +97,7 @@ target_link_options(mfx_shared_lib
   INTERFACE
     # $<$<PLATFORM_ID:Windows>:/NODEFAULTLIB:libcmtd.lib>
     $<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:Debug>>:/NODEFAULTLIB:libcpmt.lib>
+    $<$<PLATFORM_ID:Linux>:LINKER:--no-undefined,-z,relro,-z,now,-z,noexecstack,--no-as-needed,-ldl> #FIXME ldl should be in CMAKE_DL_LIBS
   )
 
 target_link_libraries(mfx_shared_lib
@@ -122,10 +123,8 @@ add_library(mfx_plugin_properties INTERFACE)
 
 target_link_options(mfx_plugin_properties
   INTERFACE
-    $<$<PLATFORM_ID:Windows>:
-      LINKER:/DEF:${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.def>
-    $<$<PLATFORM_ID:Linux>:
-      LINKER:--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map>
+    $<$<PLATFORM_ID:Windows>: LINKER:/DEF:${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.def>
+    $<$<PLATFORM_ID:Linux>: LINKER:--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map>
   )
 
 target_link_libraries(mfx_plugin_properties
@@ -134,3 +133,19 @@ target_link_libraries(mfx_plugin_properties
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
 )
+
+#set( T_ARCH "sse4.2" )
+#message( STATUS "Target Architecture to compile: ${T_ARCH}" )
+
+# HEVC plugins disabled by default
+set( ENABLE_HEVC FALSE )
+set( ENABLE_HEVC_FEI FALSE )
+
+if ((CMAKE_C_COMPILER_ID MATCHES Intel) OR ENABLE_HEVC_ON_GCC )
+    set(ENABLE_HEVC TRUE)
+    set(ENABLE_AV1 TRUE)
+    set(ENABLE_HEVC_FEI TRUE)
+    message( STATUS "  Enabling HEVC plugins build!")
+    message( STATUS "  Enabling AV1 plugin build!")
+endif()
+

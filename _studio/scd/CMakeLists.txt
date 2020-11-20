@@ -1,81 +1,131 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
-
 set(VPP_SCD_GUID "4f4e2f8290079c47bf7aff37dd5fcd4f")
 set(ENC_SCD_GUID "dfc215b3e3d3904d7fa504127ef564d5")
 
 # Plugin version info
-set(SCD_version_defs  "-DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${MEDIA_VERSION_STR}\"\\\"")
-
-# =============================================================================
-
-mfx_include_dirs( )
-
-set(MFX_ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-include_directories( ${MFX_ROOTDIR}/shared/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/cmrt_cross_platform/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/cmut )
-include_directories( ${MFX_ROOTDIR}/shared/asc/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/genx/asc/isa )
-include_directories( ${MFX_ROOTDIR}/shared/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/plugin/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/linux/include )
+set(SCD_version_defs  MFX_PLUGIN_PRODUCT_VERSION=\"\\\"${MEDIA_VERSION_STR}\"\\\")
 
 # =============================================================================
 
 #shared lib
-set( sources "" )
-set( sources.plus "" )
 
 set(USE_STRICT_NAME TRUE)
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MFX_ROOTDIR}/mfx_lib/plugin/libmfxsw_plugin.map" )
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
+add_library( mfx_vpp_scd64 SHARED )
 
-list( APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/export.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/scd_tools.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/vpp_scd.cpp
-)
+target_include_directories(mfx_vpp_scd64
+  PUBLIC
+    include
+    ${MSDK_STUDIO_ROOT}/shared/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/cmrt_cross_platform/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/cmut
+    ${MSDK_STUDIO_ROOT}/shared/asc/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/genx/asc/isa
+    ${MSDK_STUDIO_ROOT}/shared/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/plugin/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/linux/include
+  )
 
-set( LIBS "" )
-list( APPEND LIBS
-    vm
-    vm_plus
-    cmrt_cross_platform_hw
-    genx
-    mfx_trace
-    ${ITT_LIBRARIES}
-    pthread
-    dl
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    genx
-    asc
-)
+target_link_options(mfx_vpp_scd64
+  PRIVATE
+    $<$<PLATFORM_ID:Linux>:-Wl,--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map>
+  )
+
+target_sources(mfx_vpp_scd64
+  PRIVATE
+    src/export.cpp
+    src/scd_tools.cpp
+    src/vpp_scd.cpp
+  )
+
+set(IPP_LIBS "")
+if (NOT CMAKE_SYSTEM_NAME MATCHES Windows AND MFX_BUNDLED_IPP)
+    set(IPPLIBS ipp)
+else()
+    set(IPPLIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
+endif()
+
+target_link_libraries(mfx_vpp_scd64
+    PUBLIC
+        vm
+        vm_plus
+        cmrt_cross_platform_hw
+        genx
+        mfx_trace
+        ${ITT_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${CMAKE_DL_LIBS}
+        ${IPP_LIBS}
+        asc
+    )
+
+target_compile_definitions(mfx_vpp_scd64
+  PRIVATE
+    AS_VPP_SCD_PLUGIN
+    ${SCD_version_defs}
+    ${WARNING_FLAGS}
+    ${defs}
+  )
 
 gen_plugins_cfg("VPP_SCD" ${VPP_SCD_GUID} "mfx_vpp_scd64" "03" "")
-
-set( defs " -DAS_VPP_SCD_PLUGIN ${defs} ${SCD_version_defs} ${WARNING_FLAGS}" )
-make_library( mfx_vpp_scd64 hw shared )
-msdk_install( mfx_vpp_scd64 ${MFX_PLUGINS_DIR} )
-set( defs "" )
+install( TARGETS mfx_vpp_scd64 LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
 
 # =============================================================================
-set( sources "" )
-set( sources.plus "" )
 
-list( APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/export.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/scd_tools.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/enc_scd.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include
-)
+add_library( mfx_enc_scd64 SHARED )
+
+target_include_directories(mfx_enc_scd64
+  PUBLIC
+    include
+    ${MSDK_STUDIO_ROOT}/shared/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/cmrt_cross_platform/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/cmut
+    ${MSDK_STUDIO_ROOT}/shared/asc/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/genx/asc/isa
+    ${MSDK_STUDIO_ROOT}/shared/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/plugin/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/linux/include
+  )
+
+target_link_options(mfx_enc_scd64
+  PRIVATE
+    $<$<PLATFORM_ID:Linux>:-Wl,--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map>
+  )
+
+target_sources(mfx_enc_scd64
+  PRIVATE
+    src/export.cpp
+    src/scd_tools.cpp
+    src/enc_scd.cpp
+  )
+
+set(IPP_LIBS "")
+if (NOT CMAKE_SYSTEM_NAME MATCHES Windows AND MFX_BUNDLED_IPP)
+    set(IPPLIBS ipp)
+else()
+    set(IPPLIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
+endif()
+
+target_link_libraries(mfx_enc_scd64
+    PUBLIC
+        vm
+        vm_plus
+        cmrt_cross_platform_hw
+        genx
+        mfx_trace
+        ${ITT_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${CMAKE_DL_LIBS}
+        ${IPP_LIBS}
+        asc
+    )
+
+target_compile_definitions(mfx_enc_scd64
+  PRIVATE
+    AS_VPP_SCD_PLUGIN
+    ${SCD_version_defs}
+    ${WARNING_FLAGS}
+    ${defs}
+  )
 
 gen_plugins_cfg("ENC_SCD" ${ENC_SCD_GUID} "mfx_enc_scd64" "04" "")
-
-set( defs " -DAS_ENC_SCD_PLUGIN ${defs} ${SCD_version_defs} ${WARNING_FLAGS}" )
-make_library( mfx_enc_scd64 hw shared )
-msdk_install( mfx_enc_scd64 ${MFX_PLUGINS_DIR} )
-set( defs "" )
-
+install( TARGETS mfx_enc_scd64 LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )

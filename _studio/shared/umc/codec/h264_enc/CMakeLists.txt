@@ -1,18 +1,78 @@
-mfx_include_dirs( )
+add_library(h264_enc_sw STATIC)
 
-list( APPEND cdirs
-  brc color_space_converter
+target_sources(h264_enc_sw
+  PRIVATE
+    include/umc_base_bitstream.h
+    include/umc_base_bitstream_tmpl.cpp.h
+    include/umc_base_bitstream_tmpl.h
+    include/umc_h264_aic_tmpl.cpp.h
+    include/umc_h264_avbr.h
+    include/umc_h264_bme.h
+    include/umc_h264_bs.h
+    include/umc_h264_bs_tmpl.cpp.h
+    include/umc_h264_bs_tmpl.h
+    include/umc_h264_common.h
+    include/umc_h264_config.h
+    include/umc_h264_core_enc.h
+    include/umc_h264_core_enc_tmpl.cpp.h
+    include/umc_h264_core_enc_tmpl.h
+    include/umc_h264_deblocking.h
+    include/umc_h264_deblocking_mbaff_tmpl.cpp.h
+    include/umc_h264_deblocking_tmpl.cpp.h
+    include/umc_h264_deblocking_tmpl.h
+    include/umc_h264_deblocking_tools.h
+    include/umc_h264_deblocking_tools_tmpl.cpp.h
+    include/umc_h264_deblocking_tools_tmpl.h
+    include/umc_h264_defs.h
+    include/umc_h264_defs_tmpl.h
+    include/umc_h264_enc_cpb.h
+    include/umc_h264_enc_cpb_tmpl.cpp.h
+    include/umc_h264_enc_cpb_tmpl.h
+    include/umc_h264_ermb_tmpl.cpp.h
+    include/umc_h264_gen_enc_tmpl.cpp.h
+    include/umc_h264_mc_tmpl.cpp.h
+    include/umc_h264_me_tmpl.cpp.h
+    include/umc_h264_pack_tmpl.cpp.h
+    include/umc_h264_resample.h
+    include/umc_h264_tables.h
+    include/umc_h264_to_ipp.h
+    include/umc_h264_video_encoder.h
+    include/umc_h264_video_encoder_tmpl.cpp.h
+    include/umc_h264_wrappers.h
+    src/umc_base_bitstream.cpp
+    src/umc_h264_aic.cpp
+    src/umc_h264_avbr.cpp
+    src/umc_h264_bs.cpp
+    src/umc_h264_core_enc.cpp
+    src/umc_h264_deblocking.cpp
+    src/umc_h264_deblocking_mbaff.cpp
+    src/umc_h264_deblocking_tools.cpp
+    src/umc_h264_enc_cpb.cpp
+    src/umc_h264_ermb.cpp
+    src/umc_h264_gen_enc.cpp
+    src/umc_h264_mc.cpp
+    src/umc_h264_me.cpp
+    src/umc_h264_pack.cpp
+    src/umc_h264_resample.cpp
+    src/umc_h264_sad.cpp
+    src/umc_h264_tables.cpp
+    src/umc_h264_video_encoder.cpp
+    src/umc_svc_mb_decision.cpp
   )
-foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
-endforeach( )
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-set( sources "" )
-file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs})
+target_include_directories(h264_enc_sw
+  PRIVATE
+    include
+    ${MSDK_UMC_ROOT}/codec/brc/include
+    ${MSDK_UMC_ROOT}/codec/color_space_converter/include
+  )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( h264_enc sw static )
-#make_library( h264_enc none static )
-set( defs "" )
+target_link_libraries(h264_enc_sw
+  PUBLIC 
+    umc
+    umc_io 
+    mfx_static_lib
+  PRIVATE
+    mfx_require_sse4_properties
+  )
+set_property(TARGET h264_enc_sw PROPERTY FOLDER "umc")

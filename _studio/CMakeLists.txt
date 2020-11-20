@@ -39,3 +39,5 @@ if(MFX_ENABLE_USER_ENCODE)
   add_subdirectory(vp9e_hw)
 endif()
 add_subdirectory(mfx_lib/plugin)
+
+include(sources_ext.cmake OPTIONAL)

@@ -169,7 +169,7 @@ const GUID GuidTable[3][3][3] =
 
 #endif
 };
-#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
 #if defined(MFX_VA_WIN)
 MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
 #else

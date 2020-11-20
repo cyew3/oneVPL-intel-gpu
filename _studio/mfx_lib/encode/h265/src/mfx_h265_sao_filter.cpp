@@ -29,6 +29,10 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_encode.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4661)
+#endif
+
 namespace H265Enc {
 
 // see IEEE "Sample Adaptive Offset in the HEVC standard", p1760 Fast Distortion Estimation
@@ -761,18 +765,18 @@ void h265_GetCtuStatistics_8u_fast(
     MAX_NUM_SAO_TYPE
 };
 
-        Ipp16s signLineBuf1[64+1];
-        Ipp16s signLineBuf2[64+1];
+        Ipp16s signLineBuf1[64 + 1] = {};
+        Ipp16s signLineBuf2[64 + 1] = {};
 
-        int x, y, startX, startY, endX, endY;
-        int firstLineStartX, firstLineEndX;
-        int edgeType;
-        Ipp16s signLeft, signRight, signDown;
-        Ipp64s *diff, *count;        
+        int x = 0, y = 0, startX = 0, startY = 0, endX = 0, endY = 0;
+        int firstLineStartX = 0, firstLineEndX = 0;
+        int edgeType = 0;
+        Ipp16s signLeft = 0, signRight = 0, signDown = 0;
+        Ipp64s *diff = nullptr, *count = nullptr;
 
-        const Ipp8u *recLine, *orgLine;
-        const Ipp8u* recLineAbove;
-        const Ipp8u* recLineBelow;
+        const Ipp8u *recLine = nullptr, *orgLine = nullptr;
+        const Ipp8u* recLineAbove = nullptr;
+        const Ipp8u* recLineBelow = nullptr;
 
 
         for(int typeIdx=0; typeIdx< numSaoModes; typeIdx++)
@@ -1125,20 +1129,20 @@ void SaoApplier<PixType>::h265_ProcessSaoCuChroma(PixType* pRec, Ipp32s stride, 
     Ipp32s LPelX     = CUPelX;
     Ipp32s TPelY     = CUPelY;
 
-    Ipp32s RPelX;
-    Ipp32s BPelY;
-    Ipp32s signLeft;
-    Ipp32s signRight;
-    Ipp32s signDown;
-    Ipp32s signDown1;
-    Ipp32u edgeType;
-    Ipp32s picWidthTmp;
-    Ipp32s picHeightTmp;
-    Ipp32s startX;
-    Ipp32s startY;
-    Ipp32s endX;
-    Ipp32s endY;
-    Ipp32s x, y;
+    Ipp32s RPelX = 0;
+    Ipp32s BPelY = 0;
+    Ipp32s signLeft = 0;
+    Ipp32s signRight = 0;
+    Ipp32s signDown = 0;
+    Ipp32s signDown1 = 0;
+    Ipp32u edgeType = 0;
+    Ipp32s picWidthTmp = 0;
+    Ipp32s picHeightTmp = 0;
+    Ipp32s startX = 0;
+    Ipp32s startY = 0;
+    Ipp32s endX = 0;
+    Ipp32s endY = 0;
+    Ipp32s x = 0, y = 0;
 
     picWidthTmp  = picWidth;
     picHeightTmp = picHeight;

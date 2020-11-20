@@ -1,20 +1,39 @@
-include_directories (
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_multi_transcode/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_misc/wayland/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/DONT_RELEASE/sample_multi_transcode_mod/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_plugins/vpp_plugin/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_plugins/rotate_cpu/include
-)
+add_executable(sample_multi_transcode_mod)
+set_property(TARGET sample_multi_transcode_mod PROPERTY FOLDER "samples")
 
-add_definitions(-DMOD_SMT)
-
-file( GLOB_RECURSE include "[^.]*.h" "${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_multi_transcode/*.h" )
-file( GLOB_RECURSE sources "[^.]*.c" "[^.]*.cpp" "${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_multi_transcode/*.c" "${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_multi_transcode/*.cpp" )
+set(smt_dir ${MSDK_SAMPLES_ROOT}/sample_multi_transcode)
 
 
-list( APPEND LIBS_VARIANT sample_common )
-list( APPEND LIBS_NOVARIANT vpp_plugin )
+target_include_directories(sample_multi_transcode_mod
+  PRIVATE
+    include
+    ${smt_dir}/include
+    ${MSDK_SAMPLES_ROOT}/sample_misc/wayland/include
+    ${MSDK_SAMPLES_ROOT}/sample_plugins/rotate_cpu/include
+    ${MSDK_SAMPLES_ROOT}/sample_plugins/vpp_plugin/include
+  )
 
-set(DEPENDENCIES itt libmfx dl pthread)
-make_executable( shortname universal "nosafestring" )
+
+target_compile_definitions(sample_multi_transcode_mod PUBLIC MOD_SMT)
+
+target_link_libraries(sample_multi_transcode_mod
+    PRIVATE
+    MFX::mfx
+    sample_common
+    vpp_plugin
+    )
+
+target_sources(sample_multi_transcode_mod
+  PRIVATE
+    ${smt_dir}/include/pipeline_transcode.h
+    ${smt_dir}/include/sample_multi_transcode.h
+    ${smt_dir}/include/transcode_utils.h
+
+    ${smt_dir}/src/pipeline_transcode.cpp
+    ${smt_dir}/src/sample_multi_transcode.cpp
+    ${smt_dir}/src/transcode_utils.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/modified_transcoding_pipeline.cpp
+  )
+
+install( TARGETS sample_multi_transcode_mod RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

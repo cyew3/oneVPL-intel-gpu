@@ -31,7 +31,7 @@
 #include <string>
 
 #include "ippj.h"
-#if defined(MFX_DISABLE_SW_FALLBACK)
+#if !defined(MSDK_USE_EXTERNAL_IPP)
 #include "ippcc.h"
 #else
 #include "ippcc2mfx.h"

@@ -24,7 +24,7 @@
 #include "mfx_common.h"
 
 #if defined(MFX_VA)
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
+#if (defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)) && defined(MFX_VA_WIN)
 
 #include <vector>
 #include <assert.h>
@@ -37,6 +37,8 @@
 
 #include "mfx_mpeg2_enc_common_hw.h"
 #include "mfx_mpeg2_encode_d3d_common.h"
+#include "mfx_mpeg2_encode_interface.h"
+
 
 namespace MfxHwMpeg2Encode
 {

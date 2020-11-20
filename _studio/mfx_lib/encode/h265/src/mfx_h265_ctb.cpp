@@ -34,6 +34,23 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4661)
+#pragma warning(disable : 4554)
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4305)
+#endif
+
+#if defined(__linux__)
+    #include <emmintrin.h>
+    #include <tmmintrin.h>
+    static inline Ipp8u _BitScanReverse(unsigned int* index, Ipp32u mask)
+    {
+        *index =  63 - __builtin_clzl((unsigned long)mask & 0xffffffff);
+        return (mask & 0xffffffff) ? '1' : '0';
+    }
+#endif
+
 namespace H265Enc {
 
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
@@ -1630,8 +1647,8 @@ Ipp8u H265CU<PixType>::GetAdaptiveIntraMinDepth(Ipp32s absPartIdx, Ipp32s depth,
 {
     Ipp8u intraMinDepth = 0;
     Ipp32f delta_sc[10]   =   {12.0, 39.0, 81.0, 168.0, 268.0, 395.0, 553.0, 744.0, 962.0, 962.0};
-    Ipp32s subSC[4];
-    Ipp32f subSCpp[4];
+    Ipp32s subSC[4] = {};
+    Ipp32f subSCpp[4] = {};
     intraMinDepth = 0;
     //Ipp32s maxSC = 0;
     maxSC = 0;
@@ -4569,6 +4586,24 @@ bool  H265CU<PixType>::MemSCandUse(const H265MEInfo* meInfo, Ipp32s listIdx, con
     return false;
 }
 
+namespace {
+    bool SameMotion(const H265MV mv0[2], const H265MV mv1[2], const Ipp8s refIdx0[2], const Ipp8s refIdx1[2]) {
+        return *(Ipp16u*)refIdx0 == *(Ipp16u*)refIdx1 && *(Ipp64u*)mv0 == *(Ipp64u*)mv1;
+    }
+    bool SameMotion(const H265CUData &data0, const H265CUData &data1) {
+        const H265MV *mv0 = (const H265MV *)&data0.mv;
+        const H265MV *mv1 = (const H265MV *)&data1.mv;
+        const Ipp8u *refIdx0 = (const Ipp8u *)&data0.refIdx;
+        const Ipp8u *refIdx1 = (const Ipp8u *)&data1.refIdx;
+        return SameMotion(data0.mv, data1.mv, data0.refIdx, data1.refIdx);
+    }
+    Ipp32s CopyMotionInfo(const H265CUData &data, H265MV mv[2], Ipp8s refIdx[2]) {
+        *(Ipp64u*)mv = *(Ipp64u*)&data.mv;
+        *(Ipp16u*)refIdx = *(Ipp16u*)&data.refIdx;
+        return data.interDir;
+    }
+};
+
 template <typename PixType>
 bool  H265CU<PixType>::MemCandUseSubpel(const H265MEInfo* meInfo, const Ipp8s listIdx, const Ipp8s *refIdx, const H265MV *mv,  const PixType*& predBuf, Ipp32s& memPitch)
 {
@@ -4955,6 +4990,62 @@ Ipp32s H265CU<PixType>::MatchingMetricPuMemSCand(const PixType *src, const H265M
     return cost;
 }
 
+void WriteBiAverageToPicP(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    unsigned char *src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp8u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeP)((short*)src0, pitchSrc0, src1, pitchSrc1, dst, pitchDst, width, height);
+}
+
+void WriteBiAverageToPicP(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    Ipp16u * H265_RESTRICT src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp16u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeP_U16)((short*)src0, pitchSrc0, src1, pitchSrc1, dst, pitchDst, width, height, bitDepth);
+}
+
+void WriteBiAverageToPicB(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    const Ipp16s *src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp8u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeB)((short*)src0, pitchSrc0, (short*)src1, pitchSrc1, dst, pitchDst, width, height);
+}
+
+void WriteBiAverageToPicB(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    const Ipp16s *src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp16u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height,
+    Ipp32s        bitDepth)
+{
+    MFX_HEVC_PP::NAME(h265_AverageModeB_U16)((short*)src0, pitchSrc0, (short*)src1, pitchSrc1, dst, pitchDst, width, height, bitDepth);
+}
+
 
 
 // absPartIdx - for minimal TU
@@ -5111,63 +5202,6 @@ void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, c
 }
 
 
-
-
-void WriteBiAverageToPicP(
-    const Ipp16s *src0,
-    Ipp32u        pitchSrc0,      // in samples
-    unsigned char *src1,
-    Ipp32u        pitchSrc1,      // in samples
-    Ipp8u * H265_RESTRICT dst,
-    Ipp32u        pitchDst,       // in samples
-    Ipp32s        width,
-    Ipp32s        height,
-    Ipp32s        bitDepth)
-{
-    MFX_HEVC_PP::NAME(h265_AverageModeP)((short*)src0, pitchSrc0, src1, pitchSrc1, dst, pitchDst, width, height);
-}
-
-void WriteBiAverageToPicP(
-    const Ipp16s *src0,
-    Ipp32u        pitchSrc0,      // in samples
-    Ipp16u * H265_RESTRICT src1,
-    Ipp32u        pitchSrc1,      // in samples
-    Ipp16u * H265_RESTRICT dst,
-    Ipp32u        pitchDst,       // in samples
-    Ipp32s        width,
-    Ipp32s        height,
-    Ipp32s        bitDepth)
-{
-    MFX_HEVC_PP::NAME(h265_AverageModeP_U16)((short*)src0, pitchSrc0, src1, pitchSrc1, dst, pitchDst, width, height, bitDepth);
-}
-
-void WriteBiAverageToPicB(
-    const Ipp16s *src0,
-    Ipp32u        pitchSrc0,      // in samples
-    const Ipp16s *src1,
-    Ipp32u        pitchSrc1,      // in samples
-    Ipp8u * H265_RESTRICT dst,
-    Ipp32u        pitchDst,       // in samples
-    Ipp32s        width,
-    Ipp32s        height,
-    Ipp32s        bitDepth)
-{
-    MFX_HEVC_PP::NAME(h265_AverageModeB)((short*)src0, pitchSrc0, (short*)src1, pitchSrc1, dst, pitchDst, width, height);
-}
-
-void WriteBiAverageToPicB(
-    const Ipp16s *src0,
-    Ipp32u        pitchSrc0,      // in samples
-    const Ipp16s *src1,
-    Ipp32u        pitchSrc1,      // in samples
-    Ipp16u * H265_RESTRICT dst,
-    Ipp32u        pitchDst,       // in samples
-    Ipp32s        width,
-    Ipp32s        height,
-    Ipp32s        bitDepth)
-{
-    MFX_HEVC_PP::NAME(h265_AverageModeB_U16)((short*)src0, pitchSrc0, (short*)src1, pitchSrc1, dst, pitchDst, width, height, bitDepth);
-}
 
 template <typename PixType>
 void H265CU<PixType>::MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H265MV *mv, PixType *src,
@@ -6110,6 +6144,95 @@ void H265CU<PixType>::TuMaxSplitInter(Ipp32s absPartIdx, Ipp8u trIdxMax)
     }
 
     m_costCurr += costSum;
+}
+
+template <class T> void CopyNxN(const T *src_, Ipp32s pitchSrc, T *dst_, Ipp32s pitchDst, Ipp32s N)
+{
+    const Ipp32s W = N * sizeof(T);
+
+    const Ipp8u *src = (const Ipp8u *)src_;
+    const Ipp8u *dst = (const Ipp8u *)dst_;
+    pitchDst *= sizeof(T);
+    pitchSrc *= sizeof(T);
+
+    assert(pitchSrc >= N);
+    assert(pitchDst >= N);
+    assert(N == 4 || N == 8 || N == 16 || N == 32 || N == 64);
+    assert(W == 4 && (size_t(dst) & 3) == 0 && (size_t(src) & 3) == 0
+        || W == 8 && (size_t(dst) & 7) == 0 && (size_t(src) & 7) == 0
+        || (size_t(dst) & 15) == 0 && (size_t(src) & 15) == 0);
+
+    switch (W) {
+    case 4:
+        *(Ipp32u*)dst = *(Ipp32u*)src; src += pitchSrc; dst += pitchDst;
+        *(Ipp32u*)dst = *(Ipp32u*)src; src += pitchSrc; dst += pitchDst;
+        *(Ipp32u*)dst = *(Ipp32u*)src; src += pitchSrc; dst += pitchDst;
+        *(Ipp32u*)dst = *(Ipp32u*)src;
+        break;
+    case 8:
+        assert(!(N & 3));
+        for (Ipp32s i = 0; i < N; i += 4) {
+            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
+            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
+            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
+            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
+        }
+        break;
+    case 16:
+        assert(!(N & 7));
+        for (Ipp32s i = 0; i < N; i += 8) {
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
+        }
+        break;
+    case 32:
+        assert(!(N & 15));
+        for (Ipp32s i = 0; i < N; i += 4) {
+            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
+            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
+            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
+            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
+            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
+        }
+        break;
+    case 64:
+        assert(!(N & 31));
+        for (Ipp32s i = 0; i < N; i += 2) {
+            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
+            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16)));
+            _mm_store_si128((__m128i*)(dst+32), _mm_load_si128((__m128i*)(src+32)));
+            _mm_store_si128((__m128i*)(dst+48), _mm_load_si128((__m128i*)(src+48))); src += pitchSrc; dst += pitchDst;
+            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
+            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16)));
+            _mm_store_si128((__m128i*)(dst+32), _mm_load_si128((__m128i*)(src+32)));
+            _mm_store_si128((__m128i*)(dst+48), _mm_load_si128((__m128i*)(src+48))); src += pitchSrc; dst += pitchDst;
+        }
+        break;
+    case 128:
+        assert(!(N & 63));
+        for (Ipp32s i = 0; i < N; i++, src += pitchSrc, dst += pitchDst) {
+            _mm_store_si128((__m128i*)(dst+0),   _mm_load_si128((__m128i*)(src+0)));
+            _mm_store_si128((__m128i*)(dst+16),  _mm_load_si128((__m128i*)(src+16)));
+            _mm_store_si128((__m128i*)(dst+32),  _mm_load_si128((__m128i*)(src+32)));
+            _mm_store_si128((__m128i*)(dst+48),  _mm_load_si128((__m128i*)(src+48)));
+            _mm_store_si128((__m128i*)(dst+64),  _mm_load_si128((__m128i*)(src+64)));
+            _mm_store_si128((__m128i*)(dst+80),  _mm_load_si128((__m128i*)(src+80)));
+            _mm_store_si128((__m128i*)(dst+96),  _mm_load_si128((__m128i*)(src+96)));
+            _mm_store_si128((__m128i*)(dst+112), _mm_load_si128((__m128i*)(src+112)));
+        }
+        break;
+    default:
+        assert(0);
+    }
 }
 
 template <typename PixType>
@@ -8361,103 +8484,13 @@ void CopyCoeffs(const Ipp16s *src_, Ipp16s *dst_, Ipp32s numCoeff)
     }
 }
 
-template <class T> void CopyNxN(const T *src_, Ipp32s pitchSrc, T *dst_, Ipp32s pitchDst, Ipp32s N)
-{
-    const Ipp32s W = N * sizeof(T);
-
-    const Ipp8u *src = (const Ipp8u *)src_;
-    const Ipp8u *dst = (const Ipp8u *)dst_;
-    pitchDst *= sizeof(T);
-    pitchSrc *= sizeof(T);
-
-    assert(pitchSrc >= N);
-    assert(pitchDst >= N);
-    assert(N == 4 || N == 8 || N == 16 || N == 32 || N == 64);
-    assert(W == 4 && (size_t(dst) & 3) == 0 && (size_t(src) & 3) == 0
-        || W == 8 && (size_t(dst) & 7) == 0 && (size_t(src) & 7) == 0
-        || (size_t(dst) & 15) == 0 && (size_t(src) & 15) == 0);
-
-    switch (W) {
-    case 4:
-        *(Ipp32u*)dst = *(Ipp32u*)src; src += pitchSrc; dst += pitchDst;
-        *(Ipp32u*)dst = *(Ipp32u*)src; src += pitchSrc; dst += pitchDst;
-        *(Ipp32u*)dst = *(Ipp32u*)src; src += pitchSrc; dst += pitchDst;
-        *(Ipp32u*)dst = *(Ipp32u*)src;
-        break;
-    case 8:
-        assert(!(N & 3));
-        for (Ipp32s i = 0; i < N; i += 4) {
-            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
-            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
-            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
-            *(Ipp64u*)dst = *(Ipp64u*)src; src += pitchSrc; dst += pitchDst;
-        }
-        break;
-    case 16:
-        assert(!(N & 7));
-        for (Ipp32s i = 0; i < N; i += 8) {
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src)); src += pitchSrc; dst += pitchDst;
-        }
-        break;
-    case 32:
-        assert(!(N & 15));
-        for (Ipp32s i = 0; i < N; i += 4) {
-            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
-            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
-            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
-            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
-            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16))); src += pitchSrc; dst += pitchDst;
-        }
-        break;
-    case 64:
-        assert(!(N & 31));
-        for (Ipp32s i = 0; i < N; i += 2) {
-            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
-            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16)));
-            _mm_store_si128((__m128i*)(dst+32), _mm_load_si128((__m128i*)(src+32)));
-            _mm_store_si128((__m128i*)(dst+48), _mm_load_si128((__m128i*)(src+48))); src += pitchSrc; dst += pitchDst;
-            _mm_store_si128((__m128i*)(dst+0),  _mm_load_si128((__m128i*)(src+0)));
-            _mm_store_si128((__m128i*)(dst+16), _mm_load_si128((__m128i*)(src+16)));
-            _mm_store_si128((__m128i*)(dst+32), _mm_load_si128((__m128i*)(src+32)));
-            _mm_store_si128((__m128i*)(dst+48), _mm_load_si128((__m128i*)(src+48))); src += pitchSrc; dst += pitchDst;
-        }
-        break;
-    case 128:
-        assert(!(N & 63));
-        for (Ipp32s i = 0; i < N; i++, src += pitchSrc, dst += pitchDst) {
-            _mm_store_si128((__m128i*)(dst+0),   _mm_load_si128((__m128i*)(src+0)));
-            _mm_store_si128((__m128i*)(dst+16),  _mm_load_si128((__m128i*)(src+16)));
-            _mm_store_si128((__m128i*)(dst+32),  _mm_load_si128((__m128i*)(src+32)));
-            _mm_store_si128((__m128i*)(dst+48),  _mm_load_si128((__m128i*)(src+48)));
-            _mm_store_si128((__m128i*)(dst+64),  _mm_load_si128((__m128i*)(src+64)));
-            _mm_store_si128((__m128i*)(dst+80),  _mm_load_si128((__m128i*)(src+80)));
-            _mm_store_si128((__m128i*)(dst+96),  _mm_load_si128((__m128i*)(src+96)));
-            _mm_store_si128((__m128i*)(dst+112), _mm_load_si128((__m128i*)(src+112)));
-        }
-        break;
-    default:
-        assert(0);
-    }
-}
-
-
 template <typename PixType>
 bool H265CU<PixType>::CheckMerge2Nx2N(Ipp32s absPartIdx, Ipp8u depth)
 {
     bool retVal = false;
     CostType costInitial = m_costCurr;
-    __ALIGN64 CABAC_CONTEXT_H265 ctxForcedSkip[NUM_CABAC_CONTEXT];
-    __ALIGN64 CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
+    __ALIGN64 CABAC_CONTEXT_H265 ctxForcedSkip[NUM_CABAC_CONTEXT] = {};
+    __ALIGN64 CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT] = {};
     H265MEInfo meInfo;
     meInfo.absPartIdx = absPartIdx;
     meInfo.depth = depth;
@@ -9836,7 +9869,7 @@ void H265CU<PixType>::EncAndRecChroma(Ipp32s absPartIdx, Ipp32s offset, Ipp8u de
                             *ctx3 = tab_cabacTransTbl[code3][*ctx3];
 
                             for (Ipp32s idx422 = 0; idx422 <= m_par->chroma422; idx422++) {
-                                CostType cost_temp;
+                                CostType cost_temp = 0;
                                 Ipp8u setBitFlag = depth != depthMax && data->trIdx > 0 ? 1 : 0;
                                 PropagateChromaCbf(data + absPartIdx422, numParts, (2-m_par->chroma422) << 1,
                                     setBitFlag ? data->trIdx - 1 : data->trIdx, setBitFlag);
@@ -10508,23 +10541,6 @@ inline Ipp32s IsDiffMER(Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP, Ipp32s log2P
 const Ipp32s MvCandPriorityList0[12] = {0 , 1, 0, 2, 1, 2, 0, 3, 1, 3, 2, 3};
 const Ipp32s MvCandPriorityList1[12] = {1 , 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2};
 
-namespace {
-    bool SameMotion(const H265MV mv0[2], const H265MV mv1[2], const Ipp8s refIdx0[2], const Ipp8s refIdx1[2]) {
-        return *(Ipp16u*)refIdx0 == *(Ipp16u*)refIdx1 && *(Ipp64u*)mv0 == *(Ipp64u*)mv1;
-    }
-    bool SameMotion(const H265CUData &data0, const H265CUData &data1) {
-        const H265MV *mv0 = (const H265MV *)&data0.mv;
-        const H265MV *mv1 = (const H265MV *)&data1.mv;
-        const Ipp8u *refIdx0 = (const Ipp8u *)&data0.refIdx;
-        const Ipp8u *refIdx1 = (const Ipp8u *)&data1.refIdx;
-        return SameMotion(data0.mv, data1.mv, data0.refIdx, data1.refIdx);
-    }
-    Ipp32s CopyMotionInfo(const H265CUData &data, H265MV mv[2], Ipp8s refIdx[2]) {
-        *(Ipp64u*)mv = *(Ipp64u*)&data.mv;
-        *(Ipp16u*)refIdx = *(Ipp16u*)&data.refIdx;
-        return data.interDir;
-    }
-};
 template <typename PixType>
 void H265CU<PixType>::GetMergeCandFast(Ipp32s absPartIdx, Ipp32s cuSize, MergePredInfo *mergeInfo)
 {

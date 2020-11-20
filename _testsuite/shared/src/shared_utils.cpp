@@ -198,7 +198,11 @@ mfxStatus ParseInputString(vm_char* strInput[], int nArgNum, sInputParams* pPara
                   break;
                 }
                 GET_OPTION_POINTER(strArgument);
+#if !defined(MFX_DISABLE_SW_FALLBACK)
                 vm_string_strcpy_s(pParams->strSrcFile, MFX_ARRAY_SIZE(pParams->strSrcFile), strArgument);
+#else
+                vm_string_strcpy(pParams->strSrcFile, strArgument);
+#endif
                 break;
             case 'o':
                 GET_OPTION_POINTER(strArgument);

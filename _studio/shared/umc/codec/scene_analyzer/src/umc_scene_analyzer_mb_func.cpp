@@ -34,7 +34,7 @@ namespace UMC
 
 uint32_t ippiGetIntraBlockDeviation_4x4_8u(const uint8_t *pSrc, int32_t srcStep)
 {
-#if defined(WIN32) && !defined(WIN64)
+#if defined(_WIN32) && !defined(_WIN64)
 #if defined (__ICL)
 //missing return statement at end of non-void function
 #pragma warning(disable:1011)
@@ -152,7 +152,7 @@ uint32_t ippiGetIntraBlockDeviation_4x4_8u(const uint8_t *pSrc, int32_t srcStep)
 
 uint32_t ippiGetAverage4x4_8u(const uint8_t *pSrc, int32_t srcStep)
 {
-#if defined(WIN32) && !defined(WIN64)
+#if defined(_WIN32) && !defined(_WIN64)
     __asm
     {
         mov src, dword ptr [pSrc]
@@ -217,7 +217,7 @@ IppStatus ippiGetResidual4x4_8u16s(const uint8_t *pRef, int32_t refStep,
                                    const uint8_t *pSrc, int32_t srcStep,
                                    int16_t *pDst, int32_t dstStep)
 {
-#if defined(WIN32) && !defined(WIN64)
+#if defined(_WIN32) && !defined(_WIN64)
     __asm
     {
         mov ref, dword ptr [pRef]

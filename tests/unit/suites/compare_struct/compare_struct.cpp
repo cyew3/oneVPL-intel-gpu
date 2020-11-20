@@ -13,6 +13,10 @@
 #include "mfx_trace.h"
 #include "mfx_common_int.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable:4267)
+#endif
+
 typedef std::pair<mfx_reflect::AccessorField, mfx_reflect::AccessorField> PairResult_t;
 
 class PairResult : public PairResult_t

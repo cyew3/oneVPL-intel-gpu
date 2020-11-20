@@ -29,7 +29,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-#ifdef WIN64
+#ifdef _WIN64
     CCameraD3DRender* pRender = (CCameraD3DRender*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 #else
     CCameraD3DRender* pRender = (CCameraD3DRender*)LongToPtr(GetWindowLongPtr(hWnd, GWL_USERDATA));
@@ -151,7 +151,7 @@ mfxStatus CCameraD3DRender::Init(sWindowParams pWParams)
     ShowWindow(m_Hwnd, SW_SHOWDEFAULT);
     UpdateWindow(m_Hwnd);
 
-#ifdef WIN64
+#ifdef _WIN64
     SetWindowLongPtr(m_Hwnd, GWLP_USERDATA, (LONG_PTR)this);
 #else
     SetWindowLong(m_Hwnd, GWL_USERDATA, PtrToLong(this));

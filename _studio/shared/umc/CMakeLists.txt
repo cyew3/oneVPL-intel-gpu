@@ -18,95 +18,100 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-mfx_include_dirs()
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../include )
-
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-
-### UMC core umc
-set(sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_base_codec.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_frame_data.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_media_data.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_va_base.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_video_data.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_video_decoder.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_video_encoder.cpp
-    )
-
-if(NOT MFX_DISABLE_SW_FALLBACK)
-  list(APPEND sources
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_audio_codec.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_audio_render.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_default_frame_allocator.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_default_memory_allocator.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_deprecated_splitter.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_index.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_media_buffer.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_media_data_ex.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_muxer.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_par_reader.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_splitter.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_utils.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/core/umc/src/umc_video_render.cpp
-      )
-endif()
-
-make_library( umc none static )
-### UMC core umc
-
-### UMC vm
-set( sources "" )
-file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/core/vm/src/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/core/vm/src/*.cpp" )
-list( APPEND sources ${srcs})
-
-make_library( vm none static )
 ### UMC vm
 
-### UMC vm plus
-set(sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/mfx_vm++_pthread.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/mfx_vm++_pthread_unix.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/mfx_vm++_pthread_windows.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/umc_event.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/umc_semaphore.cpp
-    )
+add_subdirectory(core/vm)
 
-if(NOT MFX_DISABLE_SW_FALLBACK)
-  list(APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/umc_mmap.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/vm_plus/src/umc_sys_info.cpp
-    )
-endif()
-
-make_library( vm_plus none static )
 ### UMC vm plus
 
-### UMC VA
-set( sources "" )
-file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/io/umc_va/src/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/io/umc_va/src/*.cpp" )
-list( APPEND sources ${srcs} )
+add_subdirectory(core/vm_plus)
 
-make_library( umc_va hw static )
+### UMC core umc
+
+add_subdirectory(core/umc)
+
+### UMC VA (ex. umc_va_elk)
+add_library(umc_va_hw STATIC)
+set_property(TARGET umc_va_hw PROPERTY FOLDER "umc")
+
+target_sources(umc_va_hw
+  PRIVATE
+    io/umc_va/include/umc_av1_ddi.h
+    io/umc_va/include/umc_hevc_ddi.h
+    io/umc_va/include/umc_jpeg_ddi.h
+    io/umc_va/include/umc_mf_decl.h
+    io/umc_va/include/umc_mvc_ddi.h
+    io/umc_va/include/umc_profile_level.h
+    io/umc_va/include/umc_svc_ddi.h
+    io/umc_va/include/umc_va_dxva2.h
+    io/umc_va/include/umc_va_dxva2_protected.h
+    io/umc_va/include/umc_va_fei.h
+    io/umc_va/include/umc_va.h
+    io/umc_va/include/umc_va_linux.h
+    io/umc_va/include/umc_va_linux_protected.h
+    io/umc_va/include/umc_va_video_processing.h
+    io/umc_va/include/umc_vp8_ddi.h
+    io/umc_va/include/umc_vp9_ddi.h
+    io/umc_va/include/umc_win_event_cache.h
+
+    io/umc_va/src/umc_profile_level.cpp
+    io/umc_va/src/umc_va.cpp
+    io/umc_va/src/umc_va_dxva2.cpp
+    io/umc_va/src/umc_va_dxva2_protected.cpp
+    io/umc_va/src/umc_va_fei.cpp
+    io/umc_va/src/umc_va_linux.cpp
+    io/umc_va/src/umc_va_linux_protected.cpp
+    io/umc_va/src/umc_va_video_processing.cpp
+    io/umc_va/src/umc_win_event_cache.cpp
+  )
+
+target_compile_definitions(umc_va_hw
+  PRIVATE
+    MFX_VA
+    ${API_FLAGS} ${WARNING_FLAGS}
+  )
+target_include_directories(umc_va_hw
+  PUBLIC
+    io/umc_va/include
+    )
+target_link_libraries(umc_va_hw
+  PUBLIC
+    umc
+    $<$<PLATFORM_ID:Linux>:va>
+  )
+
 ### UMC VA
 
 ### UMC codec brc
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/codec/h264_enc/include )
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/include)
 
-set(sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_brc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_h264_brc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_mpeg2_brc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_video_brc.cpp
+add_library(bitrate_control STATIC)
+set_property(TARGET bitrate_control PROPERTY FOLDER "umc")
+
+target_sources(bitrate_control
+  PRIVATE
+    codec/brc/include/umc_brc.h
+    codec/brc/include/umc_h264_brc.h
+    codec/brc/include/umc_mpeg2_brc.h
+
+    codec/brc/include/umc_video_brc.h
+    codec/brc/src/umc_brc.cpp
+
+    codec/brc/src/umc_h264_brc.cpp
+    codec/brc/src/umc_mpeg2_brc.cpp
+    codec/brc/src/umc_video_brc.cpp
+    $<$<NOT:$<BOOL:${MFX_DISABLE_SW_FALLBACK}>>:codec/brc/src/umc_svc_brc.cpp>
+  )
+
+target_include_directories(bitrate_control
+  PUBLIC
+    core/umc/include
+    codec/brc/include
+  PRIVATE
+    codec/h264_enc/include
     )
 
-if(NOT MFX_DISABLE_SW_FALLBACK)
-  list(APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_svc_brc.cpp
-    )
-endif()
+target_link_libraries(bitrate_control PUBLIC umc)
 
-make_library( bitrate_control none static )
 ### UMC codec brc
+
+include(sources_ext.cmake OPTIONAL)

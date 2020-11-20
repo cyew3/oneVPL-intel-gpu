@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_preenc.h"
 #include "ts_struct.h"
 #include "ts_fei_warning.h"
+#include "ts_utils.h"
 
 
 namespace fei_preenc_process_frame_async

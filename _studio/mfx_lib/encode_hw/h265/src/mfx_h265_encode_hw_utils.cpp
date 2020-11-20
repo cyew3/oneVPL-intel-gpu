@@ -887,7 +887,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.DisplayColour, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.LightLevel, m_ext.m_extParam, base.NumExtParam);
 #endif
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     ExtBuffer::Construct(par, m_ext.mfeParam, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.mfeControl, m_ext.m_extParam, base.NumExtParam);
 #endif
@@ -920,7 +920,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.CO);
     ExtBuffer::Set(par, m_ext.CO2);
     ExtBuffer::Set(par, m_ext.CO3);
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     ExtBuffer::Set(par, m_ext.mfeParam);
     ExtBuffer::Set(par, m_ext.mfeControl);
 #endif
@@ -3899,10 +3899,8 @@ void ConfigureTask(
         task.m_numRefActive[0] = (mfxU8)std::max<mfxU16>(CO3.NumRefActiveP[layer], (task.m_secondField ? 2 : 1));
         // on VDENC for LDB frames L1 must be completely identical to L0
         task.m_numRefActive[1] = (IsOn(par.mfx.LowPower) ? task.m_numRefActive[0] : (mfxU8)std::min(CO3.NumRefActiveP[layer], par.m_ext.DDI.NumActiveRefBL1));
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         if (par.m_platform >= MFX_HW_TGL_LP)
             task.m_level = (par.isTL()) ? task.m_tid : layer; // for QP modulation; low delay mode only
-#endif
     }
 
     if (!isI)

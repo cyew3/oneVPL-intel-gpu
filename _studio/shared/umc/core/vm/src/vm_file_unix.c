@@ -46,9 +46,11 @@
 #include "vm_file.h"
 #include <ipps.h>
 
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 int vm_string_strncpy_s(vm_char *dest, size_t destsz,
    const vm_char *src, size_t count);
 size_t vm_string_strnlen_s(const vm_char *str, size_t strsz);
+#endif
 
 /* obtain file info. return 0 if file is not accessible,
    file_size or file_attr can be NULL if either is not interested */
@@ -116,6 +118,7 @@ int32_t vm_dir_open(vm_dir **dd, vm_char *path) {
   return (dd[0] != NULL) ? 1 : 0;
 }
 
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 /*
  * directory traverse */
 int32_t vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
@@ -131,6 +134,7 @@ int32_t vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
    }
    return rtv;
 }
+#endif
 
 void vm_dir_close(vm_dir *dd) {
   if (dd != NULL) {
@@ -146,6 +150,7 @@ void vm_dir_close(vm_dir *dd) {
     }
 }
 
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 /*
  * findfirst, findnext, findclose direct emulation
  * for old ala Windows applications
@@ -170,6 +175,7 @@ vm_findptr vm_string_findfirst(vm_char *filespec, vm_finddata_t *fileinfo) {
     vm_string_findnext(dd, fileinfo);
   return dd;
   }
+#endif
 
 int32_t vm_string_findclose(vm_findptr handle) {
   return closedir(handle);

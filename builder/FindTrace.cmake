@@ -31,7 +31,7 @@ endif()
 
 # ITT instrumentation is enabled by default to make VTune working out of the box
 set(__ITT TRUE)
-include ($ENV{MFX_HOME}/mdp_msdk-lib/builder/FindVTune.cmake)
+include (${BUILDER_ROOT}/FindVTune.cmake)
 
 if(__TRACE MATCHES all)
   set(ENABLE_TEXTLOG ON)

@@ -9,4 +9,9 @@
     <MSDK_API_ROOT>$(MSBuildThisFileDirectory)..\api</MSDK_API_ROOT>
     <MSDK_MFX_BUILD_DIR>$(MSBuildThisFileDirectory)..\..\build</MSDK_MFX_BUILD_DIR>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

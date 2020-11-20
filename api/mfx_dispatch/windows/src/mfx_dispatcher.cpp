@@ -397,7 +397,6 @@ static inline mfxI32 iGPU_priority(const void* ll, const void* rr)
     return 1;
 }
 
-#ifndef OPEN_SOURCE
 static inline bool is_Gen12plus(const mfxAdapterInfo& adapter_info)
 {
     return adapter_info.Platform.CodeName >= MFX_PLATFORM_TIGERLAKE;
@@ -418,18 +417,15 @@ static inline mfxI32 dGPU_priority(const void* ll, const void* rr)
     // In all other cases iGPU is always preferred
     return iGPU_priority(ll, rr);
 }
-#endif
 
 static void RearrangeInPriorityOrder(const mfxComponentInfo & info, MFX::MFXVector<mfxAdapterInfo> & vec)
 {
-#ifndef OPEN_SOURCE
     if (info.Type == mfxComponentType::MFX_COMPONENT_ENCODE && info.Requirements.mfx.CodecId == MFX_CODEC_HEVC)
     {
         // Move dGPU to top priority if iGPU is < Gen12
         qsort(vec.data(), vec.size(), sizeof(mfxAdapterInfo), &dGPU_priority);
     }
     else
-#endif
     {
         // Move iGPU to top priority
         qsort(vec.data(), vec.size(), sizeof(mfxAdapterInfo), &iGPU_priority);

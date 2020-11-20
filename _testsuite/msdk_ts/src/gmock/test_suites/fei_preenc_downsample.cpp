@@ -44,6 +44,8 @@ as below:
 
 ******************************************************************************/
 
+#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT)
+
 #include <string>
 
 #include "ts_struct.h"
@@ -51,6 +53,7 @@ as below:
 
 #include "vaapi_device.h"
 #include "sample_utils.h"
+#include "sample_defs.h"
 
 
 namespace fei_preenc_downsample
@@ -788,3 +791,5 @@ int TestSuite::RunTest(unsigned int id)
 
 TS_REG_TEST_SUITE_CLASS(fei_preenc_downsample);
 };
+
+#endif // defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT)

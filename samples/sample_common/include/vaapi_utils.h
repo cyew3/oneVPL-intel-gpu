@@ -28,7 +28,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #if defined(LIBVA_DRM_SUPPORT)
 #include <xf86drm.h>
 #include <xf86drmMode.h>
-#include <libdrm/intel_bufmgr.h>
+#include <intel_bufmgr.h>
 #include <va/va_drm.h>
 #endif
 #if defined(LIBVA_X11_SUPPORT)

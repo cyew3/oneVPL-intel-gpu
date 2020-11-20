@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include "ippdefs.h"
 
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 
 # include <stdio.h>
 # include <stdlib.h>

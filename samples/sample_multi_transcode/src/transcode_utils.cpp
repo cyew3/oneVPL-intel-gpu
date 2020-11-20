@@ -1238,6 +1238,12 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
     {
         InputParams.DecOutPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
+#ifdef ENABLE_MCTF
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-mctf")))
+    {
+        ParseMCTFParams(argv, argc, i, &InputParams);
+    }
+#endif
     else
     {
         // no matching argument was found
@@ -2514,12 +2520,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-#ifdef ENABLE_MCTF
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-mctf")))
-        {
-            ParseMCTFParams(argv, argc, i, &InputParams);
-        }
-#endif
         else
         {
             // WA for compiler error C1061 (too many chained else-if clauses)

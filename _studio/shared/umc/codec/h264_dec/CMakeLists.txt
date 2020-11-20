@@ -1,21 +1,113 @@
-mfx_include_dirs( )
+add_library(h264_dec STATIC)
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../core/umc/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../core/vm/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../core/vm_plus/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../io/media_buffers/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../io/umc_io/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../api/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../../mfx_lib/shared/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../io/umc_va/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../../mfx_lib/optimization/h264/include )
+target_sources(h264_dec
+  PRIVATE
+    include/umc_h264_au_splitter.h
+    include/umc_h264_bitstream.h
+    include/umc_h264_bitstream_headers.h
+    include/umc_h264_bitstream_inlines.h
+    include/umc_h264_dec.h
+    include/umc_h264_dec_coeff_token_map.h
+    include/umc_h264_dec_deblocking.h
+    include/umc_h264_dec_debug.h
+    include/umc_h264_dec_defs_dec.h
+    include/umc_h264_dec_defs_yuv.h
+    include/umc_h264_dec_init_tables_cabac.h
+    include/umc_h264_dec_internal_cabac.h
+    include/umc_h264_dec_ipplevel.h
+    include/umc_h264_dec_ippwrap.h
+    include/umc_h264_dec_mfx.h
+    include/umc_h264_dec_run_before.h
+    include/umc_h264_dec_structures.h
+    include/umc_h264_dec_tables.h
+    include/umc_h264_dec_total_zero.h
+    include/umc_h264_frame.h
+    include/umc_h264_frame_ex.h
+    include/umc_h264_frame_info.h
+    include/umc_h264_frame_list.h
+    include/umc_h264_headers.h
+    include/umc_h264_heap.h
+    include/umc_h264_log.h
+    include/umc_h264_mfx_supplier.h
+    include/umc_h264_mfx_sw_supplier.h
+    include/umc_h264_nal_spl.h
+    include/umc_h264_notify.h
+    include/umc_h264_reconstruct_templates.h
+    include/umc_h264_redual_decoder_templates.h
+    include/umc_h264_sd_inlines.h
+    include/umc_h264_segment_decoder.h
+    include/umc_h264_segment_decoder_base.h
+    include/umc_h264_segment_decoder_dxva.h
+    include/umc_h264_segment_decoder_mt.h
+    include/umc_h264_segment_decoder_templates.h
+    include/umc_h264_slice_decoding.h
+    include/umc_h264_slice_ex.h
+    include/umc_h264_task_broker.h
+    include/umc_h264_task_broker_mt.h
+    include/umc_h264_task_supplier.h
+    include/umc_h264_timing.h
+    include/umc_h264_va_packer.h
+    include/umc_h264_va_supplier.h
+    include/umc_h264_vda_supplier.h
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-set( sources "" )
-file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs}) 
-make_library( h264_dec sw static )
-make_library( h264_dec hw static )
-set( defs "" )
+    src/umc_h264_au_splitter.cpp
+    src/umc_h264_dec_bitstream.cpp
+    src/umc_h264_dec_bitstream_cabac.cpp
+    src/umc_h264_dec_bitstream_headers.cpp
+    src/umc_h264_dec_conversion.cpp
+    src/umc_h264_dec_debug.cpp
+    src/umc_h264_dec_defs_yuv.cpp
+    src/umc_h264_dec_ipplevel.cpp
+    src/umc_h264_dec_ippwrap.cpp
+    src/umc_h264_dec_mfx.cpp
+    src/umc_h264_dec_sei.cpp
+    src/umc_h264_dec_slice_decoder_decode_pic.cpp
+    src/umc_h264_dec_tables.cpp
+    src/umc_h264_dec_tables_cabac.cpp
+    src/umc_h264_direct_pred.cpp
+    src/umc_h264_frame.cpp
+    src/umc_h264_frame_ex.cpp
+    src/umc_h264_frame_list.cpp
+    src/umc_h264_heap.cpp
+    src/umc_h264_log.cpp
+    src/umc_h264_mfx_supplier.cpp
+    src/umc_h264_mfx_sw_supplier.cpp
+    src/umc_h264_nal_spl.cpp
+    src/umc_h264_segment_decoder.cpp
+    src/umc_h264_segment_decoder_cabac_mt.cpp
+    src/umc_h264_segment_decoder_cavlc_mt.cpp
+    src/umc_h264_segment_decoder_deblocking.cpp
+    src/umc_h264_segment_decoder_deblocking_mbaff.cpp
+    src/umc_h264_segment_decoder_deblocking_prepare.cpp
+    src/umc_h264_segment_decoder_deblocking_table.cpp
+    src/umc_h264_segment_decoder_decode_mb.cpp
+    src/umc_h264_segment_decoder_decode_mb_cabac.cpp
+    src/umc_h264_segment_decoder_decode_mb_types.cpp
+    src/umc_h264_segment_decoder_decode_mb_types_cabac.cpp
+    src/umc_h264_segment_decoder_dxva.cpp
+    src/umc_h264_segment_decoder_hp.cpp
+    src/umc_h264_segment_decoder_mblevel_calc.cpp
+    src/umc_h264_segment_decoder_mt.cpp
+    src/umc_h264_segment_decoder_mt_reconstruct_mv.cpp
+    src/umc_h264_segment_store.cpp
+    src/umc_h264_slice_decoding.cpp
+    src/umc_h264_slice_ex.cpp
+    src/umc_h264_task_broker.cpp
+    src/umc_h264_task_broker_mt.cpp
+    src/umc_h264_task_supplier.cpp
+    src/umc_h264_va_packer.cpp
+    src/umc_h264_va_supplier.cpp
+    src/umc_h264_vda_supplier.cpp
+  )
+
+target_include_directories(h264_dec
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE
+    ${MSDK_LIB_ROOT}/optimization/h264/include
+  )
+
+target_link_libraries(h264_dec PUBLIC vm_plus PRIVATE umc_va_hw)
+
+set_property(TARGET h264_dec PROPERTY FOLDER "umc")
+

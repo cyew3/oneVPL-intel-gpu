@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(WIN64) || defined(LINUX64)
+#if defined(_WIN64) || defined(LINUX64)
 
 #include "mfx_hevc_enc_plugin.h"
 #include "mfx_session.h"

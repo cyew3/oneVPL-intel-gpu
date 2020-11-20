@@ -1,0 +1,45 @@
+add_library(umc STATIC)
+set_property(TARGET umc PROPERTY FOLDER "umc")
+
+target_sources(umc
+  PRIVATE
+    include/umc_base_codec.h
+    include/umc_base_color_space_converter.h
+    include/umc_data_reader.h
+    include/umc_data_writer.h
+    include/umc_defs.h
+    include/umc_dynamic_cast.h
+    include/umc_frame_allocator.h
+    include/umc_frame_data.h
+    include/umc_linked_list.h
+    include/umc_media_data.h
+    include/umc_media_receiver.h
+    include/umc_memory_allocator.h
+    include/umc_module_context.h
+    include/umc_structures.h
+    include/umc_va_base.h
+    include/umc_video_data.h
+    include/umc_video_decoder.h
+    include/umc_video_encoder.h
+
+    src/umc_base_codec.cpp
+    src/umc_frame_data.cpp
+    src/umc_media_data.cpp
+    src/umc_va_base.cpp
+    src/umc_video_data.cpp
+    src/umc_video_decoder.cpp
+    src/umc_video_encoder.cpp
+  )
+
+target_include_directories(umc
+  PUBLIC
+    include
+  )
+
+if(CMAKE_SYSTEM_NAME MATCHES Linux AND NOT MFX_DISABLE_SW_FALLBACK)
+  target_link_libraries(umc PUBLIC SafeString)
+endif()
+
+target_link_libraries(umc PUBLIC mfx_static_lib vm vm_plus)
+
+include(sources_ext.cmake OPTIONAL)

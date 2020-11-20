@@ -40,6 +40,11 @@
 
 #include "umc_defs.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4996)
+#pragma warning(disable : 26812)
+#endif
+
 /* ******************************************************************** */
 /*                 MACROS for DI/ITC algorithms                         */
 /* ******************************************************************** */

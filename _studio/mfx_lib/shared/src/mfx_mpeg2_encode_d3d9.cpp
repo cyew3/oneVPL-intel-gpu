@@ -21,7 +21,7 @@
 #include "mfx_common.h"
 
 #if defined(MFX_VA)
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENC)|| defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#if (defined(MFX_ENABLE_MPEG2_VIDEO_ENC)|| defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)) && defined(MFX_VA_WIN)
 
 #include "assert.h"
 
@@ -530,8 +530,8 @@ mfxStatus D3D9Encoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, m
     encodeExecuteParams.pCompressedBuffers = encodeCompBufferDesc;
 
 #ifndef PAVP_SUPPORT
-    encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
-    encodeExecuteParams.PavpEncryptionMode.eCounterMode = PAVP_COUNTER_TYPE_A;
+    encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1; // PAVP_ENCRYPTION_NONE;
+    encodeExecuteParams.PavpEncryptionMode.eCounterMode = 1; // PAVP_COUNTER_TYPE_A;
 #else
     encodeExecuteParams.PavpEncryptionMode   = pExecuteBuffers->m_encrypt.m_PavpEncryptionMode;
 #endif

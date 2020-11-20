@@ -33,6 +33,11 @@
 #include "mfx_h265_tables.h"
 #include "mfx_h265_frame.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable:4661)
+#endif
+
 using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
@@ -1061,6 +1066,10 @@ Ipp32u CheckSumCabacCtx(const Ipp8u buf[188]);
 Ipp32u CheckSumCabacCtxChroma(const Ipp8u buf[188]);
 
 } // namespace
+
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
 
 #endif // __MFX_H265_CTB_H__
 

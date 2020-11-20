@@ -1,95 +1,271 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
-
-list( APPEND vdirs
-  h265 h264 mjpeg mpeg2 mvc svc vp9 hevc
+list(APPEND include_dirs
   )
-list( APPEND cdirs
-  mpeg2_enc jpeg_common brc color_space_converter h264_enc
-  )
-list( APPEND hevcdir
-  hevc/agnostic
-  hevc/agnostic/base
-  hevc/agnostic/g12
-  hevc/linux
-  hevc/linux/base
-  hevc/linux/g12
-  )
-if( NOT STRIP_EMABRGO )
-    list( APPEND hevcdir
-        hevc/embargo/agnostic
-        hevc/embargo/agnostic/base
-        hevc/embargo/agnostic/g11lkf
-        hevc/embargo/agnostic/g12
-        hevc/embargo/agnostic/g12ats
-        hevc/embargo/agnostic/g12dg2
-        hevc/embargo/linux
-        hevc/embargo/linux/base
-        hevc/embargo/linux/g11lkf
-        hevc/embargo/linux/g12
-        hevc/embargo/linux/g12ats
-        hevc/embargo/linux/g12dg2
-        )
-endif()
-mfx_include_dirs( )
-foreach( dir ${vdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
-endforeach()
-foreach( dir ${hevcdir} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/${dir} )
-endforeach()
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/shared )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/shared/embargo )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include)
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mctf_package/mctf/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../enc_hw/mpeg2/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../pak/mpeg2/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../hevc_fei/h265_fei/include )
-foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
-endforeach( )
 
-set( sources "" )
-set( sources.plus "" )
+set( sources
+    h264/include/mfx_h264_encode_cm.h
+    h264/include/mfx_h264_encode_cm_defs.h
+    h264/include/mfx_h264_encode_hw.h
+    h264/include/mfx_h264_encode_hw_utils.h
 
-foreach( dir ${hevcdir} )
-  file( GLOB_RECURSE srcs "${dir}/*.cpp" )
-  list( APPEND sources.plus ${srcs})
-endforeach()
-list( APPEND sources.plus
+    h264/src/mfx_h264_encode_cm.cpp
+    h264/src/mfx_h264_encode_hw.cpp
+    h264/src/mfx_h264_encode_hw_utils.cpp
+    h264/src/mfx_h264_encode_hw_utils_new.cpp
+
+    h265/include/hevce_ddi_947.h
+    h265/include/hevce_ddi_main.h
+    h265/include/mfx_h265_encode_hw_brc.h
+    h265/include/mfx_h265_encode_hw_bs.h
+    h265/include/mfx_h265_encode_hw_d3d11.h
+    h265/include/mfx_h265_encode_hw_d3d9.h
+    h265/include/mfx_h265_encode_hw_d3d_common.h
+    h265/include/mfx_h265_encode_hw_ddi.h
+    h265/include/mfx_h265_encode_hw_ddi_trace.h
+    h265/include/mfx_h265_encode_hw.h
+    h265/include/mfx_h265_encode_hw_set.h
+    h265/include/mfx_h265_encode_hw_utils.h
+    h265/include/mfx_h265_encode_vaapi.h
+    h265/include/mfx_h265_fei_encode_hw.h
+    h265/include/mfx_h265_fei_encode_vaapi.h
+
+    h265/src/mfx_h265_encode_hw_brc.cpp
+    h265/src/mfx_h265_encode_hw_bs.cpp
+    h265/src/mfx_h265_encode_hw.cpp
+    h265/src/mfx_h265_encode_hw_d3d11.cpp
+    h265/src/mfx_h265_encode_hw_d3d9.cpp
+    h265/src/mfx_h265_encode_hw_d3d_common.cpp
+    h265/src/mfx_h265_encode_hw_ddi.cpp
+    h265/src/mfx_h265_encode_hw_ddi_trace.cpp
+    h265/src/mfx_h265_encode_hw_par.cpp
+    h265/src/mfx_h265_encode_hw_utils.cpp
+    h265/src/mfx_h265_encode_vaapi.cpp
+    h265/src/mfx_h265_fei_encode_hw.cpp
+    h265/src/mfx_h265_fei_encode_vaapi.cpp
+
+    mjpeg/include/mfx_mjpeg_encode_d3d11.h
+    mjpeg/include/mfx_mjpeg_encode_d3d9.h
+    mjpeg/include/mfx_mjpeg_encode_d3d_common.h
+    mjpeg/include/mfx_mjpeg_encode_hw.h
+    mjpeg/include/mfx_mjpeg_encode_hw_utils.h
+    mjpeg/include/mfx_mjpeg_encode_interface.h
+    mjpeg/include/mfx_mjpeg_encode_vaapi.h
+
+    mjpeg/src/mfx_mjpeg_encode_d3d11.cpp
+    mjpeg/src/mfx_mjpeg_encode_d3d9.cpp
+    mjpeg/src/mfx_mjpeg_encode_d3d_common.cpp
+    mjpeg/src/mfx_mjpeg_encode_factory.cpp
+    mjpeg/src/mfx_mjpeg_encode_hw.cpp
+    mjpeg/src/mfx_mjpeg_encode_hw_utils.cpp
+    mjpeg/src/mfx_mjpeg_encode_vaapi.cpp
+
+    mpeg2/include/mfx_mpeg2_encode_debug_hw.h
+    mpeg2/include/mfx_mpeg2_encode_full_hw.h
+    mpeg2/include/mfx_mpeg2_encode_hw.h
+    mpeg2/include/mfx_mpeg2_encode_hybrid_hw.h
+    mpeg2/include/mfx_mpeg2_encode_utils_hw.h
+
+    mpeg2/src/mfx_mpeg2_encode_debug_hw.cpp
+    mpeg2/src/mfx_mpeg2_encode_full_hw.cpp
+    mpeg2/src/mfx_mpeg2_encode_hw.cpp
+    mpeg2/src/mfx_mpeg2_encode_hybrid_hw.cpp
+    mpeg2/src/mfx_mpeg2_encode_utils_hw.cpp
+
+    mvc/src/mfx_mvc_encode_hw.cpp
+
+    svc/include/mfx_svc_encode_simulcast_over_avc.h
+    svc/src/mfx_svc_encode_hw.cpp
+    svc/src/mfx_svc_encode_simulcast_over_avc.cpp
+
+    vp9/include/mfx_platform_defs.h
+    vp9/include/mfx_vp9_encode_hw_d3d11.h
+    vp9/include/mfx_vp9_encode_hw_d3d9.h
+    vp9/include/mfx_vp9_encode_hw_d3d_common.h
+    vp9/include/mfx_vp9_encode_hw_ddi.h
+    vp9/include/mfx_vp9_encode_hw.h
+    vp9/include/mfx_vp9_encode_hw_par.h
+    vp9/include/mfx_vp9_encode_hw_utils.h
+    vp9/include/mfx_vp9_encode_hw_vaapi.h
+
+    vp9/src/mfx_vp9_encode_hw.cpp
+    vp9/src/mfx_vp9_encode_hw_d3d11.cpp
+    vp9/src/mfx_vp9_encode_hw_d3d9.cpp
+    vp9/src/mfx_vp9_encode_hw_d3d_common.cpp
+    vp9/src/mfx_vp9_encode_hw_ddi.cpp
+    vp9/src/mfx_vp9_encode_hw_par.cpp
+    vp9/src/mfx_vp9_encode_hw_utils.cpp
+    vp9/src/mfx_vp9_encode_hw_vaapi.cpp
+
+    hevc/hevcehw_disp.h
+    hevc/agnostic/hevcehw_base.h
+    hevc/agnostic/hevcehw_block_queues.h
+    hevc/agnostic/hevcehw_ddi.h
+    hevc/agnostic/hevcehw_decl_blocks.h
+    hevc/agnostic/hevcehw_utils.h
+    hevc/agnostic/base/hevcehw_base_data.h
+    hevc/agnostic/base/hevcehw_base_dirty_rect.h
+    hevc/agnostic/base/hevcehw_base_dpb_report.h
+    hevc/agnostic/base/hevcehw_base_encoded_frame_info.h
+    hevc/agnostic/base/hevcehw_base_ext_brc.h
+    hevc/agnostic/base/hevcehw_base_hdr_sei.h
+    hevc/agnostic/base/hevcehw_base_hrd.h
+    hevc/agnostic/base/hevcehw_base_iddi.h
+    hevc/agnostic/base/hevcehw_base_iddi_packer.h
+    hevc/agnostic/base/hevcehw_base_interlace.h
+    hevc/agnostic/base/hevcehw_base_legacy.h
+    hevc/agnostic/base/hevcehw_base_max_frame_size.h
+    hevc/agnostic/base/hevcehw_base_packer.h
+    hevc/agnostic/base/hevcehw_base_parser.h
+    hevc/agnostic/base/hevcehw_base_roi.h
+    hevc/agnostic/base/hevcehw_base_task.h
+    hevc/agnostic/base/hevcehw_base_weighted_prediction.h
+    hevc/agnostic/base/hevcehw_base_alloc.h
+    hevc/agnostic/base/hevcehw_base_constraints.h
+    hevc/agnostic/g12/hevcehw_g12_scc.h
+
+    hevc/linux/g12/hevcehw_g12_caps_lin.h
+    hevc/linux/g12/hevcehw_g12_lin.h
+    hevc/linux/g12/hevcehw_g12_rext_lin.h
+    hevc/linux/base/hevcehw_base_encoded_frame_info_lin.h
+    hevc/linux/base/hevcehw_base_fei_lin.h
+    hevc/linux/base/hevcehw_base_interlace_lin.h
+    hevc/linux/base/hevcehw_base_lin.h
+    hevc/linux/base/hevcehw_base_roi_lin.h
+    hevc/linux/base/hevcehw_base_va_lin.h
+    hevc/linux/base/hevcehw_base_va_packer_lin.h
+    hevc/linux/base/hevcehw_base_weighted_prediction_lin.h
+    hevc/linux/base/hevcehw_base_max_frame_size_lin.h
+    hevc/linux/base/hevcehw_base_dirty_rect_lin.h
+    hevc/linux/g12/hevcehw_g12_scc_lin.h
+    hevc/linux/g12/hevcehw_g12_qp_modulation_lin.h
+
+
     hevc/hevcehw_disp.cpp
+    hevc/agnostic/hevcehw_base.cpp
+    hevc/agnostic/base/hevcehw_base_alloc.cpp
+    hevc/agnostic/base/hevcehw_base_constraints.cpp
+    hevc/agnostic/base/hevcehw_base_dirty_rect.cpp
+    hevc/agnostic/base/hevcehw_base_dpb_report.cpp
+    hevc/agnostic/base/hevcehw_base_encoded_frame_info.cpp
+    hevc/agnostic/base/hevcehw_base_ext_brc.cpp
+    hevc/agnostic/base/hevcehw_base_hdr_sei.cpp
+    hevc/agnostic/base/hevcehw_base_hrd.cpp
+    hevc/agnostic/base/hevcehw_base_interlace.cpp
+    hevc/agnostic/base/hevcehw_base_impl.cpp
+    hevc/agnostic/base/hevcehw_base_legacy.cpp
+    hevc/agnostic/base/hevcehw_base_legacy_defaults.cpp
+    hevc/agnostic/base/hevcehw_base_max_frame_size.cpp
+    hevc/agnostic/base/hevcehw_base_packer.cpp
+    hevc/agnostic/base/hevcehw_base_parser.cpp
+    hevc/agnostic/base/hevcehw_base_recon_info.cpp
+    hevc/agnostic/base/hevcehw_base_roi.cpp
+    hevc/agnostic/base/hevcehw_base_task.cpp
+    hevc/agnostic/base/hevcehw_base_weighted_prediction.cpp
+    hevc/agnostic/g12/hevcehw_g12_caps.cpp
+    hevc/agnostic/g12/hevcehw_g12_rext.cpp
+    hevc/agnostic/g12/hevcehw_g12_scc.cpp
+
+    hevc/linux/base/hevcehw_base_fei_lin.cpp
+    hevc/linux/base/hevcehw_base_interlace_lin.cpp
+    hevc/linux/base/hevcehw_base_lin.cpp
+    hevc/linux/base/hevcehw_base_roi_lin.cpp
+    hevc/linux/base/hevcehw_base_va_lin.cpp
+    hevc/linux/base/hevcehw_base_va_packer_lin.cpp
+    hevc/linux/base/hevcehw_base_weighted_prediction_lin.cpp
+    hevc/linux/g12/hevcehw_g12_lin.cpp
+    hevc/linux/g12/hevcehw_g12_rext_lin.cpp
+    hevc/linux/base/hevcehw_base_max_frame_size_lin.cpp
+    hevc/linux/base/hevcehw_base_dirty_rect_lin.cpp
+    hevc/linux/g12/hevcehw_g12_qp_modulation_lin.cpp
+
+    shared/ehw_resources_pool.h
+    shared/ehw_task_manager.h
+
     shared/ehw_resources_pool.cpp
     shared/ehw_task_manager.cpp
     shared/ehw_device_vaapi.cpp
     shared/ehw_utils_vaapi.cpp
-    )
 
-foreach( dir ${vdirs} )
-  file( GLOB_RECURSE srcs "${dir}/src/*.c" "${dir}/src/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
-  list( APPEND sources.plus
-    ${prefix}/mfx_ddi_enc_dump.cpp
-    ${prefix}/mfx_h264_enc_common_hw.cpp
-    ${prefix}/mfx_h264_encode_vaapi.cpp
-    ${prefix}/mfx_h264_fei_vaapi.cpp
-    ${prefix}/mfx_h264_encode_factory.cpp
-    ${prefix}/mfx_mpeg2_enc_common_hw.cpp
-    ${prefix}/mfx_mpeg2_encode_factory.cpp
-    ${prefix}/mfx_mpeg2_encode_vaapi.cpp
-    )
-endforeach()
+    ${MSDK_LIB_ROOT}/shared/include/encoder_ddi.hpp
+    ${MSDK_LIB_ROOT}/shared/include/encoding_ddi.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_enc_common.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_enc_common_hw.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d11.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d9.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d_common.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_interface.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_struct_vaapi.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_vaapi.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_enc_common.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_enc_common_hw.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d11.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d9.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d_common.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_interface.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_vaapi.h
 
-set( LIBS "" )
-  list( APPEND LIBS
-  asc
+    ${MSDK_LIB_ROOT}/shared/src/mfx_ddi_enc_dump.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_h264_enc_common_hw.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_h264_encode_vaapi.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_h264_fei_vaapi.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_h264_encode_factory.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_enc_common_hw.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_encode_factory.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_encode_vaapi.cpp
   )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-make_library( encode hw static )
-set( defs "" )
+add_library(encode_hw STATIC ${sources})
+
+target_compile_definitions(encode_hw
+  PRIVATE
+    MFX_VA
+    $<$<PLATFORM_ID:Windows>:MFX_VA_WIN> # w/a for missed config inclusion in hevc/av1
+  )
+
+target_include_directories(encode_hw
+  PUBLIC
+    hevc
+    hevc/agnostic
+    hevc/agnostic/base
+    hevc/agnostic/g12
+    hevc/linux
+    hevc/linux/g9
+    hevc/linux/g12
+    hevc/linux/base
+
+    ${MSDK_LIB_ROOT}/enc_hw/mpeg2/include
+    ${MSDK_LIB_ROOT}/encode_hw/shared
+    ${MSDK_LIB_ROOT}/pak/mpeg2/include
+    ${MSDK_LIB_ROOT}/fei/h264_preenc
+    ${MSDK_LIB_ROOT}/fei/include
+    ${MSDK_STUDIO_ROOT}/hevce_hw/h265/include
+    ${MSDK_STUDIO_ROOT}/hevc_fei/h265_fei/include
+
+    h265/include
+    h264/include
+    mjpeg/include
+    mpeg2/include
+    mvc/include
+    svc/include
+    vp9/include
+
+    ${MSDK_UMC_ROOT}/codec/mpeg2_enc/include
+    ${MSDK_UMC_ROOT}/codec/jpeg_common/include
+    ${MSDK_UMC_ROOT}/codec/brc/include
+    ${MSDK_UMC_ROOT}/codec/color_space_converter/include
+    ${MSDK_UMC_ROOT}/codec/h264_enc/include
+)
+
+target_link_libraries(encode_hw
+  PUBLIC
+    mfx_static_lib
+    umc_va_hw
+    asc
+    genx
+  PRIVATE
+    mfx_require_sse4_properties  # fast_copy.h implies this
+    bitrate_control
+    enc_hw
+  )
+
+
+include(sources_ext.cmake OPTIONAL)

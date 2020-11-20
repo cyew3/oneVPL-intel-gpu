@@ -53,19 +53,12 @@
 #include "mfx_mjpeg_dec_decode.h"
 #endif
 
-#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) || defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
-#if defined (MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
+#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) && defined (MFX_VA)
 #include "mfx_vp8_dec_decode_hw.h"
-#else
-#include "mfx_vp8_dec_decode.h"
-#endif
 #endif
 
-#if defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
-#include "mfx_vp9_dec_decode.h"
-#if defined (MFX_VA)
+#if defined (MFX_ENABLE_VP9_VIDEO_DECODE) && defined (MFX_VA)
 #include "mfx_vp9_dec_decode_hw.h"
-#endif
 #endif
 
 #if defined (MFX_ENABLE_AV1_VIDEO_DECODE)
@@ -122,24 +115,15 @@ VideoDECODE* _mfxSession::Create<VideoDECODE>(mfxVideoParam& par)
         break;
 #endif
 
-#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
+#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) && defined(MFX_VA)
     case MFX_CODEC_VP8:
-#if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
         pDECODE = new VideoDECODEVP8_HW(core, &mfxRes);
-#else // MFX_VA
-        pDECODE = new VideoDECODEVP8(core, &mfxRes);
-
-#endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_DECODE_HW
-
         break;
-#endif
+#endif // MFX_ENABLE_VP8_VIDEO_DECODE
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) && defined(MFX_VA)
     case MFX_CODEC_VP9:
-#if defined(MFX_VA)
         pDECODE = new VideoDECODEVP9_HW(core, &mfxRes);
-#endif // MFX_VA
-
         break;
 #endif
 
@@ -230,21 +214,15 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif
 
-#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
+#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) && defined(MFX_VA)
         case MFX_CODEC_VP8:
-#if defined (MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP8_HW::Query(session->m_pCORE.get(), in, out);
-#else
-            mfxRes = VideoDECODEVP8::Query(session->m_pCORE.get(), in, out);
-#endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_DECODE_HW
             break;
-#endif
+#endif // MFX_ENABLE_VP8_VIDEO_DECODE
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) && defined(MFX_VA)
         case MFX_CODEC_VP9:
-#if defined (MFX_VA)
             mfxRes = VideoDECODEVP9_HW::Query(session->m_pCORE.get(), in, out);
-#endif // MFX_VA && MFX_ENABLE_VP9_VIDEO_DECODE_HW
             break;
 #endif
 
@@ -322,23 +300,17 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             break;
 #endif
 
-#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
+#if defined (MFX_ENABLE_VP8_VIDEO_DECODE) && defined(MFX_VA)
         case MFX_CODEC_VP8:
-#if defined (MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP8_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-#else
-            mfxRes = VideoDECODEVP8::QueryIOSurf(session->m_pCORE.get(), par, request);
-#endif // MFX_VA && MFX_ENABLE_VP8_VIDEO_DECODE_HW
             break;
-#endif
+#endif // MFX_ENABLE_VP8_VIDEO_DECODE
 
-#if defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#if defined (MFX_ENABLE_VP9_VIDEO_DECODE) && defined(MFX_VA)
         case MFX_CODEC_VP9:
-#if defined (MFX_VA)
             mfxRes = VideoDECODEVP9_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-#endif // MFX_VA
             break;
-#endif
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE
 
 #ifdef MFX_ENABLE_AV1_VIDEO_DECODE
         case MFX_CODEC_AV1:
@@ -417,17 +389,17 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
             break;
 #endif
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) && defined(MFX_VA)
         case MFX_CODEC_VP8:
             mfxRes = VP8DecodeCommon::DecodeHeader(session->m_pCORE.get(), bs, par);
             break;
 #endif
 
-#if defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#if defined (MFX_ENABLE_VP9_VIDEO_DECODE) && defined(MFX_VA)
         case MFX_CODEC_VP9:
             mfxRes = VideoDECODEVP9_HW::DecodeHeader(session->m_pCORE.get(), bs, par);
             break;
-#endif
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE
 
 #ifdef MFX_ENABLE_AV1_VIDEO_DECODE
         case MFX_CODEC_AV1:

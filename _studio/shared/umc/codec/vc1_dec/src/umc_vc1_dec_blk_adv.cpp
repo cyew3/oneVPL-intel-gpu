@@ -858,8 +858,15 @@ VC1Status VC1ProcessDiffIntra(VC1Context* pContext, int32_t blk_num)
         roiSize.width = VC1_PIXEL_IN_BLOCK;
 
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
         ippiAddC_16s_C1IRSfs(bias, m_pBlock + VC1_BlkStart[blk_num],
                                     2*VC1_pixel_table[blk_num], roiSize, 0);
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
     return VC1_OK;
 }
 
@@ -1272,10 +1279,17 @@ VC1Status VC1ProcessDiffSpeedUpIntra(VC1Context* pContext,int32_t blk_num)
 
     }
 
+#ifdef _MSVC_LANG
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
     ippiTransform8x8Inv_VC1_16s_C1IR(m_pBlock,
                                      VC1_pixel_table[blk_num]*2,
                                      DstSizeNZ);
     ippiAddC_16s_C1IRSfs(bias, m_pBlock, 2*VC1_pixel_table[blk_num], roiSize, 0);
+#ifdef _MSVC_LANG
+#pragma warning(pop)
+#endif
     return VC1_OK;
 
 }

@@ -24,8 +24,10 @@
 #include  "mfxvideo++int.h"
 #include "libmfx_core_interface.h"
 #include "mfx_session.h"
-#include "mfx_h264_encode_hw_utils.h"
+
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+
+#include "mfx_h264_encode_hw_utils.h"
 
 #include "mfx_h264_encode_d3d_common.h"
 
@@ -56,15 +58,15 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
 
     MFX_SCHEDULER_PARAM schedule_Param;
     mfxStatus paramsts = pSheduler->GetParam(&schedule_Param);
-    eMFXHWType platform = core->GetHWType();
+
     if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
     {
         m_bSingleThreadMode = true;
 
-        m_timeoutForTDR = (platform >= MFX_HW_LKF) ? MFX_H264ENC_HW_TASK_TIMEOUT_SIM : MFX_H264ENC_HW_TASK_TIMEOUT;
+        m_timeoutForTDR = MFX_H264ENC_HW_TASK_TIMEOUT;
     }
 
-    m_timeoutSync = (platform >= MFX_HW_LKF) ? DEFAULT_TIMEOUT_AVCE_HW_SIM : DEFAULT_TIMEOUT_AVCE_HW;
+    m_timeoutSync = DEFAULT_TIMEOUT_AVCE_HW;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     m_EventCache.reset(new EventCache());

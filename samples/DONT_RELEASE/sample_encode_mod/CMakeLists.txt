@@ -1,18 +1,30 @@
-include_directories (
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_misc/wayland/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_encode/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/DONT_RELEASE/sample_encode_mod/include
-  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_plugins/rotate_cpu/include
-)
+add_executable(sample_encode_mod)
+set_property(TARGET sample_encode_mod PROPERTY FOLDER "samples")
 
-add_definitions(-DMOD_ENC)
+set(sample_encode_dir ${MSDK_SAMPLES_ROOT}/sample_encode)
 
-file( GLOB_RECURSE include "[^.]*.h" "${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_encode/*.h" )
-file( GLOB_RECURSE sources "[^.]*.c" "[^.]*.cpp" "${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_encode/*.c" "${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_encode/*.cpp" )
+target_include_directories(sample_encode_mod
+  PRIVATE
+    include
+    ${sample_encode_dir}/include
+    ${MSDK_SAMPLES_ROOT}/sample_plugins/rotate_cpu/include
+  )
 
+target_compile_definitions(sample_encode_mod PUBLIC MOD_ENC)
 
-list( APPEND LIBS_VARIANT sample_common )
+target_link_libraries(sample_encode_mod PRIVATE MFX::mfx sample_common)
 
-set(DEPENDENCIES libva libmfx dl pthread)
-make_executable( shortname universal "nosafestring")
+target_sources(sample_encode_mod
+  PRIVATE
+    ${sample_encode_dir}/include/pipeline_encode.h
+    ${sample_encode_dir}/include/pipeline_region_encode.h
+    ${sample_encode_dir}/include/pipeline_user.h
+
+    ${sample_encode_dir}/src/pipeline_encode.cpp
+    ${sample_encode_dir}/src/pipeline_region_encode.cpp
+    ${sample_encode_dir}/src/pipeline_user.cpp
+    ${sample_encode_dir}/src/sample_encode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/modified_encoding_pipeline.cpp
+  )
+
+install( TARGETS sample_encode_mod RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

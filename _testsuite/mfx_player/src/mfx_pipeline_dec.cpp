@@ -105,6 +105,9 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 #if defined(LINUX32) || defined(LINUX64)
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <va/va.h>
+#include "vaapi_utils.h"
+#include "mfx_vaapi_device.h"
 #endif
 #include "mfx_thread.h"
 

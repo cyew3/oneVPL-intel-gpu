@@ -1,15 +1,26 @@
 find_path( FEI_INCLUDE mfxfeihevc.h PATHS ${MFX_INCLUDE} )
 
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+add_executable(hevc_fei_extractor)
+
+target_include_directories(hevc_fei_extractor
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
 )
 
-list( APPEND LIBS bs_parser_hevc_static )
+target_sources(hevc_fei_extractor
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+)
 
-set( defs " -DMFX_VERSION_USE_LATEST " )
-set(DEPENDENCIES pthread)
+target_compile_definitions(hevc_fei_extractor PRIVATE MFX_VERSION_USE_LATEST)
 
-make_executable( shortname universal "nosafestring" )
+target_link_libraries(hevc_fei_extractor
+  PRIVATE
+    mfx_static_lib
+    mfx_shared_lib
+    ${CMAKE_THREAD_LIBS_INIT}
+    bs_parser_hevc_static
+)
 
-install( TARGETS ${target} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )
-set( defs "" )
+install( TARGETS hevc_fei_extractor RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )
+

@@ -1,37 +1,29 @@
-mfx_include_dirs( )
-###################################################################################################
-# compare_struct
+# disable_werror()
+add_executable(compare_struct)
 
-# Includes
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/compare_struct )
+target_include_directories(compare_struct
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-# gtest/gmock
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include )
+target_sources(compare_struct
+  PRIVATE
+    compare_struct.cpp
+    stdafx.cpp
+    stdafx.h
+    targetver.h
+    ${MSDK_LIB_ROOT}/shared/src/mfx_common_int.cpp
+)
 
-###################################################################################################
-# Tests sources
-file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/compare_struct/*.cpp" )
-list( APPEND sources ${srcs})
-
-###################################################################################################
-# Defines and Libs
-#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
-
-set( LIBS "" )
-list( APPEND LIBS
+target_link_libraries(compare_struct
+  PRIVATE
     vm
     vm_plus
     mfx_trace
     ${ITT_LIBRARIES}
-    ippcore_l
-    pthread dl
-    mfx_common_hw
+    gmock
+    gmock_main
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
 )
 
-list( APPEND LIBS_SUFFIX gmock )
-
-disable_werror()
-###################################################################################################
-# Target
-make_executable( compare_struct none )

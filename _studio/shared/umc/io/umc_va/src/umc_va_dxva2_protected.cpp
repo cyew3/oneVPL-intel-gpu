@@ -124,7 +124,7 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
     m_bs = bs;
     m_encryptCount = 0;
     m_encryptBegin = 0;
-
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (!m_bs || !m_bs->EncryptedData)
         return;
 
@@ -134,6 +134,7 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
         m_encryptCount++;
         temp = temp->Next;
     }
+#endif
 }
 
 const GUID & ProtectedVA::GetEncryptionGUID() const

@@ -1,77 +1,99 @@
 add_subdirectory(tools/configure)
 
-set (TRACER_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+if(CMAKE_SYSTEM_NAME MATCHES Windows)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(arch_postfix _64)
+  else()
+    set(arch_postfix _32)
+  endif()
 
-include_directories(
-  "$ENV{MFX_HOME}/include"
-  "${TRACER_DIR}"
-  )
+  set(tracerlibname mfx-tracer${arch_postfix})
+else()
+  set(tracerlibname mfx-tracer)
+endif()
 
-set(headers
-  "${TRACER_DIR}/config/config.h"
-  "${TRACER_DIR}/dumps/dump.h"
-  "${TRACER_DIR}/loggers/ilog.h"
-  "${TRACER_DIR}/loggers/log.h"
-  "${TRACER_DIR}/loggers/log_console.h"
-  "${TRACER_DIR}/loggers/log_etw_events.h"
-  "${TRACER_DIR}/loggers/log_file.h"
-  "${TRACER_DIR}/loggers/log_syslog.h"
-  "${TRACER_DIR}/loggers/timer.h"
-  "${TRACER_DIR}/loggers/thread_info.h"
-  "${TRACER_DIR}/tracer/tracer.h"
-  "${TRACER_DIR}/tracer/functions_table.h"
-  "${TRACER_DIR}/tracer/bits/mfxfunctions.h"
-  "${TRACER_DIR}/wrappers/mfx_structures.h"
-  )
+add_library(${tracerlibname} SHARED)
 
-set(sources
-  "${TRACER_DIR}/config/config.cpp"
-  "${TRACER_DIR}/dumps/dump.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxbrc.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxcommon.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxdefs.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxenc.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxplugin.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxsession.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxstructures.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxvideo.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxfei.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxla.cpp"
-  "${TRACER_DIR}/dumps/dump_mfxvp8.cpp"
-  "${TRACER_DIR}/loggers/log.cpp"
-  "${TRACER_DIR}/loggers/log_console.cpp"
-  "${TRACER_DIR}/loggers/log_etw_events.cpp"
-  "${TRACER_DIR}/loggers/log_file.cpp"
-  "${TRACER_DIR}/loggers/log_syslog.cpp"
-  "${TRACER_DIR}/tracer/tracer.cpp"
-  "${TRACER_DIR}/tracer/tracer_linux.cpp"
-  "${TRACER_DIR}/tracer/tracer_windows.cpp"
-  "${TRACER_DIR}/wrappers/mfx_core.cpp"
-  "${TRACER_DIR}/wrappers/mfx_video_core.cpp"
-  "${TRACER_DIR}/wrappers/mfx_video_decode.cpp"
-  "${TRACER_DIR}/wrappers/mfx_video_enc.cpp"
-  "${TRACER_DIR}/wrappers/mfx_video_encode.cpp"
-  "${TRACER_DIR}/wrappers/mfx_video_user.cpp"
-  "${TRACER_DIR}/wrappers/mfx_video_vpp.cpp"
-  "${TRACER_DIR}/wrappers/mfx_video_fei.cpp"
-  )
+target_include_directories(${tracerlibname}
+  PRIVATE
+    ${MFX_API_HOME}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_sources(${tracerlibname}
+  PRIVATE
+    config/config.h
+    dumps/dump.h
+    loggers/ilog.h
+    loggers/log.h
+    loggers/log_console.h
+    loggers/log_etw_events.h
+    loggers/log_file.h
+    loggers/log_syslog.h
+    loggers/timer.h
+    loggers/thread_info.h
+    tracer/tracer.h
+    tracer/functions_table.h
+    tracer/bits/mfxfunctions.h
+    wrappers/mfx_structures.h
+    config/config.cpp
+    dumps/dump.cpp
+    dumps/dump_mfxbrc.cpp
+    dumps/dump_mfxcommon.cpp
+    dumps/dump_mfxdefs.cpp
+    dumps/dump_mfxenc.cpp
+    dumps/dump_mfxplugin.cpp
+    dumps/dump_mfxsession.cpp
+    dumps/dump_mfxstructures.cpp
+    dumps/dump_mfxvideo.cpp
+    dumps/dump_mfxfei.cpp
+    dumps/dump_mfxla.cpp
+    dumps/dump_mfxvp8.cpp
+    loggers/log.cpp
+    loggers/log_console.cpp
+    loggers/log_etw_events.cpp
+    loggers/log_file.cpp
+    loggers/log_syslog.cpp
+    tracer/tracer.cpp
+    tracer/tracer_linux.cpp
+    tracer/tracer_windows.cpp
+    wrappers/mfx_core.cpp
+    wrappers/mfx_video_core.cpp
+    wrappers/mfx_video_decode.cpp
+    wrappers/mfx_video_enc.cpp
+    wrappers/mfx_video_encode.cpp
+    wrappers/mfx_video_user.cpp
+    wrappers/mfx_video_vpp.cpp
+    wrappers/mfx_video_fei.cpp
+    $<$<PLATFORM_ID:Windows>:mfx-tracer.def>
+)
 
 if( NOT DEFINED MFX_MODULES_DIR )
   set( MFX_MODULES_DIR ${CMAKE_INSTALL_FULL_LIBDIR} )
 endif( )
-add_definitions( -DMFX_MODULES_DIR="${MFX_MODULES_DIR}" )
 
-make_library(mfx-tracer none shared)
+target_compile_definitions(${tracerlibname}
+  PRIVATE
+    MFX_MODULES_DIR="${MFX_MODULES_DIR}"
+    $<$<PLATFORM_ID:Windows>:_MBCS>
+)
 
-set_target_properties( mfx-tracer PROPERTIES LINK_FLAGS
-  "${LINK_FLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/api/mfx_dispatch/linux/libmfx.map" )
+if(CMAKE_SYSTEM_NAME MATCHES Windows)
+  target_compile_options(${tracerlibname} PRIVATE /U_UNICODE /UUNICODE)
+  target_link_libraries(${tracerlibname} PRIVATE ${CMAKE_DL_LIBS} mfx_dispatch_trace_mbcs)
+endif()
+
+target_link_options(${tracerlibname}
+  PRIVATE
+    $<$<PLATFORM_ID:Windows>:LINKER:/DEF:mfx-tracer.def>
+    $<$<PLATFORM_ID:Linux>:LINKER:--version-script=${CMAKE_HOME_DIRECTORY}/api/mfx_dispatch/linux/libmfx.map>
+)
 
 get_mfx_version(mfx_version_major mfx_version_minor)
-set_target_properties(mfx-tracer PROPERTIES   VERSION ${mfx_version_major}.${mfx_version_minor})
-set_target_properties(mfx-tracer PROPERTIES SOVERSION ${mfx_version_major})
+set_target_properties(${tracerlibname} PROPERTIES   VERSION ${mfx_version_major}.${mfx_version_minor})
+set_target_properties(${tracerlibname} PROPERTIES SOVERSION ${mfx_version_major})
 
-target_link_libraries( mfx-tracer PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(${tracerlibname} PRIVATE ${CMAKE_DL_LIBS})
 
-install(TARGETS mfx-tracer LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS ${tracerlibname} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-set(defs "")

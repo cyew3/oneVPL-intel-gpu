@@ -20,6 +20,11 @@
 
 #include "mfx_common.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4996)
+#pragma warning(disable : 26812)
+#endif
+
 #if defined (MFX_ENABLE_VPP) && !defined (MFX_ENABLE_HW_ONLY_VPP)
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)

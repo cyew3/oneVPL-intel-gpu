@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,10 @@
 
 #  include "vm_types.h"
 #  include "vm_strings.h"
-#  if defined(LINUX32) || defined(__APPLE__)
-#     include "sys/vm_file_unix.h"
-#  else
+#  if defined(_WIN32)
 #     include "sys/vm_file_win.h"
+#  else
+#     include "sys/vm_file_unix.h"
 #  endif
 
 /*
@@ -69,6 +69,7 @@ int32_t vm_file_vfprintf(vm_file *fd, vm_char *format,  va_list argptr);
     #define vm_file_fflush fflush
 
 #else /* #if defined(LINUX32) || defined(OSX) */
+
 
 int32_t vm_file_fflush(vm_file *fd);
 vm_file *vm_file_fopen(const vm_char *fname, const vm_char *mode);

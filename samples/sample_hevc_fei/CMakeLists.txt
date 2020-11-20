@@ -1,28 +1,42 @@
 find_path( FEI_INCLUDE mfxfeihevc.h PATHS ${MFX_INCLUDE} )
-
-if(FEI_INCLUDE MATCHES NOTFOUND)
-  set(skipping _force_skipping)
-endif()
-
 find_path( VA_HEVC_FEI va/va_fei_hevc.h PATHS ${PKG_LIBVA_INCLUDEDIR} )
-if(VA_HEVC_FEI MATCHES NOTFOUND)
-  set(skipping _force_skipping)
+
+if( (FEI_INCLUDE MATCHES NOTFOUND)
+ OR (VA_HEVC_FEI MATCHES NOTFOUND)
+ OR (API_VERSION VERSION_LESS "1.27"))
+  message (STATUS "Pre-conditions missed, the following will not be built: sample_hevc_fei.")
+  return()
 endif()
 
-if(API_VERSION VERSION_LESS "1.27")
-  set(skipping _force_skipping)
+add_executable(sample_hevc_fei)
+set_property(TARGET sample_hevc_fei PROPERTY FOLDER "samples")
+
+target_include_directories(sample_hevc_fei PRIVATE include)
+target_link_libraries(sample_hevc_fei PRIVATE MFX::mfx sample_common)
+
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+  target_compile_definitions(sample_hevc_fei PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)
 endif()
 
-include_directories (
-  ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+target_sources(sample_hevc_fei
+  PRIVATE
+    include/fei_buffer_allocator.h
+    include/fei_predictors_repacking.h
+    include/fei_utils.h
+    include/hevc_fei_encode.h
+    include/hevc_fei_preenc.h
+    include/pipeline_hevc_fei.h
+    include/ref_list_manager.h
+    include/sample_hevc_fei_defs.h
 
-list( APPEND LIBS_VARIANT sample_common )
+    src/fei_buffer_allocator.cpp
+    src/fei_predictors_repaking.cpp
+    src/fei_utils.cpp
+    src/hevc_fei_encode.cpp
+    src/hevc_fei_preenc.cpp
+    src/pipeline_hevc_fei.cpp
+    src/ref_list_manager.cpp
+    src/sample_hevc_fei.cpp
+  )
 
-set(DEPENDENCIES ${skipping} itt libmfx dl pthread)
-set( defs "${WARNING_FLAGS}" )
-make_executable( shortname universal "nosafestring" )
-
-install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
-set( defs "" )
+install( TARGETS sample_hevc_fei RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )

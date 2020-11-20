@@ -45,7 +45,11 @@
 #if !((_IPP>=_IPP_H9)||(_IPP32E>=_IPP32E_L9))
 #if ((_IPP>=_IPP_V8)||(_IPP32E>=_IPP32E_U8))
 
-#define XMMCONST           static const _Alignas(16)
+#if !defined(_WIN32)
+  #define XMMCONST           static const _Alignas(16)
+#else
+  #define XMMCONST           static const __declspec(intrin_type) __declspec(align(16))
+#endif
 
 #define SH_2020            _MM_SHUFFLE(2,0,2,0)
 #define SH_3131            _MM_SHUFFLE(3,1,3,1)

@@ -444,7 +444,11 @@ mfxStatus D3D11Encoder::Execute(
     encodeExecuteParams.pCompressedBuffers = &compBufferDesc[0];
     encodeExecuteParams.pCipherCounter = 0;
     encodeExecuteParams.PavpEncryptionMode.eCounterMode = 0;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
+#else
+	encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1;
+#endif
 
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 

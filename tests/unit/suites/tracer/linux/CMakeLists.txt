@@ -50,7 +50,7 @@ if (NOT BUILD_TOOLS)
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/tools/tracer build)
 endif()
 
-target_link_libraries( mfx_tracer_test mfx-tracer gtest gmock pthread ${CMAKE_DL_LIBS} )
+target_link_libraries( mfx_tracer_test PRIVATE mfx-tracer gtest gmock pthread ${CMAKE_DL_LIBS} mfx_shared_lib mfx_static_lib)
 
 target_include_directories( mfx_tracer_test PRIVATE ${MFX_API_HOME}/mfx_tracer/linux ${CMAKE_HOME_DIRECTORY}/tools/tracer/tracer/)
 

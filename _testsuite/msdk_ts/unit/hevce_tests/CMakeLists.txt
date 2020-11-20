@@ -1,72 +1,88 @@
-mfx_include_dirs( )
+if(MFX_BUNDLED_IPP)
+  return()
+endif()
+
 ###################################################################################################
 # hevce_tests
 
-
 set( ENABLE_HEVC FALSE )
 
-if ( (CMAKE_C_COMPILER MATCHES icc) OR ENABLE_HEVC_ON_GCC )
+if ( (CMAKE_C_COMPILER_ID MATCHES Intel) OR (ENABLE_HEVC_ON_GCC AND NOT CMAKE_SYSTEM_NAME MATCHES Windows))
   set(ENABLE_HEVC TRUE)
 endif()
 
 if ( ENABLE_HEVC )
 
+# disable_werror()
+###################################################################################################
+# Target
+add_executable(hevce_tests)
+
+get_filename_component( CROSS_REPO_SPACE "${BUILDER_ROOT}/../.." ABSOLUTE )
+
 ###################################################################################################
 # Includes
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories( ${MSDK_STUDIO_ROOT}/mfx_lib/encode/h265/include )
-include_directories( ${MSDK_STUDIO_ROOT}/mfx_lib/fs_det/include  )
-include_directories( ${MSDK_STUDIO_ROOT}/mfx_lib/fei/h265/include )
-include_directories( ${MSDK_STUDIO_ROOT}/mfx_lib/cmrt_cross_platform/include )
-# gtest/gmock
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include )
+target_include_directories(hevce_tests
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${MSDK_STUDIO_ROOT}/mfx_lib/encode/h265/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/fs_det/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/fei/h265/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/cmrt_cross_platform/include
+    # gtest/gmock
+    ${CROSS_REPO_SPACE}/mdp_msdk-contrib/gmock/gtest/include
+    ${CROSS_REPO_SPACE}/mdp_msdk-contrib/gmock/include
+)
 
 ###################################################################################################
-# Plugin sources
-foreach( dir ${MSDK_STUDIO_ROOT}/mfx_lib/encode/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-file( GLOB_RECURSE srcs "${MSDK_STUDIO_ROOT}/mfx_lib/fs_det/src/*.cpp" )
-list( APPEND sources ${srcs} )
-
-list( APPEND sources ${MSDK_STUDIO_ROOT}/mfx_lib/shared/src/mfx_enc_common.cpp )
-list( APPEND sources ${MSDK_STUDIO_ROOT}/mfx_lib/shared/src/mfx_common_int.cpp )
+# sources
+target_sources(hevce_tests
+  PRIVATE
+    ${MSDK_STUDIO_ROOT}/mfx_lib/shared/src/mfx_enc_common.cpp
+    ${MSDK_STUDIO_ROOT}/mfx_lib/shared/src/mfx_common_int.cpp
+    hevce_common_api.cpp
+    hevce_common_api.h
+    hevce_encoded_order.cpp
+    hevce_encodeframeasync.cpp
+    hevce_gop.cpp
+    hevce_init.cpp
+    hevce_mock_videocore.cpp
+    hevce_mock_videocore.h
+    hevce_optimization.cpp
+    hevce_padding.cpp
+    hevce_query.cpp
+    hevce_queryiosurf.cpp
+)
 
 ###################################################################################################
-# Tests sources
-file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" )
-list( APPEND sources ${srcs})
 
-###################################################################################################
 # Defines and Libs
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
-set( defs "-DAS_HEVCE_PLUGIN" )
+target_compile_definitions(hevce_tests PRIVATE AS_HEVCE_PLUGIN)
 
-set( LIBS "" )
-list( APPEND LIBS
+target_link_libraries(hevce_tests
+  PRIVATE
     hevc_pp_dispatcher
     hevc_pp_atom
     hevc_pp_avx2
     hevc_pp_px
     hevc_pp_sse4
     hevc_pp_ssse3
+    h265_enc_hw
+    h265_fei
+    gmock_160
     umc
     vm
     vm_plus
     mfx_trace
+    mfx_static_lib
+    mfx_shared_lib
     ${ITT_LIBRARIES}
-    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread dl va
+    IPP::core IPP::dc IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::msdk
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
+    $<$<PLATFORM_ID:Linux>:va>
 )
 
-list( APPEND LIBS_SUFFIX gmock )
-
-disable_werror()
-###################################################################################################
-# Target
-make_executable( hevce_tests none )
+set_property(TARGET hevce_tests PROPERTY FOLDER "testsuite")
 
 endif() # ENABLE_HEVC

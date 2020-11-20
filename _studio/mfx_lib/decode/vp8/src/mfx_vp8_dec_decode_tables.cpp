@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) || defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW)
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 
 #include "mfx_vp8_dec_decode_vp8_defs.h"
 
@@ -688,8 +688,7 @@ const uint8_t vp8_ClampTbl[768] =
     ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff
 };
 
-
-
 }
 
-#endif 
+#endif //MFX_ENABLE_VP8_VIDEO_DECODE
+

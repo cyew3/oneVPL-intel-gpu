@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
 
 #include "hevcehw_g12ats_mfe_win.h"
 #include "hevcehw_g12_data.h"
@@ -244,5 +244,4 @@ void Windows::Gen12ATS::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST
         return MFX_ERR_NONE;
     });
 }
-
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)

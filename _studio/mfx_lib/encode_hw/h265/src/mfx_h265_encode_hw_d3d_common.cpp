@@ -60,13 +60,14 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore, GUID guid)
     mfxStatus paramsts = pSheduler->GetParam(&schedule_Param);
     if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
         m_bSingleThreadMode = true;
-
+#if !defined(STRIP_EMBARGO)
     //  This is a _temporal_ workaround. Must be removed in a short-term.
     if ((DXVA2_Intel_MFE == guid) && (pCore->GetHWType() >= MFX_HW_ATS))
     {
         m_bIsBlockingTaskSyncEnabled = false;
     }
     else
+#endif
     {
         bool *eventsEnabled = (bool *)pCore->QueryCoreInterface(MFXBlockingTaskSyncEnabled_GUID);
         if (eventsEnabled)

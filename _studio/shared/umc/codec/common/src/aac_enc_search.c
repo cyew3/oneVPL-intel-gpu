@@ -27,6 +27,8 @@
 #else
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif // #if defined(__INTEL_COMPILER)
+#else
+#pragma warning(disable : 4996)
 #endif // #if defined(__GNUC__)
 
 #include <math.h>

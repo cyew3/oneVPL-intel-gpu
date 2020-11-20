@@ -19,7 +19,18 @@
 # SOFTWARE.
 
 if (BUILD_DISPATCHER)
-  add_subdirectory(suites/mfx_dispatch/linux)
-  add_subdirectory(suites/tracer/linux)
+  if(CMAKE_SYSTEM_NAME MATCHES Windows)
+    add_subdirectory(suites/mfx_dispatch/windows)
+  else()
+    add_subdirectory(suites/mfx_dispatch/linux)
+  endif()
 endif()
 
+if (BUILD_TOOLS)
+  if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
+    add_subdirectory(suites/tracer/linux)
+  endif()
+endif()
+
+add_subdirectory(suites/scheduler)
+add_subdirectory(suites/compare_struct)

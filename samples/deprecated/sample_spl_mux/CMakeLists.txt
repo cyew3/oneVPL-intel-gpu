@@ -1,30 +1,35 @@
-pkg_check_modules(PKG_LIBAVUTIL libavutil>=52.38.100)
-pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
-pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
 
-if(PKG_LIBAVUTIL_FOUND AND
-   PKG_LIBAVCODEC_FOUND AND
-   PKG_LIBAVFORMAT_FOUND)
-    set( FFMPEG_FOUND TRUE )
-    message( STATUS "FFmpeg headers and libraries were found." )
-endif( )
+if (NOT FFMPEG_FOUND)
+  return()
+endif()
 
-if(NOT DEFINED FFMPEG_FOUND)
-  message( STATUS "FFmpeg headers and libraries were not found (optional)." )
-endif( )
-
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/api
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(sample_spl_mux
+  PUBLIC 
+    ${MSDK_SAMPLES_ROOT}/sample_common/include
+    api
+    include
+)
+target_include_directories(APPEND sources
+  src/adts_muxer.c
+  src/ffmpeg_mux_impl.c
+  src/ffmpeg_reader_writer.c
+  src/ffmpeg_splitter_impl.c
 )
 
-list(APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/adts_muxer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/ffmpeg_mux_impl.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/ffmpeg_reader_writer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/ffmpeg_splitter_impl.c
-)
 
 set(DEPENDENCIES libavutil libavcodec libavformat dl)
-make_library( sample_spl_mux none shared)
+
+add_library(sample_spl_mux SHARED
+  include/adts_muxer.h
+  include/ffmpeg_mux_impl.h
+  include/ffmpeg_reader_writer.h
+  include/ffmpeg_splitter_impl.h
+  include/inttypes.h
+  include/spl_mux_defs.h`
+  src/adts_muxer.c
+  src/ffmpeg_mux_impl.c
+  src/ffmpeg_reader_writer.c
+  src/ffmpeg_splitter_impl.c
+)
+
+target_link_librariries(sample_spl_mux PRIVATE avutil avcodec avformat ${CMAKE_DL_LIBS})

@@ -47,6 +47,7 @@ else()
   set( MFX_HOME $ENV{MFX_HOME} )
 endif()
 
+option( MFX_BUNDLED_IPP "Use bundled contrib/ipp sources" OFF )
 option( ENABLE_HEVC_ON_GCC "Build SW versions of HEVC plugins using GCC?" OFF )
 option( ENABLE_OPENCL "Build targets dependent on OpenCL?" ON )
 if( CMAKE_SYSTEM_NAME MATCHES Linux )

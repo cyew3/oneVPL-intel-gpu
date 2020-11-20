@@ -27,6 +27,10 @@
 #include "mfx_h265_quant_rdo.h"
 #include "mfx_h265_enc.h"
 
+#ifdef _MSVC_LANG
+#pragma warning(disable : 4244)
+#endif
+
 namespace H265Enc {
 
 #define MAX_INT                   2147483647  ///< max. value of signed 32-bit integer

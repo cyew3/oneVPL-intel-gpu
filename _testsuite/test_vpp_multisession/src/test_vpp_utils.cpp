@@ -2112,7 +2112,9 @@ mfxStatus GeneralWriter::Init(
                 ext);
             
             vm_char out_buf[1024];
+#if !defined(MFX_DISABLE_SW_FALLBACK)
             vm_string_sprintf_s(out_buf, VM_STRING("%s%s%s_layer%i.yuv"), drive, dir, fname, did);
+#endif
 
             sts = m_ofile[did]->Init(
                 (1 == didCount) ? strFileName : out_buf,
@@ -3337,6 +3339,7 @@ mfxStatus sAppResources::OutputProcessFrame(
                         Resources.pExtVPPAuxData[counter].TemporalComplexity,
                         Resources.pExtVPPAuxData[counter].SceneChangeRate);
                 }
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
                 else if(VPP_FILTER_DISABLED != Resources.m_pParams->varianceParam.mode)
                 {
                     mfxExtVppReport* pReport = reinterpret_cast<mfxExtVppReport*>(&Resources.pExtVPPAuxData[counter]);
@@ -3349,6 +3352,7 @@ mfxStatus sAppResources::OutputProcessFrame(
 
                     vm_string_printf(VM_STRING("\n"));
                 }
+#endif
                 else if(VPP_FILTER_DISABLED != Resources.m_pParams->idetectParam.mode)
                 {
                     vm_string_printf(
