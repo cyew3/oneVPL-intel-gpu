@@ -1021,17 +1021,10 @@ namespace Base
         TChain<mfxU16> GetTargetBitDepthLuma;
         TChain<mfxU16> GetTargetChromaFormat;
         TChain<mfxU16> GetMaxBitDepth;
-        TChain<mfxU16> GetMaxBitDepthByFourCC;
-        TChain<mfxU16> GetMaxChroma;
         TChain<mfxU16> GetRateControlMethod;
         TChain<mfxU16> GetProfile;
         TChain<mfxU16> GetMBBRC;
         TChain<mfxU16> GetAsyncDepth;
-        TChain<mfxU16> GetNumSlices;
-        TChain<mfxU16> GetLCUSize;
-        TChain<mfxU16> GetPicTimingSEI;
-        TChain<mfxU32> GetTargetKbps;
-        TChain<mfxU32> GetMaxKbps;
         TChain<mfxU32> GetBufferSizeInKB;
         TChain<std::tuple<mfxU16, mfxU16>> GetMaxNumRef;
         TChain<std::tuple<mfxU32, mfxU32>> GetFrameRate;

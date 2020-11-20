@@ -264,13 +264,6 @@ public:
         return bExternal;
     }
 
-    static mfxU16 BRefType(
-        Defaults::TChain<mfxU16>::TExt
-        , const Defaults::Param& /*par*/)
-    {
-        return MFX_B_REF_OFF;
-    }
-
     static mfxU16 PRefType(
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param&)
@@ -294,28 +287,12 @@ public:
         return std::make_tuple(frN, frD);
     }
 
-    static mfxU16 MaxBitDepthByFourCC(
-        Defaults::TChain<mfxU16>::TExt
-        , const Defaults::Param& par)
-    {
-        par;
-        return mfxU16(BITDEPTH_8);
-    }
-
     static mfxU16 MaxBitDepth(
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
     {
         par;
         return mfxU16(BITDEPTH_8);
-    }
-
-    static mfxU16 MaxChroma(
-        Defaults::TChain<mfxU16>::TExt
-        , const Defaults::Param& par)
-    {
-        par;
-        return mfxU16(MFX_CHROMAFORMAT_YUV420);
     }
 
     static mfxU16 TargetBitDepthLuma(
@@ -344,45 +321,6 @@ public:
         }
 
         return par.mvp.mfx.FrameInfo.ChromaFormat + 1;
-    }
-
-    static mfxU32 TargetKbps(
-        Defaults::TChain<mfxU32>::TExt
-        , const Defaults::Param& par)
-    {
-        auto& mfx = par.mvp.mfx;
-
-        if (mfx.TargetKbps)
-        {
-            return mfx.TargetKbps * std::max<const mfxU32>(1, mfx.BRCParamMultiplier);
-        }
-
-        mfxU32 frN = 30, frD = 1, maxBR = 0xffffffff;
-
-        SetIf(maxBR, !!mfx.CodecLevel, [&]() { return GetMaxKbpsByLevel(par.mvp); });
-
-        mfxU16 W = par.base.GetCodedPicWidth(par);
-        mfxU16 H = par.base.GetCodedPicHeight(par);
-        std::tie(frN, frD) = par.base.GetFrameRate(par);
-
-        mfxU16 bd = par.base.GetTargetBitDepthLuma(par);
-        mfxU16 cf = par.base.GetTargetChromaFormat(par) - 1;
-        mfxU32 rawBits = (General::GetRawBytes(W, H, cf, bd) << 3);
-
-        return std::min<mfxU32>(maxBR, rawBits * frN / frD / 150000);
-    }
-
-    static mfxU32 MaxKbps(
-        Defaults::TChain<mfxU32>::TExt
-        , const Defaults::Param& par)
-    {
-        auto& mfx = par.mvp.mfx;
-
-        if (mfx.MaxKbps)
-        {
-            return mfx.MaxKbps * std::max<const mfxU32>(1, mfx.BRCParamMultiplier);
-        }
-        return par.base.GetTargetKbps(par);
     }
 
     static mfxU32 BufferSizeInKB(
@@ -516,9 +454,6 @@ public:
         // (1) If target bit depth, chroma sampling are specified explicitly - check that they are correct.
         const mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par.mvp);
         bool bBDInvalid = pCO3 && Check<mfxU16, BITDEPTH_10, BITDEPTH_8, 0>(pCO3->TargetBitDepthLuma);
-        bool bCFInvalid = pCO3 && Check<mfxU16
-            , MFX_CHROMAFORMAT_YUV420 + 1>
-            (pCO3->TargetChromaFormatPlus1);
 
         // (2) Try to deduce bit depth and chroma sampling from profile and platform.
         //     For Base only Main profile is supported (8 and 10 bits, 4:2:0 sampling).
@@ -533,14 +468,10 @@ public:
 
         Defaults::Param parCopy(mvpCopy, par.caps, par.hw, par.base);
         auto pParForBD = &par;
-        auto pParForCF = &par;
 
+        // (4) If BitDepth is zero, get it from mfxVideoParam
         SetIf(pParForBD, bBDInvalid, &parCopy);
-        SetIf(pParForCF, bCFInvalid, &parCopy);
-
-        // (4) If BitDepth and/or ChromaFormat are zero, get them from mfxVideoParam
         SetIf(BitDepth, !BitDepth, [&]() { return pParForBD->base.GetTargetBitDepthLuma(*pParForBD); });
-        SetIf(ChromaFormat, !ChromaFormat, [&]() { return mfxU16(pParForCF->base.GetTargetChromaFormat(*pParForCF) - 1); });
 
         // (5) Check that list of GUIDs contains GUID for resulting BitDepth, ChromaFormat
         bool bSupported =
@@ -558,15 +489,6 @@ public:
         , const Defaults::Param& par)
     {
         return par.mvp.AsyncDepth + !par.mvp.AsyncDepth * 2;
-    }
-
-    static mfxU16 PicTimingSEI(
-        Defaults::TChain<mfxU16>::TExt
-        , const Defaults::Param& par)
-    {
-        const mfxExtCodingOption* pCO = ExtBuffer::Get(par.mvp);
-        bool bForceON = pCO && IsOn(pCO->PicTimingSEI);
-        return Bool2CO(bForceON);
     }
 
     static mfxU8 NumReorderFrames(
@@ -627,11 +549,7 @@ public:
     class TemporalLayers
     {
     public:
-        TemporalLayers()
-            : m_numTL(1)
-        {
-            m_TL[0].Scale = 1;
-        }
+        TemporalLayers() = delete;
         TemporalLayers(const mfxExtAvcTemporalLayers& tl)
         {
             SetTL(tl);
@@ -657,8 +575,6 @@ public:
 
             m_numTL = std::max<mfxU8>(m_numTL, 1);
         }
-
-        mfxU8 NumTL() const { return m_numTL; }
 
         mfxU8 GetTId(mfxU32 frameOrder) const
         {
@@ -755,62 +671,6 @@ public:
         return MFX_ERR_NONE;
     }
 
-    static void GetTileUniformSpacingParam(
-        std::vector<mfxU32>& colWidth
-        , std::vector<mfxU32>& rowHeight
-        , std::vector<mfxU32>& TsToRs
-        , mfxU32 nCol
-        , mfxU32 nRow
-        , mfxU32 nTCol
-        , mfxU32 nTRow
-        , mfxU32 nLCU)
-    {
-        std::vector<mfxU32> colBd (nTCol + 1, 0);
-        std::vector<mfxU32> rowBd (nTRow + 1, 0);
-
-        colWidth.resize(nTCol, 0);
-        rowHeight.resize(nTRow, 0);
-        TsToRs.resize(nLCU);
-
-        auto pColBd     = colBd.data();
-        auto pRowBd     = rowBd.data();
-        auto pColWidth  = colWidth.data();
-        auto pRowHeight = rowHeight.data();
-
-        mfxI32 i;
-        auto NextCW = [nCol, nTCol, &i]() { ++i; return ((i + 1) * nCol) / nTCol - (i * nCol) / nTCol; };
-        auto NextRH = [nRow, nTRow, &i]() { ++i; return ((i + 1) * nRow) / nTRow - (i * nRow) / nTRow; };
-        auto NextBd  = [&i](mfxU32 wh) { return (i += wh); };
-
-        i = -1;
-        std::generate(pColWidth, pColWidth + nTCol, NextCW);
-        i = -1;
-        std::generate(pRowHeight, pRowHeight + nTRow, NextRH);
-        i = 0;
-        std::transform(pColWidth, pColWidth + nTCol, pColBd + 1, NextBd);
-        i = 0;
-        std::transform(pRowHeight, pRowHeight + nTRow, pRowBd + 1, NextBd);
-
-        for (mfxU32 rso = 0; rso < nLCU; ++rso)
-        {
-            mfxU32 tbX   = rso % nCol;
-            mfxU32 tbY   = rso / nCol;
-            mfxU32 tso   = 0;
-            auto   LTX   = [tbX](mfxU32 x) { return tbX >= x; };
-            auto   LTY   = [tbY](mfxU32 y) { return tbY >= y; };
-            auto   tileX = std::count_if(pColBd + 1, pColBd + nTCol, LTX);
-            auto   tileY = std::count_if(pRowBd + 1, pRowBd + nTRow, LTY);
-            
-            tso += rowHeight[tileY] * std::accumulate(pColWidth, pColWidth + tileX, 0u);
-            tso += nCol             * std::accumulate(pRowHeight, pRowHeight + tileY, 0u);
-            tso += (tbY - rowBd[tileY]) * colWidth[tileX] + tbX - colBd[tileX];
-
-            assert(tso < nLCU);
-
-            TsToRs[tso] = rso;
-        }
-    }
-
     static void LoopFilterLevels(
         Defaults::TGetLoopFilterLevels::TExt
         , const Defaults::Param& par
@@ -902,16 +762,11 @@ public:
         PUSH_DEFAULT(NumRefFrames);
         PUSH_DEFAULT(MinRefForBNoPyramid);
         PUSH_DEFAULT(NumRefActive);
-        PUSH_DEFAULT(BRefType);
         PUSH_DEFAULT(PRefType);
         PUSH_DEFAULT(FrameRate);
-        PUSH_DEFAULT(MaxBitDepthByFourCC);
         PUSH_DEFAULT(MaxBitDepth);
-        PUSH_DEFAULT(MaxChroma);
         PUSH_DEFAULT(TargetBitDepthLuma);
         PUSH_DEFAULT(TargetChromaFormat);
-        PUSH_DEFAULT(TargetKbps);
-        PUSH_DEFAULT(MaxKbps);
         PUSH_DEFAULT(BufferSizeInKB);
         PUSH_DEFAULT(MaxNumRef);
         PUSH_DEFAULT(RateControlMethod);
@@ -921,7 +776,6 @@ public:
         PUSH_DEFAULT(Profile);
         PUSH_DEFAULT(GUID);
         PUSH_DEFAULT(AsyncDepth);
-        PUSH_DEFAULT(PicTimingSEI);
         PUSH_DEFAULT(FrameType);
         PUSH_DEFAULT(NumTemporalLayers);
         PUSH_DEFAULT(PreReorderInfo);

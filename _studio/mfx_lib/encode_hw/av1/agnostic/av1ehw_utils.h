@@ -612,7 +612,6 @@ inline mfxU16 Bool2CO(bool bOptON)
 
 inline mfxU8 CO2Flag(mfxU16 CO)
 {
-    assert(CO); // should be either ON or OFF
     return CO == MFX_CODINGOPTION_ON ? 1 : 0;
 }
 

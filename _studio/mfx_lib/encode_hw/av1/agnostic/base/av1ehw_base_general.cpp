@@ -973,21 +973,12 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
         auto pParNew = make_storable<ExtBuffer::Param<mfxVideoParam>>(par);
         ExtBuffer::Param<mfxVideoParam>& parNew = *pParNew;
         auto& parOld = Glob::VideoParam::Get(init);
-        auto& core = Glob::VideoCore::Get(init);
 
         global.Insert(Glob::ResetHint::Key, make_storable<ResetHint>(ResetHint{}));
         auto& hint = Glob::ResetHint::Get(global);
 
         const mfxExtEncoderResetOption* pResetOpt = ExtBuffer::Get(par);
         hint.Flags = RF_IDR_REQUIRED * (pResetOpt && IsOn(pResetOpt->StartNewSequence));
-
-        m_GetMaxRef = [&](const mfxVideoParam& par)
-        {
-            auto& def = Glob::Defaults::Get(init);
-            auto hw = core.GetHWType();
-            auto& caps = Glob::EncodeCaps::Get(init);
-            return def.GetMaxNumRef(Defaults::Param(par, caps, hw, def));
-        };
 
         std::for_each(std::begin(blocks.m_ebCopySupported)
             , std::end(blocks.m_ebCopySupported)
@@ -1278,10 +1269,7 @@ void General::PreReorderTask(const FeatureBlocks& blocks, TPushPreRT Push)
         auto& task = Task::Common::Get(s_task);
         auto  dflts = GetRTDefaults(global);
 
-        if (par.mfx.EncodedOrder)
-        {
-            assert(false && "THIS HEVC CODE IS STRIPPED FOR AV1!!!");
-        }
+        MFX_CHECK(!par.mfx.EncodedOrder, MFX_ERR_UNSUPPORTED);
 
         auto sts = dflts.base.GetPreReorderInfo(
             dflts, task, task.pSurfIn, &task.ctrl, m_lastKeyFrame, m_frameOrder);
@@ -2478,7 +2466,7 @@ void General::SetSH(
     sh = {};
 
     sh.seq_profile =   MapMfxProfileToSpec(par.mfx.CodecProfile);
-    sh.still_picture = CO2Flag(pAV1Par->StillPictureMode);
+    sh.still_picture = IsOn(pAV1Par->StillPictureMode);
 
     const int maxFrameResolutionBits = 15;
     sh.frame_width_bits       = maxFrameResolutionBits;
@@ -2528,8 +2516,6 @@ void General::SetSH(
 
 inline INTERP_FILTER MapMfxInterpFilter(mfxU16 filter)
 {
-    assert(filter); // default value must be set
-
     switch (filter)
     {
     case MFX_AV1_INTERP_EIGHTTAP_SMOOTH:
@@ -2636,16 +2622,10 @@ void SetDefaultFormat(
 void SetDefaultGOP(
     mfxVideoParam& par
     , const Defaults::Param& defPar
-    , mfxExtCodingOption2* pCO2
     , mfxExtCodingOption3* pCO3)
 {
     par.mfx.GopPicSize = defPar.base.GetGopPicSize(defPar);
     par.mfx.GopRefDist = defPar.base.GetGopRefDist(defPar);
-
-    if (pCO2 != nullptr)
-    {
-        SetIf(pCO2->BRefType, !pCO2->BRefType, [&]() { return defPar.base.GetBRefType(defPar); });
-    }
 
     if (pCO3 != nullptr)
     {
@@ -2712,7 +2692,7 @@ void General::SetDefaults(
     SetDefault(par.mfx.CodecProfile, defPar.base.GetProfile(defPar));
     SetDefault(par.mfx.CodecLevel, 0);
     SetDefault(par.mfx.TargetUsage, MFX_TARGETUSAGE_BALANCED);
-    SetDefaultGOP(par, defPar, nullptr, pCO3);
+    SetDefaultGOP(par, defPar, pCO3);
     SetDefault(par.mfx.LowPower, MFX_CODINGOPTION_ON);
     SetDefault(par.mfx.NumThread, 1);
 
@@ -3055,6 +3035,7 @@ mfxStatus General::CheckTemporalLayers(mfxVideoParam & par)
         auto& scaleCurr = pTL->Layer[curr].Scale;
         auto  scalePrev = pTL->Layer[prev].Scale;
 
+        MFX_CHECK(scalePrev != 0, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(!CheckMinOrZero(scaleCurr, scalePrev + 1), MFX_ERR_UNSUPPORTED);
         MFX_CHECK(!CheckOrZero(scaleCurr, mfxU16(scaleCurr - (scaleCurr % scalePrev))), MFX_ERR_UNSUPPORTED);
 
@@ -3101,9 +3082,6 @@ mfxStatus General::CheckTU(mfxVideoParam & par, const ENCODE_CAPS_AV1& /* caps *
     auto& tu = par.mfx.TargetUsage;
 
     if (CheckMaxOrZero(tu, 7u))
-        return MFX_ERR_UNSUPPORTED;
-
-    if (CheckMinOrZero(tu, 0u))
         return MFX_ERR_UNSUPPORTED;
 
     return MFX_ERR_NONE;
@@ -3434,20 +3412,6 @@ mfxStatus General::CheckCodedPicSize(
     MFX_CHECK(!CheckMaxOrZero(pAV1->FrameHeight, par.mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
     return MFX_ERR_NONE;
-}
-
-mfxU16 FrameType2SliceType(mfxU32 ft)
-{
-    bool bB = IsB(ft);
-    bool bP = !bB && IsP(ft);
-    return 1 * bP + 2 * !(bB || bP);
-}
-
-template<class T> inline T Lsb(T val, mfxU32 maxLSB)
-{
-    if (val >= 0)
-        return val % maxLSB;
-    return (maxLSB - ((-val) % maxLSB)) % maxLSB;
 }
 
 inline FRAME_TYPE MapMfxFrameTypeToSpec(mfxU16 ft)
