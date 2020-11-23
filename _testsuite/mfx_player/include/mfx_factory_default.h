@@ -28,18 +28,13 @@ enum /*Decoder type*/
     DECODER_BUFFERED,
     DECODER_ADVANCE, // decodes frames in advance
     DECODER_YUV_NATIVE,//decodes only yuv files
-    DECODER_MFX_PLUGIN_FILE, //create mediasdk decoder plugin based on filename
-    DECODER_MFX_PLUGIN_GUID,
     DECODER_LAST_IDX //end of enum indicator
 };
 
 enum /*Vpp Type*/
 {
     VPP_MFX_NATIVE = DECODER_LAST_IDX,
-    VPP_PLUGIN_AS_VPP,
     VPP_SVC,
-    VPP_MFX_PLUGIN_FILE, //create mediasdk vpp plugin based on filename
-    VPP_MFX_PLUGIN_GUID,
     VPP_LAST_IDX //end of enum indicator
 };
 
@@ -67,8 +62,6 @@ enum /*Render Type*/
 enum /*Render Type*/
 {
     ENCODER_MFX_NATIVE = RENDER_LAST_IDX,
-    ENCODER_MFX_PLUGIN_FILE,
-    ENCODER_MFX_PLUGIN_GUID,
     ENCODER_LAST_IDX 
 };
 

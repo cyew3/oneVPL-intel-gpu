@@ -28,9 +28,6 @@ Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
 #include "mfx_bitsream_buffer.h"
 #include "mfx_cmd_option_processor.h"
 #include "mfx_component_params.h"
-//#if defined(_WIN32)
-//    #include "mfx_vpp_plugin.h"
-//#endif
 #include "mfx_commands_initializer.h"
 #include "mfx_ifactory.h"
 #include "mfx_bitstream2.h"

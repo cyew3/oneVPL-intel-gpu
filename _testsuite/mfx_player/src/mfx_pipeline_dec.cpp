@@ -489,8 +489,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         , m_inParams.bUseVPP ? m_components[eVPP].m_extCO : m_components[eDEC].m_extCO );
 
 
-    MFX_CHECK_STS(InitPluginParams());
-
     MFX_CHECK_STS_SET_ERR(CreateAllocator(), PE_CREATE_ALLOCATOR);
     TIME_PRINT(VM_STRING("CreateAlloc"));
 
@@ -1371,21 +1369,9 @@ mfxStatus MFXDecPipeline::CreateVPP()
 
     m_components[eVPP].PrintInfo();
 
-    if (0 != vm_string_strlen(m_inParams.pPluginDLL))
-    {
-        //no support any more for plugin as vpp
-        return MFX_ERR_UNSUPPORTED;
-    }
-    else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  )
-    {
-        m_pVPP = m_pFactory->CreateVPP(
-            PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), m_inParams.strVPPPluginGuid, 1, VPP_MFX_PLUGIN_GUID, NULL));
-    }
-    else
-    {
-        m_pVPP = m_pFactory->CreateVPP(
-            PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), VM_STRING(""), VPP_MFX_NATIVE, NULL));
-    }
+
+    m_pVPP = m_pFactory->CreateVPP(
+        PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), VM_STRING(""), VPP_MFX_NATIVE, NULL));
     MFX_CHECK_WITH_ERR(m_pVPP, MFX_ERR_MEMORY_ALLOC);
     if(m_components[eVPP].m_rotate)
     {
@@ -1647,78 +1633,6 @@ mfxStatus MFXDecPipeline::CreateVPP()
     {
         MFX_CHECK_WITH_ERR(m_pVPP = new LatencyVPP(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), m_pVPP), MFX_ERR_MEMORY_ALLOC);
     }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus MFXDecPipeline::InitPluginVppParams(mfxFrameInfo & pluginInfo,
-                                              mfxFrameInfo & VppInfo)
-{
-    bool bEnable = false;
-
-    //checking enabling output
-    if (pluginInfo.CropH != 0 ||
-        pluginInfo.CropW != 0)
-    {
-        bEnable = true;
-    }
-
-
-    if (bEnable)
-    {
-        //default members initialization in transfered from vpp info
-        if (0 == pluginInfo.FourCC)
-            pluginInfo.FourCC = VppInfo.FourCC;
-
-        if (0 == pluginInfo.PicStruct)
-        {
-            pluginInfo.PicStruct = VppInfo.PicStruct;
-            //we should directly state the picstruct for plugin
-            if (0 == pluginInfo.PicStruct)
-            {
-                pluginInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-            }
-        }
-
-        if (0 == pluginInfo.CropH)
-            pluginInfo.CropH = VppInfo.CropH;
-
-        if (0 == pluginInfo.CropW)
-            pluginInfo.CropW = VppInfo.CropW;
-
-        if (0 == pluginInfo.FrameRateExtD)
-            pluginInfo.FrameRateExtD = VppInfo.FrameRateExtD;
-
-        if (0 == pluginInfo.FrameRateExtN)
-            pluginInfo.FrameRateExtN = VppInfo.FrameRateExtN;
-
-
-        //members correction
-        bool bProgressive
-            = (pluginInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE);
-
-        if (!m_inParams.bDisableSurfaceAlign)
-        {
-            pluginInfo.Width  =  mfx_align(pluginInfo.CropW, 0x10);
-            pluginInfo.Height =  mfx_align(pluginInfo.CropH, bProgressive ? 0x10 : 0x20);
-        }
-        else
-        {
-            pluginInfo.Width  =  pluginInfo.CropW;
-            pluginInfo.Height =  pluginInfo.CropH;
-        }
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus MFXDecPipeline::InitPluginParams()
-{
-    MFX_CHECK_STS(InitPluginVppParams(m_components[ePLUGIN].m_params.vpp.In
-        , m_components[eVPP].m_params.vpp.In));
-
-    MFX_CHECK_STS(InitPluginVppParams(m_components[ePLUGIN].m_params.vpp.Out
-        , m_components[eVPP].m_params.vpp.Out));
 
     return MFX_ERR_NONE;
 }
@@ -2742,24 +2656,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     //however is we will use outline to store viewids sequence viedids should be generated in YUV source
     bool bGenerateViewIds = false;
 
-    if (vm_string_strlen(m_inParams.strDecPluginGuid))
-    {
-        m_pYUVSource.reset(m_pFactory->CreateDecode(
-            PipelineObjectDesc<IYUVSource>(m_components[eDEC].m_pSession->GetMFXSession()
-            , m_inParams.strDecPluginGuid
-            , 1
-            , DECODER_MFX_PLUGIN_GUID
-            , NULL)));
-    }
-    else if (vm_string_strlen(m_inParams.strDecPlugin))
-    {
-        m_pYUVSource.reset(m_pFactory->CreateDecode(
-            PipelineObjectDesc<IYUVSource>(m_components[eDEC].m_pSession->GetMFXSession()
-            , m_inParams.strDecPlugin
-            , DECODER_MFX_PLUGIN_FILE
-            , NULL)));
-    }
-    else if (m_inParams.bYuvReaderMode ||
+    if (m_inParams.bYuvReaderMode ||
              m_inParams.m_container == MFX_CONTAINER_CRMF ||
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
         MFX_FOURCC_YV12 == m_inParams.InputCodecType)
@@ -4784,37 +4681,24 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else if (m_OptProc.Check(argv[0], VM_STRING("-plugin"), VM_STRING("load plugin from DLL and insert into pipeline"), OPT_FILENAME))
         {
             MFX_CHECK(1 + argv != argvEnd);
-            MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.pPluginDLL, MFX_ARRAY_SIZE(m_inParams.pPluginDLL), argv[1]));
             argv++;
-            m_inParams.bUseVPP = true;
+            vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-plugin:param"), VM_STRING("load plugin parameters from file"), OPT_FILENAME))
         {
             MFX_CHECK(1 + argv != argvEnd);
-            MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.pPluginParamFile, MFX_ARRAY_SIZE(m_inParams.pPluginParamFile), argv[1]));
             argv++;
+            vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-plugin:rgb32"), VM_STRING("plugin uses rgb32 color format")))
         {
-            m_components[ePLUGIN].m_params.mfx.FrameInfo.FourCC = MFX_FOURCC_RGB4;
+            vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
         }
         else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-plugin:(w|h)"), VM_STRING("plugin works on surfaces with specific resolution, pre and post processing used if necessary"))))
         {
             MFX_CHECK(1 + argv != argvEnd);
-            switch (nPattern)
-            {
-            case 1:
-                MFX_PARSE_INT(m_components[ePLUGIN].m_params.vpp.In.CropW, argv[1]);
-                MFX_PARSE_INT(m_components[ePLUGIN].m_params.vpp.Out.CropW, argv[1]);
-                break;
-            case 2:
-                MFX_PARSE_INT(m_components[ePLUGIN].m_params.vpp.In.CropH, argv[1]);
-                MFX_PARSE_INT(m_components[ePLUGIN].m_params.vpp.Out.CropH, argv[1]);
-                break;
-            default:
-                MFX_CHECK(nPattern == 1 || nPattern == 2);
-            }
             argv++;
+            vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-cmp"), VM_STRING("compare with reference file"), OPT_FILENAME))
         {
@@ -5570,11 +5454,36 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.bPAFFDetect, VM_STRING("-paff"), VM_STRING("enabled picture structure detection by VPP"));
             else HANDLE_INT_OPTION(m_inParams.nSVCDownSampling, VM_STRING("-downsampling"), VM_STRING("use downsampling algorithm 1-best quality, 2-best speed"))
             else HANDLE_BOOL_OPTION(m_inParams.bDxgiDebug, VM_STRING("-dxgidebug"), VM_STRING("inject dxgidebug.dll to report live objects(dxgilevel memory leaks)"));
-            else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin,     VM_STRING("-decode_plugin"),      VM_STRING("MediaSDK Decoder plugin filename"))
-            else HANDLE_FILENAME_OPTION(m_inParams.strDecPluginGuid, VM_STRING("-decode_plugin_guid"), VM_STRING("MediaSDK Decoder plugin GUID"))
-            else HANDLE_FILENAME_OPTION(m_inParams.strEncPlugin,     VM_STRING("-encode_plugin"),      VM_STRING("MediaSDK Encoder plugin filename"))
-            else HANDLE_FILENAME_OPTION(m_inParams.strEncPluginGuid, VM_STRING("-encode_plugin_guid"), VM_STRING("MediaSDK Encoder plugin GUID"))
-            else HANDLE_FILENAME_OPTION(m_inParams.strVPPPluginGuid, VM_STRING("-vpp_plugin_guid"),    VM_STRING("MediaSDK VPP plugin GUID"))
+            else if (m_OptProc.Check(argv[0], VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename"), OPT_FILENAME))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-decode_plugin_guid"), VM_STRING("MediaSDK Decoder plugin filename"), OPT_FILENAME))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-encode_plugin"), VM_STRING("MediaSDK Encoder plugin filename"), OPT_FILENAME))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-encode_plugin_guid"), VM_STRING("MediaSDK Encoder plugin GUID"), OPT_FILENAME))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-vpp_plugin_guid"), VM_STRING("MediaSDK VPP plugin GUID"), OPT_FILENAME))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                argv++;
+                vm_string_printf(VM_STRING("[ATTENTION] Flag '%s' is ignored! Plugins support is disabled in opeVPL."), argv[0]);
+            }
             else HANDLE_BOOL_OPTION(m_inParams.bUseOverlay, VM_STRING("-overlay"), VM_STRING("Use overlay for rendering"));
             else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-(dec|enc):shift)"), VM_STRING("Desired data shift in frame data"), OPT_INT_32)))
             {

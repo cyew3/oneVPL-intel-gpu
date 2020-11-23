@@ -23,7 +23,6 @@ File Name: .h
 #include "mfx_separate_file.h"
 #include "mfx_crc_writer.h"
 #include "mfx_svc_vpp.h"
-#include "mfx_codec_plugin.h"
 
 MFXPipelineFactory :: MFXPipelineFactory ()
 {
@@ -48,23 +47,7 @@ IYUVSource      * MFXPipelineFactory ::CreateDecode( const IPipelineObjectDesc &
 {
     PipelineObjectDescPtr<IYUVSource> create(pParams);
 
-    switch (create->Type)
-    {
-        case DECODER_MFX_NATIVE:
-        {
-            return new MFXDecoder(create->session);
-        }
-        case DECODER_MFX_PLUGIN_FILE:
-        {
-            return new MFXCodecPluginTmpl<MFXDecoder, MFXDecoderPlugin>(create->splugin, create->session);
-        }
-        case DECODER_MFX_PLUGIN_GUID:
-        {
-            return new MFXCodecPluginTmpl<MFXDecoder, MFXDecoderPlugin>(create->sPluginGuid, 1, create->session);
-        }
-    default:
-        return NULL;
-    }
+    return new MFXDecoder(create->session);
 }
 
 IMFXVideoVPP    * MFXPipelineFactory ::CreateVPP( const IPipelineObjectDesc & pParams)
@@ -81,14 +64,6 @@ IMFXVideoVPP    * MFXPipelineFactory ::CreateVPP( const IPipelineObjectDesc & pP
         {
             return new SVCedVpp(create->m_pObject);
         }
-        case VPP_MFX_PLUGIN_FILE:
-        {
-            return new MFXCodecPluginTmpl<MFXVideoVPPImpl, MFXVPPPlugin>(create->splugin, create->session);
-        }
-        case VPP_MFX_PLUGIN_GUID:
-        {
-            return new MFXCodecPluginTmpl<MFXVideoVPPImpl, MFXVPPPlugin>(create->sPluginGuid, 1, create->session);
-        }
     default:
         return NULL;
     }
@@ -98,24 +73,7 @@ IVideoEncode   * MFXPipelineFactory :: CreateVideoEncode ( IPipelineObjectDesc *
 {
     PipelineObjectDescPtr<IVideoEncode> create(pParams);
 
-    switch (create->Type)
-    {
-        case ENCODER_MFX_NATIVE :
-        {
-            return new MFXVideoEncode(create->session);
-        }
-        case ENCODER_MFX_PLUGIN_FILE:
-        {
-            return new MFXCodecPluginTmpl<MFXVideoEncode, MFXEncoderPlugin>(create->splugin, create->session);
-        }
-        case ENCODER_MFX_PLUGIN_GUID:
-        {
-            return new MFXCodecPluginTmpl<MFXVideoEncode, MFXEncoderPlugin>(create->sPluginGuid, 1, create->session);
-        }
-
-        default:
-            return NULL;
-    }
+    return new MFXVideoEncode(create->session);
 }
 
 IMFXVideoRender * MFXPipelineFactory ::CreateRender( IPipelineObjectDesc * pParams)

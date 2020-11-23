@@ -73,8 +73,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mock_encoder_plugin", "..\.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unittest", "unittest", "{E1FFA6C7-F00B-4326-88EB-C3EE02C6BE65}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pipeline_mock", "..\mfx_player\unit_test\mfx_mock_plugin\mfx_mock_plugin.vcxproj", "{84E9E998-E880-4016-95C4-18C12FA0B033}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug (Lucas DLL)|Win32 = Debug (Lucas DLL)|Win32

@@ -201,7 +201,6 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
 #else
 #include <mfxvideo.h>
 #include <mfxaudio.h>
-#include <mfxplugin.h>
 #include "mfxenc.h"
 #include "mfxpak.h"
 

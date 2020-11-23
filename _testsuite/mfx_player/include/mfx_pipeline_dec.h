@@ -159,20 +159,6 @@ struct sCommandlineParams
   //outline
   vm_char        strOutlineFile[MAX_FILE_PATH];     //output used by outline render
   vm_char        strOutlineInputFile[MAX_FILE_PATH];//input used by outline reader
-  // plugin
-  vm_char        pPluginDLL[MAX_FILE_PATH];
-  vm_char        pPluginParamFile[MAX_FILE_PATH];
-  // decoder plugin
-  vm_char        strDecPlugin[MAX_FILE_PATH];
-  vm_char        strDecPluginGuid[33];
-
-  // encoder plugin
-  vm_char        strEncPlugin[MAX_FILE_PATH];
-  vm_char        strEncPluginGuid[33];
-
-  // VPP plugin
-  vm_char        strVPPPluginGuid[33];
-
 
   vm_char        pMFXLibraryPath[MAX_FILE_PATH];
 
@@ -585,9 +571,6 @@ protected:
     virtual mfxStatus        CreateSplitter();
     virtual mfxStatus        CreateVPP();
     virtual mfxStatus        InitVPP();
-    virtual mfxStatus        InitPluginParams();
-    virtual mfxStatus        InitPluginVppParams(mfxFrameInfo & pluginInfo,
-                                                 mfxFrameInfo & pluginVpp);
     virtual mfxStatus        CreateRender();
     virtual mfxStatus        CreateFileSink(std::auto_ptr<IFile> &pSink);//render ended with file sink object
     virtual mfxStatus        DecorateRender();//creates a bunch of decorators for existing render

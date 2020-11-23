@@ -3231,24 +3231,10 @@ std::unique_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
     //create ivideoencode implementation
     PipelineObjectDesc<IVideoEncode> createParams;
 
-    if (vm_string_strlen(m_inParams.strEncPluginGuid)) {
-        createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
-            , m_inParams.strEncPluginGuid
-            , (mfxU32)1
-            , ENCODER_MFX_PLUGIN_GUID
-            , NULL);
-
-    } else if (vm_string_strlen(m_inParams.strEncPlugin)) {
-        createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
-            , m_inParams.strEncPlugin
-            , ENCODER_MFX_PLUGIN_FILE
-            , NULL);
-    } else {
-        createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
+    createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
             , VM_STRING("")
             , ENCODER_MFX_NATIVE
             , NULL);
-    }
 
     std::unique_ptr<IVideoEncode> pEncoder ( m_pFactory->CreateVideoEncode(&createParams));
 

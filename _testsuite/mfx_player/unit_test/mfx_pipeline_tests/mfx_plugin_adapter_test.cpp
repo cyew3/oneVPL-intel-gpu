@@ -11,60 +11,7 @@ File Name: .h
 \* ****************************************************************************** */
 
 #include "utest_common.h"
-#include "mfxplugin++.h"
-#include "mock_mfx_plugins.h"
 
-SUITE(mfx_plugin_plusplus)
-{
-    struct Fixture
-    {
-        MockPlugin m;
-        MFXPluginAdapter <MFXGenericPlugin> adapter;
-        mfxPlugin internalAPI;
-        mfxCoreInterface icore;
-        Fixture()
-            : adapter(&m)
-            , icore()
-        {
-            internalAPI = adapter;
-        }
-    };
-    struct FixtureDec : Fixture
-    {
-        MFXPluginAdapter <MFXDecoderPlugin> adapter_dec;
-        FixtureDec()
-            : adapter_dec(&m)
-
-        {
-            internalAPI = adapter_dec;
-        }
-    };
-
-    struct FixtureEnc : Fixture
-    {
-        MFXPluginAdapter <MFXEncoderPlugin> adapter_enc;
-        FixtureEnc()
-            : adapter_enc(&m)
-        {
-            internalAPI = adapter_enc;
-        }
-    };
-    TEST_FIXTURE(Fixture, PluginInit)
-    {
-        internalAPI.PluginInit(internalAPI.pthis, &icore);
-        CHECK(m._PluginInit.WasCalled());
-    }
-    TEST_FIXTURE(Fixture, PluginClose)
-    {
-        internalAPI.PluginClose(internalAPI.pthis);
-        CHECK(m._PluginClose.WasCalled());
-    }
-    TEST_FIXTURE(Fixture, GetPluginParam)
-    {
-        mfxPluginParam par;
-        internalAPI.GetPluginParam(internalAPI.pthis, &par);
-        CHECK(m._GetPluginParam.WasCalled());
-    }
     TEST_FIXTURE(Fixture, Submit)
     {
         //const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task
@@ -131,20 +78,6 @@ SUITE(mfx_plugin_plusplus)
         mfxThreadTask task;
         mfxEncodeCtrl ctrl;
         internalAPI.Video->EncodeFrameSubmit(internalAPI.pthis, &ctrl, &surface,&bs,&task);
-        CHECK(m._EncodeFrameSubmit.WasCalled());
-    }
-    void fnc_co_call_encode(mfxPlugin * plg){
-        mfxBitstream bs;
-        mfxFrameSurface1 surface;
-        mfxThreadTask task;
-        mfxEncodeCtrl ctrl;
-        plg->Video->EncodeFrameSubmit(plg->pthis, &ctrl, &surface,&bs,&task);
-        
-    }
-    TEST_FIXTURE(FixtureEnc, AdapterCopyCtor) {
-        
-        mfxPlugin plg = make_mfx_plugin_adapter((MFXEncoderPlugin*)&m);
-        fnc_co_call_encode(&plg);
         CHECK(m._EncodeFrameSubmit.WasCalled());
     }
 }

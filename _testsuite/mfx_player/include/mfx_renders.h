@@ -20,6 +20,7 @@ File Name: .h
 #include "mfx_ivideo_render.h"
 #include "mfx_ifile.h"
 #include "mfx_ivideo_session.h"
+#include "mfx_sysmem_allocator.h"
 
 enum MFXVideoRenderType
 {
@@ -98,7 +99,6 @@ protected:
     virtual mfxStatus UnlockFrame(mfxFrameSurface1 *surface);
 };
 
-class HWtoSYSCopier;
 class MFXFileWriteRender : public MFXVideoRender
 {
 public :
@@ -131,7 +131,6 @@ protected:
     int                m_nTimesClosed;
     std::map<int, char*>m_lucas_buffer; //per view buffer
 
-    HWtoSYSCopier * m_copier;
     mfxFrameSurface1 m_surfaceForCopy;
 
     struct FramePosition
