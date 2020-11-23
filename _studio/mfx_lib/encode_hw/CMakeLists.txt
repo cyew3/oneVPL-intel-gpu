@@ -260,6 +260,7 @@ target_link_libraries(encode_hw
     mfx_static_lib
     umc_va_hw
     asc
+    mctf_hw
     genx
   PRIVATE
     mfx_require_sse4_properties  # fast_copy.h implies this
