@@ -97,9 +97,6 @@ public:
       //assign buffers from extparams to mfxVideoParam::m_params member
       virtual void AssignExtBuffers();
 
-      //special extended buffer in case of opaq memory
-      virtual void AttachOpaqBuffer( bool bAtOutput , mfxU16 Type , std::vector<mfxFrameSurface1*>& );
-
       virtual mfxStatus AllocFrames( RWAllocatorFactory::root* pFactory
                                    , IHWDevice *hwDevice
                                    , mfxFrameAllocRequest  * pRequest
@@ -171,7 +168,7 @@ public:
         mfxFrameAllocRequest           request;
         mfxFrameAllocResponse          allocResponce;
         std::vector<SrfEncCtl>         surfaces;
-        //used if Mediasdk required linear array of allocated surfaces -> for opaq memory support
+        //used if Mediasdk required linear array of allocated surfaces
         std::vector<mfxFrameSurface1*> surfacesLinear;
         SurfacesAllocated()
             : request()

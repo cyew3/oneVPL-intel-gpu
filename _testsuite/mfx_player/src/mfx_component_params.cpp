@@ -56,8 +56,7 @@ mfxU16 ComponentParams::GetIoPatternIn()
         case MFX_BUF_SW   : return MFX_IOPATTERN_IN_SYSTEM_MEMORY;
         case MFX_BUF_HW   : return MFX_IOPATTERN_IN_VIDEO_MEMORY;
         case MFX_BUF_HW_DX11 : return MFX_IOPATTERN_IN_VIDEO_MEMORY;
-        case MFX_BUF_OPAQ : return MFX_IOPATTERN_IN_OPAQUE_MEMORY;
-        default : 
+        default :
             return MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
 }
@@ -69,8 +68,7 @@ mfxU16 ComponentParams::GetIoPatternOut()
     case MFX_BUF_SW   : return MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     case MFX_BUF_HW   : return MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     case MFX_BUF_HW_DX11 : return MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-    case MFX_BUF_OPAQ : return MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
-    default : 
+    default :
         return MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
 }
@@ -145,36 +143,8 @@ mfxStatus ComponentParams::PrintInfo()
     PipelineTrace((SerializeWithKey(VM_STRING("  External allocator"), m_bExternalAlloc).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  MFX API version"),version).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  MFXImpl"), m_RealImpl).c_str()));
-    
+
     return MFX_ERR_NONE;
-}
-
-void ComponentParams::AttachOpaqBuffer( bool bAtOutput , mfxU16 Type , std::vector<mfxFrameSurface1*>& surfaces)
-{
-    MFXExtBufferPtr<mfxExtOpaqueSurfaceAlloc> extOpaqTest(m_extParams);
-    if (NULL == extOpaqTest.get())
-    {
-        m_extParams.push_back(new mfxExtOpaqueSurfaceAlloc());
-    }
-    //TODO: again limitation of mfxextbufferptr
-    MFXExtBufferPtr<mfxExtOpaqueSurfaceAlloc> extOpaq(m_extParams);
-    if (NULL == extOpaq.get())
-    {
-        return;
-    }
-
-    if (bAtOutput)
-    {
-        extOpaq->Out.Surfaces   = &surfaces.front();
-        extOpaq->Out.NumSurface =  (mfxU16)surfaces.size();
-        extOpaq->Out.Type       =  Type;
-    }else
-    {
-        extOpaq->In.Surfaces   = &surfaces.front();
-        extOpaq->In.NumSurface =  (mfxU16)surfaces.size();
-        extOpaq->In.Type       =  Type;
-    }
-    AssignExtBuffers();
 }
 
 mfxStatus ComponentParams::DestroySurfaces()
@@ -330,12 +300,6 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             break;
         }
 #endif
-    case MFX_BUF_OPAQ:
-        {
-            MFX_CHECK(NULL == m_pAllocator);
-            refSurfaces.allocResponce.NumFrameActual = pRequest->NumFrameMin;
-            break;
-        }
     default:
         {
             MFX_CHECK(NULL != m_pAllocator);
@@ -457,7 +421,7 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                     }
 
                     MFX_CHECK_WITH_ERR(idx < m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual, MFX_ERR_INVALID_HANDLE);
-                    *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[idx];
+                    *mid = m_sufacesByIDx[refIdx]->allocResponce.mids[idx];
 
                     return MFX_ERR_NONE;
                 }
@@ -486,7 +450,7 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                     *pSurface = refSurfaces[usedNumbers[curIdx]];
 
                     MFX_CHECK_WITH_ERR(curIdx < m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual, MFX_ERR_INVALID_HANDLE);
-                    *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[curIdx];
+                    *mid = m_sufacesByIDx[refIdx]->allocResponce.mids[curIdx];
 
                     return MFX_ERR_NONE;
                 }
