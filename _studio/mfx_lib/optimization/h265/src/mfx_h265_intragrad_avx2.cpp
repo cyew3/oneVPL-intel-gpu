@@ -87,7 +87,7 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
     ALIGN_DECL(32) mfxU16 amp[4*4];
 
     __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
-    __m256 ymm3f, ymm5f, ymm6f;
+    __m256 ymm0f, ymm3f, ymm5f, ymm6f;
 
     _mm256_zeroupper();
 
@@ -123,6 +123,7 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
             ymm2 = _mm256_unpacklo_epi16(_mm256_setzero_si256(), ymm2);
             ymm2 = _mm256_srai_epi32(ymm2, 16);
             ymm3 = _mm256_mullo_epi32(ymm2, ymm2);
+            ymm3f = _mm256_cvtepi32_ps(ymm3);
 
             /* dy = [1,2,1]*col(-1) - [1,2,1]*col(+1), interleave cols -1 and +1 for each row (-1,0,+1) */
             ymm0 = _mm256_shuffle_epi8(ymm0, *(__m256i *)dyShufTab08);
@@ -139,6 +140,8 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
             ymm4 = _mm256_unpacklo_epi16(_mm256_setzero_si256(), ymm4);
             ymm4 = _mm256_srai_epi32(ymm4, 16);
             ymm5 = _mm256_mullo_epi32(ymm4, ymm4);
+
+            ymm5f = _mm256_cvtepi32_ps(ymm5);
         } else {
             /* load all 3+1 rows each time to free up registers */
             ymm0 = mm256(_mm_loadu_si128((__m128i *)(frame + 0*framePitch)));   /* row -1 */
@@ -164,7 +167,8 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
             /* add columns, calculate x2 = dx*dx */
             ymm2 = _mm256_add_epi32(ymm2, ymm3);
             ymm2 = _mm256_add_epi32(ymm2, ymm4);
-            ymm3 = _mm256_mullo_epi32(ymm2, ymm2);
+            ymm3f = _mm256_cvtepi32_ps(ymm2);
+            ymm3f = _mm256_mul_ps(ymm3f, ymm3f); // x2 = dx*dx
 
             /* dy = [1,2,1]*col(-1) - [1,2,1]*col(+1), interleave cols -1 and +1 for each row (-1,0,+1) */
             ymm0 = _mm256_shuffle_epi8(ymm0, *(__m256i *)dyShufTab16);
@@ -178,7 +182,8 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
             /* add rows, expand to 32 bits, calculate y2 = dy*dy  */
             ymm4 = _mm256_add_epi32(ymm4, ymm0);
             ymm4 = _mm256_add_epi32(ymm4, ymm5);
-            ymm5 = _mm256_mullo_epi32(ymm4, ymm4);
+            ymm5f = _mm256_cvtepi32_ps(ymm4);
+            ymm5f = _mm256_mul_ps(ymm5f, ymm5f); // y2 = dy*dy
         }
 
         /* masks: ymm0 = (dx < 0), ymm1 = (dy < 0) */
@@ -198,7 +203,8 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
         ymm6 = _mm256_blendv_epi8(ymm6, *(__m256i *)fPi15, ymm1);   /* a0 = 0.5*pi or 1.5*pi */
         ymm7 = _mm256_blendv_epi8(ymm7, *(__m256i *)fPi20, ymm1);   /* a1 = 0 or 2.0*pi */
         ymm7 = _mm256_blendv_epi8(ymm7, *(__m256i *)fPi10, ymm0);   /* a1 = 0 or 2.0*pi or 1.0 *pi */
-        ymm0 = _mm256_cmpgt_epi32(ymm5, ymm3);                      /* mask: ymm0 = (y2 > x2) */
+        ymm0f = _mm256_cmp_ps(ymm5f, ymm3f, _CMP_GT_OQ);            /* mask: ymm0 = (y2 > x2) */
+        ymm0 = _mm256_castps_si256(ymm0f);
 
         /* angf = a1 or a0, offset = +/- xy */
         ymm7 = _mm256_blendv_epi8(ymm7, ymm6, ymm0);
@@ -206,19 +212,17 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
         ymm6 = _mm256_sub_epi32(ymm6, ymm0);
 
         /* denominator = (y2 + 0.28*x2 + eps) or (x2 + 0.28*y2  + eps) */
-        ymm4 = ymm3;
-        ymm3 = _mm256_blendv_epi8(ymm3, ymm5, ymm0);
-        ymm5 = _mm256_blendv_epi8(ymm5, ymm4, ymm0);
-        ymm3f = _mm256_cvtepi32_ps(ymm3);
-        ymm5f = _mm256_cvtepi32_ps(ymm5);
+        ymm6f = ymm3f;
+        ymm3f = _mm256_blendv_ps(ymm3f, ymm5f, ymm0f);
+        ymm5f = _mm256_blendv_ps(ymm5f, ymm6f, ymm0f);
         ymm5f = _mm256_mul_ps(ymm5f, *(__m256 *)fC28);
         ymm3f = _mm256_add_ps(ymm3f, ymm5f);
         ymm3f = _mm256_add_ps(ymm3f, *(__m256 *)fCep);
-        
+
         /* a0 - (xy / denom) or a1 + (xy / denom) */
         ymm6f = _mm256_cvtepi32_ps(ymm6);
         ymm6f = _mm256_div_ps(ymm6f, ymm3f);
-        ymm6f = _mm256_add_ps(ymm6f, mmi2f(ymm7));
+        ymm6f = _mm256_add_ps(ymm6f, mmi2f(ymm7)); // angf
 
         ymm2 = _mm256_load_si256((__m256i *)dx);
         ymm3 = _mm256_load_si256((__m256i *)dy);
@@ -272,6 +276,14 @@ static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 fra
 
         /* store angle, range = [0,34] */
         _mm256_store_si256((__m256i *)(ang2 + 4*y), ymm4);
+
+#ifdef VM_DEBUG
+        for (int i = 0; i < 8; i++)
+        {
+            VM_ASSERT(ang2[4 * y + i] >= 0);
+            VM_ASSERT(ang2[4 * y + i] < HIST_MAX);
+        }
+#endif
     }
 
     /* update histogram (faster to do outside of main loop - compiler should fully unroll) */
