@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -126,23 +126,18 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
         }
     }
 
-    switch (info->FourCC)
+    if (info->Shift)
     {
-    case MFX_FOURCC_P010:
-    case MFX_FOURCC_P210:
+        if (   info->FourCC != MFX_FOURCC_P010 && info->FourCC != MFX_FOURCC_P210
 #if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y210:
+            && info->FourCC != MFX_FOURCC_Y210
 #endif
 #if (MFX_VERSION >= 1031)
-    case MFX_FOURCC_P016:
-    case MFX_FOURCC_Y216:
-    case MFX_FOURCC_Y416:
+            && info->FourCC != MFX_FOURCC_P016 && info->FourCC != MFX_FOURCC_Y216
+            && info->FourCC != MFX_FOURCC_Y416
 #endif
-        MFX_CHECK(info->Shift, MFX_ERR_INVALID_VIDEO_PARAM);
-        break;
-    default:
-        MFX_CHECK(info->Shift == 0, MFX_ERR_INVALID_VIDEO_PARAM);
-        break;
+            )
+            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     MFX_CHECK(info->ChromaFormat <= MFX_CHROMAFORMAT_YUV444,  MFX_ERR_INVALID_VIDEO_PARAM);
@@ -296,7 +291,8 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
         break;
     }
 
-    if (codecId != MFX_CODEC_HEVC && (
+    // HEVC HW supports both kind of shifts, but HEVC SW only Shift == 0
+    if ((codecId != MFX_CODEC_HEVC || !isHW) && (
            info->FourCC == MFX_FOURCC_P010
         || info->FourCC == MFX_FOURCC_P210
 #if (MFX_VERSION >= 1027)
