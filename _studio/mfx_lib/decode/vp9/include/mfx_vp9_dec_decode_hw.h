@@ -120,7 +120,9 @@ private:
 
     mfxFrameAllocRequest     m_request;
     mfxFrameAllocResponse    m_response;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc m_OpaqAlloc;
+#endif
     mfxDecodeStat            m_stat;
 
     friend mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);

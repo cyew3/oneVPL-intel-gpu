@@ -22,7 +22,11 @@
 #define __MFX_H265_BRC_HW_H__
 
 #include "mfx_common.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxla.h"
+#endif
+
 #include <vector>
 #include "mfx_h265_encode_hw_utils.h"
 #include <memory>
@@ -148,7 +152,9 @@ public:
     virtual void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder) = 0;    
     virtual mfxStatus  GetFrameCtrl(Task &task) =0;
     virtual mfxBRCStatus   PostPackFrame(MfxVideoParam &video, Task &task, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0) =0;
+#if !defined(MFX_ONEVPL)
     virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) = 0;
+#endif
     virtual void GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits) = 0;
     virtual bool IsVMEBRC() = 0;
 
@@ -156,6 +162,7 @@ public:
 
 BrcIface * CreateBrc(MfxVideoParam &video);
 
+#if !defined(MFX_ONEVPL)
 class VMEBrc : public BrcIface
 {
 public:
@@ -220,7 +227,7 @@ protected:
     UMC::Mutex    m_mutex;
 
 };
-
+#endif //!MFX_ONEVPL
 
 
 }
@@ -314,10 +321,12 @@ public:
 
 
     virtual void        PreEnc(mfxU32 /* frameType */, std::vector<VmeData *> const & /* vmeData */, mfxU32 /* encOrder */) {}
+#if !defined(MFX_ONEVPL)
     virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 )
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
+#endif //!MFX_ONEVPL
     virtual bool IsVMEBRC()  {return false;}
 
 private:

@@ -93,6 +93,7 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 (16 >> lpla->LookAheadScaleY) - 1 : 0;
         });
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         ddiCC.UpdateCqmHint.Push([this](
             TCC::TUpdateCqmHint::TExt
             , TaskCommonPar& task
@@ -108,14 +109,18 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 task.LplaStatus.ValidInfo = pLPLA.ValidInfo;
                 task.LplaStatus.CqmHint = pLPLA.CqmHint;
                 task.LplaStatus.TargetFrameSize = pLPLA.TargetFrameSize;
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 task.LplaStatus.QpModulation = pLPLA.QpModulationStrength;
+#endif
             }
             else
             {
                 task.LplaStatus.ValidInfo = 0;
                 task.LplaStatus.CqmHint = CQM_HINT_INVALID;
                 task.LplaStatus.TargetFrameSize = 0;
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 task.LplaStatus.QpModulation = 0;
+#endif
             }
 
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
@@ -134,8 +139,9 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 }
                 else pLpLa->CqmHint = CQM_HINT_INVALID;
             }
-#endif
+#endif //MFX_ENABLE_ENCTOOLS_LPLA
         });
+#endif //MFX_ENABLE_LP_LOOKAHEAD
 
         return MFX_ERR_NONE;
     });

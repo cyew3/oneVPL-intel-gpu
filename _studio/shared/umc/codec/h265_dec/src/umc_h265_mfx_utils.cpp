@@ -854,11 +854,20 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ||
-            (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        if (   (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+            || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+            )
         {
             uint32_t mask = in->IOPattern & 0xf0;
-            if (mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY || mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY || mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            if (   mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY
+                || mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+                || mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY
+#endif
+                )
                 out->IOPattern = in->IOPattern;
             else
                 sts = MFX_ERR_UNSUPPORTED;
@@ -1292,17 +1301,24 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444 )
         return false;
 
-    if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+    if (   !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+        )
         return false;
 
     if ((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
         return false;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
         return false;
 
     if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return false;
+#endif
 
     return true;
 }

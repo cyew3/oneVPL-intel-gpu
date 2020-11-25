@@ -23,7 +23,7 @@
 
 #include <algorithm>
 
-
+#include "mfx_common_int.h"
 #include "mfx_h264_encode_hw_utils.h"
 #include "ippi.h"
 
@@ -2550,6 +2550,7 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU32 fieldMaxCount = video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
         mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(task.m_ctrl, field);
 
         if (NULL == extFeiSlice)
@@ -2557,6 +2558,7 @@ void MfxHwH264Encode::ConfigureTask(
             // take default buffer (from Init) if not provided in runtime
             extFeiSlice = GetExtBuffer(video, field);
         }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
         // Fill deblocking parameters
         mfxU8 disableDeblockingIdc   = (mfxU8)extOpt2Cur->DisableDeblockingIdc;
@@ -2571,6 +2573,7 @@ void MfxHwH264Encode::ConfigureTask(
 
         for (mfxU32 i = 0; i < task.m_numSlice[task.m_fid[field]]; i++)
         {
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
             if (extFeiSlice && NULL != extFeiSlice->Slice && i < extFeiSlice->NumSlice)
             {
                 // If only one buffer was passed on init, that value will be propagated for entire frame
@@ -2578,6 +2581,7 @@ void MfxHwH264Encode::ConfigureTask(
                 sliceAlphaC0OffsetDiv2 = (mfxI8)extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
                 sliceBetaOffsetDiv2    = (mfxI8)extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
             }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
             // Store per-slice values in task
             task.m_disableDeblockingIdc[task.m_fid[field]].push_back(disableDeblockingIdc);
@@ -2643,13 +2647,19 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
     MfxVideoParam const & video,
     DdiTask const &       task)
 {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
+#endif
 
     mfxFrameSurface1 * surface = task.m_yuv;
 
-    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
+        )
     {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             surface = core.GetNativeSurface(task.m_yuv);
@@ -2662,6 +2672,7 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
             surface->Data.Corrupted  = task.m_yuv->Data.Corrupted;
             surface->Data.DataFlag   = task.m_yuv->Data.DataFlag;
         }
+#endif
 
         mfxFrameData d3dSurf = {};
         mfxFrameData sysSurf = surface->Data;
@@ -2763,8 +2774,8 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
         curr.MemId = task.m_midRaw;
         ref.MemId  = refFrame.m_midRec;
 
-        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, ref  };
-        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, curr };
+        mfxFrameSurface1 surfSrc = MakeSurface(video.mfx.FrameInfo, ref);
+        mfxFrameSurface1 surfDst = MakeSurface(video.mfx.FrameInfo, curr);
         if ((poolRec.GetFlag(refFrame.m_frameIdx) & H264_FRAME_FLAG_READY) != 0)
         {
             sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE);
@@ -2790,13 +2801,12 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
-
     Zero(handle);
     mfxHDL * nativeHandle = &handle.first;
 
     mfxFrameSurface1 * surface = task.m_yuv;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         surface = core.GetNativeSurface(task.m_yuv);
@@ -2810,13 +2820,21 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
         surface->Data.DataFlag   = task.m_yuv->Data.DataFlag;
     }
 
-    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
+#endif
+
+    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
+        )
         sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
     else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
         sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     else
         return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 

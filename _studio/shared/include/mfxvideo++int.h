@@ -31,8 +31,11 @@
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
 #include "mfxvp9.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxplugin.h"
 #include "mfxprivate.h"
+#endif
 
 #ifdef _MSVC_LANG
 #pragma warning(push)
@@ -211,7 +214,6 @@ namespace UMC
 
 // Forward declaration of used classes
 struct MFX_ENTRY_POINT;
-
 
 // Virtual table size for CommonCORE should be considered fixed.
 // Otherwise binary compatibility with already released plugins would be broken.
@@ -548,6 +550,7 @@ public:
 
 };
 
+#if !defined(MFX_ONEVPL)
 // forward declaration of used types
 struct mfxPlugin;
 struct mfxCoreInterface;
@@ -599,6 +602,7 @@ public:
 
     virtual void GetPlugin(mfxPlugin& plugin) = 0;
 };
+#endif //!MFX_ONEVPL
 
 #ifdef _MSVC_LANG
 #pragma warning(pop)

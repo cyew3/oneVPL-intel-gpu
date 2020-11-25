@@ -411,6 +411,7 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
         sts = m_raw.Alloc(m_core, request, true);
         MFX_CHECK_STS(sts);
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc& opaq = m_vpar.m_ext.Opaque;
@@ -428,7 +429,7 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
             MFX_CHECK_STS(sts);
         }
     }
-
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     bool bSkipFramesMode = ((m_vpar.isSWBRC() && (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR)) || (m_vpar.m_ext.CO2.SkipFrame == MFX_SKIPFRAME_INSERT_DUMMY));
     if (m_raw.NumFrameActual == 0 && bSkipFramesMode)
     {
@@ -628,9 +629,11 @@ mfxStatus MFXVideoENCODEH265_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par
     case MFX_IOPATTERN_IN_VIDEO_MEMORY:
         request->Type = MFX_MEMTYPE_D3D_EXT;
         break;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
         break;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     default: return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
@@ -1130,6 +1133,7 @@ mfxStatus MFXVideoENCODEH265_HW::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrame
         if (ctrl)
             task->m_ctrl = *ctrl;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             task->m_surf_real = m_core->GetNativeSurface(task->m_surf);
@@ -1144,6 +1148,7 @@ mfxStatus MFXVideoENCODEH265_HW::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrame
             task->m_surf_real->Data.DataFlag   = task->m_surf->Data.DataFlag;
         }
         else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
             task->m_surf_real = task->m_surf;
 
         m_core->IncreaseReference(&surface->Data);
@@ -1204,6 +1209,7 @@ mfxStatus MFXVideoENCODEH265_HW::PrepareTask(Task& input_task)
             task->m_frameType = task->m_ctrl.FrameType;
             m_frameOrder = task->m_surf->Data.FrameOrder;
 
+#if !defined(MFX_ONEVPL)
             if (m_brc && m_brc->IsVMEBRC())
             {
                 mfxExtLAFrameStatistics *vmeData = ExtBuffer::Get(task->m_ctrl);
@@ -1220,6 +1226,8 @@ mfxStatus MFXVideoENCODEH265_HW::PrepareTask(Task& input_task)
 
                 MFX_CHECK(m_frameOrder <= task->m_eo + m_vpar.mfx.GopRefDist - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
             }
+#endif //#!MFX_ONEVPL
+
             MFX_CHECK(m_frameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
 
             mfxU32 numberOfFields = m_vpar.isField() ? 2 : 1;
@@ -1757,8 +1765,6 @@ mfxStatus MFXVideoENCODEH265_HW::WaitForQueringTask(Task& task)
 
 void MFXVideoENCODEH265_HW::FreeResources()
 {
-    mfxExtOpaqueSurfaceAlloc& opaq = m_vpar.m_ext.Opaque;
-
     m_rec.Free();
     m_raw.Free();
     m_rawSkip.Free();
@@ -1771,11 +1777,15 @@ void MFXVideoENCODEH265_HW::FreeResources()
 
     Zero(m_caps);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    mfxExtOpaqueSurfaceAlloc& opaq = m_vpar.m_ext.Opaque;
     if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && opaq.In.Surfaces)
     {
         m_core->FreeFrames(&m_opaq);
         Zero(opaq);
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+
     if (m_brc)
     {
         delete m_brc;

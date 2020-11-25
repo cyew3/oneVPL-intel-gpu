@@ -35,4 +35,10 @@ target_compile_definitions(lpla
     MFX_VA
   )
 
-target_link_libraries(lpla PUBLIC mfx_static_lib umc_va_hw vm_plus vpp_hw)
+target_link_libraries(lpla
+  PRIVATE
+    mfx_static_lib
+    umc_va_hw
+    vm_plus
+    vpp_hw
+)

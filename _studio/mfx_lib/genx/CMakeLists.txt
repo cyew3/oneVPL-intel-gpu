@@ -97,11 +97,7 @@ if(MFX_ENABLE_KERNELS)
       field_copy/include
       h264_encode/include
       mctf/isa
-      )
-
-  if(CMAKE_SYSTEM_NAME MATCHES Linux AND NOT MFX_DISABLE_SW_FALLBACK)
-    target_link_libraries(genx PUBLIC SafeString)
-  endif()
+    )
 
   target_link_libraries(genx PUBLIC mfx_static_lib)
 endif()

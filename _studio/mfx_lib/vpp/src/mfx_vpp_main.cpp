@@ -78,7 +78,9 @@ mfxStatus VideoVPPMain::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFram
 VideoVPPMain::VideoVPPMain(VideoCORE *core, mfxStatus* sts )
 : m_core( core )
 {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     m_bOpaqMode[VPP_IN] = m_bOpaqMode[VPP_OUT] = false;
+#endif
 
     *sts   = MFX_ERR_NONE;
 
@@ -132,6 +134,7 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
 
     internalSts = mfxSts;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     // opaque configuration    
     mfxSts = CheckOpaqMode( par, m_bOpaqMode );
     MFX_CHECK_STS( mfxSts );
@@ -183,7 +186,8 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
 #endif
         }
     }
-    
+#endif
+
     m_impl = std::move(impl);
 
     return (MFX_ERR_NONE == mfxSts) ? internalSts : mfxSts;
@@ -201,6 +205,7 @@ mfxStatus VideoVPPMain::Close( void )
     m_impl->Close();
     m_impl.reset();
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     /* opaque processing */
     if( m_bOpaqMode[VPP_IN] )
     {
@@ -214,6 +219,7 @@ mfxStatus VideoVPPMain::Close( void )
     }
 
     m_bOpaqMode[VPP_IN] = m_bOpaqMode[VPP_OUT] = false;
+#endif
 
     return MFX_ERR_NONE;
 
@@ -239,6 +245,7 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
         return MFX_ERR_NOT_INITIALIZED;
     }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (in && m_bOpaqMode[VPP_IN])
     {
         if (in->Data.Y || in->Data.U || in->Data.V || in->Data.A || in->Data.MemId)
@@ -250,6 +257,7 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
         if (out->Data.Y || out->Data.U || out->Data.V || out->Data.A || out->Data.MemId)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
+#endif
 
     mfxFrameSurface1* pInputNative  =  GetNativeSurface(in, VPP_IN);
     mfxFrameSurface1* pOutputNative =  GetNativeSurface(out, VPP_OUT);
@@ -260,10 +268,9 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-
     mfxStatus mfxSts = m_impl->VppFrameCheck( pInputNative, pOutputNative, aux, pEntryPoint, numEntryPoints );
 
-
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     // Check() updated out:frameInfo & out:Data. so we need sync in case of output opaq surface
     if( m_bOpaqMode[VPP_OUT] && pOutputNative )
     {
@@ -277,6 +284,7 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
             out->Info = pOutputNative->Info;
         }
     }
+#endif
 
     return mfxSts;
 

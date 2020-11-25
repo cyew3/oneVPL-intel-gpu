@@ -21,7 +21,7 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "mfx_common.h"
+#include "mfx_common_int.h"
 
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_bs.h"
@@ -597,13 +597,17 @@ mfxStatus GetNativeHandleToRawSurface(
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameSurface1 * surface = task.m_surf_real;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
+#endif
 
     Zero(handle);
     mfxHDL * nativeHandle = &handle.first;
 
-    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
         || toSkip)
         sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
     else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
@@ -613,8 +617,10 @@ mfxStatus GetNativeHandleToRawSurface(
         else
             sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
         sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -627,18 +633,24 @@ mfxStatus CopyRawSurfaceToVideoMemory(
     Task const &          task)
 {
     mfxStatus sts = MFX_ERR_NONE;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
+#endif
     mfxFrameSurface1 * surface = task.m_surf_real;
 
     if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
+        )
+
     {
         mfxFrameData d3dSurf = {};
         mfxFrameData sysSurf = surface->Data;
         d3dSurf.MemId = task.m_midRaw;
 
-        mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
-        mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
+        mfxFrameSurface1 surfSrc = MakeSurface(video.mfx.FrameInfo, sysSurf);
+        mfxFrameSurface1 surfDst = MakeSurface(video.mfx.FrameInfo, d3dSurf);
 
         if (surfDst.Info.FourCC == MFX_FOURCC_P010
 #if (MFX_VERSION >= 1027)
@@ -857,7 +869,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CodedPicAlignment = GetAlignmentByPlatform(m_platform);
     ExtBuffer::Construct(par, m_ext.HEVCParam, m_ext.m_extParam, base.NumExtParam, CodedPicAlignment);
     ExtBuffer::Construct(par, m_ext.HEVCTiles, m_ext.m_extParam, base.NumExtParam);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     ExtBuffer::Construct(par, m_ext.Opaque, m_ext.m_extParam, base.NumExtParam);
+#endif
     ExtBuffer::Construct(par, m_ext.CO,  m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.CO2, m_ext.m_extParam, base.NumExtParam);
 #if !defined(MFX_EXT_BRC_DISABLE)
@@ -916,7 +930,9 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
 
     ExtBuffer::Set(par, m_ext.HEVCParam);
     ExtBuffer::Set(par, m_ext.HEVCTiles);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     ExtBuffer::Set(par, m_ext.Opaque);
+#endif
     ExtBuffer::Set(par, m_ext.CO);
     ExtBuffer::Set(par, m_ext.CO2);
     ExtBuffer::Set(par, m_ext.CO3);
@@ -1000,7 +1016,9 @@ bool MfxVideoParam::CheckExtBufferParam()
 
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.HEVCParam, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.HEVCTiles, true);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.Opaque, true);
+#endif
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO2, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO3, true);
@@ -1073,12 +1091,15 @@ void MfxVideoParam::SyncCalculableToVideoParam()
     mfx.BRCParamMultiplier = mfxU16((maxVal32 + 0x10000) / 0x10000);
     mfx.BufferSizeInKB     = (mfxU16)CeilDiv(BufferSizeInKB, mfx.BRCParamMultiplier);
 
-    if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
-        mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-        mfx.RateControlMethod == MFX_RATECONTROL_AVBR||
-        mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
-        mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
-        mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    if (   mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || mfx.RateControlMethod == MFX_RATECONTROL_VBR
+        || mfx.RateControlMethod == MFX_RATECONTROL_AVBR
+        || mfx.RateControlMethod == MFX_RATECONTROL_VCM
+        || mfx.RateControlMethod == MFX_RATECONTROL_QVBR
+#if !defined(MFX_ONEVPL)
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        )
     {
         mfx.TargetKbps = (mfxU16)CeilDiv(TargetKbps, mfx.BRCParamMultiplier);
 
@@ -2552,7 +2573,11 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
     }
 #endif
 
-    if (mfx.RateControlMethod == MFX_RATECONTROL_CQP || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    if (   mfx.RateControlMethod == MFX_RATECONTROL_CQP
+#if !defined(MFX_ONEVPL)
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        )
         s.slice_qp_delta = mfxI8(task.m_qpY - (m_pps.init_qp_minus26 + 26));
 
     if (m_pps.slice_chroma_qp_offsets_present_flag)
@@ -3856,8 +3881,10 @@ void ConfigureTask(
             )))
             task.m_qpY = 0;
     }
+#if !defined(MFX_ONEVPL)
     else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
         task.m_qpY = 0;
+#endif //!MFX_ONEVPL
 
     if (IsOn(CO3.GPB) && isP)
     {
@@ -4087,8 +4114,8 @@ mfxStatus CodeAsSkipFrame(     VideoCORE &            core,
         dst.MemId = task.m_midRaw;
         src.MemId = refFrame.m_midRec;
 
-        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, src };
-        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, dst };
+        mfxFrameSurface1 surfSrc = MakeSurface(video.mfx.FrameInfo, src);
+        mfxFrameSurface1 surfDst = MakeSurface(video.mfx.FrameInfo, dst);
 
         if ((poolRec.GetFlag(refFrame.m_idxRec) & H265_FRAME_FLAG_READY) != 0)
         {

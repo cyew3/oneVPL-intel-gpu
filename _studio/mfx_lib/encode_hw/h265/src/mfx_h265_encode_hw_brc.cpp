@@ -56,8 +56,7 @@ mfxF64 const NORM_EST_RATE      = 100.0;
 mfxF64 const MIN_RATE_COEFF_CHANGE = 0.5;
 mfxF64 const MAX_RATE_COEFF_CHANGE = 2.0;
 
-
-
+#if !defined(MFX_ONEVPL)
 mfxStatus VMEBrc::Init(MfxVideoParam &video, mfxI32 )
 {
     m_qpUpdateRange = 20;
@@ -199,25 +198,9 @@ mfxF64 GetTotalRate(std::list<VMEBrc::LaFrameData>::iterator start, std::list<VM
     return 51;
 }
 
-mfxU8 GetFrameTypeLetter(mfxU32 frameType)
-{
-    mfxU32 ref = (frameType & MFX_FRAMETYPE_REF) ? 0 : 'a' - 'A';
-    if (frameType & MFX_FRAMETYPE_I)
-        return mfxU8('I' + ref);
-    if (frameType & MFX_FRAMETYPE_P)
-        return mfxU8('P' + ref);
-    if (frameType & MFX_FRAMETYPE_B)
-        return mfxU8('B' + ref);
-    return 'x';
-}
-
-
-
-
 void VMEBrc::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & /*vmeData*/, mfxU32 /*curEncOrder*/)
 {
 }
-
 
 mfxU32 VMEBrc::Report(mfxU32 /*frameType*/, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32  picOrder, mfxU32 /* maxFrameSize */, mfxU32  qp )
 {
@@ -375,16 +358,21 @@ mfxStatus  VMEBrc::GetFrameCtrl(Task &task)
 
     return MFX_ERR_NONE;
 }
+#endif //!MFX_ONEVPL
+
 BrcIface * CreateBrc(MfxVideoParam &video)
 
 {
     if (video.isSWBRC())
     {
+#if !defined(MFX_ONEVPL)
         if (video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
             return new VMEBrc;
+        else
+#endif
 
 #if !defined(MFX_EXT_BRC_DISABLE)
-        else if (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+        if (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
             return new H265BRCNew;
 #endif
 

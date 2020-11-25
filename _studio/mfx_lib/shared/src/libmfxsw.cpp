@@ -61,6 +61,11 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 
 } // mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxHDL *session)
 
+static inline mfxU32 MakeVersion(mfxU16 major, mfxU16 minor)
+{
+    return major * 1000 + minor;
+}
+
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
     _mfxSession_1_10 * pSession = 0;
@@ -79,8 +84,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
 
     // check the library version
-    if ((MFX_VERSION_MAJOR != par.Version.Major) ||
-        (MFX_VERSION_MINOR < par.Version.Minor))
+    if (MakeVersion(par.Version.Major, par.Version.Minor) > MFX_VERSION)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -119,7 +123,10 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     if (!implInterface)
         implInterface = MFX_IMPL_VIA_ANY;
 
-    if (!(implInterface & MFX_IMPL_AUDIO) &&
+    if (
+#if !defined(MFX_ONEVPL)
+        !(implInterface & MFX_IMPL_AUDIO) &&
+#endif
 #if defined(MFX_VA_WIN)
     #if (MFX_VERSION >= MFX_VERSION_NEXT)
         !(implInterface & MFX_IMPL_EXTERNAL_THREADING) &&

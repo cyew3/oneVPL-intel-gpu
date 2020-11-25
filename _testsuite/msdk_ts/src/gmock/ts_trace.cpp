@@ -502,6 +502,7 @@ tsTrace& tsTrace::operator<<(const mfxExtAVCRefLists& p)
     return *this;
 }
 
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 tsTrace& tsTrace::operator<<(const mfxExtFeiEncMV& p)
 {
     STRUCT_BODY(mfxExtFeiEncMV,
@@ -515,6 +516,7 @@ tsTrace& tsTrace::operator<<(const mfxExtFeiEncMV& p)
 
     return *this;
 }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 tsTrace& tsTrace::operator << (const mfxExtAVCScalingMatrix& p)
 {

@@ -28,12 +28,12 @@ option( MFX_ENABLE_JPEG_SW_FALLBACK "Enabled software fallback for JPEG ?" ON )
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   set(OPEN_SOURCE OFF)
   set(STRIP_EMBARGO OFF)
-  set(sw_fallback_default OFF) # inverted semantics!
-else()
-  set(sw_fallback_default ON)
 endif()
 
-option(MFX_DISABLE_SW_FALLBACK "Build only HW-accelerated code path" ${sw_fallback_default})
+cmake_dependent_option(
+  MFX_DISABLE_SW_FALLBACK "Build only HW-accelerated code path?" OFF
+  "NOT OPEN_SOURCE;NOT ${API_USE_VPL}" ON)
+
 
 option( MFX_BUNDLED_IPP "Use bundled contrib/ipp sources" OFF )
 if (OPEN_SOURCE OR (NOT DEFINED ENV{MEDIASDK_ROOT}))
@@ -71,12 +71,12 @@ option( ENABLE_STAT "Enable stat tracing?" "${ENABLE_ALL}")
 option( BUILD_ALL "Build all the targets?" OFF )
 
 option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
-option( BUILD_DISPATCHER "Build dispatcher?" ON )
-cmake_dependent_option(BUILD_SAMPLES "Build samples?" ON "BUILD_DISPATCHER" OFF )
+cmake_dependent_option( BUILD_DISPATCHER "Build dispatcher?" ON "NOT ${API_USE_VPL}" OFF)
+cmake_dependent_option( BUILD_SAMPLES "Build samples?" ON "${BUILD_DISPATCHER}" OFF )
 # Tools depend on samples (sample_common) and can't be built without it. The
 # following BUILD_TOOLS option declaration assures that.
-cmake_dependent_option(BUILD_TOOLS "Build tools?" "${BUILD_ALL}" "BUILD_SAMPLES" OFF)
-cmake_dependent_option(BUILD_VAL_TOOLS "Build validation tools?" "${BUILD_ALL}" "NOT MFX_BUNDLED_IPP" OFF)
+cmake_dependent_option( BUILD_TOOLS "Build tools?" ON "${BUILD_ALL};${BUILD_SAMPLES}" OFF)
+cmake_dependent_option( BUILD_VAL_TOOLS "Build validation tools?" ON "${BUILD_ALL};NOT ${MFX_BUNDLED_IPP}" OFF)
 
 option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
 option(USE_SYSTEM_GTEST "Use system installed gtest?" OFF)
@@ -98,16 +98,24 @@ if (BUILD_KERNELS)
   endif()
 endif()
 
-set ( MFX_1_26_OPTIONS_ALLOWED ON )
-
-set ( MFX_1_34_OPTIONS_ALLOWED ON )
+if (API_USE_LATEST)
+  set ( MFX_MEXT_OPTIONS_ALLOWED ON )
+endif()
 
 option( MFX_ENABLE_AENC "Enabled AENC extension?" ON)
 
-option( MFX_ENABLE_USER_DECODE "Enabled user decode plugins?" ON)
-option( MFX_ENABLE_USER_ENCODE "Enabled user encode plugins?" ON)
-option( MFX_ENABLE_USER_ENC "Enabled user ENC plugins?" ON)
-option( MFX_ENABLE_USER_VPP "Enabled user VPP plugins?" ON)
+cmake_dependent_option(
+  MFX_ENABLE_USER_DECODE "Enable H.264 (AVC) FEI?" ON
+  "${MFX_ENABLE_H264_VIDEO_ENCODE};NOT ${API_USE_VPL}" OFF)
+
+cmake_dependent_option( MFX_ENABLE_USER_DECODE "Enabled user decode plugins?" ON
+  "NOT ${API_USE_VPL}" OFF)
+cmake_dependent_option( MFX_ENABLE_USER_ENCODE "Enabled user encode plugins?" ON
+  "NOT ${API_USE_VPL}" OFF)
+cmake_dependent_option( MFX_ENABLE_USER_ENC "Enabled user ENC plugins?" ON
+  "NOT ${API_USE_VPL}" OFF)
+cmake_dependent_option( MFX_ENABLE_USER_VPP "Enabled user VPP plugins?" ON
+  "NOT ${API_USE_VPL}" OFF)
 
 option( MFX_ENABLE_AV1_VIDEO_DECODE "Enabled AV1 decoder?" ON)
 option( MFX_ENABLE_AV1_VIDEO_ENCODE "Enabled AV1 encoder?" ON)
@@ -124,22 +132,42 @@ option( MFX_ENABLE_VC1_VIDEO_DECODE "Enabled VC1 decoder?" ON)
 option( MFX_ENABLE_H264_VIDEO_ENCODE "Enable H.264 (AVC) encoder?" ON)
 cmake_dependent_option(
   MFX_ENABLE_H264_VIDEO_FEI_ENCODE "Enable H.264 (AVC) FEI?" ON
-  "MFX_ENABLE_H264_VIDEO_ENCODE" OFF)
+  "${MFX_ENABLE_H264_VIDEO_ENCODE};NOT ${API_USE_VPL}" OFF)
 
 option( MFX_ENABLE_H265_VIDEO_ENCODE "Enable H.265 (HEVC) encoder?" ON)
 cmake_dependent_option(
   MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE "Enable H.265 (HEVC) FEI?" ON
-  "MFX_ENABLE_H265_VIDEO_ENCODE" OFF)
+  "${API_VERSION} VERSION_GREATER_EQUAL 1.27;${MFX_ENABLE_H265_VIDEO_ENCODE};NOT ${API_USE_VPL}" OFF)
 
 option( MFX_ENABLE_VP9_VIDEO_ENCODE "Enable VP9 encoder?" ON)
 
 option( MFX_ENABLE_ASC "Enable ASC support?"  ON )
+option( MFX_ENABLE_VPP "Enabled Video Processing?" ON)
 
 cmake_dependent_option(
-  MFX_ENABLE_MCTF "Build with MCTF support?"  ${MFX_1_26_OPTIONS_ALLOWED}
-  "MFX_ENABLE_ASC;MFX_ENABLE_KERNELS" OFF)
+  MFX_ENABLE_MCTF "Build with MCTF support?" ON
+  "${API_VERSION} VERSION_GREATER_EQUAL 1.26;${MFX_ENABLE_ASC};${MFX_ENABLE_KERNELS};${MFX_ENABLE_VPP}" OFF)
+cmake_dependent_option(
+  MFX_ENABLE_ENCODE_MCTF "Build encoders with MCTF support?" ON
+  "${API_VERSION} VERSION_GREATER_EQUAL 1.26;${MFX_ENABLE_ASC};${MFX_ENABLE_KERNELS}" OFF)
 
-option( MFX_ENABLE_SPECTRE_MITIGATIONS "Enable Spectre mitigations on Windows" ON )
+option( MFX_ENABLE_SCREEN_CAPTURE "Enabled Screen capture?" ON)
+
+cmake_dependent_option( MFX_ENABLE_MVC_VIDEO_ENCODE "Enable MVC encoder?" ON
+  "${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF)
+
+cmake_dependent_option( MFX_ENABLE_MFE               "Enable MFE?"            ON "${API_VERSION} VERSION_GREATER_EQUAL 1.25;NOT ${API_USE_VPL}" OFF )
+cmake_dependent_option( MFX_ENABLE_OPAQUE_MEMORY     "Enable opaque memory?"  ON "NOT ${API_USE_VPL}" OFF )
+cmake_dependent_option( MFX_ENABLE_USER_ENCTOOLS     "Enable encoding tools?" ON "${MFX_MEXT_OPTIONS_ALLOWED};NOT ${API_USE_VPL}" OFF )
+cmake_dependent_option( MFX_ENABLE_LP_LOOKAHEAD      "Enable LPLA?"           ON "NOT ${API_USE_VPL};${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF )
+
+cmake_dependent_option(
+  MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT "Enable H.264 (AVC) Decode Streamout?" ON
+  "NOT ${API_USE_VPL}" OFF)
+
+cmake_dependent_option( MFX_ENABLE_SPECTRE_MITIGATIONS "Enable Spectre mitigations?" ON
+  "${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF )
+
 # Now we will include config file which may overwrite default values of the
 # options and options which user provided in a command line.
 # It is critically important to include config file _after_ definition of
@@ -150,9 +178,12 @@ if (DEFINED MFX_CONFIG_FILE)
   # set( VARIABLE VALUE )
   message ( "Loading user-supplied config file ${MFX_CONFIG_FILE}" )
   include(${MFX_CONFIG_FILE})
-elseif ( CMAKE_SYSTEM_NAME MATCHES Windows )
-  message ( "Loading default win_x64 profile on Windows" )
-  include(${BUILDER_ROOT}/profiles/win_x64.cmake)
+elseif ( ${API} VERSION_LESS 2.0 )
+  message ( "Loading MFX profile" )
+  include(${BUILDER_ROOT}/profiles/mfx.cmake)
+else()
+  message ( "Loading VPL profile" )
+  include(${BUILDER_ROOT}/profiles/onevpl.cmake)
 endif()
 
 configure_file(${BUILDER_ROOT}/mfxconfig.h.in mfxconfig.h)

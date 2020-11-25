@@ -24,7 +24,10 @@
 #include "mfx_config.h"
 
 #include "mfxstructures.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxplugin.h"
+#endif
 
 #include "umc_structures.h"
 #include "mfx_trace.h"
@@ -569,12 +572,14 @@ static inline bool operator!=(Name const& l, Name const& r) \
     return !(l == r);                                       \
 }
 
+#if !defined(MFX_ONEVPL)
 static inline bool operator==(mfxPluginUID const& l, mfxPluginUID const& r)
 {
     return MFX_EQ_ARRAY(Data, 16);
 }
 
 MFX_DECL_OPERATOR_NOT_EQ(mfxPluginUID)
+#endif
 
 inline bool IsOn(mfxU32 opt)
 {

@@ -133,10 +133,13 @@ namespace MfxHwVideoProcessing
             bool isCopyRequired = true);
 
         mfxStatus Alloc(
-            VideoCORE *            core,
-            mfxFrameAllocRequest & req,
-            mfxFrameSurface1 **    opaqSurf,
-            mfxU32                 numOpaqSurf);
+            VideoCORE *            core
+            , mfxFrameAllocRequest & req
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            , mfxFrameSurface1 **    opaqSurf
+            , mfxU32                 numOpaqSurf
+#endif
+        );
 
         mfxStatus Free( void );
 
@@ -922,8 +925,11 @@ namespace MfxHwVideoProcessing
 
         static
         IOMode GetIOMode(
-            mfxVideoParam *par,
-            mfxFrameAllocRequest* opaqReq);
+            mfxVideoParam *par
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            , mfxFrameAllocRequest* opaqReq
+#endif
+        );
 
     private:
 

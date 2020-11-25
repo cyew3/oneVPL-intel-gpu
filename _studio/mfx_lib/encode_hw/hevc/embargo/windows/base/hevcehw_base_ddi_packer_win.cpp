@@ -374,7 +374,11 @@ void DDIPacker::FillSpsBuffer(
     auto& CO3        = (const mfxExtCodingOption3&)ExtBuffer::Get(par);
     auto& extVsi     = (const mfxExtVideoSignalInfo&)ExtBuffer::Get(par);
     auto& fi         = par.mfx.FrameInfo;
-    bool  isSWBRC    = IsOn(CO2.ExtBRC) || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT);
+    bool  isSWBRC    = IsOn(CO2.ExtBRC)
+#if !defined(MFX_ONEVPL)
+        || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+#endif
+        ;
     bool  isBPyramid = (CO2.BRefType == MFX_B_REF_PYRAMID);
 
     sps = {};

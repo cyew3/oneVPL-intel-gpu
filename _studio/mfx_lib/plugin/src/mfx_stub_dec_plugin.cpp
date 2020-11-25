@@ -104,7 +104,7 @@ mfxVideoCodecPlugin* GetVideoCodecInstance()
 mfxStatus MFXStubDecoderPlugin::CreateByDispatcher(mfxPluginUID, mfxPlugin* mfxPlg)
 {
     MFX_CHECK_NULL_PTR1(mfxPlg);
-
+#if !defined(MFX_ONEVPL)
     memset(mfxPlg, 0, sizeof(mfxPlugin));
 
     mfxPlg->PluginInit     = _PluginInit;
@@ -124,7 +124,7 @@ mfxStatus MFXStubDecoderPlugin::CreateByDispatcher(mfxPluginUID, mfxPlugin* mfxP
     mfxPlg->Video->DecodeHeader      =  _DecodeHeader;
     mfxPlg->Video->GetPayload        =  _GetPayload;
     mfxPlg->Video->DecodeFrameSubmit =  _DecodeFrameSubmit;
-
+#endif
     return MFX_ERR_NONE;
 }
 #endif

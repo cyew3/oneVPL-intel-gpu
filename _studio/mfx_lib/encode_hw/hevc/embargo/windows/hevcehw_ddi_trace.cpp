@@ -197,7 +197,9 @@ void DDITracer::TraceFunc(bool bOut, mfxU32 func, const void* buf, mfxU32 n)
     TRACE_FARG(ENCODE_CAPS_HEVC);
     TRACE_FARG(ENCODE_QUERY_STATUS_PARAMS_DESCR);
     TRACE_FARG(ENCODE_QUERY_STATUS_PARAMS_HEVC);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     TRACE_FARG(ENCODE_ENCRYPTION_SET);
+#endif
 #undef TRACE_FARG
     
     bool bHEXIn  = bHEX && !bOut;
@@ -220,6 +222,7 @@ void DDITracer::TraceFunc(bool bOut, mfxU32 func, const void* buf, mfxU32 n)
 }
 #undef FIELD_FORMAT
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #define FIELD_FORMAT "%-26s"
 DECL_START(ENCODE_ENCRYPTION_SET)
     TRACE("%d", CounterAutoIncrement);
@@ -237,6 +240,7 @@ DECL_START(ENCODE_ENCRYPTION_SET)
     }
 DECL_END
 #undef FIELD_FORMAT
+#endif //!MFX_PROTECTED_FEATURE_DISABLE
 
 #define FIELD_FORMAT "%-26s"
 DECL_START(ENCODE_QUERY_STATUS_PARAMS_DESCR)

@@ -18,6 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <mfxvideo.h>
+
+#if defined(MFX_ONEVPL)
+#include "mfxstructures-int.h"
+#define FUNCTION_DEPRECATED_IMPL(component, func_name, formal_param_list) \
+mfxStatus MFXVideo##component##_##func_name formal_param_list \
+{ \
+    return MFX_ERR_UNSUPPORTED; \
+}
+
+FUNCTION_DEPRECATED_IMPL(USER, Register,          (mfxSession session, mfxU32 type, const mfxPlugin *par))
+FUNCTION_DEPRECATED_IMPL(USER, Unregister,        (mfxSession session, mfxU32 type))
+FUNCTION_DEPRECATED_IMPL(USER, ProcessFrameAsync, (mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp))
+FUNCTION_DEPRECATED_IMPL(USER, GetPlugin,         (mfxSession session, mfxU32 type, mfxPlugin *par))
+#undef FUNCTION_DEPRECATED_IMPL
+#else
 #include <mfxplugin.h>
 #include <mfx_session.h>
 #include <mfx_task.h>
@@ -411,3 +427,4 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session,
     return mfxRes;
 
 } // mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session,
+#endif //MFX_ONEVPL

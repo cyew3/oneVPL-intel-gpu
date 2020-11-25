@@ -290,12 +290,14 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     }
 #endif
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (m_vPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         MFX_CHECK(pOpaqAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
         useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? !(pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
     }
+#endif
 
     // allocate memory
     mfxFrameAllocRequest request;
@@ -321,6 +323,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     request_internal = request;
 
     // allocates external surfaces:
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     bool mapOpaq = true;
     mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
     mfxSts = UpdateAllocRequest(par, &request, pOpqAlloc, mapOpaq);
@@ -336,6 +339,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
                                       pOpqAlloc->Out.NumSurface);
     }
     else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     {
         if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
         {
@@ -790,26 +794,32 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     params = *par;
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&params);
 
-    MFX_CHECK(
-        par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY  ||
-        par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY ||
-        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY,
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        || (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+        ;
+
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(!(
         par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY &&
         par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
         MFX_ERR_INVALID_VIDEO_PARAM);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     MFX_CHECK(!(
-        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY &&
-        par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
+        par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY &&
+        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY),
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(!(
-        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY &&
-        par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
+        par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY &&
+        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY),
         MFX_ERR_INVALID_VIDEO_PARAM);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     int32_t isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
@@ -827,11 +837,13 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
             request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
     }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
     }
     else
+#endif
     {
         request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
@@ -1613,8 +1625,15 @@ mfxStatus VideoDECODEH265::SetSkipMode(mfxSkipMode mode)
 // Check if new parameters are compatible with new parameters
 bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type)
 {
-    if ((newPar->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) !=
-        (oldPar->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) )
+    auto const mask =
+          MFX_IOPATTERN_OUT_SYSTEM_MEMORY
+        | MFX_IOPATTERN_OUT_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        | MFX_IOPATTERN_OUT_OPAQUE_MEMORY
+#endif
+        ;
+    if ((newPar->IOPattern & mask) !=
+        (oldPar->IOPattern & mask))
     {
         return false;
     }
@@ -1673,6 +1692,7 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
         return false;
     }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (oldPar->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc * opaqueNew = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
@@ -1707,6 +1727,7 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
         else
             return false;
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     mfxExtDecVideoProcessing * newVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
@@ -1744,6 +1765,7 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
     return true;
 }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
 // Fill up frame allocator request data
 mfxStatus VideoDECODEH265::UpdateAllocRequest(mfxVideoParam *par,
                                                 mfxFrameAllocRequest *request,
@@ -1766,6 +1788,7 @@ mfxStatus VideoDECODEH265::UpdateAllocRequest(mfxVideoParam *par,
     mapping = true;
     return MFX_ERR_NONE;
 }
+#endif
 
 // Get original Surface corresponding to OpaqueSurface
 mfxFrameSurface1 *VideoDECODEH265::GetOriginalSurface(mfxFrameSurface1 *surface)

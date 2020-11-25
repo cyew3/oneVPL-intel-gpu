@@ -28,6 +28,7 @@
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
 
+#if !defined(MFX_ONEVPL)
 namespace VmeBrcWrapper
 {
     //TODO: re-implement VMEBrc w/ proper interfaces (remove MfxVideoParam/Task dependencies)
@@ -104,6 +105,7 @@ namespace VmeBrcWrapper
         return MFX_ERR_NONE;
     }
 }
+#endif //MFX_ONEVPL
 
 void ExtBRC::SetSupported(ParamSupport& blocks)
 {
@@ -312,6 +314,7 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         bool                       bInternalBRC = IsOn(CO2.ExtBRC) && !brc.pthis && !m_brc.pthis;
         bool                       bExternalBRC = IsOn(CO2.ExtBRC) && brc.pthis && !m_brc.pthis;
 
+#if !defined(MFX_ONEVPL)
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         {
             auto sts = VmeBrcWrapper::Create(m_brc);
@@ -377,6 +380,7 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
                 });
             }
         }
+#endif //MFX_ONEVPL
 
         if (bInternalBRC)
         {

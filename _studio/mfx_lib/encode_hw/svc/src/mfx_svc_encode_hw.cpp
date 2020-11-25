@@ -303,11 +303,14 @@ mfxStatus ImplementationSvc::QueryIOSurf(
     //: DXVA2_Intel_Encode_AVC;
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
-    MFX_CHECK(
-        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+        ;
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_ENCODE_CAPS hwCaps = { 0 };
     sts = QueryHwCaps(core, hwCaps, par);
@@ -345,9 +348,12 @@ mfxStatus ImplementationSvc::QueryIOSurf(
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-        request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            ? MFX_MEMTYPE_OPAQUE_FRAME
-            : MFX_MEMTYPE_EXTERNAL_FRAME;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        if (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+            request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
+        else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+            request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
     // get FrameInfo from original VideoParam
@@ -488,10 +494,14 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam * par)
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK_STS(sts);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(m_video);
+#endif
     m_inputFrameType =
-        m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+            m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -514,22 +524,24 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam * par)
 
         sts = m_raw.Alloc(m_core, request);
         MFX_CHECK_STS(sts);
-        }
-        else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        request.Type        = extOpaq->In.Type;
+        request.NumFrameMin = extOpaq->In.NumSurface;
+
+        sts = m_opaqResponse.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
+        MFX_CHECK_STS(sts);
+
+        if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            request.Type        = extOpaq->In.Type;
+            request.Type        = MFX_MEMTYPE_D3D_INT;
             request.NumFrameMin = extOpaq->In.NumSurface;
-
-            sts = m_opaqResponse.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
-            MFX_CHECK_STS(sts);
-
-            if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-            {
-                request.Type        = MFX_MEMTYPE_D3D_INT;
-                request.NumFrameMin = extOpaq->In.NumSurface;
             sts = m_raw.Alloc(m_core, request);
         }
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     // ENC+PAK always needs separate chain for reconstructions produced by PAK.
     request.Type        = MFX_MEMTYPE_D3D_INT;
@@ -594,13 +606,14 @@ mfxStatus ImplementationSvc::Reset(mfxVideoParam *par)
 #endif
 
     MfxVideoParam newPar = *par;
-
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc * extOpaqNew = GetExtBuffer(newPar);
     mfxExtOpaqueSurfaceAlloc * extOpaqOld = GetExtBuffer(m_video);
     MFX_CHECK(
         extOpaqOld->In.Type       == extOpaqNew->In.Type       &&
         extOpaqOld->In.NumSurface == extOpaqNew->In.NumSurface,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     InheritDefaultValues(m_video, newPar, m_caps);
 
@@ -828,6 +841,7 @@ mfxStatus ImplementationSvc::EncodeFrameCheck(
 {
     internalParams;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY &&
         surface)
     {
@@ -841,6 +855,7 @@ mfxStatus ImplementationSvc::EncodeFrameCheck(
         surface->Data.Corrupted  = opaqSurf->Data.Corrupted;
         surface->Data.DataFlag   = opaqSurf->Data.DataFlag;
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video,
@@ -914,11 +929,16 @@ mfxStatus ImplementationSvc::CopyRawSurface(
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
+#endif
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(m_video);
 
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    if (    m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
+        )
     {
         mfxFrameData d3dSurf = { 0, };
         mfxFrameData sysSurf = task.m_yuv->Data;
@@ -954,10 +974,15 @@ mfxHDLPair ImplementationSvc::GetRawSurfaceHandle(
 {
     mfxHDLPair nativeSurface = {0,0};
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
+#endif
 
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    if (    m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
+        )
     {
         m_core->GetFrameHDL(m_raw.mids[task.m_idx], &(nativeSurface.first));
     }
@@ -965,8 +990,10 @@ mfxHDLPair ImplementationSvc::GetRawSurfaceHandle(
     {
         if (MFX_IOPATTERN_IN_VIDEO_MEMORY == m_video.IOPattern)
             m_core->GetExternalFrameHDL(task.m_yuv->Data.MemId, (mfxHDL *)&nativeSurface);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         else if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == m_video.IOPattern) // opaq with internal video memory
             m_core->GetFrameHDL(task.m_yuv->Data.MemId, &(nativeSurface.first));
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
 
     return nativeSurface;

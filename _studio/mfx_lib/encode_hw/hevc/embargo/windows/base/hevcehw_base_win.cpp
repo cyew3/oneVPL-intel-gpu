@@ -114,7 +114,9 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     m_features.emplace_back(new ExtDDI(FEATURE_EXTDDI));
     m_features.emplace_back(new HdrSei(FEATURE_HDR_SEI));
     m_features.emplace_back(new MaxFrameSize(FEATURE_MAX_FRAME_SIZE));
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     m_features.emplace_back(new Protected(FEATURE_PROTECTED));
+#endif
 #if defined(MFX_ENABLE_HEVCE_ROI)
     m_features.emplace_back(new ROI(FEATURE_ROI));
 #endif //defined(MFX_ENABLE_HEVCE_ROI)
@@ -172,9 +174,11 @@ mfxStatus Windows::Base::MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 
     {
         auto& queue = BQ<BQ_FrameSubmit>::Get(*this);
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         Reorder(queue
             , { FEATURE_LEGACY, Legacy::BLK_CheckBS }
             , { FEATURE_PROTECTED, Protected::BLK_SetBsInfo });
+#endif //!MFX_PROTECTED_FEATURE_DISABLE
     }
 
     {
@@ -210,12 +214,14 @@ mfxStatus Windows::Base::MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
             , { FEATURE_DDI_PACKER, IDDIPacker::BLK_QueryTask }
             , { FEATURE_BLOCKING_SYNC, BlockingSync::BLK_ReportHang });
 #endif //defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         Reorder(queue
             , { FEATURE_LEGACY, Legacy::BLK_CopyBS }
             , { FEATURE_PROTECTED, Protected::BLK_SetBsInfo });
         Reorder(queue
             , { FEATURE_DDI_PACKER, IDDIPacker::BLK_QueryTask }
             , { FEATURE_PROTECTED, Protected::BLK_GetFeedback });
+#endif //!MFX_PROTECTED_FEATURE_DISABLE
     }
 
     return sts;

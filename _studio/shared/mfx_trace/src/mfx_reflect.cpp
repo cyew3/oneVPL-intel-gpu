@@ -27,30 +27,44 @@
 #include <cstddef>
 
 #include "mfxstructures.h"
-#include "mfxenctools-int.h"
+
 #include "mfxvp8.h"
 #include "mfxvp9.h"
-#include "mfxplugin.h"
 #include "mfxmvc.h"
-#include "mfxcamera.h"
+
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE) || defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "mfxfei.h"
-#include "mfxla.h"
+#endif
+
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+#include "mfxfeihevc.h"
+#endif
+
+#if defined(MFX_ENABLE_USER_ENCTOOLS)
+#include "mfxenctools.h"
+#endif
+
+#if defined(MFX_ENABLE_SCREEN_CAPTURE)
 #include "mfxsc.h"
+#endif
+
+#if !defined(MFX_ONEVPL)
+#include "mfxcamera.h"
+#include "mfxplugin.h"
+
+#if !defined(OPEN_SOURCE)
+#include "mfxfeih265.h"
+#endif // !OPEN_SOURCE
+
+#include "mfxla.h"
+#endif // !MFX_ONEVPL
+
 #if (MFX_VERSION >= 1026)
 #include "mfxbrc.h"
 #endif
 
-#if (MFX_VERSION >= 1027)
-#include "mfxfeihevc.h"
-#endif
-
-#ifndef OPEN_SOURCE
-#include "mfxfeih265.h"
-#endif // !OPEN_SOURCE
-
 #if (MFX_VERSION >= 1025)
 #include "ts_typedef.h"
-
 
 #include <memory>
 

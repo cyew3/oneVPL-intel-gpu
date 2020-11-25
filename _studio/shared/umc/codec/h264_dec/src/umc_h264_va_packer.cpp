@@ -38,13 +38,16 @@
 #include "umc_va_linux.h"
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
+
 #include "umc_va_fei.h"
 
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
 #endif
 
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "mfxfei.h"
+#endif
 
 #include "mfx_trace.h"
 
@@ -2239,6 +2242,7 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, int32_t field)
     }
 #endif // defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
     if (!m_enableStreamOut)
         return;
 
@@ -2264,6 +2268,7 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, int32_t field)
             buffer->RemapRefs(so->RemapRefIdx == MFX_CODINGOPTION_ON);
         }
     }
+#endif
 }
 
 void PackerVA::EndFrame()
@@ -2343,6 +2348,7 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
     if (!pFrame)
         return UMC_ERR_FAILED;
 
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
     FrameData const* fd = pFrame->GetFrameData();
     VM_ASSERT(fd);
 
@@ -2398,6 +2404,7 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
         std::copy(src, src + count, so->MB + offset2);
     }
     fei_va->ReleaseBuffer(buffer);
+#endif //MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
 
     return UMC_OK;
 }

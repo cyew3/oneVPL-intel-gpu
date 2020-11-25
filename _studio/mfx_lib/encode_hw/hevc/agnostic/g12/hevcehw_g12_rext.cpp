@@ -248,7 +248,7 @@ void RExt::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         , [](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
         auto& fi = out.mfx.FrameInfo;
-        bool bVideoMem = Base::Legacy::IsInVideoMem(out, ExtBuffer::Get(out));
+        bool bVideoMem = Base::Legacy::IsInVideoMem(out);
 
         bool bNeedShift =
             (bVideoMem && !fi.Shift)

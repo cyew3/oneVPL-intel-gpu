@@ -608,7 +608,10 @@ public:
             || mfx.RateControlMethod == MFX_RATECONTROL_VBR
             || mfx.RateControlMethod == MFX_RATECONTROL_QVBR
             || mfx.RateControlMethod == MFX_RATECONTROL_VCM
-            || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT;
+#if !defined(MFX_ONEVPL)
+            || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+            ;
         mfxU32 maxCPB             = 0xffffffff;
         mfxU32 minCPB             = bUseMaxKbps * InitialDelayInKB(par.mvp.mfx);
         mfxU32 defaultCPB         = 0;

@@ -147,9 +147,11 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
 mfxStatus CheckTransferMatrix( mfxU16 transferMatrix );
 mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix );
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
 // Opaque processing
 mfxStatus CheckOpaqMode( mfxVideoParam* par, bool bOpaqMode[2] );
 mfxStatus GetOpaqRequest( mfxVideoParam* par, bool bOpaqMode[2], mfxFrameAllocRequest requestOpaq[2] );
+#endif
 
 //
 mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, mfxU16* pOutMemType, bool bSWLib = true );

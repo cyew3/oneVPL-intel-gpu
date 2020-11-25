@@ -23,6 +23,10 @@
 #include "mfxstructures.h"
 #include "mfx_config.h"
 
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -106,7 +110,6 @@ enum eMFXGTConfig
     MFX_GT4     = 4
 };
 
-// mfxU8 CodecProfile, CodecLevel
 /*
 Some components (samples, JPEG decoder) has used MFX_FOURCC_RGBP already.
 So, for API 1.27 and below "MFX_FOURCC_RGBP" defined inside of msdk library
@@ -132,4 +135,4 @@ enum
 };
 #endif
 
-#endif // __MFXSTRUCTURES_H
+#endif // __MFXSTRUCTURES_INT_H__

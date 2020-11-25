@@ -92,10 +92,13 @@ mfxStatus MFXDisjoinSession(mfxSession session)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pENCODE.get());
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pDECODE.get());
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pVPP.get());
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pENC.get());
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pPAK.get());
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+#if !defined(MFX_ONEVPL)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_plgGen.get());
-
+#endif
         // remove child core from parent core operator
         session->m_pOperatorCore->RemoveCore(session->m_pCORE.get());
 
@@ -248,9 +251,13 @@ mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pENCODE.get());
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pDECODE.get());
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pVPP.get());
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pENC.get());
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pPAK.get());
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+#if !defined(MFX_ONEVPL)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_plgGen.get());
+#endif
 
         // create new self core operator
         // restore original operator core.

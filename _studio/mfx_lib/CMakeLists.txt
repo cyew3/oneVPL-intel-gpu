@@ -1,21 +1,3 @@
-# =============================================================================
-
-list( APPEND mdirs
-  scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows> vpp encode_hw/mjpeg
-  decode/h264 decode/h265 decode/vp8 decode/vp9 decode/av1 decode/mpeg2/hw decode/mpeg2/sw decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/h265 encode_hw/mpeg2 encode_hw/vp9
-  decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
-  audio_decode/aac audio_decode/mp3 audio_encode/aac genx/copy_kernels
-  mctf_package/mctf
-)
-
-list( APPEND cdirs
-  brc h264_enc mpeg2_dec/hw mpeg2_dec/sw vp9_dec
-  color_space_converter mpeg2_enc jpeg_enc vc1_dec vc1_common
-  aac_dec common aac_common mp3_common mp3_dec aac_enc
-  )
-
-# =============================================================================
-
 set(sources_common
     scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core.cpp
     scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_ischeduler.cpp
@@ -27,16 +9,18 @@ set(sources_common
     shared/src/libmfxsw.cpp
     shared/src/libmfxsw_async.cpp
     shared/src/libmfxsw_decode.cpp
-    shared/src/libmfxsw_enc.cpp
     shared/src/libmfxsw_encode.cpp
+    shared/src/libmfxsw_enc.cpp
     shared/src/libmfxsw_pak.cpp
     shared/src/libmfxsw_plugin.cpp
+    $<$<NOT:$<BOOL:${API_USE_VPL}>>:
+      shared/src/mfx_user_plugin.cpp
+    >
     shared/src/libmfxsw_query.cpp
     shared/src/libmfxsw_session.cpp
     shared/src/libmfxsw_vpp.cpp
     shared/src/mfx_check_hardware_support.cpp
     shared/src/mfx_session.cpp
-    shared/src/mfx_user_plugin.cpp
 
     shared/include/feature_blocks/mfx_feature_blocks_base.h
     shared/include/feature_blocks/mfx_feature_blocks_decl_blocks.h
@@ -117,7 +101,7 @@ endif()
 
 get_mfx_version(mfx_version_major mfx_version_minor)
 
-if(MFX_DISABLE_SW_FALLBACK)
+if(MFX_DISABLE_SW_FALLBACK OR ${API_USE_VPL})
   set(VARIANTS hw)
 else()
   set(VARIANTS sw hw)
@@ -130,22 +114,15 @@ else()
   set(IPP_LIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
 endif()
 
-if(CMAKE_SYSTEM_NAME MATCHES Windows)
-  set(lib_prefix "lib")
-else()
-  set(lib_prefix "")
-endif()
-
 foreach( variant ${VARIANTS} )
+
   if( DEFINED MFX_LIBNAME )
     set( mfxlibname "${MFX_LIBNAME}")
   else()
-    if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-      set( mfxlibname ${lib_prefix}mfx${variant}64 )
-    else()
-      set( mfxlibname ${lib_prefix}mfx${variant}32 )
-    endif()
+    make_runtime_name( ${variant} mfxlibname )
   endif()
+
+  message( DEBUG "Runtime name: ${mfxlibname}")
 
   add_library(${mfxlibname} SHARED)
 
@@ -159,36 +136,36 @@ foreach( variant ${VARIANTS} )
   if (MFX_ENABLE_JPEG_SW_FALLBACK)
     set(JPEG_SW_LIBS encode encode_sw)
   endif ()
-
-  set (AVC_FEI_LIBS "")
-  if (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    set(AVC_FEI_LIBS h264_preenc h264_enc h264_pak)
-  endif ()
-
+ 
   set (SW_FALBACK_LIBS "")
   if (NOT MFX_DISABLE_SW_FALLBACK)
-    set(SW_FALBACK_LIBS
-      enc_hw
-      h264_enc_sw
-      scene_analyzer
-      color_space_converter
-      media_buffers
-      encode
-      vc1_enc
-      me
-      mpeg2_enc
-      enc
-      h264_dispatcher
-      h264_px
-      h264_sse3
-      pak
-      umc
-      umc_io)
+    set(SW_FALBACK_LIBS encode)
+
+    if (NOT ${API_USE_VPL})
+      list(APPEND SW_FALBACK_LIBS
+        scene_analyzer
+        color_space_converter
+        media_buffers
+        encode
+        vc1_enc
+        me
+        mpeg2_enc
+        h264_enc_sw
+        h264_dispatcher
+        h264_px
+        h264_sse3
+        enc_hw
+        enc
+        pak
+        umc
+        umc_io
+      )
+    endif()
   endif ()
 
   set(HW_ONLY_LIBS "")
   if (variant MATCHES hw)
-    set(HW_ONLY_LIBS umc_va_hw cmrt_cross_platform_hw enctools_hw mctf_hw asc genx)
+    set(HW_ONLY_LIBS umc_va_hw cmrt_cross_platform_hw $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw> mctf_hw asc genx)
   endif()
 
   set(LIBS
@@ -198,8 +175,7 @@ foreach( variant ${VARIANTS} )
     ${HW_ONLY_LIBS}
     decode_${variant}
     encode_${variant}
-    ${AVC_FEI_LIBS}
-    mfx_common_${variant} 
+    mfx_common_${variant}
     vpp_${variant}
     mfx_trace
     mfx_shared_lib
@@ -207,8 +183,7 @@ foreach( variant ${VARIANTS} )
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
     mfx_require_sse4_properties
-    )
-
+  )
 
   if (variant MATCHES hw)
     target_compile_definitions(${mfxlibname}
@@ -228,7 +203,13 @@ foreach( variant ${VARIANTS} )
       $<$<PLATFORM_ID:Windows>:LINKER:/DEF:${MSDK_LIB_ROOT}/libmfx.def>
       $<$<PLATFORM_ID:Linux>:LINKER:--version-script=${MSDK_LIB_ROOT}/libmfxhw.map>
     )
-  target_link_libraries(${mfxlibname} PRIVATE ${LIBS})
+  target_link_libraries(${mfxlibname}
+    PRIVATE
+      ${LIBS}
+      $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_preenc>
+      $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_enc>
+      $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_pak>
+    )
 
   set_target_properties(${mfxlibname} PROPERTIES   VERSION ${mfx_version_major}.${mfx_version_minor})
   set_target_properties(${mfxlibname} PROPERTIES SOVERSION ${mfx_version_major})

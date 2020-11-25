@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 #include "mfxfeihevc.h"
 #include "hevcehw_base_fei_lin.h"
 #include "hevcehw_base_va_lin.h"
@@ -395,4 +395,4 @@ void FEI::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 }
 
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)

@@ -136,12 +136,14 @@ VideoVPPBase::VideoVPPBase(VideoCORE *core, mfxStatus* sts )
     , m_core(core)
     , m_pHWVPP()
 {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     /* opaque processing */
     m_bOpaqMode[VPP_IN]  = false;
     m_bOpaqMode[VPP_OUT] = false;
 
     memset(&m_requestOpaq[VPP_IN], 0, sizeof(mfxFrameAllocRequest));
     memset(&m_requestOpaq[VPP_OUT], 0, sizeof(mfxFrameAllocRequest));
+#endif
 
     /* common */
     m_bDynamicDeinterlace = false;
@@ -168,6 +170,7 @@ mfxStatus VideoVPPBase::Close(void)
 
     m_bDynamicDeinterlace = false;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     /* opaque processing */
 
     if( m_bOpaqMode[VPP_IN] )
@@ -183,6 +186,7 @@ mfxStatus VideoVPPBase::Close(void)
     }
 
     m_bOpaqMode[VPP_IN] = m_bOpaqMode[VPP_OUT] = false;
+#endif
 
     //m_numUsedFilters      = 0;
     m_pipelineList.resize(0);
@@ -236,6 +240,7 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
     sts = GetPipelineList( par, m_pipelineList, true);
     MFX_CHECK_STS(sts);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     // opaque configuration rules:
     // (1) in case of OPAQ request VPP should ignore IOPattern and use extBuffer native memory type
     // (2) VPP_IN abd VPP_OUT should be checked independently of one another
@@ -270,6 +275,7 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
             }
         }
     }
+#endif
 
     sts = InternalInit(par);
     if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts)
@@ -969,10 +975,12 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                         }
                         //--------------------------------------
                     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
                     else if( MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION == in->ExtParam[i]->BufferId )
                     {
                         // No specific checks for Opaque ext buffer at the moment.
                     }
+#endif
 #if defined(_WIN32) || defined(_WIN64)
                     else if (MFX_EXTBUFF_MVC_SEQ_DESC == in->ExtParam[i]->BufferId)
                     {
@@ -1347,6 +1355,7 @@ mfxStatus VideoVPPBase::Reset(mfxVideoParam *par)
     }
     //-----------------------------------------------------
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     /* Opaque */
     if( m_bOpaqMode[VPP_IN] || m_bOpaqMode[VPP_OUT] )
     {
@@ -1389,6 +1398,7 @@ mfxStatus VideoVPPBase::Reset(mfxVideoParam *par)
             }
         }
     }// Opaque
+#endif
 
     bool isCompositionModeInNewParams = IsCompositionMode(par);
     // Enabling/disabling composition via Reset() doesn't work currently.
@@ -1489,7 +1499,11 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     pCommonCore = QueryCoreInterface<CommonCORE>(m_core, MFXIVideoCORE_GUID);
     MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    VideoVPPHW::IOMode mode = VideoVPPHW::GetIOMode(par, m_requestOpaq);
+    VideoVPPHW::IOMode mode = VideoVPPHW::GetIOMode(par
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        , m_requestOpaq
+#endif
+    );
 
     m_pHWVPP.reset(new VideoVPPHW(mode, m_core));
 

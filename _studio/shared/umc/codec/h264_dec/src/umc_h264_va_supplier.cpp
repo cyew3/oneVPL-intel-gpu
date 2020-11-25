@@ -39,7 +39,9 @@
 #include "mfx_ext_buffers.h"
 #include "umc_h264_notify.h"
 
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "mfxfei.h"
+#endif
 
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
@@ -373,10 +375,13 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
         if (!surface)
             throw h264_exception(UMC_ERR_ALLOC);
 
-        mfxExtBuffer* extbuf =
+        mfxExtBuffer* extbuf = nullptr;
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
+        extbuf =
             GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
         if (extbuf)
             frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
+#endif
 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         extbuf = GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);

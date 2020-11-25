@@ -103,10 +103,12 @@ protected:
 
     void FillVideoParam(mfxVideoParamWrapper *par, bool full);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxStatus UpdateAllocRequest(mfxVideoParam *par, 
                                 mfxFrameAllocRequest *request,
                                 mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
                                 bool &mapping);
+#endif
 
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
 

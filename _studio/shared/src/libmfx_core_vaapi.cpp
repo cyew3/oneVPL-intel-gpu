@@ -32,11 +32,18 @@
 #include "ippi.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
+
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE) || defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "mfxfei.h"
+#endif
+
 #include "libmfx_core_hw.h"
 
 #include "umc_va_linux_protected.h"
+
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "umc_va_fei.h"
+#endif
 
 #include "cm_mem_copy.h"
 
@@ -669,6 +676,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::AllocFrames(
         mfxStatus sts = MFX_ERR_NONE;
         mfxFrameAllocRequest temp_request = *request;
 
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         // external allocator doesn't know how to allocate opaque surfaces
         // we can treat opaque as internal
         if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
@@ -676,6 +684,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::AllocFrames(
             temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy && m_Display)
         {
@@ -963,6 +972,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::CreateVideoAccelerator(
     }
 #endif
 
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
     //check 'StreamOut' feature is requested
     {
         mfxExtBuffer* ext = GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
@@ -970,7 +980,12 @@ mfxStatus VAAPIVideoCORE_T<Base>::CreateVideoAccelerator(
             params.m_CreateFlags |= VA_DECODE_STREAM_OUT_ENABLE;
     }
 
-    m_pVA.reset((params.m_CreateFlags & VA_DECODE_STREAM_OUT_ENABLE) ? new FEIVideoAccelerator() : new LinuxVideoAccelerator());
+    if (params.m_CreateFlags & VA_DECODE_STREAM_OUT_ENABLE)
+        m_pVA.reset(new FEIVideoAccelerator());
+    else
+#endif //MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
+        m_pVA.reset(new LinuxVideoAccelerator());
+
     m_pVA->m_Platform   = UMC::VA_LINUX;
     m_pVA->m_Profile    = (VideoAccelerationProfile)profile;
     m_pVA->m_HWPlatform = m_HWType;

@@ -23,7 +23,6 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h264_encode_struct_vaapi.h"
-#include "mfxplugin++.h"
 
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_bs.h"

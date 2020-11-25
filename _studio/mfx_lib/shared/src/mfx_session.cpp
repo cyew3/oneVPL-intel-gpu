@@ -40,6 +40,7 @@
 namespace
 {
 
+#if !defined(MFX_ONEVPL)
 mfxStatus mfxCOREGetCoreParam(mfxHDL pthis, mfxCoreParam *par)
 {
     mfxSession session = (mfxSession) pthis;
@@ -83,6 +84,7 @@ mfxStatus mfxCOREGetCoreParam(mfxHDL pthis, mfxCoreParam *par)
 
 } // mfxStatus mfxCOREGetCoreParam(mfxHDL pthis, mfxCoreParam *par)
 
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
 mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
 {
     mfxSession session = (mfxSession) pthis;
@@ -136,6 +138,7 @@ mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFr
     return mfxRes;
 
 } // mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
+
 mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  , mfxFrameSurface1 **op_surf)
 {
     mfxSession session = (mfxSession) pthis;
@@ -193,36 +196,6 @@ mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  , mfxFram
 
 } // mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
 
-mfxStatus mfxCOREGetRealSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
-{
-    mfxSession session = (mfxSession) pthis;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-
-    try
-    {
-        *surf = session->m_pCORE->GetNativeSurface(op_surf);
-        if (!*surf)
-            return MFX_ERR_INVALID_HANDLE;
-
-        return mfxRes;
-    }
-    // handle error(s)
-    catch(...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session->m_pScheduler)
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-    }
-
-    return mfxRes;
-} // mfxStatus mfxCOREGetRealSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
-
 mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf)
 {
     mfxSession session = (mfxSession) pthis;
@@ -252,6 +225,37 @@ mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrame
 
     return mfxRes;
 }// mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+
+mfxStatus mfxCOREGetRealSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
+{
+    mfxSession session = (mfxSession) pthis;
+    mfxStatus mfxRes = MFX_ERR_NONE;
+
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
+
+    try
+    {
+        *surf = session->m_pCORE->GetNativeSurface(op_surf);
+        if (!*surf)
+            return MFX_ERR_INVALID_HANDLE;
+
+        return mfxRes;
+    }
+    // handle error(s)
+    catch(...)
+    {
+        // set the default error value
+        mfxRes = MFX_ERR_UNKNOWN;
+        if (0 == session->m_pScheduler)
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+    }
+
+    return mfxRes;
+} // mfxStatus mfxCOREGetRealSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
 
 mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxHDL *handle)
 {
@@ -474,14 +478,17 @@ void InitCoreInterface(mfxCoreInterface *pCoreInterface,
     pCoreInterface->DecreaseReference = &mfxCOREDecreaseReference;
     pCoreInterface->CopyFrame = &mfxCORECopyFrame;
     pCoreInterface->CopyBuffer = &mfxCORECopyBuffer;
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
     pCoreInterface->MapOpaqueSurface = &mfxCOREMapOpaqueSurface;
     pCoreInterface->UnmapOpaqueSurface = &mfxCOREUnmapOpaqueSurface;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     pCoreInterface->GetRealSurface = &mfxCOREGetRealSurface;
     pCoreInterface->GetOpaqueSurface = &mfxCOREGetOpaqueSurface;
     pCoreInterface->CreateAccelerationDevice = &mfxCORECreateAccelerationDevice;
     pCoreInterface->QueryPlatform = &mfxCOREQueryPlatform;
 
 } // void InitCoreInterface(mfxCoreInterface *pCoreInterface,
+#endif //!MFX_ONEVPL
 
 } // namespace
 
@@ -513,8 +520,12 @@ MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session)
 //////////////////////////////////////////////////////////////////////////
 
 _mfxSession::_mfxSession(const mfxU32 adapterNum)
-    : m_coreInt()
-    , m_currentPlatform()
+#if !defined(MFX_ONEVPL)
+    : m_coreInt() ,
+#else
+    :
+#endif
+      m_currentPlatform()
     , m_adapterNum(adapterNum)
     , m_implInterface()
     , m_pScheduler()
@@ -546,7 +557,6 @@ void _mfxSession::Clear(void)
 
     m_priority = MFX_PRIORITY_NORMAL;
     m_bIsHWENCSupport = false;
-    //m_coreInt.ExternalSurfaceAllocator = 0;
 
 } // void _mfxSession::Clear(void)
 
@@ -555,27 +565,32 @@ void _mfxSession::Cleanup(void)
     // wait until all task are processed
     if (m_pScheduler)
     {
+        if (m_pDECODE.get())
+            m_pScheduler->WaitForAllTasksCompletion(m_pDECODE.get());
+        if (m_pVPP.get())
+            m_pScheduler->WaitForAllTasksCompletion(m_pVPP.get());
+        if (m_pENCODE.get())
+            m_pScheduler->WaitForAllTasksCompletion(m_pENCODE.get());
+
+#if !defined(MFX_ONEVPL)
         if (m_plgGen.get())
             m_pScheduler->WaitForAllTasksCompletion(m_plgGen.get());
         if (m_plgDec.get())
             m_pScheduler->WaitForAllTasksCompletion(m_plgDec.get());
-        if (m_pDECODE.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_pDECODE.get());
         if (m_plgVPP.get())
             m_pScheduler->WaitForAllTasksCompletion(m_plgVPP.get());
-        if (m_pVPP.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_pVPP.get());
+
         if (m_pENC.get())
             m_pScheduler->WaitForAllTasksCompletion(m_pENC.get());
         if (m_pPAK.get())
             m_pScheduler->WaitForAllTasksCompletion(m_pPAK.get());
         if (m_plgEnc.get())
             m_pScheduler->WaitForAllTasksCompletion(m_plgEnc.get());
-        if (m_pENCODE.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_pENCODE.get());
+#endif //!MFX_ONEVPL
     }
 
     // unregister plugin before closing
+#if !defined(MFX_ONEVPL)
     if (m_plgGen.get())
     {
         m_plgGen->PluginClose();
@@ -592,13 +607,16 @@ void _mfxSession::Cleanup(void)
     {
         m_plgVPP->PluginClose();
     }
+#endif //!MFX_ONEVPL
 
     // release the components the excplicit way.
     // do not relay on default deallocation order,
     // somebody could change it.
+#if !defined(MFX_ONEVPL)
     m_plgGen.reset();
     m_pPAK.reset();
     m_pENC.reset();
+#endif //!MFX_ONEVPL
     m_pVPP.reset();
     m_pDECODE.reset();
     m_pENCODE.reset();
@@ -708,8 +726,10 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
     }
 #endif
 
+#if !defined(MFX_ONEVPL)
     // initialize the core interface
     InitCoreInterface(&m_coreInt, this);
+#endif
 
     // query the scheduler interface
     m_pScheduler = QueryInterface<MFXIScheduler> (m_pSchedulerAllocated,
@@ -789,11 +809,13 @@ _mfxSession_1_10::_mfxSession_1_10(mfxU32 adapterNum)
 
 _mfxSession_1_10::~_mfxSession_1_10(void)
 {
+#if defined(MFX_ENABLE_USER_ENC)
     if (m_plgPreEnc.get())
     {
         m_plgPreEnc->PluginClose();
     }
     m_plgPreEnc.reset();
+#endif //MFX_ENABLE_USER_ENC
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -806,10 +828,12 @@ void _mfxSession_1_10::SetAdapterNum(const mfxU32 adapterNum)
     m_adapterNum = adapterNum;
 }
 
+#if !defined(MFX_ONEVPL)
 std::unique_ptr<VideoCodecUSER> &  _mfxSession_1_10::GetPreEncPlugin()
 {
     return m_plgPreEnc;
 }
+#endif //!MFX_ONEVPL
 
 //////////////////////////////////////////////////////////////////////////
 // _mfxSession_1_10::MFXIUnknown members
@@ -965,8 +989,10 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     }
 #endif
 
+#if !defined(MFX_ONEVPL)
     // initialize the core interface
     InitCoreInterface(&m_coreInt, this);
+#endif
 
     // query the scheduler interface
     m_pScheduler = ::QueryInterface<MFXIScheduler>(m_pSchedulerAllocated, MFXIScheduler_GUID);

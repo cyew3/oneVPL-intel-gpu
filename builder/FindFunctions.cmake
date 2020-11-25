@@ -118,21 +118,6 @@ function( get_folder folder )
   set (${ARGV0} ${folder} PARENT_SCOPE)
 endfunction()
 
-function( get_mfx_version mfx_version_major mfx_version_minor )
-  file(STRINGS ${MFX_API_HOME}/include/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR" LIMIT_COUNT 1)
-  if(major STREQUAL "") # old style version
-     file(STRINGS ${MFX_API_HOME}/include/mfxvideo.h major REGEX "#define MFX_VERSION_MAJOR")
-  endif()
-  file(STRINGS ${MFX_API_HOME}/include/mfxdefs.h minor REGEX "#define MFX_VERSION_MINOR" LIMIT_COUNT 1)
-  if(minor STREQUAL "") # old style version
-     file(STRINGS ${MFX_API_HOME}/include/mfxvideo.h minor REGEX "#define MFX_VERSION_MINOR")
-  endif()
-  string(REPLACE "#define MFX_VERSION_MAJOR " "" major ${major})
-  string(REPLACE "#define MFX_VERSION_MINOR " "" minor ${minor})
-  set(${mfx_version_major} ${major} PARENT_SCOPE)
-  set(${mfx_version_minor} ${minor} PARENT_SCOPE)
-endfunction()
-
 function( gen_plugins_cfg plugin_id guid plugin_name type codecID )
   get_mfx_version(mfx_version_major mfx_version_minor)
   math(EXPR api_version "${mfx_version_major}*256 + ${mfx_version_minor}")

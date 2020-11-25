@@ -63,7 +63,7 @@ namespace UMC
         both events is INVALID_HANDLE_VALUE
         if no associated events found
         */
-        EventCache::MapValue EventCache::GetEvents(int32_t index);
+        EventCache::MapValue GetEvents(int32_t index);
 
         /*
         return Events to cache and mark it as free

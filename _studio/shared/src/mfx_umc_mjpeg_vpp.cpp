@@ -132,20 +132,24 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::Reset()
 mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpegD3D9(const mfxVideoParam *params)
 {
     bool isD3DToSys = false;
+    bool isOpaque = false;
 
     if(params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
         isD3DToSys = true;
     }
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
     else if (params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         MFX_CHECK(pOpaqAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
 
         isD3DToSys = (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) != 0;
+        isOpaque = true;
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
-    m_pCc.reset(new VideoVppJpegD3D9(m_pCore, isD3DToSys, params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY));
+    m_pCc.reset(new VideoVppJpegD3D9(m_pCore, isD3DToSys, isOpaque));
 
     mfxStatus mfxSts;
     if (params->mfx.Rotation == MFX_ROTATION_90 || params->mfx.Rotation == MFX_ROTATION_270)

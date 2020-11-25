@@ -41,6 +41,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 collect_oses()
 
 add_library(mfx_common_properties INTERFACE)
+target_link_libraries(mfx_common_properties
+  INTERFACE ${MFX_API_TARGET}
+)
 
 if( Linux )
   # If user did not override CMAKE_INSTALL_PREFIX, then set the default prefix
@@ -258,10 +261,6 @@ target_compile_definitions(mfx_common_properties
     $<$<BOOL:${OPEN_SOURCE}>:OPEN_SOURCE>
     $<$<BOOL:${OPEN_SOURCE}>:MFX_PROTECTED_FEATURE_DISABLE>
     $<$<BOOL:${OPEN_SOURCE}>:SYNCHRONIZATION_BY_VA_SYNC_SURFACE>
-    $<$<BOOL:${OPEN_SOURCE}>:MFX_ENABLE_HW_ONLY_MPEG2_DECODER>
-
-    $<$<PLATFORM_ID:Linux>:MFX_ENABLE_HW_ONLY_VPP>
-
   )
 
 target_include_directories(mfx_common_properties

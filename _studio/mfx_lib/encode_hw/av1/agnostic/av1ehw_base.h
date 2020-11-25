@@ -24,14 +24,19 @@
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
 #include "mfxvideo.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxla.h"
+#endif //!MFX_ONEVPL
+
 #include "mfxbrc.h"
 #include "mfx_ext_buffers.h"
 
-#if !defined(MFX_VA_LINUX)
+#if !defined(MFX_VA_LINUX) && !defined(MFX_ONEVPL)
 #include "mfxpcp.h"
 #include "mfxwidi.h"
-#endif //!defined(MFX_VA_LINUX)
+#endif //!MFX_VA_LINUX && !MFX_ONEVPL
+
 #include "mfxvideo++int.h"
 
 #include "mfx_utils_extbuf.h"

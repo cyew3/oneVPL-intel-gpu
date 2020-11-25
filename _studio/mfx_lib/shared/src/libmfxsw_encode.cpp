@@ -38,17 +38,19 @@
 #if defined(MFX_VA)
 #include "mfx_h264_encode_hw.h"
 #endif
-#ifndef MFX_DISABLE_SW_FALLBACK
+
+#if !defined(MFX_DISABLE_SW_FALLBACK)
 #include "mfx_h264_enc_common.h"
 #include "mfx_h264_encode.h"
-#endif
 #if defined (MFX_ENABLE_MVC_VIDEO_ENCODE)
 #include "mfx_mvc_encode.h"
 #endif
+#endif //!MFX_DISABLE_SW_FALLBACK
+
 #if defined(MFX_ENABLE_H264_FEI_ENCPAK)
 #include "mfxfei.h"
 #endif
-#endif
+#endif //MFX_ENABLE_H264_VIDEO_ENCODE
 
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 #if defined(MFX_VA)
@@ -178,7 +180,7 @@ static const CodecId2Handlers codecId2Handlers =
     },
 #endif
 
-#ifdef MFX_ENABLE_H264_VIDEO_ENCODE
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE) && ! defined(AS_H264LA_PLUGIN)
     {
         {
             MFX_CODEC_AVC,
@@ -677,6 +679,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     {
         CodecId2Handlers::const_iterator handler;
 
+#if defined(MFX_ENABLE_USER_ENCODE)
         if (session->m_plgEnc.get())
         {
             handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
@@ -684,6 +687,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         }
         // if plugin is not supported, or wrong parameters passed we should not look into library
         else
+#endif //!MFX_ENABLE_USER_ENCODE
         {
             // required to check FEI plugin registration
             bool feiStatusAvailable = false, fei = false;
@@ -700,10 +704,10 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         {
             assert(handler != codecId2Handlers.end());
 
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
             // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
             if (!session->m_plgEnc.get())
-#endif
+#endif //!MFX_ONEVPL && !OPEN_SOURCE
             {
                 mfxRes = !handler->second.fallback.query ? MFX_ERR_UNSUPPORTED
                         : (handler->second.fallback.query)(session, in, out);
@@ -777,6 +781,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     {
         CodecId2Handlers::const_iterator handler;
 
+#if defined(MFX_ENABLE_USER_ENCODE)
         if (session->m_plgEnc.get())
         {
             handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
@@ -784,6 +789,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         }
         // if plugin is not supported, or wrong parameters passed we should not look into library
         else
+#endif //MFX_ENABLE_USER_ENCODE
         {
             // required to check FEI plugin registration
             bool feiStatusAvailable = false, fei = false;
@@ -800,10 +806,10 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         {
             assert(handler != codecId2Handlers.end());
 
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
             // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
             if (!session->m_plgEnc.get())
-#endif
+#endif //MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
             {
                 mfxRes = !handler->second.fallback.query ? MFX_ERR_INVALID_VIDEO_PARAM
                     : (handler->second.fallback.queryIOSurf)(session, par, request);
@@ -920,11 +926,14 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pENCODE.get());
 
         mfxRes = session->m_pENCODE->Close();
+
+#if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
         // delete the codec's instance if not plugin
         if (!session->m_plgEnc)
         {
             session->m_pENCODE.reset(nullptr);
         }
+#endif //MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
     }
     // handle error(s)
     catch(...)

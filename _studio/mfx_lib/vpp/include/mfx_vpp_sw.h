@@ -115,9 +115,11 @@ protected:
   // State that keeps Init params. They are changed on Init only
   sErrPrtctState m_InitState;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
   // opaque processing
   bool                  m_bOpaqMode[2];
   mfxFrameAllocRequest  m_requestOpaq[2];
+#endif
 
   //
   // HW VPP Support

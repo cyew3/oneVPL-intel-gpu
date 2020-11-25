@@ -14,7 +14,6 @@ target_sources(mfx_trace
     include/sys/mfx_trace_utils_linux.h
     include/sys/mfx_trace_utils_windows.h
 
-    src/mfx_reflect.cpp
     src/mfx_trace.cpp
     src/mfx_trace_etw.cpp
     src/mfx_trace_ftrace.cpp
@@ -25,6 +24,7 @@ target_sources(mfx_trace
     src/mfx_trace_utils.cpp
     src/mfx_trace_utils_linux.cpp
     src/mfx_trace_utils_windows.cpp
+    $<$<NOT:$<BOOL:${BUILD_VPL}>>:src/mfx_reflect.cpp>
   )
 
 target_include_directories(mfx_trace

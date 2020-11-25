@@ -119,6 +119,7 @@ Linux::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
 ImplBase* Linux::Base::MFXVideoENCODEH265_HW::ApplyMode(mfxU32 mode)
 {
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
     bool bInitFEI = (mode == IMPL_MODE_FEI) && !FindFeature<FEI>(FEATURE_FEI);
 
     if (bInitFEI)
@@ -133,6 +134,7 @@ ImplBase* Linux::Base::MFXVideoENCODEH265_HW::ApplyMode(mfxU32 mode)
         m_features.emplace_back(new FEI(FEATURE_FEI));
         m_features.back()->Init(featureMode, *this);
     }
+#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
 
     return this;
 }

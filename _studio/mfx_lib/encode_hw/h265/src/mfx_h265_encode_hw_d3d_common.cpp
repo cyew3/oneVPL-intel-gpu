@@ -20,12 +20,12 @@
 
 #include "mfx_common.h"
 
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+
 #include "mfx_interface_scheduler.h"
-#include  "mfxvideo++int.h"
+#include "mfxvideo++int.h"
 #include "libmfx_core_interface.h"
 #include "mfx_session.h"
-
-#if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 
 #include "mfx_h265_encode_hw_d3d_common.h"
 #include "mfx_h265_encode_hw_utils.h"

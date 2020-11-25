@@ -242,7 +242,6 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAccelerationService");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
-    HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION ext = {};
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -270,7 +269,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
             encryptParam.pPrivateInputData     = &encryptSet;
             encryptParam.PrivateInputDataSize  = sizeof(ENCODE_ENCRYPTION_SET);
 
-            hr = DecoderExtension(encryptParam);
+            HRESULT hr = DecoderExtension(encryptParam);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
     }

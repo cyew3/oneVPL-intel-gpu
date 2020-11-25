@@ -8,19 +8,19 @@ else()
   set(OUTLINE_LIB_NAME outline_d)
 endif()
 
-add_library(${OUTLINE_LIB_NAME} SHARED )
-
-target_include_directories(${OUTLINE_LIB_NAME}
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../spy_test_component/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/color_space_converter/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/h264_dec/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../spy_test_component/xerces/include
-)
-
 pkg_check_modules(PKG_XERCES xerces-c>=3.0 IMPORTED_TARGET)
 
 if( PKG_XERCES_FOUND )
+  add_library(${OUTLINE_LIB_NAME} SHARED )
+
+  target_include_directories(${OUTLINE_LIB_NAME}
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/../spy_test_component/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/color_space_converter/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/h264_dec/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/../spy_test_component/xerces/include
+  )
+
   target_sources(${OUTLINE_LIB_NAME}
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}/src/checker.cpp

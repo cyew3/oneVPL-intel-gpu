@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "mfxvideo++int.h"
 #include "libmfx_allocator.h"
 
-#include "mfxvideo++int.h"
 
 #include "ippcore.h"
 #include "ipps.h"

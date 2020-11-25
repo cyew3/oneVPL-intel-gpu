@@ -20,6 +20,24 @@
 
 #include <mfxvideo.h>
 
+#if defined(MFX_ONEVPL)
+#include "mfxstructures-int.h"
+
+#define FUNCTION_DEPRECATED_IMPL(component, func_name, formal_param_list) \
+mfxStatus MFXVideo##component##_##func_name formal_param_list \
+{ \
+    return MFX_ERR_UNSUPPORTED; \
+}
+
+FUNCTION_DEPRECATED_IMPL(ENC, QueryIOSurf,       (mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request))
+FUNCTION_DEPRECATED_IMPL(ENC, Init,              (mfxSession session, mfxVideoParam *par))
+FUNCTION_DEPRECATED_IMPL(ENC, Close,             (mfxSession session))
+FUNCTION_DEPRECATED_IMPL(ENC, Reset,             (mfxSession session, mfxVideoParam *par))
+FUNCTION_DEPRECATED_IMPL(ENC, Query,             (mfxSession session, mfxVideoParam *in, mfxVideoParam *out))
+FUNCTION_DEPRECATED_IMPL(ENC, GetVideoParam,     (mfxSession session, mfxVideoParam *par))
+FUNCTION_DEPRECATED_IMPL(ENC, ProcessFrameAsync, (mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp))
+#undef FUNCTION_DEPRECATED_IMPL
+#else
 #include <mfx_session.h>
 #include <mfx_common.h>
 
@@ -485,12 +503,11 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
 
 } // MFXVideoENC_ProcessFrameAsync
 
-
 //
 // THE OTHER ENC FUNCTIONS HAVE IMPLICIT IMPLEMENTATION
 //
 
 FUNCTION_RESET_IMPL(ENC, Reset, (mfxSession session, mfxVideoParam *par), (par))
-
 FUNCTION_IMPL(ENC, GetVideoParam, (mfxSession session, mfxVideoParam *par), (par))
 FUNCTION_IMPL(ENC, GetFrameParam, (mfxSession session, mfxFrameParam *par), (par))
+#endif //MFX_ONEVPL

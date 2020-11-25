@@ -58,11 +58,11 @@ target_sources(umc_va_hw
     io/umc_va/src/umc_va.cpp
     io/umc_va/src/umc_va_dxva2.cpp
     io/umc_va/src/umc_va_dxva2_protected.cpp
-    io/umc_va/src/umc_va_fei.cpp
     io/umc_va/src/umc_va_linux.cpp
     io/umc_va/src/umc_va_linux_protected.cpp
     io/umc_va/src/umc_va_video_processing.cpp
     io/umc_va/src/umc_win_event_cache.cpp
+    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT}>:io/umc_va/src/umc_va_fei.cpp>
   )
 
 target_compile_definitions(umc_va_hw

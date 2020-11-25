@@ -23,8 +23,11 @@
 
 #include <mfxvideo.h>
 #include <mfxvideo++int.h>
+
+#if !defined(MFX_ONEVPL)
 #include "mfxenc.h"
 #include "mfxpak.h"
+#endif
 
 // Declare task's parameters structure
 typedef
@@ -60,6 +63,7 @@ struct MFX_THREAD_TASK_PARAMETERS
 
         } vpp;
 
+#if !defined(MFX_ONEVPL)
         // ENC, PAK parameters
         struct
         {
@@ -71,6 +75,7 @@ struct MFX_THREAD_TASK_PARAMETERS
             mfxPAKInput  *in;
             mfxPAKOutput *out;
         } pak_ext;
+#endif //!MFX_ONEVPL
     };
 
 } MFX_THREAD_TASK_PARAMETERS;

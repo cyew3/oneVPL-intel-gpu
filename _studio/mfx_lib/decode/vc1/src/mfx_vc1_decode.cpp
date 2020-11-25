@@ -184,7 +184,6 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     UMC::Status     IntUMCStatus = UMC::UMC_OK;
     UMC::Status     umcSts;
     bool            isPartMode = false;
-    bool            MapOpaq = true;
     bool            Polar   = false;
 
     m_isSWPlatform = true;
@@ -263,6 +262,10 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
 
         m_response.NumFrameActual = 32;
 
+#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
+        bool MapOpaq = false;
+#else
+        bool MapOpaq = true;
          // to process Opaque surfaces
         mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
         MFXSts = UpdateAllocRequest(&m_par, &request, &pOpqAlloc, MapOpaq, Polar);
@@ -276,6 +279,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
                                           pOpqAlloc->Out.NumSurface);
         }
         else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
         {
             bool isNeedCopy = ((MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern) && (request.Type & MFX_MEMTYPE_INTERNAL_FRAME)) || ((MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern) && (m_isSWPlatform));
 
@@ -299,8 +303,8 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
         // External allocator already was set
         MFXSts = MFX_ERR_NONE; // there are no errors
 
-        if ((IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY && !m_isSWPlatform)||
-            (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY && m_isSWPlatform)||
+        if ((IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY && !m_isSWPlatform) ||
+            (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY && m_isSWPlatform) ||
             (MapOpaq && Polar))  // use internal surfaces
         {
             umcSts = m_pFrameAlloc->InitMfx(0, m_pCore, &m_par, &request, &m_response, false, m_isSWPlatform);
@@ -1518,8 +1522,10 @@ mfxStatus MFXVideoDECODEVC1::ConvertMfxPlaneToMediaData(mfxFrameSurface1 *surfac
     mfxStatus       MFXSts = MFX_ERR_NONE;
     mfxFrameSurface1 *pNativeSurface = surface;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (MFX_IOPATTERN_OUT_OPAQUE_MEMORY & m_par.IOPattern)
-    pNativeSurface = GetOriginalSurface(surface);
+        pNativeSurface = GetOriginalSurface(surface);
+#endif
 
     mfxFrameData* pData = &pNativeSurface->Data;
 
@@ -1545,17 +1551,22 @@ mfxStatus MFXVideoDECODEVC1::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mf
     mfxStatus sts = SetAllocRequestExternal(core, par, request);
     MFX_CHECK_STS(sts);
 
-    MFX_CHECK(
-        (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)  ||
-        (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) ||
-        (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY),
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        || (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+        ;
+
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(
         !(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ||
         !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
         MFX_ERR_INVALID_VIDEO_PARAM);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     MFX_CHECK(
         !(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
         !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
@@ -1565,6 +1576,7 @@ mfxStatus MFXVideoDECODEVC1::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mf
         !(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
         !(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
         MFX_ERR_INVALID_VIDEO_PARAM);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     if (!IsHWSupported(core, par))
     {
@@ -1612,10 +1624,12 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestInternal(VideoCORE *core, mfxVideoPa
         return MFX_ERR_NONE;
     }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         CalculateFramesNumber(request, par, IsBufferMode(core, par));
     }
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -1652,6 +1666,7 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestExternal(VideoCORE *core, mfxVideoPa
 
         request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else // opaque memory
     {
         CalculateFramesNumber(request, par, IsBufferMode(core, par));
@@ -1660,6 +1675,7 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestExternal(VideoCORE *core, mfxVideoPa
         else
             request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     return MFX_ERR_NONE;
 }
@@ -1694,8 +1710,16 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
     mfxStatus sts = CheckFrameInfo(&in->mfx.FrameInfo);
     MFX_CHECK_STS(sts);
 
-    if ((in->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) !=
-        (m_Initpar.IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)))
+auto const mask =
+          MFX_IOPATTERN_OUT_SYSTEM_MEMORY
+        | MFX_IOPATTERN_OUT_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        | MFX_IOPATTERN_OUT_OPAQUE_MEMORY
+#endif
+        ;
+
+    if (      (in->IOPattern & mask) !=
+        (m_Initpar.IOPattern & mask))
     {
         MFX_RETURN(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     }
@@ -1704,6 +1728,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
     MFX_CHECK(in->AsyncDepth == m_Initpar.AsyncDepth, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(in->Protected == m_Initpar.Protected, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc * opaqueNew = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
@@ -1725,6 +1750,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
             MFX_CHECK(opaqueNew->Out.Surfaces[i] == m_AlloExtBuffer.Out.Surfaces[i], MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         }
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     return MFX_ERR_NONE;
 
@@ -1758,6 +1784,7 @@ bool MFXVideoDECODEVC1::IsHWSupported(VideoCORE *pCore, mfxVideoParam *par)
     return true;
 }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
 mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
                                                 mfxFrameAllocRequest *request,
                                                 mfxExtOpaqueSurfaceAlloc **pOpaqAlloc,
@@ -1850,6 +1877,8 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
     else
         return MFX_ERR_NONE;
 }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+
 void   MFXVideoDECODEVC1::FillMFXDataOutputSurface(mfxFrameSurface1 *surface)
 {
     if (!m_qTS.front().isOriginal)

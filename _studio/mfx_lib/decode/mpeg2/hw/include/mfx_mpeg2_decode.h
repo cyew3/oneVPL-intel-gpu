@@ -80,11 +80,15 @@ public:
 private:
     // Internal implementation of API QueryIOSurf function
     static mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam*, mfxFrameAllocRequest*);
+
     // Fill up frame allocator request data
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxStatus UpdateAllocRequest(mfxVideoParam *par,
                                 mfxFrameAllocRequest *request,
                                 mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
                                 bool &mapping);
+#endif
+
     // Decoder threads entry point
     static mfxStatus DecodeRoutine(void* state, void* param, mfxU32, mfxU32);
     // Threads complete proc callback

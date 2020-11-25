@@ -127,9 +127,15 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par,
     eMFXHWType platform = core->GetHWType();
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
-    MFX_CHECK(inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+        ;
+
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     VP9MfxVideoParam toValidate(*par, platform);
 
@@ -154,9 +160,11 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par,
     case MFX_IOPATTERN_IN_VIDEO_MEMORY:
         request->Type = MFX_MEMTYPE_D3D_EXT;
         break;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
         break;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     default:
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -296,6 +304,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
         sts = m_rawLocalFrames.Init(m_pCore, &request, true);
         MFX_CHECK_STS(sts);
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc& opaq = GetExtBufferRef(m_video);
@@ -313,6 +322,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
             MFX_CHECK_STS(sts);
         }
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     // allocate and register surfaces for reconstructed frames
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);

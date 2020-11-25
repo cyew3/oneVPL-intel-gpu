@@ -485,11 +485,13 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
         // external allocator doesn't know how to allocate opaque surfaces
         // we can treat opaque as internal
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
         {
             temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         // Create Service - first call
         sts = GetD3DService(request->Info.Width, request->Info.Height);

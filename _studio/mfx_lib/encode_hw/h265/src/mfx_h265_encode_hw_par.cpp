@@ -1402,7 +1402,10 @@ void InheritDefaultValues(
 inline bool isInVideoMem(MfxVideoParam const & par)
 {
     return (par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        || ((par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par.m_ext.Opaque.In.Type == MFX_IOPATTERN_IN_VIDEO_MEMORY));
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || ((par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par.m_ext.Opaque.In.Type == MFX_IOPATTERN_IN_VIDEO_MEMORY))
+#endif
+        ;
 }
 
 #if (MFX_VERSION >= 1025)
@@ -2136,7 +2139,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     changed += CheckOption(par.IOPattern
         , (mfxU32)MFX_IOPATTERN_IN_VIDEO_MEMORY
         , (mfxU32)MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         , (mfxU32)MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
         , 0);
 
     if (par.mfx.RateControlMethod == (mfxU32)MFX_RATECONTROL_AVBR)
@@ -2154,7 +2159,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
         , caps.VBRSupport ? MFX_RATECONTROL_VBR : 0
         , (mfxU32)MFX_RATECONTROL_AVBR
         , caps.CQPSupport ? MFX_RATECONTROL_CQP : 0
+#if !defined(MFX_ONEVPL)
         , (mfxU32)MFX_RATECONTROL_LA_EXT
+#endif
         , caps.ICQSupport ? MFX_RATECONTROL_ICQ : 0
         , caps.ddi_caps.VCMBitRateControl ? MFX_RATECONTROL_VCM : 0
         , caps.ddi_caps.QVBRBRCSupport ? MFX_RATECONTROL_QVBR : 0
@@ -2321,8 +2328,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
         par.MaxKbps = par.TargetKbps;
         changed ++;
     }
-    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
-        par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+#if !defined(MFX_ONEVPL)
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        )
         && par.MaxKbps != par.TargetKbps
         && par.MaxKbps!= 0
         && par.TargetKbps!= 0)
@@ -3086,7 +3096,10 @@ void SetDefaults(
              || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
              || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
              || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM
-             || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+#if !defined(MFX_ONEVPL)
+             || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        )
     {
         if (!par.TargetKbps)
         {

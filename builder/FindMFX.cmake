@@ -32,23 +32,71 @@ else()
   set( os_arch "${os_arch}_ia32" )
 endif()
 
-find_path( MFX_INCLUDE mfxdefs.h PATHS ${MFX_API_HOME}/include NO_CMAKE_FIND_ROOT_PATH )
-
-if( NOT DEFINED MFX_INCLUDE )
-  message( FATAL_ERROR "Intel(R) Media SDK was not found (required)! Set/check MFX_HOME environment variable!")
+if( NOT DEFINED API )
+  message( FATAL_ERROR "API is not defined")
+elseif (${API} STREQUAL "master"
+     OR ${API} STREQUAL "latest"
+     OR ${API} VERSION_LESS 2.0 )
+  set( MFX_API_HOME ${MFX_API_HOME} )
+elseif( ${API} VERSION_GREATER_EQUAL 2.0 )
+  set( MFX_API_HOME ${MFX_API_HOME}/mfx2)
 else()
-  message( STATUS "Intel(R) Media SDK was found here ${MFX_API_HOME}")
+  message( FATAL_ERROR "Unknown API = ${API}")
 endif()
+
+unset( MFX_INCLUDE CACHE )
+find_path( MFX_INCLUDE
+  NAMES mfxdefs.h
+  PATHS "${MFX_API_HOME}/include"
+  NO_CMAKE_FIND_ROOT_PATH
+)
+
+include (${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
+find_package_handle_standard_args(MFX REQUIRED_VARS MFX_INCLUDE)
+
+if (NOT MFX_FOUND)
+  message( FATAL_ERROR "Unknown API = ${API}")
+endif()
+
+macro( make_api_target target)
+
+  add_library( ${target}-api INTERFACE )
+  target_include_directories(${target}-api
+    INTERFACE ${MFX_API_HOME}/include ${MFX_API_HOME}/../mediasdk_structures
+  )
+  target_compile_definitions(${target}-api
+    INTERFACE $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
+  )
+
+  add_library( ${target}::api ALIAS ${target}-api )
+  set (MFX_API_TARGET ${target}::api)
+
+endmacro()
+
+function( get_mfx_version mfx_version_major mfx_version_minor )
+  file(STRINGS ${MFX_API_HOME}/include/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR" LIMIT_COUNT 1)
+  if(major STREQUAL "") # old style version
+     file(STRINGS ${MFX_API_HOME}/include/mfxvideo.h major REGEX "#define MFX_VERSION_MAJOR")
+  endif()
+  file(STRINGS ${MFX_API_HOME}/include/mfxdefs.h minor REGEX "#define MFX_VERSION_MINOR" LIMIT_COUNT 1)
+  if(minor STREQUAL "") # old style version
+     file(STRINGS ${MFX_API_HOME}/include/mfxvideo.h minor REGEX "#define MFX_VERSION_MINOR")
+  endif()
+  string(REPLACE "#define MFX_VERSION_MAJOR " "" major ${major})
+  string(REPLACE "#define MFX_VERSION_MINOR " "" minor ${minor})
+  set(${mfx_version_major} ${major} PARENT_SCOPE)
+  set(${mfx_version_minor} ${minor} PARENT_SCOPE)
+endfunction()
 
 # Potential source of confusion here. MFX_VERSION should contain API version i.e. 1025 for API 1.25, 
 # Product version stored in MEDIA_VERSION_STR
-if( NOT DEFINED API OR API STREQUAL "master")
+if( ${API} STREQUAL "master")
   set( API_FLAGS "")
   set( API_USE_LATEST FALSE )
   get_mfx_version(major_vers minor_vers)
 else( )
-  if( API STREQUAL "latest" )
-    # This would enable all latest non-production features     
+  if( ${API} STREQUAL "latest" )
+    # This would enable all latest non-production features
     set( API_FLAGS -DMFX_VERSION_USE_LATEST )
     set( API_USE_LATEST TRUE )
     get_mfx_version(major_vers minor_vers)
@@ -72,9 +120,18 @@ else( )
       # Compute a version number
     math(EXPR version_number "${major_vers} * 1000 + ${minor_vers}" )
     set(API_FLAGS -DMFX_VERSION=${version_number})
-  endif()  
+  endif()
 endif()
 
 set( API_VERSION "${major_vers}.${minor_vers}")
+
+if ( ${API_VERSION} VERSION_GREATER_EQUAL 2.0 )
+  set( API_USE_VPL TRUE )
+  set( API_USE_LATEST TRUE )
+  make_api_target( onevpl )
+else()
+  set( API_USE_VPL FALSE )
+  make_api_target( mfx )
+endif()
 
 message(STATUS "Enabling API ${major_vers}.${minor_vers} feature set with flags ${API_FLAGS}")

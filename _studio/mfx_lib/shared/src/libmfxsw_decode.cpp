@@ -475,11 +475,13 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pDECODE.get());
 
         mfxRes = session->m_pDECODE->Close();
+#if defined(MFX_ENABLE_USER_DECODE)
         // delete the codec's instance if not plugin
         if (!session->m_plgDec)
         {
             session->m_pDECODE.reset(nullptr);
         }
+#endif //MFX_ENABLE_USER_DECODE
     }
     // handle error(s)
     catch(...)
@@ -541,6 +543,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 #endif
 #endif
             task.pDst[0] = *surface_out;
+#if defined(MFX_ENABLE_USER_DECODE)
             // this is wa to remove external task dependency for HEVC SW decode plugin.
             // need only because SW HEVC decode is pseudo
             {
@@ -556,6 +559,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
                     }
                 }
             }
+#endif //MFX_ENABLE_USER_DECODE
 
 #ifdef MFX_TRACE_ENABLE
             task.nParentId = MFX_AUTO_TRACE_GETID();

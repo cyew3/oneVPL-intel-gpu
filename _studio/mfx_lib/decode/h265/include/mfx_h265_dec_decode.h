@@ -124,11 +124,13 @@ protected:
     // Fill up resolution information if new header arrived
     void FillVideoParam(mfxVideoParamWrapper *par, bool full);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     // Fill up frame allocator request data
     mfxStatus UpdateAllocRequest(mfxVideoParam *par,
                                 mfxFrameAllocRequest *request,
                                 mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
                                 bool &mapping);
+#endif
 
     // Get original Surface corresponding to OpaqueSurface
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);

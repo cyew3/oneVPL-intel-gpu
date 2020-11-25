@@ -190,14 +190,6 @@ namespace UMC_MPEG2_DECODER
 
             CHECK_UNSUPPORTED( (in->NumExtParam == 0) != (in->ExtParam == nullptr) );
 
-            if (in->NumExtParam && !in->Protected)
-            {
-                auto pOpaq = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-                // ignore opaque extension buffer
-                CHECK_UNSUPPORTED(in->NumExtParam != 1 || !(in->NumExtParam == 1 && NULL != pOpaq));
-            }
-
             mfxExtBuffer **pExtBuffer = out->ExtParam;
             mfxU16 numDistBuf = out->NumExtParam;
             *out = *in;
@@ -386,17 +378,24 @@ namespace UMC_MPEG2_DECODER
         if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
             return false;
 
-        if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        if (   !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+            && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+            )
             return false;
 
         if ((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
             return false;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
             return false;
 
         if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
             return false;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         return true;
     }

@@ -21,29 +21,42 @@
 #include <stddef.h>
 
 #include "mfxstructures.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxplugin.h"
+#endif
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 #include "mfxenc.h"
 #include "mfxpak.h"
 #include "mfxfei.h"
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 #include "mfxfeihevc.h"
+#endif
 #include "mfxjpeg.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxla.h"
+#endif
 #include "mfxmvc.h"
 #include "mfxvp8.h"
 #include "mfxvp9.h"
 #include "mfxvideo.h"
 #include "mfxbrc.h"
 #include "mfxpcp.h"
+#if defined(MFX_ENABLE_SCREEN_CAPTURE)
 #include "mfxsc.h"
+#endif
+#if !defined(MFX_ONEVPL)
 #include "mfxscd.h"
 #include "mfxcamera.h"
+#endif
 #include "mfxadapter.h"
+#if defined(MFX_ENABLE_USER_ENCTOOLS)
 #include "mfxenctools-int.h"
+#endif
 
-
-#ifndef OPEN_SOURCE
+#if !defined(MFX_ONEVPL) && defined(OPEN_SOURCE)
 #include "mfxwidi.h"
-#endif // OPEN_SOURCE
+#endif //!MFX_ONEVPL && OPEN_SOURCE
 
 /* .cpp instead of .h to avoid changing of include files dependencies graph
     and not to include unnecessary includes into libmfx library             */
@@ -342,7 +355,9 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCodingOptionVPS        ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVideoSignalInfo        ,20  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPDoUse               ,24  )
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtOpaqueSurfaceAlloc     ,80  )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAVCRefListCtrl         ,1068)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPFrameRateConversion ,72  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPImageStab           ,32  )
@@ -414,9 +429,11 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9TemporalLayers      ,384  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9Param               ,256  )
 #endif
-#if (MFX_VERSION >= 1025)
+#if defined(MFX_ENABLE_MFE)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameParam        ,128  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameControl      ,128  )
+#endif //MFX_ENABLE_MFE
+#if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64   )
 #endif
@@ -474,7 +491,9 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCodingOptionVPS        ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVideoSignalInfo        ,20  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPDoUse               ,16  )
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtOpaqueSurfaceAlloc     ,72  )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAVCRefListCtrl         ,1068)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPFrameRateConversion ,72  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPImageStab           ,32  )
@@ -542,9 +561,11 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9TemporalLayers      ,384  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9Param               ,256  )
 #endif
-#if (MFX_VERSION >= 1025)
+#if defined(MFX_ENABLE_MFE)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameParam        ,128 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameControl      ,128 )
+#endif //MFX_ENABLE_MFE
+#if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64  )
 #endif
@@ -670,9 +691,11 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9TemporalLayers      ,384  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9Param               ,256  )
 #endif
-#if (MFX_VERSION >= 1025)
+#if defined(MFX_ENABLE_MFE)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameParam        ,128 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameControl      ,128 )
+#endif //MFX_ENABLE_MFE
+#if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64  )
 #endif
@@ -706,10 +729,14 @@
 //mfxvideo.h
 #if defined (__MFXVIDEO_H__)
     #if defined(_WIN64) || defined(LINUX64)
+        #if !defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBufferAllocator ,56)
+        #endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameAllocator  ,64)
     #elif defined(_WIN32) || defined(LINUX32)
+        #if !defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBufferAllocator ,36)
+        #endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameAllocator  ,40)
     #endif
 #endif //defined (__MFXVIDEO_H__)
@@ -758,20 +785,20 @@
 #if MFX_VERSION >= 1030
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCencParam              ,72   )
 #endif
-#ifndef OPEN_SOURCE
+#if !defined(MFX_ONEVPL) && !defined(OPEN_SOURCE)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAES128CipherCounter       ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData             ,88   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPAVPOption             ,64   )
-#endif // OPEN_SOURCE
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData             ,88   )
+#endif
     #elif defined(_WIN32) || defined(LINUX32)
 #if MFX_VERSION >= 1030
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCencParam              ,72   )
 #endif
-#ifndef OPEN_SOURCE
+#if !defined(MFX_ONEVPL) && !defined(OPEN_SOURCE)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAES128CipherCounter       ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData             ,72   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPAVPOption             ,64   )
-#endif // OPEN_SOURCE
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData             ,72   )
+#endif
     #endif
 #endif //defined (__MFXPCP_H__)
 
@@ -1441,6 +1468,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,NumAlg                        ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,AlgList                       ,16   )
 
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In                            ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.Surfaces                   ,16   )
@@ -1450,6 +1478,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Surfaces                  ,48   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Type                      ,76   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.NumSurface                ,78   )
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,Header                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,NumRefIdxL0Active              ,8    )
@@ -1805,7 +1834,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVP9Param                     ,NumTileColumns                ,34   )
 #endif
 #endif
-#if (MFX_VERSION >= 1025)
+#if defined(MFX_ENABLE_MFE)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MFMode                        ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MaxNumFrames                  ,10   )
@@ -1813,7 +1842,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Timeout                       ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Flush                         ,12   )
-
+#endif //MFX_ENABLE_MFE
+#if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Type                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Offset                        ,4    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Size                          ,8    )
@@ -2289,6 +2319,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,NumAlg                        ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,AlgList                       ,12   )
 
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In                            ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.Surfaces                   ,16   )
@@ -2298,6 +2329,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Surfaces                  ,44   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Type                      ,68   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.NumSurface                ,70   )
+#endif
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,Header                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,NumRefIdxL0Active              ,8    )
@@ -2672,7 +2704,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVP9Param                     ,NumTileColumns                ,34   )
 #endif
 #endif
-#if (MFX_VERSION >= 1025)
+#if defined(MFX_ENABLE_MFE)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MFMode                        ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MaxNumFrames                  ,10   )
@@ -2680,6 +2712,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Timeout                       ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Flush                         ,12   )
+#endif //MFX_ENABLE_MFE
+#if (MFX_VERSION >= 1025)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Type                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Offset                        ,4    )
@@ -3538,7 +3572,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVP9Param                     ,NumTileColumns                ,34   )
 #endif
 #endif
-#if (MFX_VERSION >= 1025)
+#if defined(MFX_ENABLE_MFE)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MFMode                        ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MaxNumFrames                  ,10   )
@@ -3546,6 +3580,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Timeout                       ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Flush                         ,12   )
+#endif //MFX_ENABLE_MFE
+#if (MFX_VERSION >= 1025)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Type                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Offset                        ,4    )
@@ -3686,11 +3722,13 @@
 //mfxvideo.h
 #if defined (__MFXVIDEO_H__)
     #if defined(_WIN64) || defined(LINUX64)
+        #if !defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,pthis                        ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Alloc                        ,24   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Lock                         ,32   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Unlock                       ,40   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Free                         ,48   )
+        #endif //!MFX_ONEVPL
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameAllocator                  ,pthis                        ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameAllocator                  ,Alloc                        ,24   )
@@ -3699,11 +3737,13 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameAllocator                  ,GetHDL                       ,48   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameAllocator                  ,Free                         ,56   )
     #elif defined(_WIN32) || defined(LINUX32)
+        #if !defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,pthis                        ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Alloc                        ,20   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Lock                         ,24   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Unlock                       ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBufferAllocator                 ,Free                         ,32   )
+        #endif //!MFX_ONEVPL
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameAllocator                  ,pthis                        ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameAllocator                  ,Alloc                        ,20   )
@@ -4791,9 +4831,15 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                    ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                    ,StatusReportIndex             ,8    )
 #endif
-#ifndef OPEN_SOURCE
+#if !defined(MFX_ONEVPL) && !defined(OPEN_SOURCE)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAES128CipherCounter             ,IV                            ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAES128CipherCounter             ,Count                         ,8    )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,Header                        ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CipherCounter                 ,8    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterIncrement              ,24   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,EncryptionType                ,28   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterType                   ,30   )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,Next                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,Data                          ,16   )
@@ -4802,22 +4848,21 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,MaxLength                     ,32   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,CipherCounter                 ,40   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,AppId                         ,56   )
+#endif //!MFX_ONEVPL && !OPEN_SOURCE
+    #elif defined(_WIN32) || defined(LINUX32)
+#if (MFX_VERSION >= 1030)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                    ,Header                        ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                    ,StatusReportIndex             ,8    )
+#endif
+#if !defined(MFX_ONEVPL) && !defined(OPEN_SOURCE)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAES128CipherCounter             ,IV                            ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAES128CipherCounter             ,Count                         ,8    )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CipherCounter                 ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterIncrement              ,24   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,EncryptionType                ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterType                   ,30   )
-
-#endif // OPEN_SOURCE
-    #elif defined(_WIN32) || defined(LINUX32)
-#if (MFX_VERSION >= 1030)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                    ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                    ,StatusReportIndex             ,8    )
-#endif
-#ifndef OPEN_SOURCE
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAES128CipherCounter             ,IV                            ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAES128CipherCounter             ,Count                         ,8    )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,Next                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,Data                          ,8    )
@@ -4826,14 +4871,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,MaxLength                     ,20   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,CipherCounter                 ,24   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncryptedData                   ,AppId                         ,40   )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CipherCounter                 ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterIncrement              ,24   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,EncryptionType                ,28   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterType                   ,30   )
-
-#endif // OPEN_SOURCE
+#endif //!MFX_ONEVPL && !OPEN_SOURCE
     #endif
 #endif //defined (__MFXPCP_H__)
 

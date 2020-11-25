@@ -20,10 +20,23 @@
 
 #pragma once
 
+// Hotfix for VPL build
+#ifndef _MFX_CONFIG_H_
+#define MFX_ENABLE_OPAQUE_MEMORY
+#define MFX_ENABLE_USER_ENCTOOLS
+#define MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+#define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
+#define MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
+#define MFX_ENABLE_SCREEN_CAPTURE
+#endif
+// End of Hotfix for VPL build
+
 #define TYPEDEF_MEMBER(base, member, name) \
     struct name : std::decay<decltype(base::member)>::type {};
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
 TYPEDEF_MEMBER(mfxExtOpaqueSurfaceAlloc,  In,                  mfxExtOpaqueSurfaceAlloc_InOut)
+#endif
 TYPEDEF_MEMBER(mfxExtAVCRefListCtrl,      PreferredRefList[0], mfxExtAVCRefListCtrl_Entry)
 TYPEDEF_MEMBER(mfxExtPictureTimingSEI,    TimeStamp[0],        mfxExtPictureTimingSEI_TimeStamp)
 TYPEDEF_MEMBER(mfxExtAvcTemporalLayers,   Layer[0],            mfxExtAvcTemporalLayers_Layer)
@@ -42,11 +55,14 @@ TYPEDEF_MEMBER(mfxExtDirtyRect,           Rect[0],             mfxExtDirtyRect_E
 TYPEDEF_MEMBER(mfxExtMoveRect,            Rect[0],             mfxExtMoveRect_Entry)
 typedef union { mfxU32 n; char c[4]; } mfx4CC;
 typedef mfxExtAVCRefLists::mfxRefPic mfxExtAVCRefLists_mfxRefPic;
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 typedef mfxExtFeiEncMV::mfxExtFeiEncMVMB mfxExtFeiEncMV_MB;
 typedef mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB mfxExtFeiEncMBCtrl_MB;
 typedef mfxExtFeiPreEncMVPredictors::mfxExtFeiPreEncMVPredictorsMB mfxExtFeiPreEncMVPredictors_MB;
 typedef mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB mfxExtFeiPreEncMV_MB;
 typedef mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB mfxExtFeiPreEncMBStat_MB;
+typedef mfxExtFeiPPS::mfxExtFeiPpsDPB mfxExtFeiPPS_mfxExtFeiPpsDPB;
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 typedef mfxExtEncoderIPCMArea::area mfxExtEncoderIPCMArea_area;
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
@@ -78,7 +94,3 @@ typedef struct {
     mfxU8  MaxBaseQIndex;
 } mfxExtAV1AuxData_QP;
 # endif
-
-#if MFX_VERSION >= 1023
-typedef mfxExtFeiPPS::mfxExtFeiPpsDPB mfxExtFeiPPS_mfxExtFeiPpsDPB;
-#endif // MFX_VERSION >= 1023

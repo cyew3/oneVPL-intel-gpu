@@ -162,7 +162,9 @@ static mfxStatus CheckExtendedBuffers (mfxVideoParam* par)
     mfxU32 supported_buffers[NUM_SUPPORTED_BUFFERS] = {
         MFX_EXTBUFF_CODING_OPTION,
         MFX_EXTBUFF_CODING_OPTION_SPSPPS,
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#endif
         MFX_EXTBUFF_VIDEO_SIGNAL_INFO
     };
     mfxU32 num_supported = 0;
@@ -410,14 +412,18 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
             case 0:
             case MFX_IOPATTERN_IN_VIDEO_MEMORY:
             case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
             case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
+#endif
                 break;
             default:
                 bWarning = true;
                 if (out->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
                     out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
                 else if (in->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
                     out->IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
                 else if (out->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
                     out->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
                 else
@@ -625,8 +631,11 @@ mfxStatus MFXVideoENCODEMPEG2::QueryIOSurf(mfxVideoParam *par_input, mfxFrameAll
         request->NumFrameSuggested = (mfxU16)umcpar.IPDistance;
         request->Type              = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
     }
-    else if (((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))== MFX_IOPATTERN_IN_SYSTEM_MEMORY)||
-        ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY))== MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+    else if (((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))== MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY))== MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+#endif
+        )
     {
         request->Info              =  par->mfx.FrameInfo;
         request->NumFrameMin       = (mfxU16)umcpar.IPDistance;
@@ -635,10 +644,13 @@ mfxStatus MFXVideoENCODEMPEG2::QueryIOSurf(mfxVideoParam *par_input, mfxFrameAll
         request->NumFrameMin       += 2;
         request->NumFrameSuggested += 2;
 #endif
-        if (par->IOPattern  & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
+        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        if (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+            request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
         else
-            request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+            request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
     else
     {
@@ -2052,10 +2064,15 @@ mfxStatus MFXVideoENCODEMPEG2::GetFrame(mfxEncodeInternalParams *pInternalParams
       sts = m_core->IncreaseReference(&pCpy->Data);
       MFX_CHECK_STS(sts);
 
+      bool opaque = false
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+          || (m_IOPattern & MFX_MEMTYPE_OPAQUE_FRAME)
+#endif
+      ;
       sts = m_core->DoFastCopyWrapper(pCpy,
                                       MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
                                       pInp,
-                                      mfxU16((m_IOPattern & MFX_MEMTYPE_OPAQUE_FRAME) ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+                                      static_cast<mfxU16>((opaque ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_DXVA2_DECODER_TARGET));
       MFX_CHECK_STS(sts);
 
       pCpy->Data.FrameOrder = pInp->Data.FrameOrder;

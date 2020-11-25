@@ -22,24 +22,33 @@
 #define __MFX_H264_ENC_COMMON_HW_H__
 
 #include "mfx_common.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxla.h"
+#endif
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
 
 #include <vector>
 #include <assert.h>
 #include <memory>
-#if 0
-#include "vm_file.h"
-#endif
+
 #include "mfx_ext_buffers.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxwidi.h"
+#endif
+
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
 #include "mfxfei.h"
+#endif
+
 #ifdef MFX_ENABLE_ENCTOOLS
 #include "mfxenctools-int.h"
 #else
 #include "mfxbrc.h"
 #endif
+
 #if defined(MFX_VA_WIN)
 #include "encoding_ddi.h"
 #include "auxiliary_device.h"
@@ -53,7 +62,9 @@
 #endif
 
 #include "mfxpcp.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxhdcp.h"
+#endif
 #include "mfxmvc.h"
 
 #include "umc_defs.h"
@@ -132,11 +143,17 @@ namespace MfxHwH264Encode
     static const mfxU16 MFX_FRAMETYPE_xIREF   = MFX_FRAMETYPE_xI | MFX_FRAMETYPE_xREF;
     static const mfxU16 MFX_FRAMETYPE_KEYPIC  = 0x0020;
 
-    static const mfxU16 MFX_IOPATTERN_IN_MASK_SYS_OR_D3D =
-        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY;
+    static const mfxU16 MFX_IOPATTERN_IN_MASK_SYS_OR_D3D = MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        | MFX_IOPATTERN_IN_VIDEO_MEMORY
+#endif
+        ;
 
-    static const mfxU16 MFX_IOPATTERN_IN_MASK =
-        MFX_IOPATTERN_IN_MASK_SYS_OR_D3D | MFX_IOPATTERN_IN_OPAQUE_MEMORY;
+    static const mfxU16 MFX_IOPATTERN_IN_MASK = MFX_IOPATTERN_IN_MASK_SYS_OR_D3D
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        | MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+        ;
 
     // masks for VideoParam.mfx.CodecProfile
     static const mfxU16 MASK_PROFILE_IDC          = (0xff);
@@ -194,7 +211,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSpecialEncodingModes, MFX_EXTBUFF_SPECIAL_MODES            );
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtVideoSignalInfo,      MFX_EXTBUFF_VIDEO_SIGNAL_INFO        );
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,   MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+#endif
 #if defined (MFX_ENABLE_H264_VIDEO_PAK) || defined (MFX_ENABLE_H264_VIDEO_ENC)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAvcMvData,            MFX_CUC_AVC_MV                       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAvcRefFrameParam,     MFX_CUC_AVC_REFFRAME                 );
@@ -223,8 +242,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderResetOption,   MFX_EXTBUFF_ENCODER_RESET_OPTION     );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderCapability,    MFX_EXTBUFF_ENCODER_CAPABILITY       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
+#if !defined(MFX_ONEVPL)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtLAFrameStatistics,    MFX_EXTBUFF_LOOKAHEAD_STAT           );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiParam,             MFX_EXTBUFF_FEI_PARAM                );
+#endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3,        MFX_EXTBUFF_CODING_OPTION3           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBQP,                 MFX_EXTBUFF_MBQP                     );
@@ -233,12 +253,14 @@ namespace MfxHwH264Encode
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtChromaLocInfo,        MFX_EXTBUFF_CHROMA_LOC_INFO          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBDisableSkipMap,     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      );
-#ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
+#if !defined(MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodeCtrl,        MFX_EXTBUFF_AVC_ENCODE_CTRL          );
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPredWeightTable,      MFX_EXTBUFF_PRED_WEIGHT_TABLE        );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtDirtyRect,            MFX_EXTBUFF_DIRTY_RECTANGLES         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMoveRect,             MFX_EXTBUFF_MOVING_RECTANGLES        );
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiParam,             MFX_EXTBUFF_FEI_PARAM                );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiCodingOption,      MFX_EXTBUFF_FEI_CODING_OPTION        );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMV,             MFX_EXTBUFF_FEI_ENC_MV               );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMBStat,         MFX_EXTBUFF_FEI_ENC_MB_STAT          );
@@ -258,6 +280,7 @@ namespace MfxHwH264Encode
 #if (MFX_VERSION >= 1025)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiRepackStat,        MFX_EXTBUFF_FEI_REPACK_STAT          );
 #endif
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtIntGPUHang,           MFX_EXTBUFF_GPU_HANG                 );
 #endif
@@ -681,7 +704,11 @@ namespace MfxHwH264Encode
         mfxExtSpecialEncodingModes  m_extSpecModes;
 #endif
         mfxExtVideoSignalInfo       m_extVideoSignal;
+
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
+#endif
+
         mfxExtMVCSeqDesc            m_extMvcSeqDescr;
         mfxExtPictureTimingSEI      m_extPicTiming;
         mfxExtAvcTemporalLayers     m_extTempLayers;
@@ -691,7 +718,7 @@ namespace MfxHwH264Encode
 #endif
         mfxExtEncoderResetOption    m_extEncResetOpt;
         mfxExtEncoderROI            m_extEncRoi;
-        mfxExtFeiParam              m_extFeiParam;
+
         mfxExtChromaLocInfo         m_extChromaLoc;
         mfxExtPredWeightTable       m_extPwt;
         mfxExtDirtyRect             m_extDirtyRect;
@@ -705,10 +732,13 @@ namespace MfxHwH264Encode
         mfxExtSpsHeader             m_extSps;
         mfxExtPpsHeader             m_extPps;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+        mfxExtFeiParam              m_extFeiParam;
         mfxExtFeiCodingOption       m_extFeiOpt;
         mfxExtFeiSliceHeader        m_extFeiSlice[2];
         mfxExtFeiSPS                m_extFeiSPS;
         mfxExtFeiPPS                m_extFeiPPS;
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 #if defined(__MFXBRC_H__)
         mfxExtBRC                   m_extBRC;
@@ -933,8 +963,10 @@ namespace MfxHwH264Encode
         eMFXGTConfig            config = MFX_GT_UNKNOWN,
         bool                    bInit = false);
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     mfxStatus CheckVideoParamFEI(
         MfxVideoParam &     par);
+#endif
 
     mfxStatus CheckVideoParamQueryLike(
         MfxVideoParam &         par,

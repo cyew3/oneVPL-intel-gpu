@@ -42,7 +42,9 @@ VP9MfxVideoParam::VP9MfxVideoParam()
     Zero(m_layerParam);
     Zero(m_extParam);
     Zero(m_extPar);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     Zero(m_extOpaque);
+#endif
     Zero(m_extOpt2);
     Zero(m_extOpt3);
     Zero(m_extOptDDI);
@@ -83,8 +85,11 @@ VP9MfxVideoParam& VP9MfxVideoParam::operator=(mfxVideoParam const & par)
 
 void VP9MfxVideoParam::CalculateInternalParams()
 {
-    if (IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (m_extOpaque.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    if (    IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (m_extOpaque.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
+        )
     {
         m_inMemType = INPUT_SYSTEM_MEMORY;
     }
@@ -175,7 +180,9 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     Zero(m_extParam);
 
     InitExtBufHeader(m_extPar);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     InitExtBufHeader(m_extOpaque);
+#endif
     InitExtBufHeader(m_extOpt2);
     InitExtBufHeader(m_extOpt3);
     InitExtBufHeader(m_extOptDDI);
@@ -185,8 +192,10 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtVP9Param * opts = GetExtBuffer(par))
         m_extPar = *opts;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
         m_extOpaque = *opts;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     if (mfxExtCodingOption2 * opts = GetExtBuffer(par))
         m_extOpt2 = *opts;
@@ -212,12 +221,14 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     }
 
     m_extParam[0] = &m_extPar.Header;
-    m_extParam[1] = &m_extOpaque.Header;
-    m_extParam[2] = &m_extOpt2.Header;
-    m_extParam[3] = &m_extOpt3.Header;
-    m_extParam[4] = &m_extSeg.Header;
-    m_extParam[5] = &m_extTempLayers.Header;
-    m_extParam[6] = &m_extOptDDI.Header;
+    m_extParam[1] = &m_extOpt2.Header;
+    m_extParam[2] = &m_extOpt3.Header;
+    m_extParam[3] = &m_extSeg.Header;
+    m_extParam[4] = &m_extTempLayers.Header;
+    m_extParam[5] = &m_extOptDDI.Header;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    m_extParam[6] = &m_extOpaque.Header;
+#endif
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
@@ -228,10 +239,11 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 
 bool isVideoSurfInput(mfxVideoParam const & video)
 {
-    mfxExtOpaqueSurfaceAlloc * pOpaq = GetExtBuffer(video);
-
     if (video.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
         return true;
+
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    mfxExtOpaqueSurfaceAlloc * pOpaq = GetExtBuffer(video);
     if (isOpaq(video) && pOpaq)
     {
         if (pOpaq->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
@@ -239,6 +251,8 @@ bool isVideoSurfInput(mfxVideoParam const & video)
             return true;
         }
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+
     return false;
 }
 
@@ -794,11 +808,13 @@ mfxStatus GetRealSurface(
     Task const &task,
     mfxFrameSurface1 *& pSurface)
 {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         pSurface = pCore->GetNativeSurface(task.m_pRawFrame->pSurface);
     }
     else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     {
         pSurface = task.m_pRawFrame->pSurface;
     }
@@ -868,16 +884,23 @@ mfxStatus GetNativeHandleToRawSurface(
 
     mfxU32 iopattern = video.IOPattern;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc& opaq = GetExtBufferRef(video);
     mfxU16 opaq_type = opaq.In.Type;
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
-    if (iopattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (iopattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq_type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    if (    iopattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (iopattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq_type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
+        )
         sts = core.GetFrameHDL(mid, handle);
     else if (iopattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         sts = core.GetExternalFrameHDL(mid, handle);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (iopattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
         sts = core.GetFrameHDL(mid, handle);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 

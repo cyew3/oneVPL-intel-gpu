@@ -27,10 +27,13 @@
 #include "hevce_ddi_main.h"
 #include "mfx_h265_encode_hw_set.h"
 #include "mfx_ext_buffers.h"
-#include "mfxplugin++.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxla.h"
-#include "mfxpcp.h"
 #include "mfxwidi.h"
+#endif //!MFX_ONEVPL
+
+#include "mfxpcp.h"
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
 #include "mfx_lp_lookahead.h"
 #endif
@@ -156,7 +159,13 @@ inline mfxU32 GetAlignmentByPlatform(eMFXHWType platform)
 
 enum
 {
-    MFX_IOPATTERN_IN_MASK = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY,
+    MFX_IOPATTERN_IN_MASK =
+        MFX_IOPATTERN_IN_SYSTEM_MEMORY
+      | MFX_IOPATTERN_IN_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+      | MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+    ,
     MFX_MEMTYPE_D3D_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
     MFX_MEMTYPE_D3D_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME,
     MFX_MEMTYPE_SYS_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY        | MFX_MEMTYPE_EXTERNAL_FRAME,
@@ -457,7 +466,9 @@ namespace ExtBuffer
     const mfxU32 allowed_buffers[] = {
          MFX_EXTBUFF_HEVC_PARAM,
          MFX_EXTBUFF_HEVC_TILES,
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
          MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#endif
 #ifndef MFX_EXT_DPB_HEVC_DISABLE
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
          MFX_EXTBUFF_DPB,
@@ -479,7 +490,9 @@ namespace ExtBuffer
          MFX_EXTBUFF_ENCODER_RESET_OPTION,
          MFX_EXTBUFF_CODING_OPTION_VPS,
          MFX_EXTBUFF_VIDEO_SIGNAL_INFO,
+#if !defined(MFX_ONEVPL)
          MFX_EXTBUFF_LOOKAHEAD_STAT,
+#endif
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
          MFX_EXTBUFF_PAVP_OPTION,
          MFX_EXTBUFF_ENCODER_WIDI_USAGE,
@@ -509,7 +522,9 @@ namespace ExtBuffer
     #define EXTBUF(TYPE, ID) template<> struct ExtBufferMap <TYPE> { enum { Id = ID}; }
         EXTBUF(mfxExtHEVCParam,             MFX_EXTBUFF_HEVC_PARAM);
         EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+#endif
 #ifndef MFX_EXT_DPB_HEVC_DISABLE
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
@@ -530,7 +545,9 @@ namespace ExtBuffer
         EXTBUF(mfxExtCodingOptionVPS,       MFX_EXTBUFF_CODING_OPTION_VPS);
         EXTBUF(mfxExtVideoSignalInfo,       MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
         EXTBUF(mfxExtEncoderCapability,     MFX_EXTBUFF_ENCODER_CAPABILITY);
+#if !defined(MFX_ONEVPL)
         EXTBUF(mfxExtLAFrameStatistics,     MFX_EXTBUFF_LOOKAHEAD_STAT);
+#endif
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         EXTBUF(mfxExtIntGPUHang,            MFX_EXTBUFF_GPU_HANG);
 #endif
@@ -891,7 +908,9 @@ public:
     {
         mfxExtHEVCParam             HEVCParam;
         mfxExtHEVCTiles             HEVCTiles;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         mfxExtOpaqueSurfaceAlloc    Opaque;
+#endif
         mfxExtCodingOption          CO;
         mfxExtCodingOption2         CO2;
         mfxExtCodingOption3         CO3;
@@ -966,7 +985,16 @@ public:
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
     bool isLowDelay() const { return ((m_ext.CO3.PRefType == MFX_P_REF_PYRAMID) && !isTL()); }
     bool isTL()       const { return NumTL() > 1; }
-    bool isSWBRC()    const {return  (IsOn(m_ext.CO2.ExtBRC) && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
+    bool isSWBRC()    const
+    {
+        return
+            (IsOn(m_ext.CO2.ExtBRC) &&
+            (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))
+#if !defined(MFX_ONEVPL)
+            || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+            ;
+    }
     bool isField()    const { return  !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE); }
     bool isBFF()      const { return  ((mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM); }
 

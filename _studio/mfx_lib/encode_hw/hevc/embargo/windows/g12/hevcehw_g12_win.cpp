@@ -65,12 +65,14 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     // because it is supposed to be used for any render target that will get protected output at some point in time
     if (core.GetHWType() == MFX_HW_TGL_LP)
     {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         GetFeature<Base::Protected>(Base::FEATURE_PROTECTED).SetRecFlag(
             MFX_MEMTYPE_FROM_ENCODE
             | MFX_MEMTYPE_DXVA2_DECODER_TARGET
             | MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET
             | MFX_MEMTYPE_INTERNAL_FRAME
             | MFX_MEMTYPE_PROTECTED);
+#endif //!MFX_PROTECTED_FEATURE_DISABLE
     }
 
     TFeatureList newFeatures;

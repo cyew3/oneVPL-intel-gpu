@@ -1,23 +1,67 @@
 # ====================================== mfx_common_hw ======================================
+add_library(mfx_common STATIC)
 
-#make_library( mfx_common hw static )
+target_sources(mfx_common
+  PRIVATE
+    include/mfx_brc_common.h
+    include/mfx_common_int.h
+    include/mfx_common_decode_int.h
+    include/mfx_enc_common.h
+    include/mfx_mpeg2_dec_common.h
+    include/mfx_vc1_dec_common.h
+    include/mfx_vpx_dec_common.h
+
+    src/mfx_brc_common.cpp
+    src/mfx_common_int.cpp
+    src/mfx_common_decode_int.cpp
+    src/mfx_enc_common.cpp
+    src/mfx_mpeg2_dec_common.cpp
+    src/mfx_vc1_dec_common.cpp
+    src/mfx_vpx_dec_common.cpp
+    $<$<NOT:$<BOOL:${MFX_DISABLE_SW_FALLBACK}>>:src/mfx_h264_enc_common.cpp>
+  )
+
+#target_compile_definitions(mfx_common PUBLIC MFX_RT)
+target_include_directories(mfx_common
+  PUBLIC
+    include
+    ${MSDK_UMC_ROOT}/codec/brc/include
+    ${MSDK_UMC_ROOT}/codec/h264_enc/include
+    ${MSDK_UMC_ROOT}/codec/vc1_common/include
+    ${MSDK_UMC_ROOT}/codec/vc1_dec/include
+  )
+
+set(LINKLIBS "")
+
+if (NOT MFX_DISABLE_SW_FALLBACK AND
+    NOT ${API_USE_VPL})
+  set(LINKLIBS h264_enc_sw)
+endif()
+
+target_link_libraries(mfx_common
+  PUBLIC
+    mfx_static_lib
+    umc
+    $<$<NOT:$<BOOL:${MFX_DISABLE_SW_FALLBACK}>>:IPP::msdk>
+    ${LINKLIBS}
+  )
+
+# ====================================== mfx_common_hw ======================================
+
 add_library(mfx_common_hw STATIC)
 
 target_sources(mfx_common_hw
-  PUBLIC
+  PRIVATE
     include/encoder_ddi.hpp
     include/encoding_ddi.h
     include/libmfxsw.h
     include/mediasdk_version.h
-    include/mfx_brc_common.h
     include/mfx_check_hardware_support.h
     include/mfx_common_decode_int.h
     include/mfx_common_int.h
     include/mfx_critical_error_handler.h
     include/mfx_ddi_enc_dump.h
-    include/mfx_enc_common.h
     include/mfx_frames.h
-    include/mfx_h264_enc_common.h
     include/mfx_h264_enc_common_hw.h
     include/mfx_h264_encode_d3d11.h
     include/mfx_h264_encode_d3d9.h
@@ -28,7 +72,6 @@ target_sources(mfx_common_hw
     include/mfx_interface.h
     include/mfx_interface_scheduler.h
     include/mfx_log.h
-    include/mfx_mpeg2_dec_common.h
     include/mfx_mpeg2_enc_common.h
     include/mfx_mpeg2_enc_common_hw.h
     include/mfx_mpeg2_encode_d3d11.h
@@ -45,15 +88,8 @@ target_sources(mfx_common_hw
     include/mfx_tools.h
     include/mfx_user_plugin.h
     include/mfx_vc1_dec_common.h
-    include/mfx_vpx_dec_common.h
     include/mfx_win_event_cache.h
 
-    src/mfx_brc_common.cpp
-    src/mfx_common_decode_int.cpp
-    src/mfx_common_int.cpp
-    src/mfx_enc_common.cpp
-    src/mfx_mpeg2_dec_common.cpp
-    src/mfx_vc1_dec_common.cpp
     src/mfx_critical_error_handler.cpp
     src/mfx_ddi_enc_dump.cpp
     src/mfx_h264_enc_common_hw.cpp
@@ -69,7 +105,6 @@ target_sources(mfx_common_hw
     src/mfx_mpeg2_encode_factory.cpp
     src/mfx_mpeg2_encode_d3d_common.cpp
     src/mfx_mpeg2_enc_common_hw.cpp
-    src/mfx_vpx_dec_common.cpp
     src/mfx_win_event_cache.cpp
   )
 
@@ -81,15 +116,12 @@ target_include_directories(mfx_common_hw
     ${MSDK_LIB_ROOT}/cmrt_cross_platform/include
     ${MSDK_LIB_ROOT}/encode_hw/h264/include
     ${MSDK_UMC_ROOT}/codec/brc/include
-    ${MSDK_UMC_ROOT}/codec/vc1_common/include
-    ${MSDK_UMC_ROOT}/codec/vc1_dec/include
-    ${MSDK_UMC_ROOT}/codec/h264_enc/include
     ${MSDK_STUDIO_ROOT}/shared/asc/include
   )
 
-target_link_libraries(mfx_common_hw 
+target_link_libraries(mfx_common_hw
   PUBLIC
-    mfx_static_lib
+    mfx_common
     umc_va_hw
     mctf_hw
   PRIVATE

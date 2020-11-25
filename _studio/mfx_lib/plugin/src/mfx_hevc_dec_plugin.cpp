@@ -103,7 +103,7 @@ mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin*
 
     return MFX_ERR_NONE;
 }
-#else
+#elif !defined(MFX_ONEVPL)
 mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
 {
     if (guid != g_HEVCDecoderGuid) {
@@ -115,5 +115,10 @@ mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin*
     mfxPlg->GetPluginParam = _GetPluginParam;
 
     return MFX_ERR_NONE;
+}
+#else
+mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID /*guid*/, mfxPlugin* /*mfxPlg*/)
+{
+    return MFX_ERR_UNSUPPORTED;
 }
 #endif

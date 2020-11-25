@@ -37,6 +37,7 @@
 #include "umc_h264_brc.h"
 #include "mfx_enc_common.h"
 #include "umc_h264_common.h"
+
 #ifdef MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
 #include "mfxfei.h"
 #endif
@@ -1433,10 +1434,13 @@ bool MfxHwH264Encode::IsCmNeededForSCD(
     bool useCm = false;
 #if (MFX_VERSION >= 1026)
     // If frame in Sys memory then Cm is not needed
+    useCm = !(video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(video);
-    useCm = !(video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)));
+    useCm = useCm && !(video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY));
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 #endif
+
     return useCm;
 }
 
@@ -1957,7 +1961,9 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #endif
         || id == MFX_EXTBUFF_MVC_SEQ_DESC
         || id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+#endif
         || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
         || id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS
         || id == MFX_EXTBUFF_CODING_OPTION2
@@ -1973,8 +1979,8 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
         || id == MFX_EXTBUFF_DIRTY_RECTANGLES
         || id == MFX_EXTBUFF_MOVING_RECTANGLES
-        || id == MFX_EXTBUFF_FEI_CODING_OPTION
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+        || id == MFX_EXTBUFF_FEI_CODING_OPTION
         || id == MFX_EXTBUFF_FEI_PARAM
         || id == MFX_EXTBUFF_FEI_SLICE
         || id == MFX_EXTBUFF_FEI_SPS
@@ -2251,9 +2257,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         MFX_CHECK(setExtAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
-    MFX_CHECK(
-        ((par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY) || (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) ||(par.Protected == 0)),
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           (par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+        ;
+
+    MFX_CHECK(supportedMemoryType || (par.Protected == 0), MFX_ERR_INVALID_VIDEO_PARAM);
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
@@ -2278,6 +2289,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
         checkSts = sts;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(par);
@@ -2286,9 +2298,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 
         MFX_CHECK(extOpaq.In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     sts = CheckVideoParamFEI(par);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
@@ -2302,6 +2317,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     return checkSts;
 }
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
     MfxVideoParam &     par)
 {
@@ -2388,6 +2404,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamFEI(
 
     return checkSts;
 }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+
 /*
  * utils for debug purposes
  */
@@ -2562,7 +2580,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtDirtyRect  *         extDirtyRect = GetExtBuffer(par);
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
+#endif
 #if defined(MFX_ENABLE_ENCTOOLS)
     mfxExtEncToolsConfig *     extConfig    = GetExtBuffer(par);
 #endif
@@ -2575,9 +2595,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtGameStreaming*       extGameStreaming = GetExtBuffer(par);
 #endif
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_ENC)    ||
                     (feiParam->Func == MFX_FEI_FUNCTION_PAK);
+#endif
+
     bool sliceRowAlligned = true;
 
     // check HW capabilities
@@ -2604,7 +2627,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #if defined(LOWPOWERENCODE_AVC)
     if (IsOn(par.mfx.LowPower))
     {
-#if defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
+#if !defined(STRIP_EMBARGO) && defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
         // Gen12HP VDEnc supports B frames
         if (par.mfx.GopRefDist > 1 && platform < MFX_HW_TGL_HP)
 #else
@@ -2723,9 +2746,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             par.IOPattern &= MFX_IOPATTERN_IN_MASK;
         }
 
-        if (par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY  &&
-            par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY &&
-            par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        if (   par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY
+            && par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            && par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+            )
         {
             changed = true;
             par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
@@ -2770,11 +2796,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     }
+
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if ((isENCPAK) && (MFX_RATECONTROL_CQP != par.mfx.RateControlMethod))
         unsupported = true;
 
     if ((isENCPAK) && !CheckTriStateOption(feiParam->SingleFieldProcessing))
         unsupported = true;
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     if(MFX_HW_VAAPI == vaType &&
        par.mfx.RateControlMethod != 0 &&
@@ -3536,6 +3565,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if ((isENCPAK || vaType != MFX_HW_VAAPI)
         && (IsOn(extOpt3->DirectBiasAdjustment) || IsOn(extOpt3->GlobalMotionBiasAdjustment)))
     {
@@ -3543,6 +3573,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt3->DirectBiasAdjustment       = MFX_CODINGOPTION_OFF;
         extOpt3->GlobalMotionBiasAdjustment = MFX_CODINGOPTION_OFF;
     }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     if (!CheckRangeDflt(extOpt3->MVCostScalingFactor, 0, 3, 0)) changed = true;
 
@@ -4932,7 +4963,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         {
 // On linux, WP is FEI specific feature. So when legay encoder calls Query(), do not
 // enable the flag of this capability.
-#if defined (MFX_VA_LINUX)
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
             if (isENCPAK)
             {
 #endif
@@ -4946,7 +4977,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 maxChroma[0] = std::min<mfxU16>(hwCaps.ddi_caps.MaxNum_WeightedPredL0, 32);
                 maxChroma[1] = std::min<mfxU16>(hwCaps.ddi_caps.MaxNum_WeightedPredL1, 32);
             }
-#if defined (MFX_VA_LINUX)
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
             }
 #endif
         }
@@ -5005,10 +5036,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
          par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR);
 
     bool slidingWindowSupported  =
-            par.mfx.RateControlMethod == MFX_RATECONTROL_LA  ||
-            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
-            par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ||
-            (mfxRateControlHwSupport && !IsOn(extOpt2->ExtBRC));
+            par.mfx.RateControlMethod == MFX_RATECONTROL_LA
+        ||  par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+#if !defined(MFX_ONEVPL)
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        || (mfxRateControlHwSupport && !IsOn(extOpt2->ExtBRC));
 
      if (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize)
      {
@@ -5227,24 +5260,28 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (!CheckTriStateOption(extOpt3->FadeDetection)) changed = true;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if (isENCPAK && (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && IsOn(feiParam->SingleFieldProcessing))
     {
         feiParam->SingleFieldProcessing = MFX_CODINGOPTION_OFF;
         changed = true;
     }
-
     if (isENCPAK && IsOn(feiParam->SingleFieldProcessing) && !par.mfx.EncodedOrder)
     {
         feiParam->SingleFieldProcessing = MFX_CODINGOPTION_OFF;
         unsupported = true;
     }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 #if defined (MFX_VA_LINUX)
     // disable WP for legacy encoder on linux
-    if ((!isENCPAK)
-        && (extOpt3->WeightedPred   == MFX_WEIGHTED_PRED_EXPLICIT ||
-            extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT ||
-            extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_IMPLICIT))
+    if (
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+        (!isENCPAK) &&
+#endif
+        (extOpt3->WeightedPred   == MFX_WEIGHTED_PRED_EXPLICIT ||
+         extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT ||
+         extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_IMPLICIT))
     {
         extOpt3->WeightedPred   = MFX_WEIGHTED_PRED_DEFAULT;
         extOpt3->WeightedBiPred = MFX_WEIGHTED_PRED_DEFAULT;
@@ -5252,12 +5289,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 #endif
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if ((isENCPAK) && (extOpt3->FadeDetection  == MFX_CODINGOPTION_ON))
     {
         // FD is not supported for FEI
         extOpt3->FadeDetection = MFX_CODINGOPTION_OFF;
         unsupported = true;
     }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 #ifdef MFX_ENABLE_MFE
     //ToDo: move to separate function
@@ -6013,7 +6052,6 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
 #endif
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
-    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
 #if defined(MFX_ENABLE_MFE)
     mfxExtMultiFrameParam* mfeParam = GetExtBuffer(par);
     mfxExtMultiFrameControl* mfeControl = GetExtBuffer(par);
@@ -6028,12 +6066,15 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtEncToolsConfig *extConfig = GetExtBuffer(par);
 #endif
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_ENC) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_PAK);
 
     bool isPAK      = feiParam->Func == MFX_FEI_FUNCTION_PAK;
     bool isENCorPAK = feiParam->Func == MFX_FEI_FUNCTION_ENC || isPAK;
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     if (extOpt2->UseRawRef)
         extDdi->RefRaw = extOpt2->UseRawRef;
@@ -6204,12 +6245,19 @@ void MfxHwH264Encode::SetDefaults(
                 par.mfx.GopRefDist = par.mfx.GopPicSize;
         }
 
+#if !defined(MFX_ONEVPL)
         if (par.mfx.RateControlMethod & MFX_RATECONTROL_LA_EXT)
         {
             par.mfx.GopRefDist = 3;
         }
+#endif //!MFX_ONEVPL
     }
-    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
+    if (  (par.mfx.RateControlMethod == MFX_RATECONTROL_LA
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+#if !defined(MFX_ONEVPL)
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        ) && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
     {
         if (!extOpt3->WinBRCMaxAvgKbps)
         {
@@ -6230,6 +6278,7 @@ void MfxHwH264Encode::SetDefaults(
     }
     if (extDdi->NumActiveRefP == 0)
     {
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
         if (isENCPAK)
         {
             // FEI has it's own limits
@@ -6241,6 +6290,7 @@ void MfxHwH264Encode::SetDefaults(
             }
         }
         else
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         {
             mfxU16 maxNumActivePL0 = GetMaxNumRefActivePL0(par.mfx.TargetUsage, platform, IsOn(par.mfx.LowPower), par.mfx.FrameInfo);
             extDdi->NumActiveRefP = extOpt3->NumRefActiveP[0] ? std::min(maxNumActivePL0, extOpt3->NumRefActiveP[0]) : maxNumActivePL0;
@@ -6251,6 +6301,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (extDdi->NumActiveRefBL0 == 0)
         {
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
             if (isENCPAK)
             {
                 // FEI has it's own limits
@@ -6262,6 +6313,7 @@ void MfxHwH264Encode::SetDefaults(
                 }
             }
             else
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
             {
                 mfxU16 maxNumActiveBL0 = GetMaxNumRefActiveBL0(par.mfx.TargetUsage, platform, IsOn(par.mfx.LowPower));
                 extDdi->NumActiveRefBL0 = extOpt3->NumRefActiveBL0[0] ? std::min(maxNumActiveBL0, extOpt3->NumRefActiveBL0[0]) : maxNumActiveBL0;
@@ -6270,6 +6322,7 @@ void MfxHwH264Encode::SetDefaults(
 
         if (extDdi->NumActiveRefBL1 == 0)
         {
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
             if (isENCPAK)
             {
                 // FEI has it's own limits
@@ -6282,6 +6335,7 @@ void MfxHwH264Encode::SetDefaults(
                 }
             }
             else
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
             {
                 mfxU16 maxNumActiveBL1 = GetMaxNumRefActiveBL1(par.mfx.TargetUsage, platform, par.mfx.FrameInfo.PicStruct, IsOn(par.mfx.LowPower));
                 extDdi->NumActiveRefBL1 = extOpt3->NumRefActiveBL1[0] ? std::min(maxNumActiveBL1, extOpt3->NumRefActiveBL1[0]) : maxNumActiveBL1;
@@ -6370,11 +6424,13 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt->EndOfStream == MFX_CODINGOPTION_UNKNOWN)
         extOpt->EndOfStream = MFX_CODINGOPTION_OFF;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if (isENCorPAK)
     {
         SetDefaultOff(extOpt->PicTimingSEI);
     }
     else
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
     {
         SetDefaultOn(extOpt->PicTimingSEI);
     }
@@ -6606,7 +6662,10 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt2->BufferingPeriodSEI == MFX_BPSEI_DEFAULT
         && IsOn(extOpt->RecoveryPointSEI)
         && extOpt2->IntRefType == 0
-        && !isENCorPAK)
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+        && !isENCorPAK
+#endif
+        )
     {
         extOpt2->BufferingPeriodSEI = MFX_BPSEI_IFRAME;
     }
@@ -6981,8 +7040,10 @@ void MfxHwH264Encode::SetDefaults(
         case MFX_RATECONTROL_ICQ:
         case MFX_RATECONTROL_LA_ICQ:
             break;
+#if !defined(MFX_ONEVPL)
         case MFX_RATECONTROL_LA_EXT:
             break;
+#endif //MFX_ONEVPL
         default:
             assert(0);
             break;
@@ -7370,8 +7431,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     MFX_CHECK_NULL_PTR3(ctrl, surface, bs);
     mfxStatus checkSts = MFX_ERR_NONE;
 
+#if !defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+    bool single_field_mode = false;
+#else
     mfxExtFeiParam const & feiParam = GetExtBufferRef(video);
     bool single_field_mode = IsOn(feiParam.SingleFieldProcessing);
+#endif //!MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     for (mfxU32 i = 0; i < bs->NumExtParam; i++)
     {
@@ -7439,6 +7504,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     mfxU16 PicStruct = (video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN) ? video.mfx.FrameInfo.PicStruct : surface->Info.PicStruct;
     mfxU16 NumFields = (PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if (feiParam.Func == MFX_FEI_FUNCTION_ENCODE)
     {
         for (mfxU16 fieldId = 0; fieldId < NumFields; fieldId++)
@@ -7480,6 +7546,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
             }
         }
     }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     {
         mfxStatus sts = CheckFEIRunTimeExtBuffersContent(video, ctrl, surface, bs);
@@ -8032,8 +8099,8 @@ mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
     mfxFrameData const & src,
     mfxFrameInfo const & info)
 {
-    mfxFrameSurface1 surfSrc = { {0,}, info, src };
-    mfxFrameSurface1 surfDst = { {0,}, info, dst };
+    mfxFrameSurface1 surfSrc = MakeSurface(info, src);
+    mfxFrameSurface1 surfDst = MakeSurface(info, dst);
     return core->DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
 }
 
@@ -8621,7 +8688,9 @@ MfxVideoParam::MfxVideoParam()
     , m_extSpecModes()
 #endif
     , m_extVideoSignal()
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     , m_extOpaque()
+#endif
     , m_extMvcSeqDescr()
     , m_extPicTiming()
     , m_extTempLayers()
@@ -8631,7 +8700,6 @@ MfxVideoParam::MfxVideoParam()
 #endif
     , m_extEncResetOpt()
     , m_extEncRoi()
-    , m_extFeiParam()
     , m_extChromaLoc()
     , m_extPwt()
     , m_extDirtyRect()
@@ -8642,9 +8710,12 @@ MfxVideoParam::MfxVideoParam()
 #endif
     , m_extSps()
     , m_extPps()
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+    , m_extFeiParam()
     , m_extFeiOpt()
     , m_extFeiSPS()
     , m_extFeiPPS()
+#endif
 #if defined(__MFXBRC_H__)
     , m_extBRC()
 #if defined(MFX_ENABLE_ENCTOOLS)
@@ -8668,7 +8739,9 @@ MfxVideoParam::MfxVideoParam()
 #endif
 {
     memset(m_extParam, 0, sizeof(m_extParam));
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     memset(m_extFeiSlice, 0, sizeof(m_extFeiSlice));
+#endif
 }
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
@@ -8737,9 +8810,12 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     {
         calcParam.bufferSizeInKB = calcParam.initialDelayInKB = calcParam.maxKbps = 0;
     }
-    if (mfx.RateControlMethod == MFX_RATECONTROL_LA ||
-        mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
-        mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    if (   mfx.RateControlMethod == MFX_RATECONTROL_LA
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        )
         calcParam.WinBRCMaxAvgKbps = m_extOpt3.WinBRCMaxAvgKbps * multiplier;
 
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
@@ -8872,9 +8948,12 @@ void MfxVideoParam::SyncCalculableToVideoParam()
             mfx.MaxKbps          = mfxU16(calcParam.maxKbps / mfx.BRCParamMultiplier);
         }
     }
-    if (mfx.RateControlMethod == MFX_RATECONTROL_LA ||
-        mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
-        mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    if (   mfx.RateControlMethod == MFX_RATECONTROL_LA
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        )
         m_extOpt3.WinBRCMaxAvgKbps = mfxU16(calcParam.WinBRCMaxAvgKbps / mfx.BRCParamMultiplier);
 }
 
@@ -8926,8 +9005,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtSpecialEncodingModes, m_extSpecModes);
 #endif
     CONSTRUCT_EXT_BUFFER(mfxExtVideoSignalInfo,      m_extVideoSignal);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     CONSTRUCT_EXT_BUFFER(mfxExtOpaqueSurfaceAlloc,   m_extOpaque);
-
+#endif
     // perform deep copy of the mfxExtMVCSeqDesc buffer
     InitExtBufHeader(m_extMvcSeqDescr);
     if (mfxExtMVCSeqDesc * buffer = GetExtBuffer(par))
@@ -8951,15 +9031,17 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtEncoderROI,           m_extEncRoi);
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption3,        m_extOpt3);
     CONSTRUCT_EXT_BUFFER(mfxExtChromaLocInfo,        m_extChromaLoc);
-    CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,             m_extFeiParam);
     CONSTRUCT_EXT_BUFFER(mfxExtPredWeightTable,      m_extPwt);
     CONSTRUCT_EXT_BUFFER(mfxExtDirtyRect,            m_extDirtyRect);
     CONSTRUCT_EXT_BUFFER(mfxExtMoveRect,             m_extMoveRect);
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+    CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,             m_extFeiParam);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiCodingOption,      m_extFeiOpt);
     CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,    m_extFeiSlice, 0);
     CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,    m_extFeiSlice, 1);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiSPS,               m_extFeiSPS);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiPPS,               m_extFeiPPS);
+#endif
 
 #if defined(__MFXBRC_H__)
     CONSTRUCT_EXT_BUFFER(mfxExtBRC,                  m_extBRC);

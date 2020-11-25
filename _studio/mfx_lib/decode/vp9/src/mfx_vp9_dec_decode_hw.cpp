@@ -22,7 +22,6 @@
 
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
 
-#include "mfx_session.h"
 #include "mfx_vp9_dec_decode.h"
 #include "mfx_vp9_dec_decode_hw.h"
 
@@ -412,7 +411,9 @@ VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
       m_Packer(),
       m_request(),
       m_response(),
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
       m_OpaqAlloc(),
+#endif
       m_stat(),
       m_va(nullptr),
       m_completedList(),
@@ -530,9 +531,13 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
        MFX_CHECK(is_fourcc_supported,MFX_ERR_UNSUPPORTED);
     }
 #endif
-    m_vInitPar.IOPattern = (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+    m_vInitPar.IOPattern = (
+           m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
         | (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-        | (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        | (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+        ;
 
     if (0 == m_vInitPar.mfx.FrameInfo.FrameRateExtN || 0 == m_vInitPar.mfx.FrameInfo.FrameRateExtD)
     {
@@ -557,6 +562,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     sts = MFX_VPX_Utility::QueryIOSurfInternal(&m_vInitPar, &m_request);
     MFX_CHECK_STS(sts);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc*)
@@ -580,6 +586,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
             pOpaqAlloc->Out.Surfaces, pOpaqAlloc->Out.NumSurface);
     }
     else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     {
         m_request.AllocId = par->AllocId;
         sts = m_core->AllocFrames(&m_request, &m_response, false);
@@ -655,6 +662,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
 
     MFX_CHECK(IsSameVideoParam(par, &m_vInitPar), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc*)
         GetExtendedBuffer(
             par->ExtParam, par->NumExtParam,
@@ -665,6 +673,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
         MFX_CHECK(m_is_opaque_memory, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(m_request.NumFrameMin == pOpaqAlloc->Out.NumSurface, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     }
+#endif
 
     MFX_CHECK(m_platform == m_core->GetPlatformType(), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
@@ -718,7 +727,9 @@ mfxStatus VideoDECODEVP9_HW::Close()
 
     memset(&m_request, 0, sizeof(m_request));
     memset(&m_response, 0, sizeof(m_response));
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     memset(&m_OpaqAlloc, 0, sizeof(m_OpaqAlloc));
+#endif
     memset(&m_stat, 0, sizeof(m_stat));
 
     return MFX_ERR_NONE;
@@ -851,17 +862,22 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     const mfxVideoParam p_params = *p_video_param;
 
-    MFX_CHECK(
-        p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY ||
-        p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY ||
-        p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY,
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           (p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        || (p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+        ;
+
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(!(
         p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY &&
         p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
         MFX_ERR_INVALID_VIDEO_PARAM);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     MFX_CHECK(!(
         p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY &&
         p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
@@ -871,6 +887,7 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY &&
         p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
         MFX_ERR_INVALID_VIDEO_PARAM);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     if (p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
@@ -884,11 +901,13 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         sts = MFX_VPX_Utility::QueryIOSurfInternal(p_video_param, p_request);
     }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         p_request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
     }
     else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     {
         p_request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
@@ -1024,12 +1043,15 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         MFX_CHECK(surfaceSrc, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         bool systemMemory = (decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) != 0;
+#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
+        bool opaqMemory = false;
+#else
         bool opaqMemory = (decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) != 0;
+#endif
         mfxU16 srcMemType = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
         srcMemType |= (systemMemory || opaqMemory) ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
         mfxU16 dstMemType = opaqMemory ? (mfxU16) MFX_MEMTYPE_INTERNAL_FRAME : (mfxU16) MFX_MEMTYPE_EXTERNAL_FRAME;
         dstMemType |= systemMemory ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-
         mfxStatus sts = MFX_ERR_NONE;
         {
             UMC::AutomaticUMCMutex guardCopy(decoder.m_mCopyGuard[data.copyFromFrame]);

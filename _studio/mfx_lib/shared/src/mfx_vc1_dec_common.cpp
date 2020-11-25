@@ -118,12 +118,20 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
                 break;
             }
 
-            if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ||
-                (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+            if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+                || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+                || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+                )
             {
                 Ipp32u mask = in->IOPattern & 0xf0;
-                if ((mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY) ||
-                    (mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+                if ((mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+                    || (mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+                    || (mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+                    )
                     out->IOPattern = in->IOPattern;
                 else
                     sts = MFX_ERR_UNSUPPORTED;
@@ -246,9 +254,12 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
         if (in->mfx.NumThread)
             out->mfx.NumThread = in->mfx.NumThread;
 
-        if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) ||
-            (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ||
-            (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+            || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+            )
             out->IOPattern = in->IOPattern;
         else if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
             out->IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;

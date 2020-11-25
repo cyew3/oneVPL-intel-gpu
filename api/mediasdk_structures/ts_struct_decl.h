@@ -384,6 +384,7 @@ STRUCT(mfxExtVPPDoUse,
     FIELD_T(mfxU32*, AlgList)
 )
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY) || !defined(_MFX_CONFIG_H_)
 STRUCT(mfxExtOpaqueSurfaceAlloc_InOut,
     FIELD_T(mfxFrameSurface1 ** , Surfaces  )
     FIELD_T(mfxU16              , Type      )
@@ -395,6 +396,7 @@ STRUCT(mfxExtOpaqueSurfaceAlloc,
     FIELD_S(mfxExtOpaqueSurfaceAlloc_InOut, In)
     FIELD_S(mfxExtOpaqueSurfaceAlloc_InOut, Out)
 )
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
 STRUCT(mfxExtAVCRefListCtrl_Entry,
     FIELD_T(mfxU32, FrameOrder  )
@@ -557,10 +559,13 @@ STRUCT(mfxExtVP8CodingOption,
     FIELD_T(mfxU16, LoopFilterType)
 )
 
+#if !defined(MFX_ONEVPL)
 STRUCT(mfxPluginUID,
     FIELD_T(mfxU8, Data)
 )
+#endif //!MFX_ONEVPL
 
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE) || !defined(_MFX_CONFIG_H_)
 STRUCT(mfxExtFeiParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxFeiFunction, Func)
@@ -727,7 +732,9 @@ STRUCT(mfxExtFeiRepackCtrl,
     FIELD_T(mfxU32,  MaxFrameSize)
     FIELD_T(mfxU32,  NumPasses)
 )
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
+#if defined (MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT) || !defined(_MFX_CONFIG_H_)
 STRUCT(mfxExtFeiDecStreamOut,
     FIELD_S(mfxExtBuffer,    Header)
     FIELD_T(mfxU32,  NumMBAlloc)
@@ -735,8 +742,9 @@ STRUCT(mfxExtFeiDecStreamOut,
     FIELD_T(mfxU16,  PicStruct)
     FIELD_T(mfxFeiDecStreamOutMBCtrl*, MB)
 )
+#endif //MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
 
-#if (MFX_VERSION >= 1027)
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE) || !defined(_MFX_CONFIG_H_)
 STRUCT(mfxExtFeiHevcEncFrameCtrl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16,       SearchPath)
@@ -777,8 +785,9 @@ STRUCT(mfxExtFeiHevcEncQP,
     FIELD_T(mfxU32,       Height)
     FIELD_T(mfxU8*,       Data)
 )
-#endif
+#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
 
+#if !defined(MFX_ONEVPL)
 STRUCT(mfxExtCamGammaCorrection,
     FIELD_S(mfxExtBuffer, Header         )
     FIELD_T(mfxU16,       Mode           )
@@ -864,6 +873,7 @@ STRUCT(mfxExtCamPipeControl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, RawFormat   )
 )
+#endif //!MFX_ONEVPL
 
 STRUCT(mfxExtAVCRefLists_mfxRefPic,
     FIELD_T(mfxU32, FrameOrder)
@@ -1076,6 +1086,7 @@ STRUCT(mfxExtCodingOption3,
 )
 #endif
 
+#if !defined(MFX_ONEVPL)
 STRUCT(mfxExtLAControl,
     FIELD_S(mfxExtBuffer, Header       )
     FIELD_T(mfxU16      , LookAheadDepth)
@@ -1093,6 +1104,7 @@ STRUCT(mfxExtLAFrameStatistics,
     FIELD_T(mfxLAFrameInfo  *, FrameStat)
     FIELD_T(mfxFrameSurface1*, OutSurface)
 )
+#endif //!MFX_ONEVPL
 
 STRUCT(mfxQPandMode,
     FIELD_T(mfxU8,  QP)
@@ -1132,7 +1144,7 @@ STRUCT(mfxExtChromaLocInfo,
     FIELD_T(mfxU16      , ChromaSampleLocTypeBottomField)
 )
 
-#if !defined(OPEN_SOURCE)
+#if !defined(MFX_ONEVPL) && !defined(OPEN_SOURCE)
 STRUCT(mfxExtFEIH265Param,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32      , MaxCUSize)
@@ -1151,7 +1163,7 @@ STRUCT(mfxExtFEIH265Output,
     FIELD_S(mfxExtBuffer      , Header)
     FIELD_T(mfxFEIH265Output* , feiOut)
 )
-#endif
+#endif //!MFX_ONEVPL && !OPEN_SOURCE
 
 STRUCT(mfxExtDecodedFrameInfo,
     FIELD_S(mfxExtBuffer, Header)
@@ -1213,12 +1225,14 @@ STRUCT(mfxExtVPPMirroring,
     FIELD_T(mfxU16      , Type)
 )
 
+#if defined(MFX_ENABLE_SCREEN_CAPTURE) || !defined(_MFX_CONFIG_H_)
 STRUCT(mfxExtScreenCaptureParam,
     FIELD_S(mfxExtBuffer, Header             )
     FIELD_T(mfxU32      , DisplayIndex       )
     FIELD_T(mfxU16      , EnableDirtyRect    )
     FIELD_T(mfxU16      , EnableCursorCapture)
 )
+#endif //MFX_ENABLE_SCREEN_CAPTURE
 
 STRUCT(mfxExtDirtyRect_Entry,
     FIELD_T(mfxU32, Left    )
@@ -1471,6 +1485,7 @@ STRUCT(mfxBRCFrameStatus,
 
 #endif // defined(__MFXBRC_H__)
 
+#if defined(MFX_ENABLE_MFE)
 STRUCT(mfxExtMultiFrameParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16      , MFMode)
@@ -1482,6 +1497,7 @@ STRUCT(mfxExtMultiFrameControl,
     FIELD_T(mfxU32      , Timeout)
     FIELD_T(mfxU16      , Flush)
 )
+#endif //MFX_ENABLE_MFE
 
 STRUCT(mfxEncodedUnitInfo,
     FIELD_T(mfxU16, Type)
@@ -1708,7 +1724,7 @@ STRUCT(mfxExtAV1LargeScaleTileParam,
 )
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_USER_ENCTOOLS) || !defined(_MFX_CONFIG_H_)
 STRUCT(mfxExtEncToolsConfig,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_S(mfxStructVersion,  Version)

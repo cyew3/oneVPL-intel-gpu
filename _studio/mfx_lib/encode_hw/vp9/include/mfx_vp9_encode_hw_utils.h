@@ -91,7 +91,11 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK_SYS_OR_D3D =
     MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
 static const mfxU16 MFX_IOPATTERN_IN_MASK =
-    MFX_IOPATTERN_IN_MASK_SYS_OR_D3D | MFX_IOPATTERN_IN_OPAQUE_MEMORY;
+      MFX_IOPATTERN_IN_MASK_SYS_OR_D3D
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    | MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+    ;
 
 static const mfxU16 MFX_MEMTYPE_SYS_OR_D3D =
 MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_SYSTEM_MEMORY;
@@ -278,7 +282,9 @@ enum // identifies memory type at encoder input w/o any details
 
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
     BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9Param,  MFX_EXTBUFF_VP9_PARAM);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+#endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3, MFX_EXTBUFF_CODING_OPTION3);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
@@ -551,7 +557,9 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
     private:
         mfxExtBuffer *              m_extParam[NUM_OF_SUPPORTED_EXT_BUFFERS];
         mfxExtVP9Param              m_extPar;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
+#endif
         mfxExtCodingOption2         m_extOpt2;
         mfxExtCodingOption3         m_extOpt3;
         mfxExtCodingOptionDDI       m_extOptDDI;
@@ -624,10 +632,12 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 
     bool isVideoSurfInput(mfxVideoParam const & video);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     inline bool isOpaq(mfxVideoParam const & video)
     {
         return (video.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)!=0;
     }
+#endif
 
     inline mfxU32 CalcNumTasks(mfxVideoParam const & video)
     {

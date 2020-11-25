@@ -10,6 +10,10 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 #pragma once
 
+#ifdef MFX_HAVE_EXTERNAL_CONFIG
+    #include "mfxconfig.h"
+#endif
+
 #include "mfxvideo.h"
 #include "mfxvp8.h"
 #include "mfxvp9.h"
@@ -114,10 +118,12 @@ public:
     tsTrace& operator << (const mfxExtMoveRect& p);
     tsTrace& operator << (const mfxExtDirtyRect_Entry& p);
     tsTrace& operator << (const mfxExtMoveRect_Entry& p);
+#if !defined(MFX_ONEVPL)
     tsTrace& operator << (const mfxExtCamGammaCorrection& p);
     tsTrace& operator << (const mfxExtCamTotalColorControl& p);
     tsTrace& operator << (const mfxExtCamCscYuvRgb& p);
     tsTrace& operator << (const mfxExtCamVignetteCorrection& p);
+#endif //!MFX_ONEVPL
     tsTrace& operator << (const mfxInfoMFX& p);
     tsTrace& operator << (const mfxPluginUID& p);
     tsTrace& operator << (const mfxFrameData& p);
@@ -133,7 +139,9 @@ public:
     tsTrace& operator << (const BSErr& p){
         return operator<<(const_cast<BSErr&>(p));
     }
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     tsTrace& operator << (const mfxExtFeiEncMV& p);
+#endif
 
     template<typename T> tsTrace& operator << (T& p) { (tsAutoTrace&)*this << p; return *this; }
     template<typename T> tsTrace& operator << (T* p) { (tsAutoTrace&)*this << p; return *this; }

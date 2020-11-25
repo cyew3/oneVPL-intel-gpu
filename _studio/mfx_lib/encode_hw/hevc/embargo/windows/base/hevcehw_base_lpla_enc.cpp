@@ -119,6 +119,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             return MFX_ERR_NONE;
         });
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         // Update LPLA realted picture params.
         ddiCC.UpdateLPLAEncPPS.Push([this](
             TCC::TUpdateLPLAEncPPS::TExt
@@ -132,16 +133,21 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             if (task.LplaStatus.TargetFrameSize > 0)
             {
                 pps.TargetFrameSize = task.LplaStatus.TargetFrameSize;
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 pps.QpModulationStrength = task.LplaStatus.QpModulation;
+#endif
             }
             else
             {
                 pps.TargetFrameSize = 0;
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 pps.QpModulationStrength = 0;
+#endif
             }
 
             return MFX_ERR_NONE;
         });
+#endif //MFX_ENABLE_LP_LOOKAHEAD
 
         // Check when it is needed to pack cqm PPS to driver.
         ddiCC.PackCqmPPS.Push([this](

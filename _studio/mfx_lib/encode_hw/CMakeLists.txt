@@ -1,6 +1,3 @@
-list(APPEND include_dirs
-  )
-
 set( sources
     h264/include/mfx_h264_encode_cm.h
     h264/include/mfx_h264_encode_cm_defs.h
@@ -204,7 +201,6 @@ set( sources
     ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_vaapi.h
 
     ${MSDK_LIB_ROOT}/shared/src/mfx_ddi_enc_dump.cpp
-    ${MSDK_LIB_ROOT}/shared/src/mfx_h264_enc_common_hw.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_h264_encode_vaapi.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_h264_fei_vaapi.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_h264_encode_factory.cpp
@@ -234,11 +230,18 @@ target_include_directories(encode_hw
 
     ${MSDK_LIB_ROOT}/enc_hw/mpeg2/include
     ${MSDK_LIB_ROOT}/encode_hw/shared
-    ${MSDK_LIB_ROOT}/pak/mpeg2/include
-    ${MSDK_LIB_ROOT}/fei/h264_preenc
+
     ${MSDK_LIB_ROOT}/fei/include
+    ${MSDK_LIB_ROOT}/pak/mpeg2/include
+    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:
+      ${MSDK_LIB_ROOT}/fei/h264_common
+      ${MSDK_LIB_ROOT}/fei/h264_preenc
+      ${MSDK_LIB_ROOT}/fei/h264_enc
+      ${MSDK_LIB_ROOT}/fei/h264_pak
+      ${MSDK_STUDIO_ROOT}/hevc_fei/h265_fei/include
+    >
+
     ${MSDK_STUDIO_ROOT}/hevce_hw/h265/include
-    ${MSDK_STUDIO_ROOT}/hevc_fei/h265_fei/include
 
     h265/include
     h264/include

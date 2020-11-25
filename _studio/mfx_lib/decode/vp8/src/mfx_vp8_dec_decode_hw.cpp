@@ -34,7 +34,6 @@
 
 #if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 
-#include "mfx_session.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_vp8_dec_decode_hw.h"
 #include "mfx_enc_common.h"
@@ -191,6 +190,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     sts = MFX_VPX_Utility::QueryIOSurfInternal(&m_video_params, &request);
     MFX_CHECK_STS(sts);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (m_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc*)
@@ -217,6 +217,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
             pOpaqAlloc->Out.Surfaces, pOpaqAlloc->Out.NumSurface);
     }
     else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     {
         request.AllocId = p_video_param->AllocId;
         sts = m_p_core->AllocFrames(&request, &m_response, false);
@@ -291,6 +292,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
     if (!IsSameVideoParam(p_video_param, &m_on_init_video_params))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc*)
             GetExtendedBuffer(
                 p_video_param->ExtParam, p_video_param->NumExtParam,
@@ -308,6 +310,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     // need to sw acceleration
     if (m_platform != m_p_core->GetPlatformType())
@@ -408,9 +411,12 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     mfxVideoParam p_params = *p_video_param;
 
-    if (!(p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+    if (   !(p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
         && !(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-        && !(p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        && !(p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+        )
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -421,6 +427,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if ((p_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         && (p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
@@ -432,6 +439,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     if(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {

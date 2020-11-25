@@ -305,7 +305,7 @@ namespace UMC
                 m_bIsPreviousSkip = false;
         }
 
-        virtual void VC1PackerDXVA_EagleLake::VC1PackOneSlice  (VC1Context* pContext,
+        virtual void VC1PackOneSlice  (VC1Context* pContext,
                                           SliceParams* slparams,
                                           uint32_t BufIndex, // only in future realisations
                                           uint32_t MBOffset,
@@ -421,7 +421,7 @@ namespace UMC
                 m_bIsPreviousSkip = false;
         }
 
-        virtual void VC1PackerDXVA_Protected::VC1PackOneSlice  (VC1Context* pContext,
+        virtual void VC1PackOneSlice  (VC1Context* pContext,
             SliceParams* slparams,
             uint32_t BufIndex, // only in future realisations
             uint32_t MBOffset,
@@ -444,7 +444,7 @@ namespace UMC
             else
                 return 0;
                 }
-        uint32_t VC1PackerDXVA_Protected::VC1PackBitStreamAdv (VC1Context* pContext,
+        uint32_t VC1PackBitStreamAdv (VC1Context* pContext,
                                                        uint32_t& Size,
                                                        uint8_t* pOriginalData,
                                                        uint32_t OriginalSize,

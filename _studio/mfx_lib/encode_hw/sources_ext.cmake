@@ -31,7 +31,7 @@ target_include_directories(encode_hw PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g13
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g12
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo
 )
 
 target_sources(encode_hw
@@ -164,7 +164,7 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_device_dx9.h
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_device_dx11.h
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_utils_ddi.h
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_platforms.h
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_resources_pool_dx11.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_device_dx9.cpp
@@ -240,4 +240,7 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_tile.h
     )
 
-target_link_libraries(encode_hw PUBLIC lpla)
+target_link_libraries(encode_hw
+  PUBLIC
+    $<$<BOOL:${MFX_ENABLE_LP_LOOKAHEAD}>:lpla>
+)

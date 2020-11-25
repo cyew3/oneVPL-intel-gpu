@@ -108,7 +108,7 @@ mfxStatus MFXVP9DecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* 
 
     return MFX_ERR_NONE;
 }
-#else
+#elif !defined(MFX_ONEVPL)
 mfxStatus MFXVP9DecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
 {
     if (guid != g_VP9DecoderGuid) {
@@ -120,5 +120,10 @@ mfxStatus MFXVP9DecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* 
     mfxPlg->GetPluginParam = _GetPluginParam;
 
     return MFX_ERR_NONE;
+}
+#else
+mfxStatus MFXVP9DecoderPlugin::CreateByDispatcher(mfxPluginUID /*guid*/, mfxPlugin* /*mfxPlg*/)
+{
+    return MFX_ERR_UNSUPPORTED;
 }
 #endif

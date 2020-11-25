@@ -113,7 +113,9 @@ const mfxU32 g_TABLE_CONFIG [] =
 
 const mfxU32 g_TABLE_EXT_PARAM [] =
 {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#endif
 #ifdef MFX_ENABLE_VPP_SVC
     MFX_EXTBUFF_SVC_SEQ_DESC,
 #endif
@@ -2122,7 +2124,7 @@ mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
 
 } // mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
 
-
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
 mfxStatus CheckOpaqMode( mfxVideoParam* par, bool bOpaqMode[2] )
 {
     if ( (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) || (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) )
@@ -2198,7 +2200,7 @@ mfxStatus GetOpaqRequest( mfxVideoParam* par, bool bOpaqMode[2], mfxFrameAllocRe
     return MFX_ERR_NONE;
 
 } // mfxStatus GetOpaqRequest( mfxVideoParam* par, bool bOpaqMode[2], mfxFrameAllocRequest requestOpaq[2] )
-
+#endif
 
 mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, mfxU16* pOutMemType, bool bSWLib)
 {
@@ -2225,10 +2227,12 @@ mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, 
     {
         *pInMemType = MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         *pInMemType = MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|nativeMemType;
     }
+#endif
     else
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2242,10 +2246,12 @@ mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, 
     {
         *pOutMemType = MFX_MEMTYPE_FROM_VPPOUT|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if(IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         *pOutMemType = MFX_MEMTYPE_FROM_VPPOUT|MFX_MEMTYPE_OPAQUE_FRAME|nativeMemType;
     }
+#endif
     else
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2750,10 +2756,12 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
         list.push_back(MFX_EXTBUFF_VPP_IMAGE_STABILIZATION);
     }
 
+#if !defined(MFX_ONEVPL)
     if(caps.uVariance)
     {
         list.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);
     }
+#endif
 
     if(caps.uRotation)
     {

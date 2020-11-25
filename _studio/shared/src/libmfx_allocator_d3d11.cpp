@@ -276,12 +276,12 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
             Desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
         }
 
-#if !defined(OPEN_SOURCE)
+#if !defined(OPEN_SOURCE) && !defined(MFX_ONEVPL)
         if (request->Type & MFX_MEMTYPE_PROTECTED)
         {
             Desc.MiscFlags |= D3D11_RESOURCE_MISC_HW_PROTECTED;
         }
-#endif
+#endif //!OPEN_SOURCE && !MFX_ONEVPL
 
         // d3d11 wo
         if( DXGI_FORMAT_P8 == Desc.Format )
@@ -317,12 +317,12 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
                 return MFX_ERR_MEMORY_ALLOC;
         }
 
-#if !defined(OPEN_SOURCE)
+#if !defined(OPEN_SOURCE) && !defined(MFX_ONEVPL)
         if (request->Type & MFX_MEMTYPE_PROTECTED)
         {
             Desc.MiscFlags &= ~D3D11_RESOURCE_MISC_HW_PROTECTED;
         }
-#endif
+#endif //!OPEN_SOURCE && !MFX_ONEVPL
 
         // Create Staging buffers for fast coping (do not need for 420 opaque)
         if(Desc.Format != DXGI_FORMAT_420_OPAQUE)

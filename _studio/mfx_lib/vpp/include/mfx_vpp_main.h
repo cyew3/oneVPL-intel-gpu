@@ -108,6 +108,7 @@ private:
     // Opaq processing
     mfxFrameSurface1 *GetNativeSurface(mfxFrameSurface1 *surface, mfxU32 type )
     {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if( m_bOpaqMode[type] )
         {
             mfxFrameSurface1 * nativeSurface = m_core->GetNativeSurface(surface);
@@ -120,16 +121,18 @@ private:
 
             return nativeSurface;
         }
-
+#endif
         return surface;
     }
 
     VideoCORE* m_core;
     std::unique_ptr<VideoVPP> m_impl;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     // opaque processing
     bool  m_bOpaqMode[2];
     mfxFrameAllocResponse m_responseOpaq[2];
+#endif
 };
 
 #endif // __MFX_VPP_MAIN_H

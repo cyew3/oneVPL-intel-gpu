@@ -136,14 +136,18 @@ protected:
     mfxU32  m_encodedFrames;
 
     bool m_useAuxInput;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     //bool m_useSysOpaq;
     //bool m_useVideoOpaq;
     bool m_isOpaque;
+#endif
     bool m_isInitialized;
 
     mfxExtJPEGQuantTables    m_checkedJpegQT;
     mfxExtJPEGHuffmanTables  m_checkedJpegHT;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc m_checkedOpaqAllocReq;
+#endif
     mfxExtBuffer*            m_pCheckedExt[3];
 
     //

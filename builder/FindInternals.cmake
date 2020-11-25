@@ -62,6 +62,7 @@ function( mfx_include_dirs )
   endif()
 endfunction()
 
+
 #================================================
 
 add_library(mfx_static_lib INTERFACE)

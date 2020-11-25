@@ -781,11 +781,14 @@ mfxStatus ImplementationMvc::QueryIOSurf(
     mfxFrameAllocRequest * request)
 {
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
-    MFX_CHECK(
-        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+        ;
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_ENCODE_CAPS hwCaps = {};
     mfxStatus sts = QueryHwCaps(core, hwCaps, par);
@@ -818,9 +821,12 @@ mfxStatus ImplementationMvc::QueryIOSurf(
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-        request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            ? MFX_MEMTYPE_OPAQUE_FRAME
-            : MFX_MEMTYPE_EXTERNAL_FRAME;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        if (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+            request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
+        else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+            request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
     // get FrameInfo from original VideoParam
@@ -890,7 +896,9 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
     mfxExtCodingOption *       extOpt  = GetExtBuffer(m_video);
 // MVC BD }
     mfxExtMVCSeqDesc *         extMvc  = GetExtBuffer(m_video);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
+#endif
 
 // MVC BD {
     m_numEncs = 1;
@@ -954,6 +962,7 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
         }
 // MVC BD }
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         request.Type        = extOpaq->In.Type;
@@ -975,10 +984,13 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
 // MVC BD }
         }
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     m_inputFrameType =
-        m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+            m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -1072,12 +1084,14 @@ mfxStatus ImplementationMvc::Reset(mfxVideoParam *par)
 
     MfxVideoParam newPar(*par);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc * optOpaqNew = GetExtBuffer(newPar);
     mfxExtOpaqueSurfaceAlloc * optOpaqOld = GetExtBuffer(m_video);
     MFX_CHECK(
         optOpaqOld->In.Type       == optOpaqNew->In.Type       &&
         optOpaqOld->In.NumSurface == optOpaqNew->In.NumSurface,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     InheritDefaultValues(m_video, newPar, m_ddiCaps);
 
@@ -1205,6 +1219,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         m_core->IsExternalFrameAllocator(), m_ddiCaps);
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (surface && m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         //mfxFrameSurface1 * opaqSurf = surface;
@@ -1218,6 +1233,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         surface->Data.Corrupted  = inSurf->Data.Corrupted;
         surface->Data.DataFlag   = inSurf->Data.DataFlag;
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     MvcTask * task = 0;
     mfxStatus assignSts = m_taskMan.AssignTask(m_video, ctrl, surface, bs, task);

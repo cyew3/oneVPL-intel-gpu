@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 
 #include <va/va.h>
 #include <va/va_enc_h264.h>
@@ -2605,5 +2605,5 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
 #endif //defined(MFX_ENABLE_H264_VIDEO_FEI_ENC) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
 
-#endif // (MFX_ENABLE_H264_VIDEO_ENCODE) && (MFX_VA_LINUX)
+#endif // MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 /* EOF */

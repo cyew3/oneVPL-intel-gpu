@@ -22,7 +22,6 @@
 
 #if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
 
-#include "mfx_session.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_vp8_dec_decode_hw.h"
 #include "mfx_enc_common.h"

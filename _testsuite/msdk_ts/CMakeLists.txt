@@ -25,29 +25,8 @@ target_include_directories(msdk_gmock
     ${MFX_API_HOME}/mediasdk_structures
 )
 
-target_sources(msdk_gmock
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_alloc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_aux_dev.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_bitstream.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_common.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_decoder.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_encoder.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_plugin.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_session.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_streams.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_struct.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface_provider.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_trace.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_vpp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_preenc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_enc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_pak.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_transcoder.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_encpak.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_utils.cpp
+if (MFX_ENABLE_AV1_VIDEO_DECODE)
+  set(AV1_VIDEO_DECODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/av1d_close.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/av1d_decode_frame_async.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/av1d_decode_header.cpp
@@ -59,6 +38,12 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/av1d_query_io_surf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/av1d_reset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avc_sethandle_16.cpp
+  )
+  source_group("av1" FILES ${AV1_VIDEO_DECODE_SRC})
+endif()
+
+if (MFX_ENABLE_H264_VIDEO_DECODE)
+  set(H264_VIDEO_DECODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avcd_bs_dataflag.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avcd_close.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avcd_constraints.cpp
@@ -74,6 +59,12 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avcd_picturetype.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avcd_res_change.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avcd_reset.cpp
+  )
+  source_group("avc" FILES ${H264_VIDEO_DECODE_SRC})
+endif()
+
+if (MFX_ENABLE_H264_VIDEO_ENCODE)
+  set (H264_VIDEO_ENCODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_adaptivegop.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_adaptivemaxframesize.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_advanced_ref_lists.cpp
@@ -94,9 +85,11 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_dynamic_intra_refresh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_emulation_prevention_bytes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_encoder_roi.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_et_gs_query_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_et_mds_encode.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_et_mds_query_init.cpp
+    $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_et_gs_query_init.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_et_mds_encode.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_et_mds_query_init.cpp
+    >
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_extbrcadaptiveltr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_force_repartition_check.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_get_video_param_tcbrc.cpp
@@ -120,18 +113,20 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mbcontrol.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mbext_brc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mbqp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_close.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_encode_frame_async.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_close.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_encode_frame_async.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_get_video_param.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_query.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_query_io_surf.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_get_video_param.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_query.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_query_io_surf.cpp
+    $<$<BOOL:${MFX_ENABLE_MFE}>:
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_close.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_encode_frame_async.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_close.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_encode_frame_async.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_get_video_param.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_init.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_query.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_query_io_surf.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_get_video_param.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_init.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_query.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_query_io_surf.cpp
+    >
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_move_rect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_nalu_size.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_nummbperslice.cpp
@@ -153,21 +148,26 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_trellis_cavlc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_vui_flag.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_weight_prediction.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_close.cpp
+  )
+  source_group("avc" FILES ${H264_VIDEO_ENCODE_SRC})
+endif()
+
+if (NOT API_USE_VPL)
+  set (CAMERA_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_get_video_param.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_close.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_init.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_query.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_query_io_surf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_reset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_run_frame_async.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/camera_unsupport.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/decoders_gpu_hang.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/encoders_extbrc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/encoders_gpu_hang.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/feature_unsupported.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/get_plugin.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/gpu_hang_transcoding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevc_ctuqp_quality.cpp
+  )
+  source_group("camera" FILES ${CAMERA_SRC})
+endif()
+
+if (MFX_ENABLE_H265_VIDEO_DECODE)
+  set (H265_VIDEO_DECODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_bs_data_flag.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_close.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_corruption.cpp
@@ -185,9 +185,12 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_reset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_shift.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_stream_change.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_stream_change_bitdepth.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_stream_change_chroma.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevcd_stream_change_res.cxx
+  )
+  source_group("hevc" FILES ${H265_VIDEO_DECODE_SRC})
+endif()
+
+if (MFX_ENABLE_H265_VIDEO_ENCODE)
+  set(H265_VIDEO_ENCODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_8b_420_nv12_qp_range.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_argb.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_big_resolution.cpp
@@ -250,15 +253,12 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_tiles.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_transformskip.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_weight_prediction.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/jpegd_res_change.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/lookahead_1N.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_bs_dataflag.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_colorformat.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_corruption.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_payload.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpege_tables.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2_sethandle_16.cpp
+  )
+  source_group("hevc" FILES ${H265_VIDEO_ENCODE_SRC})
+endif()
+
+if (MFX_ENABLE_MPEG2_VIDEO_DECODE)
+  set(MPEG2_VIDEO_DECODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2d_aspect_ratio_change.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2d_bs_dataflag.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2d_corruption.cpp
@@ -267,6 +267,12 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2d_res_change.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2d_timecode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2d_timestamp.cpp
+  )
+  source_group("mpeg2" FILES ${MPEG2_VIDEO_DECODE_SRC})
+endif()
+
+if (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+  set(MPEG2_VIDEO_ENCODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2e_aspectratio_reset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2e_brc_panic_mode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2e_headers_order.cpp
@@ -275,37 +281,30 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2e_ratecontrol.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2e_skipframes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2e_user_data.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/multisession.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mvc_sethandle_16.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mvce_view_output.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/opaque_dynamic_pipeline.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_close.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_frame_async_ex.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_get_video_param.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_query.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_query_io_surf.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_reset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/query_platform.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_close.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_decode_frame_async.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_decode_header.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_dirty_rect.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_query.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_query_io_surf.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/threading_mfxinitex.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/trans_opaque.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/trans_opaque_deallocation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vc1_sethandle_16.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vc1d_bs_dataflag.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vc1d_res_change.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp8d_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp8e_encode_frame_async.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp8e_get_video_param.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp8e_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp8e_query_io_surf.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp8e_reset.cpp
+  )
+  source_group("mpeg2" FILES ${MPEG2_VIDEO_ENCODE_SRC})
+endif()
+
+if (MFX_ENABLE_MJPEG_VIDEO_DECODE)
+  set(MJPEG_VIDEO_DECODE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_bs_dataflag.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_colorformat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_corruption.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpegd_payload.cpp
+  )
+  source_group("mjpeg" FILES ${MJPEG_VIDEO_DECODE_SRC})
+endif()
+
+if (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+  set(MJPEG_VIDEO_ENCODE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mjpege_tables.cpp
+  )
+  source_group("mjpeg" FILES ${MJPEG_VIDEO_ENCODE_SRC})
+endif()
+
+if (MFX_ENABLE_VP9_VIDEO_DECODE)
+  set(VP9_VIDEO_DECODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9d_close.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9d_decode_frame_async.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9d_decode_header.cpp
@@ -318,6 +317,12 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9d_res_change.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9d_reset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9d_trans_opaque.cpp
+  )
+  source_group("vp9" FILES ${VP9_VIDEO_DECODE_SRC})
+endif()
+
+if (MFX_ENABLE_VP9_VIDEO_ENCODE)
+  set(VP9_VIDEO_ENCODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9e_big_resolution.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9e_brc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9e_close.cpp
@@ -335,6 +340,12 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9e_temporal_scalability.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9e_tiles.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp9e_trans_opaque.cpp
+  )
+  source_group("vp9" FILES ${VP9_VIDEO_ENCODE_SRC})
+endif()
+
+if (MFX_ENABLE_VPP)
+  set(VPP_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp_chroma_siting.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp_close.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp_composition.cpp
@@ -375,48 +386,160 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp_uyvy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp_video_signal_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp10bit.cpp
+  )
+  source_group("vpp" FILES ${VPP_SRC})
+endif()
+
+if (MFX_ENABLE_SCREEN_CAPTURE)
+  set(SCREEN_CAPTURE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_close.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_decode_frame_async.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_decode_header.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_dirty_rect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_query.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_query_io_surf.cpp
+  )
+  source_group("screen_capture" FILES ${SCREEN_CAPTURE_SRC})
+endif()
+
+if (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+  set(H264_VIDEO_FEI_ENCODE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_enc_memory_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_enc_query_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_advanced_ref_lists.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_bp_sei.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_close.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_default_ref_lists.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_direct_bias.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_disable_deblocking.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_enablembqp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_encode_frame_async.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_ext_coding_option.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_field_coding.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_gpu_hang.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_mbqp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_memory_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_num_active_ref.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_oversized_surfaces.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_pi_field_pair.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_ref_list_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_sei_payload.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_timestamp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_weighted_prediction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_aud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_mmco.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_pps.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_sei_payload.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_sps.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_multi_pak.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_gpu_hang.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_memory_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_query_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_queryiosurf.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_reset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_downsample.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_enable8x8stat_check.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_gpu_hang.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_memory_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_mvmb_valid_buffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_process_frame_async.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_query_init.cpp
+  )
+  source_group("fei" FILES ${H264_VIDEO_FEI_ENCODE_SRC})
+endif()
+
+if (MFX_ENABLE_VC1_VIDEO_DECODE)
+  set(VC1_VIDEO_DECODE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vc1_sethandle_16.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vc1d_bs_dataflag.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vc1d_res_change.cpp
+  )
+  source_group("vc1" FILES ${VC1_VIDEO_DECODE_SRC})
+endif()
+
+if (MFX_ENABLE_VP8_VIDEO_DECODE)
+  set(VP8_VIDEO_DECODE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vp8d_init.cpp
+  )
+  source_group("vp8" FILES ${VP8_VIDEO_DECODE_SRC})
+endif()
+
+target_sources(msdk_gmock
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_alloc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_aux_dev.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_bitstream.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_decoder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_encoder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_session.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_streams.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_struct.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface_provider.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_trace.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_vpp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_preenc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_enc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_pak.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_transcoder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_encpak.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_utils.cpp
+
+    ${AV1_VIDEO_DECODE_SRC}
+    ${H264_VIDEO_DECODE_SRC}
+    ${H264_VIDEO_ENCODE_SRC}
+    ${H265_VIDEO_DECODE_SRC}
+    ${H265_VIDEO_ENCODE_SRC}
+    ${MPEG2_VIDEO_DECODE_SRC}
+    ${MPEG2_VIDEO_ENCODE_SRC}
+    ${MJPEG_VIDEO_DECODE_SRC}
+    ${MJPEG_VIDEO_ENCODE_SRC}
+    ${VC1_VIDEO_DECODE_SRC}
+    ${VP8_VIDEO_DECODE_SRC}
+    ${VP9_VIDEO_DECODE_SRC}
+    ${VP9_VIDEO_DECODE_SRC}
+    ${VP9_VIDEO_ENCODE_SRC}
+    ${VPP_SRC}
+    ${CAMERA_SRC}
+    ${SCREEN_CAPTURE_SRC}
+    ${H264_VIDEO_FEI_ENCODE_SRC}
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/decoders_gpu_hang.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/encoders_extbrc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/encoders_gpu_hang.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/feature_unsupported.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/get_plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/gpu_hang_transcoding.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevc_ctuqp_quality.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/jpegd_res_change.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/lookahead_1N.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mpeg2_sethandle_16.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/multisession.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mvc_sethandle_16.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/mvce_view_output.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/opaque_dynamic_pipeline.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_close.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_frame_async_ex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_get_video_param.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_query.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_query_io_surf.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_reset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/query_platform.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/threading_mfxinitex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/trans_opaque.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/trans_opaque_deallocation.cpp
+
     $<$<PLATFORM_ID:Linux>:
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_enc_memory_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_enc_query_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_advanced_ref_lists.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_bp_sei.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_close.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_default_ref_lists.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_direct_bias.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_disable_deblocking.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_enablembqp.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_encode_frame_async.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_ext_coding_option.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_field_coding.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_gpu_hang.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_mbqp.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_memory_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_num_active_ref.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_oversized_surfaces.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_pi_field_pair.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_ref_list_ctrl.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_sei_payload.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_timestamp.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_weighted_prediction.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_aud.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_mmco.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_pps.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_sei_payload.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_sps.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_multi_pak.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_gpu_hang.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_memory_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_query_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_queryiosurf.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_reset.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_downsample.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_enable8x8stat_check.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_gpu_hang.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_memory_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_mvmb_valid_buffer.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_process_frame_async.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_query_init.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_nalutype.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_num_active_references.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp_fieldweaving_robustness.cpp
@@ -456,6 +579,7 @@ target_compile_definitions(msdk_gmock
     _VARIADIC_MAX=10
     ENABLE_PS=1
     MFX_VERSION_USE_LATEST
+    MFX_HAVE_EXTERNAL_CONFIG
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
 )
 

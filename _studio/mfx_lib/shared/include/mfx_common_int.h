@@ -25,8 +25,10 @@
 #include <memory>
 #include <errno.h>
 #include "mfx_common.h"
-#include "mfxaudio.h"
 
+#if !defined(MFX_ONEVPL)
+#include "mfxaudio.h"
+#endif
 
 mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 codecId);
 mfxStatus CheckFrameInfoEncoders(mfxFrameInfo  *info);
@@ -35,14 +37,17 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId = MFX_CODEC_A
 mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
 mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CheckAudioParamEncoders(mfxAudioParam *in);
 mfxStatus CheckAudioParamCommon(mfxAudioParam *in);
 mfxStatus CheckAudioParamDecoders(mfxAudioParam *in);
 
-mfxStatus CheckBitstream(const mfxBitstream *bs);
 mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame);
-mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs);
+#endif //!MFX_ONEVPL
+
+mfxStatus CheckBitstream(const mfxBitstream *bs);
 mfxStatus CheckFrameData(const mfxFrameSurface1 *surface);
+mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs);
 
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par);
 
@@ -144,5 +149,8 @@ private:
 
 mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const&);
 mfxStatus GetFramePointerChecked(mfxFrameInfo const& info, mfxFrameData const&, mfxU8**);
+
+mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxFrameData const& fd);
+mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxMemId mid);
 
 #endif

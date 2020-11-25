@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #include "hevcehw_base_protected_win.h"
 #include "hevcehw_base_ddi_packer_win.h"

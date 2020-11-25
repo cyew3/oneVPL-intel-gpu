@@ -145,7 +145,9 @@ namespace MPEG2EncoderHW
         mfxU32 supported_buffers[] = {
             MFX_EXTBUFF_CODING_OPTION
             ,MFX_EXTBUFF_CODING_OPTION_SPSPPS
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
             ,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+#endif
             ,MFX_EXTBUFF_VIDEO_SIGNAL_INFO
 #ifdef PAVP_SUPPORT
             ,MFX_EXTBUFF_PAVP_OPTION
@@ -781,14 +783,18 @@ namespace MPEG2EncoderHW
                 case 0:
                 case MFX_IOPATTERN_IN_VIDEO_MEMORY:
                 case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
                 case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
+#endif
                     break;
                 default:
                     bWarning = true;
                     if (out->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
                         out->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
                     else if (in->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
                         out->IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
+#endif
                     else if (out->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
                         out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
                     else
@@ -940,17 +946,19 @@ namespace MPEG2EncoderHW
 
 
             // invalid modes
-            if (out->mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_ICQ ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_LA ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED1 ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED2 ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED3 ||
-                out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED4)
+            if (   out->mfx.RateControlMethod == MFX_RATECONTROL_VCM
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_ICQ
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_QVBR
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_LA
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ
+#if !defined(MFX_ONEVPL)
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED1
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED2
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED3
+                || out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED4)
             {
                 out->mfx.RateControlMethod = 0;
                 bUnsupported = true;
@@ -1118,15 +1126,21 @@ namespace MPEG2EncoderHW
         videoParamEx.mfxVideoParams = *par;
         ApplyTargetUsage (&videoParamEx);
 
-        if ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY)) == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-            ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY))== MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+        if (    (par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY)) == MFX_IOPATTERN_IN_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            || ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY)) == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+#endif
+            )
         {
             request->Info              = videoParamEx.mfxVideoParams.mfx.FrameInfo ;
             request->NumFrameMin       = videoParamEx.mfxVideoParams.mfx.GopRefDist + 3;
             request->NumFrameSuggested = request->NumFrameMin;
-            request->Type              = (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-                ? MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME  |MFX_MEMTYPE_DXVA2_DECODER_TARGET
-                : MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            if (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+                request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME  |MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+            else
+#endif
+                request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
         }
         else if ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))==MFX_IOPATTERN_IN_SYSTEM_MEMORY)
         {
@@ -1423,17 +1437,19 @@ namespace MPEG2EncoderHW
         mfxU16& RateControl = m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod;
 
         // invalid modes
-        if (RateControl == MFX_RATECONTROL_VCM ||
-            RateControl == MFX_RATECONTROL_ICQ ||
-            RateControl == MFX_RATECONTROL_QVBR ||
-            RateControl == MFX_RATECONTROL_LA ||
-            RateControl == MFX_RATECONTROL_LA_ICQ ||
-            RateControl == MFX_RATECONTROL_LA_EXT ||
-            RateControl == MFX_RATECONTROL_LA_HRD ||
-            RateControl == MFX_RATECONTROL_RESERVED1 ||
-            RateControl == MFX_RATECONTROL_RESERVED2 ||
-            RateControl == MFX_RATECONTROL_RESERVED3 ||
-            RateControl == MFX_RATECONTROL_RESERVED4)
+        if (   RateControl == MFX_RATECONTROL_VCM
+            || RateControl == MFX_RATECONTROL_ICQ
+            || RateControl == MFX_RATECONTROL_QVBR
+            || RateControl == MFX_RATECONTROL_LA
+            || RateControl == MFX_RATECONTROL_LA_ICQ
+#if !defined(MFX_ONEVPL)
+            || RateControl == MFX_RATECONTROL_LA_EXT
+#endif
+            || RateControl == MFX_RATECONTROL_LA_HRD
+            || RateControl == MFX_RATECONTROL_RESERVED1
+            || RateControl == MFX_RATECONTROL_RESERVED2
+            || RateControl == MFX_RATECONTROL_RESERVED3
+            || RateControl == MFX_RATECONTROL_RESERVED4)
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }

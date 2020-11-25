@@ -1,6 +1,10 @@
 #
 #
 
+if(${API_USE_VPL})
+  return()
+endif()
+
 set(HEVC_DECODER_HW_GUID   "33a61c0b4c27454ca8d85dde757c6f8e")
 set(H264LA_ENCODER_GUID    "588f1185d47b42968dea377bb5d0dcb4")
 set(VP8_DECODER_HW_GUID    "f622394d8d87452f878c51f2fc9b4131")
@@ -89,6 +93,7 @@ set( prefix ${MSDK_LIB_ROOT}/shared/src )
     ${prefix}/libmfxsw_async.cpp
     ${prefix}/libmfxsw_query.cpp
     ${prefix}/libmfxsw_session.cpp
+    ${prefix}/libmfxsw_encode.cpp
     ${prefix}/mfx_session.cpp
     ${prefix}/mfx_user_plugin.cpp
     ${prefix}/mfx_enc_common.cpp
@@ -192,7 +197,7 @@ if( DEFINED H264LA_ENCODER_GUID )
   list( APPEND sources ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp )
   list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
   list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_factory.cpp )
-  #list( APPEND sources ${MSDK_LIB_ROOT}/fei/h264_la/mfx_h264_la.cpp )
+  list( APPEND sources ${MSDK_LIB_ROOT}/fei/h264_la/mfx_h264_la.cpp )
   list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/umc/core/umc/src/umc_default_memory_allocator.cpp )
   list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/svc/src/mfx_svc_encode_hw.cpp )
   list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/svc/src/mfx_svc_encode_simulcast_over_avc.cpp )
@@ -208,7 +213,11 @@ if( DEFINED H264LA_ENCODER_GUID )
 
   install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
 
-  target_include_directories(${plugin_name} PRIVATE ${include_dirs})
+  target_include_directories(${plugin_name}
+    PRIVATE
+      ${include_dirs}
+      ${MSDK_LIB_ROOT}/fei/h264_la
+    )
 
   target_compile_definitions(${plugin_name}
     PRIVATE
@@ -229,11 +238,10 @@ if( DEFINED H264LA_ENCODER_GUID )
 
   target_link_libraries(${plugin_name}
     PRIVATE
-      h264_la
       lpla
       genx
       asc
-      enctools_hw
+      $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>
       mctf_hw
       vm_plus
       mfx_trace
@@ -242,6 +250,7 @@ if( DEFINED H264LA_ENCODER_GUID )
       mfx_shared_lib
       ${ITT_LIBRARIES}
       ${la_IPPLIBS}
+      Threads::Threads
       mfx_require_sse4_properties
     )
 

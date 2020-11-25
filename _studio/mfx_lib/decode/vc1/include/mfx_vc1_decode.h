@@ -146,12 +146,14 @@ protected:
     void            PrepareMediaIn(void);
     static bool     IsHWSupported(VideoCORE *pCore, mfxVideoParam *par);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     // to correspond Opaque memory type
     mfxStatus UpdateAllocRequest(mfxVideoParam *par, 
                                 mfxFrameAllocRequest *request, 
                                 mfxExtOpaqueSurfaceAlloc **pOpaqAlloc,
                                 bool &Mapping,
                                 bool &Polar);
+#endif
 
     // frame buffering 
     mfxStatus           IsDisplayFrameReady(mfxFrameSurface1 **surface_disp);
@@ -252,7 +254,9 @@ protected:
     std::vector<uint8_t>                m_RawSeq;
     mfxU64                            m_ext_dur;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc          m_AlloExtBuffer;
+#endif
 
     bool                              m_bStsReport;
     mfxU32                            m_NumberOfQueries;

@@ -49,6 +49,11 @@ endif()
 
 set( BUILDER_ROOT "${CMAKE_HOME_DIRECTORY}/builder" )
 
+if(NOT DEFINED API)
+  set( API "latest" CACHE STRING "Use this API version. Options: latest, master, <major.minor>")
+  set( MFX_API_HOME "${MFX_HOME}/api")
+endif()
+
 if(NOT DEFINED ENV{MFX_HOME} )
   set( MFX_HOME "${CMAKE_HOME_DIRECTORY}" )
   set( MFX_API_HOME "${CMAKE_HOME_DIRECTORY}/api" )
@@ -57,16 +62,16 @@ else()
   set( MFX_API_HOME "${MFX_HOME}/api")
 endif()
 
+include( ${BUILDER_ROOT}/FindMFX.cmake )
+
+include( ${BUILDER_ROOT}/FindInternals.cmake )
+include( ${BUILDER_ROOT}/FindOpenCL.cmake )
 include( ${BUILDER_ROOT}/FindFunctions.cmake )
 include( ${BUILDER_ROOT}/BuildOptions.cmake )
 include( ${BUILDER_ROOT}/FindGlobals.cmake )
 include( ${BUILDER_ROOT}/FindITT.cmake )
 include( ${BUILDER_ROOT}/FindIPP.cmake )
 include( ${BUILDER_ROOT}/FindPackages.cmake )
-include( ${BUILDER_ROOT}/FindOpenCL.cmake )
-include( ${BUILDER_ROOT}/FindMFX.cmake )
-include( ${BUILDER_ROOT}/FindInternals.cmake )
-
 
 if(CMAKE_SYSTEM_NAME MATCHES WindowsStore)
   message(STATUS "UWP build enabled. Another components will not be built!")

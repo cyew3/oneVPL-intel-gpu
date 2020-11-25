@@ -21,6 +21,8 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include "mfx_common_int.h"
+
 #include "hevcehw_base_legacy.h"
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_constraints.h"
@@ -114,6 +116,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(NumTileRows);
         MFX_COPY_FIELD(NumTileColumns);
     });
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     blocks.m_ebCopySupported[MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -126,6 +129,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(Out.Type);
         MFX_COPY_FIELD(Out.NumSurface);
     });
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     blocks.m_ebCopySupported[MFX_EXTBUFF_AVC_REFLISTS].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -277,6 +281,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         auto& buf_dst = *(mfxExtVideoSignalInfo*)pDst;
         buf_dst = buf_src;
     });
+#if !defined(MFX_ONEVPL)
     blocks.m_ebCopySupported[MFX_EXTBUFF_LOOKAHEAD_STAT].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -288,6 +293,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(FrameStat);
         MFX_COPY_FIELD(OutSurface);
     });
+#endif //!MFX_ONEVPL
     blocks.m_ebCopySupported[MFX_EXTBUFF_MBQP].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -763,7 +769,7 @@ void Legacy::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     Push(BLK_CheckShift
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
-        return CheckShift(out, ExtBuffer::Get(out));
+        return CheckShift(out);
     });
 
     Push(BLK_CheckFrameRate
@@ -847,7 +853,9 @@ void Legacy::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
         bool check_result = Check<mfxU16
             , MFX_IOPATTERN_IN_VIDEO_MEMORY
             , MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
             , MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
             >
             (par.IOPattern);
 
@@ -898,12 +906,17 @@ void Legacy::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
 
         bool bSYS = par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY;
         bool bVID = par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         bool bOPQ = par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY;
+#endif //!MFX_ENABLE_OPAQUE_MEMORY
 
         req.Type =
             bSYS * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME)
             + bVID * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME)
-            + bOPQ * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            + bOPQ * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME)
+#endif
+            ;
         MFX_CHECK(req.Type, MFX_ERR_INVALID_VIDEO_PARAM);
 
         req.NumFrameMin = GetMaxRaw(par);
@@ -1174,6 +1187,7 @@ void Legacy::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             sts = AllocRaw(rawInfo.NumFrameMin);
             MFX_CHECK_STS(sts);
         }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         else if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             const mfxExtOpaqueSurfaceAlloc& osa = ExtBuffer::Get(par);
@@ -1190,6 +1204,7 @@ void Legacy::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
                 MFX_CHECK_STS(sts);
             }
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         bool bSkipFramesMode = (
             (IsSWBRC(par, &CO2)
@@ -1582,6 +1597,7 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
         if (pCtrl)
             tpar.ctrl = *pCtrl;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             tpar.pSurfReal = core.GetNativeSurface(tpar.pSurfIn);
@@ -1594,6 +1610,7 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
             tpar.pSurfReal->Data.DataFlag    = tpar.pSurfIn->Data.DataFlag;
         }
         else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
             tpar.pSurfReal = tpar.pSurfIn;
 
         core.IncreaseReference(&tpar.pSurfIn->Data);
@@ -1764,13 +1781,17 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
     {
         auto& core = Glob::VideoCore::Get(global);
         auto& par = Glob::VideoParam::Get(global);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         const mfxExtOpaqueSurfaceAlloc& opaq = ExtBuffer::Get(par);
+#endif
         auto& task = Task::Common::Get(s_task);
 
         bool bInternalFrame =
             par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
             || (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
                 && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif //MFX_ENABLE_OPAQUE_MEMORY
             || task.bSkip;
 
         mfxFrameSurface1* surface = task.pSurfReal;
@@ -1782,8 +1803,10 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         MFX_CHECK(par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY
             , core.GetExternalFrameHDL(task.pSurfReal->Data.MemId, &task.HDLRaw.first));
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         MFX_CHECK(par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
             , MFX_ERR_UNDEFINED_BEHAVIOR);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         return core.GetFrameHDL(task.pSurfReal->Data.MemId, &task.HDLRaw.first);
     });
@@ -1794,19 +1817,24 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
             , StorageW& s_task)->mfxStatus
     {
         auto& par = Glob::VideoParam::Get(global);
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         const mfxExtOpaqueSurfaceAlloc& opaq = ExtBuffer::Get(par);
+#endif
         auto& task = Task::Common::Get(s_task);
         auto dflts = GetRTDefaults(global);
 
-        MFX_CHECK(
-            !(task.bSkip
-            || par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
+        bool videoMemory =
+            par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
             || (    par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
-                 && !(opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
-            , MFX_ERR_NONE);
+                 && !(opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+            ;
 
-        mfxFrameSurface1 surfSrc = { {}, par.mfx.FrameInfo, task.pSurfReal->Data };
-        mfxFrameSurface1 surfDst = { {}, par.mfx.FrameInfo, {} };
+        MFX_CHECK(!(task.bSkip || videoMemory), MFX_ERR_NONE);
+
+        mfxFrameSurface1 surfSrc = MakeSurface(par.mfx.FrameInfo, task.pSurfReal->Data);
+        mfxFrameSurface1 surfDst = MakeSurface(par.mfx.FrameInfo, mfxFrameData{});
         surfDst.Data.MemId = task.Raw.Mid;
 
         surfDst.Info.Shift =
@@ -2221,7 +2249,12 @@ static void SetTaskQpY(
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
+#if !defined(MFX_ONEVPL)
         task.QpY &= 0xff * (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT);
+#else
+        task.QpY = 0;
+#endif //!MFX_ONEVPL
+
         return;
     }
 
@@ -3376,7 +3409,10 @@ void SetDefaultBRC(
         || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
         || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
         || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT);
+#if !defined(MFX_ONEVPL)
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        );
     bool bSetICQ  = (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ);
     bool bSetQVBR = (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && pCO3);
 
@@ -3943,21 +3979,24 @@ mfxStatus Legacy::CheckFrameRate(mfxVideoParam & par)
     return MFX_ERR_NONE;
 }
 
-bool Legacy::IsInVideoMem(const mfxVideoParam & par, const mfxExtOpaqueSurfaceAlloc* pOSA)
+bool Legacy::IsInVideoMem(const mfxVideoParam & par)
 {
     if (par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         return true;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    mfxExtOpaqueSurfaceAlloc const* pOSA = ExtBuffer::Get(par);
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         return (!pOSA || (pOSA->In.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)));
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     return false;
 }
 
-mfxStatus Legacy::CheckShift(mfxVideoParam & par, mfxExtOpaqueSurfaceAlloc* pOSA)
+mfxStatus Legacy::CheckShift(mfxVideoParam & par)
 {
     auto& fi = par.mfx.FrameInfo;
-    bool bVideoMem = IsInVideoMem(par, pOSA);
+    bool bVideoMem = IsInVideoMem(par);
 
     if (bVideoMem && !fi.Shift)
     {
@@ -3996,7 +4035,10 @@ bool Legacy::IsSWBRC(mfxVideoParam const & par, const mfxExtCodingOption2* pCO2)
         (      pCO2 && IsOn(pCO2->ExtBRC)
             && (   par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
                 || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR))
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT;
+#if !defined(MFX_ONEVPL)
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        ;
 }
 
 bool CheckBufferSizeInKB(
@@ -4066,15 +4108,20 @@ mfxStatus Legacy::CheckBRC(
         changed++;
     }
 
-    MFX_CHECK(!CheckOrZero<mfxU16>(par.mfx.RateControlMethod
+    bool supportedRateControl = !CheckOrZero<mfxU16>(par.mfx.RateControlMethod
         , 0
         , !!defPar.caps.msdk.CBRSupport * MFX_RATECONTROL_CBR
         , !!defPar.caps.msdk.VBRSupport * MFX_RATECONTROL_VBR
         , !!defPar.caps.msdk.CQPSupport * MFX_RATECONTROL_CQP
+#if !defined(MFX_ONEVPL)
         , MFX_RATECONTROL_LA_EXT
+#endif
         , !!defPar.caps.msdk.ICQSupport * MFX_RATECONTROL_ICQ
         , !!defPar.caps.VCMBitRateControl * MFX_RATECONTROL_VCM
-        , !!defPar.caps.QVBRBRCSupport * MFX_RATECONTROL_QVBR), MFX_ERR_UNSUPPORTED);
+        , !!defPar.caps.QVBRBRCSupport * MFX_RATECONTROL_QVBR
+    );
+
+    MFX_CHECK(supportedRateControl, MFX_ERR_UNSUPPORTED);
 
     MFX_CHECK(par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
         || !CheckMaxOrZero(par.mfx.ICQQuality, 51), MFX_ERR_UNSUPPORTED);
@@ -4207,7 +4254,9 @@ mfxStatus Legacy::CheckIOPattern(mfxVideoParam & par)
     bool check_result = Check<mfxU16
                             , MFX_IOPATTERN_IN_VIDEO_MEMORY
                             , MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
                             , MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
                             , 0>
                             (par.IOPattern);
 
@@ -4754,7 +4803,11 @@ mfxStatus Legacy::GetSliceHeader(
 
     bool bSetQPd =
         par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT;
+#if !defined(MFX_ONEVPL)
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        ;
+
     s.slice_qp_delta     = mfxI8((task.QpY - (pps.init_qp_minus26 + 26)) * bSetQPd);
     s.slice_cb_qp_offset = 0;
     s.slice_cr_qp_offset = 0;

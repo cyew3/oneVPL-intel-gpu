@@ -4,5 +4,5 @@ endif()
 
 return()
 
-include(sources_libaudio.cmake)
-include(sources_librt.cmake)
+#include(sources_libaudio.cmake)
+#include(sources_librt.cmake)

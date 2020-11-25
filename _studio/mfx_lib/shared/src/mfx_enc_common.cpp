@@ -544,12 +544,19 @@ mfxStatus InputSurfaces::Reset(mfxVideoParam *par, mfxU16 NumFrameMin)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxU32 ioPattern = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+    mfxU32 ioPattern = par->IOPattern & (
+        MFX_IOPATTERN_IN_VIDEO_MEMORY
+        | MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        | MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+    );
     if (ioPattern & (ioPattern - 1))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     MFX_INTERNAL_CPY(&m_Info,&par->mfx.FrameInfo,sizeof(mfxFrameInfo));
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     bool bOpaq = (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)!=0;
 
     MFX_CHECK(bOpaq == m_bOpaq || !m_bInitialized, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -596,6 +603,7 @@ mfxStatus InputSurfaces::Reset(mfxVideoParam *par, mfxU16 NumFrameMin)
         m_bOpaq = true;
     }
     else
+#endif
     {
         bool bSysMemFrames = (par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) != 0;
         MFX_CHECK(bSysMemFrames == m_bSysMemFrames || !m_bInitialized, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -610,7 +618,9 @@ mfxStatus InputSurfaces::Close()
     {
         m_pCore->FreeFrames (&m_response);
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     m_bOpaq = false;
+#endif
     m_bSysMemFrames = false;
     m_bInitialized = false;
 

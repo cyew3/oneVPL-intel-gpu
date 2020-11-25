@@ -23,7 +23,10 @@
 #include <mfx_session.h>
 #include <mfx_tools.h>
 #include <mfx_common.h>
+
+#if defined (MFX_ENABLE_USER_VPP)
 #include <mfx_user_plugin.h>
+#endif
 
 // sheduling and threading stuff
 #include <mfx_task.h>
@@ -221,11 +224,13 @@ mfxStatus MFXVideoVPP_Close(mfxSession session)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pVPP.get());
 
         mfxRes = session->m_pVPP->Close();
+#if defined(MFX_ENABLE_USER_VPP)
         // delete the codec's instance if not plugin
         if (!session->m_plgVPP)
         {
             session->m_pVPP.reset(nullptr);
         }
+#endif //MFX_ENABLE_USER_VPP
     }
     // handle error(s)
     catch(...)

@@ -170,6 +170,7 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
         MFX_CHECK_NULL_PTR2(request, response);
         mfxFrameAllocRequest temp_request = *request;
 
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         // external allocator doesn't know how to allocate opaque surfaces
         // we can treat opaque as internal
         if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
@@ -177,6 +178,7 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
             temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         // external allocator
         if (m_bSetExtFrameAlloc && !(request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
@@ -738,15 +740,16 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
     switch (type)
     {
 #if defined(_WIN32) || defined(_WIN64)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     case MFX_HANDLE_DECODER_DRIVER_HANDLE:
         MFX_CHECK(m_DXVA2DecodeHandle, MFX_ERR_NOT_FOUND);
         *handle = m_DXVA2DecodeHandle;
         break;
-
     case MFX_HANDLE_VIDEO_DECODER:
         MFX_CHECK(m_D3DDecodeHandle, MFX_ERR_NOT_FOUND);
         *handle = m_D3DDecodeHandle;
         break;
+#endif //MFX_PROTECTED_FEATURE_DISABLE
 
 #if defined (MFX_ENABLE_GET_CM_DEVICE)
     case MFX_HANDLE_CM_DEVICE:
@@ -835,10 +838,10 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
     case MFX_HW_EHL    : platform.CodeName = MFX_PLATFORM_ELKHARTLAKE;   break;
     case MFX_HW_JSL    : platform.CodeName = MFX_PLATFORM_JASPERLAKE;    break;
 #endif
-#ifndef STRIP_EMBARGO
+#if !defined(STRIP_EMBARGO) && !defined(MFX_ONEVPL)
     case MFX_HW_LKF    : platform.CodeName = MFX_PLATFORM_LAKEFIELD;     break;
     case MFX_HW_RYF    :
-#endif
+#endif //!STRIP_EMBARGO && !MFX_ONEVPL
 #if (MFX_VERSION >= 1031)
     case MFX_HW_RKL    :
     case MFX_HW_TGL_LP : platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
@@ -852,6 +855,7 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
 #endif
                          platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
+#if !defined(MFX_ONEVPL)
     case MFX_HW_PVC    :
 #if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
@@ -865,6 +869,7 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
     case MFX_HW_ADL_S  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_S;   break;
     case MFX_HW_ADL_P  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_P;   break;
     case MFX_HW_MTL    : platform.CodeName = MFX_PLATFORM_METEORLAKE;    break;
+#endif //!MFX_ONEVPL
 #endif //STRIP_EMBARGO
     default:
 #if (MFX_VERSION >= 1031)
@@ -963,7 +968,9 @@ mfxStatus CommonCORE::SetFrameAllocator(mfxFrameAllocator *allocator)
     {
         m_FrameAllocator.frameAllocator = *allocator;
         m_bSetExtFrameAlloc = true;
+#if !defined(MFX_ONEVPL)
         m_session->m_coreInt.FrameAllocator = *allocator;
+#endif
         return MFX_ERR_NONE;
     }
     else
@@ -1729,6 +1736,9 @@ bool CommonCORE::CheckOpaqueRequest(mfxFrameAllocRequest *request,
     if (request->NumFrameMin != NumOpaqueSurface)
         return false;
 
+#if !defined(MFX_ENABLE_OPAQUE_MEMORY)
+    return false;
+#else
     if (!(request->Type  & MFX_MEMTYPE_OPAQUE_FRAME))
         return false;
 
@@ -1757,7 +1767,7 @@ bool CommonCORE::CheckOpaqueRequest(mfxFrameAllocRequest *request,
     }
 
     return true;
-
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 }
 
 bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,

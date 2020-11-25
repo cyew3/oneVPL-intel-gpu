@@ -23,7 +23,10 @@
 #if defined (MFX_ENABLE_H264_VIDEO_DECODE)
 
 #include <algorithm>
+
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "mfxfei.h"
+#endif
 
 #include "umc_h264_mfx_supplier.h"
 
@@ -1355,11 +1358,20 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ||
-            (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        if (   (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+            || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+            )
         {
             uint32_t mask = in->IOPattern & 0xf0;
-            if (mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY || mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY || mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            if (   mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY
+                || mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+                || mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY
+#endif
+                )
                 out->IOPattern = in->IOPattern;
             else
                 sts = MFX_ERR_UNSUPPORTED;
@@ -1422,7 +1434,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         if (stsExt < MFX_ERR_NONE)
             sts = MFX_ERR_UNSUPPORTED;
 
-#if !defined (UMC_VA_LINUX)
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
         if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_FEI_PARAM))
                 sts = MFX_ERR_UNSUPPORTED;
 #endif
@@ -1899,10 +1911,6 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
             }
         }
 #endif // #ifdef MFX_ENABLE_SVC_VIDEO_DECODE
-        mfxExtOpaqueSurfaceAlloc * opaqueOut = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        if (opaqueOut)
-        {
-        }
 
         out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
@@ -1954,7 +1962,7 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
         return false;
     }
 
-#if !defined (UMC_VA_LINUX)
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
     if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_FEI_PARAM))
         return false;
 #endif
@@ -2036,17 +2044,24 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
             return false;
     }
 
-    if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+    if (   !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif
+        )
         return false;
 
     if ((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
         return false;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
         return false;
 
     if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return false;
+#endif
 
     return true;
 }

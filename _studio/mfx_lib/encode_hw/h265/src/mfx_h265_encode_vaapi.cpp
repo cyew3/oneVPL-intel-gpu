@@ -296,7 +296,9 @@ uint32_t ConvertRateControlMFX2VAAPI(mfxU8 rateControl, bool bSWBRC)
     switch (rateControl)
     {
         case MFX_RATECONTROL_CQP:    return VA_RC_CQP;
+#if !defined(MFX_ONEVPL)
         case MFX_RATECONTROL_LA_EXT: return VA_RC_CQP;
+#endif
         case MFX_RATECONTROL_CBR:    return VA_RC_CBR | VA_RC_MB;
         case MFX_RATECONTROL_VBR:    return VA_RC_VBR | VA_RC_MB;
         case MFX_RATECONTROL_ICQ:    return VA_RC_ICQ;
@@ -390,7 +392,11 @@ mfxStatus SetRateControl(
     rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
 
     if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
+#if !defined(MFX_ONEVPL)
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT
+#endif
+        )
     {
         if (par.m_ext.CO3.WinBRCSize)
         {
@@ -944,7 +950,10 @@ void VAAPIEncoder::FillSps(
 
     if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
         && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
+#if !defined(MFX_ONEVPL)
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT
+#endif
+        )
     {
         sps.bits_per_second = par.TargetKbps * 1000;
     }

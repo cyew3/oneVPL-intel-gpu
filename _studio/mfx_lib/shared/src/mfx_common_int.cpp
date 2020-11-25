@@ -21,7 +21,11 @@
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
+
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "mfxfei.h"
+#endif
+
 #include "mfx_utils.h"
 
 #include <stdexcept>
@@ -311,6 +315,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
     return MFX_ERR_NONE;
 }
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CheckAudioParamCommon(mfxAudioParam *in)
 {
 //    mfxStatus sts;
@@ -345,6 +350,17 @@ mfxStatus CheckAudioParamEncoders(mfxAudioParam *in)
     return MFX_ERR_NONE;
 }
 
+mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame)
+{
+    if (!aFrame || !aFrame->Data)
+        return MFX_ERR_NULL_PTR;
+
+    if (aFrame->DataLength > aFrame->MaxLength)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    return MFX_ERR_NONE;
+}
+#endif //!MFX_ONEVPL
 
 mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 {
@@ -417,17 +433,26 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     mfxStatus sts = CheckVideoParamCommon(in, type);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
-    MFX_CHECK((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        , MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        || (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+        ;
+
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
         , MFX_ERR_INVALID_VIDEO_PARAM);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
     }
+#endif
 
     if (in->mfx.DecodedOrder && in->mfx.CodecId != MFX_CODEC_JPEG && in->mfx.CodecId != MFX_CODEC_AVC && in->mfx.CodecId != MFX_CODEC_HEVC)
         return MFX_ERR_UNSUPPORTED;
@@ -451,7 +476,14 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
                 MFX_ERR_INVALID_VIDEO_PARAM);
         }
 
-        MFX_CHECK((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
+#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
+        MFX_CHECK((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
+#else
+        MFX_CHECK(
+            (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            , MFX_ERR_INVALID_VIDEO_PARAM
+        );
+#endif //!MFX_ENABLE_OPAQUE_MEMORY
 
         return MFX_ERR_NONE;
     }
@@ -485,18 +517,6 @@ mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 
     return MFX_ERR_NONE;
 }
-
-mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame)
-{
-    if (!aFrame || !aFrame->Data)
-        return MFX_ERR_NULL_PTR;
-
-    if (aFrame->DataLength > aFrame->MaxLength)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    return MFX_ERR_NONE;
-}
-
 
 mfxStatus CheckBitstream(const mfxBitstream *bs)
 {
@@ -647,7 +667,9 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 {
     static const mfxU32 g_commonSupportedExtBuffers[]       = {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
                                                                MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+#endif
 #ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
                                                                MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK,
 #endif
@@ -662,7 +684,10 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
                                                                MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
 #endif
-                                                               MFX_EXTBUFF_FEI_PARAM};
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
+                                                               MFX_EXTBUFF_FEI_PARAM
+#endif
+                                                              };
 
     static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {
                                                                MFX_EXTBUFF_HEVC_PARAM
@@ -674,20 +699,21 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 #endif
                                                                };
 
-    static const mfxU32 g_decoderSupportedExtBuffersVC1[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+    static const mfxU32 g_decoderSupportedExtBuffersVC1[]   = {
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
                                                                MFX_EXTBUFF_PAVP_OPTION,
 #endif
+                                                               0 //Fallback
                                                          };
 
-    static const mfxU32 g_decoderSupportedExtBuffersVP9[] = { 
-                                                              MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+    static const mfxU32 g_decoderSupportedExtBuffersVP9[] = {
 #ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
-                                                              ,MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK
+                                                              MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK,
 #endif
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-                                                              ,MFX_EXTBUFF_DEC_VIDEO_PROCESSING
+                                                              MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
 #endif
+                                                              0 //Fallback
                                                         };
 
     static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_JPEG_HUFFMAN,
@@ -697,8 +723,9 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 
     static const mfxU32 g_decoderSupportedExtBuffersAV1[] = {
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-                                                              MFX_EXTBUFF_DEC_VIDEO_PROCESSING
+                                                              MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
 #endif
+                                                              0 //Fallback
     };
 
     const mfxU32 *supported_buffers = 0;
@@ -755,7 +782,7 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
         bool is_known = false;
         for (mfxU32 j = 0; j < numberOfSupported; ++j)
         {
-            if (par->ExtParam[i]->BufferId == supported_buffers[j])
+            if (supported_buffers[j] && par->ExtParam[i]->BufferId == supported_buffers[j])
             {
                 is_known = true;
                 break;
@@ -992,7 +1019,9 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_PAVP_OPTION:
 #endif
         case MFX_EXTBUFF_VIDEO_SIGNAL_INFO:
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
+#endif
 #if defined(MFX_ENABLE_SVC_VIDEO_DECODE)
         case MFX_EXTBUFF_SVC_SEQ_DESC:
         case MFX_EXTBUFF_SVC_TARGET_LAYER:
@@ -1003,6 +1032,7 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_JPEG_QT:
         case MFX_EXTBUFF_JPEG_HUFFMAN:
         case MFX_EXTBUFF_HEVC_PARAM:
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
         case MFX_EXTBUFF_FEI_PARAM:
             {
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
@@ -1018,6 +1048,7 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                 std::copy(src, src + par.ExtParam[i]->BufferSz, dst);
             }
             break;
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         case MFX_EXTBUFF_MVC_SEQ_DESC:
             {
                 mfxExtMVCSeqDesc * mvcPoints = (mfxExtMVCSeqDesc *)GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
@@ -1193,4 +1224,22 @@ mfxStatus GetFramePointerChecked(mfxFrameInfo const& info, mfxFrameData const& d
 
     return
         !min_pitch || pitch < min_pitch ? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_NONE;
+}
+
+mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxFrameData const& fd)
+{
+    mfxFrameSurface1 surface{};
+    surface.Info = fi;
+    surface.Data = fd;
+
+    return surface;
+}
+
+mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxMemId mid)
+{
+    mfxFrameSurface1 surface{};
+    surface.Info = fi;
+    surface.Data.MemId = mid;
+
+    return surface;
 }

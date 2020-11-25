@@ -19,6 +19,27 @@
 // SOFTWARE.
 
 #include <mfxvideo.h>
+
+#if defined(MFX_ONEVPL)
+#include "mfxstructures-int.h"
+
+#define FUNCTION_DEPRECATED_IMPL(component, func_name, formal_param_list) \
+mfxStatus MFXVideo##component##_##func_name formal_param_list \
+{ \
+    return MFX_ERR_UNSUPPORTED; \
+}
+
+FUNCTION_DEPRECATED_IMPL(PAK, QueryIOSurf,       (mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request))
+FUNCTION_DEPRECATED_IMPL(PAK, Init,              (mfxSession session, mfxVideoParam *par))
+FUNCTION_DEPRECATED_IMPL(PAK, Close,             (mfxSession session))
+FUNCTION_DEPRECATED_IMPL(PAK, Reset,             (mfxSession session, mfxVideoParam *par))
+FUNCTION_DEPRECATED_IMPL(PAK, Query,             (mfxSession session, mfxVideoParam *in, mfxVideoParam *out))
+FUNCTION_DEPRECATED_IMPL(PAK, GetVideoParam,     (mfxSession session, mfxVideoParam *par))
+FUNCTION_DEPRECATED_IMPL(PAK, ProcessFrameAsync, (mfxSession session, mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp))
+#undef FUNCTION_DEPRECATED_IMPL
+
+#else
+
 #include <mfxfei.h>
 #include <mfxpak.h>
 #include "mfx_pak_ext.h"
@@ -29,15 +50,15 @@
 // sheduling and threading stuff
 #include <mfx_task.h>
 
-#ifdef MFX_ENABLE_MPEG2_VIDEO_PAK
+#if defined(MFX_ENABLE_MPEG2_VIDEO_PAK)
 #include "mfx_mpeg2_pak.h"
 #endif
 
-#ifdef MFX_ENABLE_H264_VIDEO_PAK
+#if defined(MFX_ENABLE_H264_VIDEO_PAK)
 #include "mfx_h264_pak.h"
 #endif
 
-#if defined(MFX_VA_LINUX) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
 #include "mfx_h264_fei_pak.h"
 #endif
 
@@ -336,3 +357,4 @@ FUNCTION_RESET_IMPL(PAK, Reset, (mfxSession session, mfxVideoParam *par), (par))
 
 FUNCTION_IMPL(PAK, GetVideoParam, (mfxSession session, mfxVideoParam *par), (par))
 FUNCTION_IMPL(PAK, GetFrameParam, (mfxSession session, mfxFrameParam *par), (par))
+#endif

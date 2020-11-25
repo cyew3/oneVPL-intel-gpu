@@ -25,7 +25,7 @@
 #include <cmath>
 
 #include "cmrt_cross_platform.h"
-#include "mfx_session.h"
+
 #include "mfx_task.h"
 #include "libmfx_core.h"
 #include "libmfx_core_hw.h"
@@ -40,7 +40,10 @@
 #include "mfx_h264_encode_cm_defs.h"
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 #include "mfx_lp_lookahead.h"
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#include "mfx_enctools_lpla.h"
 #endif
+#endif //MFX_ENABLE_LP_LOOKAHEAD
 #include "vm_time.h"
 
 #if USE_AGOP
@@ -472,10 +475,12 @@ mfxStatus ImplementationAvc::Query(
         else if (checkSts == MFX_ERR_NONE && lpSts != MFX_ERR_NONE) // transfer MFX_WRN_INCOMPATIBLE_VIDEO_PARAM to upper level
             checkSts = lpSts;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
         /* FEI ENCODE additional check for input parameters */
         mfxExtFeiParam* feiParam = GetExtBuffer(*in);
         if ((NULL != feiParam) && (MFX_FEI_FUNCTION_ENCODE != feiParam->Func))
             checkSts = MFX_ERR_UNSUPPORTED;
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 #ifdef MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
         if(mfxExtPartialBitstreamParam* po = GetExtBuffer(*out))
@@ -679,11 +684,15 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     mfxFrameAllocRequest * request)
 {
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
-    MFX_CHECK(
-        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
-        MFX_ERR_INVALID_VIDEO_PARAM);
+    auto const supportedMemoryType =
+           inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
+#endif
+        ;
+
+    MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_ENCODE_CAPS hwCaps = {};
     MfxVideoParam tmp(*par);
@@ -731,9 +740,13 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-        request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            ? MFX_MEMTYPE_OPAQUE_FRAME
-            : MFX_MEMTYPE_EXTERNAL_FRAME;
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        if (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+            request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
+        else
+#endif
+            request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
+
         //if MDF is in pipeline need to allocate shared resource to avoid performance issues due to decompression when MMCD is enabled
 #ifdef MFX_VA_WIN
         request->Type|= (bIntRateControlLA(par->mfx.RateControlMethod) || IsOn(extOpt3.FadeDetection))? MFX_MEMTYPE_SHARED_RESOURCE:0;
@@ -917,12 +930,13 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxStatus sts = CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     /* feiParam buffer attached by application */
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
     m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
     if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
         return MFX_ERR_INVALID_VIDEO_PARAM;
-
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     m_video = *par;
     eMFXHWType platform = m_core->GetHWType();
@@ -1128,7 +1142,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_emulatorForSyncPart.Init(m_video, adaptGopDelay);
     m_emulatorForAsyncPart = m_emulatorForSyncPart;
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(m_video);
+#endif
 
     // Allocate raw surfaces.
     // This is required only in case of system memory at input
@@ -1147,6 +1163,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         }
         MFX_CHECK_STS(sts);
     }
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         request.Type = extOpaq.In.Type;
@@ -1171,6 +1188,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             }
         }
     }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+
     mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
     bool bPanicModeSupport = m_enabledSwBrc;
     if (m_raw.NumFrameActual == 0 && bPanicModeSupport)
@@ -1185,8 +1204,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 
     m_inputFrameType =
-        m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+            m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        || (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+#endif
         ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
         : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -1700,6 +1721,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     /* feiParam buffer attached by application */
     mfxExtFeiParam* feiParam = NULL;
     if (newParIn)
@@ -1711,6 +1733,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
     if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
             return MFX_ERR_INVALID_VIDEO_PARAM;
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption * extPavpNew = GetExtBuffer(newPar);
@@ -1723,15 +1746,16 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     sts = ReadSpsPpsHeaders(newPar);
     MFX_CHECK_STS(sts);
 
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc & extOpaqNew = GetExtBufferRef(newPar);
     mfxExtOpaqueSurfaceAlloc & extOpaqOld = GetExtBufferRef(m_video);
     MFX_CHECK(
         extOpaqOld.In.Type       == extOpaqNew.In.Type       &&
         extOpaqOld.In.NumSurface == extOpaqNew.In.NumSurface,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(newPar);
-
 
     //set NumSliceI/P/B to Numslice if not set by new parameters.
     ResetNumSliceIPB(newPar);
@@ -1772,11 +1796,16 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
                   MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     }
 
-    MFX_CHECK(!((m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA ||
-                m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ||
-                m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD) &&
-                !IsOn(m_video.mfx.LowPower) && extOpt2New.MaxSliceSize == 0),
-              MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    auto const LARateControl =
+           m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA
+        || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+#if !defined(MFX_ONEVPL)
+        || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        ;
+
+    MFX_CHECK(!(LARateControl && !IsOn(m_video.mfx.LowPower) && extOpt2New.MaxSliceSize == 0),
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     // check if IDR required after change of encoding parameters
     bool isSpsChanged = extSpsNew.vuiParametersPresentFlag == 0 ?
@@ -2951,11 +2980,13 @@ mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & task)
     mfxHDLPair handle = { nullptr,nullptr };
     if (IsCmNeededForSCD(m_video))
     {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             MFX_SAFE_CALL(m_core->GetFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle)));
         }
         else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
         {
             MFX_SAFE_CALL(m_core->GetExternalFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle), false));
         }
@@ -3263,11 +3294,13 @@ mfxStatus ImplementationAvc::CalculateFrameCmplx(DdiTask const &task, mfxU32 &ra
 
     if (IsCmNeededForSCD(m_video))
     {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             MFX_SAFE_CALL(m_core->GetFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle)));
         }
         else
+#endif //MFX_ENABLE_OPAQUE_MEMORY
         {
             MFX_SAFE_CALL(m_core->GetExternalFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle), false));
         }
@@ -3762,7 +3795,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         m_stagesToGo = m_emulatorForAsyncPart.Go(!m_incoming.empty());
     }
 
-
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     mfxExtFeiParam const * extFeiParams = GetExtBuffer(m_video, 0);
     mfxU32 stagesToGo = 0;
 
@@ -3775,7 +3808,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         */
         m_stagesToGo = AsyncRoutineEmulator::STG_BIT_RESTART*2;
     }
-
+#endif
 
 #if USE_AGOP
 #if 0
@@ -3807,6 +3840,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 #endif
 
+#if !defined(MFX_ONEVPL)
        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
        {
             const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(newTask.m_ctrl);
@@ -3820,6 +3854,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             MFX_CHECK(newTask.m_ctrl.FrameType, MFX_ERR_UNDEFINED_BEHAVIOR);
        }
+#endif //!MFX_ONEVPL
 
         if (!m_video.mfx.EncodedOrder)
         {
@@ -4353,6 +4388,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
                 if (bIntRateControlLA(m_video.mfx.RateControlMethod))
                     BrcPreEnc(*task);
+#if !defined(MFX_ONEVPL)
                 else if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
                 {
                     const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(task->m_ctrl);
@@ -4361,7 +4397,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     if (sts != MFX_ERR_NONE)
                         return Error(sts);
                 }
-
+#endif //!MFX_ONEVPL
 
                 if (IsExtBrcSceneChangeSupported(m_video)
                     && (task->GetFrameType() & MFX_FRAMETYPE_I) && (task->m_encOrder == 0 || m_video.mfx.GopPicSize != 1))
@@ -4445,7 +4481,11 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
 
             // In case of progressive frames in PAFF mode need to switch the flag off to prevent m_fieldCounter changes
-            task->m_singleFieldMode = (task->m_fieldPicFlag != 0) && IsOn(extFeiParams->SingleFieldProcessing);
+            task->m_singleFieldMode = (task->m_fieldPicFlag != 0)
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+                && IsOn(extFeiParams->SingleFieldProcessing)
+#endif
+                ;
 
 #ifdef ENABLE_H264_MBFORCE_INTRA
             {
@@ -4796,6 +4836,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     }
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     /* FEI Field processing mode: second (last) field processing */
     if ( ((AsyncRoutineEmulator::STG_BIT_RESTART*2) == m_stagesToGo ) &&
          IsOn(extFeiParams->SingleFieldProcessing) && (1 == m_fieldCounter) )
@@ -4822,7 +4863,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         m_stagesToGo = stagesToGo;
         OnEncodingQueried(task);
     } // if (( (AsyncRoutineEmulator::STG_BIT_RESTART*2) == m_stagesToGo ) &&
-
+#endif
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_RESTART)
     {
@@ -4981,6 +5022,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
     mfxStatus status = checkSts;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     mfxExtFeiParam const * extFeiParams = GetExtBuffer(m_video, 0);
     /* If (1): encoder in state "FEI field processing mode"
      * and (2): first field is coded already
@@ -5005,7 +5047,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         m_encoding.front().m_ctrl = *ctrl;
         return status;
     }
-
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
     {
         UMC::AutomaticUMCMutex guard(m_listMutex);
         if (m_free.empty())

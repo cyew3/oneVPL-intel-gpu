@@ -21,7 +21,6 @@
 #ifndef __MFX_TASK_H
 #define __MFX_TASK_H
 
-#include <mfxplugin.h>
 #include <mfx_thread_task.h>
 #include <mfx_task_threading_policy.h>
 

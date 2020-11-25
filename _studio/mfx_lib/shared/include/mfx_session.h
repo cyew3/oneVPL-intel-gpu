@@ -27,8 +27,12 @@
 #include <mfxdefs.h>
 #include <mfxstructures.h>
 #include <mfxvideo++int.h>
+
+#if !defined(MFX_ONEVPL)
 #include <mfxaudio++int.h>
 #include <mfxplugin.h>
+#endif
+
 #include "mfx_common.h"
 
 // private headers
@@ -79,8 +83,6 @@ protected:
     T*   m_ptr;
 };
 
-
-
 struct _mfxSession
 {
     // Constructor
@@ -101,16 +103,28 @@ struct _mfxSession
 
     // Declare session's components
     mfx_core_ptr<VideoCORE> m_pCORE;
+#if !defined(MFX_ONEVPL)
     std::unique_ptr<AudioCORE> m_pAudioCORE;
+#endif
+
     std::unique_ptr<VideoENCODE> m_pENCODE;
     std::unique_ptr<VideoDECODE> m_pDECODE;
+
+#if !defined(MFX_ONEVPL)
     std::unique_ptr<AudioENCODE> m_pAudioENCODE;
     std::unique_ptr<AudioDECODE> m_pAudioDECODE;
+#endif
+
     std::unique_ptr<VideoVPP> m_pVPP;
+
+#if !defined(MFX_ONEVPL)
     std::unique_ptr<VideoENC> m_pENC;
     std::unique_ptr<VideoPAK> m_pPAK;
+#endif
+
     std::unique_ptr<void *>   m_reserved;
-    
+
+#if !defined(MFX_ONEVPL)
     std::unique_ptr<VideoCodecUSER> m_plgDec;
     std::unique_ptr<VideoCodecUSER> m_plgEnc;
     std::unique_ptr<VideoCodecUSER> m_plgVPP;
@@ -118,6 +132,7 @@ struct _mfxSession
 
     // Wrapper of interface for core object
     mfxCoreInterface m_coreInt;
+#endif //!MFX_ONEVPL
 
     // Current implementation platform ID
     eMFXPlatform m_currentPlatform;
@@ -179,10 +194,13 @@ private:
     _mfxSession & operator = (const _mfxSession &);
 };
 
-#if defined(_WIN64) || defined(LINUX64)
-  static_assert(sizeof(_mfxSession) == 440, "size_of_session_is_fixed");
-#elif defined(_WIN32) || defined(LINUX32)
-  static_assert(sizeof(_mfxSession) == 244, "size_of_session_is_fixed");
+#if !defined(MFX_ONEVPL)
+    #if defined(_WIN64) || defined(LINUX64)
+        static_assert(sizeof(_mfxSession) == 440, "size_of_session_is_fixed");
+    #elif defined(_WIN32) || defined(LINUX32)
+        static_assert(sizeof(_mfxSession) == 244, "size_of_session_is_fixed");
+    #endif
+#else
 #endif
 
 
@@ -202,7 +220,9 @@ public:
     // Finish initialization. Should be called before Init().
     virtual void SetAdapterNum(const mfxU32 adapterNum) = 0;
 
+#if !defined(MFX_ONEVPL)
     virtual std::unique_ptr<VideoCodecUSER> & GetPreEncPlugin() = 0;
+#endif
 };
 
 MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session);
@@ -220,7 +240,10 @@ public:
     //
 
     void SetAdapterNum(const mfxU32 adapterNum);
+
+#if !defined(MFX_ONEVPL)
     std::unique_ptr<VideoCodecUSER> &  GetPreEncPlugin();
+#endif
 
     //
     // MFXIUnknown interface
@@ -247,8 +270,11 @@ public:
         mfxStatus InitEx(mfxInitParam& par);
 
 public:
+
+#if !defined(MFX_ONEVPL)
     // Declare additional session's components
     std::unique_ptr<VideoCodecUSER> m_plgPreEnc;
+#endif
 
 protected:
     // Reference counters

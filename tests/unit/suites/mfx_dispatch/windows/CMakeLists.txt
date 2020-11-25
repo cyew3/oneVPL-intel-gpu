@@ -42,6 +42,9 @@ target_link_libraries(test_multi_adapter
     gmock
 )
 
-target_compile_definitions(test_multi_adapter PUBLIC MFX_ENABLE_UNIT_TEST_MULTI_ADAPTER)
+target_compile_definitions(test_multi_adapter
+  PRIVATE
+    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:MFX_ENABLE_UNIT_TEST_MULTI_ADAPTER>
+)
 
 target_compile_options(test_multi_adapter PRIVATE /bigobj)

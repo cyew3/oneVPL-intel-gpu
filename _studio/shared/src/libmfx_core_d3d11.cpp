@@ -380,11 +380,13 @@ mfxStatus D3D11VideoCORE_T<Base>::AllocFrames(mfxFrameAllocRequest *request,
     {
         // external allocator doesn't know how to allocate opaque surfaces
         // we can treat opaque as internal
-        if ((request->Type & MFX_MEMTYPE_OPAQUE_FRAME) || request->Info.FourCC == MFX_FOURCC_P8
-
-        // use internal allocator for R16 since creating requires
-        // Intel's internal resource extensions that are not
-        // exposed for external application
+        if (    request->Info.FourCC == MFX_FOURCC_P8
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
+            || (request->Type & MFX_MEMTYPE_OPAQUE_FRAME)
+#endif
+            // use internal allocator for R16 since creating requires
+            // Intel's internal resource extensions that are not
+            // exposed for external application
             || IsBayerFormat(request->Info.FourCC))
         {
             request->Type &= ~MFX_MEMTYPE_EXTERNAL_FRAME;
