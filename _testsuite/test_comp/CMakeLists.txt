@@ -24,8 +24,8 @@ target_link_libraries(${test_comp}
     mfx
     mfx_shared_lib
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${CMAKE_DL_LIBS}
+  PRIVATE
+    mfx_va_properties
 )
 
 set(common_linux_defs

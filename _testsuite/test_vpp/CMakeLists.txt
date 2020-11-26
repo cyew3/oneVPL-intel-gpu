@@ -92,12 +92,14 @@ target_link_libraries(test_vpp
     vm
     vm_plus
     IPP::dc IPP::vc IPP::cc IPP::i IPP::s IPP::core
-    ${CMAKE_DL_LIBS}
-    ${CMAKE_THREAD_LIBS_INIT}
   PRIVATE
+    mfx_va_properties
     mfx_require_sse4_properties
 )
 
-target_compile_definitions(test_vpp PRIVATE MFX_VERSION_USE_LATEST)
+target_compile_definitions(test_vpp 
+  PRIVATE 
+    MFX_VERSION_USE_LATEST
+  )
 
 set_property(TARGET test_vpp PROPERTY FOLDER "testsuite")

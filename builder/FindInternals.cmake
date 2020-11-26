@@ -135,10 +135,35 @@ target_link_libraries(mfx_plugin_properties
     ${CMAKE_DL_LIBS}
 )
 
-#set( T_ARCH "sse4.2" )
-#message( STATUS "Target Architecture to compile: ${T_ARCH}" )
+#================================================
 
-# HEVC plugins disabled by default
+add_library(mfx_va_properties INTERFACE) # va stands for video acceleration 
+
+target_link_options(mfx_va_properties
+  INTERFACE
+    $<$<PLATFORM_ID:Linux>:LINKER:--no-undefined,-z,relro,-z,now,-z,noexecstack,--no-as-needed>
+  )
+
+target_link_libraries(mfx_va_properties
+  INTERFACE
+    $<$<PLATFORM_ID:Linux>:va>
+    Threads::Threads
+    ${CMAKE_DL_LIBS}
+)
+
+target_compile_definitions(mfx_va_properties
+  INTERFACE
+    MFX_VA
+    $<$<PLATFORM_ID:Linux>:
+      LIBVA_SUPPORT
+      LIBVA_DRM_SUPPORT
+    >
+    $<$<PLATFORM_ID:Windows>:MFX_D3D11_ENABLED>
+  )
+
+#================================================
+
+# HEVC plugins disabled by default FIXME: put these in configuration-specific build options override
 set( ENABLE_HEVC FALSE )
 set( ENABLE_HEVC_FEI FALSE )
 

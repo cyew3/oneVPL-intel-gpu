@@ -74,8 +74,6 @@ set(common_mfx_pipeline_sources
 
 set(common_linux_defs
   LINUX32
-  LIBVA_SUPPORT
-  LIBVA_DRM_SUPPORT
   $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:LINUX64>
 )
 
@@ -117,6 +115,8 @@ target_link_libraries(mfx_pipeline
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
+  PRIVATE
+    mfx_va_properties
 )
 
 # ============================= mfx_pipeline_lucas ================================================
@@ -152,6 +152,8 @@ target_link_libraries(mfx_pipeline_lucas
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
+  PRIVATE
+    mfx_va_properties
 )
 
 target_compile_definitions(mfx_pipeline_lucas

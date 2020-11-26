@@ -49,6 +49,8 @@ target_link_libraries(mfx_trans_pipeline
     mfx_static_lib
     mfx_pipeline
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
+  PRIVATE
+    mfx_va_properties
 )
 
 target_compile_definitions(mfx_trans_pipeline
@@ -69,6 +71,8 @@ target_link_libraries(mfx_trans_pipeline_lucas
     mfx_static_lib
     mfx_pipeline_lucas
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
+  PRIVATE
+    mfx_va_properties
 )
 
 target_compile_definitions(mfx_trans_pipeline_lucas
@@ -97,8 +101,8 @@ target_link_libraries(mfx_transcoder
     mfx_trace
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
     ${ITT_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${CMAKE_DL_LIBS}
+  PRIVATE
+    mfx_va_properties
 )
 
 target_compile_definitions(mfx_transcoder
@@ -125,8 +129,8 @@ target_link_libraries(mfx_transcoder_lucas
     mfx_trace
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
     ${ITT_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${CMAKE_DL_LIBS}
+  PRIVATE
+    mfx_va_properties
 )
 
 target_compile_definitions(mfx_transcoder_lucas

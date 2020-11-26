@@ -92,8 +92,8 @@ target_link_libraries(test_vpp_multisession
     vm
     vm_plus
     IPP::dc IPP::vc IPP::cc IPP::i IPP::s IPP::core
-    ${CMAKE_DL_LIBS}
-    ${CMAKE_THREAD_LIBS_INIT}
+  PRIVATE
+    mfx_va_properties
 )
 
 target_compile_definitions(test_vpp_multisession PRIVATE MFX_VERSION_USE_LATEST)
