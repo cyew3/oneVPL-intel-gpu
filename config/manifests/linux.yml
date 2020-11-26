@@ -1,0 +1,14 @@
+version: '1'
+components:
+  libva:
+    type: git
+    repository: https://github.com/intel/libva
+    branch: master
+    revision: 2.9.0.pre1
+    dest_dir: libva
+  msdk:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.lib.git
+    branch: master
+    revision: 9aa9b5e4cc0a974860628824a035a662db9f1b14
+    dest_dir: msdk

@@ -1,0 +1,6 @@
+---
+systems:
+- name: linux/ubuntu
+  buildplan: linux-ubuntu.yml
+- name: linux/ubuntu/tools
+  buildplan: linux_tools-ubuntu.yml

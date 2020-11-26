@@ -1,0 +1,19 @@
+---
+resource: DOCKER_LINUX_DRIVER
+manifest: linux.yml
+working_dir: ''
+env:
+  DOCKER_ENV_VARS: "-e SYSTEM=Ubuntu18.04 -e LINUX_DISTRO=ubuntu -e CCACHE_DIR=/opt/ccache"
+  DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-ubuntu18.04:1
+qb_variable_map:
+  build_version: BUILD_VERSION
+  component_name: COMPONENT_NAME
+  irepo_workspace: WORKSPACE
+  parent_build_id: BUILD_ID
+steps:
+  - name: mock command
+    command: echo "Hello world!"
+types:
+  ubuntu18.04:
+    env:
+      BUILD_TYPE: Release
