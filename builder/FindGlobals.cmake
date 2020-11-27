@@ -126,6 +126,7 @@ elseif( Windows )
   target_compile_options(mfx_common_properties
     INTERFACE
       $<$<BOOL:${MFX_ENABLE_SPECTRE_MITIGATIONS}>:/Qspectre>
+      /guard:cf
   )
 endif( )
 
