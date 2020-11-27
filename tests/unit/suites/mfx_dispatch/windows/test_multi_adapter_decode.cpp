@@ -176,7 +176,7 @@ namespace test
         );
     }
 
-    TEST_F(QueryAdaptersDecode, QueryDecode)
+    TEST_F(QueryAdaptersDecode, DISABLED_QueryDecode)
     {
         //add a couple of adapters to mocked factory
         mock_factory(*factory,

@@ -65,6 +65,7 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_static_assert_structs.cpp
 
     $<$<PLATFORM_ID:Windows>:libmfx.def>
+    $<$<PLATFORM_ID:Windows>:libmfxhw.rc>
   )
 
 set(sources_hw
