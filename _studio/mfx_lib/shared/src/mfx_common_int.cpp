@@ -1034,6 +1034,7 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_HEVC_PARAM:
 #if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
         case MFX_EXTBUFF_FEI_PARAM:
+#endif
             {
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
                 m_buffers.AddBuffer(par.ExtParam[i]);
@@ -1048,7 +1049,6 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                 std::copy(src, src + par.ExtParam[i]->BufferSz, dst);
             }
             break;
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         case MFX_EXTBUFF_MVC_SEQ_DESC:
             {
                 mfxExtMVCSeqDesc * mvcPoints = (mfxExtMVCSeqDesc *)GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
