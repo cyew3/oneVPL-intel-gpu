@@ -929,6 +929,11 @@ void CmContext::Setup(
     case MFX_HW_LKF:
         m_programHist = ReadProgram(m_device, genx_icllp_histogram, SizeOf(genx_icllp_histogram));
         break;
+    case MFX_HW_ADL_S:
+    case MFX_HW_ADL_P:
+        m_program = ReadProgram(m_device, genx_tgllp_simple_me, SizeOf(genx_tgllp_simple_me));
+        m_programHist = ReadProgram(m_device, genx_tgllp_histogram, SizeOf(genx_tgllp_histogram));
+        break;
 #endif
 #endif // #ifdef MFX_ENABLE_KERNELS
     default:

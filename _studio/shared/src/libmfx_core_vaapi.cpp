@@ -455,10 +455,21 @@ typedef struct {
     { 0x4C90, MFX_HW_RKL, MFX_GT1 }, // RKL-S
     { 0x4C9A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
 
-    /* ADL */
+    /* ADL-S */
     { 0x4600, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
     { 0x4680, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4681, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4683, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4690, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4691, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4693, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4698, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4699, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+
+    /* ADL-P */
     { 0x46A0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46C0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46E0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
 
     /* PVC */
     { 0x0BD0, MFX_HW_PVC, MFX_GT4 }
