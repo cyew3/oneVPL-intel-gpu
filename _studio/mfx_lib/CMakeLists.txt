@@ -211,8 +211,15 @@ foreach( variant ${VARIANTS} )
       $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_pak>
     )
 
-  set_target_properties(${mfxlibname} PROPERTIES   VERSION ${mfx_version_major}.${mfx_version_minor})
-  set_target_properties(${mfxlibname} PROPERTIES SOVERSION ${mfx_version_major})
+  set(libversion   ${mfx_version_major}.${mfx_version_minor})
+  set(libsoversion ${mfx_version_major})
+  if(${API_USE_VPL})
+    set(libversion   1.${libversion})
+    set(libsoversion 1.${libsoversion})
+  endif()
+
+  set_target_properties(${mfxlibname} PROPERTIES   VERSION ${libversion})
+  set_target_properties(${mfxlibname} PROPERTIES SOVERSION ${libsoversion})
 
   install(TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR})
 
