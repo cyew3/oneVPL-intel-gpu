@@ -28,7 +28,7 @@ target_link_options(sample_plugin_opencl
 
 target_link_libraries(sample_plugin_opencl
   PUBLIC
-    ${OPENCL_LIBS}
+    ${OPENCL_LIBRARY}
     sample_common
   )
 

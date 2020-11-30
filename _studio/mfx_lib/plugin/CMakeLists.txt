@@ -234,6 +234,8 @@ if( DEFINED H264LA_ENCODER_GUID )
     else()
       set(la_IPPLIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
     endif()
+  else()
+      set(la_IPPLIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
   endif()
 
   target_link_libraries(${plugin_name}
