@@ -166,7 +166,7 @@ foreach( variant ${VARIANTS} )
 
   set(HW_ONLY_LIBS "")
   if (variant MATCHES hw)
-    set(HW_ONLY_LIBS umc_va_hw cmrt_cross_platform_hw $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw> mctf_hw asc genx)
+    set(HW_ONLY_LIBS umc_va_hw cmrt_cross_platform_hw $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw> asc genx)
   endif()
 
   set(LIBS
