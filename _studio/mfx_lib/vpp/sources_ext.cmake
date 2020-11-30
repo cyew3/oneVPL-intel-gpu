@@ -44,7 +44,6 @@ target_link_libraries(vpp_sw
     mctf_hw
   PRIVATE
     genx
-    mfx_require_sse4_properties
 )
 
 target_sources(vpp_hw PRIVATE ${sources})
@@ -53,5 +52,4 @@ target_link_libraries(vpp_hw
   PUBLIC
     scene_analyzer
   PRIVATE
-    mfx_require_sse4_properties
   )

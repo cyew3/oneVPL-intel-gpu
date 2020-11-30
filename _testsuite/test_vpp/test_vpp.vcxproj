@@ -254,6 +254,9 @@
     <ClCompile Include="src\test_vpp_pts.cpp" />
     <ClCompile Include="src\test_vpp_roi.cpp" />
     <ClCompile Include="src\test_vpp_utils.cpp" />
+    <ClCompile Include="..\..\_studio\mfx_lib\..\shared\src\fast_copy_sse4_impl.cpp" />
+    <ClCompile Include="..\..\_studio\mfx_lib\..\shared\src\fast_copy_c_impl.cpp" />
+    <ClCompile Include="..\..\_studio\mfx_lib\..\shared\src\fast_copy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\api\mfx_dispatch\windows\libmfx_vs2015.vcxproj">

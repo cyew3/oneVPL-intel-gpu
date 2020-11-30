@@ -36,7 +36,10 @@
     <ClCompile Include="..\..\shared\src\d3d11_decode_accelerator.cpp" />
     <ClCompile Include="..\..\shared\src\d3d11_video_processor.cpp" />
     <ClCompile Include="..\..\shared\src\fast_compositing_ddi.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_sse4_impl.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_c_impl.cpp" />
     <ClCompile Include="..\..\shared\src\fast_copy.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_multithreading.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_allocator_d3d11.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_allocator_d3d9.cpp" />
@@ -114,6 +117,8 @@
     <ClInclude Include="..\..\shared\include\auxiliary_device.h" />
     <ClInclude Include="..\..\shared\include\cm_mem_copy.h" />
     <ClInclude Include="..\..\shared\include\d3d11_decode_accelerator.h" />
+    <ClInclude Include="..\..\shared\include\fast_copy_sse4_impl.h" />
+    <ClInclude Include="..\..\shared\include\fast_copy_c_impl.h" />
     <ClInclude Include="..\..\shared\include\fast_copy.h" />
     <ClInclude Include="..\..\shared\include\libmfx_allocator.h" />
     <ClInclude Include="..\..\shared\include\libmfx_allocator_d3d11.h" />

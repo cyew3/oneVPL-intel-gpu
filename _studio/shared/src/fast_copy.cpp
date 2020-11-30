@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -6,7 +6,7 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-//
+// 
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 //
@@ -20,248 +20,43 @@
 
 #include "fast_copy.h"
 
-#include "umc_event.h"
-#include <thread>
-#include "libmfx_allocator.h"
+#define FAFT_COPY_CPU_DISP_INIT_C(func)           (func ## _C)
+#define FAFT_COPY_CPU_DISP_INIT_SSE4(func)        (func ## _SSE4)
+#define FAFT_COPY_CPU_DISP_INIT_SSE4_C(func)      (m_SSE4_available ? FAFT_COPY_CPU_DISP_INIT_SSE4(func) : FAFT_COPY_CPU_DISP_INIT_C(func))
 
-struct FC_TASK
-{
-    // pointers to source and destination
-    Ipp8u *pS;
-    Ipp8u *pD;
-
-    // size of chunk to copy
-    Ipp32u chunkSize;
-
-    // pitches and frame size
-    IppiSize roi;
-    Ipp32u srcPitch, dstPitch;
-    int flag;
-
-    // event handles
-    UMC::Event EventStart;
-    UMC::Event EventEnd;
-};
-
-class FastCopyMultithreading : public FastCopy
-{
-public:
-
-    // constructor
-    FastCopyMultithreading(void);
-
-    // destructor
-    virtual ~FastCopyMultithreading(void);
-
-    // initialize available functionality
-    mfxStatus Initialize(void);
-
-    // release object
-    mfxStatus Release(void);
-
-    // copy memory by streaming
-    mfxStatus Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, int flag);
+mfxI32 CpuFeature_SSE41() {
 #if defined(_WIN32) || defined(_WIN64)
-    // copy memory by streaming with shifting
-    mfxStatus CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift, int flag);
+    mfxI32 info[4], mask = (1 << 19);    // SSE41
+    __cpuidex(info, 0x1, 0);
+    return ((info[2] & mask) == mask);
+#else
+    return((__builtin_cpu_supports("sse4.1")));
 #endif
+}
 
-protected:
-
-   // synchronize threads
-    mfxStatus Synchronize(void);
-
-    static mfxU32 __STDCALL CopyByThread(void *object);
-    static IppBool m_bCopyQuit;
-
-    // handles
-    std::thread *m_pThreads;
-    Ipp32u m_numThreads;
-
-    FC_TASK *m_tasks;
-};
-
-IppBool FastCopyMultithreading::m_bCopyQuit = ippFalse;
-
-FastCopyMultithreading::FastCopyMultithreading(void)
+void copyVideoToSys(const mfxU8* src, mfxU8* dst, int width)
 {
-    m_pThreads = NULL;
-    m_tasks = NULL;
+    static const int m_SSE4_available = CpuFeature_SSE41();
 
-    m_numThreads = 0;
+    static const t_copyVideoToSys copyVideoToSys_impl = FAFT_COPY_CPU_DISP_INIT_SSE4_C(copyVideoToSys);
 
-} // FastCopy::FastCopy(void)
+    copyVideoToSys_impl(src, dst, width);
+}
 
-FastCopyMultithreading::~FastCopyMultithreading(void)
+void copyVideoToSysShift(const mfxU16* src, mfxU16* dst, int width, int shift)
 {
-    Release();
+    static const int m_SSE4_available = CpuFeature_SSE41();
 
-} // FastCopy::~FastCopy(void)
+    static const t_copyVideoToSysShift copyVideoToSysShift_impl = FAFT_COPY_CPU_DISP_INIT_SSE4_C(copyVideoToSysShift);
 
-mfxStatus FastCopyMultithreading::Initialize(void)
+    copyVideoToSysShift_impl(src, dst, width, shift);
+}
+
+void copySysToVideoShift(const mfxU16* src, mfxU16* dst, int width, int shift)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-    mfxU32 i = 0;
+    static const int m_SSE4_available = CpuFeature_SSE41();
 
-    // release object before allocation
-    Release();
+    static const t_copySysToVideoShift copySysToVideoShift_impl = FAFT_COPY_CPU_DISP_INIT_SSE4_C(copySysToVideoShift);
 
-    if (MFX_ERR_NONE == sts)
-    {
-        // streaming is on
-        m_numThreads = 1;
-    }
-    if (MFX_ERR_NONE == sts)
-    {
-        m_pThreads = new std::thread[m_numThreads];
-        m_tasks = new FC_TASK[m_numThreads];
-
-        if (!m_pThreads || !m_tasks) sts = MFX_ERR_MEMORY_ALLOC;
-    }
-    // initialize events
-    for (i = 0; (MFX_ERR_NONE == sts) && (i < m_numThreads - 1); i += 1)
-    {
-        if (UMC::UMC_OK != m_tasks[i].EventStart.Init(0, 0))
-        {
-            sts = MFX_ERR_UNKNOWN;
-        }
-        if (UMC::UMC_OK != m_tasks[i].EventEnd.Init(0, 0))
-        {
-            sts = MFX_ERR_UNKNOWN;
-        }
-    }
-    // run threads
-    for (i = 0; (MFX_ERR_NONE == sts) && (i < m_numThreads - 1); i += 1)
-    {
-        m_pThreads[i] = std::thread([this, i]() { CopyByThread((void *)(m_tasks + i)); });
-    }
-
-    return MFX_ERR_NONE;
-} // mfxStatus FastCopy::Initialize(void)
-
-mfxStatus FastCopyMultithreading::Release(void)
-{
-    m_bCopyQuit = ippTrue;
-
-    if ((m_numThreads > 1) && m_tasks && m_pThreads)
-    {
-        // set event
-        for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
-        {
-            m_tasks[i].EventStart.Set();
-            if (m_pThreads[i].joinable())
-                m_pThreads[i].join();
-        }
-    }
-
-    m_numThreads = 0;
-
-    if (m_pThreads)
-    {
-        delete [] m_pThreads;
-        m_pThreads = NULL;
-    }
-
-    if (m_tasks)
-    {
-        delete [] m_tasks;
-        m_tasks = NULL;
-    }
-
-    m_bCopyQuit = ippFalse;
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus FastCopy::Release(void)
-
-mfxStatus FastCopyMultithreading::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, int flag)
-{
-    if (NULL == pDst || NULL == pSrc)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-
-    mfxU32 partSize = roi.height / m_numThreads;
-    mfxU32 rest = roi.height % m_numThreads;
-
-    roi.height = partSize;
-
-    // distribute tasks
-    for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
-    {
-        m_tasks[i].pS = pSrc + i * (partSize * srcPitch);
-        m_tasks[i].pD = pDst + i * (partSize * dstPitch);
-        m_tasks[i].srcPitch = srcPitch;
-        m_tasks[i].dstPitch = dstPitch;
-        m_tasks[i].roi = roi;
-        m_tasks[i].flag = flag;
-
-        m_tasks[i].EventStart.Set();
-    }
-
-    if (rest != 0)
-    {
-        roi.height = rest;
-    }
-
-    pSrc = pSrc + (m_numThreads - 1) * (partSize * srcPitch);
-    pDst = pDst + (m_numThreads - 1) * (partSize * dstPitch);
-
-    FastCopy::Copy(pDst, dstPitch, pSrc, srcPitch, roi, flag);
-
-    Synchronize();
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
-#if defined(_WIN32) || defined(_WIN64)
-mfxStatus FastCopyMultithreading::CopyAndShift(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift, int flag)
-{
-    return FastCopy::CopyAndShift(pDst, dstPitch, pSrc, srcPitch, roi, lshift, rshift, flag);
-} // mfxStatus FastCopyMultithreading::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
-#endif
-
-mfxStatus FastCopyMultithreading::Synchronize(void)
-{
-    for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
-    {
-        m_tasks[i].EventEnd.Wait();
-    }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus FastCopy::Synchronize(void)
-
-// thread function
-mfxU32 __STDCALL FastCopyMultithreading::CopyByThread(void *arg)
-{
-    FC_TASK *task = (FC_TASK *)arg;
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "ThreadName=FastCopy");
-
-    // wait to event
-    task->EventStart.Wait();
-
-    while (!m_bCopyQuit)
-    {
-        mfxU32 srcPitch = task->srcPitch;
-        mfxU32 dstPitch = task->dstPitch;
-        IppiSize roi = task->roi;
-
-        Ipp8u *pSrc = task->pS;
-        Ipp8u *pDst = task->pD;
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopy::Copy");
-            FastCopy::Copy(pDst, dstPitch, pSrc, srcPitch, roi, task->flag);
-        }
-
-        // done copy
-        task->EventEnd.Set();
-
-        // wait for the next frame
-        task->EventStart.Wait();
-    }
-
-    return 0;
-
-} // mfxU32 __stdcall FastCopyMultithreading::CopyByThread(void *arg)
+    copySysToVideoShift_impl(src, dst, width, shift);
+}

@@ -81,6 +81,10 @@ target_sources(test_vpp
     common/src/vm/thread_linux.cpp
     common/src/vm/time.cpp
     common/src/vm/time_linux.cpp
+
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_c_impl.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
 )
 
 target_link_libraries(test_vpp

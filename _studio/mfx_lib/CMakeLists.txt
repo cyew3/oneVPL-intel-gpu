@@ -1,3 +1,10 @@
+add_library(fast_copy_sse4 OBJECT
+  ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_sse4_impl.h
+  ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
+)
+target_include_directories(fast_copy_sse4 PRIVATE ${MSDK_STUDIO_ROOT}/shared/include)
+target_link_libraries(fast_copy_sse4 PRIVATE bitrate_control mfx_require_sse4_properties)
+
 set(sources_common
     scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core.cpp
     scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_ischeduler.cpp
@@ -34,6 +41,7 @@ set(sources_common
 
     ${MSDK_STUDIO_ROOT}/shared/include/cm_mem_copy.h
     ${MSDK_STUDIO_ROOT}/shared/include/dispatch_session.h
+    ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_c_impl.h
     ${MSDK_STUDIO_ROOT}/shared/include/fast_copy.h
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_allocator.h
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_core.h
@@ -56,6 +64,8 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_utils.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_vpp_interface.h
 
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_c_impl.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_factory.cpp
@@ -66,6 +76,7 @@ set(sources_common
 
     $<$<PLATFORM_ID:Windows>:libmfx.def>
     $<$<PLATFORM_ID:Windows>:libmfxhw.rc>
+    $<TARGET_OBJECTS:fast_copy_sse4>
   )
 
 set(sources_hw
@@ -96,7 +107,7 @@ set(sources_hw
 
 if(NOT MFX_DISABLE_SW_FALLBACK)
   list(APPEND sources_hw
-    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_multithreading.cpp
   )
 endif()
 
@@ -183,7 +194,6 @@ foreach( variant ${VARIANTS} )
     ${ITT_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
-    mfx_require_sse4_properties
   )
 
   if (variant MATCHES hw)

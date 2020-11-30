@@ -348,6 +348,8 @@ _studio/mfx_lib/vpp/src/mfx_vpp_sw_internal.cpp
 _studio/mfx_lib/vpp/src/mfx_vpp_utils.cpp
 _studio/shared/include/cm_mem_copy.h
 _studio/shared/include/dispatch_session.h
+_studio/shared/include/fast_copy_c_impl.h
+_studio/shared/include/fast_copy_sse4_impl.h
 _studio/shared/include/fast_copy.h
 _studio/shared/include/libmfx_allocator.h
 _studio/shared/include/libmfx_allocator_vaapi.h
@@ -405,6 +407,9 @@ _studio/shared/mfx_trace/src/mfx_trace_textlog.cpp
 _studio/shared/mfx_trace/src/mfx_trace_utils.cpp
 _studio/shared/mfx_trace/src/mfx_trace_utils_linux.cpp
 _studio/shared/src/cm_mem_copy.cpp
+_studio/shared/src/fast_copy_c_impl.cpp
+_studio/shared/src/fast_copy_sse4_impl.cpp
+_studio/shared/src/fast_copy.cpp
 _studio/shared/src/libmfx_allocator.cpp
 _studio/shared/src/libmfx_allocator_vaapi.cpp
 _studio/shared/src/libmfx_core.cpp

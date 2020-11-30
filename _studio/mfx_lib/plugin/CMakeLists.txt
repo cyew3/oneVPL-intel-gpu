@@ -103,8 +103,18 @@ set( prefix ${MSDK_LIB_ROOT}/shared/src )
   )
 
 set( prefix ${MSDK_STUDIO_ROOT}/shared/src )
+
+add_library(fast_copy_sse4_plugin OBJECT
+  ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_sse4_impl.h
+  ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
+)
+target_include_directories(fast_copy_sse4_plugin PRIVATE ${MSDK_STUDIO_ROOT}/shared/include)
+target_link_libraries(fast_copy_sse4_plugin PRIVATE bitrate_control mfx_require_sse4_properties)
+
   list( APPEND plugin_common_sources
     ${prefix}/cm_mem_copy.cpp
+    ${prefix}/fast_copy_c_impl.cpp
+    ${prefix}/fast_copy.cpp
     ${prefix}/fast_compositing_ddi.cpp
     ${prefix}/libmfx_allocator.cpp
     ${prefix}/libmfx_allocator_vaapi.cpp
@@ -121,10 +131,11 @@ set( prefix ${MSDK_STUDIO_ROOT}/shared/src )
     ${prefix}/d3d11_video_processor.cpp
     ${prefix}/auxiliary_device.cpp
     ${prefix}/mfx_umc_alloc_wrapper.cpp
+    $<TARGET_OBJECTS:fast_copy_sse4_plugin>
   )
 if(NOT MFX_DISABLE_SW_FALLBACK)
   list( APPEND plugin_common_sources
-    ${prefix}/fast_copy.cpp
+    ${prefix}/fast_copy_multithreading.cpp
     )
 endif()
 
@@ -253,7 +264,6 @@ if( DEFINED H264LA_ENCODER_GUID )
       ${ITT_LIBRARIES}
       ${la_IPPLIBS}
       Threads::Threads
-      mfx_require_sse4_properties
     )
 
 set_property(TARGET ${plugin_name} PROPERTY FOLDER "plugins")

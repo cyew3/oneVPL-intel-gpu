@@ -43,7 +43,10 @@ if(NOT MFX_DISABLE_SW_FALLBACK)
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/auxiliary_device.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/cm_mem_copy.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_compositing_ddi.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy_sse4_impl.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy_c_impl.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy_multithreading.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator_vaapi.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core.cpp

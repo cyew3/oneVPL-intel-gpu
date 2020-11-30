@@ -17,7 +17,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\shared\src\fast_copy.cpp">
+    <ClCompile Include="..\..\shared\src\fast_copy_sse4_impl.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_c_impl.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_multithreading.cpp" />
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp">
@@ -97,6 +100,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\shared\include\fast_copy_c_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\include\fast_copy_sse4_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\shared\include\fast_copy.h">
       <Filter>Header Files</Filter>
     </ClInclude>

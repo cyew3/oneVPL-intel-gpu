@@ -266,7 +266,6 @@ target_link_libraries(encode_hw
     mctf_hw
     genx
   PRIVATE
-    mfx_require_sse4_properties  # fast_copy.h implies this
     bitrate_control
     enc_hw
   )

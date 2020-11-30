@@ -94,8 +94,6 @@ target_link_libraries(mfx_common_hw
     mfx_static_lib
     umc_va_hw
     mctf_hw
-  PRIVATE
-    mfx_require_sse4_properties
   )
 
 include(sources_ext.cmake)

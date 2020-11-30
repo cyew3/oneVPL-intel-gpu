@@ -36,7 +36,10 @@ if(NOT MFX_DISABLE_SW_FALLBACK)
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_session.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_session.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_common_int.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy_sse4_impl.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy_c_impl.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy_multithreading.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_factory.cpp

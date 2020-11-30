@@ -29,7 +29,16 @@
     <ClCompile Include="..\shared\src\fast_compositing_ddi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\src\fast_copy_sse4_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\src\fast_copy_c_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\shared\src\fast_copy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\src\fast_copy_multithreading.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\src\libmfx_allocator.cpp">
@@ -173,6 +182,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\shared\include\fast_compositing_ddi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\include\fast_copy_sse4_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\include\fast_copy_c_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\shared\include\fast_copy.h">

@@ -104,7 +104,10 @@ if(NOT OPEN_SOURCE)
           ${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/fast_compositing_ddi.cpp
+          ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_c_impl.cpp
+          ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
+          ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_multithreading.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d11.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d9.cpp
@@ -151,6 +154,8 @@ if(NOT OPEN_SOURCE)
           ${MSDK_STUDIO_ROOT}/shared/include/auxiliary_device.h
           ${MSDK_STUDIO_ROOT}/shared/include/cm_mem_copy.h
           ${MSDK_STUDIO_ROOT}/shared/include/d3d11_decode_accelerator.h
+          ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_c_impl.h
+          ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_sse4_impl.h
           ${MSDK_STUDIO_ROOT}/shared/include/fast_copy.h
           ${MSDK_STUDIO_ROOT}/shared/include/libmfx_allocator.h
           ${MSDK_STUDIO_ROOT}/shared/include/libmfx_allocator_d3d11.h
@@ -229,7 +234,10 @@ if(NOT OPEN_SOURCE)
     endif()
 
     set(hevcd_sw_common_sources
+      ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_c_impl.cpp
+      ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
       ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
+      ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_multithreading.cpp
       ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator.cpp
       ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core.cpp
       ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_factory.cpp

@@ -276,6 +276,9 @@ MFX_LIB_SHARED_FILES_1 := $(addprefix mfx_lib/shared/src/, \
 
 MFX_LIB_SHARED_FILES_2 := $(addprefix shared/src/, \
     auxiliary_device.cpp \
+    fast_copy_sse4_impl.cpp \
+    fast_copy_c_impl.cpp \
+    fast_copy_multithreading.cpp \
     fast_copy.cpp \
     fast_compositing_ddi.cpp \
     cm_mem_copy.cpp \

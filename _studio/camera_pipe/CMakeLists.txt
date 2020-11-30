@@ -53,7 +53,10 @@ target_sources(mfx_camera_hw64
     ${MSDK_LIB_ROOT}/scheduler/linux/src/mfx_scheduler_core_thread.cpp
     ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/cm_mem_copy.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_c_impl.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_multithreading.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_vaapi.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core.cpp

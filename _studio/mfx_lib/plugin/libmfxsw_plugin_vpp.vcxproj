@@ -416,7 +416,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\shared\src\fast_copy_sse4_impl.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_c_impl.cpp" />
     <ClCompile Include="..\..\shared\src\fast_copy.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_multithreading.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
@@ -440,6 +443,8 @@
     <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\shared\include\fast_copy_sse4_impl.h" />
+    <ClInclude Include="..\..\shared\include\fast_copy_c_impl.h" />
     <ClInclude Include="..\..\shared\include\fast_copy.h" />
     <ClInclude Include="..\..\shared\include\libmfx_allocator.h" />
     <ClInclude Include="..\..\shared\include\libmfx_core.h" />

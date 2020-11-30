@@ -2,7 +2,10 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\decode\h265\src\mfx_h265_dec_decode.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_sse4_impl.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy_c_impl.cpp" />
     <ClCompile Include="..\..\shared\src\fast_copy.cpp">
+    <ClCompile Include="..\..\shared\src\fast_copy_multithreading.cpp">
       <Filter>libmfx_services</Filter>
     </ClCompile>
     <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp">
@@ -74,7 +77,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\decode\h265\include\mfx_h265_dec_decode.h" />
-    <ClInclude Include="..\..\shared\include\fast_copy.h">
+    <ClInclude Include="..\..\shared\include\fast_copy_sse4_impl.h" />
+    <ClInclude Include="..\..\shared\include\fast_copy_c_impl.h" />
+    <ClInclude Include="..\..\shared\include\fast_copy.h" />
       <Filter>libmfx_services</Filter>
     </ClInclude>
     <ClInclude Include="..\..\shared\include\libmfx_allocator.h">
