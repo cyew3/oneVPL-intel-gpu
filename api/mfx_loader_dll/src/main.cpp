@@ -216,24 +216,45 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
 
             adapter_description curr_descr;
 
-            // Extract path to MSDK lib
+            // Extract path to MSDK or VPL lib
+            bool is_msdk_key = false;
+            bool is_vpl_key  = false;
             DWORD path_size = sizeof(intel_dll_path);
             LSTATUS n_error = key.QueryStringValue(_T("DriverStorePathForMediaSDK"), intel_dll_path, &path_size);
 
-            if (n_error != ERROR_SUCCESS)
+            if (n_error == ERROR_SUCCESS)
+            {
+                curr_descr.path_to_msdk = intel_dll_path;
+                append_lib_name(curr_descr.path_to_msdk, default_MSDK_dll_name);
+                is_msdk_key = true;
+            }
+            else
             {
                 DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForMediaSDK\" key failed with status %l\n", n_error));
-                continue;
             }
-            curr_descr.path_to_msdk = intel_dll_path;
 
-			tstring exist_dll_path = intel_dll_path;
-			append_lib_name(exist_dll_path, default_VPL_dll_name);
-            std::ifstream file(exist_dll_path);
-            if (file.good())
+            path_size = sizeof(intel_dll_path);
+            n_error = key.QueryStringValue(_T("DriverStorePathForVPL"), intel_dll_path, &path_size);
+
+            if (n_error == ERROR_SUCCESS)
+            {
+                curr_descr.path_to_msdk = intel_dll_path;
                 append_lib_name(curr_descr.path_to_msdk, default_VPL_dll_name);
+                is_vpl_key = true;
+            }
             else
-                append_lib_name(curr_descr.path_to_msdk, default_MSDK_dll_name);
+            {
+                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForVPL\" key failed with status %l\n", n_error));
+            }
+
+            if (!is_msdk_key && !is_vpl_key)
+                continue;
+
+            if (is_msdk_key && is_vpl_key)
+            {
+                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue succeeded for both VPL and MSDK which is unexpected. Continued with VPL\n"));
+            }
+
 
             // Extract description string
             path_size = sizeof(intel_dll_path);
