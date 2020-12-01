@@ -525,6 +525,20 @@ inline void FillCDEF(
     }
 }
 
+inline uint16_t MapLRTypeToDDI(RestorationType lrType)
+{
+    switch (lrType)
+    {
+    case RESTORE_NONE:
+        return 0;
+    case RESTORE_WIENER:
+        return 1;
+    default:
+        ThrowAssert(true, "Only RESTORE_NONE and RESTORE_WIENER are supported");
+        return 0;
+    }
+}
+
 void DDIPacker::FillPpsBuffer(
     const TaskCommonPar& task
     , const SH& bs_sh
@@ -570,9 +584,9 @@ void DDIPacker::FillPpsBuffer(
     FillCDEF(bs_sh, bs_fh, pps);
 
     //loop restoration
-    pps.LoopRestorationFlags.fields.yframe_restoration_type  = bs_fh.lr_params.lr_type[0];
-    pps.LoopRestorationFlags.fields.cbframe_restoration_type = bs_fh.lr_params.lr_type[1];
-    pps.LoopRestorationFlags.fields.crframe_restoration_type = bs_fh.lr_params.lr_type[2];
+    pps.LoopRestorationFlags.fields.yframe_restoration_type  = MapLRTypeToDDI(bs_fh.lr_params.lr_type[0]);
+    pps.LoopRestorationFlags.fields.cbframe_restoration_type = MapLRTypeToDDI(bs_fh.lr_params.lr_type[1]);
+    pps.LoopRestorationFlags.fields.crframe_restoration_type = MapLRTypeToDDI(bs_fh.lr_params.lr_type[2]);
     pps.LoopRestorationFlags.fields.lr_unit_shift            = bs_fh.lr_params.lr_unit_shift;
     pps.LoopRestorationFlags.fields.lr_uv_shift              = bs_fh.lr_params.lr_uv_shift;
 
