@@ -39,7 +39,7 @@
 #include "mfxwidi.h"
 #endif
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 #include "mfxfei.h"
 #endif
 

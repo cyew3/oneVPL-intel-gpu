@@ -129,6 +129,12 @@
         #define MFX_ENABLE_OPAQUE_MEMORY
         #define MFX_ENABLE_SVC_VIDEO_ENCODE
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
+
+        #define MFX_ENABLE_LP_LOOKAHEAD
+        #define MFX_ENABLE_ENCTOOLS
+        #define MFX_ENABLE_ENCTOOLS_LPLA
+        #define MFX_ENABLE_MCTF
+        #define MFX_ENABLE_MFE
     #endif
 
     #if ((MFX_VERSION >= 1026) && defined(AS_CAMERA_PLUGIN))
@@ -296,7 +302,6 @@
         #define MFX_ENABLE_H264_VIDEO_ENCODE
         #undef MFX_ENABLE_VP9_VIDEO_ENCODE_HW
         #undef MFX_ENABLE_VP9_VIDEO_ENCODE
-        #undef MFX_ENABLE_LP_LOOKAHEAD
         #if defined(__linux__)
             #undef MFX_ENABLE_VPP
         #else
@@ -437,6 +442,9 @@
         #define MFX_ENABLE_H264_VIDEO_FEI_PREENC
         #define MFX_ENABLE_H264_VIDEO_FEI_ENC
         #define MFX_ENABLE_H264_VIDEO_FEI_PAK
+    #endif
+    #if defined(MFX_ENABLE_MFE)
+        #define MFX_ENABLE_H264_VIDEO_FEI_ENCODE
     #endif
     #ifndef OPEN_SOURCE
         #define MFX_ENABLE_AVCE_DIRTY_RECTANGLE

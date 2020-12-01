@@ -40,9 +40,6 @@
 #include "mfx_h264_encode_cm_defs.h"
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 #include "mfx_lp_lookahead.h"
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
-#include "mfx_enctools_lpla.h"
-#endif
 #endif //MFX_ENABLE_LP_LOOKAHEAD
 #include "vm_time.h"
 
