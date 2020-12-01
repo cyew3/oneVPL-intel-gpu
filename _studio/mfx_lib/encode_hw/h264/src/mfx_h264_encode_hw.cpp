@@ -4481,9 +4481,11 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
 
             // In case of progressive frames in PAFF mode need to switch the flag off to prevent m_fieldCounter changes
-            task->m_singleFieldMode = (task->m_fieldPicFlag != 0)
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-                && IsOn(extFeiParams->SingleFieldProcessing)
+            task->m_singleFieldMode =
+#if !defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+                false
+#else
+                (task->m_fieldPicFlag != 0) && IsOn(extFeiParams->SingleFieldProcessing)
 #endif
                 ;
 
