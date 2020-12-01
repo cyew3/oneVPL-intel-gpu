@@ -76,7 +76,7 @@ cmake_dependent_option( BUILD_SAMPLES "Build samples?" ON "${BUILD_DISPATCHER}" 
 # Tools depend on samples (sample_common) and can't be built without it. The
 # following BUILD_TOOLS option declaration assures that.
 cmake_dependent_option( BUILD_TOOLS "Build tools?" ON "${BUILD_ALL};${BUILD_SAMPLES}" OFF)
-cmake_dependent_option( BUILD_VAL_TOOLS "Build validation tools?" ON "${BUILD_ALL};NOT ${MFX_BUNDLED_IPP}" OFF)
+cmake_dependent_option( BUILD_VAL_TOOLS "Build validation tools?" ON "${BUILD_DISPATCHER};NOT ${MFX_BUNDLED_IPP}" OFF)
 
 option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
 option(USE_SYSTEM_GTEST "Use system installed gtest?" OFF)
