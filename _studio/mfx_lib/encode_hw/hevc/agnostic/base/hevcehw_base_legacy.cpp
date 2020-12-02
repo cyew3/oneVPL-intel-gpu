@@ -508,6 +508,7 @@ void Legacy::SetInherited(ParamInheritance& par)
         INHERIT_OPT(WinBRCMaxAvgKbps);
         INHERIT_OPT(WinBRCSize);
         INHERIT_OPT(EnableMBQP);
+        INHERIT_OPT(ScenarioInfo);
 
         mfxU16 RC = parInit.mfx.RateControlMethod
             * (parInit.mfx.RateControlMethod == parReset.mfx.RateControlMethod);

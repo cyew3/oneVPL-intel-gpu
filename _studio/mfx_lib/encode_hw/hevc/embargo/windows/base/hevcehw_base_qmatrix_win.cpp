@@ -156,6 +156,17 @@ void QMatrix::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         UpRightToPlane(scalingList_inter, 8, sps.scl.scalingLists2[5]);
         sps.scl.scalingListDCCoefSizeID2[5] = sps.scl.scalingLists2[5][0];
 
+        if (global.Contains(Glob::RealState::Key))
+        {
+            auto& hint = Glob::ResetHint::Get(global);
+            const SPS& oldSPS = Glob::SPS::Get(Glob::RealState::Get(global));
+            SPS& newSPS = Glob::SPS::Get(global);
+
+            bool bSPSChanged = !!memcmp(&newSPS, &oldSPS, sizeof(SPS));
+
+            hint.Flags = RF_SPS_CHANGED * (bSPSChanged || (hint.Flags & RF_IDR_REQUIRED));
+        }
+
         return MFX_ERR_NONE;
     });
 
