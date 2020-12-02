@@ -263,6 +263,11 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
             return MFX_ERR_UNSUPPORTED;
         }
     }
+    else if (storageID == MFX_PATH_MSDK_FOLDER && m_implType == MFX_LIB_HARDWARE)
+    {
+        // disable load by GetThisDllModuleHandle for hw library
+        return MFX_ERR_UNSUPPORTED;
+    }
     else if(!GetImplPath(storageID, sMediaSDKPath))
     {
         return MFX_ERR_UNSUPPORTED;
