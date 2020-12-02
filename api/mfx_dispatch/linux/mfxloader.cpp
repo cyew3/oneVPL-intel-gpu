@@ -35,6 +35,8 @@
 
 #include "mfxloader.h"
 
+#include "device_ids.h"
+
 namespace MFX {
 
 #if defined(__i386__)
@@ -52,6 +54,7 @@ namespace MFX {
     #else
         #define LIBMFXSW "libmfxsw64.so.1"
         #define LIBMFXHW "libmfxhw64.so.1"
+        #define ONEVPLRT "libmfx-gen.so.1.2"
     #endif
 #else
     #error Unsupported architecture
@@ -177,10 +180,19 @@ mfxStatus LoaderCtx::Init(mfxInitParam& par)
     return MFX_ERR_UNSUPPORTED;
   }
 
+  eMFXHWType platform = MFX_HW_UNKNOWN;
+  auto devices = get_devices();
+  if (devices.size()) {
+    platform = devices[0].platform;
+  }
+
   std::vector<std::string> libs;
 
-  if (MFX_IMPL_BASETYPE(par.Implementation) == MFX_IMPL_AUTO ||
-      MFX_IMPL_BASETYPE(par.Implementation) == MFX_IMPL_AUTO_ANY) {
+  if (platform >= MFX_HW_ATS) {
+    libs.emplace_back(ONEVPLRT);
+    libs.emplace_back(MFX_MODULES_DIR "/" ONEVPLRT);
+  } else if (MFX_IMPL_BASETYPE(par.Implementation) == MFX_IMPL_AUTO ||
+             MFX_IMPL_BASETYPE(par.Implementation) == MFX_IMPL_AUTO_ANY) {
     libs.emplace_back(LIBMFXHW);
     libs.emplace_back(MFX_MODULES_DIR "/" LIBMFXHW);
     libs.emplace_back(LIBMFXSW);
