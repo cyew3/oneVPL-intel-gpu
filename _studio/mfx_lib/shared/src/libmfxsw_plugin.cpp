@@ -19,6 +19,34 @@
 // SOFTWARE.
 
 #include <mfxvideo.h>
+#include <mfx_utils.h>
+#include <algorithm>
+
+#if defined(MFX_ONEVPL)
+#include <mfxdeprecated.h>
+
+static const mfxPluginUID  MFX_PLUGINID_HEVCD_HW        = {{0x33, 0xa6, 0x1c, 0x0b, 0x4c, 0x27, 0x45, 0x4c, 0xa8, 0xd8, 0x5d, 0xde, 0x75, 0x7c, 0x6f, 0x8e}};
+static const mfxPluginUID  MFX_PLUGINID_VP8D_HW         = {{0xf6, 0x22, 0x39, 0x4d, 0x8d, 0x87, 0x45, 0x2f, 0x87, 0x8c, 0x51, 0xf2, 0xfc, 0x9b, 0x41, 0x31}};
+static const mfxPluginUID  MFX_PLUGINID_VP9D_HW         = {{0xa9, 0x22, 0x39, 0x4d, 0x8d, 0x87, 0x45, 0x2f, 0x87, 0x8c, 0x51, 0xf2, 0xfc, 0x9b, 0x41, 0x31}};
+static const mfxPluginUID  MFX_PLUGINID_HEVCE_HW        = {{0x6f, 0xad, 0xc7, 0x91, 0xa0, 0xc2, 0xeb, 0x47, 0x9a, 0xb6, 0xdc, 0xd5, 0xea, 0x9d, 0xa3, 0x47}};
+static const mfxPluginUID  MFX_PLUGINID_VP9E_HW         = {{0xce, 0x44, 0xef, 0x6f, 0x1a, 0x6d, 0x22, 0x46, 0xb4, 0x12, 0xbb, 0x38, 0xd6, 0xe4, 0x51, 0x82}};
+#if (MFX_VERSION >= 1027)
+static const mfxPluginUID  MFX_PLUGINID_HEVC_FEI_ENCODE = {{0x54, 0x18, 0xa7, 0x06, 0x66, 0xf9, 0x4d, 0x5c, 0xb4, 0xf7, 0xb1, 0xca, 0xee, 0x86, 0x33, 0x9b}};
+#endif
+
+#endif  // defined(MFX_ONEVPL)
+
+const mfxPluginUID NativePlugins[] =
+{
+    MFX_PLUGINID_HEVCD_HW,
+    MFX_PLUGINID_VP8D_HW,
+    MFX_PLUGINID_VP9D_HW,
+    MFX_PLUGINID_HEVCE_HW,
+    MFX_PLUGINID_VP9E_HW,
+#if MFX_VERSION >= 1027
+    MFX_PLUGINID_HEVC_FEI_ENCODE
+#endif
+};
 
 #if defined(MFX_ONEVPL)
 #include "mfxstructures-int.h"
@@ -28,11 +56,30 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
     return MFX_ERR_UNSUPPORTED; \
 }
 
-FUNCTION_DEPRECATED_IMPL(USER, Register,          (mfxSession session, mfxU32 type, const mfxPlugin *par))
 FUNCTION_DEPRECATED_IMPL(USER, Unregister,        (mfxSession session, mfxU32 type))
 FUNCTION_DEPRECATED_IMPL(USER, ProcessFrameAsync, (mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp))
 FUNCTION_DEPRECATED_IMPL(USER, GetPlugin,         (mfxSession session, mfxU32 type, mfxPlugin *par))
 #undef FUNCTION_DEPRECATED_IMPL
+
+mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
+                                const mfxPlugin *par)
+{
+    mfxStatus mfxRes;
+
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK_NULL_PTR1(par);
+    MFX_CHECK_NULL_PTR1(par->GetPluginParam);
+
+    //check is this plugin was included into MSDK lib as a native component
+    mfxPluginParam pluginParam = {};
+    mfxRes = par->GetPluginParam(par->pthis, &pluginParam);
+    MFX_CHECK_STS(mfxRes);
+    if (std::find(std::begin(NativePlugins), std::end(NativePlugins), pluginParam.PluginUID) != std::end(NativePlugins)) {
+        return MFX_ERR_NONE;
+    }
+    return MFX_ERR_UNSUPPORTED;
+}
+
 #else
 #include <mfxplugin.h>
 #include <mfx_session.h>
@@ -40,7 +87,6 @@ FUNCTION_DEPRECATED_IMPL(USER, GetPlugin,         (mfxSession session, mfxU32 ty
 #include <mfx_user_plugin.h>
 #include <mfx_utils.h>
 #include <libmfx_core_interface.h>
-#include <algorithm>
 // static section of the file
 namespace
 {
@@ -183,18 +229,6 @@ namespace
 
 
 } // namespace
-
-const mfxPluginUID NativePlugins[] =
-{
-    MFX_PLUGINID_HEVCD_HW,
-    MFX_PLUGINID_VP8D_HW,
-    MFX_PLUGINID_VP9D_HW,
-    MFX_PLUGINID_HEVCE_HW,
-    MFX_PLUGINID_VP9E_HW,
-#if MFX_VERSION >= 1027
-    MFX_PLUGINID_HEVC_FEI_ENCODE
-#endif
-};
 
 mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
                                 const mfxPlugin *par)

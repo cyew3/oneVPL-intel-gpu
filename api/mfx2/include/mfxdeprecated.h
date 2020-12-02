@@ -8,6 +8,7 @@
 #define __MFXDEPRECATED_H__
 
 #include "mfxcommon.h"
+#include "mfxsession.h"
 
 #if defined(MFX_ONEVPL)
 
@@ -33,8 +34,52 @@ mfxStatus MFX_CDECL MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBuffe
 
 mfxStatus MFX_CDECL MFXDoWork(mfxSession session);
 
+typedef enum {
+    MFX_THREADPOLICY_SERIAL    = 0,
+    MFX_THREADPOLICY_PARALLEL  = 1
+} mfxThreadPolicy;
+
 MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct {} mfxPlugin;
+typedef struct {
+    mfxU8  Data[16];
+} mfxPluginUID;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+typedef struct mfxPluginParam {
+    mfxU32          reserved[6];
+    mfxU16          reserved1;
+    mfxU16          PluginVersion;
+    mfxVersion      APIVersion;
+    mfxPluginUID    PluginUID;
+    mfxU32          Type;
+    mfxU32          CodecId;
+    mfxThreadPolicy ThreadPolicy;
+    mfxU32          MaxThreadNum;
+} mfxPluginParam;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxHDL pthis;
+
+    mfxStatus (MFX_CDECL *PluginInit) (/*mfxHDL pthis, mfxCoreInterface *core*/);
+    mfxStatus (MFX_CDECL *PluginClose) (/*mfxHDL pthis*/);
+
+    mfxStatus (MFX_CDECL *GetPluginParam)(mfxHDL pthis, mfxPluginParam *par);
+
+    mfxStatus (MFX_CDECL *Submit)(/*mfxHDL pthis, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task*/);
+    mfxStatus (MFX_CDECL *Execute)(/*mfxHDL pthis, mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a*/);
+    mfxStatus (MFX_CDECL *FreeResources)(/*mfxHDL pthis, mfxThreadTask task, mfxStatus sts*/);
+
+    void *Video;
+    // union {
+    //     mfxVideoCodecPlugin  *Video;
+    //     mfxAudioCodecPlugin  *Audio;
+    // };
+
+    mfxHDL reserved[8];
+} mfxPlugin;
 MFX_PACK_END()
 
 mfxStatus MFX_CDECL MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par);
