@@ -41,8 +41,8 @@
 #include "mfx_h265_dec_decode.h"
 #endif
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE) || defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
-#if defined (OPEN_SOURCE) || defined (MFX_VA) && defined (MFX_ENABLE_HW_ONLY_MPEG2_DECODER)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
+#if defined (MFX_VA)
 #include "mfx_mpeg2_decode.h"
 #else
 #include "mfx_mpeg2_decode_internal.h"
