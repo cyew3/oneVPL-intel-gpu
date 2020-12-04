@@ -22,10 +22,10 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12ats_win.h"
+#include "hevcehw_g12xehp_win.h"
 #include "hevcehw_base_blocking_sync_win.h"
 #if defined(MFX_ENABLE_MFE)
-#include "hevcehw_g12ats_mfe_win.h"
+#include "hevcehw_g12xehp_mfe_win.h"
 #endif //defined(MFX_ENABLE_MFE)
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_iddi.h"
@@ -34,7 +34,7 @@ namespace HEVCEHW
 {
 namespace Windows
 {
-namespace Gen12ATS
+namespace Gen12XEHP
 {
 
 MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
@@ -82,6 +82,6 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-}}} //namespace HEVCEHW::Windows::Gen12ATS
+}}} //namespace HEVCEHW::Windows::Gen12XEHP
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

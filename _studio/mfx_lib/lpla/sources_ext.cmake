@@ -22,11 +22,11 @@ target_include_directories(lpla
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/windows/base
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/windows/g11lkf
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/windows/g12
-    ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/windows/g12ats
+    ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/windows/g12xehp
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/windows/g12dg2
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/agnostic/g11lkf
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/agnostic/g12
-    ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/agnostic/g12ats
+    ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/agnostic/g12xehp
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/agnostic/g12dg2
 )
 

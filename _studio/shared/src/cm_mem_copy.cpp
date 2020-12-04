@@ -2667,7 +2667,7 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
     }
 
 #ifndef STRIP_EMBARGO
-    if (hwtype == MFX_HW_ATS)
+    if (hwtype == MFX_HW_XE_HP)
         cmSts = m_pCmDevice->CreateQueueEx(m_pCmQueue, CM_COMPUTE_QUEUE_CREATE_OPTION);
     else
 #endif
@@ -2729,7 +2729,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         break;
 #endif
 #ifndef STRIP_EMBARGO
-    case MFX_HW_TGL_HP:
+    case MFX_HW_XE_HP:
         cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
 #if defined(_WIN32) || defined(_WIN64)

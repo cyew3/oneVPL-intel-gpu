@@ -395,23 +395,23 @@ typedef struct {
 
     /* RYF */
     { 0x9940, MFX_HW_RYF, MFX_GT2 },
-    /* ATS */
-    { 0x0201, MFX_HW_ATS, MFX_GT4 },
-    { 0x0202, MFX_HW_ATS, MFX_GT4 },
-    { 0x0203, MFX_HW_ATS, MFX_GT4 },
-    { 0x0204, MFX_HW_ATS, MFX_GT4 },
-    { 0x0205, MFX_HW_ATS, MFX_GT4 },
-    { 0x0206, MFX_HW_ATS, MFX_GT4 },
-    { 0x0207, MFX_HW_ATS, MFX_GT4 },
-    { 0x0208, MFX_HW_ATS, MFX_GT4 },
-    { 0x0209, MFX_HW_ATS, MFX_GT4 },
-    { 0x020A, MFX_HW_ATS, MFX_GT4 },
-    { 0x020B, MFX_HW_ATS, MFX_GT4 },
-    { 0x020C, MFX_HW_ATS, MFX_GT4 },
-    { 0x020D, MFX_HW_ATS, MFX_GT4 },
-    { 0x020E, MFX_HW_ATS, MFX_GT4 },
-    { 0x020F, MFX_HW_ATS, MFX_GT4 },
-    { 0x0210, MFX_HW_ATS, MFX_GT4 },
+    /* XE HP */
+    { 0x0201, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0202, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0203, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0204, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0205, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0206, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0207, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0208, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0209, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x020A, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x020B, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x020C, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x020D, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x020E, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x020F, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0210, MFX_HW_XE_HP, MFX_GT4 },
 
 
     /* DG2 */

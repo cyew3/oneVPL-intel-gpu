@@ -21,41 +21,32 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_LINUX)
 
-#include "hevcehw_base.h"
-#include "hevcehw_g12_data.h"
-#include "ehw_platforms.h"
+#include "hevcehw_g12xehp_mfe.h"
+#include "mfx_mfe_adapter.h"
 
 namespace HEVCEHW
 {
-namespace Gen12ATS
+namespace Linux
+{
+namespace Gen12XEHP
 {
 class MFE
-    : public FeatureBase
+    : public HEVCEHW::Gen12XEHP::MFE
 {
 public:
-#define DECL_BLOCK_LIST\
-    DECL_BLOCK(Init)\
-    DECL_BLOCK(SetCallChains)\
-    DECL_BLOCK(UpdateDDITask)\
-    DECL_BLOCK(CheckAndFix)
-#define DECL_FEATURE_NAME "G12ATS_MFE"
-#include "hevcehw_decl_blocks.h"
-
     MFE(mfxU32 FeatureId)
-        : FeatureBase(FeatureId)
+        : HEVCEHW::Gen12XEHP::MFE(FeatureId)
     {}
 
 protected:
-    virtual void SetSupported(ParamSupport& blocks) override;
-    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
 
-    bool   m_bDDIExecSet = false;
-    mfxU32 m_timeout = 3600000000;//one hour for pre-si, ToDo:remove for silicon
+    NotNull<MFEVAAPIEncoder*> m_pMfeAdapter = nullptr;
 };
-
-} //Gen12ATS
+} //Gen12XEHP
+} //namespace Linux
 } //namespace HEVCEHW
 
 #endif

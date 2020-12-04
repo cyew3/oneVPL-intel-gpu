@@ -27,7 +27,7 @@
 #include "hevcehw_g11lkf.h"
 #include "hevcehw_g11lkf_win.h"
 #include "hevcehw_g12_win.h"
-#include "hevcehw_g12ats_win.h"
+#include "hevcehw_g12xehp_win.h"
 #include "hevcehw_g12dg2_win.h"
 
 namespace hevce { namespace tests
@@ -36,7 +36,7 @@ namespace hevce { namespace tests
 using TBase     = HEVCEHW::Windows::Base::MFXVideoENCODEH265_HW;
 using TGen11LKF = HEVCEHW::Windows::Gen11LKF::MFXVideoENCODEH265_HW;
 using TGen12    = HEVCEHW::Windows::Gen12::MFXVideoENCODEH265_HW;
-using TGen12ATS = HEVCEHW::Windows::Gen12ATS::MFXVideoENCODEH265_HW;
+using TGen12XEHP = HEVCEHW::Windows::Gen12XEHP::MFXVideoENCODEH265_HW;
 using TGen12DG2 = HEVCEHW::Windows::Gen12DG2::MFXVideoENCODEH265_HW;
 
 template<typename T>
@@ -48,7 +48,7 @@ inline bool IsGen<TBase>(VideoENCODE* p)
     return dynamic_cast<TBase*>(p)
         && !dynamic_cast<TGen11LKF*>(p)
         && !dynamic_cast<TGen12*>(p)
-        && !dynamic_cast<TGen12ATS*>(p)
+        && !dynamic_cast<TGen12XEHP*>(p)
         && !dynamic_cast<TGen12DG2*>(p);
 }
 
@@ -57,7 +57,7 @@ inline bool IsGen<TGen11LKF>(VideoENCODE* p)
 {
     return dynamic_cast<TGen11LKF*>(p)
         && !dynamic_cast<TGen12*>(p)
-        && !dynamic_cast<TGen12ATS*>(p)
+        && !dynamic_cast<TGen12XEHP*>(p)
         && !dynamic_cast<TGen12DG2*>(p);
 }
 
@@ -65,14 +65,14 @@ template<>
 inline bool IsGen<TGen12>(VideoENCODE* p)
 {
     return dynamic_cast<TGen12*>(p)
-        && !dynamic_cast<TGen12ATS*>(p)
+        && !dynamic_cast<TGen12XEHP*>(p)
         && !dynamic_cast<TGen12DG2*>(p);
 }
 
 template<>
-inline bool IsGen<TGen12ATS>(VideoENCODE* p)
+inline bool IsGen<TGen12XEHP>(VideoENCODE* p)
 {
-    return dynamic_cast<TGen12ATS*>(p)
+    return dynamic_cast<TGen12XEHP*>(p)
         && !dynamic_cast<TGen12DG2*>(p);
 }
 
@@ -80,7 +80,7 @@ template<>
 inline bool IsGen<TGen12DG2>(VideoENCODE* p)
 {
     return dynamic_cast<TGen12DG2*>(p)
-        && !dynamic_cast<TGen12ATS*>(p);
+        && !dynamic_cast<TGen12XEHP*>(p);
 }
 
 class Core
@@ -243,12 +243,12 @@ TEST(Disp, Gen12)
     }
 }
 
-TEST(Disp, Gen12ATS)
+TEST(Disp, Gen12XEHP)
 {
     Core vcore;
     mfxStatus sts = MFX_ERR_NONE;
     eMFXHWType hwSet[] = {
-        MFX_HW_ATS
+        MFX_HW_XE_HP
     };
 
     for (auto hw : hwSet)
@@ -258,7 +258,7 @@ TEST(Disp, Gen12ATS)
         std::unique_ptr<VideoENCODE> pHEVC(HEVCEHW::Create((VideoCORE&)vcore, sts));
         EXPECT_NE(pHEVC.get(), (VideoENCODE*)nullptr);
         EXPECT_EQ(sts, MFX_ERR_NONE);
-        EXPECT_TRUE(IsGen<TGen12ATS>(pHEVC.get()));
+        EXPECT_TRUE(IsGen<TGen12XEHP>(pHEVC.get()));
     }
 }
 

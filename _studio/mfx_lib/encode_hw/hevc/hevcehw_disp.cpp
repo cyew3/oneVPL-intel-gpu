@@ -177,19 +177,19 @@ namespace HEVCEHW
 #if !defined(STRIP_EMBARGO)
 
 #if defined(MFX_VA_LINUX)
-    #include "hevcehw_g12ats_lin.h"
+    #include "hevcehw_g12xehp_lin.h"
     #include "hevcehw_g12dg2_lin.h"
     namespace HEVCEHWDisp
     {
-        namespace ATS { using namespace HEVCEHW::Linux::Gen12ATS; };
+        namespace ATS { using namespace HEVCEHW::Linux::Gen12XEHP; };
         namespace DG2 { using namespace HEVCEHW::Linux::Gen12DG2; };
     };
 #else
-    #include "hevcehw_g12ats_win.h"
+    #include "hevcehw_g12xehp_win.h"
     #include "hevcehw_g12dg2_win.h"
     namespace HEVCEHWDisp
     {
-        namespace ATS { using namespace HEVCEHW::Windows::Gen12ATS; };
+        namespace ATS { using namespace HEVCEHW::Windows::Gen12XEHP; };
         namespace DG2 { using namespace HEVCEHW::Windows::Gen12DG2; };
     };
 #endif
@@ -207,7 +207,7 @@ static ImplBase* CreateSpecific(
 #ifndef STRIP_EMBARGO
     if (HW >= MFX_HW_DG2)
         return new HEVCEHWDisp::DG2::MFXVideoENCODEH265_HW(core, status, mode);
-    if (HW >= MFX_HW_ATS)
+    if (HW >= MFX_HW_XE_HP)
         return new HEVCEHWDisp::ATS::MFXVideoENCODEH265_HW(core, status, mode);
 #endif
     if (HW == MFX_HW_DG1)

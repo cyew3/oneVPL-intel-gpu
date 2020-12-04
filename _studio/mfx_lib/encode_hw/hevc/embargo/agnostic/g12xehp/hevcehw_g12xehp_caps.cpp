@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,41 +18,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "hevcehw_g12_win.h"
-#include "ehw_platforms.h"
+#include "hevcehw_g12xehp_caps.h"
 
-namespace HEVCEHW
+using namespace HEVCEHW;
+using namespace HEVCEHW::Gen12XEHP;
+
+void Caps::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
-namespace Windows
-{
-namespace Gen12ATS
-{
-    enum eFeatureId
+    Push(BLK_HardcodeCaps
+        , [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
-        FEATURE_MFE = Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
-    };
+        auto& caps = HEVCEHW::Gen12::Glob::EncodeCaps::Get(strg);
+        caps.LCUSizeSupported = 0b100; // 64x64 lcu is only supported
 
-    class MFXVideoENCODEH265_HW
-        : public Windows::Gen12::MFXVideoENCODEH265_HW
-    {
-    public:
-        using TBaseImpl = Windows::Gen12::MFXVideoENCODEH265_HW;
+        return MFX_ERR_NONE;
+    });
+}
 
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
-
-        virtual mfxStatus Init(mfxVideoParam *par) override;
-    };
-} //Gen12ATS
-} //Windows
-}// namespace HEVCEHW
-
-#endif
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

@@ -21,10 +21,10 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
 
-#include "hevcehw_g12ats_mfe.h"
+#include "hevcehw_g12xehp_mfe.h"
 
 using namespace HEVCEHW;
-using namespace HEVCEHW::Gen12ATS;
+using namespace HEVCEHW::Gen12XEHP;
 
 void MFE::SetSupported(ParamSupport& blocks)
 {

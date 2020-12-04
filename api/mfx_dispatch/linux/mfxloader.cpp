@@ -188,7 +188,7 @@ mfxStatus LoaderCtx::Init(mfxInitParam& par)
 
   std::vector<std::string> libs;
 
-  if (platform >= MFX_HW_ATS) {
+  if (platform >= MFX_HW_XE_HP) {
     libs.emplace_back(ONEVPLRT);
     libs.emplace_back(MFX_MODULES_DIR "/" ONEVPLRT);
   } else if (MFX_IMPL_BASETYPE(par.Implementation) == MFX_IMPL_AUTO ||

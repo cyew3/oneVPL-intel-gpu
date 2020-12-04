@@ -62,7 +62,7 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore, GUID guid)
         m_bSingleThreadMode = true;
 #if !defined(STRIP_EMBARGO)
     //  This is a _temporal_ workaround. Must be removed in a short-term.
-    if ((DXVA2_Intel_MFE == guid) && (pCore->GetHWType() >= MFX_HW_ATS))
+    if ((DXVA2_Intel_MFE == guid) && (pCore->GetHWType() >= MFX_HW_XE_HP))
     {
         m_bIsBlockingTaskSyncEnabled = false;
     }

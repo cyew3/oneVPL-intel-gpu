@@ -30,7 +30,7 @@ namespace HEVCEHW
 {
 namespace Linux
 {
-namespace Gen12ATS
+namespace Gen12XEHP
 {
     enum eFeatureId
     {
@@ -52,7 +52,7 @@ namespace Gen12ATS
 
         virtual mfxStatus Init(mfxVideoParam *par) override;
     };
-} //Gen12ATS
+} //Gen12XEHP
 } //Linux
 }// namespace HEVCEHW
 

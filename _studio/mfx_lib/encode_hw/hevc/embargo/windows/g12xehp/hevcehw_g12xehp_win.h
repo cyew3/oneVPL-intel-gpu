@@ -21,32 +21,38 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12ats_mfe.h"
-#include "mfx_mfe_adapter.h"
+#include "hevcehw_g12_win.h"
+#include "ehw_platforms.h"
 
 namespace HEVCEHW
 {
-namespace Linux
+namespace Windows
 {
-namespace Gen12ATS
+namespace Gen12XEHP
 {
-class MFE
-    : public HEVCEHW::Gen12ATS::MFE
-{
-public:
-    MFE(mfxU32 FeatureId)
-        : HEVCEHW::Gen12ATS::MFE(FeatureId)
-    {}
+    enum eFeatureId
+    {
+        FEATURE_MFE = Gen12::eFeatureId::NUM_FEATURES
+        , NUM_FEATURES
+    };
 
-protected:
-    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+    class MFXVideoENCODEH265_HW
+        : public Windows::Gen12::MFXVideoENCODEH265_HW
+    {
+    public:
+        using TBaseImpl = Windows::Gen12::MFXVideoENCODEH265_HW;
 
-    NotNull<MFEVAAPIEncoder*> m_pMfeAdapter = nullptr;
-};
-} //Gen12ATS
-} //namespace Linux
-} //namespace HEVCEHW
+        MFXVideoENCODEH265_HW(
+            VideoCORE& core
+            , mfxStatus& status
+            , eFeatureMode mode = eFeatureMode::INIT);
+
+        virtual mfxStatus Init(mfxVideoParam *par) override;
+    };
+} //Gen12XEHP
+} //Windows
+}// namespace HEVCEHW
 
 #endif

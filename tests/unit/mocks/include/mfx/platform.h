@@ -44,7 +44,7 @@ namespace mocks { namespace mfx
             case HW_JSL:     return detail::IGFX_JASPERLAKE;
             case HW_TGL:     return detail::IGFX_TIGERLAKE_LP;
             case HW_DG1:     return detail::IGFX_DG1;
-            case HW_ATS:     return detail::IGFX_TIGERLAKE_HP;
+            case HW_XEHP:    return detail::IGFX_XE_HP;
 #ifndef STRIP_EMBARGO
             case HW_LKF:     return detail::IGFX_LAKEFIELD;
             case HW_DG2:     return detail::IGFX_DG2;

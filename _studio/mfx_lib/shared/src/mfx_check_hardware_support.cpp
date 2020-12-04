@@ -101,7 +101,7 @@ enum PRODUCT_FAMILY
     IGFX_ALDERLAKE_S,
     IGFX_ALDERLAKE_P,
     IGFX_DG1 = 1210,
-    IGFX_TIGERLAKE_HP = 1250,
+    IGFX_XE_HP = 1250,
     IGFX_DG2 = 1270,
     IGFX_PVC = 1271,
     IGFX_METEORLAKE = 1272,
@@ -170,8 +170,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_RKL;
     case IGFX_DG1:
         return MFX_HW_DG1;
-    case IGFX_TIGERLAKE_HP:
-        return MFX_HW_TGL_HP;
+    case IGFX_XE_HP:
+        return MFX_HW_XE_HP;
     case IGFX_DG2:
         return MFX_HW_DG2;
     case IGFX_ALDERLAKE_S:

@@ -329,7 +329,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 
          //PicStruct support differs, need to check per-platform
 #ifndef STRIP_EMBARGO
-        if (m_core->GetHWType() != MFX_HW_ATS
+        if (m_core->GetHWType() != MFX_HW_XE_HP
             && m_core->GetHWType() != MFX_HW_DG2
             && m_core->GetHWType() != MFX_HW_PVC
             && m_core->GetHWType() != MFX_HW_MTL)

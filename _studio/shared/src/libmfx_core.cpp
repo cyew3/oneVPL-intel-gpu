@@ -850,7 +850,7 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
                          platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
 #endif
 #ifndef STRIP_EMBARGO
-    case MFX_HW_TGL_HP :
+    case MFX_HW_XE_HP :
 #if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
 #endif

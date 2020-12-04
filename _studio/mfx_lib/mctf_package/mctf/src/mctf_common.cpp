@@ -803,7 +803,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     res = device->GetCaps(CAP_GPU_PLATFORM, hwSize, &hwType);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 #ifndef STRIP_EMBARGO
-    if (core->GetHWType() == MFX_HW_ATS)
+    if (core->GetHWType() == MFX_HW_XE_HP)
         res = device->CreateQueueEx(queue, CM_COMPUTE_QUEUE_CREATE_OPTION);
     else
 #endif

@@ -65,7 +65,7 @@ static mfxU16 GetRefDist(VideoCORE *core, mfxVideoParam *par)
         refDist = (
             IsOn(par->mfx.LowPower)
 #ifndef STRIP_EMBARGO
-            && core->GetHWType() < MFX_HW_TGL_HP
+            && core->GetHWType() < MFX_HW_XE_HP
 #else
             && core->GetHWType() < MFX_HW_TGL_LP
 #endif

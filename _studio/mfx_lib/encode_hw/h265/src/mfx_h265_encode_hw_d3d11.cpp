@@ -849,7 +849,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
         if (m_pMfeAdapter != nullptr)
         {
             mfxU32 timeout = task.m_mfeTimeToWait;
-            if (m_core->GetHWType() >= MFX_HW_ATS)
+            if (m_core->GetHWType() >= MFX_HW_XE_HP)
                 timeout = 3600000000;//one hour for pre-si, ToDo:remove for silicon
             mfxStatus sts = m_pMfeAdapter->Submit(m_StreamInfo.StreamId, (task.m_flushMfe ? 0 : timeout), false);
             if (sts != MFX_ERR_NONE)

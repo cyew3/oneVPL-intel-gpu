@@ -65,7 +65,7 @@ namespace mocks { namespace mfx
             IGFX_ALDERLAKE_S,
             IGFX_ALDERLAKE_UH,
             IGFX_DG1 = 1210,
-            IGFX_TIGERLAKE_HP = 1250,
+            IGFX_XE_HP = 1250,
             IGFX_DG2 = 1270,
             IGFX_PVC = 1271,
             IGFX_METEORLAKE = 1272,
@@ -112,10 +112,10 @@ namespace mocks { namespace mfx
 
 #ifndef STRIP_EMBARGO
         HW_LKF       = HW_ICL + 10,
-        HW_ATS       = HW_DG1 + 1,
-        HW_DG2       = HW_ATS + 1,
-        HW_ADL_S     = HW_ATS + 2,
-        HW_ADL_UH    = HW_ATS + 3,
+        HW_XEHP      = HW_DG1  + 1,
+        HW_DG2       = HW_XEHP + 1,
+        HW_ADL_S     = HW_XEHP + 2,
+        HW_ADL_UH    = HW_XEHP + 3,
 
         HW_MTL       = 0xf00000
 #endif

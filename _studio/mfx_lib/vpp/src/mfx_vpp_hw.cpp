@@ -2414,7 +2414,7 @@ mfxStatus  VideoVPPHW::Init(
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12lp,sizeof(genx_fcopy_gen12lp),m_pCmProgram,"nojitter");
                 break;
         #ifndef STRIP_EMBARGO
-            case MFX_HW_TGL_HP:
+            case MFX_HW_XE_HP:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12, sizeof(genx_fcopy_gen12), m_pCmProgram, "nojitter");
                 break;
             case MFX_HW_ADL_S:
@@ -2440,7 +2440,7 @@ mfxStatus  VideoVPPHW::Init(
         if (NULL == m_pCmQueue)
         {
 #ifndef STRIP_EMBARGO
-            if (m_pCore->GetHWType() == MFX_HW_ATS)
+            if (m_pCore->GetHWType() == MFX_HW_XE_HP)
                 res = m_pCmDevice->CreateQueueEx(m_pCmQueue, CM_COMPUTE_QUEUE_CREATE_OPTION);
             else
 #endif
@@ -2736,7 +2736,7 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
     caps.uMCTF = 0;
     if (hwType >= MFX_HW_BDW
 #ifndef STRIP_EMBARGO
-        && hwType <= MFX_HW_ATS
+        && hwType <= MFX_HW_XE_HP
 #endif
         )
         caps.uMCTF = 1;
@@ -4488,11 +4488,11 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
 #if !defined(STRIP_EMBARGO)
-    if ((imfxFPMode - 1 == FIELD2TFF || imfxFPMode - 1 == FIELD2BFF) && m_pCore->GetHWType() >= MFX_HW_TGL_HP)
+    if ((imfxFPMode - 1 == FIELD2TFF || imfxFPMode - 1 == FIELD2BFF) && m_pCore->GetHWType() >= MFX_HW_XE_HP)
     {
         m_executeParams.bFieldWeavingExt = true;
     }
-    if ((imfxFPMode - 1 == TFF2FIELD || imfxFPMode - 1 == BFF2FIELD) && m_pCore->GetHWType() >= MFX_HW_TGL_HP)
+    if ((imfxFPMode - 1 == TFF2FIELD || imfxFPMode - 1 == BFF2FIELD) && m_pCore->GetHWType() >= MFX_HW_XE_HP)
     {
         m_executeParams.bFieldSplittingExt = true;
     }

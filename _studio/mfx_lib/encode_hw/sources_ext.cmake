@@ -8,19 +8,19 @@ target_include_directories(encode_hw PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/base
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12xehp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12dg2
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/base
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g11lkf
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12ats
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12xehp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12dg2
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/base
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g11lkf
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12ats
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12dg2
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base
@@ -42,18 +42,18 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf_caps.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_caps.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_caps.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_mfe.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_mfe.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12xehp/hevcehw_g12xehp_caps.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12xehp/hevcehw_g12xehp_caps.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12xehp/hevcehw_g12xehp_mfe.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12xehp/hevcehw_g12xehp_mfe.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12dg2/hevcehw_g12dg2_caps.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12dg2/hevcehw_g12dg2_caps.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g11lkf/hevcehw_g11lkf_lin.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12ats/hevcehw_g12ats_lin.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12ats/hevcehw_g12ats_lin.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12ats/hevcehw_g12ats_mfe_lin.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12ats/hevcehw_g12ats_mfe_lin.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12xehp/hevcehw_g12xehp_lin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12xehp/hevcehw_g12xehp_lin.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12xehp/hevcehw_g12xehp_mfe_lin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12xehp/hevcehw_g12xehp_mfe_lin.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12dg2/hevcehw_g12dg2_lin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12dg2/hevcehw_g12dg2_lin.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12/hevcehw_g12_embargo_lin.cpp
@@ -65,21 +65,21 @@ target_sources(encode_hw
 
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf_caps.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_mfe.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12xehp/hevcehw_g12xehp_mfe.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12dg2/hevcehw_g12dg2_caps.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/base/hevcehw_base_dump_files.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/base/hevcehw_base_extddi.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g11lkf/hevcehw_g11lkf_lin.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12ats/hevcehw_g12ats_lin.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12ats/hevcehw_g12ats_mfe_lin.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12xehp/hevcehw_g12xehp_lin.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12xehp/hevcehw_g12xehp_mfe_lin.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12dg2/hevcehw_g12dg2_lin.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/g12/hevcehw_g12_embargo_lin.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/linux/base/hevcehw_base_gpu_hang_lin.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/hevcehw_ddi_trace.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g11lkf/hevcehw_g11lkf_win.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12ats/hevcehw_g12ats_mfe_win.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12ats/hevcehw_g12ats_win.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp/hevcehw_g12xehp_mfe_win.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp/hevcehw_g12xehp_win.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12dg2/hevcehw_g12dg2_win.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12/hevcehw_g12_qp_modulation_win.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12/hevcehw_g12_scc_win.h
@@ -154,10 +154,10 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/hevcehw_ddi_trace.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g11lkf/hevcehw_g11lkf_win.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12ats/hevcehw_g12ats_mfe_win.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12ats/hevcehw_g12ats_mfe_win.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12ats/hevcehw_g12ats_win.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12ats/hevcehw_g12ats_win.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp/hevcehw_g12xehp_mfe_win.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp/hevcehw_g12xehp_mfe_win.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp/hevcehw_g12xehp_win.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp/hevcehw_g12xehp_win.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12dg2/hevcehw_g12dg2_win.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12dg2/hevcehw_g12dg2_win.h
 

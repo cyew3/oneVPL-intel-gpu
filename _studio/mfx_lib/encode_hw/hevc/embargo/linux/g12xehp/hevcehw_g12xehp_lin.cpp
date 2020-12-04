@@ -22,11 +22,11 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12ats_lin.h"
+#include "hevcehw_g12xehp_lin.h"
 #if defined(MFX_ENABLE_MFE)
-#include "hevcehw_g12ats_mfe_lin.h"
+#include "hevcehw_g12xehp_mfe_lin.h"
 #endif //defined(MFX_ENABLE_MFE)
-#include "hevcehw_g12ats_caps.h"
+#include "hevcehw_g12xehp_caps.h"
 #include "hevcehw_g12_caps.h"
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_iddi.h"
@@ -38,7 +38,7 @@ namespace HEVCEHW
 {
 namespace Linux
 {
-namespace Gen12ATS
+namespace Gen12XEHP
 {
 
 MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
@@ -53,7 +53,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     newFeatures.emplace_back(new MFE(FEATURE_MFE));
 #endif //defined(MFX_ENABLE_MFE)
 
-    newFeatures.emplace_back(new HEVCEHW::Gen12ATS::Caps(FEATURE_CAPS));
+    newFeatures.emplace_back(new HEVCEHW::Gen12XEHP::Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new HEVCEHW::Base::ExtDDI(HEVCEHW::Base::FEATURE_EXTDDI));
 
     for (auto& pFeature : newFeatures)
@@ -68,7 +68,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
         Reorder(
             qwc
             , { HEVCEHW::Gen12::FEATURE_CAPS, HEVCEHW::Gen12::Caps::BLK_HardcodeCaps }
-            , { FEATURE_CAPS, HEVCEHW::Gen12ATS::Caps::BLK_HardcodeCaps }
+            , { FEATURE_CAPS, HEVCEHW::Gen12XEHP::Caps::BLK_HardcodeCaps }
         , PLACE_AFTER);
     }
 }
@@ -81,6 +81,6 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-}}} //namespace HEVCEHW::Linux::Gen12ATS
+}}} //namespace HEVCEHW::Linux::Gen12XEHP
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

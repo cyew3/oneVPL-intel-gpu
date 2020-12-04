@@ -211,7 +211,7 @@ namespace hevce_explicit_weight_pred
         }
 
         // driver's limitation: kernel in VME HEVC for non-ATS platforms has hard-coded luma denom=6, so others are not allowed, VDEnc - ?
-        if (g_tsHWtype == MFX_HW_ATS)
+        if (g_tsHWtype == MFX_HW_XE_HP)
             pwt.LumaLog2WeightDenom = GetRandomNumber(1, 7);
         else
             pwt.LumaLog2WeightDenom = 6;

@@ -19,13 +19,13 @@
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\base;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g11lkf;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12;
-      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12ats;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12xehp;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12dg2;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\base;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g11lkf;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12;
-      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12ats;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12xehp;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12dg2;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared\embargo;

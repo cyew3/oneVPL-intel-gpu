@@ -101,7 +101,7 @@ namespace mocks { namespace mfx { namespace dx11
             case HW_DG1:     return make_component(adapter, ctx, std::integral_constant<int, HW_DG1>{},     std::forward<Args>(args)...);
 #ifndef STRIP_EMBARGO
             case HW_LKF:     return make_component(adapter, ctx, std::integral_constant<int, HW_LKF>{},     std::forward<Args>(args)...);
-            case HW_ATS:     return make_component(adapter, ctx, std::integral_constant<int, HW_ATS>{},     std::forward<Args>(args)...);
+            case HW_XEHP:    return make_component(adapter, ctx, std::integral_constant<int, HW_XEHP>{},     std::forward<Args>(args)...);
             case HW_DG2:     return make_component(adapter, ctx, std::integral_constant<int, HW_DG2>{},     std::forward<Args>(args)...);
 #endif
             default:         return make_component(adapter, ctx, std::integral_constant<int, HW_UNKNOWN>{}, std::forward<Args>(args)...);

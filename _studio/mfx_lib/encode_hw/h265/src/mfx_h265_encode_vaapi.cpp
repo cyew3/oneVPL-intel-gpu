@@ -2097,7 +2097,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDLPair pair)
     if (m_pMfeAdapter) {
         //ToDo: need to implement correct timeout handling from user.
         unsigned long long timeout = task.m_mfeTimeToWait;
-        if (m_core->GetHWType() >= MFX_HW_ATS)
+        if (m_core->GetHWType() >= MFX_HW_XE_HP)
             timeout = 360000000;//one hour for pre-si, ToDo:remove for silicon
         mfxStatus sts = m_pMfeAdapter->Submit(m_vaContextEncode, (task.m_flushMfe ? 0 : timeout), !skipMode.NeedDriverCall());
         if (sts != MFX_ERR_NONE)

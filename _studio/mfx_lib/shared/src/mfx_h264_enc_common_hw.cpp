@@ -2629,7 +2629,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     {
 #if !defined(STRIP_EMBARGO) && defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
         // Gen12HP VDEnc supports B frames
-        if (par.mfx.GopRefDist > 1 && platform < MFX_HW_TGL_HP)
+        if (par.mfx.GopRefDist > 1 && platform < MFX_HW_XE_HP)
 #else
         if (par.mfx.GopRefDist > 1)
 #endif

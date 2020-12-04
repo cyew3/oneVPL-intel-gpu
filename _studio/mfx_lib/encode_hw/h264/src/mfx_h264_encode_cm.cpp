@@ -864,7 +864,7 @@ void CmContext::Setup(
     m_device = cmDevice;
 
 #ifndef STRIP_EMBARGO
-    if (core->GetHWType() == MFX_HW_ATS)
+    if (core->GetHWType() == MFX_HW_XE_HP)
     {
         if (m_device->CreateQueueEx(m_queue, CM_COMPUTE_QUEUE_CREATE_OPTION) != CM_SUCCESS)
             throw CmRuntimeError();

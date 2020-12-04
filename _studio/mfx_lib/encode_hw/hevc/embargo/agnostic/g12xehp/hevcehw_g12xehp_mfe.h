@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,24 +18,44 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
 
-#include "hevcehw_g12ats_caps.h"
+#include "hevcehw_base.h"
+#include "hevcehw_g12_data.h"
+#include "ehw_platforms.h"
 
-using namespace HEVCEHW;
-using namespace HEVCEHW::Gen12ATS;
-
-void Caps::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+namespace HEVCEHW
 {
-    Push(BLK_HardcodeCaps
-        , [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
-    {
-        auto& caps = HEVCEHW::Gen12::Glob::EncodeCaps::Get(strg);
-        caps.LCUSizeSupported = 0b100; // 64x64 lcu is only supported
+namespace Gen12XEHP
+{
+class MFE
+    : public FeatureBase
+{
+public:
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(Init)\
+    DECL_BLOCK(SetCallChains)\
+    DECL_BLOCK(UpdateDDITask)\
+    DECL_BLOCK(CheckAndFix)
+#define DECL_FEATURE_NAME "G12XEHP_MFE"
+#include "hevcehw_decl_blocks.h"
 
-        return MFX_ERR_NONE;
-    });
-}
+    MFE(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+protected:
+    virtual void SetSupported(ParamSupport& blocks) override;
+    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+
+    bool   m_bDDIExecSet = false;
+    mfxU32 m_timeout = 3600000000;//one hour for pre-si, ToDo:remove for silicon
+};
+
+} //Gen12XEHP
+} //namespace HEVCEHW
+
+#endif

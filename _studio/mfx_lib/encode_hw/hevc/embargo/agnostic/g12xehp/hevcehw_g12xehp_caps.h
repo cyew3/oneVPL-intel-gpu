@@ -29,7 +29,7 @@
 
 namespace HEVCEHW
 {
-namespace Gen12ATS
+namespace Gen12XEHP
 {
 class Caps
     : public FeatureBase
@@ -37,7 +37,7 @@ class Caps
 public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(HardcodeCaps)
-#define DECL_FEATURE_NAME "G12ATS_Caps"
+#define DECL_FEATURE_NAME "G12XEHP_Caps"
 #include "hevcehw_decl_blocks.h"
 
     Caps(mfxU32 FeatureId)
@@ -48,7 +48,7 @@ protected:
     virtual void Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
 };
 
-} //Gen12ATS
+} //Gen12XEHP
 } //namespace HEVCEHW
 
 #endif

@@ -20,7 +20,7 @@
 
 #pragma once
 
-#define Gen12ATS PlatformK
+#define Gen12XEHP PlatformK
 #define Gen12DG2 PlatformL
 #define Gen13    PlatformM
 

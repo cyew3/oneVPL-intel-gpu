@@ -21,7 +21,7 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
 
-#include "hevcehw_g12ats_mfe_win.h"
+#include "hevcehw_g12xehp_mfe_win.h"
 #include "hevcehw_g12_data.h"
 #include "libmfx_core_interface.h"
 #include "hevcehw_base_d3d11_win.h"
@@ -30,7 +30,7 @@
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen12;
 
-void Windows::Gen12ATS::MFE::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
+void Windows::Gen12XEHP::MFE::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
 {
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam&, StorageRW& strg, StorageRW&) -> mfxStatus
@@ -62,7 +62,7 @@ void Windows::Gen12ATS::MFE::InitExternal(const FeatureBlocks& /*blocks*/, TPush
     });
 }
 
-void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+void Windows::Gen12XEHP::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
@@ -187,7 +187,7 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
     });
 }
 
-void Windows::Gen12ATS::MFE::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
+void Windows::Gen12XEHP::MFE::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 {
     Push(BLK_Init
         , [this](StorageRW& strg, StorageRW&) -> mfxStatus
@@ -207,7 +207,7 @@ void Windows::Gen12ATS::MFE::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA 
     });
 }
 
-void Windows::Gen12ATS::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
+void Windows::Gen12XEHP::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
     Push(BLK_UpdateDDITask
         , [this](

@@ -45,10 +45,9 @@ enum eMFXHWType
     MFX_HW_RYF       = MFX_HW_TGL_LP + 1,
     MFX_HW_ADL_S     = MFX_HW_TGL_LP + 4,
     MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
-    MFX_HW_TGL_HP    = MFX_HW_TGL_LP + 6,
-    MFX_HW_ATS       = MFX_HW_TGL_HP,
-    MFX_HW_DG2       = MFX_HW_ATS + 1,
-    MFX_HW_PVC       = MFX_HW_ATS + 2,
+    MFX_HW_XE_HP     = MFX_HW_TGL_LP + 6,
+    MFX_HW_DG2       = MFX_HW_XE_HP + 1,
+    MFX_HW_PVC       = MFX_HW_XE_HP + 2,
 
     MFX_HW_MTL       = 0x1700000
 #endif
@@ -390,23 +389,23 @@ const mfx_device_item listLegalDevIDs[] = {
 
     /* RYF */
     { 0x9940, MFX_HW_RYF, GT_INTEGRATED },
-    /* ATS */
-    { 0x0201, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0202, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0203, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0204, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0205, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0206, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0207, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0208, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0209, MFX_HW_ATS, GT_DISCRETE },
-    { 0x020A, MFX_HW_ATS, GT_DISCRETE },
-    { 0x020B, MFX_HW_ATS, GT_DISCRETE },
-    { 0x020C, MFX_HW_ATS, GT_DISCRETE },
-    { 0x020D, MFX_HW_ATS, GT_DISCRETE },
-    { 0x020E, MFX_HW_ATS, GT_DISCRETE },
-    { 0x020F, MFX_HW_ATS, GT_DISCRETE },
-    { 0x0210, MFX_HW_ATS, GT_DISCRETE },
+    /* XE HP */
+    { 0x0201, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0202, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0203, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0204, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0205, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0206, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0207, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0208, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0209, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x020A, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x020B, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x020C, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x020D, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x020E, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x020F, MFX_HW_XE_HP, GT_DISCRETE },
+    { 0x0210, MFX_HW_XE_HP, GT_DISCRETE },
 
 
     /* DG2 */
@@ -491,8 +490,8 @@ static inline const char *get_name(eMFXHWType platform) {
     case MFX_HW_RYF: return "RYF";
     case MFX_HW_ADL_S: return "ADL_S";
     case MFX_HW_ADL_P: return "ADL_P";
-    // case MFX_HW_TGL_HP: return "TGL_HP"; <-- MFX_HW_TGL_HP == MFX_HW_ATS
-    case MFX_HW_ATS: return "ATS";
+    // case MFX_HW_XE_HP: return "TGL_HP"; <-- MFX_HW_XE_HP == MFX_HW_XE_HP
+    case MFX_HW_XE_HP: return "XE_HP";
     case MFX_HW_DG2: return "DG2";
     case MFX_HW_PVC: return "PVC";
     case MFX_HW_MTL: return "MTL";

@@ -23,21 +23,21 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN) && !defined(AS_MFX_LA_PLUGIN) && !defined(STRIP_EMBARGO)
 
-#include "hevcehw_g12ats_mfe.h"
+#include "hevcehw_g12xehp_mfe.h"
 #include "mfx_mfe_adapter_dxva.h"
 
 namespace HEVCEHW
 {
 namespace Windows
 {
-namespace Gen12ATS
+namespace Gen12XEHP
 {
 class MFE
-    : public HEVCEHW::Gen12ATS::MFE
+    : public HEVCEHW::Gen12XEHP::MFE
 {
 public:
     MFE(mfxU32 FeatureId)
-        : HEVCEHW::Gen12ATS::MFE(FeatureId)
+        : HEVCEHW::Gen12XEHP::MFE(FeatureId)
     {}
 
 protected:
@@ -53,7 +53,7 @@ protected:
     bool                               m_bSendEvent  = false;
     std::vector<ENCODE_COMPBUFFERDESC> m_cbd;
 };
-} //Gen12ATS
+} //Gen12XEHP
 } //namespace Windows
 } //namespace HEVCEHW
 

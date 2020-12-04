@@ -21,15 +21,15 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_LINUX)
 
-#include "hevcehw_g12ats_mfe_lin.h"
+#include "hevcehw_g12xehp_mfe_lin.h"
 #include "hevcehw_g12_data.h"
 #include "libmfx_core_interface.h"
 #include "hevcehw_base_va_lin.h"
 
 using namespace HEVCEHW;
-using namespace HEVCEHW::Gen12ATS;
+using namespace HEVCEHW::Gen12XEHP;
 
-void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+void Linux::Gen12XEHP::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam& in, mfxVideoParam&, StorageRW& strg) -> mfxStatus

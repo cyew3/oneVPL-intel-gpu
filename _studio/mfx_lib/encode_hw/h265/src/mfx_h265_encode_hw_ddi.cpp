@@ -166,7 +166,7 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
         IsOff(par.mfx.LowPower) && (platform >= MFX_HW_TGL_LP))
         caps.ddi_caps.YUV422ReconSupport = 1;    // Win VME is not fixed yet
 #if !defined(STRIP_EMBARGO) && !defined(STRIP_EMBARGO)
-    if (platform >= MFX_HW_ATS && IsOn(par.mfx.LowPower))
+    if (platform >= MFX_HW_XE_HP && IsOn(par.mfx.LowPower))
     {
         // For now the driver reports in caps 8 pipes for ATS while in fact there are 2
         // and more pipes are not expected to be supported.
