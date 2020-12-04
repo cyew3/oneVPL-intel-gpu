@@ -113,6 +113,10 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 /_testsuite/msdk_ts/src/gmock/test_suites/hevc_fei/** miroslav.goncharenko@intel.com dmitry.ermilov@intel.com leonid.a.kulakov@intel.com alexandra.tyugina@intel.com 
 /_testsuite/msdk_ts/src/gmock/test_suites/hevce_fei/** miroslav.goncharenko@intel.com dmitry.ermilov@intel.com leonid.a.kulakov@intel.com alexandra.tyugina@intel.com 
 
+# enctools:
+/_studio/enctools/** timofei.a.kulakov@intel.com olga.golikova@intel.com
+/_studio/enctools/aenc/** sergey.plotnikov@intel.com
+
 # audio:
 /_studio/mfx_lib/audio_decode/** oleg.nabiullin@intel.com dmitry.ermilov@intel.com
 /_studio/mfx_lib/audio_encode/** oleg.nabiullin@intel.com dmitry.ermilov@intel.com
