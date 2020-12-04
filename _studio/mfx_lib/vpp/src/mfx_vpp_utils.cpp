@@ -29,7 +29,12 @@
 
 #if defined (MFX_VA)
 #include "mfxpcp.h"
+
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
 #endif
+
+#endif //defined(MFX_VA)
 
 #include "ipps.h"
 #include "ippi.h"

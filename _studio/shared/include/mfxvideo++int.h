@@ -34,8 +34,9 @@
 
 #if !defined(MFX_ONEVPL)
 #include "mfxplugin.h"
-#include "mfxprivate.h"
 #endif
+
+#include "mfxprivate.h"
 
 #ifdef _MSVC_LANG
 #pragma warning(push)

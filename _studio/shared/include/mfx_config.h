@@ -181,10 +181,7 @@
     #endif // #ifdef MFX_DISABLE_SW_FALLBACK
 #endif
 
-#if defined(MFX_ONEVPL)
-    #define MFX_PROTECTED_FEATURE_DISABLE
-    #define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
-#endif
+#define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
 
 // closed source fixed-style defines
 #if !defined(ANDROID) && defined(__linux__)
@@ -488,7 +485,9 @@
 
 #ifdef MFX_DISABLE_SW_FALLBACK
 
+#if !defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
     #define MFX_PROTECTED_FEATURE_DISABLE
+#endif
 //    #define VP_OPERATION_TIMEOUT 5000
 
     #if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)

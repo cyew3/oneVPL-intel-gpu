@@ -29,7 +29,11 @@
 #include "libmfx_core.h"
 #include "libmfx_core_factory.h"
 #include "libmfx_core_interface.h"
+
 #include "mfxpcp.h"
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
 
 #include "mfx_vpp_utils.h"
 #include "mfx_vpp_sw.h"

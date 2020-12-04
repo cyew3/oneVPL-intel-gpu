@@ -35,6 +35,10 @@
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common_decode_int.h"
 
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
+
 #define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
 #define DXVA2_VC1BITPLANE_EXT_BUFFER       22
 

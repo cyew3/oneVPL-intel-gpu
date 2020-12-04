@@ -28,6 +28,12 @@
 #include <exception>
 #include <algorithm>
 
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpcp.h"
+#include "private/mfxpavp.h"
+#include "private/mfxwidi.h"
+#endif
+
 namespace MfxExtBuffer
 {
     template<class T> struct IdMap {};

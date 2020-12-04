@@ -50,6 +50,11 @@
 #include "umc_h264_vda_supplier.h"
 #endif
 
+#include "mfxpcp.h"
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
+
 inline bool IsNeedToUseHWBuffering(eMFXHWType /*type*/)
 {
     return false;

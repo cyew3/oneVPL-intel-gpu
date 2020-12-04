@@ -62,7 +62,10 @@ macro( make_api_target target)
 
   add_library( ${target}-api INTERFACE )
   target_include_directories(${target}-api
-    INTERFACE ${MFX_API_HOME}/include ${MFX_API_HOME}/../mediasdk_structures
+    INTERFACE
+    ${MFX_API_HOME}/include
+    ${MFX_API_HOME}/../mediasdk_structures
+    $<$<BOOL:${API_USE_VPL}>:${MFX_API_HOME}/include/private>
   )
   target_compile_definitions(${target}-api
     INTERFACE $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>

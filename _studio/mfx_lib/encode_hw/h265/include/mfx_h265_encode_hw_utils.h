@@ -30,10 +30,16 @@
 
 #if !defined(MFX_ONEVPL)
 #include "mfxla.h"
-#include "mfxwidi.h"
-#endif //!MFX_ONEVPL
+#endif
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpcp.h"
+#include "mfxwidi.h"
+#if defined(MFX_ONEVPL)
+    #include "mfxpavp.h"
+#endif
+#endif //!defined(MFX_PROTECTED_FEATURE_DISABLE)
+
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
 #include "mfx_lp_lookahead.h"
 #endif

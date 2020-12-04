@@ -27,7 +27,11 @@
 #include "umc_h265_nal_spl.h"
 
 #include "mfx_common_decode_int.h"
+
 #include "mfxpcp.h"
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
 
 #if defined (MFX_VA)
 #include "umc_va_dxva2.h"

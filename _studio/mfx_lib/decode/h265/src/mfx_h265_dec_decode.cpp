@@ -40,6 +40,11 @@
 #include "umc_va_video_processing.h"
 #endif
 
+#include "mfxpcp.h"
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
+
 using namespace UMC_HEVC_DECODER;
 
 inline

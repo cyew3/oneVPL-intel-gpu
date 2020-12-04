@@ -22,6 +22,10 @@
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
 
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
+
 #if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 #include "mfxfei.h"
 #endif

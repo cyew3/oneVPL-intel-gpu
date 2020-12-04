@@ -35,10 +35,6 @@
 
 #include "mfx_ext_buffers.h"
 
-#if !defined(MFX_ONEVPL)
-#include "mfxwidi.h"
-#endif
-
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 #include "mfxfei.h"
 #endif
@@ -61,10 +57,15 @@
 #include <va/va_enc_h264.h>
 #endif
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpcp.h"
-#if !defined(MFX_ONEVPL)
+#include "mfxwidi.h"
 #include "mfxhdcp.h"
+#if defined(MFX_ONEVPL)
+#include "mfxpavp.h"
 #endif
+#endif //!defined(MFX_PROTECTED_FEATURE_DISABLE)
+
 #include "mfxmvc.h"
 
 #include "umc_defs.h"

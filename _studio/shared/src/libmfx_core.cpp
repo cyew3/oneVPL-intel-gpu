@@ -21,6 +21,9 @@
 #include <assert.h>
 
 #include "mfxpcp.h"
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
 
 #include <mfx_scheduler_core.h>
 #include <libmfx_core_interface.h>

@@ -25,6 +25,11 @@
 #include "mfx_vc1_dec_common.h"
 #include "umc_vc1_common.h"
 #include "mfxpcp.h"
+
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
+
 #include "mfx_common_int.h"
 #include "umc_vc1_dec_seq.h"
 

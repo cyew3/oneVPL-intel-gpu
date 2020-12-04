@@ -30,13 +30,17 @@
 #define D3DDDIFORMAT        D3DFORMAT
 #define DXVADDI_VIDEODESC   DXVA2_VideoDesc
 
-#if   defined(MFX_VA_WIN)
+#if defined(MFX_VA_WIN)
     #include "encoder_ddi.hpp"
     #include "auxiliary_device.h"
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
-    #define PAVP_SUPPORT
-#endif
+    #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        #define PAVP_SUPPORT
+        #include "mfxpcp.h"
+        #if defined(MFX_ONEVPL)
+        #include "mfxpavp.h"
+        #endif
+    #endif
 #elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
     #include "mfx_h264_encode_struct_vaapi.h"
 #endif
@@ -45,12 +49,6 @@
 
 #include <vector>
 #include <list>
-
-#ifdef PAVP_SUPPORT
-#include "mfxpcp.h"
-#endif
-
-
 
 #ifdef MPEG2_ENC_HW_PERF
 #include "vm_time.h"
