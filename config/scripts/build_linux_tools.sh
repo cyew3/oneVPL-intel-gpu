@@ -7,6 +7,7 @@ TARGETS_TOOLS=(
     'FSEP'
     'PTIRapp'
     'acctv3_read'
+    'aenc'
     'artificial_stream_generator'
     'asg-hevc'   # depends on libmfx.so
     'avc_cmp'
@@ -19,6 +20,7 @@ TARGETS_TOOLS=(
     'calc_crc'
     'cocoto'
     'cocotor'
+    'compare_struct'
     'csc_tool'
     'cttmetrics'
     'decode_fbf'   # depends on libmfx.so
@@ -47,10 +49,16 @@ TARGETS_TOOLS=(
     'hevcrnd'
     'init'
     'interlace_maker'
+    'ldecod'
+    'ldecodRPL'
+    'ldecodQP'
     'metrics_calc_lite'
     'metrics_monitor'
+    'mfx_dispatch_test'
     'mfx_player'   # depends on libmfx.so
     'mfx_player_lucas'   # depends on libmfx.so
+    'mfx-tracer-config'
+    'mfx_tracer_test'
     'mfx_transcoder'   # depends on libmfx.so
     'mfx_transcoder_lucas'   # depends on libmfx.so
     'mfxsw64'
@@ -85,12 +93,14 @@ TARGETS_TOOLS=(
     'sample_spl_mux_dispatcher'
     'sample_vpp'
     'sampler'
+    'scheduler_tests'
     'stream_cut'
     'stream_maker'
     'telecine'
 #    'test_behavior'   # depends on libmfx.so, not building for now
 #    'hevce_tests'   #deprecated
     'test_comp'   # depends on libmfx.so
+    'test_monitor'
     'test_muxer'
     'test_session_priority'   # depends on libmfx.so
     'test_splitter'

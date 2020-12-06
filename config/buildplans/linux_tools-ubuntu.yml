@@ -1,14 +1,13 @@
 ---
 resource: DOCKER_LINUX_DRIVER
-manifest: linux-tools.yml
-working_dir: ''
+manifest: linux.yml
+working_dir: '..'
 env:
   DOCKER_ENV_VARS: "-e SYSTEM=Ubuntu18.04 -e LINUX_DISTRO=ubuntu -e CCACHE_DIR=/opt/ccache \
-    -e MEDIASDK_ROOT=/opt/src/msdk_tools -e LIBVA_REV=va-unified -e MFX_HOME=/opt/src/msdk_repos/mdp_msdk-lib \
-    -e MFX_MDF_PATH=/opt/src/msdk_tools/cmrt_linux \
-    -e PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/opt/src/msdk_repos/mdp_msdk-contrib/libva/va-unified \
-    -e PKG_CONFIG_TOP_BUILD_DIR=/opt/src/msdk_repos/mdp_msdk-contrib/libva/va-unified \
-    -e CMAKE_VTUNE_HOME=/opt/src/msdk_repos/mdp_msdk-contrib/itt"
+    -e MEDIASDK_ROOT=/opt/src/msdk_root -e MFX_HOME=/opt/src/sources/mdp_msdk-lib \
+    -e MFX_MDF_PATH=/opt/src/msdk_root/cmrt_linux \
+    -e PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig \
+    -e CMAKE_VTUNE_HOME=/opt/src/sources/mdp_msdk-contrib/itt"
   DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-ubuntu18.04:1
 qb_variable_map:
   build_version: BUILD_VERSION
@@ -16,9 +15,50 @@ qb_variable_map:
   irepo_workspace: WORKSPACE
   parent_build_id: BUILD_ID
 steps:
+  - name: copy mediasdk lib repo
+    command: rm -rf ./sources/mdp_msdk-lib && cp -R mediasdk sources/mdp_msdk-lib
   - name: mock command in container
-    command: echo "Hello world!"
+    command: docker run --name $BUILD_ID --rm -d -w /opt/src $DOCKER_ENV_VARS --init -v $WORKSPACE:/opt/src
+      -v /ccache:/opt/ccache -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` $DOCKER_IMAGE
+      /bin/bash  -c "sleep 2400"
+  - name: config_libva
+    command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu"
+  - name: build_libva
+    command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
+  - name: config mediasdk tools
+    command: docker exec $BUILD_ID /bin/bash -c 'mkdir -p sources/mdp_msdk-lib/build && cd sources/mdp_msdk-lib/build
+      && /opt/tools/cmake-latest/bin/cmake -DCMAKE_INSTALL_PREFIX=/opt/intel/mediasdk
+      -DCMAKE_C_FLAGS_RELEASE="-Wall -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
+      -DCMAKE_CXX_FLAGS_RELEASE="-Wall -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
+      -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON
+      -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=latest $MFX_HOME'
+  - name: build mediasdk tools
+    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build && chmod +x /opt/src/sources/mdp_msdk-lib/config/scripts/build_linux_tools.sh
+      && /opt/src/sources/mdp_msdk-lib/config/scripts/build_linux_tools.sh"
+  - name: create drop package
+    command: docker exec $BUILD_ID /bin/bash -c "chmod +x /opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_tools.sh &&
+      /opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_tools.sh
+      -v /opt/src/msdk_binaries/validation_tools
+      -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
+      -l /opt/src/sources/mdp_msdk-lib/build/__lib/release
+      -t /opt/src/msdk_binaries/test_behavior
+      -p /opt/src/sources/mdp_msdk-lib/build/output"
+  - name: create deb package
+    command: docker exec $BUILD_ID /bin/bash -c "chmod +x /opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh &&
+      /opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh
+      -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
+      -t /opt/src/msdk_binaries/test_behavior
+      -h /opt/src/hevce_tests
+      -p /opt/src/sources/mdp_msdk-lib/build/output"
+  - name: remove container
+    command: docker kill $BUILD_ID
+  - name: mock command on host
+    command: docker ps -a
 types:
   ubuntu18.04:
     env:
       BUILD_TYPE: Release
+    output:
+    - file_patterns: "*.deb,*.tgz"
+      source_dir: "../sources/mdp_msdk-lib/build/output"
+      destination_dir: Linux/Ubuntu/18.04

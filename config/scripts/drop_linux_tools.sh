@@ -1,8 +1,8 @@
 #!/bin/bash
 set -ex
 
-VERSION_MINOR=$(cat /opt/src/msdk_repos/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
-VERSION_MAJOR=$(cat /opt/src/msdk_repos/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+VERSION_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+VERSION_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
 
 BIN_FILES=(
     "acctv3_read"
@@ -17,6 +17,7 @@ BIN_FILES=(
     "calc_crc"
     "cocoto"
     "cocotor"
+    "compare_struct"
     "ConvertNV12"
     "ConvertYUY2"
     "csc_tool"
@@ -48,6 +49,9 @@ BIN_FILES=(
     "hevcrnd"
     "init"
     "interlace_maker"
+    "ldecod"
+    "ldecodRPL"
+    "ldecodQP"
     "libbs_parser.so"
     "libcttmetrics.so"
     "libmfx_player_lucas.so"
@@ -64,8 +68,11 @@ BIN_FILES=(
 #    "libva_wrapper.so"   # now it's libva_wrapper.a
     "metrics_calc_lite"
     "metrics_monitor"
+    "mfx_dispatch_test"
     "mfx_player"
     "mfx_transcoder"
+    "mfx-tracer-config"
+    "mfx_tracer_test"
     "mjpeg_parser"
     "mpeg2_hrd_stream_checker"
     "mpeg2_parser"
@@ -93,12 +100,14 @@ BIN_FILES=(
     "sample_multi_transcode_mod"
     "sample_vpp"
     "sampler"
+    "scheduler_tests"
     "stream_cut"
     "stream_maker"
     "telecine"
-    "test_behavior"
+#    "test_behavior"
     "test_comp"
     "test_muxer"
+    "test_monitor"
     "test_session_priority"
     "test_splitter"
     "test_thread_safety"
@@ -117,25 +126,32 @@ BIN_FILES=(
 	
 LIB_FILES=(
     'libsample_spl_mux_dispatcher.a'
+    'libaenc.a'
     )
 
-while getopts b:l:v: flag
+while getopts b:l:v:t:p: flag
 do
     case "${flag}" in
         b) binaries_dir=${OPTARG};;
-		l) libraries_dir=${OPTARG};;
+        l) libraries_dir=${OPTARG};;
         v) validation_tools_dir=${OPTARG};;
+        t) test_behavior_dir=${OPTARG};;
+        p) path_to_save=${OPTARG};;
     esac
 done
 
-package_name=drop.tgz
-package_dir=/opt/src/output/drop/to_drop
+package_name=tools_drop.tgz
+package_dir=$path_to_save/to_drop
 
 mkdir -p $package_dir/imports/mediasdk
-cp -v $validation_tools_dir/{mediasdkDir.exe,mediasdkDirLinux.exe,setupMsdkTool.sh} $package_dir
-cd $binaries_dir && cp -v ${BIN_FILES[*]} $package_dir/imports/mediasdk
-cd $libraries_dir && cp -v ${LIB_FILES[*]} $package_dir/imports/mediasdk
+cp -Pv $validation_tools_dir/{mediasdkDir.exe,mediasdkDirLinux.exe,setupMsdkTool.sh} $package_dir
+cd $binaries_dir
+cp -Pv ${BIN_FILES[*]} $package_dir/imports/mediasdk
+cd $libraries_dir
+cp -Pv ${LIB_FILES[*]} $package_dir/imports/mediasdk
+cd $test_behavior_dir
+cp -Pv test_behavior $package_dir/imports/mediasdk
 
 # Needed to publish artifacts in QuickBuild, сopying each file causes an error
-tar -cvzf /opt/src/output/drop/$package_name -C $package_dir .
+tar -cvzf $path_to_save/$package_name -C $package_dir .
 rm -r $package_dir

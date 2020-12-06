@@ -6,9 +6,56 @@ components:
     branch: master
     revision: 2.9.0.pre1
     dest_dir: libva
-  msdk:
+  contrib:
     type: git
-    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.lib.git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.contrib.git
     branch: master
-    revision: 9aa9b5e4cc0a974860628824a035a662db9f1b14
-    dest_dir: msdk
+    revision: c93b0ecaca8224683f97d7851775169d53f1e240
+    dest_dir: sources/mdp_msdk-contrib
+  val-tools:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.val-tools.git
+    branch: master
+    revision: 690f974480386bd52c953c82642f51f074005c60
+    dest_dir: sources/mdp_msdk-val-tools
+  hevc-stream-generator:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.hevc-stream-generator.git
+    branch: master
+    revision: 149c98d71a724e0a3082d7217a2a39d7d15725ca
+    dest_dir: sources/mdp_msdk-hevc-stream-generator
+  cmrt_linux:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: cmrt_linux
+    asset_version: 1
+    dest_dir: msdk_root/cmrt_linux
+  ipp_linux:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: ipp_linux
+    asset_version: 1
+    dest_dir: msdk_root/ipp
+  tools:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: tools
+    asset_version: 1
+    dest_dir: msdk_binaries/tools
+  test_behavior:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: test_behavior
+    asset_version: dab74464a23303359fa4f2db18db0cc86c79d082
+    dest_dir: msdk_binaries/test_behavior
+  validation_tools:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: validation_tools
+    asset_version: 1
+    dest_dir: msdk_binaries/validation_tools

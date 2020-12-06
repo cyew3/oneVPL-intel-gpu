@@ -1,6 +1,0 @@
-Package: mediasdk-tools
-Version: 10.0 
-Section: default 
-Priority: optional 
-Architecture: amd64
-Description: no description
