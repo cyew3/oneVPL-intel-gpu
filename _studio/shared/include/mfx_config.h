@@ -246,7 +246,6 @@
         #define MFX_CAMERA_FEATURE_DISABLE
 
         #if (MFX_VERSION < MFX_VERSION_NEXT)
-            #define STRIP_EMBARGO
             #define MFX_EXT_DPB_HEVC_DISABLE
             #define MFX_ADAPTIVE_PLAYBACK_DISABLE
             #define MFX_FUTURE_FEATURE_DISABLE
