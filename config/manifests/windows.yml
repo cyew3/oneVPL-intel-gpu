@@ -1,0 +1,109 @@
+version: '1'
+components:
+  msdk_root:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/deployment
+    asset_name: mediasdk_root
+    asset_version: 1
+    dest_dir: sources/msdk_root
+  msdk_trs_module:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/deployment
+    asset_name: windows_module
+    asset_version: 1
+    dest_dir: sources/msdk_trs_module
+  contrib:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.contrib.git
+    branch: master
+    revision: c93b0ecaca8224683f97d7851775169d53f1e240
+    dest_dir: sources/mdp_msdk-contrib
+  val-tools:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.val-tools.git
+    branch: master
+    revision: dc9689ec7d4255768a4733e307078b7def6ae534
+    dest_dir: sources/mdp_msdk-val-tools
+  hevc-stream-generator:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.hevc-stream-generator.git
+    branch: master
+    revision: 149c98d71a724e0a3082d7217a2a39d7d15725ca
+    dest_dir: sources/mdp_msdk-hevc-stream-generator
+  mfts:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.mfts.git
+    branch: master
+    revision: 95c88aa19ef97e843e2c1c5a915c5fb430b84de6
+    dest_dir: sources/mdp_msdk-mfts
+  sys-analyzer:
+    type: git
+    repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.sys-analyzer.git
+    branch: master
+    revision: 92d49d6fa7b6427ee46d9a6037ae669ff550ccd6
+    dest_dir: sources/mdp_msdk-sys-analyzer
+  msdk_binaries:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: msdk_binaries
+    asset_version: 201c251804b57f1914579c47ee2c79d07344e1d1_conf_c07719c5_2
+    dest_dir: msdk_binaries
+  VPA_build:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: VPA_build
+    asset_version: 1
+    dest_dir: vpa_build
+  mfts_binaries:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: mfts_binaries
+    asset_version: 201c251804b57f1914579c47ee2c79d07344e1d1_conf_c07719c5
+    dest_dir: mfts_binaries
+  icc_binaries:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: icc_binaries
+    asset_version: 201c251804b57f1914579c47ee2c79d07344e1d1_conf_c07719c5
+    dest_dir: icc_binaries
+  AMD64:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: AMD64
+    asset_version: 1
+    dest_dir: AMD64
+  service_UWD:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: service_UWD
+    asset_version: 1
+    dest_dir: service
+  test_system:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/tests/tests/master/commit
+    asset_name: closed_perl_test_pkg_release
+    asset_version: 16955fc9d79ac7ada63f3cb411892dca6f0f207b_conf_160320a2_18
+    dest_dir: test_system
+  validation_tools:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: validation_tools
+    asset_version: 2
+    dest_dir: validation_tools
+  nuget_packages:
+    type: artifactory
+    root_url: https://gfx-assets.inn.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    asset_name: nuget_packages
+    asset_version: 1
+    dest_dir: nuget_packages

@@ -1,0 +1,45 @@
+---
+resource: windows2016v2
+working_dir: '..'
+manifest: windows.yml
+qb_variable_map:
+  build_version: BUILD_VERSION
+  component_name: COMPONENT_NAME
+  irepo_workspace: WORKSPACE
+  parent_build_id: BUILD_ID
+env:
+  DOCKER_IMAGE: '-t dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-windows-1803:7'
+  DOCKER_WORKSPACE: "C:\\workspace"
+  DOCKER_ENV: "-e MEDIASDK_TRS_MODULE_PATH=C:\\workspace\\sources\\msdk_trs_module \
+    -e MFX_HOME=C:\\workspace\\sources\\mdp_msdk-lib -e MEDIASDK_ROOT=C:\\workspace\\sources\\msdk_root \
+    -e INTELMEDIASDK_FFMPEG_ROOT=C:\\workspace\\sources\\msdk_root\\ffmpeg -e MINIDDK_VERSION=10.0.18362.0"
+steps:
+  - name: copy Nuget packages
+    command: xcopy /E /I /Y %WORKSPACE%\\nuget_packages %WORKSPACE%\\sources\\mdp_msdk-val-tools\\plugins\\mfoundation\\capture_realtime_hmft\\packages
+  - name: copy mediasdk lib repo
+    command: (if exist %WORKSPACE%\\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\\sources\mdp_msdk-lib) &&
+      (if exist mediasdk (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
+      else (xcopy product %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q))
+  - name: build
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+      %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat
+types:
+  release:
+    env:
+      BUILD_TYPE: Release
+    output:
+    - source_dir: "../output/packages"
+      file_patterns: "*.zip"
+      destination_dir: "Windows"
+    - source_dir: "../output/WindowsDrop"
+      file_patterns: "*.zip"
+      destination_dir: "WindowsDrop"
+    - source_dir: "../output/WindowsToolsDrop"
+      file_patterns: "*.zip"
+      destination_dir: "WindowsToolsDrop"
+    - source_dir: "../output/LucasPackage"
+      file_patterns: "*.zip"
+      destination_dir: "WindowsLucasPkg"
+    - source_dir: "../output/WindowsNightlyPackage"
+      file_patterns: "*.zip"
+      destination_dir: "WindowsNightlyPackage"

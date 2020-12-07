@@ -2,3 +2,5 @@
 systems:
 - name: linux/ubuntu
   buildplan: linux-ubuntu.yml
+- name: Windows
+  buildplan: windows.yml
