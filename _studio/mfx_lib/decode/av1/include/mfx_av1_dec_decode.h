@@ -23,19 +23,13 @@
 
 #include "umc_defs.h"
 #include "umc_video_decoder.h"
+#include "mfx_umc_alloc_wrapper.h"
 #include <mutex>
 
 #ifndef _MFX_AV1_DEC_DECODE_H_
 #define _MFX_AV1_DEC_DECODE_H_
 
 #if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
-
-class mfx_UMC_FrameAllocator;
-
-namespace UMC
-{
-    class VideoDecoderParams;
-}
 
 namespace UMC_AV1_DECODER
 {
@@ -53,6 +47,7 @@ class VideoDECODEAV1
     {
         mfxFrameSurface1 *surface_work;
         mfxFrameSurface1 *surface_out;
+        UMC::FrameMemID  copyfromframe;
     };
 
 public:

@@ -830,7 +830,6 @@ mfxStatus VideoDECODEAV1::DecodeFrameCheck(mfxBitstream* bs, mfxFrameSurface1* s
     MFX_CHECK_NULL_PTR1(entry_point);
 
     std::lock_guard<std::mutex> guard(m_guard);
-
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -843,9 +842,14 @@ mfxStatus VideoDECODEAV1::DecodeFrameCheck(mfxBitstream* bs, mfxFrameSurface1* s
 
     std::unique_ptr<TaskInfo> info(new TaskInfo);
 
+    info->copyfromframe = UMC::FRAME_MID_INVALID;
     info->surface_work = GetOriginalSurface(surface_work);
     if (*surface_out)
         info->surface_out = GetOriginalSurface(*surface_out);
+
+    if(m_decoder->GetRepeatedFrame() != UMC::FRAME_MID_INVALID){
+        info->copyfromframe = m_decoder->GetRepeatedFrame();
+    }
 
     mfxThreadTask task =
         reinterpret_cast<mfxThreadTask>(info.release());
@@ -872,7 +876,6 @@ mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderF
 {
     MFX_CHECK(surface_out, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
-
     surface_out->Data.Corrupted = 0;
     int32_t const error = frame->GetError();
 
@@ -913,7 +916,6 @@ mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderF
 #else
     frame->Reset();
 #endif
-
     return sts;
 }
 
@@ -926,28 +928,28 @@ mfxStatus VideoDECODEAV1::QueryFrame(mfxThreadTask task)
 
     auto info =
         reinterpret_cast<TaskInfo*>(task);
-
-    mfxFrameSurface1* surface_out = info->surface_out;
-    MFX_CHECK(surface_out, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    UMC::FrameMemID id = m_allocator->FindSurface(surface_out, m_opaque);
-    UMC_AV1_DECODER::AV1DecoderFrame* frame =
-        m_decoder->FindFrameByMemID(id);
-
-    MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    MFX_CHECK(frame->DecodingStarted(), MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    if (!frame->DecodingCompleted())
+    UMC_AV1_DECODER::AV1DecoderFrame* frame = NULL;
+    mfxFrameSurface1* surface_out = info->surface_out;;
+    if(info->copyfromframe != UMC::FRAME_MID_INVALID)
     {
-        m_decoder->QueryFrames();
+        frame = m_decoder->FindFrameByMemID(info->copyfromframe);
     }
+    else
+    {
+        MFX_CHECK(surface_out, MFX_ERR_UNDEFINED_BEHAVIOR);
+        UMC::FrameMemID id = m_allocator->FindSurface(surface_out, m_opaque);
+        frame = m_decoder->FindFrameByMemID(id);
+        MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(frame->DecodingStarted(), MFX_ERR_UNDEFINED_BEHAVIOR);
+        if (!frame->DecodingCompleted())
+        {
+            m_decoder->QueryFrames();
+        }
 
-    MFX_CHECK(frame->DecodingCompleted(), MFX_TASK_WORKING);
-
+        MFX_CHECK(frame->DecodingCompleted(), MFX_TASK_WORKING);
+    }
     mfxStatus sts = DecodeFrame(surface_out, frame);
     MFX_CHECK_STS(sts);
-
     return MFX_TASK_DONE;
 }
 
