@@ -15,8 +15,11 @@ qb_variable_map:
   irepo_workspace: WORKSPACE
   parent_build_id: BUILD_ID
 steps:
-  - name: clean and copy mediasdk lib repo
-    command: rm -rf $WORKSPACE/sources/mdp_msdk-lib && cp -R $WORKSPACE/mediasdk $WORKSPACE/sources/mdp_msdk-lib
+  - name: clean mediasdk lib repo
+    command: rm -rf $WORKSPACE/sources/mdp_msdk-lib
+  - name: copy lib repo (mediasdk or product)
+    command: if [ -d $WORKSPACE/mediasdk ]; then cp -R $WORKSPACE/mediasdk $WORKSPACE/sources/mdp_msdk-lib;
+      elif [ -d $WORKSPACE/product ]; then cp -R $WORKSPACE/product $WORKSPACE/sources/mdp_msdk-lib; else exit 1; fi
   - name: create container
     command: docker run --name $BUILD_ID --rm -d -w /opt/src $DOCKER_ENV_VARS --init -v $WORKSPACE:/opt/src
       -v /ccache:/opt/ccache -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` $DOCKER_IMAGE
