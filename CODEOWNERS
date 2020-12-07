@@ -29,6 +29,7 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 # decode scrum
 /_studio/mfx_lib/dec/** will.guo@intel.com gavin.shen@intel.com yan.wang@intel.com dmitry.gurulev@intel.com dmitry.ermilov@intel.com
 /_studio/mfx_lib/decode/**  will.guo@intel.com gavin.shen@intel.com yan.wang@intel.com dmitry.gurulev@intel.com dmitry.ermilov@intel.com
+/_studio/shared/umc/codec/av1_dec/**  will.guo@intel.com gavin.shen@intel.com yan.wang@intel.com dmitry.gurulev@intel.com dmitry.ermilov@intel.com
 /_studio/shared/umc/codec/h264_dec/**  will.guo@intel.com gavin.shen@intel.com yan.wang@intel.com dmitry.gurulev@intel.com dmitry.ermilov@intel.com
 /_studio/shared/umc/codec/jpeg_common/**  will.guo@intel.com gavin.shen@intel.com yan.wang@intel.com dmitry.gurulev@intel.com dmitry.ermilov@intel.com
 /_studio/shared/umc/codec/jpeg_dec/**  will.guo@intel.com gavin.shen@intel.com yan.wang@intel.com dmitry.gurulev@intel.com dmitry.ermilov@intel.com
