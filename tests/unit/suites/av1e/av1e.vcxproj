@@ -46,6 +46,9 @@
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\libmfxhw.vcxproj">
       <Project>{38e352c7-c5f5-459e-9338-a7dd164e6ca4}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
+      <Project>{5b832ea0-e58c-46b9-aff6-2416cf805c09}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj">
       <Project>{e48418e7-2dca-4642-80d5-09a8799c2549}</Project>
     </ProjectReference>

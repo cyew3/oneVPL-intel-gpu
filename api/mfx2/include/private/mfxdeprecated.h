@@ -17,11 +17,6 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-enum  {
-    MFX_IMPL_SINGLE_THREAD= 0x0009,
-    MFX_IMPL_EXTERNAL_THREADING        = 0x10000
-};
-
 mfxStatus MFX_CDECL MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()

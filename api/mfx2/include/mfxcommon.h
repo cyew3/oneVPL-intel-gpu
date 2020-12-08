@@ -158,7 +158,12 @@ typedef struct {
         mfxU16  reserved2[5];
     };
     mfxU16      GPUCopy;         /*!< Enables or disables GPU accelerated copying between video and system memory in legacy Intel(r) Media SDK components. See the GPUCopy enumerator for a list of valid values. */
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
+    mfxU16      AltDependencies;
+    mfxU16      reserved[20];
+#else
     mfxU16      reserved[21];
+#endif
 } mfxInitParam;
 MFX_PACK_END()
 

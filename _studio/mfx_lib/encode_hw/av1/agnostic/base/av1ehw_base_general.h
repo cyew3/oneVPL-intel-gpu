@@ -169,7 +169,7 @@ namespace Base
         mfxStatus CheckCrops(
             mfxVideoParam & par
             , const Defaults::Param& defPar);
-        mfxStatus CheckShift(mfxVideoParam & par, mfxExtOpaqueSurfaceAlloc* pOSA);
+        mfxStatus CheckShift(mfxVideoParam & par);
         mfxStatus CheckFrameRate(mfxVideoParam & par);
         mfxStatus CheckNumRefFrame(
             mfxVideoParam & par
@@ -205,7 +205,7 @@ namespace Base
             , FH & s) const;
         TTaskIt ReorderWrap(const ExtBuffer::Param<mfxVideoParam> & par, TTaskIt begin, TTaskIt end, bool flush);
         static mfxU32 GetRawBytes(mfxU16 w, mfxU16 h, mfxU16 ChromaFormat, mfxU16 BitDepth);
-        static bool IsInVideoMem(const mfxVideoParam & par, const mfxExtOpaqueSurfaceAlloc* pOSA);
+        static bool IsInVideoMem(const mfxVideoParam & par);
 
         mfxU16 GetMaxRaw(const mfxVideoParam & par)
         {
