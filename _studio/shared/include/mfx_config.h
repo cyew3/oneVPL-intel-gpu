@@ -529,6 +529,9 @@
     #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 #endif
 
+#if defined(MFX_VA_WIN)
+    #define MFX_ENABLE_SINGLE_THREAD
+#endif
 
 #if defined(MFX_ENABLE_VPP)
     #define MFX_ENABLE_VPP_COMPOSITION

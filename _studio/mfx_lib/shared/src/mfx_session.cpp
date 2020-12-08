@@ -35,7 +35,6 @@
 #include <libmfx_core_vaapi.h>
 #endif
 
-
 // static section of the file
 namespace
 {
@@ -637,7 +636,7 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
     mfxStatus mfxRes;
     MFX_SCHEDULER_PARAM schedParam;
     mfxU32 maxNumThreads;
-#if defined(MFX_VA_WIN) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_SINGLE_THREAD)
     bool isExternalThreading = (implInterface & MFX_IMPL_EXTERNAL_THREADING)?true:false;
     implInterface &= ~MFX_IMPL_EXTERNAL_THREADING;
 #endif
@@ -740,7 +739,7 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
     }
     memset(&schedParam, 0, sizeof(schedParam));
     schedParam.flags = MFX_SCHEDULER_DEFAULT;
-#if defined(MFX_VA_WIN) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_SINGLE_THREAD)
     if (isExternalThreading)
         schedParam.flags = MFX_SINGLE_THREAD;
 #endif
