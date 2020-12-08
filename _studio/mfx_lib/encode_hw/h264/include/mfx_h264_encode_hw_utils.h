@@ -2780,7 +2780,7 @@ protected:
                 (bLA ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptiveQuantMatrices);
 
             config.AdaptiveI = (mfxU16)(IsNotDefined(config.AdaptiveI) ?
-                (bLA ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptiveI);
+                MFX_CODINGOPTION_OFF : config.AdaptiveI);
         }
 #endif
    }
