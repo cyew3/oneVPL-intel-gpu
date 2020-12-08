@@ -58,15 +58,16 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
 
     MFX_SCHEDULER_PARAM schedule_Param;
     mfxStatus paramsts = pSheduler->GetParam(&schedule_Param);
+    eMFXHWType platform = core->GetHWType();
 
     if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
     {
         m_bSingleThreadMode = true;
 
-        m_timeoutForTDR = MFX_H264ENC_HW_TASK_TIMEOUT;
+        m_timeoutForTDR = (platform > MFX_HW_DG1) ? MFX_H264ENC_HW_TASK_TIMEOUT_SIM : MFX_H264ENC_HW_TASK_TIMEOUT;
     }
 
-    m_timeoutSync = DEFAULT_TIMEOUT_AVCE_HW;
+    m_timeoutSync = (platform > MFX_HW_DG1) ? DEFAULT_TIMEOUT_AVCE_HW_SIM : DEFAULT_TIMEOUT_AVCE_HW;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     m_EventCache.reset(new EventCache());
