@@ -229,8 +229,12 @@ foreach( variant ${VARIANTS} )
     set(libsoversion 1.${libsoversion})
   endif()
 
-  set_target_properties(${mfxlibname} PROPERTIES   VERSION ${libversion})
-  set_target_properties(${mfxlibname} PROPERTIES SOVERSION ${libsoversion})
+  set_target_properties(${mfxlibname} PROPERTIES
+     VERSION ${libversion}
+     SOVERSION ${libsoversion}
+     PDB_NAME ${mfxlibname}_full 
+     PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
+  )
 
   install(TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR})
 

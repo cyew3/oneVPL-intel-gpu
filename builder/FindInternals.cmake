@@ -98,6 +98,10 @@ target_link_options(mfx_shared_lib
   INTERFACE
     # $<$<PLATFORM_ID:Windows>:/NODEFAULTLIB:libcmtd.lib>
     $<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:Debug>>:/NODEFAULTLIB:libcpmt.lib>
+    $<$<PLATFORM_ID:Windows>:
+      /DEBUG
+      /PDBSTRIPPED:$<TARGET_PDB_FILE_DIR:$<TARGET_PROPERTY:NAME>>/$<TARGET_PROPERTY:NAME>.pdb
+    >
     $<$<PLATFORM_ID:Linux>:LINKER:--no-undefined,-z,relro,-z,now,-z,noexecstack,--no-as-needed,-ldl> #FIXME ldl should be in CMAKE_DL_LIBS
   )
 
