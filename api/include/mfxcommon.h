@@ -206,6 +206,7 @@ enum {
     MFX_PLATFORM_PONTE_VECCHIO  = 45,
     MFX_PLATFORM_DG2            = 46,
     MFX_PLATFORM_METEORLAKE     = 51,
+    MFX_PLATFORM_ELASTICG       = 52,
 #endif
     MFX_PLATFORM_KEEMBAY        = 50,
 };

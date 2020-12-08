@@ -872,6 +872,7 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
     case MFX_HW_ADL_S  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_S;   break;
     case MFX_HW_ADL_P  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_P;   break;
     case MFX_HW_MTL    : platform.CodeName = MFX_PLATFORM_METEORLAKE;    break;
+    case MFX_HW_ELG    : platform.CodeName = MFX_PLATFORM_ELASTICG;      break;
 #endif //!MFX_ONEVPL
 #endif //STRIP_EMBARGO
     default:

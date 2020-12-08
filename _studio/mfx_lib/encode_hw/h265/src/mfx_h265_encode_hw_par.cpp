@@ -1669,7 +1669,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 
 #if (MFX_VERSION >= 1025)
 #ifndef STRIP_EMBARGO
-    if ((par.m_platform == MFX_HW_DG2 || par.m_platform == MFX_HW_MTL)
+    if ((par.m_platform == MFX_HW_DG2 || par.m_platform == MFX_HW_MTL || par.m_platform == MFX_HW_ELG)
         && IsOff(par.mfx.LowPower))
     {
         sts = MFX_ERR_UNSUPPORTED;

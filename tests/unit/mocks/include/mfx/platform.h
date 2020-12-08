@@ -51,6 +51,7 @@ namespace mocks { namespace mfx
             case HW_ADL_S:   return detail::IGFX_ALDERLAKE_S;
             case HW_ADL_UH:  return detail::IGFX_ALDERLAKE_UH;
             case HW_MTL:     return detail::IGFX_METEORLAKE;
+            case HW_ELG:     return detail::IGFX_ELASTICG;
 #endif
             default:             return detail::IGFX_UNKNOWN;
         }

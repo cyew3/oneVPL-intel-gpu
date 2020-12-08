@@ -231,6 +231,7 @@ mfxStatus SetLowpowerDefault(MfxVideoParam& par)
         || par.m_platform == MFX_HW_LKF
         || par.m_platform == MFX_HW_DG2
         || par.m_platform == MFX_HW_MTL
+        || par.m_platform == MFX_HW_ELG
 #endif
         )
         && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)

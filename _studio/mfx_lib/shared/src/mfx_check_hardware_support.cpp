@@ -105,6 +105,7 @@ enum PRODUCT_FAMILY
     IGFX_DG2 = 1270,
     IGFX_PVC = 1271,
     IGFX_METEORLAKE = 1272,
+    IGFX_ELASTICG   = 1273,
 
     IGFX_SOFIA_LTE1 = 1001,
     IGFX_SOFIA_LTE2 = 1002,
@@ -182,6 +183,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_PVC;
     case IGFX_METEORLAKE:
         return MFX_HW_MTL;
+    case IGFX_ELASTICG:
+        return MFX_HW_ELG;
 #endif
     default:
         break;

@@ -98,6 +98,10 @@ mfxStatus CheckPlatform(mfxPlatform platform)
         {
             return ((g_tsHWtype == MFX_HW_MTL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
         }
+        case MFX_PLATFORM_ELASTICG:
+        {
+            return ((g_tsHWtype == MFX_HW_ELG) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+        }
 #endif
         default:
             {

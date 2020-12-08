@@ -324,7 +324,8 @@ mfxStatus D3D9VideoCORE::InternalInit()
     if (   m_HWType == MFX_HW_RYF
         || m_HWType == MFX_HW_RKL
         || m_HWType == MFX_HW_DG2
-        || m_HWType == MFX_HW_MTL)
+        || m_HWType == MFX_HW_MTL
+        || m_HWType == MFX_HW_ELG)
         m_bCmCopyAllowed = false;
 #endif
 

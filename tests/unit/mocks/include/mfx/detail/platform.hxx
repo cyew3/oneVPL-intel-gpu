@@ -69,6 +69,7 @@ namespace mocks { namespace mfx
             IGFX_DG2 = 1270,
             IGFX_PVC = 1271,
             IGFX_METEORLAKE = 1272,
+            IGFX_ELASTICG = 1273,
 
             IGFX_GENNEXT               = 0x7ffffffe,
 
@@ -117,7 +118,8 @@ namespace mocks { namespace mfx
         HW_ADL_S     = HW_XEHP + 2,
         HW_ADL_UH    = HW_XEHP + 3,
 
-        HW_MTL       = 0xf00000
+        HW_MTL       = 0xf00000,
+        HW_ELG       = HW_MTL + 1
 #endif
     };
 
