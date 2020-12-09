@@ -373,19 +373,12 @@ namespace vp9e_init
             AllocOpaque(m_request, *osa);
         }
 
-        mfxVideoParam *orig_par = NULL;
-
         if (tc.type == CALL_QUERY)
             Query();
 
         if (tc.type == PAR_NULL)
         {
             m_pPar = NULL;
-        }
-        else
-        {
-            orig_par = new mfxVideoParam();
-            memcpy(orig_par, m_pPar, sizeof(mfxVideoParam));
         }
 
         if ((tc.type == _2_CALL) || (tc.type == _2_CALL_CLOSE))
@@ -397,21 +390,10 @@ namespace vp9e_init
 
         //call tested function
         g_tsStatus.expect(sts);
-        TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
-
         if (tc.type != SESSION_NULL) {
-            sts = MFXVideoENCODE_Init(m_session, m_pPar);
+            sts = Init(m_session, m_pPar);
         } else {
-            sts = MFXVideoENCODE_Init(NULL, m_pPar);
-        }
-
-        g_tsStatus.check(sts);
-
-        if ((orig_par) && (tc.sts == MFX_ERR_NONE))
-        {
-            EXPECT_EQ(0, memcmp(orig_par, m_pPar, sizeof(mfxVideoParam)))
-                << "ERROR: Input parameters must not be changed in Init()";
-            delete orig_par;
+            sts = Init(NULL, m_pPar);
         }
 
         if(tc.type == SESSION_NULL) {

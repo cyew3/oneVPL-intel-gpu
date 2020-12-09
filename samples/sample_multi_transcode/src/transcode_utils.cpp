@@ -199,8 +199,10 @@ void TranscodingSample::PrintHelp()
         MSDK_STRING("                In encoding sessions (-o::source) and transcoding sessions \n") \
         MSDK_STRING("                  this parameter limits number of frames sent to encoder.\n"));
 
-    msdk_printf(MSDK_STRING("  -ext_allocator    Force usage of external allocators\n"));
-    msdk_printf(MSDK_STRING("  -sys          Force usage of external system allocator\n"));
+    msdk_printf(MSDK_STRING("  -MemType::video    Force usage of external video allocator (default)\n"));
+    msdk_printf(MSDK_STRING("  -MemType::system   Force usage of external system allocator\n"));
+    msdk_printf(MSDK_STRING("  -MemType::opaque   Force usage of internal allocator\n"));
+
     msdk_printf(MSDK_STRING("  -dec::sys     Set dec output to system memory\n"));
     msdk_printf(MSDK_STRING("  -vpp::sys     Set vpp output to system memory\n"));
     msdk_printf(MSDK_STRING("  -vpp::vid     Set vpp output to video memory\n"));
@@ -1244,6 +1246,19 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
         ParseMCTFParams(argv, argc, i, &InputParams);
     }
 #endif
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")) || 0 == msdk_strcmp(argv[i], MSDK_STRING("-MemType::video")))
+    {
+        InputParams.bUseOpaqueMemory = false;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sys")) || 0 == msdk_strcmp(argv[i], MSDK_STRING("-MemType::system")))
+    {
+        InputParams.bUseOpaqueMemory = false;
+        InputParams.bForceSysMem = true;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-opaq")) || 0 == msdk_strcmp(argv[i], MSDK_STRING("-MemType::opaque")))
+    {
+        InputParams.bUseOpaqueMemory = true;
+    }
     else
     {
         // no matching argument was found
@@ -1461,7 +1476,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     }
     // default implementation
     InputParams.libType = MFX_IMPL_HARDWARE_ANY;
-    InputParams.bUseOpaqueMemory = true;
+    InputParams.bUseOpaqueMemory = false;
     InputParams.eModeExt = Native;
 
     for (mfxU32 i = 0; i < argc; i++)
@@ -1602,11 +1617,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             InputParams.strDevicePath = argv[++i];
         }
 #endif
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sys")))
-        {
-            InputParams.bUseOpaqueMemory = false;
-            InputParams.bForceSysMem = true;
-        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-perf_opt")))
         {
             InputParams.bIsPerf = true;
@@ -2050,10 +2060,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             }
         }
 #endif
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")))
-        {
-            InputParams.bUseOpaqueMemory = false;
-        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::sys")))
         {
             InputParams.VppOutPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;

@@ -10,8 +10,26 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 #include "ts_vpp.h"
 
+enum eVPPFunction
+{
+    INIT
+    , RESET
+    , QUERY
+    , QUERYIOSURF
+};
 
-
+static void SkipDecision(mfxVideoParam& par, eVPPFunction /*function*/)
+{
+    if (g_tsConfig.core20)
+    {
+        if (par.IOPattern & (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        {
+            g_tsLog << "Opaque memory is not supported by core20\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+    }
+}
 
 tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     : m_default(useDefaults)
@@ -170,6 +188,10 @@ mfxStatus tsVideoVPP::Init(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoVPP_Init, session, par);
     IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
+    if (par)
+    {
+        SkipDecision(*par, INIT);
+    }
     g_tsStatus.check( MFXVideoVPP_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
@@ -228,6 +250,10 @@ mfxStatus tsVideoVPP::Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 {
     TRACE_FUNC3(MFXVideoVPP_Query, session, in, out);
     IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
+    if (in)
+    {
+        SkipDecision(*in, QUERY);
+    }
     g_tsStatus.check( MFXVideoVPP_Query(session, in, out) );
     TS_TRACE(out);
 
@@ -250,6 +276,10 @@ mfxStatus tsVideoVPP::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 {
     TRACE_FUNC3(MFXVideoVPP_QueryIOSurf, session, par, request);
     IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
+    if (par)
+    {
+        SkipDecision(*par, QUERYIOSURF);
+    }
     g_tsStatus.check( MFXVideoVPP_QueryIOSurf(session, par, request) );
     TS_TRACE(request);
     if(request)
@@ -268,6 +298,10 @@ mfxStatus tsVideoVPP::Reset()
 mfxStatus tsVideoVPP::Reset(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoVPP_Reset, session, par);
+    if (par)
+    {
+        SkipDecision(*par, RESET);
+    }
     g_tsStatus.check( MFXVideoVPP_Reset(session, par) );
 
     return g_tsStatus.get();

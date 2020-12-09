@@ -366,8 +366,7 @@ namespace hevce_reset
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-                g_tsStatus.check(sts);
+                sts = Query(m_session, m_pPar, m_pParOut);
                 return 0;
             }
 

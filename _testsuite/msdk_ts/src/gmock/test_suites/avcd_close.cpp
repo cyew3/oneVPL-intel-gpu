@@ -75,7 +75,8 @@ int TestSuite::RunTest(unsigned int id)
     {
         DecodeHeader();
         m_par.mfx.FrameInfo.Height = -10;
-        MFXVideoDECODE_Init(m_session, m_par);
+        g_tsStatus.disable_next_check();
+        Init(m_session, m_par);
     }
     else
     {

@@ -52,6 +52,7 @@ typedef struct {
     bool        sim;
     mfxU16      GPU_copy_mode;
     std::string cfg_filename;
+    bool        core20;
 } tsConfig;
 
 typedef struct {

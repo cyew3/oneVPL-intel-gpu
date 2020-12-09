@@ -487,7 +487,7 @@ namespace hevce_query
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                g_tsStatus.check(MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut));
+                Query(m_session, m_pPar, m_pParOut);
                 return 0;
             }
 
@@ -760,13 +760,12 @@ namespace hevce_query
         }
 
         g_tsStatus.expect(sts);
+        g_tsStatus.disable_next_check();
         //call tested function
-        TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, m_pParOut);
         if (tc.type != SESSION_NULL)
-            sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+            sts = Query(m_session, m_pPar, m_pParOut);
         else
-            sts = MFXVideoENCODE_Query(NULL, m_pPar, m_pParOut);
-        TS_TRACE(m_pParOut);
+            sts = Query(NULL, m_pPar, m_pParOut);
 
         CheckOutPar(tc);
         if (buff_in)

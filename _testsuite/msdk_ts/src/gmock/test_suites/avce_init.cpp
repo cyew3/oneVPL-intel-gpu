@@ -183,8 +183,6 @@ namespace avce_init
     {
         TS_START;
 
-        mfxStatus sts;
-
         MFXInit();
 
         m_par = InitParams();
@@ -265,25 +263,9 @@ namespace avce_init
             m_par.mfx.QPB = 26;
         }
 
-        sts = tc.sts;
-
-        mfxVideoParam *orig_par = NULL;
-
-        orig_par = new mfxVideoParam();
-        memcpy(orig_par, m_pPar, sizeof(mfxVideoParam));
-
         //call tested function
-        g_tsStatus.expect(sts);
-        TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
-        sts = MFXVideoENCODE_Init(m_session, m_pPar);
-
-        g_tsStatus.check(sts);
-        if ((orig_par) && (tc.sts == MFX_ERR_NONE))
-        {
-            EXPECT_EQ(0, memcmp(orig_par, m_pPar, sizeof(mfxVideoParam)))
-                << "ERROR: Input parameters must not be changed in Init()";
-            delete orig_par;
-        }
+        g_tsStatus.expect(tc.sts);
+        Init(m_session, m_pPar);
 
         if (tc.type == BUFFER_SIZE)
         {

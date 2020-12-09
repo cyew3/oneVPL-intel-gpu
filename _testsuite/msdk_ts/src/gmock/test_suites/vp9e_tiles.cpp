@@ -1597,8 +1597,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
 
             g_tsLog << "WARNING: Unsupported HW Platform!\n";
-            mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-            g_tsStatus.check(sts);
+            mfxStatus sts = Query(m_session, m_pPar, m_pParOut);
             return 0;
         }
 
@@ -1610,11 +1609,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (tc.type & QUERY)
         {
             g_tsStatus.expect(tc.sts);
-            TS_TRACE(m_pPar);
-            TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, pOutPar);
-            mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, pOutPar);
-            TS_TRACE(pOutPar);
-            g_tsStatus.check(sts);
+            Query(m_session, m_pPar, pOutPar);
             CheckOutputParams("Query", *iterations[0]);
         }
 
@@ -1622,7 +1617,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if ((tc.type & (INIT | RESET)) || totalFramesToEncode)
         {
             g_tsStatus.expect(tc.sts);
-            TS_TRACE(m_pPar);
             // workaround for issue with [scalable pipeline + HuC]:
             // refresh of CABAC contexts should be disabled - attach special ext buffer
             // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
@@ -1635,8 +1629,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 m_pPar->ExtParam[m_pPar->NumExtParam++] = (mfxExtBuffer*)&extDdi;
             }
             */
-            TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
-            mfxStatus sts = MFXVideoENCODE_Init(m_session, m_pPar);
+            g_tsStatus.disable_next_check();
+            mfxStatus sts = Init(m_session, m_pPar);
             // workaround for issue with [scalable pipeline + HuC]:
             // detach special ext buffer
             // TODO: remove once support of scalable pipline together with HuC is unblocked in the driver
@@ -1646,7 +1640,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 m_pPar->ExtParam[--m_pPar->NumExtParam] = 0;
             }
             */
-            TS_TRACE(&m_pPar);
             if (tc.type & INIT)
             {
                 g_tsStatus.check(sts);
@@ -1657,7 +1650,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 g_tsStatus.expect(MFX_ERR_NONE);
                 g_tsStatus.check(sts);
             }
-            m_initialized = sts >= MFX_ERR_NONE;
         }
 
         // GET_VIDEO_PARAM SECTION
@@ -1687,9 +1679,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             *m_pPar = iterations[idx]->m_param[SET];
             g_tsStatus.expect(tc.sts);
-            TS_TRACE(m_pPar)
-            TRACE_FUNC2(MFXVideoENCODE_Reset, m_session, m_pPar);
-            mfxStatus sts = MFXVideoENCODE_Reset(m_session, m_pPar);
+            g_tsStatus.disable_next_check();
+            mfxStatus sts = Reset(m_session, m_pPar);
             if (tc.type & RESET)
             {
                 g_tsStatus.check(sts);

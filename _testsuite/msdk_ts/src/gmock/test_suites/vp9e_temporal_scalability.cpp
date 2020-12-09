@@ -1318,9 +1318,8 @@ namespace vp9e_temporal_scalability
             g_tsStatus.expect(query_expect_status);
             tsExtBufType<mfxVideoParam> par_query_out = m_par;
 
-            TS_TRACE(m_pPar);
-            mfxStatus query_result_status = MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out);
-            TS_TRACE(&par_query_out);
+            g_tsStatus.disable_next_check();
+            mfxStatus query_result_status = Query(m_session, m_pPar, &par_query_out);
 
             if (tc.sts == MFX_ERR_NONE && !TemporalLayersParamsChecker("Query", m_par, par_query_out))
             {
@@ -1335,14 +1334,7 @@ namespace vp9e_temporal_scalability
         if (tc.type & CHECK_INIT || tc.type & CHECK_GET_V_PARAM || tc.type & CHECK_ENCODE || tc.type & CHECK_RESET)
         {
             g_tsStatus.expect(tc.sts);
-            TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
-            mfxStatus init_result_status = MFXVideoENCODE_Init(m_session, m_pPar);
-            if (init_result_status >= MFX_ERR_NONE)
-            {
-                m_initialized = true;
-            }
-            g_tsLog << "Init() returned with status " << init_result_status << ", expected status " << tc.sts << "\n";
-            g_tsStatus.check(init_result_status);
+            Init(m_session, m_pPar);
         }
 
         // GET_VIDEO_PARAM SECTION

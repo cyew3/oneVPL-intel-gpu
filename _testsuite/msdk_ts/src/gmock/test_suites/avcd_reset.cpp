@@ -237,8 +237,8 @@ int TestSuite::RunTest(unsigned int id)
     }
     else
     {
-        TRACE_FUNC2(MFXVideoDECODE_Reset, m_session, pPar_reset);
-        mfxStatus sts = MFXVideoDECODE_Reset(m_session, pPar_reset);
+        g_tsStatus.disable_next_check();
+        mfxStatus sts = Reset(m_session, pPar_reset);
         if (sts != MFX_ERR_INCOMPATIBLE_VIDEO_PARAM && sts != MFX_ERR_INVALID_VIDEO_PARAM)
             TS_FAIL_TEST("Component specified that it supports AsyncDepth in Query but when Reset was called with different AsyncDepth it din't return a correct error or warning", MFX_ERR_ABORTED);
     }

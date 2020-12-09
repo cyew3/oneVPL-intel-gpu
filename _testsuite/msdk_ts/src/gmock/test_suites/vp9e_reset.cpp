@@ -370,8 +370,8 @@ namespace vp9e_reset
             SetFrameInfo(m_resetPar.pPar->mfx.FrameInfo, resetFourCC);
         }
 
-        TRACE_FUNC2(MFXVideoENCODE_Reset, m_resetPar.session, m_resetPar.pPar);
-        mfxStatus reset_status = MFXVideoENCODE_Reset(m_resetPar.session, m_resetPar.pPar);
+        g_tsStatus.disable_next_check();
+        mfxStatus reset_status = Reset(m_resetPar.session, m_resetPar.pPar);
         bs_checker.UpdatePar(reset_par);
 
         if (reset_status >= 0)

@@ -500,8 +500,8 @@ exit:
         apply_par(tc, T_CTR);
         
         MFXInit();
-        TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, m_pParOut);
-        expected = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+        g_tsStatus.disable_next_check();
+        expected = Query(m_session, m_pPar, m_pParOut);
         TS_TRACE(m_pParOut);
         if ((expected != MFX_ERR_NONE) && (expected != MFX_WRN_PARTIAL_ACCELERATION))
         {

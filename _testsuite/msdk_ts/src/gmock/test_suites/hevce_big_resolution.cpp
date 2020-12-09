@@ -318,7 +318,8 @@ namespace hevce_big_resolution
         mfxStatus sts = MFX_ERR_NONE;
         if (tc.type & QUERY)
         {
-            sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+            g_tsStatus.disable_next_check();
+            sts = Query(m_session, m_pPar, m_pParOut);
             if (!isResolutionSupported && (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_UNSUPPORTED))
                 g_tsStatus.expect(sts);
             g_tsStatus.check(sts);
@@ -326,7 +327,8 @@ namespace hevce_big_resolution
 
         if (tc.type & INIT)
         {
-            sts = MFXVideoENCODE_Init(m_session, m_pPar);
+            g_tsStatus.disable_next_check();
+            sts = Init(m_session, m_pPar);
             if (!isResolutionSupported && (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_INVALID_VIDEO_PARAM))
                 g_tsStatus.expect(sts);
             g_tsStatus.check(sts);

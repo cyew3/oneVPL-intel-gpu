@@ -483,15 +483,10 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     }
 
     //call tested function
-    TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, m_pParOut);
     if (tc.type != SESSION_NULL)
-        sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+        sts = Query(m_session, m_pPar, m_pParOut);
     else
-        sts = MFXVideoENCODE_Query(NULL, m_pPar, m_pParOut);
-
-    TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, m_pParOut);
-
-    g_tsStatus.check(sts);
+        sts = Query(NULL, m_pPar, m_pParOut);
 
     if (sts == MFX_ERR_NONE && tc.type != IN_PAR_NULL)
     {

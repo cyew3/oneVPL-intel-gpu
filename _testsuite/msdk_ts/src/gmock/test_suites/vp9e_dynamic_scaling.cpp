@@ -2047,8 +2047,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
             g_tsLog << "WARNING: Unsupported HW Platform!\n";
-            mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-            g_tsStatus.check(sts);
+            Query(m_session, m_pPar, m_pParOut);
             return 0;
         }
 

@@ -684,9 +684,7 @@ namespace hevce_roi
         else
         {
             //here Init() and EncodeFrameAsync() are checked
-            TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
-            sts = MFXVideoENCODE_Init(m_session, m_pPar);
-            g_tsStatus.check(sts);
+            sts = Init(m_session, m_pPar);
 
             if(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
             {

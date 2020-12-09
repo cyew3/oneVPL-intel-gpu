@@ -21,6 +21,16 @@ enum eEncoderFunction
 
 void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction function)
 {
+    if (g_tsConfig.core20)
+    {
+        if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        {
+            g_tsLog << "Opaque memory is not supported by core20\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+    }
+
     if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
     {
         if (!(par.mfx.CodecId == MFX_CODEC_HEVC && g_tsHWtype >= HWType::MFX_HW_TGL) && (par.mfx.GopRefDist > 1

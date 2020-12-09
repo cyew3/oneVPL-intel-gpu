@@ -928,29 +928,11 @@ namespace hevce_init
 
         //call tested function
         g_tsStatus.expect(sts);
-        TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
+        std::unique_ptr<mfxExtBuffer> upBufIn(buff_in), upBufOut(buff_out);
         if (tc.type != SESSION_NULL)
-            sts = MFXVideoENCODE_Init(m_session, m_pPar);
+            sts = Init(m_session, m_pPar);
         else
-            sts = MFXVideoENCODE_Init(NULL, m_pPar);
-
-        if (buff_in)
-            delete buff_in;
-        if (buff_out)
-            delete buff_out;
-
-        g_tsStatus.check(sts);
-        if ((orig_par) && (tc.sts == MFX_ERR_NONE))
-        {
-            if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
-            {
-                EXPECT_EQ(g_tsConfig.lowpower, m_pPar->mfx.LowPower)
-                    << "ERROR: external configuration of LowPower doesn't equal to real value\n";
-            }
-            EXPECT_EQ(0, memcmp(orig_par, m_pPar, sizeof(mfxVideoParam)))
-                << "ERROR: Input parameters must not be changed in Init()";
-            delete orig_par;
-        }
+            sts = Init(NULL, m_pPar);
 
         if (tc.type == BUFFER_SIZE && sts== MFX_ERR_NONE)
         {

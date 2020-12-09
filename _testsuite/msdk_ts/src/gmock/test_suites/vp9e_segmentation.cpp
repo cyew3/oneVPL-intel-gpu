@@ -1616,12 +1616,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             g_tsStatus.expect(query_expect_status);
             tsExtBufType<mfxVideoParam> par_query_out = m_par;
 
-            TS_TRACE(m_session);
-            TS_TRACE(m_pPar);
+            g_tsStatus.disable_next_check();
             g_tsLog << "NOW CALLING QUERY()...\n MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out) \n";
-            mfxStatus query_result_status = MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out);
+            mfxStatus query_result_status = Query(m_session, m_pPar, &par_query_out);
             g_tsLog << "QUERY() FINISHED WITH STATUS " << query_result_status << "\n";
-            TS_TRACE(&par_query_out);
             mfxExtVP9Segmentation *segment_ext_params_query = reinterpret_cast <mfxExtVP9Segmentation*>(par_query_out.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
             if (m_InitedSegmentExtParams != nullptr && segment_ext_params_query == nullptr)
             {
@@ -1651,14 +1649,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY || tc.type & CHECK_STRESS_TEST)
         {
             g_tsStatus.expect(sts);
-            TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
-            mfxStatus init_result_status = MFXVideoENCODE_Init(m_session, m_pPar);
-            if (init_result_status >= MFX_ERR_NONE)
-            {
-                m_initialized = true;
-            }
-            g_tsLog << "Init() F " << init_result_status << ", expected status " << sts << "\n";
-            g_tsStatus.check(init_result_status);
+            Init(m_session, m_pPar);
             m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_INIT;
             if (m_InitedSegmentExtParams)
             {

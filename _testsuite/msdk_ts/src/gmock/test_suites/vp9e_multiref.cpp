@@ -710,17 +710,7 @@ namespace vp9e_multiref
         m_filler = reader;
 
         g_tsStatus.expect(tc.sts);
-        mfxStatus init_result_status = MFXVideoENCODE_Init(m_session, m_pPar);
-        if (init_result_status >= MFX_ERR_NONE)
-        {
-            m_initialized = true;
-        }
-        else
-        {
-            ADD_FAILURE() << "Init() failed with error";
-            return init_result_status;
-        }
-        g_tsStatus.check(init_result_status);
+        Init(m_session, m_pPar);
 
         g_tsStatus.expect(MFX_ERR_NONE);
 

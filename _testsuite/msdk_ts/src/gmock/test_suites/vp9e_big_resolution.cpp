@@ -525,15 +525,7 @@ namespace vp9e_big_resolution
             g_tsStatus.expect(query_expect_status);
             tsExtBufType<mfxVideoParam> par_query_out = m_par;
 
-            TS_TRACE(m_session);
-            TS_TRACE(m_pPar);
-            g_tsLog << "NOW CALLING QUERY()...\n MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out) \n";
-            mfxStatus query_result_status = MFXVideoENCODE_Query(m_session, m_pPar, &par_query_out);
-            g_tsLog << "QUERY() FINISHED WITH STATUS " << query_result_status << "\n";
-            TS_TRACE(&par_query_out);
-
-            g_tsLog << "Query() returned with status " << query_result_status << ", expected status " << query_expect_status << "\n";
-            g_tsStatus.check(query_result_status);
+            Query(m_session, m_pPar, &par_query_out);
 
             if (!isResolutionSupported)
             {

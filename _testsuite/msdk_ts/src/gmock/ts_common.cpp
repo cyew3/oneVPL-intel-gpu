@@ -351,6 +351,8 @@ void MFXVideoTest::SetUp()
 
     g_tsPlugin.Init(plugins, platform);
 
+    g_tsConfig.core20 = (ENV("TS_CORE20", (g_tsHWtype == MFX_HW_XE_HP || g_tsHWtype == MFX_HW_DG2) ? "1" : "0") != "0");
+
 #if defined(_WIN32) || defined(_WIN64)
     for (mfxU32 adapter = 0; adapter < 4 && !g_tsConfig.sim; adapter++)
     {

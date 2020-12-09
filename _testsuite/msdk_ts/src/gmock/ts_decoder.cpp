@@ -10,6 +10,27 @@ Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 #include "ts_decoder.h"
 
+enum eDecoderFunction
+{
+    INIT
+    , RESET
+    , QUERY
+    , QUERYIOSURF
+};
+
+static void SkipDecision(mfxVideoParam& par, eDecoderFunction /*function*/)
+{
+    if (g_tsConfig.core20)
+    {
+        if (par.IOPattern == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+        {
+            g_tsLog << "Opaque memory is not supported by core20\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+    }
+}
+
 tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_id)
     : m_default(useDefaults)
     , m_initialized(false)
@@ -156,6 +177,10 @@ mfxStatus tsVideoDecoder::Init(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoDECODE_Init, session, par);
     IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
+    if (par)
+    {
+        SkipDecision(*par, INIT);
+    }
     g_tsStatus.check( MFXVideoDECODE_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
@@ -202,6 +227,10 @@ mfxStatus tsVideoDecoder::Query(mfxSession session, mfxVideoParam *in, mfxVideoP
 {
     TRACE_FUNC3(MFXVideoDECODE_Query, session, in, out);
     IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
+    if (in)
+    {
+        SkipDecision(*in, QUERY);
+    }
     g_tsStatus.check( MFXVideoDECODE_Query(session, in, out) );
     TS_TRACE(out);
 
@@ -231,6 +260,10 @@ mfxStatus tsVideoDecoder::QueryIOSurf()
 mfxStatus tsVideoDecoder::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     TRACE_FUNC3(MFXVideoDECODE_QueryIOSurf, session, par, request);
+    if (par)
+    {
+        SkipDecision(*par, QUERYIOSURF);
+    }
     g_tsStatus.check( MFXVideoDECODE_QueryIOSurf(session, par, request) );
     TS_TRACE(request);
 
@@ -245,6 +278,10 @@ mfxStatus tsVideoDecoder::Reset()
 mfxStatus tsVideoDecoder::Reset(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoDECODE_Reset, session, par);
+    if (par)
+    {
+        SkipDecision(*par, RESET);
+    }
     g_tsStatus.check( MFXVideoDECODE_Reset(session, par) );
 
     //m_frames_buffered = 0;
