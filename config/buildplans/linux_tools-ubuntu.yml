@@ -36,16 +36,14 @@ steps:
     command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build && chmod +x /opt/src/sources/mdp_msdk-lib/config/scripts/build_linux_tools.sh
       && /opt/src/sources/mdp_msdk-lib/config/scripts/build_linux_tools.sh"
   - name: create drop package
-    command: docker exec $BUILD_ID /bin/bash -c "chmod +x /opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_tools.sh &&
-      /opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_tools.sh
+    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_tools.sh
       -v /opt/src/msdk_binaries/validation_tools
       -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
       -l /opt/src/sources/mdp_msdk-lib/build/__lib/release
       -t /opt/src/msdk_binaries/test_behavior
       -p /opt/src/sources/mdp_msdk-lib/build/output"
   - name: create deb package
-    command: docker exec $BUILD_ID /bin/bash -c "chmod +x /opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh &&
-      /opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh
+    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh
       -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
       -t /opt/src/msdk_binaries/test_behavior
       -h /opt/src/hevce_tests
