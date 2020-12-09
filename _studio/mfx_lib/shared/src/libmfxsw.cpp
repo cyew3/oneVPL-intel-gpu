@@ -128,7 +128,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         !(implInterface & MFX_IMPL_AUDIO) &&
 #endif
 #if defined(MFX_VA_WIN)
-    #if (MFX_VERSION >= MFX_VERSION_NEXT)
+    #if defined(MFX_ENABLE_SINGLE_THREAD)
         !(implInterface & MFX_IMPL_EXTERNAL_THREADING) &&
     #endif
         (MFX_IMPL_VIA_D3D11 != implInterface) &&

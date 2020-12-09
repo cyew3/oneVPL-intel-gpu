@@ -883,7 +883,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
 {
     mfxStatus mfxRes;
     mfxU32 maxNumThreads;
-#if defined(MFX_VA_WIN) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_SINGLE_THREAD)
     bool isSingleThreadMode = (par.Implementation & MFX_IMPL_EXTERNAL_THREADING) ? true : false;
     par.Implementation &= ~MFX_IMPL_EXTERNAL_THREADING;
 #endif
@@ -1010,7 +1010,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         MFX_SCHEDULER_PARAM2 schedParam;
         memset(&schedParam, 0, sizeof(schedParam));
         schedParam.flags = MFX_SCHEDULER_DEFAULT;
-#if defined(MFX_VA_WIN) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_SINGLE_THREAD)
         if (isSingleThreadMode)
             schedParam.flags = MFX_SINGLE_THREAD;
 #endif
@@ -1027,7 +1027,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         MFX_SCHEDULER_PARAM schedParam;
         memset(&schedParam, 0, sizeof(schedParam));
         schedParam.flags = MFX_SCHEDULER_DEFAULT;
-#if defined(MFX_VA_WIN) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_SINGLE_THREAD)
         if (isSingleThreadMode)
             schedParam.flags = MFX_SINGLE_THREAD;
 #endif
