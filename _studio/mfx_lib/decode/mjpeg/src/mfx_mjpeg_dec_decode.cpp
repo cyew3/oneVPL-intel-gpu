@@ -192,7 +192,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     else
         request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
 
-    mfxStatus mfxSts;
+    mfxStatus mfxSts = MFX_ERR_NONE;
     // allocates external surfaces:
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     bool mapOpaq = true;
