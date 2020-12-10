@@ -2878,8 +2878,14 @@ D3DFORMAT StrToD3DFORMAT(vm_char *format_name, bool directx11 = false)
 
 mfxStatus MFXDecPipeline::CreateDeviceManager()
 {
+    mfxIMPL implDec, implRen, implDecVia, implRenVia;
+    MFX_CHECK_POINTER(m_components[eDEC].m_pSession);
+    MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&implDec));
+    MFX_CHECK_POINTER(m_components[eREN].m_pSession);
+    MFX_CHECK_STS(m_components[eREN].m_pSession->QueryIMPL(&implRen));
+
 #ifdef LIBVA_SUPPORT
-    //if(MFX_IMPL_HARDWARE == m_components[eDEC].m_RealImpl || m_components[eDEC].m_bufType == MFX_BUF_HW || m_components[eREN].m_bufType == MFX_BUF_HW)
+    if (implDec != MFX_IMPL_SOFTWARE || implRen != MFX_IMPL_SOFTWARE)
     {
         VADisplay va_dpy = NULL;
 
@@ -2912,11 +2918,6 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         }
     }
 #endif
-    mfxIMPL implDec, implRen, implDecVia, implRenVia;
-    MFX_CHECK_POINTER(m_components[eDEC].m_pSession);
-    MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&implDec));
-    MFX_CHECK_POINTER(m_components[eREN].m_pSession);
-    MFX_CHECK_STS(m_components[eREN].m_pSession->QueryIMPL(&implRen));
 
     implDecVia = implDec & (-MFX_IMPL_VIA_ANY);
     implRenVia = implRen & (-MFX_IMPL_VIA_ANY);
