@@ -417,7 +417,6 @@ protected:
     virtual mfxStatus InitVppFilters();
     virtual void FreeVppFilters();
 
-    virtual mfxStatus AllocateExtMVCBuffers();
     virtual void DeallocateExtMVCBuffers();
 
     virtual mfxStatus CreateAllocator();
@@ -439,6 +438,8 @@ protected:
     virtual MFXVideoENCODE* GetFirstEncoder(){return m_pmfxENC;}
 
     virtual mfxU32 FileFourCC2EncFourCC(mfxU32 fcc);
+
+    void InitExtMVCBuffers(mfxExtMVCSeqDesc *mvcBuffer) const;
 };
 
 #endif // __PIPELINE_ENCODE_H__
