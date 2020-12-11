@@ -707,7 +707,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
             // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
             if (!session->m_plgEnc.get())
-#endif //!MFX_ONEVPL && !OPEN_SOURCE
+#endif //!MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
             {
                 mfxRes = !handler->second.fallback.query ? MFX_ERR_UNSUPPORTED
                         : (handler->second.fallback.query)(session, in, out);
@@ -927,13 +927,13 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
 
         mfxRes = session->m_pENCODE->Close();
 
-#if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
+#if !defined(MFX_ONEVPL)
         // delete the codec's instance if not plugin
         if (!session->m_plgEnc)
+#endif
         {
             session->m_pENCODE.reset(nullptr);
         }
-#endif //MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
     }
     // handle error(s)
     catch(...)

@@ -241,6 +241,7 @@ target_include_directories(encode_hw
       ${MSDK_STUDIO_ROOT}/hevc_fei/h265_fei/include
     >
 
+    ${MSDK_STUDIO_ROOT}/shared/include
     ${MSDK_STUDIO_ROOT}/hevce_hw/h265/include
 
     h265/include

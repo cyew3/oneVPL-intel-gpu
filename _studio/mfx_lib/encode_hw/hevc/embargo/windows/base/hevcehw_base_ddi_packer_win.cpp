@@ -142,8 +142,10 @@ void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
         cc.InitSPS(strg, m_sps);
         cc.InitPPS(strg, m_pps);
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         cc.UpdateLPLAAnalysisSPS(strg, m_sps);
         cc.UpdateLPLAEncSPS(strg, m_sps);
+#endif
         FillSliceBuffer(Glob::SliceInfo::Get(strg), m_slices);
 
         // Reserve space for feedback reports.
@@ -251,7 +253,9 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
         cc.UpdatePPS(global, s_task, m_sps, m_pps);
         cc.UpdateSPS(global, s_task, m_sps, m_pps);
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         cc.UpdateLPLAEncPPS(global, s_task, m_pps);
+#endif
         FillSliceBuffer(sh, task.RefPicList, m_slices);
 
         m_pps.SkipFrameFlag  = bSkipCurr * 2 + (!bSkipCurr && !!m_numSkipFrames);
@@ -298,8 +302,10 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         nCBD += (task.InsertHeaders & INSERT_PPS)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.PPS, true));
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         nCBD += cc.PackCqmPPS(global, s_task)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.CqmPPS, true));
+#endif
 
         nCBD += (((task.InsertHeaders & INSERT_SEI) || (task.ctrl.NumPayload > 0)) && ph.PrefixSEI.BitLen)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.PrefixSEI, true));
@@ -357,7 +363,9 @@ void DDIPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         }
 
         auto& cc = CC::Get(global);
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         cc.UpdateCqmHint(task, ((ENCODE_QUERY_STATUS_PARAMS_HEVC *)pFeedback)->lookaheadInfo);
+#endif
 
         fb.Remove(task.StatusReportId);
 

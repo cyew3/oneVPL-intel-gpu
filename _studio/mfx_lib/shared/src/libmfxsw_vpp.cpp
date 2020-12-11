@@ -224,13 +224,13 @@ mfxStatus MFXVideoVPP_Close(mfxSession session)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pVPP.get());
 
         mfxRes = session->m_pVPP->Close();
-#if defined(MFX_ENABLE_USER_VPP)
+#if !defined(MFX_ONEVPL)
         // delete the codec's instance if not plugin
         if (!session->m_plgVPP)
+#endif
         {
             session->m_pVPP.reset(nullptr);
         }
-#endif //MFX_ENABLE_USER_VPP
     }
     // handle error(s)
     catch(...)
