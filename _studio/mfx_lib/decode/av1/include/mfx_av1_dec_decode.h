@@ -114,6 +114,7 @@ private:
 
     bool                                         m_is_init;
     mfxF64                                       m_in_framerate;
+    bool                                         m_is_cscInUse;
 };
 
 #endif // MFX_ENABLE_AV1_VIDEO_DECODE

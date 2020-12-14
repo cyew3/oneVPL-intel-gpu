@@ -243,6 +243,8 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
         MFX_CHECK(m_core->GetHWType() >= MFX_HW_MTL &&
             (m_video_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
             MFX_ERR_UNSUPPORTED);
+        if (par->mfx.FrameInfo.FourCC != videoProcessing->Out.FourCC)//csc is in use
+            m_is_cscInUse = true;
 
         bool is_fourcc_supported = false;
         is_fourcc_supported =
@@ -960,21 +962,8 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo &info)
     switch (info.FourCC)
     {
     case MFX_FOURCC_NV12:
-    case MFX_FOURCC_AYUV:
-    case MFX_FOURCC_YUY2:
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y410:
-#endif
         break;
-#if (MFX_VERSION >= 1330)
-    case MFX_FOURCC_Y216:
-    case MFX_FOURCC_P016:
-    case MFX_FOURCC_Y416:
-#endif
     case MFX_FOURCC_P010:
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y210:
-#endif
         MFX_CHECK(info.Shift == 1, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         break;
     default:
@@ -984,8 +973,6 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo &info)
     switch (info.ChromaFormat)
     {
     case MFX_CHROMAFORMAT_YUV420:
-    case MFX_CHROMAFORMAT_YUV422:
-    case MFX_CHROMAFORMAT_YUV444:
         break;
     default:
         MFX_CHECK_STS(MFX_ERR_INVALID_VIDEO_PARAM);
@@ -1016,8 +1003,12 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
         MFX_CHECK(!workSfsIsClean, MFX_ERR_LOCK_MEMORY);
     }
 
-    mfxStatus sts = CheckFrameInfo(surface_work->Info);
-    MFX_CHECK_STS(sts);
+    mfxStatus sts = MFX_ERR_NONE;
+    if (m_is_cscInUse != true)
+    {
+        sts = CheckFrameInfo(surface_work->Info);
+        MFX_CHECK_STS(sts);
+    }
 
     sts = CheckFrameData(surface_work);
     MFX_CHECK_STS(sts);
