@@ -290,6 +290,7 @@ enum // identifies memory type at encoder input w/o any details
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9Segmentation, MFX_EXTBUFF_VP9_SEGMENTATION);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtVP9TemporalLayers, MFX_EXTBUFF_VP9_TEMPORAL_LAYERS);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodedFrameInfo, MFX_EXTBUFF_ENCODED_FRAME_INFO);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -521,7 +522,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxU32 targetKbps;
     };
 
-#define NUM_OF_SUPPORTED_EXT_BUFFERS 7 // mfxExtVP9Param, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation, mfxExtVP9TemporalLayers
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 8 // mfxExtVP9Param, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption2, mfxExtCodingOption3, mfxExtCodingOptionDDI, mfxExtVP9Segmentation, mfxExtVP9TemporalLayers, mfxExtAVCEncodedFrameInfo
 
     class VP9MfxVideoParam : public mfxVideoParam
     {
@@ -565,6 +566,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxExtCodingOptionDDI       m_extOptDDI;
         mfxExtVP9Segmentation       m_extSeg;
         mfxExtVP9TemporalLayers     m_extTempLayers;
+        mfxExtAVCEncodedFrameInfo   m_extFrameInfo;
     };
 
     template <typename T> ActualExtBufferExtractor GetActualExtBufferRef(VP9MfxVideoParam const & basicPar, T const & newPar)

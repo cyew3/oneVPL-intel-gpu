@@ -1137,6 +1137,9 @@ mfxStatus MFXVideoENCODEVP9_HW::UpdateBitstream(
     task.m_pBitsteam->FrameType = mfxU16(task.m_frameParam.frameType == KEY_FRAME ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
     task.m_pBitsteam->PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
+    mfxExtAVCEncodedFrameInfo& encFrameInfo = GetExtBufferRef(*(task.m_pBitsteam));
+    encFrameInfo.FrameOrder = task.m_frameOrder;
+
     return MFX_ERR_NONE;
 }
 

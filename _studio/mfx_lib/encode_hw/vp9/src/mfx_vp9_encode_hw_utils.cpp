@@ -50,6 +50,7 @@ VP9MfxVideoParam::VP9MfxVideoParam()
     Zero(m_extOptDDI);
     Zero(m_extSeg);
     Zero(m_extTempLayers);
+    Zero(m_extFrameInfo);
 }
 
 VP9MfxVideoParam::VP9MfxVideoParam(VP9MfxVideoParam const & par)
@@ -188,6 +189,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extOptDDI);
     InitExtBufHeader(m_extSeg);
     InitExtBufHeader(m_extTempLayers);
+    InitExtBufHeader(m_extFrameInfo);
 
     if (mfxExtVP9Param * opts = GetExtBuffer(par))
         m_extPar = *opts;
@@ -220,6 +222,9 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
         m_tempLayersBufPassed = true;
     }
 
+    if (mfxExtAVCEncodedFrameInfo * opts = GetExtBuffer(par))
+        m_extFrameInfo = *opts;
+
     m_extParam[0] = &m_extPar.Header;
     m_extParam[1] = &m_extOpt2.Header;
     m_extParam[2] = &m_extOpt3.Header;
@@ -229,6 +234,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     m_extParam[6] = &m_extOpaque.Header;
 #endif
+    m_extParam[7] = &m_extFrameInfo.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
