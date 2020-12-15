@@ -87,16 +87,17 @@ inline void SetTileLimits(
 
     CheckRangeOrClip(TileRowsLog2, tileLimits.MinLog2TileRows, tileLimits.MaxLog2TileRows);
 
+    if (tileLimits.MinLog2Tiles)
+        tileAreaSb >>= (tileLimits.MinLog2Tiles + 1);
+
     mfxU32 widestTileSb = 0;
     std::for_each(tileWidthInSB, tileWidthInSB + numTileColumns,
         [&](mfxU32 x) {
             widestTileSb = std::max(widestTileSb, x);
         });
 
-    if (tileLimits.MinLog2Tiles)
-        tileAreaSb >>= (tileLimits.MinLog2Tiles + 1);
-
-    tileLimits.MaxTileHeightSb = std::max(mfxU32(1), tileAreaSb / widestTileSb);
+    if (widestTileSb != 0)
+        tileLimits.MaxTileHeightSb = std::max(mfxU32(1), tileAreaSb / widestTileSb);
 }
 
 inline mfxU32 CheckTileLimits(
