@@ -94,3 +94,10 @@ LIBMFXHW_1.19 {
     MFXVideoCORE_QueryPlatform;
     MFXVideoUSER_GetPlugin;
 } LIBMFXHW_1.14;
+
+LIBMFXGEN_1.2.1 {
+  global:
+    MFXInitialize;
+    MFXQueryImplsDescription;
+    MFXReleaseImplDescription;
+} LIBMFXHW_1.19;

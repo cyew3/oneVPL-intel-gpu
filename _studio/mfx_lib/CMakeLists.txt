@@ -74,10 +74,15 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_timing.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_static_assert_structs.cpp
 
-    $<$<PLATFORM_ID:Windows>:libmfx.def>
     $<$<PLATFORM_ID:Windows>:libmfxhw.rc>
     $<TARGET_OBJECTS:fast_copy_sse4>
   )
+
+if (Windows)
+  list (APPEND sources_common
+    $<IF:$<BOOL:${API_USE_VPL}>,libvpl.def,libmfx.def>
+  )
+endif()
 
 set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_allocator_vaapi.h
@@ -211,7 +216,6 @@ foreach( variant ${VARIANTS} )
 
   target_link_options(${mfxlibname}
     PRIVATE
-      $<$<PLATFORM_ID:Windows>:LINKER:/DEF:${MSDK_LIB_ROOT}/libmfx.def>
       $<$<PLATFORM_ID:Linux>:LINKER:--version-script=${MSDK_LIB_ROOT}/libmfxhw.map>
     )
   target_link_libraries(${mfxlibname}

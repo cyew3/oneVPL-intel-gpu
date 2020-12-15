@@ -21,6 +21,10 @@
 #include <mfxvideo.h>
 
 #include <mfx_session.h>
+#if defined(MFX_ONEVPL)
+#include <mfximplcaps.h>
+#endif
+
 #include <mfx_trace.h>
 
 #include <ippcore.h>
@@ -275,6 +279,23 @@ mfxStatus MFXClose(mfxSession session)
     return mfxRes;
 
 } // mfxStatus MFXClose(mfxHDL session)
+
+#if defined(MFX_ONEVPL)
+mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam, mfxSession*)
+{
+    return MFX_ERR_NOT_IMPLEMENTED;
+}
+
+mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat, mfxU32* /*num_impls*/)
+{
+    return NULL;
+}
+
+mfxStatus MFX_CDECL MFXReleaseImplDescription(mfxHDL)
+{
+    return MFX_ERR_NOT_IMPLEMENTED;
+}
+#endif //MFX_ONEVPL
 
 #if defined(_WIN32) || defined(_WIN64)
 BOOL APIENTRY DllMain(HMODULE hModule,
