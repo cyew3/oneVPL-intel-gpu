@@ -857,8 +857,7 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
 #if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
 #endif
-                         platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
-#if !defined(MFX_ONEVPL)
+                         platform.CodeName = MFX_PLATFORM_XEHP;          break;
     case MFX_HW_PVC    :
 #if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
@@ -873,7 +872,6 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
     case MFX_HW_ADL_P  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_P;   break;
     case MFX_HW_MTL    : platform.CodeName = MFX_PLATFORM_METEORLAKE;    break;
     case MFX_HW_ELG    : platform.CodeName = MFX_PLATFORM_ELASTICG;      break;
-#endif //!MFX_ONEVPL
 #endif //STRIP_EMBARGO
     default:
 #if (MFX_VERSION >= 1031)
