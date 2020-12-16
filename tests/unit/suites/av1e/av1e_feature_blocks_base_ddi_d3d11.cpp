@@ -86,11 +86,6 @@ namespace Base
 
         void SetUp() override
         {
-            ////mock registry that MFX Dispatcher finds right 'libmfxhw'
-            //ASSERT_NO_THROW({
-            //    registry = mocks::mfx::dispatch_to(INTEL_VENDOR_ID, DEVICE_ID, 1);
-            //});
-
             mfxVideoParam vp{};
             vp.mfx.FrameInfo.Width  = 640;
             vp.mfx.FrameInfo.Height = 480;
@@ -114,7 +109,7 @@ namespace Base
                 std::make_tuple(mocks::guid<&DXVA2_Intel_LowpowerEncode_AV1_420_8b>{}, vp)
             );
 
-            ASSERT_EQ(
+            EXPECT_EQ(
                 session.InitEx(
                     mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
                 ),
@@ -131,7 +126,7 @@ namespace Base
                 { FEATURE_GENERAL, General::BLK_Query1NoCaps }
             );
 
-            ASSERT_EQ(
+            EXPECT_EQ(
                 blkQuery1NoCaps->Call(vp, storage, storage),
                 MFX_ERR_NONE
             );
@@ -143,7 +138,7 @@ namespace Base
                 { FEATURE_DDI, IDDI::BLK_SetCallChains }
             );
 
-            ASSERT_EQ(
+            EXPECT_EQ(
                 setCallChains->Call(vp, vp, storage),
                 MFX_ERR_NONE
             );
@@ -153,7 +148,7 @@ namespace Base
                 { FEATURE_DDI, IDDI::BLK_CreateDevice }
             );
 
-            ASSERT_EQ(
+            EXPECT_EQ(
                 create->Call(vp, storage, storage),
                 MFX_ERR_NONE
             );
@@ -164,8 +159,6 @@ namespace Base
 
         void TearDown() override
         {
-            storage.Clear();
-            tasks.Clear();
         }
     };
 
@@ -180,7 +173,7 @@ namespace Base
 
         auto& vp = Glob::VideoParam::GetOrConstruct(storage);
         Glob::DDI_Execute::GetOrConstruct(storage);
-        ASSERT_EQ(
+        EXPECT_EQ(
             block->Call(vp, vp, storage),
             MFX_ERR_NONE
         );
@@ -253,13 +246,12 @@ namespace Base
         );
     }
 
-    // TODO: The test is disabled. Fix the test after merge to master.
-    /*TEST_F(FeatureBlocksDDI_D3D11, SubmitTaskExecuteFailure)
+    TEST_F(FeatureBlocksDDI_D3D11, SubmitTaskExecuteFailure)
     {
         mock_context(*context,
             std::make_tuple(
                 D3D11_VIDEO_DECODER_EXTENSION{
-                    DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE
+                    DXVA2_SET_GPU_TASK_EVENT_HANDLE
                 },
                 [](D3D11_VIDEO_DECODER_EXTENSION const*)
                 { return E_FAIL; } //return failure for [ID3D11VideoContext::DecoderExtension]
@@ -276,22 +268,21 @@ namespace Base
 
         auto& params = Glob::DDI_SubmitParam::Get(storage);
         params.push_back(
-            DDIExecParam{ DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE }
+            DDIExecParam{ DXVA2_SET_GPU_TASK_EVENT_HANDLE }
         );
 
         EXPECT_EQ(
             block->Call(storage, tasks),
             MFX_ERR_DEVICE_FAILED
         );
-    }*/
+    }
 
-    // TODO: The test is disabled. Fix the test after merge to master.
-    /*TEST_F(FeatureBlocksDDI_D3D11, SubmitTaskExecute)
+    TEST_F(FeatureBlocksDDI_D3D11, SubmitTaskExecute)
     {
         //registered extension will return [S_OK] by default
         mock_context(*context,
             D3D11_VIDEO_DECODER_EXTENSION{
-                DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE
+                DXVA2_SET_GPU_TASK_EVENT_HANDLE
             }
         );
 
@@ -305,14 +296,14 @@ namespace Base
 
         auto& params = Glob::DDI_SubmitParam::Get(storage);
         params.push_back(
-            DDIExecParam{ DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE }
+            DDIExecParam{ DXVA2_SET_GPU_TASK_EVENT_HANDLE }
         );
 
         EXPECT_EQ(
             block->Call(storage, tasks),
             MFX_ERR_NONE
         );
-    }*/
+    }
 
     struct FeatureBlocksDDI_D3D11_NoInit
         : testing::Test
@@ -338,8 +329,7 @@ namespace Base
 
         void TearDown() override
         {
-            storage.Clear();
-            tasks.Clear();
+
         }
     };
 
