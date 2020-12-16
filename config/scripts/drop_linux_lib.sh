@@ -96,7 +96,7 @@ declare -a COPY_CMDS=(
 VERSION_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
 VERSION_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
 
-package_name="I_MSDK_p_1234"
+package_name="I_MSDK_p_$BUILD_NUMBER"
 tmp_dir=${path_to_save}/tmp_drop_linux_lib_files
 package_dir=${tmp_dir}/${package_name}/I_MSDK
 

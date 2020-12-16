@@ -117,7 +117,7 @@ for command in "${COPY_CMDS[@]}"
   done
 
 echo "Package: $package_name
-Version: 10.0
+Version: 10.0.$BUILD_NUMBER
 Section: default
 Priority: optional
 Architecture: amd64

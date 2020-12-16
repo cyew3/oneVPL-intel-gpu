@@ -152,7 +152,7 @@ do
     esac
 done
 
-package_name=lucas_linux_drop.tgz
+package_name="lucas_linux_drop_$BUILD_NUMBER.tgz"
 package_dir=$path_to_save/lucas_drop
 
 mkdir -p $package_dir/imports/mediasdk

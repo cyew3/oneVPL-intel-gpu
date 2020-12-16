@@ -140,7 +140,7 @@ do
     esac
 done
 
-package_name=tools_drop.tgz
+package_name="tools_drop_$BUILD_NUMBER.tgz"
 package_dir=$path_to_save/to_drop
 
 mkdir -p $package_dir/imports/mediasdk
