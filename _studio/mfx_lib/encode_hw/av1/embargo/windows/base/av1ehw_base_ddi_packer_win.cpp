@@ -453,7 +453,7 @@ inline void FillRefCtrlL1(
     const TaskCommonPar& task
     , ENCODE_SET_PICTURE_PARAMETERS_AV1& pps)
 {
-    if (IsB(task.FrameType) || task.isLDB)
+    if (IsB(task.FrameType))
     {
         mfxU8 idx = 0;
         for (mfxU8 refFrame = BWDREF_FRAME; refFrame < MAX_REF_FRAMES; refFrame++)
@@ -461,6 +461,11 @@ inline void FillRefCtrlL1(
             if (IsValidRefFrame(task.RefList, refFrame)) // Assume search order is same as ref_list order. Todo: to align the search order with HW capability.
                 FillSearchIdx(pps.ref_frame_ctrl_l1, idx++, refFrame);
         }
+    }
+    else if (task.isLDB)
+    {
+        // According to DDI: "For LDB, app should set ref_frame_ctrl_l0 = ref_frame_ctrl_l1"
+        pps.ref_frame_ctrl_l1 = pps.ref_frame_ctrl_l0;
     }
 }
 
