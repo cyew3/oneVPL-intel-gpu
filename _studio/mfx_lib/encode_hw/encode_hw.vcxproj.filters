@@ -969,6 +969,9 @@
     <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_rext_win.h">
       <Filter>hevc\embargo\windows\g12</Filter>
     </ClInclude>
+    <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_caps_win.h">
+      <Filter>hevc\embargo\windows\g12</Filter>
+    </ClInclude>
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_recon_info.h">
       <Filter>hevc\open\agnostic\base</Filter>
     </ClInclude>
