@@ -517,11 +517,13 @@ namespace avce_qp_report
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  2048 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2048 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,       8000 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB,    0 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,          10000 } } },
         {/*22*/ 2,{ { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,    MFX_RATECONTROL_VBR },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  2048 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2048 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps,       10000 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB,    0 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,          15000 } } },
 
         {/*23*/ 16,{ { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod,    MFX_RATECONTROL_CBR },
@@ -641,7 +643,7 @@ namespace avce_qp_report
         mfxExtCodingOption2 *codingOption2 = reinterpret_cast<mfxExtCodingOption2*>(m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2));
 
         if (!(m_impl & MFX_IMPL_SOFTWARE) && (!(m_impl & MFX_IMPL_HARDWARE) || !(m_impl & MFX_IMPL_VIA_D3D11)) ) {
-            g_tsLog << "\n\nWARNING: QP reporting is only supported by hw and d3d11 mode\n\n\n";
+            g_tsLog << "\n\nWARNING: QP reporting is only supported by hw in d3d11 mode\n\n\n";
             throw tsSKIP;
         }
         if ((codingOption2->MBBRC==MFX_CODINGOPTION_ON) && (m_impl & MFX_IMPL_SOFTWARE)) {

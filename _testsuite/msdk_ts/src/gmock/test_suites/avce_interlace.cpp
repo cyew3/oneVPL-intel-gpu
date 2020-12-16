@@ -91,6 +91,7 @@ namespace avce_interlace{
     void TestSuite::initParams(){
 
         m_par.mfx.RateControlMethod       = MFX_RATECONTROL_CBR;
+        m_par.mfx.InitialDelayInKB        = 0;
         m_par.mfx.TargetKbps              = 12000;
         m_par.mfx.MaxKbps                 = m_par.mfx.TargetKbps;
         m_par.mfx.FrameInfo.FourCC        = MFX_FOURCC_NV12;
