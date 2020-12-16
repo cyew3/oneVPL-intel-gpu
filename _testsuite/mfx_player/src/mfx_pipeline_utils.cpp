@@ -219,6 +219,7 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
 #else
 #define LIBMFXSW "libmfxsw32.so.1"
 #define LIBMFXHW "libmfxhw32.so.1"
+#define ONEVPLRT "libmfx-gen.so.1.2"
 #endif
 #elif defined(__x86_64__)
 #ifdef ANDROID
@@ -227,6 +228,7 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
 #else
 #define LIBMFXSW "libmfxsw64.so.1"
 #define LIBMFXHW "libmfxhw64.so.1"
+#define ONEVPLRT "libmfx-gen.so.1.2"
 #endif
 #else
 #error Unsupported architecture
@@ -237,7 +239,7 @@ static int PrintLibMFXPath(struct dl_phdr_info *info, size_t size, void *data)
 {
 #if (defined(LINUX32) || defined(LINUX64))
     std::string libPath = info->dlpi_name;
-    if (libPath.find(LIBMFXSW) != std::string::npos || libPath.find(LIBMFXHW) != std::string::npos)
+    if (libPath.find(LIBMFXSW) != std::string::npos || libPath.find(LIBMFXHW) != std::string::npos || libPath.find(ONEVPLRT) != std::string::npos)
     {
         vm_string_printf(VM_STRING("loaded module %s \n"), info->dlpi_name);
     }
