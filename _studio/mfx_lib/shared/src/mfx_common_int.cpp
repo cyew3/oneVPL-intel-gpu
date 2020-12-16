@@ -41,8 +41,6 @@
 #include <DXGI.h>
 #endif
 
-mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type);
-
 mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
 {
     if (extBuf != 0)
@@ -206,10 +204,10 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
     case MFX_CODEC_JPEG:
 #if defined(_WIN32) || defined(_WIN64)
         if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != DXGI_FORMAT_AYUV && info->FourCC != MFX_FOURCC_RGB4 && info->FourCC != MFX_FOURCC_YUY2)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
 #else
         if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != MFX_FOURCC_RGB4 && info->FourCC != MFX_FOURCC_YUY2)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
         break;
     case MFX_CODEC_VP8:
@@ -366,7 +364,7 @@ mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame)
 }
 #endif //!MFX_ONEVPL
 
-mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
+static mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 {
     MFX_CHECK_NULL_PTR1(in);
 
@@ -380,11 +378,11 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
         if (pavpOpt && pavpOpt->Header.BufferSz != sizeof(mfxExtPAVPOption))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
         if (IS_PROTECTION_PAVP_ANY(in->Protected) && !pavpOpt)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
         if (!IS_PROTECTION_PAVP_ANY(in->Protected) && pavpOpt)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
     }
 
