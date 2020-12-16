@@ -2306,6 +2306,7 @@ int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_general_16s)(const Ipp16s* src, Ipp32s 
         if (height == 16)       return SAD_64xN<16>(src, src_stride, ref, ref_stride);
         else if (height == 32)  return SAD_64xN<32>(src, src_stride, ref, ref_stride);
         else if (height == 48)  return SAD_64xN<48>(src, src_stride, ref, ref_stride);
+        else if (height == 56)  return SAD_64xN<56>(src, src_stride, ref, ref_stride);
         else if (height == 64)  return SAD_64xN<64>(src, src_stride, ref, ref_stride);
         break;
     default:
