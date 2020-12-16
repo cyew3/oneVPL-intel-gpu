@@ -35,6 +35,12 @@ target_sources(libmfx_uwp
 )
 
 target_link_libraries(libmfx_uwp PRIVATE ${CMAKE_DL_LIBS})
+target_link_options(libmfx_uwp
+  PRIVATE
+    /DEBUG
+    /PDB:$<TARGET_PDB_FILE_DIR:libmfx_uwp>/libmfx_uwp_full.pdb
+    /PDBSTRIPPED:$<TARGET_PDB_FILE_DIR:libmfx_uwp>/libmfx_uwp.pdb    
+)
 
 target_compile_features(libmfx_uwp PRIVATE cxx_std_11)
 
@@ -85,4 +91,7 @@ target_link_directories(libmfx_uwp
     $ENV{MINIDDK_ROOT}/Lib/win8/um/x86
 )
 
-set_target_properties(libmfx_uwp PROPERTIES VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION "${VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION}")
+set_target_properties(libmfx_uwp PROPERTIES
+    VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION "${VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION}"
+    PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
+)

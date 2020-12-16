@@ -39,6 +39,12 @@ target_compile_definitions(${intel_gfx_api_dll}
 )
 
 target_link_libraries(${intel_gfx_api_dll} PRIVATE libmfx_uwp)
+target_link_options(${intel_gfx_api_dll}
+  PRIVATE
+      /DEBUG
+      /PDB:$<TARGET_PDB_FILE_DIR:${intel_gfx_api_dll}>/${intel_gfx_api_dll}_full.pdb
+      /PDBSTRIPPED:$<TARGET_PDB_FILE_DIR:${intel_gfx_api_dll}>/${intel_gfx_api_dll}.pdb    
+)
 
 target_compile_options(${intel_gfx_api_dll} PRIVATE /DEF:"src/intel_api.def")
 
@@ -74,5 +80,7 @@ add_custom_command(TARGET ${intel_gfx_api_dll} POST_BUILD
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-
-set_target_properties(${intel_gfx_api_dll} PROPERTIES VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION "${VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION}")
+set_target_properties(${intel_gfx_api_dll} PROPERTIES
+  VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION "${VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION}"
+  PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
+)
