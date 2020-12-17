@@ -27,60 +27,60 @@ Param(
     [string]$IccBinaries
 )
 
+$global:ProgressPreference = 'SilentlyContinue'
+$global:ErrorActionPreference = 'Stop'
+
 $FILES=@(
-    'msvc\x32\__bin\RelWithDebInfo\avcrnd.exe',
-    'msvc\x32\__bin\RelWithDebInfo\bd_conformance.exe',
-    'msvc\x32\__bin\RelWithDebInfo\behavior_tests.exe',
-    'msvc\x32\__bin\RelWithDebInfo\bitstreams_parser.exe',
-    'msvc\x32\__bin\RelWithDebInfo\bs_parser.dll',
-    'msvc\x32\__bin\RelWithDebInfo\bs_trace.exe',
-    'msvc\x32\__bin\RelWithDebInfo\fieldweavingtool.exe',
-    'msvc\x32\__bin\RelWithDebInfo\FSEP.exe',
-    'msvc\x32\__bin\RelWithDebInfo\h264_ff_dumper.exe',
-    'msvc\x32\__bin\RelWithDebInfo\h264_fs_dumper.exe',
-    'msvc\x32\__bin\RelWithDebInfo\h264_gop_dumper.exe',
-    'msvc\x32\__bin\RelWithDebInfo\h264_parser_fei.exe',
-    'msvc\x32\__bin\RelWithDebInfo\h264_qp_extractor.exe',
-    'msvc\x32\__bin\RelWithDebInfo\hevcrnd.exe',
-    'msvc\x32\__bin\RelWithDebInfo\hevc_fs_dumper.exe',
-    'msvc\x32\__bin\RelWithDebInfo\hevc_qp_dump.exe',
-    'msvc\x32\__bin\RelWithDebInfo\hevc_qp_extractor.exe',
-    'msvc\x32\__bin\RelWithDebInfo\hevc_stream_info.exe',
-    'msvc\x64\__bin\RelWithDebInfo\libmfxhw64.dll',
-    'msvc\x64\__bin\RelWithDebInfo\libmfxsw64.dll',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_pavp.dll',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_player.exe',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_transcoder.exe',
-    'msvc\x32\__bin\RelWithDebInfo\mpeg2_stream_info.exe',
-    'msvc\x32\__bin\RelWithDebInfo\mpg2rnd.exe',
-    'msvc\x32\__bin\RelWithDebInfo\msdk_gmock.exe',
-    'msvc\x32\__bin\RelWithDebInfo\msdk_sys_analyzer.exe',
-    'msvc\x32\__bin\RelWithDebInfo\msdk_ts.exe',
-    'msvc\x32\__bin\RelWithDebInfo\ref_compose.exe',
-    'msvc\x32\__bin\RelWithDebInfo\sampler.exe',
-    'msvc\x32\__bin\RelWithDebInfo\sample_camera.exe',
-    'msvc\x32\__bin\RelWithDebInfo\sample_decode.exe',
-    'msvc\x32\__bin\RelWithDebInfo\sample_encode.exe',
-    'msvc\x32\__bin\RelWithDebInfo\sample_multi_transcode.exe',
-    'msvc\x32\__bin\RelWithDebInfo\sample_rotate_plugin.dll',
-    'msvc\x32\__bin\RelWithDebInfo\sample_vpp.exe',
-    'msvc\x32\__bin\RelWithDebInfo\scheduler_tests.exe',
-    'msvc\x32\__bin\RelWithDebInfo\simple_composite.exe',
-    'msvc\x32\__bin\RelWithDebInfo\test_behavior.exe',
-    'msvc\x32\__bin\RelWithDebInfo\test_dispatcher.exe',
-    'msvc\x32\__bin\RelWithDebInfo\test_dispatcher_2005.exe',
-    'msvc\x32\__bin\RelWithDebInfo\test_thread_safety.exe',
-    'msvc\x32\__bin\RelWithDebInfo\test_usage_models.exe',
-    'msvc\x32\__bin\RelWithDebInfo\test_vpp.exe',
-    'msvc\x32\__bin\RelWithDebInfo\test_vpp_multisession.exe',
-    'msvc\x32\__bin\RelWithDebInfo\uc_conformance.exe',
-    # TODO: add Debug config to build script
+    'msvc\x64\__bin\Release\avcrnd.exe',
+    'msvc\x64\__bin\Release\bd_conformance.exe',
+    'msvc\x64\__bin\Release\behavior_tests.exe',
+    'msvc\x64\__bin\Release\bitstreams_parser.exe',
+    'msvc\x64\__bin\Release\bs_parser.dll',
+    'msvc\x64\__bin\Release\bs_trace.exe',
+    'msvc\x64\__bin\Release\fieldweavingtool.exe',
+    'msvc\x64\__bin\Release\FSEP.exe',
+    'msvc\x64\__bin\Release\h264_ff_dumper.exe',
+    'msvc\x64\__bin\Release\h264_fs_dumper.exe',
+    'msvc\x64\__bin\Release\h264_gop_dumper.exe',
+    'msvc\x64\__bin\Release\h264_parser_fei.exe',
+    'msvc\x64\__bin\Release\h264_qp_extractor.exe',
+    'msvc\x64\__bin\Release\hevcrnd.exe',
+    'msvc\x64\__bin\Release\hevc_fs_dumper.exe',
+    'msvc\x64\__bin\Release\hevc_qp_dump.exe',
+    'msvc\x64\__bin\Release\hevc_qp_extractor.exe',
+    'msvc\x64\__bin\Release\hevc_stream_info.exe',
+    'msvc\x64\__bin\Release\libmfxhw64.dll',
+    'msvc\x64\__bin\Release\libmfxsw64.dll',
+    'msvc\x64\__bin\Release\mfx_pavp.dll',
+    'msvc\x64\__bin\Release\mfx_player.exe',
+    'msvc\x64\__bin\Release\mfx_transcoder.exe',
+    'msvc\x64\__bin\Release\mpeg2_stream_info.exe',
+    'msvc\x64\__bin\Release\mpg2rnd.exe',
+    'msvc\x64\__bin\Release\msdk_gmock.exe',
+    'msvc\x64\__bin\Release\msdk_sys_analyzer.exe',
+    'msvc\x64\__bin\Release\msdk_ts.exe',
+    'msvc\x64\__bin\Release\ref_compose.exe',
+    'msvc\x64\__bin\Release\sampler.exe',
+    'msvc\x64\__bin\Release\sample_camera.exe',
+    'msvc\x64\__bin\Release\sample_decode.exe',
+    'msvc\x64\__bin\Release\sample_encode.exe',
+    'msvc\x64\__bin\Release\sample_multi_transcode.exe',
+    'msvc\x64\__bin\Release\sample_rotate_plugin.dll',
+    'msvc\x64\__bin\Release\sample_vpp.exe',
+    'msvc\x64\__bin\Release\scheduler_tests.exe',
+    'msvc\x64\__bin\Release\simple_composite.exe',
+    'msvc\x64\__bin\Release\test_behavior.exe',
+    'msvc\x64\__bin\Release\test_dispatcher.exe',
+    'msvc\x64\__bin\Release\test_dispatcher_2005.exe',
+    'msvc\x64\__bin\Release\test_thread_safety.exe',
+    'msvc\x64\__bin\Release\test_usage_models.exe',
+    'msvc\x64\__bin\Release\test_vpp.exe',
+    'msvc\x64\__bin\Release\test_vpp_multisession.exe',
+    'msvc\x64\__bin\Release\uc_conformance.exe',
     'msvc\x64\__bin\Debug\mfx_loader_dll_hw64.dll',
-    # TODO: add VPL build
     'VPL_build\x64\__bin\Release\libmfx64-gen.dll'
 )
 
-# TODO: add nuget packages to manifest and copy it to mdp_msdk-val-tools dir
 $TRACE_EVENT_FILES=@(
     'mfts\x64\__bin\Release\Microsoft.Diagnostics.Tracing.TraceEvent.dll',
     'mfts\x64\__bin\Release\Microsoft.Diagnostics.Tracing.TraceEvent.xml',
@@ -123,7 +123,7 @@ Set-Location -Path $BuildDir; Copy-Item $TRACE_EVENT_FILES -Destination $package
 Set-Location -Path $MsdkBinaries; Copy-Item $MSDK_FILES -Destination $package_dir\to_archive\build\win_x64\bin -Recurse
 Set-Location -Path $IccBinaries; Copy-Item 'mfxplugin64_hw.dll' -Destination $package_dir\to_archive\build\win_x64\bin
 
-# Copy-Item $Workspace\workspace_snapshot.json -Destination $package_dir\to_archive\build
+Copy-Item $Workspace\workspace_snapshot.json -Destination $package_dir\to_archive\build
 
 Rename-Item -Path $package_dir\to_archive\build\win_x64\bin\mfx_loader_dll_hw64.dll -NewName "mfx_loader_dll_hw64_d.dll"
 

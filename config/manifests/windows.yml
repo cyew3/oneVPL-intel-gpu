@@ -24,7 +24,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.val-tools.git
     branch: master
-    revision: dc9689ec7d4255768a4733e307078b7def6ae534
+    revision: a48547caa90d5d6cef312fbdc44b819299b5b47c
     dest_dir: sources/mdp_msdk-val-tools
   hevc-stream-generator:
     type: git
@@ -36,7 +36,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.mfts.git
     branch: master
-    revision: 95c88aa19ef97e843e2c1c5a915c5fb430b84de6
+    revision: 0b9f65e7f1e4993deb9a57b2179c5c8854405fbb
     dest_dir: sources/mdp_msdk-mfts
   sys-analyzer:
     type: git
@@ -58,13 +58,6 @@ components:
     asset_name: VPA_build
     asset_version: 1
     dest_dir: vpa_build
-  mfts_binaries:
-    type: artifactory
-    root_url: https://gfx-assets.inn.intel.com/artifactory
-    asset_path: gfx-media-ci-nn/test/tools_for_driver
-    asset_name: mfts_binaries
-    asset_version: 201c251804b57f1914579c47ee2c79d07344e1d1_conf_c07719c5
-    dest_dir: mfts_binaries
   icc_binaries:
     type: artifactory
     root_url: https://gfx-assets.inn.intel.com/artifactory
@@ -106,4 +99,4 @@ components:
     asset_path: gfx-media-ci-nn/test/tools_for_driver
     asset_name: nuget_packages
     asset_version: 1
-    dest_dir: nuget_packages
+    dest_dir: sources/nuget_packages

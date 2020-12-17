@@ -15,54 +15,54 @@ Param(
     [string]$VPABuildDir
 )
 
+$global:ProgressPreference = 'SilentlyContinue'
+$global:ErrorActionPreference = 'Stop'
+
 $FILES=@(
-    'msvc\x64\__bin\RelWithDebInfo\avcrnd.exe',
-    'msvc\x64\__bin\RelWithDebInfo\bd_conformance.exe',
-    'msvc\x64\__bin\RelWithDebInfo\behavior_tests.exe',
-    'msvc\x64\__bin\RelWithDebInfo\bitstreams_parser.exe',
-    'msvc\x64\__bin\RelWithDebInfo\bs_parser.dll',
-    'msvc\x64\__bin\RelWithDebInfo\bs_trace.exe',
-    'msvc\x64\__bin\RelWithDebInfo\compare_struct.exe',
-    'msvc\x64\__bin\RelWithDebInfo\fieldweavingtool.exe',
-    'msvc\x64\__bin\RelWithDebInfo\FSEP.exe',
-    'msvc\x64\__bin\RelWithDebInfo\h264_ff_dumper.exe',
-    'msvc\x64\__bin\RelWithDebInfo\h264_fs_dumper.exe',
-    'msvc\x64\__bin\RelWithDebInfo\h264_gop_dumper.exe',
-    'msvc\x64\__bin\RelWithDebInfo\h264_qp_extractor.exe',
-    'msvc\x64\__bin\RelWithDebInfo\hevcrnd.exe',
-    'msvc\x64\__bin\RelWithDebInfo\hevc_fs_dumper.exe',
-    'msvc\x64\__bin\RelWithDebInfo\hevc_qp_dump.exe',
-    'msvc\x64\__bin\RelWithDebInfo\hevc_qp_extractor.exe',
-    'msvc\x64\__bin\RelWithDebInfo\hevc_stream_info.exe',
-    'uwp\x64\__bin\RelWithDebInfo\intel_gfx_api-x64.dll',
-    'msvc\x64\__bin\RelWithDebInfo\libmfxsw64.dll',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_player.exe',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_transcoder.exe',
-    'msvc\x64\__bin\RelWithDebInfo\mpeg2_stream_info.exe',
-    'msvc\x64\__bin\RelWithDebInfo\mpg2rnd.exe',
-    'msvc\x64\__bin\RelWithDebInfo\msdk_gmock.exe',
-    'msvc\x64\__bin\RelWithDebInfo\msdk_ts.exe',
-    'msvc\x64\__bin\RelWithDebInfo\ref_compose.exe',
+    'msvc\x64\__bin\Release\avcrnd.exe',
+    'msvc\x64\__bin\Release\bd_conformance.exe',
+    'msvc\x64\__bin\Release\behavior_tests.exe',
+    'msvc\x64\__bin\Release\bitstreams_parser.exe',
+    'msvc\x64\__bin\Release\bs_parser.dll',
+    'msvc\x64\__bin\Release\bs_trace.exe',
+    'msvc\x64\__bin\Release\compare_struct.exe',
+    'msvc\x64\__bin\Release\fieldweavingtool.exe',
+    'msvc\x64\__bin\Release\FSEP.exe',
+    'msvc\x64\__bin\Release\h264_ff_dumper.exe',
+    'msvc\x64\__bin\Release\h264_fs_dumper.exe',
+    'msvc\x64\__bin\Release\h264_gop_dumper.exe',
+    'msvc\x64\__bin\Release\h264_qp_extractor.exe',
+    'msvc\x64\__bin\Release\hevcrnd.exe',
+    'msvc\x64\__bin\Release\hevc_fs_dumper.exe',
+    'msvc\x64\__bin\Release\hevc_qp_dump.exe',
+    'msvc\x64\__bin\Release\hevc_qp_extractor.exe',
+    'msvc\x64\__bin\Release\hevc_stream_info.exe',
+    'uwp\x64\__bin\Release\intel_gfx_api-x64.dll',
+    'msvc\x64\__bin\Release\libmfxsw64.dll',
+    'msvc\x64\__bin\Release\mfx_player.exe',
+    'msvc\x64\__bin\Release\mfx_transcoder.exe',
+    'msvc\x64\__bin\Release\mpeg2_stream_info.exe',
+    'msvc\x64\__bin\Release\mpg2rnd.exe',
+    'msvc\x64\__bin\Release\msdk_gmock.exe',
+    'msvc\x64\__bin\Release\msdk_ts.exe',
+    'msvc\x64\__bin\Release\ref_compose.exe',
     'mfts\x64\__bin\Release\rtest_vista.exe',
-    'msvc\x64\__bin\RelWithDebInfo\sampler.exe',
-    'msvc\x64\__bin\RelWithDebInfo\sample_camera.exe',
-    'msvc\x64\__bin\RelWithDebInfo\sample_decode.exe',
-    'msvc\x64\__bin\RelWithDebInfo\sample_encode.exe',
-    'msvc\x64\__bin\RelWithDebInfo\sample_multi_transcode.exe',
-    'msvc\x64\__bin\RelWithDebInfo\sample_rotate_plugin.dll',
-    'msvc\x64\__bin\RelWithDebInfo\sample_vpp.exe',
-    'msvc\x64\__bin\RelWithDebInfo\scheduler_tests.exe',
-    'msvc\x64\__bin\RelWithDebInfo\simple_composite.exe',
-    'msvc\x64\__bin\RelWithDebInfo\test_behavior.exe',
-    'msvc\x64\__bin\RelWithDebInfo\test_dispatcher.exe',
-    'msvc\x64\__bin\RelWithDebInfo\test_dispatcher_2005.exe',
-    'msvc\x64\__bin\RelWithDebInfo\test_multi_adapter.exe',
-    'msvc\x64\__bin\RelWithDebInfo\test_thread_safety.exe',
-    'msvc\x64\__bin\RelWithDebInfo\test_vpp.exe',
-    'msvc\x64\__bin\RelWithDebInfo\uc_conformance.exe',
-    'msvc\x64\__bin\RelWithDebInfo\libmfxsw64.dll',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_player.exe',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_transcoder.exe'
+    'msvc\x64\__bin\Release\sampler.exe',
+    'msvc\x64\__bin\Release\sample_camera.exe',
+    'msvc\x64\__bin\Release\sample_decode.exe',
+    'msvc\x64\__bin\Release\sample_encode.exe',
+    'msvc\x64\__bin\Release\sample_multi_transcode.exe',
+    'msvc\x64\__bin\Release\sample_rotate_plugin.dll',
+    'msvc\x64\__bin\Release\sample_vpp.exe',
+    'msvc\x64\__bin\Release\scheduler_tests.exe',
+    'msvc\x64\__bin\Release\simple_composite.exe',
+    'msvc\x64\__bin\Release\test_behavior.exe',
+    'msvc\x64\__bin\Release\test_dispatcher.exe',
+    'msvc\x64\__bin\Release\test_dispatcher_2005.exe',
+    'msvc\x64\__bin\Release\test_multi_adapter.exe',
+    'msvc\x64\__bin\Release\test_thread_safety.exe',
+    'msvc\x64\__bin\Release\test_vpp.exe',
+    'msvc\x64\__bin\Release\uc_conformance.exe',
     'VPL_build\x64\__bin\Release\libmfx64-gen.dll'
 )
 
@@ -80,15 +80,15 @@ $VPA_FILES=@(
 )
 
 $FILES_WIN32=@(
-    'msvc\x32\__bin\RelWithDebInfo\libmfxsw32.dll',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_player.exe',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_transcoder.exe'
+    'msvc\x32\__bin\Release\libmfxsw32.dll',
+    'msvc\x32\__bin\Release\mfx_player.exe',
+    'msvc\x32\__bin\Release\mfx_transcoder.exe'
 )
 
 $FILES_WIN64=@(
-    'msvc\x64\__bin\RelWithDebInfo\libmfxsw64.dll',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_player.exe',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_transcoder.exe'
+    'msvc\x64\__bin\Release\libmfxsw64.dll',
+    'msvc\x64\__bin\Release\mfx_player.exe',
+    'msvc\x64\__bin\Release\mfx_transcoder.exe'
 )
 
 $package_dir="$Workspace\output\WindowsToolsDrop"

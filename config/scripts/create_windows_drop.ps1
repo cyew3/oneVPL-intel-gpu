@@ -6,12 +6,11 @@ Param(
     [string]$BuildDir,
 
     [Parameter(Mandatory)]
-    [string]$MftsBinaries,
-
-    [Parameter(Mandatory)]
     [string]$IccBinaries
 )
 
+$global:ProgressPreference = 'SilentlyContinue'
+$global:ErrorActionPreference = 'Stop'
 
 $CONFIG_INI_DATA = "
 version=10.0.0
@@ -59,6 +58,15 @@ $MFTS_RELEASE_FILES=@(
     'mfts\x64\__bin\Release\mj_64.vp',
     'mfts\x32\__bin\Release\vp9e_32.vp',
     'mfts\x64\__bin\Release\vp9e_64.vp',
+    'mfts\x32\__bin\Release\cpa_32.vp',
+    'mfts\x64\__bin\Release\cpa_64.vp',
+    'mfts\x32\__bin\Release\c_32.cpa',
+    'mfts\x64\__bin\Release\c_64.cpa',
+    'mfts\x32\__bin\Release\dev_32.vp',
+    'mfts\x64\__bin\Release\dev_64.vp'
+)
+
+$MFTS_RELEASE_PDB_FILES=@(
     'mfts\x32\__bin\Release\mfx_mft_av1hve_32.pdb',
     'mfts\x64\__bin\Release\mfx_mft_av1hve_64.pdb',
     'mfts\x32\__bin\Release\mfx_mft_encrypt_32.pdb',
@@ -75,7 +83,7 @@ $MFTS_RELEASE_FILES=@(
     'mfts\x64\__bin\Release\mfx_mft_vp9vd_64.pdb',
     'mfts\x32\__bin\Release\mfx_mft_vp9ve_32.pdb',
     'mfts\x64\__bin\Release\mfx_mft_vp9ve_64.pdb'
-  )
+)
 
 $MFTS_INTERNAL_FILES=@(
     'mfts\x32\__bin\ReleaseInternal\h265e_32.vp',
@@ -104,6 +112,15 @@ $MFTS_INTERNAL_FILES=@(
     'mfts\x64\__bin\ReleaseInternal\mj_64.vp',
     'mfts\x32\__bin\ReleaseInternal\vp9e_32.vp',
     'mfts\x64\__bin\ReleaseInternal\vp9e_64.vp',
+    'mfts\x32\__bin\ReleaseInternal\cpa_32.vp',
+    'mfts\x64\__bin\ReleaseInternal\cpa_64.vp',
+    'mfts\x32\__bin\ReleaseInternal\c_32.cpa',
+    'mfts\x64\__bin\ReleaseInternal\c_64.cpa',
+    'mfts\x32\__bin\ReleaseInternal\dev_32.vp',
+    'mfts\x64\__bin\ReleaseInternal\dev_64.vp'
+)
+
+$MFTS_INTERNAL_PDB_FILES=@(
     'mfts\x32\__bin\ReleaseInternal\mfx_mft_av1hve_32.pdb',
     'mfts\x64\__bin\ReleaseInternal\mfx_mft_av1hve_64.pdb',
     'mfts\x32\__bin\ReleaseInternal\mfx_mft_encrypt_32.pdb',
@@ -120,22 +137,24 @@ $MFTS_INTERNAL_FILES=@(
     'mfts\x64\__bin\ReleaseInternal\mfx_mft_vp9vd_64.pdb',
     'mfts\x32\__bin\ReleaseInternal\mfx_mft_vp9ve_32.pdb',
     'mfts\x64\__bin\ReleaseInternal\mfx_mft_vp9ve_64.pdb'
-  )
+)
 
 $MSDK_FILES=@(
-    'msvc\x32\__bin\RelWithDebInfo\libmfxhw32.dll',
-    'msvc\x64\__bin\RelWithDebInfo\libmfxhw64.dll',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_loader_dll_hw32.dll',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_loader_dll_hw64.dll',
-    'uwp\x64\__bin\RelWithDebInfo\intel_gfx_api-x64.dll',
-    'uwp\x32\__bin\RelWithDebInfo\intel_gfx_api-x86.dll',
-    'uwp\x64\__bin\RelWithDebInfo\intel_gfx_api-x64.pdb',
-    'uwp\x32\__bin\RelWithDebInfo\intel_gfx_api-x86.pdb',
-    'msvc\x32\__bin\RelWithDebInfo\libmfxhw32.pdb',
-    'msvc\x64\__bin\RelWithDebInfo\libmfxhw64.pdb',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_loader_dll_hw32.pdb',
-    'msvc\x64\__bin\RelWithDebInfo\mfx_loader_dll_hw64.pdb'
+    'msvc\x32\__bin\Release\libmfxhw32.dll',
+    'msvc\x64\__bin\Release\libmfxhw64.dll',
+    'msvc\x32\__bin\Release\mfx_loader_dll_hw32.dll',
+    'msvc\x64\__bin\Release\mfx_loader_dll_hw64.dll',
+    'uwp\x64\__bin\Release\intel_gfx_api-x64.dll',
+    'uwp\x32\__bin\Release\intel_gfx_api-x86.dll'
+)
 
+$MSDK_PDB_FILES=@(
+    'uwp\x64\__bin\Release\intel_gfx_api-x64.pdb',
+    'uwp\x32\__bin\Release\intel_gfx_api-x86.pdb',
+    'msvc\x32\__bin\Release\libmfxhw32.pdb',
+    'msvc\x64\__bin\Release\libmfxhw64.pdb',
+    'msvc\x32\__bin\Release\mfx_loader_dll_hw32.pdb',
+    'msvc\x64\__bin\Release\mfx_loader_dll_hw64.pdb'
 )
 
 # TODO: It should be built in icc build
@@ -143,30 +162,14 @@ $ICC_FILES=@(
     'mfxplugin32_av1e_gacc.dll',
     'mfxplugin32_hw.dll',
     'mfxplugin64_av1e_gacc.dll',
-    'mfxplugin64_hw.dll',
+    'mfxplugin64_hw.dll'
+)
+
+$ICC_PDB_FILES=@(
     'mfxplugin32_av1e_gacc.pdb',
     'mfxplugin32_hw.pdb',
     'mfxplugin64_av1e_gacc.pdb',
     'mfxplugin64_hw.pdb'
-)
-
-# TODO: It should be built in mfts build
-$MFTS_VP_CPA_RELEASE_FILES=@(
-    'Release\cpa_32.vp',
-    'Release\cpa_64.vp',
-    'Release\c_32.cpa',
-    'Release\c_64.cpa',
-    'Release\dev_32.vp',
-    'Release\dev_64.vp'
-)
-# TODO: It should be built in mfts build
-$MFTS_VP_CPA_INTERNAL_FILES=@(
-    'ReleaseInternal\cpa_32.vp',
-    'ReleaseInternal\cpa_64.vp',
-    'ReleaseInternal\c_32.cpa',
-    'ReleaseInternal\c_64.cpa',
-    'ReleaseInternal\dev_32.vp',
-    'ReleaseInternal\dev_64.vp'
 )
 
 $PACKAGE_NAMES = @(
@@ -187,21 +190,20 @@ foreach ($pkg_name in $PACKAGE_NAMES)
 
     if ($pkg_name -eq 'MediaSDK-64-bit')
     {
-        Set-Location -Path $BuildDir; Copy-Item $MFTS_RELEASE_FILES -Destination $archive_dir -Exclude '*.pdb';
-          Copy-Item $MFTS_RELEASE_FILES -Destination $archive_dir\pdb -Include '*.pdb'
-        Set-Location -Path $MftsBinaries; Copy-Item $MFTS_VP_CPA_RELEASE_FILES -Destination $archive_dir
+        Set-Location -Path $BuildDir; Copy-Item $MFTS_RELEASE_FILES -Destination $archive_dir;
+          Copy-Item $MFTS_RELEASE_PDB_FILES -Destination $archive_dir\pdb
     }
     else
     {
-        Set-Location -Path $BuildDir; Copy-Item $MFTS_INTERNAL_FILES -Destination $archive_dir -Exclude '*.pdb';
-          Copy-Item $MFTS_INTERNAL_FILES -Destination $archive_dir\pdb -Include '*.pdb'
-        Set-Location -Path $MftsBinaries; Copy-Item $MFTS_VP_CPA_INTERNAL_FILES -Destination $archive_dir
+        Set-Location -Path $BuildDir; Copy-Item $MFTS_INTERNAL_FILES -Destination $archive_dir;
+          Copy-Item $MFTS_INTERNAL_PDB_FILES -Destination $archive_dir\pdb
     }
 
-    Set-Location -Path $BuildDir; Copy-Item $MSDK_FILES -Destination $archive_dir -Exclude '*.pdb';
-      Copy-Item $MSDK_FILES -Destination $archive_dir\pdb -Include '*.pdb'
-    Copy-Item $IccBinaries\* -Destination $archive_dir -Exclude '*.pdb'
-    Copy-Item $IccBinaries\* -Destination $archive_dir\pdb -Include '*.pdb'
+    Set-Location -Path $BuildDir; Copy-Item $MSDK_FILES -Destination $archive_dir;
+      Copy-Item $MSDK_PDB_FILES -Destination $archive_dir\pdb
+
+    Set-Location -Path $IccBinaries; Copy-Item $ICC_FILES -Destination $archive_dir;
+      Copy-Item $ICC_PDB_FILES -Destination $archive_dir\pdb
 
     Compress-Archive -Path $archive_dir\* -DestinationPath "$package_dir\${pkg_name}.zip"
 }

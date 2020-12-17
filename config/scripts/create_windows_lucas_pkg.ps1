@@ -12,10 +12,13 @@ Param(
     [string]$IccBinaries
 )
 
+$global:ProgressPreference = 'SilentlyContinue'
+$global:ErrorActionPreference = 'Stop'
+
 $FILES=@(
-    'msvc\x64\__bin\RelWithDebInfo\libmfxhw64.dll',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_player.exe',
-    'msvc\x32\__bin\RelWithDebInfo\mfx_transcoder.exe'
+    'msvc\x64\__bin\Release\libmfxhw64.dll',
+    'msvc\x64\__bin\Release\mfx_player.exe',
+    'msvc\x64\__bin\Release\mfx_transcoder.exe'
     'VPL_build\x64\__bin\Release\libmfx64-gen.dll'
 )
 
@@ -27,6 +30,6 @@ Set-Location -Path $BuildDir; Copy-Item $FILES -Destination $package_dir\to_arch
 
 Copy-Item $ValidationTools\mediasdkDir.exe -Destination $package_dir\to_archive
 Copy-Item $IccBinaries\mfxplugin64_hw.dll -Destination $package_dir\to_archive\imports\mediasdk
-# Copy-Item $Workspace\workspace_snapshot.json -Destination $package_dir\to_archive
+Copy-Item $Workspace\workspace_snapshot.json -Destination $package_dir\to_archive
 
 Compress-Archive -Path $package_dir\to_archive\* -DestinationPath $package_dir\$package_name

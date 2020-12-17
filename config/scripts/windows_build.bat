@@ -18,18 +18,18 @@ for %%t in (%ICC_TARGETS%) do (
 )
 
 cmake -B%WORKSPACE%\Build\msvc\x64 -H%WORKSPACE%\sources\mdp_msdk-lib -A x64 -DAPI=latest -DBUILD_VAL_TOOLS=ON -DBUILD_TESTS=ON -DMFX_ENABLE_LP_LOOKAHEAD=ON
-cmake --build %WORKSPACE%\Build\msvc\x64 -j %NUMBER_OF_PROCESSORS% --config RelWithDebInfo
+cmake --build %WORKSPACE%\Build\msvc\x64 -j %NUMBER_OF_PROCESSORS% --config Release
 cmake --build %WORKSPACE%\Build\msvc\x64 -j %NUMBER_OF_PROCESSORS% --config Debug --target mfx_loader_dll_hw64
 
 cmake -B%WORKSPACE%\Build\msvc\x32 -H%WORKSPACE%\sources\mdp_msdk-lib -A Win32 -DAPI=latest -DBUILD_VAL_TOOLS=ON -DBUILD_TESTS=ON -DMFX_ENABLE_LP_LOOKAHEAD=ON
-cmake --build %WORKSPACE%\Build\msvc\x32 -j %NUMBER_OF_PROCESSORS% --config RelWithDebInfo
+cmake --build %WORKSPACE%\Build\msvc\x32 -j %NUMBER_OF_PROCESSORS% --config Release
 
 
 cmake -B%WORKSPACE%\Build\uwp\x64 -H%WORKSPACE%\sources\mdp_msdk-lib -A x64 -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.18362.0
-cmake --build %WORKSPACE%\Build\uwp\x64 -j %NUMBER_OF_PROCESSORS% --config RelWithDebInfo
+cmake --build %WORKSPACE%\Build\uwp\x64 -j %NUMBER_OF_PROCESSORS% --config Release
 
 cmake -B%WORKSPACE%\Build\uwp\x32 -H%WORKSPACE%\sources\mdp_msdk-lib -A Win32 -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.18362.0
-cmake --build %WORKSPACE%\Build\uwp\x32 -j %NUMBER_OF_PROCESSORS% --config RelWithDebInfo
+cmake --build %WORKSPACE%\Build\uwp\x32 -j %NUMBER_OF_PROCESSORS% --config Release
 
 
 cmake -B%WORKSPACE%\Build\mfts\x64 -H%WORKSPACE%\sources\mdp_msdk-mfts -A x64 -DAPI=latest
@@ -50,14 +50,8 @@ cmake --build %WORKSPACE%\Build\VPL_build\x32 -j %NUMBER_OF_PROCESSORS% --config
 
 if exist %WORKSPACE%\output\packages rmdir %WORKSPACE%\output\packages
 mkdir %WORKSPACE%\output\packages
-powershell Compress-Archive -Path %WORKSPACE%\Build\icc\* -DestinationPath %WORKSPACE%\output\packages\icc.zip
-powershell Compress-Archive -Path %WORKSPACE%\Build\msvc\* -DestinationPath %WORKSPACE%\output\packages\msvc.zip
-powershell Compress-Archive -Path %WORKSPACE%\Build\uwp\* -DestinationPath %WORKSPACE%\output\packages\uwp.zip
-powershell Compress-Archive -Path %WORKSPACE%\Build\mfts\* -DestinationPath %WORKSPACE%\output\packages\mfts.zip
+powershell $global:ProgressPreference = 'SilentlyContinue'; Compress-Archive -Path %WORKSPACE%\Build\icc\* -DestinationPath %WORKSPACE%\output\packages\icc.zip
+powershell $global:ProgressPreference = 'SilentlyContinue'; Compress-Archive -Path %WORKSPACE%\Build\msvc\* -DestinationPath %WORKSPACE%\output\packages\msvc.zip
+powershell $global:ProgressPreference = 'SilentlyContinue'; Compress-Archive -Path %WORKSPACE%\Build\uwp\* -DestinationPath %WORKSPACE%\output\packages\uwp.zip
+powershell $global:ProgressPreference = 'SilentlyContinue'; Compress-Archive -Path %WORKSPACE%\Build\mfts\* -DestinationPath %WORKSPACE%\output\packages\mfts.zip
 
-powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1 -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -MftsBinaries "C:\workspace\mfts_binaries" -IccBinaries "C:\workspace\icc_binaries"
-powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_tools_drop.ps1 -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\validation_tools" -MsdkBinaries "C:\workspace\msdk_binaries" -VPABuildDir "C:\workspace\vpa_build"
-powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_lucas_pkg.ps1 -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\validation_tools" -IccBinaries "C:\workspace\icc_binaries"
-powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_nightly_pkg.ps1 -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -VPABuildDir "C:\workspace\VPA_build" -ValidationTools "C:\workspace\validation_tools" -Service_UWD "C:\workspace\service" -AMD64 "C:\workspace\AMD64" -TestSystem "C:\workspace\test_system" -MsdkBinaries "C:\workspace\msdk_binaries" -IccBinaries "C:\workspace\icc_binaries"
-
-exit /b %ERRORLEVEL%
