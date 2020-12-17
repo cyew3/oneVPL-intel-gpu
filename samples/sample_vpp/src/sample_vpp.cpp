@@ -636,9 +636,6 @@ int main(int argc, msdk_char *argv[])
 
         while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || bDoNotUpdateIn )
         {
-#ifdef ENABLE_MCTF
-            bool bAttachMctfBuffer = false;
-#endif
             mfxU16 viewID = 0;
             mfxU16 viewIndx = 0;
 
@@ -733,22 +730,6 @@ int main(int argc, msdk_char *argv[])
             }
             else
             {
-#ifdef ENABLE_MCTF
-                if (bAttachMctfBuffer)
-                {
-                    // attach control MCTF buffer to pInSurf[nInStreamInd]
-                    // need to update this info somehow.
-                    // suppose bitrate & deblock control is going to be passed:
-                    auto MctfRTParams = pInSurf[nInStreamInd]->AddExtBuffer<mfxExtVppMctf>();
-                    MctfRTParams->FilterStrength = MCTF_MID_FILTER_STRENGTH;
-#if defined (ENABLE_MCTF_EXT)
-                    MctfRTParams->BitsPerPixelx100k = mfxU32(MCTF_AUTO_BPP * MCTF_BITRATE_MULTIPLIER);
-                    MctfRTParams->Deblocking = MFX_CODINGOPTION_OFF;
-                    MctfRTParams->TemporalMode = MCTF_TEMPORAL_2REF_MODE;
-#endif
-                }
-#endif
-
 #ifdef ENABLE_VPP_RUNTIME_HSBC
                 if (Params.rtHue.isEnabled || Params.rtSaturation.isEnabled ||
                     Params.rtBrightness.isEnabled || Params.rtContrast.isEnabled)
