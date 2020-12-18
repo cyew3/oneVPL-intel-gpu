@@ -26,36 +26,36 @@ components:
     dest_dir: sources/mdp_msdk-hevc-stream-generator
   cmrt_linux:
     type: artifactory
-    root_url: https://gfx-assets.inn.intel.com/artifactory
-    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
     asset_name: cmrt_linux
     asset_version: 1
     dest_dir: msdk_root/cmrt_linux
   ipp_linux:
     type: artifactory
-    root_url: https://gfx-assets.inn.intel.com/artifactory
-    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
     asset_name: ipp_linux
     asset_version: 1
     dest_dir: msdk_root/ipp
   tools:
     type: artifactory
-    root_url: https://gfx-assets.inn.intel.com/artifactory
-    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
     asset_name: tools
     asset_version: 1
     dest_dir: msdk_binaries/tools
   test_behavior:
     type: artifactory
-    root_url: https://gfx-assets.inn.intel.com/artifactory
-    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
     asset_name: test_behavior
     asset_version: dab74464a23303359fa4f2db18db0cc86c79d082
     dest_dir: msdk_binaries/test_behavior
   validation_tools:
     type: artifactory
-    root_url: https://gfx-assets.inn.intel.com/artifactory
-    asset_path: gfx-media-ci-nn/test/tools_for_driver
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
     asset_name: validation_tools
     asset_version: 1
     dest_dir: msdk_binaries/validation_tools
