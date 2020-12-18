@@ -31,9 +31,7 @@ add_subdirectory(mfx_lib/mctf_package)
 add_subdirectory(mfx_lib/shared)
 add_subdirectory(mfx_lib)
 
-if (MFX_ENABLE_H264_VIDEO_FEI_ENCODE OR MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-  add_subdirectory(mfx_lib/fei)
-endif()
+add_subdirectory(mfx_lib/fei)
 
 if (MFX_ENABLE_USER_ENCTOOLS)
   add_subdirectory(enctools)
