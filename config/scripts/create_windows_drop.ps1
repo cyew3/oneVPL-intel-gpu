@@ -145,7 +145,9 @@ $MSDK_FILES=@(
     'msvc\x32\__bin\Release\mfx_loader_dll_hw32.dll',
     'msvc\x64\__bin\Release\mfx_loader_dll_hw64.dll',
     'uwp\x64\__bin\Release\intel_gfx_api-x64.dll',
-    'uwp\x32\__bin\Release\intel_gfx_api-x86.dll'
+    'uwp\x32\__bin\Release\intel_gfx_api-x86.dll',
+    'VPL_build\x64\__bin\Release\libmfx64-gen.dll',
+    'VPL_build\x32\__bin\Release\libmfx32-gen.dll'
 )
 
 $MSDK_PDB_FILES=@(
@@ -154,7 +156,9 @@ $MSDK_PDB_FILES=@(
     'msvc\x32\__bin\Release\libmfxhw32.pdb',
     'msvc\x64\__bin\Release\libmfxhw64.pdb',
     'msvc\x32\__bin\Release\mfx_loader_dll_hw32.pdb',
-    'msvc\x64\__bin\Release\mfx_loader_dll_hw64.pdb'
+    'msvc\x64\__bin\Release\mfx_loader_dll_hw64.pdb',
+    'VPL_build\x64\__bin\Release\libmfx64-gen.pdb',
+    'VPL_build\x32\__bin\Release\libmfx32-gen.pdb'
 )
 
 # TODO: It should be built in icc build

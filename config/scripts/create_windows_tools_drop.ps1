@@ -62,8 +62,7 @@ $FILES=@(
     'msvc\x64\__bin\Release\test_multi_adapter.exe',
     'msvc\x64\__bin\Release\test_thread_safety.exe',
     'msvc\x64\__bin\Release\test_vpp.exe',
-    'msvc\x64\__bin\Release\uc_conformance.exe',
-    'VPL_build\x64\__bin\Release\libmfx64-gen.dll'
+    'msvc\x64\__bin\Release\uc_conformance.exe'
 )
 
 $VPA_FILES=@(
