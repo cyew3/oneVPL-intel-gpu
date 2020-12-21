@@ -20,7 +20,6 @@
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set( MFX_BUNDLED_IPP OFF )
 set( MFX_DISABLE_SW_FALLBACK ON )
 set( MFX_ENABLE_MFE OFF )
 
@@ -59,5 +58,5 @@ endfunction()
 
 if( CMAKE_SYSTEM_NAME MATCHES Windows )
   message ( "Loading default win_x64 profile on Windows" )
-  include ( ${BUILDER_ROOT}/profiles//win_x64.cmake )
+  include ( ${BUILDER_ROOT}/profiles/win_x64.cmake )
 endif()
