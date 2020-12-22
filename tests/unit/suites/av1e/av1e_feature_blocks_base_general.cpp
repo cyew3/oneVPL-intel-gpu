@@ -37,7 +37,8 @@ namespace av1e {
         {
             FeatureBlocks   blocks{};
             General         general;
-            StorageRW       storage;
+            StorageRW       global;
+            StorageRW       local;
             MFXVideoSession session;
 
             FeatureBlocksGeneral()
@@ -46,7 +47,7 @@ namespace av1e {
 
             void SetUp() override
             {
-                ASSERT_EQ(
+                EXPECT_EQ(
                     session.InitEx(
                         mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
                     ),
@@ -54,25 +55,25 @@ namespace av1e {
                 );
 
                 auto s = static_cast<_mfxSession*>(session);
-                storage.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+                global.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
 
                 general.Init(INIT | RUNTIME, blocks);
 
-                Glob::EncodeCaps::GetOrConstruct(storage);
-                Glob::Defaults::GetOrConstruct(storage);
+                Glob::EncodeCaps::GetOrConstruct(global);
+                Glob::Defaults::GetOrConstruct(global);
 
                 auto& queueQ1 = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks);
                 auto setDefault = FeatureBlocks::Get(queueQ1, { FEATURE_GENERAL, General::BLK_SetDefaultsCallChain });
 
-                auto& vp = Glob::VideoParam::GetOrConstruct(storage);
+                auto& vp = Glob::VideoParam::GetOrConstruct(global);
                 vp.AsyncDepth = 1;
                 vp.mfx.GopPicSize = 1;
                 vp.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
                 vp.mfx.FrameInfo.Width = 640;
                 vp.mfx.FrameInfo.Height = 480;
 
-                ASSERT_EQ(
-                    setDefault->Call(vp, vp, storage),
+                EXPECT_EQ(
+                    setDefault->Call(vp, vp, global),
                     MFX_ERR_NONE
                 );
             }
@@ -80,103 +81,103 @@ namespace av1e {
 
         TEST_F(FeatureBlocksGeneral, InitTask)
         {
-            mfxEncodeCtrl* pCtrl = nullptr;
-            mfxFrameSurface1 pSurf;
-            mfxBitstream pBs;
-            StorageRW task;
-
-            auto &video_par = Glob::VideoParam::GetOrConstruct(storage);
-            const mfxU16 num_ref_frame_test_value = 2;
-            video_par.mfx.NumRefFrame = num_ref_frame_test_value;
-
-            pSurf.Data.Locked = 0;
-
             auto& queueAT = FeatureBlocks::BQ<FeatureBlocks::BQ_AllocTask>::Get(blocks);
             auto& allocTask = FeatureBlocks::Get(queueAT, { FEATURE_GENERAL, General::BLK_AllocTask });
-            ASSERT_EQ(
-                allocTask->Call(storage, task),
+
+            auto& vp = Glob::VideoParam::GetOrConstruct(global);
+            const mfxU16 numRefFrame = 2;
+            vp.mfx.NumRefFrame = numRefFrame;
+            EXPECT_EQ(
+                allocTask->Call(global, local),
                 MFX_ERR_NONE
             );
 
             // calling General's InitTask routing
             auto& queueIT = FeatureBlocks::BQ<FeatureBlocks::BQ_InitTask>::Get(blocks);
             auto& block = FeatureBlocks::Get(queueIT, { FEATURE_GENERAL, General::BLK_InitTask });
-            ASSERT_EQ(
-                block->Call(pCtrl, &pSurf, &pBs, storage, task),
+
+            mfxEncodeCtrl* pCtrl = nullptr;
+            mfxFrameSurface1 surf;
+            surf.Data.Locked = 0;
+            mfxBitstream bs;
+            EXPECT_EQ(
+                block->Call(pCtrl, &surf, &bs, global, local),
                 MFX_ERR_NONE
             );
 
             // let's check if task was configured properly
-            ASSERT_EQ(pSurf.Data.Locked, 1);
-            auto& tpar = Task::Common::Get(task);
-            ASSERT_EQ(tpar.DPB.size(), num_ref_frame_test_value);
+            EXPECT_EQ(surf.Data.Locked, 1);
+
+            auto& tpar = Task::Common::Get(local);
+            EXPECT_EQ(tpar.DPB.size(), numRefFrame);
         }
 
         TEST_F(FeatureBlocksGeneral, ConfigureTask)
         {
-            StorageRW task;
-            auto p_task_par = MfxFeatureBlocks::make_storable<TaskCommonPar>();
-            task.Insert(Task::Common::Key, std::move(p_task_par));
+            local.Insert(Task::Common::Key, MfxFeatureBlocks::make_storable<TaskCommonPar>());
 
             auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_PreReorderTask>::Get(blocks);
             auto block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_PrepareTask });
 
-            ASSERT_EQ(
-                block->Call(storage, task),
+            EXPECT_EQ(
+                block->Call(global, local),
                 MFX_ERR_NONE
             );
-            auto& tpar = Task::Common::Get(task);
-            ASSERT_EQ(tpar.DisplayOrder, 0);
+            auto& tpar = Task::Common::Get(local);
+            EXPECT_EQ(tpar.DisplayOrder, 0);
+        }
 
-            // call second time to check if DisplayOrder is increased
-            ASSERT_EQ(
-                block->Call(storage, task),
+        TEST_F(FeatureBlocksGeneral, ConfigureTaskIncreaseDisplayOrder)
+        {
+            local.Insert(Task::Common::Key, MfxFeatureBlocks::make_storable<TaskCommonPar>());
+
+            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_PreReorderTask>::Get(blocks);
+            auto block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_PrepareTask });
+
+            EXPECT_EQ(
+                block->Call(global, local),
                 MFX_ERR_NONE
             );
-            auto& tpar2 = Task::Common::Get(task);
-            ASSERT_EQ(tpar2.DisplayOrder, 1);
+
+            EXPECT_EQ(
+                block->Call(global, local),
+                MFX_ERR_NONE
+            );
+            auto& tpar = Task::Common::Get(local);
+            EXPECT_EQ(tpar.DisplayOrder, 1);
         }
 
         TEST_F(FeatureBlocksGeneral, SetDefaults)
         {
-            StorageRW task;
-
             auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks);
             auto block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_SetDefaults });
 
-            auto &vp_before = Glob::VideoParam::GetOrConstruct(storage);
-            ASSERT_EQ(vp_before.mfx.TargetUsage, 0);
-            ASSERT_EQ(vp_before.mfx.QPI, 0);
+            auto& vpOld = Glob::VideoParam::GetOrConstruct(global);
+            EXPECT_EQ(vpOld.mfx.TargetUsage, 0);
+            EXPECT_EQ(vpOld.mfx.QPI, 0);
 
-            // cannot call SetDefaults() as a block due to HW-dependency
-            auto& vp = Glob::VideoParam::Get(storage);
-            auto& caps = Glob::EncodeCaps::Get(storage);
-            auto& defchain = Glob::Defaults::Get(storage);
+            // Todo: Mock HW-dependency which blocks call SetDefaults block
+            auto& vp = Glob::VideoParam::Get(global);
+            auto& caps = Glob::EncodeCaps::Get(global);
+            auto& defchain = Glob::Defaults::Get(global);
             general.SetDefaults(vp, Defaults::Param(vp, caps, MFX_HW_DG2, defchain), false);
 
             // check that after the Call() the default params are set
-            auto &vp_after = Glob::VideoParam::GetOrConstruct(storage);
-            ASSERT_EQ(vp_after.mfx.TargetUsage, MFX_TARGETUSAGE_4);
-            const mfxU16 default_QPI = 128;
-            ASSERT_EQ(vp_after.mfx.QPI, default_QPI);
+            // Todo: Do we need to test all default params? Or several of them are enough
+            auto& vpNew = Glob::VideoParam::GetOrConstruct(global);
+            EXPECT_EQ(vpNew.mfx.TargetUsage, MFX_TARGETUSAGE_4);
+            EXPECT_EQ(vpNew.mfx.QPI, 128);
         }
 
         TEST_F(FeatureBlocksGeneral, SetFH)
         {
-            auto& vp   = Glob::VideoParam::Get(storage);
-            auto& caps = Glob::EncodeCaps::Get(storage);
-            auto p_sh  = MfxFeatureBlocks::make_storable<SH>();
-            auto p_fh  = MfxFeatureBlocks::make_storable<FH>();
-
+            auto& vp   = Glob::VideoParam::Get(global);
             vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
             vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
             vp.NewEB(MFX_EXTBUFF_CODING_OPTION3, false);
             vp.NewEB(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, false);
-            mfxExtAV1Param& av1Par      = ExtBuffer::Get(vp);
-            mfxExtAV1AuxData& av1AuxPar = ExtBuffer::Get(vp);
-            mfxExtCodingOption3& pCO3   = ExtBuffer::Get(vp);
-            mfxExtAvcTemporalLayers& pTL= ExtBuffer::Get(vp);
 
+            mfxExtAV1Param& av1Par          = ExtBuffer::Get(vp);
             av1Par.FrameHeight              = 480;
             av1Par.FrameWidth               = 640;
             av1Par.StillPictureMode         = MFX_CODINGOPTION_OFF;
@@ -187,77 +188,79 @@ namespace av1e {
             av1Par.InterpFilter             = MFX_AV1_INTERP_EIGHTTAP;
             av1Par.DisableCdfUpdate         = MFX_CODINGOPTION_OFF;
             av1Par.DisableFrameEndUpdateCdf = MFX_CODINGOPTION_OFF;
+
+            mfxExtAV1AuxData& av1AuxPar     = ExtBuffer::Get(vp);
             av1AuxPar.EnableOrderHint       = MFX_CODINGOPTION_OFF;
             av1AuxPar.ErrorResilientMode    = MFX_CODINGOPTION_OFF;
 
-            general.SetSH(vp, MFX_HW_DG2, caps, *p_sh);
-            storage.Insert(Glob::SH::Key, std::move(p_sh));
-            auto& sh = Glob::SH::Get(storage);
-            general.SetFH(vp, MFX_HW_DG2, sh, *p_fh);
+            auto& caps = Glob::EncodeCaps::Get(global);
+            auto& sh   = Glob::SH::GetOrConstruct(global);
+            auto& fh   = Glob::FH::GetOrConstruct(global);
+            general.SetSH(vp, MFX_HW_DG2, caps, sh);
+            general.SetFH(vp, MFX_HW_DG2, sh, fh);
 
-            // check loop restoration parameters in frame header
             for (auto i = 0; i < MAX_MB_PLANE; i++)
             {
-                ASSERT_EQ(p_fh->lr_params.lr_type[i], RESTORE_WIENER);
+                EXPECT_EQ(fh.lr_params.lr_type[i], RESTORE_WIENER);
             }
-            ASSERT_EQ(p_fh->lr_params.lr_unit_shift, 0);
-            ASSERT_EQ(p_fh->lr_params.lr_unit_extra_shift, 0);
-            ASSERT_EQ(p_fh->lr_params.lr_uv_shift, 1);
-            ASSERT_EQ(p_fh->RenderWidth, av1Par.FrameWidth);
-            ASSERT_EQ(p_fh->FrameWidth, GetActualEncodeWidth(av1Par));
+            EXPECT_EQ(fh.lr_params.lr_unit_shift, 0);
+            EXPECT_EQ(fh.lr_params.lr_unit_extra_shift, 0);
+            EXPECT_EQ(fh.lr_params.lr_uv_shift, 1);
+            EXPECT_EQ(fh.RenderWidth, av1Par.FrameWidth);
+            EXPECT_EQ(fh.FrameWidth, GetActualEncodeWidth(av1Par));
         }
 
         TEST_F(FeatureBlocksGeneral, CheckTemporalLayers)
         {
-            auto& vp = Glob::VideoParam::Get(storage);
+            auto& vp = Glob::VideoParam::Get(global);
             vp.NewEB(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, false);
-            mfxExtAvcTemporalLayers& pTL = ExtBuffer::Get(vp);
+            mfxExtAvcTemporalLayers& tl = ExtBuffer::Get(vp);
 
             // check zero TL
-            pTL.Layer[0].Scale = 0;
-            ASSERT_EQ(
+            tl.Layer[0].Scale = 0;
+            EXPECT_EQ(
                 general.CheckTemporalLayers(vp),
                 MFX_ERR_NONE);
 
             // check base layer
-            pTL.Layer[0].Scale = 1;
-            ASSERT_EQ(
+            tl.Layer[0].Scale = 1;
+            EXPECT_EQ(
                 general.CheckTemporalLayers(vp),
                 MFX_ERR_NONE);
 
             // check 2x ratio between the frame rates of the current temporal layer and the base layer
             for (auto i = 1; i < MAX_NUM_TEMPORAL_LAYERS; i++)
             {
-                pTL.Layer[i].Scale = pTL.Layer[i - 1].Scale << 1;
-                ASSERT_EQ(
+                tl.Layer[i].Scale = tl.Layer[i - 1].Scale << 1;
+                EXPECT_EQ(
                     general.CheckTemporalLayers(vp),
                     MFX_ERR_NONE);
             }
 
             // check flexible (but valid) ratio between the frame rates of the current temporal layer and the base layer
-            std::for_each(pTL.Layer, pTL.Layer + MAX_NUM_TEMPORAL_LAYERS, [](auto& t){ t.Scale = 0; });
+            std::for_each(tl.Layer, tl.Layer + MAX_NUM_TEMPORAL_LAYERS, [](auto& t){ t.Scale = 0; });
             mfxU16 const scale[] = { 1, 3, 6, 18, 72, 144, 720, 1440 };
             for (auto i = 0; i < MAX_NUM_TEMPORAL_LAYERS; i++)
             {
-                pTL.Layer[i].Scale = scale[i];
-                ASSERT_EQ(
+                tl.Layer[i].Scale = scale[i];
+                EXPECT_EQ(
                     general.CheckTemporalLayers(vp),
                     MFX_ERR_NONE);
             }
 
             // check invalid ratio between the frame rates of the current temporal layer and the base layer
             // case with the same frame rate for both base and advanced layers
-            std::for_each(pTL.Layer, pTL.Layer + MAX_NUM_TEMPORAL_LAYERS, [](auto& t) { t.Scale = 0; });
-            pTL.Layer[0].Scale = 2;
-            pTL.Layer[1].Scale = 2;
-            ASSERT_EQ(
+            std::for_each(tl.Layer, tl.Layer + MAX_NUM_TEMPORAL_LAYERS, [](auto& t) { t.Scale = 0; });
+            tl.Layer[0].Scale = 2;
+            tl.Layer[1].Scale = 2;
+            EXPECT_EQ(
                 general.CheckTemporalLayers(vp),
                 MFX_ERR_UNSUPPORTED);
 
             // case when base layer has higher frame rate than advanced one
-            pTL.Layer[0].Scale = 4;
-            pTL.Layer[1].Scale = 2;
-            ASSERT_EQ(
+            tl.Layer[0].Scale = 4;
+            tl.Layer[1].Scale = 2;
+            EXPECT_EQ(
                 general.CheckTemporalLayers(vp),
                 MFX_ERR_UNSUPPORTED);
         }
