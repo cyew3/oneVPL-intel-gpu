@@ -49,7 +49,7 @@ namespace Gen12
         {
             HEVCEHW::Gen12::Caps::Query1WithCaps(blocks, Push);
 
-            Push(BLK_HardcodeCaps
+            Push(BLK_HardcodeCapsExt
                 , [this](const mfxVideoParam&, mfxVideoParam& par, StorageRW& strg)->mfxStatus
             {
                 auto& caps = Glob::EncodeCaps::Get(strg);

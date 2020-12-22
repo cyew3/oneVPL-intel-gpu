@@ -120,6 +120,10 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             , { Base::FEATURE_DDI_PACKER, Base::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_CAPS, Caps::BLK_HardcodeCaps }
             , PLACE_AFTER);
+        Reorder(
+            qwc
+            , { Base::FEATURE_LEGACY, Base::Legacy::BLK_CheckHeaders }
+            , { FEATURE_CAPS, Caps::BLK_HardcodeCapsExt });
     }
 
     if (mode & INIT)
