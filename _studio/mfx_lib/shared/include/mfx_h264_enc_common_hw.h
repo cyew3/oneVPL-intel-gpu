@@ -669,13 +669,13 @@ namespace MfxHwH264Encode
 
         void ApplyDefaultsToMvcSeqDesc();
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-        mfxExtPpsHeader& GetCqmPps()
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        std::vector<mfxExtPpsHeader>& GetCqmPps()
         {
             return m_extCqmPps;
         }
 
-        const mfxExtPpsHeader& GetCqmPps() const
+        const std::vector<mfxExtPpsHeader>& GetCqmPps() const
         {
             return m_extCqmPps;
         }
@@ -757,8 +757,8 @@ namespace MfxHwH264Encode
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxExtLplaParam            m_extLowpowerLA;
 #endif
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-        mfxExtPpsHeader            m_extCqmPps;
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        std::vector<mfxExtPpsHeader>  m_extCqmPps;
 #endif
 
 #if defined (MFX_ENABLE_MFE)
@@ -821,6 +821,9 @@ namespace MfxHwH264Encode
 
     bool   isSWBRC (MfxVideoParam const & par);
     bool   isAdaptiveQP(MfxVideoParam const & par);
+
+    bool   isAdaptiveCQMSupported(mfxU16 scenarioInfo, eMFXHWType platform, bool isLowPowerOn);
+
     mfxU16 GetMaxNumSlices(MfxVideoParam const & par);
 
     mfxU16 GetNumSurfInput(MfxVideoParam const & video);
@@ -1646,7 +1649,7 @@ namespace MfxHwH264Encode
 
         std::vector<ENCODE_PACKEDHEADER_DATA> const & GetPps(bool cqmPps = false ) const {
             (void)cqmPps;
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
             if (cqmPps)
                 return m_packedCqmPps;
 #endif
@@ -1664,7 +1667,7 @@ namespace MfxHwH264Encode
         void GetHeadersInfo(std::vector<mfxEncodedUnitInfo> &HeadersMap, DdiTask const& task, mfxU32 fid);
 #endif
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         mfxU32 GetPackedCqmPpsNum() { return (mfxU32)m_packedCqmPps.size(); }
 #endif
 
@@ -1716,10 +1719,9 @@ namespace MfxHwH264Encode
         static const mfxU32 SPSPPS_BUFFER_SIZE = 1024;
         static const mfxU32 SLICE_BUFFER_SIZE  = 2048;
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         std::vector<mfxExtPpsHeader>            m_cqmPps;
         std::vector<ENCODE_PACKEDHEADER_DATA>   m_packedCqmPps;
-        static const mfxU32 CQM_PPS_NUM = 1;
 #endif
     };
 

@@ -44,9 +44,13 @@ struct MfxLookAheadReport
 
 enum
 {
-    CQM_HINT_USE_FLAT_MATRIX = 0,    //use flat matrix
-    CQM_HINT_USE_CUST_MATRIX = 1,    //use customized matrix
-    CQM_HINT_INVALID         = 0xFF  //invalid hint
+    CQM_HINT_USE_FLAT_MATRIX  = 0,   //use flat matrix
+    CQM_HINT_USE_CUST_MATRIX1 = 1,   //use customized matrix
+    CQM_HINT_USE_CUST_MATRIX2 = 2,
+    CQM_HINT_USE_CUST_MATRIX3 = 3,
+    CQM_HINT_USE_CUST_MATRIX4 = 4,
+    CQM_HINT_NUM_CUST_MATRIX  = 4,
+    CQM_HINT_INVALID          = 0xFF  //invalid hint
 };
 
 class LPLA_EncTool

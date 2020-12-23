@@ -3567,16 +3567,16 @@ mfxU32 AsyncRoutineEmulator::Go(bool hasInput)
 mfxStatus MfxHwH264Encode::GetDefaultScalingList(mfxU8 *outList, mfxU8 outListSize, mfxU8 index, bool zigzag=false)
 {
     //Rec. ITU-T H.264, Table 7-3
-    uint8_t intra_4x4[16] = { 6,13,13,20,20,20,28,28,28,28,32,32,32,37,37,42, };
-    uint8_t inter_4x4[16] = { 10,14,14,20,20,20,24,24,24,24,27,27,27,30,30,34 };
+    mfxU8 intra_4x4[16] = { 6,13,13,20,20,20,28,28,28,28,32,32,32,37,37,42, };
+    mfxU8 inter_4x4[16] = { 10,14,14,20,20,20,24,24,24,24,27,27,27,30,30,34 };
     //Rec. ITU-T H.264, Table 7-4
-    uint8_t intra_8x8[64] = {
+    mfxU8 intra_8x8[64] = {
          6, 10, 10, 13, 11, 13, 16, 16, 16, 16, 18, 18, 18, 18, 18, 23,
         23, 23, 23, 23, 23, 25, 25, 25, 25, 25, 25, 25, 27, 27, 27, 27,
         27, 27, 27, 27, 29, 29, 29, 29, 29, 29, 29, 31, 31, 31, 31, 31,
         31, 33, 33, 33, 33, 33, 36, 36, 36, 36, 38, 38, 38, 40, 40, 42
     };
-    uint8_t inter_8x8[64] = {
+    mfxU8 inter_8x8[64] = {
          9, 13, 13, 15, 13, 15, 17, 17, 17, 17, 19, 19, 19, 19, 19, 21,
         21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 24, 24, 24, 24,
         24, 24, 24, 24, 25, 25, 25, 25, 25, 25, 25, 27, 27, 27, 27, 27,
@@ -3632,7 +3632,7 @@ mfxStatus MfxHwH264Encode::GetDefaultScalingList(mfxU8 *outList, mfxU8 outListSi
     return MFX_ERR_NONE;
 }
 
-mfxStatus MfxHwH264Encode::FillCustomScalingLists(void *inMatrix, mfxU16 ScenarioInfo)
+mfxStatus MfxHwH264Encode::FillCustomScalingLists(void *inMatrix, mfxU16 ScenarioInfo, mfxU8 maxtrixIndex)
 {
     DXVA_Qmatrix_H264 &matrix = *static_cast<DXVA_Qmatrix_H264*>(inMatrix);
 
@@ -3640,55 +3640,236 @@ mfxStatus MfxHwH264Encode::FillCustomScalingLists(void *inMatrix, mfxU16 Scenari
         (ScenarioInfo != MFX_SCENARIO_REMOTE_GAMING))
         return MFX_ERR_NOT_FOUND;
 
-    uint8_t intra_4x4[16] = {
-        16, 34, 53, 74,
-        34, 53, 74, 85,
-        53, 74, 85, 98,
-        74, 85, 98, 112
+    if (maxtrixIndex >= CQM_HINT_USE_CUST_MATRIX1 + CQM_HINT_NUM_CUST_MATRIX)
+        maxtrixIndex = 0;
 
-    };
-    uint8_t inter_4x4[16] = {
-        16, 22, 32, 38,
-        22, 32, 38, 43,
-        32, 38, 43, 48,
-        38, 43, 48, 54
-    };
-    uint8_t intra_8x8[64] = {
-        16,26,34,42,48,61,66,72,
-        26,29,42,48,61,66,72,77,
-        34,42,48,61,66,72,77,82,
-        42,48,61,66,72,77,82,88,
-        48,61,66,72,77,82,88,96,
-        61,66,72,77,82,88,96,101,
-        66,72,77,82,88,96,101,106,
-        72,77,82,88,96,101,106,112
-    };
-    uint8_t inter_8x8[64] = {
-        16,23,26,30,33,37,39,42,
-        23,23,30,33,37,39,42,44,
-        26,30,33,37,39,42,44,48,
-        30,33,37,39,42,44,48,49,
-        33,37,39,42,44,48,49,53,
-        37,39,42,44,48,49,53,56,
-        39,42,44,48,49,53,56,58,
-        42,44,48,49,53,56,58,62
+    mfxU8 intra_4x4[CQM_HINT_NUM_CUST_MATRIX+1][16] =
+    {
+       // matrix 0: single CQM
+        {
+            16, 34, 53, 74,
+            34, 53, 74, 85,
+            53, 74, 85, 98,
+            74, 85, 98, 112
+        },
+        // matrix 1: multiple CQM, weak
+        {
+            21, 21, 21, 24,
+            21, 21, 24, 26,
+            21, 24, 26, 29,
+            24, 26, 29, 32
+        },
+        // matrix 2: multiple CQM, medium
+        {
+            27, 29, 36, 46,
+            29, 36, 46, 52,
+            36, 46, 52, 58,
+            46, 52, 58, 64
+        },
+        // matrix 3: multiple CQM, strong
+        {
+            28, 31, 53, 74,
+            31, 53, 74, 85,
+            53, 74, 85, 98,
+            74, 85, 98, 112
+        },
+        // matrix 4: multiple CQM, extreme
+        {
+            31, 31, 53, 74,
+            31, 53, 74, 85,
+            53, 74, 85, 98,
+            74, 85, 98, 112
+        }
     };
 
-    std::copy(std::begin(intra_4x4), std::end(intra_4x4), std::begin(matrix.bScalingLists4x4[0]));
-    std::copy(std::begin(intra_4x4), std::end(intra_4x4), std::begin(matrix.bScalingLists4x4[1]));
-    std::copy(std::begin(intra_4x4), std::end(intra_4x4), std::begin(matrix.bScalingLists4x4[2]));
-    std::copy(std::begin(inter_4x4), std::end(inter_4x4), std::begin(matrix.bScalingLists4x4[3]));
-    std::copy(std::begin(inter_4x4), std::end(inter_4x4), std::begin(matrix.bScalingLists4x4[4]));
-    std::copy(std::begin(inter_4x4), std::end(inter_4x4), std::begin(matrix.bScalingLists4x4[5]));
-    std::copy(std::begin(intra_8x8), std::end(intra_8x8), std::begin(matrix.bScalingLists8x8[0]));
-    std::copy(std::begin(inter_8x8), std::end(inter_8x8), std::begin(matrix.bScalingLists8x8[1]));
+    mfxU8 inter_4x4[CQM_HINT_NUM_CUST_MATRIX+1][16] =
+    {
+        //matrix 0: single CQM
+        {
+            16, 22, 32, 38,
+            22, 32, 38, 43,
+            32, 38, 43, 48,
+            38, 43, 48, 54
+        },
+        // matrix 1: multiple CQM, weak
+        {
+            21, 21, 21, 24,
+            21, 21, 24, 26,
+            21, 24, 26, 29,
+            24, 26, 29, 32
+        },
+        // matrix 2: multiple CQM, medium
+        {
+            27, 29, 32, 38,
+            29, 32, 38, 43,
+            32, 38, 43, 48,
+            38, 43, 48, 54
+        },
+        // matrix 3: multiple CQM, strong
+        {
+            28, 31, 36, 46,
+            31, 36, 46, 52,
+            36, 46, 52, 58,
+            46, 52, 58, 64
+        },
+        // matrix 4: multiple CQM, extreme
+        {
+            31, 31, 36, 46,
+            31, 36, 46, 52,
+            36, 46, 52, 58,
+            46, 52, 58, 64
+        }
+    };
+
+    mfxU8 intra_8x8[CQM_HINT_NUM_CUST_MATRIX+1][64] =
+    {
+        //matrix 0: single CQM
+        {
+            16, 26, 34, 42, 48, 61, 66, 72,
+            26, 29, 42, 48, 61, 66, 72, 77,
+            34, 42, 48, 61, 66, 72, 77, 82,
+            42, 48, 61, 66, 72, 77, 82, 88,
+            48, 61, 66, 72, 77, 82, 88, 96,
+            61, 66, 72, 77, 82, 88, 96, 101,
+            66, 72, 77, 82, 88, 96, 101, 106,
+            72, 77, 82, 88, 96, 101, 106, 112
+        },
+        // matrix 1: multiple CQM, weak
+        {
+            16, 16, 34, 42, 48, 61, 66, 72,
+            16, 29, 42, 48, 61, 66, 72, 77,
+            34, 42, 48, 61, 66, 72, 77, 82,
+            42, 48, 61, 66, 72, 77, 82, 88,
+            48, 61, 66, 72, 77, 82, 88, 96,
+            61, 66, 72, 77, 82, 88, 96, 101,
+            66, 72, 77, 82, 88, 96, 101, 106,
+            72, 77, 82, 88, 96, 101, 106, 112
+        },
+        // matrix 2: multiple CQM, medium
+        {
+            16, 19, 34, 42, 48, 61, 66, 72,
+            19, 29, 42, 48, 61, 66, 72, 77,
+            34, 42, 48, 61, 66, 72, 77, 82,
+            42, 48, 61, 66, 72, 77, 82, 88,
+            48, 61, 66, 72, 77, 82, 88, 96,
+            61, 66, 72, 77, 82, 88, 96, 101,
+            66, 72, 77, 82, 88, 96, 101, 106,
+            72, 77, 82, 88, 96, 101, 106, 112
+        },
+        // matrix 3: multiple CQM, strong
+        {
+            19, 25, 34, 42, 48, 61, 66, 72,
+            25, 29, 42, 48, 61, 66, 72, 77,
+            34, 42, 48, 61, 66, 72, 77, 82,
+            42, 48, 61, 66, 72, 77, 82, 88,
+            48, 61, 66, 72, 77, 82, 88, 96,
+            61, 66, 72, 77, 82, 88, 96, 101,
+            66, 72, 77, 82, 88, 96, 101, 106,
+            72, 77, 82, 88, 96, 101, 106, 112
+        },
+        // matrix 4: multiple CQM, extreme
+        {
+            22, 22, 34, 42, 48, 61, 66, 72,
+            22, 29, 42, 48, 61, 66, 72, 77,
+            34, 42, 48, 61, 66, 72, 77, 82,
+            42, 48, 61, 66, 72, 77, 82, 88,
+            48, 61, 66, 72, 77, 82, 88, 96,
+            61, 66, 72, 77, 82, 88, 96, 101,
+            66, 72, 77, 82, 88, 96, 101, 106,
+            72, 77, 82, 88, 96, 101, 106, 112
+        }
+    };
+
+    mfxU8 inter_8x8[CQM_HINT_NUM_CUST_MATRIX+1][64] = {
+        //matrix 0: single CQM
+        {
+            16, 23, 26, 30, 33, 37, 39, 42,
+            23, 23, 30, 33, 37, 39, 42, 44,
+            26, 30, 33, 37, 39, 42, 44, 48,
+            30, 33, 37, 39, 42, 44, 48, 49,
+            33, 37, 39, 42, 44, 48, 49, 53,
+            37, 39, 42, 44, 48, 49, 53, 56,
+            39, 42, 44, 48, 49, 53, 56, 58,
+            42, 44, 48, 49, 53, 56, 58, 62
+        },
+        // matrix 1: multiple CQM, weak
+        {
+            16, 16, 26, 30, 33, 37, 39, 42,
+            16, 23, 30, 33, 37, 39, 42, 44,
+            26, 30, 33, 37, 39, 42, 44, 48,
+            30, 33, 37, 39, 42, 44, 48, 49,
+            33, 37, 39, 42, 44, 48, 49, 53,
+            37, 39, 42, 44, 48, 49, 53, 56,
+            39, 42, 44, 48, 49, 53, 56, 58,
+            42, 44, 48, 49, 53, 56, 58, 62
+        },
+        // matrix 2: multiple CQM, medium
+        {
+            16, 16, 26, 30, 33, 37, 39, 42,
+            16, 23, 30, 33, 37, 39, 42, 44,
+            26, 30, 33, 37, 39, 42, 44, 48,
+            30, 33, 37, 39, 42, 44, 48, 49,
+            33, 37, 39, 42, 44, 48, 49, 53,
+            37, 39, 42, 44, 48, 49, 53, 56,
+            39, 42, 44, 48, 49, 53, 56, 58,
+            42, 44, 48, 49, 53, 56, 58, 62
+        },
+        // matrix 3: multiple CQM, strong
+        {
+            19, 22, 26, 30, 33, 37, 39, 42,
+            22, 23, 30, 33, 37, 39, 42, 44,
+            26, 30, 33, 37, 39, 42, 44, 48,
+            30, 33, 37, 39, 42, 44, 48, 49,
+            33, 37, 39, 42, 44, 48, 49, 53,
+            37, 39, 42, 44, 48, 49, 53, 56,
+            39, 42, 44, 48, 49, 53, 56, 58,
+            42, 44, 48, 49, 53, 56, 58, 62
+        },
+        // matrix 4: multiple CQM, extreme
+        {
+            19, 22, 26, 30, 33, 37, 39, 42,
+            22, 23, 30, 33, 37, 39, 42, 44,
+            26, 30, 33, 37, 39, 42, 44, 48,
+            30, 33, 37, 39, 42, 44, 48, 49,
+            33, 37, 39, 42, 44, 48, 49, 53,
+            37, 39, 42, 44, 48, 49, 53, 56,
+            39, 42, 44, 48, 49, 53, 56, 58,
+            42, 44, 48, 49, 53, 56, 58, 62
+        }
+    };
+
+    mfxU8 flat_4x4[16] = {
+        16, 16, 16, 16,
+        16, 16, 16, 16,
+        16, 16, 16, 16,
+        16, 16, 16, 16
+    };
+
+    std::copy(std::begin(intra_4x4[maxtrixIndex]), std::end(intra_4x4[maxtrixIndex]), std::begin(matrix.bScalingLists4x4[0]));
+    std::copy(std::begin(inter_4x4[maxtrixIndex]), std::end(inter_4x4[maxtrixIndex]), std::begin(matrix.bScalingLists4x4[3]));
+    std::copy(std::begin(intra_8x8[maxtrixIndex]), std::end(intra_8x8[maxtrixIndex]), std::begin(matrix.bScalingLists8x8[0]));
+    std::copy(std::begin(inter_8x8[maxtrixIndex]), std::end(inter_8x8[maxtrixIndex]), std::begin(matrix.bScalingLists8x8[1]));
+    if (maxtrixIndex > 2)
+    {
+        std::copy(std::begin(intra_4x4[maxtrixIndex-2]), std::end(intra_4x4[maxtrixIndex-2]), std::begin(matrix.bScalingLists4x4[1]));
+        std::copy(std::begin(intra_4x4[maxtrixIndex-2]), std::end(intra_4x4[maxtrixIndex-2]), std::begin(matrix.bScalingLists4x4[2]));
+        std::copy(std::begin(inter_4x4[maxtrixIndex-2]), std::end(inter_4x4[maxtrixIndex-2]), std::begin(matrix.bScalingLists4x4[4]));
+        std::copy(std::begin(inter_4x4[maxtrixIndex-2]), std::end(inter_4x4[maxtrixIndex-2]), std::begin(matrix.bScalingLists4x4[5]));
+    }
+    else
+    {
+        std::copy(std::begin(flat_4x4), std::end(flat_4x4), std::begin(matrix.bScalingLists4x4[1]));
+        std::copy(std::begin(flat_4x4), std::end(flat_4x4), std::begin(matrix.bScalingLists4x4[2]));
+        std::copy(std::begin(flat_4x4), std::end(flat_4x4), std::begin(matrix.bScalingLists4x4[4]));
+        std::copy(std::begin(flat_4x4), std::end(flat_4x4), std::begin(matrix.bScalingLists4x4[5]));
+    }
 
     return MFX_ERR_NONE;
 }
 
 void MfxHwH264Encode::FillTaskScalingList(mfxExtSpsHeader const &extSps, mfxExtPpsHeader const &extPps, DdiTask &task)
 {
-    for (mfxU8 i = 0; i < ((extSps.levelIdc != 3) ? 8 : 12); ++i) //levelIdc==3 isn't supported, hsa to be checked on input
+    for (mfxU8 i = 0; i < ((extSps.levelIdc != 3) ? 8 : 12); ++i) //levelIdc==3 isn't supported, has to be checked on input
     {
         if (i < 6)
         {

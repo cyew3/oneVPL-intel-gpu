@@ -4609,6 +4609,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #endif //MFX_AUTOLTR_FEATURE_DISABLE
 #endif // (MFX_VERSION >= 1026)
 
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+#if defined(MFX_ONEVPL)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (!CheckTriStateOption(extOpt3->AdaptiveCQM)) changed = true;
+    if (IsOn(extOpt3->AdaptiveCQM) && !isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
+    {
+        extOpt3->AdaptiveCQM = MFX_CODINGOPTION_OFF;
+        changed = true;
+    }
+#endif
+#endif
+#endif
+
     if (IsMvcProfile(par.mfx.CodecProfile) && MFX_ERR_UNSUPPORTED == CheckMVCSeqDescQueryLike(extMvc))
     {
         unsupported = true;
@@ -6027,6 +6040,11 @@ bool MfxHwH264Encode::isAdaptiveQP(MfxVideoParam const & video)
     return false;
 }
 
+bool MfxHwH264Encode::isAdaptiveCQMSupported(mfxU16 scenarioInfo, eMFXHWType platform, bool isLowPowerOn)
+{
+    return ((scenarioInfo == MFX_SCENARIO_GAME_STREAMING && platform >= MFX_HW_ICL) || (scenarioInfo == MFX_SCENARIO_REMOTE_GAMING && platform >= MFX_HW_KBL)) && isLowPowerOn;
+}
+
 
 void MfxHwH264Encode::SetDefaults(
     MfxVideoParam &         par,
@@ -6728,6 +6746,20 @@ void MfxHwH264Encode::SetDefaults(
     }
 #endif //(MFX_VERSION >= 1026)
 
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+#if defined(MFX_ONEVPL)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
+    {
+        if (extOpt3->AdaptiveCQM == MFX_CODINGOPTION_UNKNOWN)
+            extOpt3->AdaptiveCQM = MFX_CODINGOPTION_ON;
+    }
+    else
+        extOpt3->AdaptiveCQM = MFX_CODINGOPTION_OFF;
+#endif
+#endif
+#endif
+
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType, config);
 
     if (extOpt3->NumSliceI == 0 && extOpt3->NumSliceP == 0 && extOpt3->NumSliceB == 0)
@@ -7248,36 +7280,27 @@ void MfxHwH264Encode::SetDefaults(
         }
 
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
-        //We use CQM in case of
-        //MFX_SCENARIO_GAME_STREAMING AVC VDEnc/VME on Gen11+ or
-        //MFX_SCENARIO_REMOTE_GAMING  AVC VDEnc     on Gen9+
-        if ((extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && platform >= MFX_HW_ICL && extOpt2->LookAheadDepth == 0) ||
-            (extOpt3->ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING  && platform >= MFX_HW_SCL && IsOn(par.mfx.LowPower)))
-        {
-            FillCustomScalingLists(&(extSps->scalingList4x4[0][0]), extOpt3->ScenarioInfo);
-            extSps->seqScalingMatrixPresentFlag = 1;
-            for (mfxU8 i = 0; i < sizeof(extSps->seqScalingListPresentFlag) / sizeof(extSps->seqScalingListPresentFlag[0]); ++i)
-            {
-                extSps->seqScalingListPresentFlag[i] = (i < ((extSps->levelIdc != 3) ? 8 : 12)) ? 1 : 0;
-            }
-        }
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-        if (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && hwCaps.ddi_caps.LookaheadBRCSupport)
-        {
-            mfxExtPpsHeader &extCqmPps = par.GetCqmPps();
-
-            extCqmPps = *extPps;
-            extCqmPps.picParameterSetId = 1;
-
-            FillCustomScalingLists(&(extCqmPps.scalingList4x4[0][0]), extOpt3->ScenarioInfo);
-            extCqmPps.picScalingMatrixPresentFlag = 1;
-            for (mfxU8 i = 0; i < sizeof(extCqmPps.picScalingListPresentFlag) / sizeof(extCqmPps.picScalingListPresentFlag[0]); ++i)
-            {
-                extCqmPps.picScalingListPresentFlag[i] = (i < ((extSps->levelIdc != 3) ? 8 : 12)) ? 1 : 0;
-            }
-        }
+#if defined(MFX_ONEVPL)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        if (IsOn(extOpt3->AdaptiveCQM))
 #endif
+#endif
+        if (isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
+        {
+            std::vector<mfxExtPpsHeader> &extCqmPps = par.GetCqmPps();
+            for (mfxU8 j = 0; j < extCqmPps.size(); j++)
+            {
+                extCqmPps[j] = *extPps;
+                extCqmPps[j].picParameterSetId = j + 1;
+                FillCustomScalingLists(&(extCqmPps[j].scalingList4x4[0][0]), extOpt3->ScenarioInfo, j+1);
+                extCqmPps[j].picScalingMatrixPresentFlag = 1;
+                for (mfxU8 i = 0; i < sizeof(extCqmPps[j].picScalingListPresentFlag) / sizeof(extCqmPps[j].picScalingListPresentFlag[0]); ++i)
+                    extCqmPps[j].picScalingListPresentFlag[i] = (i < ((extSps->levelIdc != 3) ? 8 : 12)) ? 1 : 0;
+            }
+
+        }
+
         // Quantization buffer has higher priority than ScenarioInfo
         if (extQM)
         {
@@ -8982,6 +9005,10 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 
     NumExtParam = 0;
 
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    m_extCqmPps.resize(CQM_HINT_NUM_CUST_MATRIX);
+#endif
+
 #define CONSTRUCT_EXT_BUFFER(type, name)        \
     InitExtBufHeader(name);                     \
     if (type * opts = GetExtBuffer(par))        \
@@ -10433,23 +10460,27 @@ void HeaderPacker::Init(
     PrepareSpsPpsHeaders(par, m_sps, m_pps);
 #endif
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-    mfxExtCodingOption3 * extOpt3 = GetExtBuffer(par);
-    if (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && hwCaps.ddi_caps.LookaheadBRCSupport && extOpt2.LookAheadDepth > 0)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+#if defined(MFX_ONEVPL)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    const mfxExtCodingOption3 &extOpt3 = GetExtBufferRef(par);
+    if (IsOn(extOpt3.AdaptiveCQM))
+#endif
+#endif
     {
-        const mfxExtPpsHeader &extCqmPps = par.GetCqmPps();
+        const std::vector<mfxExtPpsHeader> &extCqmPps = par.GetCqmPps();
         if (m_cqmPps.empty())
         {
-            m_cqmPps.resize(CQM_PPS_NUM);
+            m_cqmPps.resize(extCqmPps.size());
             Zero(m_cqmPps);
         }
         if (m_packedCqmPps.empty())
         {
-            m_packedCqmPps.resize(CQM_PPS_NUM);
+            m_packedCqmPps.resize(extCqmPps.size());
             Zero(m_packedCqmPps);
         }
-
-        m_cqmPps.back() = extCqmPps;
+        for (mfxU32 i = 0; i < extCqmPps.size(); i++)
+            m_cqmPps[i] = extCqmPps[i];
     }
 #endif
 
@@ -10528,7 +10559,7 @@ void HeaderPacker::Init(
         bufBegin += numBits / 8;
     }
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     // pack extended pps for adaptive CQM
     if (!m_packedCqmPps.empty())
     {
@@ -10601,9 +10632,10 @@ ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackAud(
     mfxU32          fieldId)
 {
     mfxU8 * audBegin = m_packedPps.back().pData + m_packedPps.back().DataLength;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     if (!m_packedCqmPps.empty())
-        audBegin += m_packedCqmPps.back().DataLength;
+        for (auto it = m_packedCqmPps.begin(); it < m_packedCqmPps.end(); it++)
+            audBegin += it->DataLength;
 #endif
 
     OutputBitstream obs(audBegin, End(m_headerBuffer), m_emulPrev);
@@ -10761,9 +10793,9 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU32 fieldPicFlag = task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE;
 
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
-    mfxExtPpsHeader const & pps =
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-        task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
+    mfxExtPpsHeader const & pps = 
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        task.m_adaptiveCQMHint > 0 && task.m_adaptiveCQMHint <= static_cast<mfxU32>(m_cqmPps.size()) ? m_cqmPps[task.m_adaptiveCQMHint - 1] :
 #endif
         task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
 
@@ -10996,8 +11028,8 @@ mfxU32 HeaderPacker::WriteSlice(
 
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
     mfxExtPpsHeader const & pps =
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-        task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        IS_CUST_MATRIX(task.m_adaptiveCQMHint) ? m_cqmPps[(mfxU32)task.m_adaptiveCQMHint - 1] :
 #endif
         task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
 
@@ -11310,8 +11342,8 @@ ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackSkippedSlice(
 
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
     mfxExtPpsHeader const & pps =
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-        task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        IS_CUST_MATRIX(task.m_adaptiveCQMHint) ? m_cqmPps[(mfxU32)task.m_adaptiveCQMHint - 1] :
 #endif
         task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
 

@@ -174,7 +174,7 @@ typedef struct tagENCODE_EVENT_DESCR
 } ENCODE_EVENT_DESCR;
 
 #define AVC_D3D9_DDI_VERSION 928
-#define AVC_D3D11_DDI_VERSION 370  
+#define AVC_D3D11_DDI_VERSION 370
 #define INTEL_AVC_ENCODE_DDI_VERSION (AVC_D3D9_DDI_VERSION|(AVC_D3D11_DDI_VERSION<<16))
 #define MPEG2_D3D9_DDI_VERSION 928
 #define MPEG2_D3D11_DDI_VERSION 370
@@ -214,7 +214,7 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS_DESCR
 
 // new encode query status interface (starting from DDI 0.915)
 typedef enum tagENCODE_QUERY_STATUS_PARAM_TYPE
-{ 
+{
     QUERY_STATUS_PARAM_FRAME = 0, // Frame level reporting, the default, always supported
     QUERY_STATUS_PARAM_SLICE = 1, // Slice level reporting, not always supported
     QUERY_STATUS_PARAM_EXT = 2, // Extended Status Report Format, not always supported
@@ -350,14 +350,19 @@ typedef struct tagENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC
     USHORT  *pSliceSizes;
 } ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC;
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 enum
 {
-    CQM_HINT_USE_FLAT_MATRIX = 0,    //use flat matrix
-    CQM_HINT_USE_CUST_MATRIX = 1,    //use customized matrix
-    CQM_HINT_INVALID         = 0xFF  //invalid hint
+    CQM_HINT_USE_FLAT_MATRIX  = 0,   //use flat matrix
+    CQM_HINT_USE_CUST_MATRIX1 = 1,   //use customized matrix
+    CQM_HINT_USE_CUST_MATRIX2 = 2,
+    CQM_HINT_USE_CUST_MATRIX3 = 3,
+    CQM_HINT_USE_CUST_MATRIX4 = 4,
+    CQM_HINT_NUM_CUST_MATRIX  = 4,
+    CQM_HINT_INVALID          = 0xFF  //invalid hint
 };
-#endif
+
+#define IS_CUST_MATRIX(CqmHint)  ((CqmHint) >= CQM_HINT_USE_CUST_MATRIX1 && (CqmHint) < CQM_HINT_USE_CUST_MATRIX1 + CQM_HINT_NUM_CUST_MATRIX)
+
 
 // new encode query status interface for slice level report (starting from DDI 0.935)
 typedef struct tagENCODE_QUERY_STATUS_SLICE_PARAMS
@@ -522,7 +527,7 @@ typedef struct tagFASTCOPY_QUERYCAPS
 
 // Fast Video Compositing Device for Blu-Ray
 // {7DD2D599-41DB-4456-9395-8B3D18CEDCAE}
-static const GUID DXVA2_FastCompositing = 
+static const GUID DXVA2_FastCompositing =
 { 0x7dd2d599, 0x41db, 0x4456, { 0x93, 0x95, 0x8b, 0x3d, 0x18, 0xce, 0xdc, 0xae } };
 
 /*---------------------------------------------\
@@ -758,7 +763,7 @@ typedef struct _FASTCOMP_BLT_PARAMS
     FASTCOMP_VideoSample    *pSamples;
     REFERENCE_TIME          TargetFrame;
     RECT                    TargetRect;
-    UINT                    Reserved1               : 1;    
+    UINT                    Reserved1               : 1;
     UINT                    TargetTransferMatrix    : 3;    // Render Target Matrix
     UINT                    bTargetExtendedGamut    : 1;    // Render Target Extended Gamut
     UINT                    iTargetInterlacingMode  : 3;    // Render Target Interlacing Mode
@@ -791,7 +796,7 @@ typedef struct _FASTCOMP_BLT_PARAMS
     UINT                    Reserved;
 
     // Rev 1.5 parameters
-    FASTCOMP_BLT_PARAMS_OBJECT         QueryStatusObject;    
+    FASTCOMP_BLT_PARAMS_OBJECT         QueryStatusObject;
     FASTCOMP_BLT_PARAMS_OBJECT         ISObject;
     FASTCOMP_BLT_PARAMS_OBJECT         FRCObject;
 
@@ -872,8 +877,8 @@ typedef struct tagFASTCOMP_FRC_CUSTOM_RATE_DATA
     UINT                    OutputFrames;
     UINT                    InputInterlaced;
     UINT                    InputFramesOrFields;
-    USHORT                  usNumBackwardSamples; 
-    USHORT                  usNumForwardSamples; 
+    USHORT                  usNumBackwardSamples;
+    USHORT                  usNumForwardSamples;
 } FASTCOMP_FRC_CUSTOM_RATE_DATA;
 
 

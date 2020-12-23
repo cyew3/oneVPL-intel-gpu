@@ -1122,6 +1122,9 @@ namespace MfxHwH264Encode
             , m_isMBControl(false)
             , m_midMBControl(MID_INVALID)
             , m_idxMBControl(NO_INDEX)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+            , m_adaptiveCQMHint(CQM_HINT_INVALID)
+#endif
             , m_cmRawForHist(0)
             , m_cmHist(0)
             , m_cmHistSys(0)
@@ -1419,6 +1422,9 @@ namespace MfxHwH264Encode
         mfxU32   m_idxMBControl;
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxLplastatus m_lplastatus;
+#endif
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        mfxU32 m_adaptiveCQMHint;
 #endif
         CmSurface2D *         m_cmRawForHist;
         CmBufferUP *          m_cmHist;     // Histogram data, kernel output
@@ -3035,6 +3041,17 @@ private:
 #endif
     using ns_asc::ASC;
 
+    struct QpHistory
+    {
+        QpHistory() { Reset(); }
+        void Reset() { std::fill_n(history, HIST_SIZE, mfxU8(52)); }
+        void Add(mfxU32 qp);
+        mfxU8 GetAverageQp() const;
+    private:
+        static const mfxU32 HIST_SIZE = 16;
+        mfxU8 history[HIST_SIZE];
+    };
+
     class ImplementationAvc : public VideoENCODE
     {
     public:
@@ -3368,7 +3385,9 @@ private:
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
         std::unique_ptr<MfxLpLookAhead> m_lpLookAhead;
 #endif
-
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        QpHistory m_qpHistory;
+#endif
         std::vector<mfxU32>     m_recFrameOrder;
 
         mfxU32 m_recNonRef[2];
@@ -4845,7 +4864,7 @@ private:
     ///<summary>Function fills custom quantization matrices into inMatrix, writes in ZigZag orde</summary>
     ///<param name="ScenarioInfo">Fills matrices depends on selected ScenarioInfo (CodingOption3)</param>
     ///<return>MFX_ERR_NONE if matrices were copied, MFX_ERR_NOT_FOUND if requested ScenarioInfo isn't supported</return>
-    mfxStatus FillCustomScalingLists(void *inMatrix, mfxU16 ScenarioInfo);
+    mfxStatus FillCustomScalingLists(void *inMatrix, mfxU16 ScenarioInfo, mfxU8 maxtrixIndex = 0);
 
     ///<summary>Function fills default values of scaling list</summary>
     ///<param name="outList">Pointer to the output list</param>

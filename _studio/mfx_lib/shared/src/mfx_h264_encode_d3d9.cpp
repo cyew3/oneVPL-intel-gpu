@@ -326,12 +326,11 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_H264 & pps,
     std::vector<ENCODE_RECT> &           dirtyRects,
     std::vector<MOVE_RECT> &             movingRects
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     , mfxU32                             extPpsNum
 #endif
 )
 {
-
     pps.NumSlice                                = mfxU8(task.m_numSlice[fieldId]);
     pps.CurrOriginalPic.Index7Bits              = mfxU8(task.m_idxRecon);
     pps.CurrOriginalPic.AssociatedFlag          = mfxU8(fieldId);
@@ -471,21 +470,6 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 #endif
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-    // refresh pic_parameter_set_id for adaptive CQM
-    if (task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX && extPpsNum > 0)
-    {
-        // only extended CQM pps is supported now and CqmHint is CQM_HINT_USE_CUST_MATRIX
-        pps.pic_parameter_set_id = 1;
-        pps.pic_scaling_matrix_present_flag = true;
-        pps.pic_scaling_list_present_flag = true;
-    }
-    else
-    {   //CqmHint is CQM_HINT_USE_FLAT_MATRIX or CQM_HINT_INVALID, or no available extended CQM pps
-        pps.pic_parameter_set_id = 0;
-        pps.pic_scaling_matrix_present_flag = false;
-        pps.pic_scaling_list_present_flag = false;
-    }
-
     if (task.m_lplastatus.TargetFrameSize > 0)
     {
         pps.TargetFrameSize = task.m_lplastatus.TargetFrameSize;
@@ -494,6 +478,22 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         if (task.m_lplastatus.MiniGopSize > 1)
             pps.HierarchLevelPlus1 = (mfxU8)(task.m_LowDelayPyramidLayer + 1);
 #endif
+    }
+#endif
+
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    // refresh pic_parameter_set_id for adaptive CQM
+    if (IS_CUST_MATRIX(task.m_adaptiveCQMHint) && extPpsNum > 0)
+    {
+        pps.pic_parameter_set_id = static_cast<UCHAR>(task.m_adaptiveCQMHint);
+        pps.pic_scaling_matrix_present_flag = true;
+        pps.pic_scaling_list_present_flag = true;
+    }
+    else
+    {   //CqmHint is CQM_HINT_USE_FLAT_MATRIX or CQM_HINT_INVALID, or no available extended CQM pps
+        pps.pic_parameter_set_id = 0;
+        pps.pic_scaling_matrix_present_flag = false;
+        pps.pic_scaling_list_present_flag = false;
     }
 #endif
 }

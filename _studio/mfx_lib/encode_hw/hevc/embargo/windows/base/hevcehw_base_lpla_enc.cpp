@@ -175,7 +175,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         {
             auto& slice = Task::SSH::Get(s_task);
             auto& task = Task::Common::Get(s_task);
-            if (task.LplaStatus.CqmHint == CQM_HINT_USE_CUST_MATRIX)
+            if (IS_CUST_MATRIX(task.LplaStatus.CqmHint))
                 slice.pic_parameter_set_id = 1;
         });
 

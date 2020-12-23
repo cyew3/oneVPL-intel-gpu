@@ -331,7 +331,25 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqm
         m_curDispOrder = (mfxI32)dispOrder;
         m_encodeHints.pop_front();
     }
-    pCqmHint->MatrixType = (mfxU16)(m_curEncodeHints.CqmHint == CQM_HINT_USE_CUST_MATRIX ? MFX_QUANT_MATRIX_HIGH_FREQUENCY_STRONG : MFX_QUANT_MATRIX_FLAT);
+   
+    switch (m_curEncodeHints.CqmHint)
+    {
+    case CQM_HINT_USE_CUST_MATRIX1:
+        pCqmHint->MatrixType = MFX_QUANT_MATRIX_WEAK;
+        break;
+    case CQM_HINT_USE_CUST_MATRIX2:
+        pCqmHint->MatrixType = MFX_QUANT_MATRIX_MEDIUM;
+        break;
+    case CQM_HINT_USE_CUST_MATRIX3:
+        pCqmHint->MatrixType = MFX_QUANT_MATRIX_STRONG;
+        break;
+    case CQM_HINT_USE_CUST_MATRIX4:
+        pCqmHint->MatrixType = MFX_QUANT_MATRIX_EXTREME;
+        break;
+    case CQM_HINT_USE_FLAT_MATRIX:
+    default:
+        pCqmHint->MatrixType = MFX_QUANT_MATRIX_FLAT;
+    }
 
     return MFX_ERR_NONE;
 }

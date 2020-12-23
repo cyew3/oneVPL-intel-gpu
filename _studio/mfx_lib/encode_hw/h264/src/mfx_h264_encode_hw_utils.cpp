@@ -5373,6 +5373,12 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         if (pCO3) {
             MFX_CHECK(pCO3->DeblockingAlphaTcOffset >= -12 && pCO3->DeblockingAlphaTcOffset <= 12, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
             MFX_CHECK(pCO3->DeblockingBetaOffset >= -12 && pCO3->DeblockingBetaOffset <= 12, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#if defined(MFX_ONEVPL)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            if (pCO3->AdaptiveCQM != MFX_CODINGOPTION_UNKNOWN)
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+#endif
+#endif
         }
     }
 #endif
