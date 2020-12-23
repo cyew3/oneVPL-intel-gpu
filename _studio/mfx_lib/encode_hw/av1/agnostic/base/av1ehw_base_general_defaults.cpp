@@ -457,7 +457,7 @@ public:
 
         // (2) Try to deduce bit depth and chroma sampling from profile and platform.
         //     For Base only Main profile is supported (8 and 10 bits, 4:2:0 sampling).
-        mfxU16 BitDepth = 0;                           // can't derive BitDepth from profile
+        mfxU16 BitDepth = BITDEPTH_8;                           // can't derive BitDepth from profile
         mfxU16 ChromaFormat = MFX_CHROMAFORMAT_YUV420; // Main profile supports only 4:2:0 sampling
 
         // (3) Prepare mfxVideoParam for getting target bit depth and chroma sampling.
