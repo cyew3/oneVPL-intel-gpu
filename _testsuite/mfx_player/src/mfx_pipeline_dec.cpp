@@ -134,6 +134,10 @@ using namespace std;
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     : m_YUV_Width(0)
     , m_YUV_Height(0)
+    , m_YUV_CropX(0)
+    , m_YUV_CropY(0)
+    , m_YUV_CropW(0)
+    , m_YUV_CropH(0)
 #if defined(_WIN64) || defined(_WIN32)
     , m_reg(new tsRegistryEditor)
 #endif
