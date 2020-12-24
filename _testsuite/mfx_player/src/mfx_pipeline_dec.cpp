@@ -399,24 +399,18 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         }
     }
 
-    mfxVideoParam paramsSource = m_components[eDEC].m_params;
-    MFX_CHECK_STS_CUSTOM_HANDLER(m_pYUVSource->Query(&paramsSource, &m_components[eDEC].m_params), {
-         PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(paramsSource, m_components[eDEC].m_params).Serialize().c_str()));
+    MFXStructuresPair<mfxVideoParam> ParamsSource(m_components[eDEC].m_params);
+    MFX_CHECK_STS_CUSTOM_HANDLER(m_pYUVSource->Query(&m_components[eDEC].m_params, &m_components[eDEC].m_params), {
+        ParamsSource.SetNewParams(m_components[eDEC].m_params);
+        PipelineTrace((VM_STRING("%s"), ParamsSource.Serialize().c_str()));
     });
 
     if (NULL != m_pRender)
     {
-        mfxVideoParam params = m_components[eREN].m_params;
-        MFXExtBufferVector ExtBuffers(m_components[eREN].m_params);
-
-        if (!ExtBuffers.empty())
-        {
-            params.ExtParam = ExtBuffers.data();
-            params.NumExtParam = (mfxU16)ExtBuffers.size();
-        }
-
-        MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&params, &m_components[eREN].m_params), {
-            PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
+        MFXStructuresPair<mfxVideoParam> ParamsRender(m_components[eREN].m_params);
+        MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&m_components[eREN].m_params, &m_components[eREN].m_params), {
+            ParamsRender.SetNewParams(m_components[eREN].m_params);
+            PipelineTrace((VM_STRING("%s"), ParamsRender.Serialize().c_str()));
         });
     }
 
