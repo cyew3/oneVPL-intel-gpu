@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -70,12 +70,12 @@ namespace avce_adaptivemaxframesize
             { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },
         } },
 
-        // invalid tri-state
+        // invalid CO3.AdaptiveMaxFrameSize
         {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY | INIT ,{
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeI, NORMAL_FRAME_SIZE },
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeP, NORMAL_FRAME_SIZE + 1 },
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, 0x1 },
-            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, 0 },
+            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_UNKNOWN },
             { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },
         } },
 
@@ -84,21 +84,21 @@ namespace avce_adaptivemaxframesize
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeI, NORMAL_FRAME_SIZE },
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeP, 0 },
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_ON },
-            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, 0 },
+            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_UNKNOWN },
             { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },
         } },
 
-        // zero LowPower ON
+        // CO3.AdaptiveMaxFrameSize=ON LowPower=ON
         {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY | INIT ,{
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeI, NORMAL_FRAME_SIZE },
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeP, NORMAL_FRAME_SIZE + 1 },
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_ON },
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
-            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, 0 },
-            { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },
+            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_UNKNOWN },
+            { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },	// MFX_CODINGOPTION_ON for ICL+
         } },
 
-        // Can be ON
+        // CO3.AdaptiveMaxFrameSize=ON
         {/*04*/ MFX_ERR_NONE, QUERY | INIT ,{
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeI, NORMAL_FRAME_SIZE },
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeP, NORMAL_FRAME_SIZE + 1 },
@@ -106,7 +106,18 @@ namespace avce_adaptivemaxframesize
             { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_ON },
             { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_ON },
         } },
+
+        // CO3.AdaptiveMaxFrameSize=UNKNOWN LowPower=ON
+        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY | INIT ,{
+            { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeI, NORMAL_FRAME_SIZE },
+            { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeP, NORMAL_FRAME_SIZE + 1 },
+            { EXT_COD3, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_UNKNOWN },
+            { MFXPAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_UNKNOWN },
+            { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },	// MFX_CODINGOPTION_ON for ICL+
+        } },
     };
+
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
     int TestSuite::RunTest(unsigned int id)
@@ -166,6 +177,13 @@ namespace avce_adaptivemaxframesize
         if (tc.type & INIT)
         {
             SETPARS(&extOpt3_expectation, EXT_COD3_EXPECTED_INIT);
+            extOpt3 = m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION3);
+            if ((((mfxExtCodingOption3*)extOpt3)->AdaptiveMaxFrameSize != MFX_CODINGOPTION_OFF) &&
+                (m_par.mfx.LowPower == MFX_CODINGOPTION_ON) &&
+                (g_tsHWtype >= MFX_HW_ICL))
+                // For VDENC ICL+ CO3.AdaptiveMaxFrameSize should be ON by default for TCBRC functionality
+                extOpt3_expectation.AdaptiveMaxFrameSize = MFX_CODINGOPTION_ON;
+
             Init();
 
             GetVideoParam(m_session, &out_par);
