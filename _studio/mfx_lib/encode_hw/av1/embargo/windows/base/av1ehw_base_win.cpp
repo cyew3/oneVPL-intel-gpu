@@ -70,13 +70,6 @@ Windows::Base::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
     m_features.emplace_back(new DirtyRect(FEATURE_DIRTY_RECT));
 
     InternalInitFeatures(status, mode);
-
-    if (mode & QUERY1)
-    {
-        auto& queue = BQ<BQ_Query1WithCaps>::Get(*this);
-
-        queue.splice(queue.begin(), queue, Get(queue, { FEATURE_DDI, IDDI::BLK_QueryCORE }));
-    }
 }
 
 mfxStatus Windows::Base::MFXVideoENCODEAV1_HW::Init(mfxVideoParam *par)

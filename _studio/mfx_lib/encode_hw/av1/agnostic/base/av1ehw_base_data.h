@@ -78,8 +78,6 @@ namespace Base
     const uint32_t MAX_AV1_NUM_TILE_ROWS = 1024;
     const uint32_t MAX_AV1_NUM_TILE_COLS = 1024;
 
-    const uint16_t DEFAULT_TARGET_USAGE  = MFX_TARGETUSAGE_BALANCED;
-
     constexpr mfxU8 IDX_INVALID = 0xff;
 
     inline bool IsCModelMode(const mfxVideoParam& par)

@@ -36,15 +36,13 @@ class IDDI
 public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(SetCallChains) \
-    DECL_BLOCK(QueryCORE)     \
     DECL_BLOCK(QueryCaps)     \
-    DECL_BLOCK(QueryDDI)      \
     DECL_BLOCK(CreateDevice)  \
     DECL_BLOCK(CreateService) \
     DECL_BLOCK(Register)      \
-    DECL_BLOCK(Reset)         \
+    DECL_BLOCK(Reset)      \
     DECL_BLOCK(SubmitTask)    \
-    DECL_BLOCK(QueryTask)     
+    DECL_BLOCK(QueryTask)
 #define DECL_FEATURE_NAME "G12_IDDI"
 #include "av1ehw_decl_blocks.h"
 
