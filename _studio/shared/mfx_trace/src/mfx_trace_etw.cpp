@@ -27,60 +27,6 @@ extern "C"
 #include "mfx_trace_utils.h"
 #include "mfx_trace_etw.h"
 
-#ifndef MFX_VA
-
-mfxTraceU32 MFXTraceETW_Init()
-{
-    return 0;
-}
-
-mfxTraceU32 MFXTraceETW_Close(void)
-{
-    return 0;
-}
-
-mfxTraceU32 MFXTraceETW_SetLevel(mfxTraceChar*, mfxTraceLevel)
-{
-    return 0;
-}
-
-mfxTraceU32 MFXTraceETW_DebugMessage(mfxTraceStaticHandle*,
-    const char *, mfxTraceU32,
-    const char *,
-    mfxTraceChar*, mfxTraceLevel,
-    const char *, const char *, ...)
-{
-    return 0;
-}
-
-mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
-    const char* /*file_name*/, mfxTraceU32,
-    const char* /*function_name*/,
-    mfxTraceChar* /*category*/, mfxTraceLevel,
-    const char*,
-    const char*, va_list)
-{
-    return 0;
-}
-
-mfxTraceU32 MFXTraceETW_BeginTask(mfxTraceStaticHandle *,
-    const char * /*file_name*/, mfxTraceU32,
-    const char *,
-    mfxTraceChar* /*category*/, mfxTraceLevel /*level*/,
-    const char *, const mfxTraceTaskType /*task_type*/,
-    mfxTraceTaskHandle*, const void *)
-{
-    return 0;
-}
-
-mfxTraceU32 MFXTraceETW_EndTask(mfxTraceStaticHandle *,
-    mfxTraceTaskHandle*)
-{
-    return 0;
-}
-
-#else
-
 #include <stdio.h>
 #include <math.h>
 #include <evntprov.h>
@@ -388,7 +334,6 @@ mfxTraceU32 MFXTraceETW_EndTask(mfxTraceStaticHandle * /*static_handle*/,
                         : 1;
 }
 
-#endif
 
 } // extern "C"
 #endif // #ifdef MFX_TRACE_ENABLE_ETW
