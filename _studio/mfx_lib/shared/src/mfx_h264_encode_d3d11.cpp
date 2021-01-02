@@ -718,18 +718,21 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_encodeExecuteParams.NumCompBuffers++;
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
-        mfxU32 extCqmNum = m_headerPacker.GetPackedCqmPpsNum();
-        if (extCqmNum > 0)
+        if (IS_CUST_MATRIX(task.m_adaptiveCQMHint))
         {
-            std::vector<ENCODE_PACKEDHEADER_DATA> const & packedCqmPps = m_headerPacker.GetPps(true);
-            mfxU32 cqmIndex = 0;
-            while (cqmIndex < extCqmNum)
+            mfxU32 extCqmNum = m_headerPacker.GetPackedCqmPpsNum();
+            if (extCqmNum > 0)
             {
-                m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
-                m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-                m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = RemoveConst(&packedCqmPps[cqmIndex]);
-                m_encodeExecuteParams.NumCompBuffers++;
-                cqmIndex++;
+                std::vector<ENCODE_PACKEDHEADER_DATA> const & packedCqmPps = m_headerPacker.GetPps(true);
+                mfxU32 cqmIndex = 0;
+                while (cqmIndex < extCqmNum)
+                {
+                    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+                    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+                    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = RemoveConst(&packedCqmPps[cqmIndex]);
+                    m_encodeExecuteParams.NumCompBuffers++;
+                    cqmIndex++;
+                }
             }
         }
 #endif
