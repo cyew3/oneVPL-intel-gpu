@@ -3,8 +3,10 @@ if (NOT ENABLE_WAYLAND)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES Linux)
-  pkg_check_modules(PKG_LIBDRM    REQUIRED QUIET libdrm>=2.4.91 IMPORTED_TARGET)
-  pkg_check_modules(PKG_LIBVA     REQUIRED QUIET libva>=1.9     IMPORTED_TARGET)
+  pkg_check_modules(PKG_LIBDRM         REQUIRED QUIET libdrm>=2.4.91 IMPORTED_TARGET)
+  pkg_check_modules(PKG_LIBDRM_INTEL   REQUIRED QUIET libdrm_intel   IMPORTED_TARGET)
+  pkg_check_modules(PKG_LIBVA          REQUIRED QUIET libva>=1.9     IMPORTED_TARGET)
+  pkg_check_modules(PKG_WAYLAND_CLIENT REQUIRED QUIET wayland-client IMPORTED_TARGET)
 endif()
 
 add_library(mfx_wayland SHARED)
@@ -24,11 +26,12 @@ target_compile_definitions(mfx_wayland
 target_compile_features(mfx_wayland PUBLIC cxx_std_11)
 target_link_libraries(mfx_wayland
   PUBLIC
+    sample_common
+    $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_WAYLAND_CLIENT>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBVA>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
-    wayland-client
-    sample_common
-    ${CMAKE_THREAD_LIBS_INIT}
+    $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM_INTEL>
+    Threads::Threads
     ${CMAKE_DL_LIBS}
   )
 

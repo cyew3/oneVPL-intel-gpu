@@ -61,11 +61,9 @@ target_sources(sample_plugin_opencl
 
 install( TARGETS sample_plugin_opencl LIBRARY DESTINATION ${MFX_SAMPLES_INSTALL_LIB_DIR} )
 
-if ( DEFINED OPENCL_FOUND )
-    # copy .cl file into build directory
-    execute_process( COMMAND ${CMAKE_COMMAND} -E copy
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ocl_rotate.cl"
-    "${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}/ocl_rotate.cl" )
+# copy .cl file into build directory
+execute_process( COMMAND ${CMAKE_COMMAND} -E copy
+"${CMAKE_CURRENT_SOURCE_DIR}/src/ocl_rotate.cl"
+"${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}/ocl_rotate.cl" )
 
-    install( FILES src/ocl_rotate.cl DESTINATION ${MFX_SAMPLES_INSTALL_LIB_DIR} )
-endif ( )
+install( FILES src/ocl_rotate.cl DESTINATION ${MFX_SAMPLES_INSTALL_LIB_DIR} )
