@@ -162,6 +162,7 @@ VideoDECODEAV1::VideoDECODEAV1(VideoCORE* core, mfxStatus* sts)
     , m_response()
     , m_is_init(false)
     , m_in_framerate(0)
+    , m_is_cscInUse(false)
 {
     if (sts)
     {
