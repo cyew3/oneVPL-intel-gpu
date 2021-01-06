@@ -405,7 +405,7 @@
     #endif
 #endif
 
-#define VP_OPERATION_TIMEOUT 5000
+#define VP_OPERATION_TIMEOUT 120000
 
 
 #endif//#if defined(_WIN32) || defined(_WIN64)
