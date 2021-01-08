@@ -1438,7 +1438,7 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
                      (videoProcessingTargetIn->Out.Height >= MHW_SFC_MIN_HEIGHT &&
                       videoProcessingTargetIn->Out.Height <= MHW_SFC_MAX_HEIGHT) &&
                      // only conversion to RGB4 is supported by driver
-                     (fourCC == MFX_FOURCC_RGB4) &&
+                     (fourCC == MFX_FOURCC_RGB4|| videoProcessingTargetIn->Out.FourCC == MFX_FOURCC_RGB4) &&
                      // resize is not supported by driver
                      (videoProcessingTargetIn->In.CropX == videoProcessingTargetIn->Out.CropX &&
                       videoProcessingTargetIn->In.CropY == videoProcessingTargetIn->Out.CropY &&
