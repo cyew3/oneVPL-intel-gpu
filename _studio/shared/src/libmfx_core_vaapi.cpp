@@ -386,6 +386,25 @@ typedef struct {
     { 0x4907, MFX_HW_DG1, MFX_GT2 },
     { 0x4908, MFX_HW_DG1, MFX_GT2 },
 
+    /* RKL */
+    { 0x4C80, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C8A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C81, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C8B, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C90, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C9A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+
+    /* ADL-S */
+    { 0x4600, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4680, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4681, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4683, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4690, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4691, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4693, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4698, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x4699, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+
 #ifndef STRIP_EMBARGO
     { 0xFF20, MFX_HW_TGL_LP, MFX_GT2 },//iTGLSIM
     { 0x9A09, MFX_HW_TGL_LP, MFX_GT2 },
@@ -412,7 +431,6 @@ typedef struct {
     { 0x020E, MFX_HW_XE_HP, MFX_GT4 },
     { 0x020F, MFX_HW_XE_HP, MFX_GT4 },
     { 0x0210, MFX_HW_XE_HP, MFX_GT4 },
-
 
     /* DG2 */
     { 0x4F80, MFX_HW_DG2, MFX_GT4 }, // DG2-512 / IDG2_8x4x16_SKU_DEVICE_F0_ID
@@ -447,25 +465,6 @@ typedef struct {
     { 0x56B1, MFX_HW_DG2, MFX_GT4 }, // DG2-96  / IDG2_2x3x16_SKU_DEVICE_F0_ID
     { 0x56C0, MFX_HW_DG2, MFX_GT4 }, // DG2-512 / IDG2_8x4x16_SKU_DEVICE_F0_ID
 
-    /* RKL */
-    { 0x4C80, MFX_HW_RKL, MFX_GT1 }, // RKL-S
-    { 0x4C8A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
-    { 0x4C81, MFX_HW_RKL, MFX_GT1 }, // RKL-S
-    { 0x4C8B, MFX_HW_RKL, MFX_GT1 }, // RKL-S
-    { 0x4C90, MFX_HW_RKL, MFX_GT1 }, // RKL-S
-    { 0x4C9A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
-
-    /* ADL-S */
-    { 0x4600, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4680, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4681, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4683, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4690, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4691, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4693, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4698, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-    { 0x4699, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
-
     /* ADL-P */
     { 0x46A0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
     { 0x46C0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
@@ -474,7 +473,6 @@ typedef struct {
     /* PVC */
     { 0x0BD0, MFX_HW_PVC, MFX_GT4 }
 #endif
-
 };
 
 #define TMP_DEBUG

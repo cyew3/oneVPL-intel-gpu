@@ -2725,6 +2725,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
     case MFX_HW_TGL_LP:
     case MFX_HW_DG1:
     case MFX_HW_RKL:
+    case MFX_HW_ADL_S:
         cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx,sizeof(tgllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
 #endif
@@ -2739,7 +2740,6 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
 #endif
 #endif
 #ifndef STRIP_EMBARGO
-    case MFX_HW_ADL_S:
     case MFX_HW_ADL_P:
         cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx, sizeof(tgllp_copy_kernel_genx), m_pCmProgram, "nojitter");
         break;
