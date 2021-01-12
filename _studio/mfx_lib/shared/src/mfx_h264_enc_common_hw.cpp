@@ -952,24 +952,30 @@ namespace
     }
 #if defined(MFX_ENABLE_MFE)
     mfxU16 GetDefaultNumMfeFrames(mfxU32 targetUsage, const mfxFrameInfo& info,
-        eMFXHWType platform, mfxFeiFunction func, int slices, bool extSurfUsed,
+        eMFXHWType platform, mfxU32 feiFunc, int slices, bool extSurfUsed,
         eMFXGTConfig config)
     {
         std::ignore = targetUsage;//no specific check for TU now, can be added later
         if (!config) config = MFX_GT4;//WA while windows doesn't support GTT config report
+        bool IsFeiEncode =
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+            feiFunc == MFX_FEI_FUNCTION_ENCODE;
+#else
+            false;
+#endif
         if (platform == MFX_HW_SCL && config >= MFX_GT3)
         {
             if ((info.CropH > 1088 && info.CropW > 1920) || slices > 1)
             {
                 return 1;
             }
-            else if ( extSurfUsed || func == MFX_FEI_FUNCTION_ENCODE)
+            else if ( extSurfUsed || IsFeiEncode)
             {
                 return 2;
             }
             //other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
             //extSurfUsed - mean we are using  running into kernel limitation for max number of surfaces used in kernel
-            else if (func)
+            else if (feiFunc)
             {
                 return 1;
             }
@@ -984,13 +990,13 @@ namespace
             {
                 return 1;
             }
-            else if (extSurfUsed || func == MFX_FEI_FUNCTION_ENCODE)
+            else if (extSurfUsed || IsFeiEncode)
             {
                 return 2;
             }
             //other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
             //extSurfUsed - mean we are using running into kernel limitation for max number of surfaces used in kernel
-            else if (func)
+            else if (feiFunc)
             {
                 return 1;
             }
@@ -5310,7 +5316,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 #endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-
 #ifdef MFX_ENABLE_MFE
     //ToDo: move to separate function
     mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
@@ -5319,14 +5324,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         mfeParam.MFMode = MFX_MF_DEFAULT;
         changed = true;
     }
-    /*explicitly force defualt number of frames, higher number will cause performance degradation
+    /*explicitly force default number of frames, higher number will cause performance degradation
     multi-slice can be supported only through slice map control for MFE
     Adding any of Mad/MBQP/NonSkipMap/ForceIntraMap causing additional surfaces for kernel, leading to surface state cache size overhead*/
-
-    mfxU16 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
+    mfxU16 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform,
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+        feiParam->Func,
+#else
+        0,
+#endif
         par.mfx.NumSlice,
         (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) ||  (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
         (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON), config);
+
     if (mfeParam.MaxNumFrames > numFrames)
     {
         mfeParam.MaxNumFrames = numFrames;
@@ -6143,7 +6153,12 @@ void MfxHwH264Encode::SetDefaults(
             mfeParam->MFMode = MFX_MF_AUTO;
         if (mfeParam->MFMode >= MFX_MF_AUTO && !mfeParam->MaxNumFrames)
         {
-            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform, feiParam->Func,
+            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform,
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+                feiParam->Func,
+#else
+                0,
+#endif
                 par.mfx.NumSlice,
                 (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
                 (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON), config);

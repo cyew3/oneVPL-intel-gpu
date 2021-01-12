@@ -66,6 +66,10 @@
 #if (MFX_VERSION >= 1025)
 #include "ts_typedef.h"
 
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
+
 #include <memory>
 
 namespace mfx_reflect

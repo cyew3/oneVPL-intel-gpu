@@ -122,7 +122,38 @@ mfxStatus MFX_CDECL MFXVideoPAK_Close(mfxSession session);
 mfxStatus MFX_CDECL MFXVideoPAK_ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out,  mfxSyncPoint *syncp);
 
 mfxStatus MFX_CDECL MFXVideoPAK_GetVideoParam(mfxSession session, mfxVideoParam *par);
- 
+
+/* Multi-Frame Mode */
+enum {
+    MFX_MF_DEFAULT = 0,
+    MFX_MF_DISABLED = 1,
+    MFX_MF_AUTO = 2,
+    MFX_MF_MANUAL = 3
+};
+
+/* Multi-Frame Initialization parameters */
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16      MFMode;
+    mfxU16      MaxNumFrames;
+
+    mfxU16      reserved[58];
+} mfxExtMultiFrameParam;
+MFX_PACK_END()
+
+/* Multi-Frame Run-time controls */
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32      Timeout;      /* timeout in millisecond */
+    mfxU16      Flush;        /* Flush internal frame buffer, e.g. submit all collected frames. */
+
+    mfxU16      reserved[57];
+} mfxExtMultiFrameControl;
+MFX_PACK_END()
 
 #ifdef __cplusplus
 }

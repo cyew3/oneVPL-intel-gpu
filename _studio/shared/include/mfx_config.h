@@ -439,9 +439,6 @@
         #define MFX_ENABLE_H264_VIDEO_FEI_ENC
         #define MFX_ENABLE_H264_VIDEO_FEI_PAK
     #endif
-    #if defined(MFX_ENABLE_MFE)
-        #define MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-    #endif
     #ifndef OPEN_SOURCE
         #define MFX_ENABLE_AVCE_DIRTY_RECTANGLE
         #define MFX_ENABLE_AVCE_MOVE_RECTANGLE
