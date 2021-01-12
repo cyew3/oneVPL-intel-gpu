@@ -112,6 +112,7 @@ set( sources
     hevc/agnostic/base/hevcehw_base_max_frame_size.h
     hevc/agnostic/base/hevcehw_base_packer.h
     hevc/agnostic/base/hevcehw_base_parser.h
+    hevc/agnostic/base/hevcehw_base_query_impl_desc.h
     hevc/agnostic/base/hevcehw_base_roi.h
     hevc/agnostic/base/hevcehw_base_task.h
     hevc/agnostic/base/hevcehw_base_weighted_prediction.h
@@ -154,6 +155,7 @@ set( sources
     hevc/agnostic/base/hevcehw_base_packer.cpp
     hevc/agnostic/base/hevcehw_base_parser.cpp
     hevc/agnostic/base/hevcehw_base_recon_info.cpp
+    hevc/agnostic/base/hevcehw_base_query_impl_desc.cpp
     hevc/agnostic/base/hevcehw_base_roi.cpp
     hevc/agnostic/base/hevcehw_base_task.cpp
     hevc/agnostic/base/hevcehw_base_weighted_prediction.cpp

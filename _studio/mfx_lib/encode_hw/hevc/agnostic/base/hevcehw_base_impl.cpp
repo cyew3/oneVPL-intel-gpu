@@ -114,6 +114,18 @@ mfxStatus MFXVideoENCODEH265_HW::InternalQuery(
     return GetWorstSts(wrn, sts);
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus MFXVideoENCODEH265_HW::QueryImplsDescription(
+    VideoCORE& core
+    , mfxEncoderDescription::encoder& caps
+    , mfx::PODArraysHolder& ah)
+{
+    auto& queue = BQ<BQ_QueryImplsDescription>::Get(*this);
+    MFX_CHECK(!queue.empty(), MFX_ERR_UNSUPPORTED);
+    return RunBlocks(Check<mfxStatus, MFX_ERR_NONE>, queue, core, caps, ah, m_storage);
+}
+#endif //defined(MFX_ONEVPL)
+
 mfxStatus MFXVideoENCODEH265_HW::InternalQueryIOSurf(
     VideoCORE& core
     , mfxVideoParam& par

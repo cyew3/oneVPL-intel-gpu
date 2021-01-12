@@ -141,6 +141,16 @@ public:
     {
         return this;
     }
+
+#if defined(MFX_ONEVPL)
+    virtual mfxStatus QueryImplsDescription(
+        VideoCORE&
+        , mfxEncoderDescription::encoder&
+        , mfx::PODArraysHolder&)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+#endif //defined(MFX_ONEVPL)
 };
 
 }; //namespace HEVCEHW

@@ -46,6 +46,12 @@ public:
     {
         return MPEG2EncoderHW::ControllerBase::QueryIOSurf(core,par,request);
     }
+#if defined(MFX_ONEVPL)
+    static mfxStatus QueryImplsDescription(VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
+    {
+        return MPEG2EncoderHW::ControllerBase::QueryImplsDescription(core, caps, ah);
+    }
+#endif //defined(MFX_ONEVPL)
     MFXVideoENCODEMPEG2_HW(VideoCORE *core, mfxStatus *sts)
     {
         m_pCore = core;

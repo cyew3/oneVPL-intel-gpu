@@ -103,6 +103,24 @@ mfxStatus Query(
     return impl->InternalQuery(*core, in, *out);
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus QueryImplsDescription(
+    VideoCORE& core
+    , mfxEncoderDescription::encoder& caps
+    , mfx::PODArraysHolder& ah)
+{
+    auto hw = core.GetHWType();
+
+    mfxStatus sts = MFX_ERR_NONE;
+    std::unique_ptr<ImplBase> impl(CreateSpecific(core, sts, eFeatureMode::QUERY_IMPLS_DESCRIPTION));
+
+    MFX_CHECK_STS(sts);
+    MFX_CHECK(impl, MFX_ERR_UNKNOWN);
+
+    return impl->QueryImplsDescription(core, caps, ah);
+}
+#endif //defined(MFX_ONEVPL)
+
 } //namespace AV1EHW
 
 #endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,9 @@ class MFXVideoENCODEMJPEG_HW : public VideoENCODE {
 public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
+#if defined(MFX_ONEVPL)
+    static mfxStatus QueryImplsDescription(VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah);
+#endif //defined(MFX_ONEVPL)
 
     MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts);
     virtual ~MFXVideoENCODEMJPEG_HW() {Close();}

@@ -50,6 +50,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <algorithm>
 
 #ifndef MFX_DEBUG_TRACE
 #define MFX_STS_TRACE(sts) sts
@@ -548,6 +549,30 @@ namespace options //MSDK API options verification utilities
         }
     }
 }
+
+class PODArraysHolder
+{
+public:
+    template<typename T>
+    T& PushBack(T*& p)
+    {
+        auto IsSameData = [p](std::vector<uint8_t>& v) { return (uint8_t*)p == v.data(); };
+        auto it = std::find_if(std::begin(m_attachedData), std::end(m_attachedData), IsSameData);
+
+        if (it == m_attachedData.end())
+        {
+            m_attachedData.emplace_back(std::vector<uint8_t>(sizeof(T), 0));
+            return *(p = (T*)m_attachedData.back().data());
+        }
+
+        auto itNew = it->insert(it->end(), sizeof(T), 0);
+        p = (T*)it->data();
+
+        return *(T*)&*itNew;
+    }
+protected:
+    std::list<std::vector<uint8_t>> m_attachedData;
+};
 }
 
 #if defined(MFX_VA_LINUX)

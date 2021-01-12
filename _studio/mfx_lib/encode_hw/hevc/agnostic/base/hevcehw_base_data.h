@@ -1355,6 +1355,7 @@ namespace Base
         , FEATURE_LPLA_ENCODE
         , FEATURE_RECON_INFO
         , FEATURE_LPLA_STATUS
+        , FEATURE_QUERY_IMPL_DESC
         , NUM_FEATURES
     };
 

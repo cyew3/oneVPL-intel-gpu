@@ -64,6 +64,9 @@
 #include "hevcehw_base_lpla_analysis.h"
 #include "hevcehw_base_lpla_enc.h"
 #endif
+#if defined (MFX_ONEVPL)
+#include "hevcehw_base_query_impl_desc.h"
+#endif
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
@@ -138,6 +141,9 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #endif
 #if defined (MFX_ENABLE_LP_LOOKAHEAD)
     m_features.emplace_back(new LpLookAheadEnc(FEATURE_LPLA_ENCODE));
+#endif
+#if defined (MFX_ONEVPL)
+    m_features.emplace_back(new QueryImplDesc(FEATURE_QUERY_IMPL_DESC));
 #endif
 
     InternalInitFeatures(status, mode);

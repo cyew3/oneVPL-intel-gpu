@@ -47,6 +47,98 @@ void SetDefaultForLowpower(mfxU16 & lowpower, eMFXHWType platform)
     }
 }
 
+#if defined(MFX_ONEVPL)
+bool CheckFourcc(mfxU32 fourcc, ENCODE_CAPS_VP9 const& caps);
+
+mfxStatus MFXVideoENCODEVP9_HW::QueryImplsDescription(
+    VideoCORE& core
+    , mfxEncoderDescription::encoder& caps
+    , mfx::PODArraysHolder& ah)
+{
+    mfxVideoParam par = {};
+    eMFXHWType platform = core.GetHWType();
+    VP9MfxVideoParam tmp(par, platform);
+    SetDefaultForLowpower(tmp.mfx.LowPower, platform);
+
+    const mfxU32 Profiles[] =
+    {
+        MFX_PROFILE_VP9_0
+        , MFX_PROFILE_VP9_1
+        , MFX_PROFILE_VP9_2
+        , MFX_PROFILE_VP9_3
+    };
+    const mfxU32 FourCC[] =
+    {
+        MFX_FOURCC_NV12
+        , MFX_FOURCC_YV12
+        , MFX_FOURCC_NV16
+        , MFX_FOURCC_YUY2
+        , MFX_FOURCC_RGB565
+        , MFX_FOURCC_RGBP
+        , MFX_FOURCC_RGB4
+        , MFX_FOURCC_P010
+        , MFX_FOURCC_P016
+        , MFX_FOURCC_P210
+        , MFX_FOURCC_BGR4
+        , MFX_FOURCC_A2RGB10
+        , MFX_FOURCC_ARGB16
+        , MFX_FOURCC_ABGR16
+        , MFX_FOURCC_AYUV
+        , MFX_FOURCC_AYUV_RGB4
+        , MFX_FOURCC_UYVY
+        , MFX_FOURCC_Y210
+        , MFX_FOURCC_Y410
+        , MFX_FOURCC_Y216
+        , MFX_FOURCC_Y416
+        , MFX_FOURCC_NV21
+        , MFX_FOURCC_IYUV
+        , MFX_FOURCC_I010
+    };
+
+    caps.CodecID                 = MFX_CODEC_VP9;
+    caps.BiDirectionalPrediction = 0;
+    caps.MaxcodecLevel           = 0;
+
+    for (mfxU32 profile : Profiles)
+    {
+        ENCODE_CAPS_VP9 hwCaps = {};
+        tmp.mfx.CodecProfile = profile;
+        if (MFX_ERR_NONE != QueryCaps(&core, hwCaps, GetGuid(tmp), tmp))
+            continue;
+
+        auto& profileCaps = ah.PushBack(caps.Profiles);
+
+        profileCaps.Profile = profile;
+
+        auto& memCaps = ah.PushBack(profileCaps.MemDesc);
+
+        memCaps.MemHandleType = MFX_RESOURCE_SYSTEM_SURFACE;
+        memCaps.Width         = { 16, hwCaps.MaxPicWidth, 16 };
+        memCaps.Height        = { 16, hwCaps.MaxPicHeight, 16 };
+
+        for (mfxU32 fcc : FourCC)
+        {
+            if (CheckFourcc(fcc, hwCaps))
+            {
+                ah.PushBack(memCaps.ColorFormats) = fcc;
+                ++memCaps.NumColorFormats;
+            }
+        }
+
+        ah.PushBack(profileCaps.MemDesc);
+        profileCaps.MemDesc[1] = profileCaps.MemDesc[0];
+        profileCaps.MemDesc[1].MemHandleType = core.GetVAType() == MFX_HW_VAAPI ? MFX_RESOURCE_VA_SURFACE : MFX_RESOURCE_DX11_TEXTURE;
+        profileCaps.NumMemTypes = 2;
+
+        ++caps.NumProfiles;
+    }
+
+    MFX_CHECK(caps.NumProfiles, MFX_ERR_UNSUPPORTED);
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 mfxStatus MFXVideoENCODEVP9_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXVideoENCODEVP9_HW::Query");

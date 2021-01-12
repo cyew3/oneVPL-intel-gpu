@@ -227,6 +227,83 @@ mfxStatus MFXHWVideoENCODEH264::Init(mfxVideoParam * par)
     return sts;
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus MFXHWVideoENCODEH264::QueryImplsDescription(
+    VideoCORE& core
+    , mfxEncoderDescription::encoder& caps
+    , mfx::PODArraysHolder& ah)
+{
+    MFX_ENCODE_CAPS hwCaps = {};
+    MfxVideoParam tmp = mfxVideoParam();
+    auto platform = core.GetHWType();
+
+    std::ignore = SetLowPowerDefault(tmp, platform);
+    MFX_SAFE_CALL(QueryHwCaps(&core, hwCaps, &tmp));
+
+    const mfxU32 SupportedProfiles[] =
+    {
+        MFX_PROFILE_AVC_BASELINE
+        , MFX_PROFILE_AVC_CONSTRAINED_BASELINE
+        , MFX_PROFILE_AVC_MAIN
+        , MFX_PROFILE_AVC_HIGH
+        , MFX_PROFILE_AVC_CONSTRAINED_HIGH
+        , MFX_PROFILE_AVC_PROGRESSIVE_HIGH
+        , MFX_PROFILE_AVC_STEREO_HIGH
+    };
+    const mfxResourceType SupportedMemTypes[] =
+    {
+        MFX_RESOURCE_SYSTEM_SURFACE
+#if defined(MFX_VA_LINUX)
+        , MFX_RESOURCE_VA_SURFACE
+#else
+        , MFX_RESOURCE_DX11_TEXTURE
+#endif
+    };
+    const mfxU32 SupportedFourCC[] =
+    {
+        MFX_FOURCC_NV12
+        , MFX_FOURCC_RGB4
+        , MFX_FOURCC_BGR4
+        , MFX_FOURCC_YUY2
+        , MFX_FOURCC_AYUV
+    };
+
+    caps.CodecID                 = MFX_CODEC_AVC;
+    caps.MaxcodecLevel           = MFX_LEVEL_AVC_52;
+    caps.BiDirectionalPrediction =
+        !IsOn(tmp.mfx.LowPower)
+#if !defined(STRIP_EMBARGO) && defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
+        ||  (platform >= MFX_HW_XE_HP)
+#endif
+        ;
+
+    for (mfxU32 profile : SupportedProfiles)
+    {
+        auto& pfCaps = ah.PushBack(caps.Profiles);
+
+        pfCaps.Profile = profile;
+
+        for (auto memType : SupportedMemTypes)
+        {
+            auto& memCaps = ah.PushBack(pfCaps.MemDesc);
+            memCaps.MemHandleType = memType;
+            memCaps.Width  = {16, hwCaps.ddi_caps.MaxPicWidth,  16};
+            memCaps.Height = {16, hwCaps.ddi_caps.MaxPicHeight, 16};
+
+            for (auto fcc : SupportedFourCC)
+            {
+                ah.PushBack(memCaps.ColorFormats) = fcc;
+                ++memCaps.NumColorFormats;
+            }
+            ++pfCaps.NumMemTypes;
+        }
+        ++caps.NumProfiles;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 mfxStatus MFXHWVideoENCODEH264::Query(
     VideoCORE *     core,
     mfxVideoParam * in,

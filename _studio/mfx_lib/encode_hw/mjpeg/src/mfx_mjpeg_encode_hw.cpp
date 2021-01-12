@@ -198,6 +198,47 @@ MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
     *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
 }
 
+
+#if defined(MFX_ONEVPL)
+mfxStatus MFXVideoENCODEMJPEG_HW::QueryImplsDescription(
+    VideoCORE& core
+    , mfxEncoderDescription::encoder& caps
+    , mfx::PODArraysHolder& ah)
+{
+    JpegEncCaps hwCaps = {};
+    MFX_SAFE_CALL(QueryHwCaps(&core, hwCaps));
+
+    caps.CodecID                    = MFX_CODEC_JPEG;
+    caps.MaxcodecLevel              = 0;
+    caps.BiDirectionalPrediction    = 0;
+
+    auto& profileCaps = ah.PushBack(caps.Profiles);
+
+    profileCaps.Profile = MFX_PROFILE_JPEG_BASELINE;
+
+    auto& memCaps = ah.PushBack(profileCaps.MemDesc);
+
+    memCaps.MemHandleType = MFX_RESOURCE_SYSTEM_SURFACE;
+    memCaps.Width  = { 1, hwCaps.MaxPicWidth, 1 };
+    memCaps.Height = { 1, hwCaps.MaxPicHeight, 1 };
+
+    ah.PushBack(memCaps.ColorFormats) = MFX_FOURCC_NV12;
+    ah.PushBack(memCaps.ColorFormats) = MFX_FOURCC_YV12;
+    ah.PushBack(memCaps.ColorFormats) = MFX_FOURCC_YUY2;
+    ah.PushBack(memCaps.ColorFormats) = MFX_FOURCC_RGB4;
+    memCaps.NumColorFormats = 4;
+
+    ah.PushBack(profileCaps.MemDesc);
+    profileCaps.MemDesc[1] = profileCaps.MemDesc[0];
+    profileCaps.MemDesc[1].MemHandleType = core.GetVAType() == MFX_HW_VAAPI ? MFX_RESOURCE_VA_SURFACE : MFX_RESOURCE_DX11_TEXTURE;
+
+    profileCaps.NumMemTypes = 2;
+    caps.NumProfiles = 1;
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxU32 isCorrected = 0;

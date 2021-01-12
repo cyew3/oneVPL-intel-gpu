@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,10 @@ D3DXCommonEncoder::~D3DXCommonEncoder()
 mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
 {
     MFX_CHECK_NULL_PTR1(pCore);
+#if defined(MFX_ONEVPL)
+    if (!pCore->GetSession())
+        return MFX_ERR_NONE; //init with incomplete core, just to query caps
+#endif
 
     auto pScheduler = (MFXIScheduler2 *)pCore->GetSession()->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
     if (pScheduler == NULL)

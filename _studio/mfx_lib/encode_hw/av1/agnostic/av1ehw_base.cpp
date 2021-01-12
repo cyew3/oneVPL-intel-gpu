@@ -98,9 +98,13 @@ void FeatureBase::Init(
 
     mode &= ~prevMode;
 
-    bool   bNeedQ0  = !!(mode & QUERY0);
-    bool   bNeedQ1  = (mode & (QUERY1 | QUERY_IO_SURF | INIT)) && !(prevMode & (QUERY1 | QUERY_IO_SURF | INIT));
+    mfxU32 modesQ1  = (QUERY1 | QUERY_IO_SURF | INIT | QUERY_IMPLS_DESCRIPTION);
+    bool   bNeedQ0  = !!(mode & (QUERY0 | QUERY_IMPLS_DESCRIPTION));
+    bool   bNeedQ1  = (mode & modesQ1) && !(prevMode & modesQ1);
     bool   bNeedQIS = !!(mode & QUERY_IO_SURF);
+#if defined(MFX_ONEVPL)
+    bool   bNeedQID = !!(mode & QUERY_IMPLS_DESCRIPTION);
+#endif
     bool   bNeedIX  = !!(mode & INIT);
     bool   bNeedSD  = bNeedQIS || bNeedIX;
     bool   bNeedRT  = !!(mode & RUNTIME);
@@ -110,6 +114,9 @@ void FeatureBase::Init(
     nQ += bNeedQ1  && InitQueue<Q1NC>(&FeatureBase::Query1NoCaps, blocks);
     nQ += bNeedQ1  && InitQueue<Q1WC>(&FeatureBase::Query1WithCaps, blocks);
     nQ += bNeedQIS && InitQueue<QIS>(&FeatureBase::QueryIOSurf, blocks);
+#if defined(MFX_ONEVPL)
+    nQ += bNeedQID && InitQueue<QID>(&FeatureBase::QueryImplsDescription, blocks);
+#endif
     nQ += bNeedSD  && InitQueue<SD>(&FeatureBase::SetDefaults, blocks);
 
     if (bNeedIX)

@@ -32,9 +32,16 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <tchar.h>
+#include "mfx_dxva2_device.h"
+#else
+#include <unistd.h>
+#include <fcntl.h>
+#include "va/va_drm.h"
 #endif
 
 #include "mediasdk_version.h"
+#include "libmfx_core_factory.h"
+#include "mfx_interface_scheduler.h"
 
 
 // static section of the file
@@ -286,14 +293,226 @@ mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam, mfxSession*)
     return MFX_ERR_NOT_IMPLEMENTED;
 }
 
-mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat, mfxU32* /*num_impls*/)
+namespace mfx
 {
-    return NULL;
+    class ImplDescriptionHolder;
+
+    class ImplDescription
+        : public mfxImplDescription
+        , public PODArraysHolder
+    {
+    public:
+        ImplDescription(ImplDescriptionHolder* h)
+            : mfxImplDescription()
+            , m_pHolder(h)
+        {
+        }
+        ~ImplDescription();
+    protected:
+        ImplDescriptionHolder* m_pHolder;
+    };
+
+    class ImplDescriptionHolder
+    {
+    public:
+        friend class ImplDescription;
+
+        ImplDescription& PushBack()
+        {
+            m_impls.emplace_back(new ImplDescription(this));
+            m_implsArray.push_back(m_impls.back().get());
+            return *m_impls.back();
+        }
+
+        mfxHDL* GetArray() { return m_implsArray.data(); }
+
+        size_t  GetSize() { return m_implsArray.size(); }
+
+        void Detach()
+        {
+            m_ref = m_impls.size();
+            for (auto& up : m_impls)
+                up.release();
+            m_impls.clear();
+        }
+
+    protected:
+        std::vector<mfxHDL> m_implsArray;
+        std::list<std::unique_ptr<ImplDescription>> m_impls;
+        size_t m_ref = 0;
+
+        void Release()
+        {
+            if (m_impls.empty() && m_ref-- <= 1)
+                delete this;
+        }
+    };
+
+    ImplDescription::~ImplDescription()
+    {
+        if (m_pHolder)
+            m_pHolder->Release();
+    }
+};
+
+mfxStatus QueryImplsDescription(VideoCORE&, mfxEncoderDescription&, mfx::PODArraysHolder&);
+
+mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfxU32* num_impls)
+{
+    auto IsVplHW = [](eMFXHWType hw) -> bool
+    {
+        return
+               hw == MFX_HW_XE_HP
+            || hw == MFX_HW_DG2
+            ;
+    };
+
+    if (!num_impls || format != MFX_IMPLCAPS_IMPLDESCSTRUCTURE)
+        return nullptr;
+
+    try
+    {
+        std::unique_ptr<mfx::ImplDescriptionHolder> holder(new mfx::ImplDescriptionHolder);
+
+        auto QueryImplDesc = [&](VideoCORE& core, mfxU32 deviceId) -> bool
+        {
+            if (!IsVplHW(core.GetHWType()))
+                return true;
+
+            auto& impl = holder->PushBack();
+
+            impl.Impl             = MFX_IMPL_TYPE_HARDWARE;
+            impl.ApiVersion       = { MFX_VERSION_MINOR, MFX_VERSION_MAJOR };
+            impl.VendorID         = 0x8086;
+            impl.VendorImplID     = 0;
+            impl.AccelerationMode = core.GetVAType() == MFX_HW_VAAPI ? MFX_ACCEL_MODE_VIA_VAAPI :  MFX_ACCEL_MODE_VIA_D3D11;
+
+            snprintf(impl.Dev.DeviceID, sizeof(impl.Dev.DeviceID), "%x", deviceId);
+
+            //TODO:
+            impl.ImplName;
+            impl.License;
+            impl.Keywords;
+
+            return (MFX_ERR_NONE == QueryImplsDescription(core, impl.Enc, impl));
+        };
+
+#if defined(MFX_VA_WIN)
+        for (mfxU32 adapter = 0;; ++adapter)
+        {
+            mfxU32 deviceId = 0;
+
+            {
+                MFX::DXVA2Device dxvaDevice;
+
+                if (!dxvaDevice.InitDXGI1(adapter))
+                    break;
+
+                if (0x8086 != dxvaDevice.GetVendorID())
+                    continue;
+
+                deviceId = dxvaDevice.GetDeviceID();
+            }
+
+            std::unique_ptr<VideoCORE> pCore(FactoryCORE::CreateCORE(MFX_HW_D3D11, adapter, 0));
+
+            if (!QueryImplDesc(*pCore, deviceId))
+                return nullptr;
+        }
+#elif defined(MFX_VA_LINUX)
+        for (int i = 0; i < 64; ++i)
+        {
+            std::string path;
+
+            {
+                mfxU32 vendorId = 0;
+
+                path = std::string("/sys/class/drm/renderD") + std::to_string(128 + i) + "/device/vendor";
+                FILE* file = fopen(path.c_str(), "r");
+
+                if (!file)
+                    break;
+
+                fscanf(file, "%x", &vendorId);
+                fclose(file);
+
+                if (vendorId != 0x8086)
+                    continue;
+            }
+
+            mfxU32 deviceId = 0;
+            {
+                path = std::string("/sys/class/drm/renderD") + std::to_string(128 + i) + "/device/device";
+
+                FILE* file = fopen(path.c_str(), "r");
+                if (!file)
+                    break;
+
+                fscanf(file, "%x", &deviceId);
+                fclose(file);
+            }
+
+            path = std::string("/dev/dri/renderD") + std::to_string(128 + i);
+
+            int fd = open(path.c_str(), O_RDWR);
+            if (fd < 0)
+                continue;
+
+            std::shared_ptr<int> closeFile(&fd, [fd](int*) { close(fd); });
+
+            {
+                auto displ = vaGetDisplayDRM(fd);
+
+                int vamajor = 0, vaminor = 0;
+                if (VA_STATUS_SUCCESS != vaInitialize(displ, &vamajor, &vaminor))
+                    continue;
+
+                std::shared_ptr<VADisplay> closeVA(&displ, [displ](VADisplay*) { vaTerminate(displ); });
+
+                {
+                    std::unique_ptr<VideoCORE> pCore(FactoryCORE::CreateCORE(MFX_HW_VAAPI, 0, 0));
+
+                    if (pCore->SetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL)displ))
+                        continue;
+
+                    if (!QueryImplDesc(*pCore, deviceId))
+                        return nullptr;
+                }
+            }
+        }
+#endif
+
+        if (!holder->GetSize())
+            return nullptr;
+
+        *num_impls = mfxU32(holder->GetSize());
+
+        holder->Detach();
+
+        return holder.release()->GetArray();
+    }
+    catch (...)
+    {
+        return nullptr;
+    }
+
+    return nullptr;
 }
 
-mfxStatus MFX_CDECL MFXReleaseImplDescription(mfxHDL)
+mfxStatus MFX_CDECL MFXReleaseImplDescription(mfxHDL hdl)
 {
-    return MFX_ERR_NOT_IMPLEMENTED;
+    MFX_CHECK_HDL(hdl);
+
+    try
+    {
+        delete (mfx::ImplDescription*)hdl;
+    }
+    catch (...)
+    {
+        return MFX_ERR_UNKNOWN;
+    }
+
+    return MFX_ERR_NONE;
 }
 #endif //MFX_ONEVPL
 

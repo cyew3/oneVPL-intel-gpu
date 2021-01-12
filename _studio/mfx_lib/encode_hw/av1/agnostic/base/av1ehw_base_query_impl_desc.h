@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,32 +21,33 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && defined(MFX_ONEVPL)
 
-#include "mfxvideo++int.h"
+#include "av1ehw_base.h"
+#include "av1ehw_base_data.h"
 
 namespace AV1EHW
 {
-    VideoENCODE* Create(
-        VideoCORE& core
-        , mfxStatus& status);
+namespace Base
+{
+class QueryImplDesc
+    : public FeatureBase
+{
+public:
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(Query)
+#define DECL_FEATURE_NAME "Base_QueryImplDesc"
+#include "hevcehw_decl_blocks.h"
 
-    mfxStatus QueryIOSurf(
-        VideoCORE *core
-        , mfxVideoParam *par
-        , mfxFrameAllocRequest *request);
+    QueryImplDesc(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
 
-    mfxStatus Query(
-        VideoCORE *core
-        , mfxVideoParam *in
-        , mfxVideoParam *out);
+protected:
+    void QueryImplsDescription(const FeatureBlocks& blocks, TPushQID Push) override;
+};
 
-#if defined(MFX_ONEVPL)
-    mfxStatus QueryImplsDescription(
-        VideoCORE& core
-        , mfxEncoderDescription::encoder& caps
-        , mfx::PODArraysHolder& ah);
-#endif //defined(MFX_ONEVPL)
-}
+} //Base
+} //namespace HEVCEHW
 
-#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ONEVPL)

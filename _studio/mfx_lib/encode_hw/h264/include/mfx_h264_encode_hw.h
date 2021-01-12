@@ -33,6 +33,10 @@ public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, void * state = 0);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
+#if defined(MFX_ONEVPL)
+    static mfxStatus QueryImplsDescription(VideoCORE&, mfxEncoderDescription::encoder&, mfx::PODArraysHolder&);
+#endif
+
     MFXHWVideoENCODEH264(VideoCORE *core, mfxStatus *sts)
         : m_core(core)
     {

@@ -1129,6 +1129,7 @@ namespace Base
         , FEATURE_ENCODED_FRAME_INFO
         , FEATURE_WEIGHTPRED
         , FEATURE_QMATRIX
+        , FEATURE_QUERY_IMPL_DESC
         , NUM_FEATURES
     };
 

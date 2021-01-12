@@ -296,6 +296,27 @@ mfxStatus Query(
     return impl->InternalQuery(*core, in, *out);
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus QueryImplsDescription(
+    VideoCORE& core
+    , mfxEncoderDescription::encoder& caps
+    , mfx::PODArraysHolder& ah)
+{
+    auto hw = core.GetHWType();
+
+    if (hw < MFX_HW_SCL)
+        return MFX_ERR_UNSUPPORTED;
+
+    mfxStatus sts = MFX_ERR_NONE;
+    std::unique_ptr<ImplBase> impl(CreateSpecific(hw, core, sts, eFeatureMode::QUERY_IMPLS_DESCRIPTION));
+
+    MFX_CHECK_STS(sts);
+    MFX_CHECK(impl, MFX_ERR_UNKNOWN);
+
+    return impl->QueryImplsDescription(core, caps, ah);
+}
+#endif //defined(MFX_ONEVPL)
+
 } //namespace HEVCEHW
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

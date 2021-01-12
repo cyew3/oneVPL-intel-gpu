@@ -48,6 +48,9 @@
 #endif
 #include "hevcehw_base_max_frame_size_lin.h"
 #include "hevcehw_base_fei_lin.h"
+#if defined (MFX_ONEVPL)
+#include "hevcehw_base_query_impl_desc.h"
+#endif
 #include <algorithm>
 
 using namespace HEVCEHW;
@@ -96,6 +99,9 @@ Linux::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     m_features.emplace_back(new ROI(FEATURE_ROI));
 #endif
     m_features.emplace_back(new MaxFrameSize(FEATURE_MAX_FRAME_SIZE));
+#if defined (MFX_ONEVPL)
+    m_features.emplace_back(new QueryImplDesc(FEATURE_QUERY_IMPL_DESC));
+#endif
 
     InternalInitFeatures(status, mode);
 

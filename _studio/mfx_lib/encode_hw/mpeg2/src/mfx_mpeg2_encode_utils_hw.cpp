@@ -490,6 +490,60 @@ namespace MPEG2EncoderHW
         return sts;
     }
 
+#if defined(MFX_ONEVPL)
+    mfxStatus ControllerBase::QueryImplsDescription(
+        VideoCORE& core
+        , mfxEncoderDescription::encoder& caps
+        , mfx::PODArraysHolder& ah)
+    {
+        const mfxU32 SupportedProfiles[] =
+        {
+            MFX_PROFILE_MPEG2_SIMPLE
+            , MFX_PROFILE_MPEG2_MAIN
+            , MFX_PROFILE_MPEG2_HIGH
+        };
+        const mfxResourceType SupportedMemTypes[] =
+        {
+            MFX_RESOURCE_SYSTEM_SURFACE
+#if defined(MFX_VA_LINUX)
+            , MFX_RESOURCE_VA_SURFACE
+#else
+            , MFX_RESOURCE_DX11_TEXTURE
+#endif
+        };
+
+        caps.CodecID                 = MFX_CODEC_MPEG2;
+        caps.MaxcodecLevel           = MFX_LEVEL_MPEG2_HIGH;
+        caps.BiDirectionalPrediction = 1;
+
+        ENCODE_CAPS hwCaps = {};
+        MFX_SAFE_CALL(MfxHwMpeg2Encode::QueryHwCaps(&core, hwCaps, MFX_PROFILE_MPEG2_HIGH));
+
+        for (auto profile : SupportedProfiles)
+        {
+            auto& pfCaps = ah.PushBack(caps.Profiles);
+
+            pfCaps.Profile = profile;
+
+            for (auto memType : SupportedMemTypes)
+            {
+                auto& memCaps = ah.PushBack(pfCaps.MemDesc);
+                memCaps.MemHandleType = memType;
+                memCaps.Width  = { 16, hwCaps.MaxPicWidth,  16 };
+                memCaps.Height = { 16, hwCaps.MaxPicHeight, 16 };
+
+                ah.PushBack(memCaps.ColorFormats) = MFX_FOURCC_NV12;
+                ++memCaps.NumColorFormats;
+
+                ++pfCaps.NumMemTypes;
+            }
+            ++caps.NumProfiles;
+        }
+
+        return MFX_ERR_NONE;
+    }
+#endif //defined(MFX_ONEVPL)
+
     mfxStatus ControllerBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out, bool bAVBR_WA)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ControllerBase::Query");

@@ -52,6 +52,11 @@ D3DXCommonEncoder::~D3DXCommonEncoder()
 // Init
 mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
 {
+#if defined(MFX_ONEVPL)
+    if (!core->GetSession())
+        return MFX_ERR_NONE; //init with incomplete core, just to query caps
+#endif
+
     pSheduler = (MFXIScheduler2 *)core->GetSession()->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
     if (pSheduler == NULL)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
