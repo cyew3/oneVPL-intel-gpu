@@ -288,9 +288,33 @@ mfxStatus MFXClose(mfxSession session)
 } // mfxStatus MFXClose(mfxHDL session)
 
 #if defined(MFX_ONEVPL)
-mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam, mfxSession*)
+mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam param, mfxSession* session)
 {
-    return MFX_ERR_NOT_IMPLEMENTED;
+    mfxInitParam par = {};
+
+    par.Implementation = MFX_IMPL_HARDWARE;
+    switch (param.AccelerationMode)
+    {
+    case MFX_ACCEL_MODE_VIA_D3D9:
+        par.Implementation |= MFX_IMPL_VIA_D3D9;
+        break;
+    case MFX_ACCEL_MODE_VIA_D3D11:
+        par.Implementation |= MFX_IMPL_VIA_D3D11;
+        break;
+    case MFX_ACCEL_MODE_VIA_VAAPI:
+        par.Implementation |= MFX_IMPL_VIA_VAAPI;
+        break;
+    default:
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    par.Version.Major = MFX_VERSION_MAJOR;
+    par.Version.Minor = MFX_VERSION_MINOR;
+    par.ExternalThreads = 0;
+    par.NumExtParam = param.NumExtParam;
+    par.ExtParam = param.ExtParam;
+    
+    return MFXInitEx(par, session);
 }
 
 namespace mfx
