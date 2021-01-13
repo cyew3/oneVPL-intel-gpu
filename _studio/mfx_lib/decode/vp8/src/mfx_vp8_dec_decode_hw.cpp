@@ -247,6 +247,63 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
 } // mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
+#if defined(MFX_ONEVPL)
+mfxStatus VideoDECODEVP8_HW::QueryImplsDescription(
+    VideoCORE& core,
+    mfxDecoderDescription::decoder& caps,
+    mfx::PODArraysHolder& ah)
+{
+    const mfxU32 SupportedProfiles[] =
+    {
+        MFX_PROFILE_VP8_0
+        , MFX_PROFILE_VP8_1
+        , MFX_PROFILE_VP8_2
+        , MFX_PROFILE_VP8_3
+    };
+    const mfxResourceType SupportedMemTypes[] =
+    {
+        MFX_RESOURCE_SYSTEM_SURFACE
+#if defined(MFX_VA_LINUX)
+        , MFX_RESOURCE_VA_SURFACE
+#else
+        , MFX_RESOURCE_DX11_TEXTURE
+#endif
+    };
+    const mfxU32 SupportedFourCC[] =
+    {
+        MFX_FOURCC_NV12
+    };
+
+    caps.CodecID = MFX_CODEC_VP8;
+    caps.MaxcodecLevel = MFX_LEVEL_UNKNOWN;
+
+    mfxStatus sts = MFX_ERR_NONE;
+    for (mfxU32 profile : SupportedProfiles)
+    {
+        auto& pfCaps = ah.PushBack(caps.Profiles);
+        pfCaps.Profile = profile;
+
+        for (auto memType : SupportedMemTypes)
+        {
+            auto& memCaps = ah.PushBack(pfCaps.MemDesc);
+            memCaps.MemHandleType = memType;
+            memCaps.Width = { 16, 4096, 16 };
+            memCaps.Height = { 16, 4096, 16 };
+
+            for (auto fcc : SupportedFourCC)
+            {
+                ah.PushBack(memCaps.ColorFormats) = fcc;
+                ++memCaps.NumColorFormats;
+            }
+            ++pfCaps.NumMemTypes;
+        }
+        ++caps.NumProfiles;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
 {
     if (newPar->IOPattern != oldPar->IOPattern)

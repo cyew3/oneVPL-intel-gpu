@@ -58,6 +58,9 @@ public:
     static mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam*, mfxFrameAllocRequest*);
     // Decode header and initialize video parameters
     static mfxStatus DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* par);
+#if defined(MFX_ONEVPL)
+    static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
+#endif
     // Initialize decoder
     mfxStatus Init(mfxVideoParam*) override;
     // Reset decoder

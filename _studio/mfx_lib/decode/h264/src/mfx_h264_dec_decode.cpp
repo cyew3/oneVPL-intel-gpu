@@ -564,6 +564,89 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus VideoDECODEH264::QueryImplsDescription(
+    VideoCORE& core,
+    mfxDecoderDescription::decoder& caps,
+    mfx::PODArraysHolder& ah)
+{
+    const mfxU32 SupportedProfiles[] =
+    {
+        MFX_PROFILE_AVC_BASELINE
+        , MFX_PROFILE_AVC_MAIN
+        , MFX_PROFILE_AVC_HIGH
+        , MFX_PROFILE_AVC_HIGH_422
+        , MFX_PROFILE_AVC_EXTENDED
+#ifdef MFX_ENABLE_SVC_VIDEO_DECODE
+        , MFX_PROFILE_AVC_SCALABLE_BASELINE
+        , MFX_PROFILE_AVC_SCALABLE_HIGH
+#endif
+        , MFX_PROFILE_AVC_MULTIVIEW_HIGH
+        , MFX_PROFILE_AVC_STEREO_HIGH
+    };
+    const mfxResourceType SupportedMemTypes[] =
+    {
+        MFX_RESOURCE_SYSTEM_SURFACE
+#if defined(MFX_VA_LINUX)
+        , MFX_RESOURCE_VA_SURFACE
+#else
+        , MFX_RESOURCE_DX11_TEXTURE
+#endif
+    };
+    const mfxU32 SupportedFourCC[] =
+    {
+        MFX_FOURCC_NV12
+    };
+
+    caps.CodecID = MFX_CODEC_AVC;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    caps.MaxcodecLevel = MFX_LEVEL_AVC_62;
+#else
+    caps.MaxcodecLevel = MFX_LEVEL_AVC_52;
+#endif
+    mfxVideoParam par;
+    memset(&par, 0, sizeof(par));
+    par.mfx.CodecId = MFX_CODEC_AVC;
+    par.mfx.CodecLevel = caps.MaxcodecLevel;
+
+    mfxStatus sts = MFX_ERR_NONE;
+    for (mfxU32 profile : SupportedProfiles)
+    {
+        par.mfx.CodecProfile = profile;
+        // Set FourCC to pass IsNeedPartialAcceleration check
+        par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+        sts = VideoDECODEH264::Query(&core, &par, &par);
+        if (sts != MFX_ERR_NONE) continue;
+
+        auto& pfCaps = ah.PushBack(caps.Profiles);
+        pfCaps.Profile = profile;
+
+        for (auto memType : SupportedMemTypes)
+        {
+            auto& memCaps = ah.PushBack(pfCaps.MemDesc);
+            memCaps.MemHandleType = memType;
+            memCaps.Width = { 16, 4096, 16 };
+            memCaps.Height = { 16, 4096, 16 };
+
+            for (auto fcc : SupportedFourCC)
+            {
+                par.mfx.FrameInfo.FourCC = fcc;
+                sts = VideoDECODEH264::Query(&core, &par, &par);
+                if (sts != MFX_ERR_NONE) continue;
+
+                ah.PushBack(memCaps.ColorFormats) = fcc;
+                ++memCaps.NumColorFormats;
+            }
+            ++pfCaps.NumMemTypes;
+        }
+        ++caps.NumProfiles;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 mfxU16 VideoDECODEH264::GetChangedProfile(mfxVideoParam *par)
 {
 #ifdef MFX_ENABLE_SVC_VIDEO_DECODE

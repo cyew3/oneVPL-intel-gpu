@@ -28,6 +28,7 @@
 #include <mfx_task.h>
 
 #include <libmfx_core.h>
+#include <functional>
 
 #if defined (MFX_ENABLE_VC1_VIDEO_DECODE)
 #include "mfx_vc1_decode.h"
@@ -608,6 +609,132 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
     return mfxRes;
 
 } // mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_dec, mfxFrameSurface1 **surface_disp, mfxSyncPoint *syncp)
+
+
+#if defined(MFX_ONEVPL)
+struct Handlers {
+    std::function<mfxStatus(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&)> QueryImplsDescription;
+};
+typedef std::map<mfxU32, Handlers> CodecId2Handlers;
+
+mfxStatus QueryImplsDescription(VideoCORE& core, mfxDecoderDescription& caps, mfx::PODArraysHolder& ah)
+{
+    static const CodecId2Handlers codecId2Handlers =
+    {
+    #if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
+        {
+            MFX_CODEC_MPEG2,
+            {
+            // .QueryImplsDescription =
+            [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+            {
+                return VideoDECODEMPEG2::QueryImplsDescription(core, caps, ah);
+            }
+            }
+    },
+    #endif
+    #if defined (MFX_ENABLE_VC1_VIDEO_DECODE)
+        {
+            MFX_CODEC_VC1,
+            {
+                // .QueryImplsDescription =
+                [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+                {
+                    return MFXVideoDECODEVC1::QueryImplsDescription(core, caps, ah);
+                }
+            }
+        },
+    #endif
+    #if defined (MFX_ENABLE_H264_VIDEO_DECODE)
+        {
+            MFX_CODEC_AVC,
+            {
+                // .QueryImplsDescription =
+                [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+                {
+                    return VideoDECODEH264::QueryImplsDescription(core, caps, ah);
+                }
+            }
+        },
+    #endif
+    #if defined (MFX_ENABLE_H265_VIDEO_DECODE)
+        {
+            MFX_CODEC_HEVC,
+            {
+                // .QueryImplsDescription =
+                [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+                {
+                    return VideoDECODEH265::QueryImplsDescription(core, caps, ah);
+                }
+            }
+        },
+    #endif
+    #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
+        {
+            MFX_CODEC_JPEG,
+            {
+                // .QueryImplsDescription =
+                [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+                {
+                    return VideoDECODEMJPEG::QueryImplsDescription(core, caps, ah);
+                }
+            }
+        },
+    #endif
+    #if defined (MFX_ENABLE_VP8_VIDEO_DECODE) && defined(MFX_VA)
+       {
+           MFX_CODEC_VP8,
+           {
+               // .QueryImplsDescription =
+               [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+               {
+                   return VideoDECODEVP8_HW::QueryImplsDescription(core, caps, ah);
+               }
+           }
+       },
+    #endif
+    #if defined (MFX_ENABLE_VP9_VIDEO_DECODE) && defined(MFX_VA)
+       {
+           MFX_CODEC_VP9,
+           {
+               // .QueryImplsDescription =
+               [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+               {
+                   return VideoDECODEVP9_HW::QueryImplsDescription(core, caps, ah);
+               }
+           }
+       },
+    #endif
+    #if defined (MFX_ENABLE_AV1_VIDEO_DECODE) && defined(MFX_VA)
+       {
+           MFX_CODEC_AV1,
+           {
+               // .QueryImplsDescription =
+               [](VideoCORE& core, mfxDecoderDescription::decoder& caps, mfx::PODArraysHolder& ah)
+               {
+                   return VideoDECODEAV1::QueryImplsDescription(core, caps, ah);
+               }
+           }
+       },
+    #endif
+    };
+
+    for (auto& c : codecId2Handlers)
+    {
+        if (!c.second.QueryImplsDescription)
+            continue;
+
+        auto& dec = ah.PushBack(caps.Codecs);
+        dec.CodecID = c.first;
+
+        MFX_SAFE_CALL(c.second.QueryImplsDescription(core, dec, ah));
+        ++caps.NumCodecs;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+#endif //defined(MFX_ONEVPL)
 
 //
 // THE OTHER DECODE FUNCTIONS HAVE IMPLICIT IMPLEMENTATION

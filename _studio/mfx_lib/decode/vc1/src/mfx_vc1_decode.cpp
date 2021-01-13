@@ -389,6 +389,79 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     return MFXSts;
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus MFXVideoDECODEVC1::QueryImplsDescription(
+    VideoCORE& core,
+    mfxDecoderDescription::decoder& caps,
+    mfx::PODArraysHolder& ah)
+{
+    const mfxU32 SupportedProfiles[] =
+    {
+        MFX_PROFILE_VC1_SIMPLE
+        , MFX_PROFILE_VC1_MAIN
+        , MFX_PROFILE_VC1_ADVANCED
+    };
+    const mfxResourceType SupportedMemTypes[] =
+    {
+        MFX_RESOURCE_SYSTEM_SURFACE
+#if defined(MFX_VA_LINUX)
+        , MFX_RESOURCE_VA_SURFACE
+#else
+        , MFX_RESOURCE_DX11_TEXTURE
+#endif
+    };
+    const mfxU32 SupportedFourCC[] =
+    {
+        MFX_FOURCC_NV12
+    };
+
+    caps.CodecID = MFX_CODEC_VC1;
+    caps.MaxcodecLevel = MFX_LEVEL_VC1_4;
+
+    mfxVideoParam par;
+    memset(&par, 0, sizeof(par));
+    par.mfx.CodecId = MFX_CODEC_VC1;
+    par.mfx.CodecLevel = caps.MaxcodecLevel;
+
+    mfxStatus sts = MFX_ERR_NONE;
+    for (mfxU32 profile : SupportedProfiles)
+    {
+        par.mfx.CodecProfile = profile;
+        // Set FourCC & ChromaFormat to pass Query check
+        par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+        sts = MFXVideoDECODEVC1::Query(&core, &par, &par);
+        if (sts != MFX_ERR_NONE) continue;
+
+        auto& pfCaps = ah.PushBack(caps.Profiles);
+        pfCaps.Profile = profile;
+
+        for (auto memType : SupportedMemTypes)
+        {
+            auto& memCaps = ah.PushBack(pfCaps.MemDesc);
+            memCaps.MemHandleType = memType;
+            memCaps.Width = { 16, 4096, 16 };
+            memCaps.Height = { 16, 4096, 16 };
+
+            for (auto fcc : SupportedFourCC)
+            {
+                par.mfx.FrameInfo.FourCC = fcc;
+                sts = MFXVideoDECODEVC1::Query(&core, &par, &par);
+                if (sts != MFX_ERR_NONE) continue;
+
+                ah.PushBack(memCaps.ColorFormats) = fcc;
+                ++memCaps.NumColorFormats;
+            }
+            ++pfCaps.NumMemTypes;
+        }
+        ++caps.NumProfiles;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
 {
     mfxStatus       MFXSts = MFX_ERR_NONE;

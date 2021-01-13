@@ -59,6 +59,9 @@ public:
 
     static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut);
     static mfxStatus QueryIOSurf(VideoCORE *pCore, mfxVideoParam *pPar, mfxFrameAllocRequest *pRequest);
+#if defined(MFX_ONEVPL)
+    static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
+#endif
 
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Reset(mfxVideoParam *pPar);

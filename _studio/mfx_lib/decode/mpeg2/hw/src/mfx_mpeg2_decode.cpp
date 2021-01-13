@@ -311,6 +311,78 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam* par)
     return isNeedChangeVideoParamWarning ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus VideoDECODEMPEG2::QueryImplsDescription(
+    VideoCORE& core,
+    mfxDecoderDescription::decoder& caps,
+    mfx::PODArraysHolder& ah)
+{
+    const mfxU32 SupportedProfiles[] =
+    {
+        MFX_PROFILE_MPEG2_SIMPLE
+        , MFX_PROFILE_MPEG2_MAIN
+        , MFX_PROFILE_MPEG2_HIGH
+    };
+    const mfxResourceType SupportedMemTypes[] =
+    {
+        MFX_RESOURCE_SYSTEM_SURFACE
+#if defined(MFX_VA_LINUX)
+        , MFX_RESOURCE_VA_SURFACE
+#else
+        , MFX_RESOURCE_DX11_TEXTURE
+#endif
+    };
+    const mfxU32 SupportedFourCC[] =
+    {
+        MFX_FOURCC_NV12
+    };
+
+    caps.CodecID = MFX_CODEC_MPEG2;
+    caps.MaxcodecLevel = MFX_LEVEL_MPEG2_HIGH1440;
+
+    mfxVideoParam par;
+    memset(&par, 0, sizeof(par));
+    par.mfx.CodecId = MFX_CODEC_MPEG2;
+    par.mfx.CodecLevel = caps.MaxcodecLevel;
+
+    mfxStatus sts = MFX_ERR_NONE;
+    for (mfxU32 profile : SupportedProfiles)
+    {
+        par.mfx.CodecProfile = profile;
+        // Set FourCC to pass Query check
+        par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+        sts = VideoDECODEMPEG2::Query(&core, &par, &par);
+        if (sts != MFX_ERR_NONE) continue;
+
+        auto& pfCaps = ah.PushBack(caps.Profiles);
+        pfCaps.Profile = profile;
+
+        for (auto memType : SupportedMemTypes)
+        {
+            auto& memCaps = ah.PushBack(pfCaps.MemDesc);
+            memCaps.MemHandleType = memType;
+            memCaps.Width = { 16, 2048, 16 };
+            memCaps.Height = { 16, 2048, 16 };
+
+            for (auto fcc : SupportedFourCC)
+            {
+                par.mfx.FrameInfo.FourCC = fcc;
+                sts = VideoDECODEMPEG2::Query(&core, &par, &par);
+                if (sts != MFX_ERR_NONE) continue;
+
+                ah.PushBack(memCaps.ColorFormats) = fcc;
+                ++memCaps.NumColorFormats;
+            }
+            ++pfCaps.NumMemTypes;
+        }
+        ++caps.NumProfiles;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 // Reset decoder
 mfxStatus VideoDECODEMPEG2::Reset(mfxVideoParam *par)
 {

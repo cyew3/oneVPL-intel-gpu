@@ -474,6 +474,90 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus VideoDECODEH265::QueryImplsDescription(
+    VideoCORE& core,
+    mfxDecoderDescription::decoder& caps,
+    mfx::PODArraysHolder& ah)
+{
+    const mfxU32 SupportedProfiles[] =
+    {
+        MFX_PROFILE_HEVC_MAIN
+        , MFX_PROFILE_HEVC_MAIN10
+        , MFX_PROFILE_HEVC_MAINSP
+        , MFX_PROFILE_HEVC_REXT
+        , MFX_PROFILE_HEVC_SCC
+    };
+    const mfxResourceType SupportedMemTypes[] =
+    {
+        MFX_RESOURCE_SYSTEM_SURFACE
+#if defined(MFX_VA_LINUX)
+        , MFX_RESOURCE_VA_SURFACE
+#else
+        , MFX_RESOURCE_DX11_TEXTURE
+#endif
+    };
+    const mfxU32 SupportedFourCCChromaFormat[][2] =
+    {
+        { MFX_FOURCC_NV12, MFX_CHROMAFORMAT_YUV420 }
+        , { MFX_FOURCC_P010, MFX_CHROMAFORMAT_YUV420 }
+        , { MFX_FOURCC_P016, MFX_CHROMAFORMAT_YUV420 }
+        , { MFX_FOURCC_YUY2, MFX_CHROMAFORMAT_YUV422 }
+        , { MFX_FOURCC_Y210, MFX_CHROMAFORMAT_YUV422 }
+        , { MFX_FOURCC_Y216, MFX_CHROMAFORMAT_YUV422 }
+        , { MFX_FOURCC_AYUV, MFX_CHROMAFORMAT_YUV444 }
+        , { MFX_FOURCC_Y410, MFX_CHROMAFORMAT_YUV444 }
+        , { MFX_FOURCC_Y416, MFX_CHROMAFORMAT_YUV444 }
+    };
+
+    caps.CodecID = MFX_CODEC_HEVC;
+    caps.MaxcodecLevel = MFX_LEVEL_HEVC_62;
+
+    mfxVideoParam par;
+    memset(&par, 0, sizeof(par));
+    par.mfx.CodecId = MFX_CODEC_HEVC;
+    par.mfx.CodecLevel = caps.MaxcodecLevel;
+
+    mfxStatus sts = MFX_ERR_NONE;
+    for (mfxU32 profile : SupportedProfiles)
+    {
+        par.mfx.CodecProfile = profile;
+        par.mfx.FrameInfo.ChromaFormat = 0;
+        par.mfx.FrameInfo.FourCC = 0;
+
+        sts = VideoDECODEH265::Query(&core, &par, &par);
+        if (sts != MFX_ERR_NONE) continue;
+
+        auto& pfCaps = ah.PushBack(caps.Profiles);
+        pfCaps.Profile = profile;
+
+        for (auto memType : SupportedMemTypes)
+        {
+            auto& memCaps = ah.PushBack(pfCaps.MemDesc);
+            memCaps.MemHandleType = memType;
+            memCaps.Width = { 16, 16384, 16 };
+            memCaps.Height = { 16, 16384, 16 };
+
+            for (auto fccChroma : SupportedFourCCChromaFormat)
+            {
+                par.mfx.FrameInfo.FourCC = fccChroma[0];
+                par.mfx.FrameInfo.ChromaFormat = fccChroma[1];
+
+                sts = VideoDECODEH265::Query(&core, &par, &par);
+                if (sts != MFX_ERR_NONE) continue;
+
+                ah.PushBack(memCaps.ColorFormats) = fccChroma[0];
+                ++memCaps.NumColorFormats;
+            }
+            ++pfCaps.NumMemTypes;
+        }
+        ++caps.NumProfiles;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif //defined(MFX_ONEVPL)
+
 // Reset decoder with new parameters
 mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
 {

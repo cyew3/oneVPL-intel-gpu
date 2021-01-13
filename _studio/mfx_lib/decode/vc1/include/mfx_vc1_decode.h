@@ -70,6 +70,9 @@ public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
+#if defined(MFX_ONEVPL)
+    static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
+#endif
 
     MFXVideoDECODEVC1(VideoCORE *core, mfxStatus* mfxSts);
     virtual ~MFXVideoDECODEVC1(void);
