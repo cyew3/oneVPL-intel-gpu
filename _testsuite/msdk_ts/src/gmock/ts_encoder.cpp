@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2021 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -26,6 +26,12 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             g_tsLog << "Opaque memory is not supported by core20\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+        {
+            g_tsLog << "MFX_RATECONTROL_LA_EXT removed in OneVPL\n";
             g_tsStatus.disable();
             throw tsSKIP;
         }
