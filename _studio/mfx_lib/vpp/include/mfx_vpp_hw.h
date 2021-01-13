@@ -902,7 +902,10 @@ namespace MfxHwVideoProcessing
 
         static
         mfxStatus Query(VideoCORE* core,mfxVideoParam *par);
-
+#if defined(MFX_ONEVPL)
+        static
+        mfxStatus QueryImplsDescription(VideoCORE* core, mfxVPPDescription& caps, mfx::PODArraysHolder& arrayHolder);
+#endif
         static
         mfxStatus QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
         static

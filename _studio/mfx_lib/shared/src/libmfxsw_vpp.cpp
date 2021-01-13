@@ -34,6 +34,9 @@
 #ifdef MFX_ENABLE_VPP
 // VPP include files here
 #include "mfx_vpp_main.h"       // this VideoVPP class builds VPP pipeline and run the VPP pipeline
+#ifdef MFX_ONEVPL
+#include "mfx_vpp_hw.h"
+#endif
 #endif
 
 #if !defined (MFX_RT)
@@ -569,3 +572,10 @@ FUNCTION_RESET_IMPL(VPP, Reset, (mfxSession session, mfxVideoParam *par), (par))
 
 FUNCTION_IMPL(VPP, GetVideoParam, (mfxSession session, mfxVideoParam *par), (par))
 FUNCTION_IMPL(VPP, GetVPPStat, (mfxSession session, mfxVPPStat *stat), (stat))
+
+#if defined(MFX_ONEVPL)
+mfxStatus QueryImplsDescription(VideoCORE& core, mfxVPPDescription& caps, mfx::PODArraysHolder& arrayHolder)
+{
+    return MfxHwVideoProcessing::VideoVPPHW::QueryImplsDescription(&core, caps, arrayHolder);
+}
+#endif //defined(MFX_ONEVPL)

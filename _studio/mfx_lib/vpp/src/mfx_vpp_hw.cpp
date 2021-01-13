@@ -2200,6 +2200,55 @@ mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
     return sts;
 }
 
+#if defined(MFX_ONEVPL)
+mfxStatus VideoVPPHW::QueryImplsDescription(VideoCORE* core, mfxVPPDescription& caps, mfx::PODArraysHolder& arrayHolder)
+{
+    MfxHwVideoProcessing::mfxVppCaps vppCaps;
+    QueryCaps(core, vppCaps);
+    std::vector<mfxU32> capsList;
+    ConvertCaps2ListDoUse(vppCaps, capsList);
+
+    for(auto &filterId : capsList)
+    {
+        mfxVPPDescription::filter filter = { };
+        filter.FilterFourCC = filterId;
+
+        auto& memCaps = arrayHolder.PushBack(filter.MemDesc);
+        memCaps.MemHandleType = MFX_RESOURCE_SYSTEM_SURFACE;
+        memCaps.Width = {16, vppCaps.uMaxWidth, 16};
+        memCaps.Height = {16, vppCaps.uMaxHeight, 16};
+
+        for (auto fourcc : g_TABLE_SUPPORTED_FOURCC)
+        {
+            if (vppCaps.mFormatSupport[fourcc] & MFX_FORMAT_SUPPORT_INPUT)
+            {
+                auto& formatIn = arrayHolder.PushBack(memCaps.Formats);
+                formatIn.InFormat = fourcc;
+                
+                for (auto fourccOut : g_TABLE_SUPPORTED_FOURCC)
+                {
+                    if (vppCaps.mFormatSupport[fourccOut] & MFX_FORMAT_SUPPORT_OUTPUT)
+                    {
+                        arrayHolder.PushBack(formatIn.OutFormats) = fourccOut;
+                        ++formatIn.NumOutFormat;
+                    }
+                }
+                ++memCaps.NumInFormats;
+            }
+        }
+        arrayHolder.PushBack(filter.MemDesc);
+        filter.MemDesc[1] = filter.MemDesc[0];
+        filter.MemDesc[1].MemHandleType = core->GetVAType() == MFX_HW_VAAPI ? MFX_RESOURCE_VA_SURFACE : MFX_RESOURCE_DX11_TEXTURE;
+        filter.NumMemTypes = 2;
+
+        arrayHolder.PushBack(caps.Filters) = filter;
+        caps.NumFilters++;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif
+
 mfxStatus  VideoVPPHW::Init(
     mfxVideoParam *par,
     bool /*isTemporal*/)

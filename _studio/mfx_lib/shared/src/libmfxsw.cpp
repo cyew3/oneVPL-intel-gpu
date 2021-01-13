@@ -381,6 +381,7 @@ namespace mfx
 
 mfxStatus QueryImplsDescription(VideoCORE&, mfxEncoderDescription&, mfx::PODArraysHolder&);
 mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription&, mfx::PODArraysHolder&);
+mfxStatus QueryImplsDescription(VideoCORE&, mfxVPPDescription&, mfx::PODArraysHolder&);
 
 mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfxU32* num_impls)
 {
@@ -420,7 +421,8 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
             impl.Keywords;
 
             return (MFX_ERR_NONE == QueryImplsDescription(core, impl.Enc, impl) &&
-                    MFX_ERR_NONE == QueryImplsDescription(core, impl.Dec, impl));
+                    MFX_ERR_NONE == QueryImplsDescription(core, impl.Dec, impl) &&
+                    MFX_ERR_NONE == QueryImplsDescription(core, impl.VPP, impl));
         };
 
 #if defined(MFX_VA_WIN)
