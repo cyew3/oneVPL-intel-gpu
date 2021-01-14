@@ -1274,6 +1274,10 @@ mfxStatus D3D11Encoder::Init(
         m_caps.CBRSupport = 1;
         m_caps.VBRSupport = 1;
         m_caps.AVBRSupport = 1;
+#ifndef STRIP_EMBARGO
+        if (m_core->GetHWType() >= MFX_HW_DG2)
+            m_caps.AVBRSupport = 0;
+#endif
         m_caps.AdaptiveMaxFrameSizeSupport = 1;
 
         CHECK_HRES(hRes);

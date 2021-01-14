@@ -1627,6 +1627,10 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 #endif
 #if VA_CHECK_VERSION(1,3,0)
     m_caps.AVBRSupport = !!(AV(VAConfigAttribRateControl) & VA_RC_AVBR);
+#ifndef STRIP_EMBARGO
+    if (m_core->GetHWType() >= MFX_HW_DG2)
+        m_caps.AVBRSupport = 0;
+#endif
 #endif
 #if VA_CHECK_VERSION(1, 10, 0)
     m_caps.ddi_caps.TCBRCSupport = !!(AV(VAConfigAttribRateControl) & VA_RC_TCBRC);
