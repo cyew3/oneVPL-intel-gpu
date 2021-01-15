@@ -191,6 +191,33 @@ void General::SetSupported(ParamSupport& blocks)
         }
     });
 
+    blocks.m_ebCopySupported[MFX_EXTBUFF_ENCODER_CAPABILITY].emplace_back(
+        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
+    {
+        auto& src = *(const mfxExtEncoderCapability*)pSrc;
+        auto& dst = *(mfxExtEncoderCapability*)pDst;
+
+        dst.MBPerSec = src.MBPerSec;
+    });
+
+    blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION].emplace_back(
+        [](const mfxExtBuffer* /* pSrc */, mfxExtBuffer* /* pDst */) -> void
+    {
+        // Teams query this buffer supportness, keeps empty since those fields ignored by AV1
+    });
+
+    blocks.m_ebCopySupported[MFX_EXTBUFF_VP9_PARAM].emplace_back(
+        [](const mfxExtBuffer* /* pSrc */, mfxExtBuffer* /* pDst */) -> void
+    {
+        // Teams query this buffer supportness, keeps empty since those fields ignored by AV1
+    });
+
+    blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
+        [](const mfxExtBuffer* /* pSrc */, mfxExtBuffer* /* pDst */) -> void
+    {
+        // Teams query this buffer supportness, keeps empty since those fields ignored by AV1
+    });
+
     blocks.m_ebCopySupported[MFX_EXTBUFF_ENCODER_RESET_OPTION].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -2720,7 +2747,7 @@ void General::SetDefaults(
 
     SetDefault(par.mfx.CodecProfile, defPar.base.GetProfile(defPar));
     SetDefault(par.mfx.CodecLevel, 0);
-    SetDefault(par.mfx.TargetUsage, MFX_TARGETUSAGE_BALANCED);
+    SetDefault(par.mfx.TargetUsage, DEFAULT_TARGET_USAGE);
     SetDefaultGOP(par, defPar, pCO3);
     SetDefault(par.mfx.LowPower, MFX_CODINGOPTION_ON);
     SetDefault(par.mfx.NumThread, 1);
@@ -2754,7 +2781,7 @@ void General::SetDefaults(
     {
         SetDefault(pAV1Par->WriteIVFHeaders, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->UseAnnexB, MFX_CODINGOPTION_OFF);
-        SetDefault(pAV1Par->PackOBUFrame, MFX_CODINGOPTION_OFF);
+        SetDefault(pAV1Par->PackOBUFrame, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->InsertTemporalDelimiter, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->DisableCdfUpdate, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->DisableFrameEndUpdateCdf, MFX_CODINGOPTION_OFF);

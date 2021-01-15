@@ -472,6 +472,8 @@ public:
         // (4) If BitDepth is zero, get it from mfxVideoParam
         SetIf(pParForBD, bBDInvalid, &parCopy);
         SetIf(BitDepth, !BitDepth, [&]() { return pParForBD->base.GetTargetBitDepthLuma(*pParForBD); });
+        if (!pParForBD->mvp.mfx.FrameInfo.BitDepthLuma)
+            BitDepth = BITDEPTH_8;
 
         // (5) Check that list of GUIDs contains GUID for resulting BitDepth, ChromaFormat
         bool bSupported =
