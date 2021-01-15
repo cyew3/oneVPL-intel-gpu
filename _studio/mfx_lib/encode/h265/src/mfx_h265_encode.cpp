@@ -3002,8 +3002,8 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                 {
                     // TT_COMPLETE shouldn't have dependent tasks
                     assert(task->numDownstreamDependencies == 0);
-                    th->m_prepCritSect.lock();
                     MFX_CHECK_NULL_PTR1(th->m_inputTaskInProgress);
+                    th->m_prepCritSect.lock();
                     H265EncodeTaskInputParams *taskInProgress = th->m_inputTaskInProgress;
                     if (taskInProgress->bs) {
                         for (Ipp32s f = 0; f < (th->m_videoParam.picStruct == PROGR ? 1 : 2); f++) {
