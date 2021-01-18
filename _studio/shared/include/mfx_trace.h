@@ -21,6 +21,7 @@
 #ifndef __MFX_TRACE_H__
 #define __MFX_TRACE_H__
 
+#include <stdint.h>
 #ifndef MFX_TRACE_DISABLE
 // Uncomment one or several lines below to enable tracing
 #if (defined(_WIN32) || defined(_WIN64)) && !defined (MFX_TRACE_ENABLE_ITT)
@@ -112,8 +113,7 @@ enum mfxTraceTaskType
     MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK,
     MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK,
     MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK,
-    MFX_TRACE_HOTSPOT_CM_COPY_VIDEO_TO_SYS_TASK,
-    MFX_TRACE_HOTSPOT_CM_COPY_SYS_TO_VIDEO_TASK,
+    MFX_TRACE_HOTSPOT_CM_COPY,
 };
 
 // list of output modes
@@ -299,6 +299,74 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 
 /*------------------------------------------------------------------------------*/
 
+#if defined(_WIN32) || defined(_WIN64)
+mfxTraceU32 MFXTrace_ETWEvent(uint16_t task, uint8_t opcode, uint8_t level, uint64_t size, void *ptr);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#pragma pack(push, 2)
+
+template <typename ...>
+struct event_data;
+
+template <>
+struct event_data<>
+{
+    event_data() = default;
+};
+
+template <typename T, typename ...Rest>
+struct event_data<T, Rest...>
+    : event_data<Rest...>
+{
+    T value;
+
+    template <typename A, typename ...Args>
+    event_data(A&& a, Args&&... args)
+        : event_data<Rest...>(std::forward<Args>(args)...)
+        , value(std::forward<A>(a))
+    {}
+};
+
+#pragma pack(pop)
+
+class ETWScopedTrace
+{
+    uint16_t task;
+    uint8_t level;
+public:
+    template <typename ...Args>
+    ETWScopedTrace(uint16_t task, uint8_t level, Args... args)
+        : task(task)
+        , level(level)
+    {
+        event_data <Args...> e { std::forward <Args>(args)... };
+        MFXTrace_ETWEvent(task, 1, level, sizeof(e), &e);
+    };
+
+    ~ETWScopedTrace()
+    {
+        MFXTrace_ETWEvent(task, 2, level, 0, nullptr);
+    };
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define ETW_NEW_EVENT(task, level, ...) \
+    ETWScopedTrace _etw_scoped_trace##__LINE__ (task, level, __VA_ARGS__)
+
+#else
+
+#define ETW_NEW_EVENT(task, level, ...)
+
+#endif
+
+/*------------------------------------------------------------------------------*/
+
 // basic macroses
 
 #define MFX_TRACE_PARAMS \
@@ -330,6 +398,7 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 #define MFX_TRACE_CLOSE()
 #define MFX_TRACE_CLOSE_RES(res)
 #define MFX_LTRACE(_trace_all_params)
+#define ETW_NEW_EVENT(task, level, ...)
 #endif
 
 /*------------------------------------------------------------------------------*/
@@ -502,9 +571,6 @@ private:
 #define MFX_AUTO_TRACE(_task_name) \
     _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, _task_name, MFX_TRACE_DEFAULT_TASK, false)
 
-#define MFX_AUTO_TRACE_FUNC() \
-    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, __FUNCTION__, MFX_TRACE_DEFAULT_TASK, false)
-
 #define MFX_AUTO_LTRACE_FUNC(_level) \
     _MFX_AUTO_LTRACE_(_level, __FUNCTION__, MFX_TRACE_DEFAULT_TASK, false)
 
@@ -513,15 +579,6 @@ private:
 
 #define MFX_AUTO_TRACE_WITHID(_task_name) \
     _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, _task_name, MFX_TRACE_DEFAULT_TASK, true)
-
-#define MFX_AUTO_TRACE_FUNCTYPE(_task_type) \
-    _MFX_AUTO_LTRACE_(TraceTaskType2TraceLevel<_task_type>::value, __FUNCTION__, _task_type, false)
-
-#define MFX_AUTO_TRACE_TYPE(_task_name, _task_type) \
-    _MFX_AUTO_LTRACE_(TraceTaskType2TraceLevel<_task_type>::value, _task_name, _task_type, false)
-
-#define MFX_AUTO_TRACE_FUNCTYPE_WITHID(_task_type) \
-    _MFX_AUTO_LTRACE_(TraceTaskType2TraceLevel<_task_type>::value, __FUNCTION__, _task_type, true)
 
 #endif // ifdef __cplusplus
 
@@ -581,8 +638,6 @@ struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK> : std::
 template <>
 struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
 template <>
-struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_CM_COPY_VIDEO_TO_SYS_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
-template <>
-struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_CM_COPY_SYS_TO_VIDEO_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
+struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_CM_COPY> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
 
 #endif // #ifndef __MFX_TRACE_H__

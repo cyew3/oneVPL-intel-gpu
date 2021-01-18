@@ -25,9 +25,10 @@
 
 mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
 {
-    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_SYNC_OPERATION_TASK);
     mfxStatus mfxRes;
 
+    MFX_AUTO_TRACE("SyncOperaton");
+    ETW_NEW_EVENT(MFX_TRACE_API_SYNC_OPERATION_TASK, 0, wait, syncp, session);
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
 

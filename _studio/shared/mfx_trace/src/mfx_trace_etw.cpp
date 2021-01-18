@@ -78,8 +78,7 @@ CHECK_TYPE_MATCH(MFX_TRACE_API_SYNC_OPERATION_TASK);
 CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK);
 CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK);
 CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK);
-CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_CM_COPY_VIDEO_TO_SYS_TASK);
-CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_CM_COPY_SYS_TO_VIDEO_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_CM_COPY);
 
 #undef MFX_2_ETW_TASK
 #undef ERROR_MSG
@@ -280,60 +279,91 @@ mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
 
 /*------------------------------------------------------------------------------*/
 
-inline mfxTraceU32 MFXTraceETW_SendBeginEndEvent(USHORT task, UCHAR opcode, UCHAR level, const char * message)
+enum {
+    MPA_ETW_OPCODE_START = 1,
+    MPA_ETW_OPCODE_STOP = 2,
+};
+
+mfxTraceU32 MFXTraceETW_SendNamedEvent(mfxTraceStaticHandle *static_handle,
+                                       mfxTraceTaskHandle *handle,
+                                       UCHAR opcode,
+                                       const mfxTraceU32 *task_params = nullptr)
 {
-    EVENT_DESCRIPTOR descriptor = {};
+    EVENT_DESCRIPTOR descriptor;
+    EVENT_DATA_DESCRIPTOR data_descriptor;
+    char* task_name = nullptr;
+
+    if (!handle) return 1;
+
+    task_name = handle->etw1.str;
+    if (!task_name) return 1;
+
+    memset(&descriptor, 0, sizeof(EVENT_DESCRIPTOR));
+    memset(&data_descriptor, 0, sizeof(EVENT_DATA_DESCRIPTOR));
+
     descriptor.Opcode = opcode;
-    descriptor.Level = level;
-    descriptor.Task = task;
-    descriptor.Keyword = task ? MFX_ETW_KEYWORD_TYPED_EVENT : MFX_ETW_KEYWORD_NON_TYPED_EVENT;
-    // VERY IMPORTANT !!!
-    // MANIFEST FILE SHALL FOLLOW THE SAME RULE DEFINING ID FOR EVENTS:
-    descriptor.Id = (descriptor.Task << 2) + descriptor.Opcode; // Since ONLY Info/Start/Stop opcodes are used
-                                                                // we reserve 2 lowest bits for opcode and the rest for task Id.
+    descriptor.Level = (static_handle) ? (UCHAR)static_handle->level : 0;
+    descriptor.Task = (USHORT)handle->etw2.uint32;
+    if (task_params)
+    {
+        descriptor.Id = 1;
+        descriptor.Keyword = *task_params;
+    }
 
-    EVENT_DATA_DESCRIPTOR EventData[1];
-    EventDataDescCreate(&EventData[0],
-        (message != nullptr) ? message : "NULL",
-        (message != nullptr) ? (ULONG)((strlen(message) + 1) * sizeof(CHAR)) : (ULONG)sizeof("NULL"));
+    EventDataDescCreate(&data_descriptor, task_name, (ULONG)(strlen(task_name) + 1));
 
-    EventWrite(Intel_MediaSDKHandle, &descriptor, 1, EventData);
+    EventWrite(Intel_MediaSDKHandle, &descriptor, 1, &data_descriptor);
     return 0;
 }
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceETW_BeginTask(mfxTraceStaticHandle * /*static_handle*/,
-                             const char * /*file_name*/, mfxTraceU32 /*line_num*/,
+mfxTraceU32 MFXTraceETW_BeginTask(mfxTraceStaticHandle * static_handle,
+                             const char * /*file_name*/, mfxTraceU32 line_num,
                              const char * function_name,
-                             mfxTraceChar* /*category*/, mfxTraceLevel level,
-                             const char * task_name, const mfxTraceTaskType task_type,
-                             mfxTraceTaskHandle* task_handle, const void * /*task_params*/)
+                             mfxTraceChar* /*category*/, mfxTraceLevel /*level*/,
+                             const char * task_name, const mfxTraceTaskType /*task_type*/,
+                             mfxTraceTaskHandle* task_handle, const void * task_params)
 {
     if (!task_handle) return 1;
     auto function_or_task_name = ((task_name) ? task_name : function_name);
+    task_handle->etw1.str    = (char*)function_or_task_name;
+    task_handle->etw2.uint32 = line_num;
 
-    task_handle->etw1.uint32 = task_type;
-    task_handle->etw2.uint32 = level;
-    task_handle->etw3.str = (char*)function_or_task_name;
-    return MFXTraceETW_SendBeginEndEvent((USHORT)task_handle->etw1.uint32,
-                                      EVENT_TRACE_TYPE_START,
-                                      (UCHAR)level,
-                                      function_or_task_name);
+    return MFXTraceETW_SendNamedEvent(static_handle, task_handle, MPA_ETW_OPCODE_START, (const UINT32*)task_params);
 }
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceETW_EndTask(mfxTraceStaticHandle * /*static_handle*/,
+mfxTraceU32 MFXTraceETW_EndTask(mfxTraceStaticHandle * static_handle,
                            mfxTraceTaskHandle* task_handle)
 {
-    return task_handle ? MFXTraceETW_SendBeginEndEvent((USHORT)task_handle->etw1.uint32,
-                                                    EVENT_TRACE_TYPE_STOP,
-                                                    (UCHAR)task_handle->etw2.uint32,
-                                                    task_handle->etw3.str)
-                        : 1;
+    if (!task_handle) return 1;
+
+    return MFXTraceETW_SendNamedEvent(static_handle, task_handle, MPA_ETW_OPCODE_STOP);
 }
 
+mfxTraceU32 MFXTrace_ETWEvent(uint16_t task, uint8_t opcode, uint8_t level, uint64_t size, void *ptr)
+{
+    EVENT_DESCRIPTOR descriptor = {};
+    descriptor.Opcode = opcode;
+    descriptor.Level = level;
+    descriptor.Task = task;
+    // VERY IMPORTANT !!!
+    // MANIFEST FILE SHALL FOLLOW THE SAME RULE DEFINING ID FOR EVENTS:
+    descriptor.Keyword = task ? MFX_ETW_KEYWORD_TYPED_EVENT : MFX_ETW_KEYWORD_NON_TYPED_EVENT;
+    descriptor.Id = (descriptor.Task << 2) + descriptor.Opcode; // Since ONLY Info/Start/Stop opcodes are used
+                                                                // we reserve 2 lowest bits for opcode and the rest for task Id.
+
+    EVENT_DATA_DESCRIPTOR EventData[1];
+    int count = 0;
+    if (size && ptr) {
+        EventDataDescCreate(&EventData[count++], ptr, (ULONG)size);
+    }
+
+    EventWrite(Intel_MediaSDKHandle, &descriptor, count, count ? EventData : nullptr);
+    return 0;
+}
 
 } // extern "C"
 #endif // #ifdef MFX_TRACE_ENABLE_ETW

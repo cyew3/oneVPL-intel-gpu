@@ -176,7 +176,9 @@ void mfxSchedulerCore::WakeupThreadProc()
         vm_status vmRes;
 
         {
-            MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK);
+            MFX_AUTO_TRACE("mfxSchedulerCore::WakeupThreadProc");
+            ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK, 0, this);
+
             vmRes = vm_event_timed_wait(&m_hwTaskDone, m_timer_hw_event);
         }
 
