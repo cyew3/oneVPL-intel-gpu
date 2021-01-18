@@ -618,10 +618,10 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 
 
 #if defined(MFX_ONEVPL)
-struct Handlers {
+struct DHandlers {
     std::function<mfxStatus(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&)> QueryImplsDescription;
 };
-typedef std::map<mfxU32, Handlers> CodecId2Handlers;
+typedef std::map<mfxU32, DHandlers> CodecId2Handlers;
 
 mfxStatus QueryImplsDescription(VideoCORE& core, mfxDecoderDescription& caps, mfx::PODArraysHolder& ah)
 {

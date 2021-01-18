@@ -131,7 +131,7 @@ struct CodecKey {
     }
 };
 
-struct Handlers {
+struct EHandlers {
     typedef std::function<VideoENCODE*(VideoCORE* core, mfxU16 codecProfile, mfxStatus *mfxRes)> CtorType;
 
     struct Funcs {
@@ -147,7 +147,7 @@ struct Handlers {
     Funcs fallback;
 };
 
-typedef std::map<CodecKey, Handlers> CodecId2Handlers;
+typedef std::map<CodecKey, EHandlers> CodecId2Handlers;
 
 static const CodecId2Handlers codecId2Handlers =
 {
@@ -674,7 +674,7 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
         return nullptr;
     }
 
-    const Handlers::CtorType &ctor = m_bIsHWENCSupport?
+    const EHandlers::CtorType &ctor = m_bIsHWENCSupport?
         handler->second.primary.ctor : handler->second.fallback.ctor;
     if (!ctor)
     {
