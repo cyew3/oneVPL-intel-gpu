@@ -82,6 +82,7 @@ public:
     virtual mfxStatus GetDownStream(IFile **ppFile);
     virtual mfxStatus SetDownStream(IFile *ppFile);
     virtual mfxStatus GetDevice(IHWDevice **pDevice);
+    virtual mfxStatus SetVDSFCFormat(bool bVDSFCFormatSetting);
 
 
 protected:
@@ -94,6 +95,7 @@ protected:
     bool                    m_bAutoView;
     mfxU32                  m_nViewId;         
     std::auto_ptr<IFile>    m_pFile;
+    bool                    m_bVDSFCFormatSetting;
 
     virtual mfxStatus LockFrame(mfxFrameSurface1 *surface);
     virtual mfxStatus UnlockFrame(mfxFrameSurface1 *surface);

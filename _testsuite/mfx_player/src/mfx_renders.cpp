@@ -204,6 +204,12 @@ mfxStatus MFXVideoRender::GetDevice(IHWDevice **ppDevice)
     return MFX_ERR_NONE;
 }
 
+mfxStatus MFXVideoRender::SetVDSFCFormat(bool bVDSFCFormatSetting)
+{
+    m_bVDSFCFormatSetting = bVDSFCFormatSetting;
+    return MFX_ERR_NONE;
+}
+
 //////////////////////////////////////////////////////////////////////////
 MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params, IVideoSession * core, mfxStatus *status)
     : MFXVideoRender(core, status)
@@ -383,7 +389,7 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     mfxFrameSurface1 * pConvertedSurface = pSurface;
 
     //so target fourcc is different than input
-    if (m_nFourCC != pSurface->Info.FourCC)
+    if ( (m_nFourCC != pSurface->Info.FourCC) && (m_bVDSFCFormatSetting == false) )
     {
         if (pSurface->Info.Width != m_auxSurface.Info.Width || pSurface->Info.Height != m_auxSurface.Info.Height)
         {

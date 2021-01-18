@@ -1064,6 +1064,51 @@ mfxStatus MFXDecPipeline::InitBitDepthByFourCC(mfxFrameInfo &info)
     return MFX_ERR_NONE;
 }
 
+/*
+    AdjustShiftByFourCCForVDSFC adjust native Shift supported by HW
+
+    info.Shift is:
+    0 if FourCC bit depth is 8 bit
+    1 if FourCC bit depth is 10 or 12 bit.
+*/
+mfxStatus MFXDecPipeline::AdjustShiftByFourCCForVDSFC(mfxFrameInfo &info)
+{
+    if (m_components[eDEC].m_libType == MFX_IMPL_SOFTWARE || m_components[eDEC].m_libType == MFX_IMPL_UNSUPPORTED)
+        return MFX_ERR_UNSUPPORTED;
+
+    switch (info.FourCC)
+    {
+        // 8 bit
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_NV16:
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_AYUV:
+    case MFX_FOURCC_YV12:
+    case MFX_FOURCC_UYVY:
+        info.Shift = 0;
+        break;
+        // 10 bit
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_P210:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y210:
+#endif
+        // 12 bit
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+#endif
+        info.Shift = 1;
+        break;
+
+    default:
+        return MFX_ERR_UNSUPPORTED; // VDSFC unsupported
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus MFXDecPipeline::LightReset()
 {
     //double reset will goes to long almost infinite run
@@ -1870,8 +1915,11 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     // FourCC and picstruct must be the same as in decoded frame
     if (!m_extDecVideoProcessing.IsZero())
     {
-        m_extDecVideoProcessing->Out.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
-        m_extDecVideoProcessing->Out.FourCC       = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
+        if (!m_inParams.bVDSFCFormatSetting)
+        {
+            m_extDecVideoProcessing->Out.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
+            m_extDecVideoProcessing->Out.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
+        }
 
         m_components[eDEC].m_extParams.push_back(m_extDecVideoProcessing);
         m_components[eDEC].AssignExtBuffers();
@@ -2454,6 +2502,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         //TODO: it is always a part of render creation?
         //        MFX_CHECK_STS(m_pRender->SetOutputFourcc(m_components[eREN].m_params.mfx.FrameInfo.FourCC));
         MFX_CHECK_STS(m_pRender->SetAutoView(m_inParams.bMultiFiles));
+        MFX_CHECK_STS(m_pRender->SetVDSFCFormat(m_inParams.bVDSFCFormatSetting));
     }
 
     return sts;
@@ -3099,6 +3148,17 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         request->Info.CropH = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
         request->Info.CropW = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
 
+        if (m_inParams.bVDSFCFormatSetting)
+        {
+            request->Info.ChromaFormat = m_extDecVideoProcessing->Out.ChromaFormat;
+            request->Info.FourCC = m_extDecVideoProcessing->Out.FourCC;
+
+            request->Info.BitDepthLuma = 0;
+            request->Info.BitDepthChroma = 0;
+            MFX_CHECK_STS(InitBitDepthByFourCC(request->Info));
+            MFX_CHECK_STS(AdjustShiftByFourCCForVDSFC(request->Info));
+        }
+
         if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
         {
             request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_ENCODE;
@@ -3148,6 +3208,17 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         memcpy(&request->Info, &m_components[eVPP].m_params.vpp.In, sizeof(mfxFrameInfo));
         request->Info.CropH = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
         request->Info.CropW = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
+
+        if (m_inParams.bVDSFCFormatSetting)
+        {
+            request->Info.ChromaFormat = m_extDecVideoProcessing->Out.ChromaFormat;
+            request->Info.FourCC = m_extDecVideoProcessing->Out.FourCC;
+
+            request->Info.BitDepthLuma = 0;
+            request->Info.BitDepthChroma = 0;
+            MFX_CHECK_STS(InitBitDepthByFourCC(request->Info));
+            MFX_CHECK_STS(AdjustShiftByFourCCForVDSFC(request->Info));
+        }
 
         if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
         {
@@ -5390,6 +5461,69 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropW, argv[0]);
                 argv ++;
                 MFX_PARSE_INT(m_extDecVideoProcessing->Out.CropH, argv[0]);
+
+                if (1 + argv == argvEnd)
+                    break;
+                argv++;
+                // assume CSC is used
+                m_inParams.bVDSFCFormatSetting = true;
+
+                if (m_OptProc.Check(argv[0], VM_STRING("nv12"), VM_STRING("sfc out format is nv12")) || m_OptProc.Check(argv[0], VM_STRING("NV12"), VM_STRING("sfc out format is NV12")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_NV12;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("p010"), VM_STRING("sfc out format is p010")) || m_OptProc.Check(argv[0], VM_STRING("P010"), VM_STRING("sfc out format is P010")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_P010;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("p016"), VM_STRING("sfc out format is p016")) || m_OptProc.Check(argv[0], VM_STRING("P016"), VM_STRING("sfc out format is P016")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_P016;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("yuy2"), VM_STRING("sfc out format is yuy2")) || m_OptProc.Check(argv[0], VM_STRING("YUY2"), VM_STRING("sfc out format is YUY2")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_YUY2;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("y210"), VM_STRING("sfc out format is y210")) || m_OptProc.Check(argv[0], VM_STRING("Y210"), VM_STRING("sfc out format is Y210")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_Y210;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("y216"), VM_STRING("sfc out format is y216")) || m_OptProc.Check(argv[0], VM_STRING("Y216"), VM_STRING("sfc out format is Y216")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_Y216;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("ayuv"), VM_STRING("sfc out format is ayuv")) || m_OptProc.Check(argv[0], VM_STRING("AYUV"), VM_STRING("sfc out format is AYUV")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_AYUV;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("y410"), VM_STRING("sfc out format is y410")) || m_OptProc.Check(argv[0], VM_STRING("Y410"), VM_STRING("sfc out format is Y410")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_Y410;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("y416"), VM_STRING("sfc out format is y416")) || m_OptProc.Check(argv[0], VM_STRING("Y416"), VM_STRING("sfc out format is Y416")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_Y416;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                }
+                else if (m_OptProc.Check(argv[0], VM_STRING("rgb32"), VM_STRING("sfc out format is rgb32")) || m_OptProc.Check(argv[0], VM_STRING("RGB32"), VM_STRING("sfc out format is RGB32")))
+                {
+                    m_extDecVideoProcessing->Out.FourCC = MFX_FOURCC_RGB4;
+                    m_extDecVideoProcessing->Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                }
+                else
+                {
+                    // CSC is not used
+                    argv--;
+                    m_inParams.bVDSFCFormatSetting = false;
+                }
             }
             else HANDLE_INT_OPTION(m_inParams.nInputBitdepth, VM_STRING("-i_bitdepth"), VM_STRING("bitdepth of input raw stream"))
             else HANDLE_BOOL_OPTION(m_inParams.bDisableIpFieldPair, VM_STRING("-disable_ip_field_pair"), VM_STRING("disable i/p field pair"));

@@ -54,4 +54,6 @@ public:
 
     //since surfaces are buffered number of target surfaces is different than one in target render
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
+
+    virtual mfxStatus SetVDSFCFormat(bool bVDSFCFormatSetting);
 };

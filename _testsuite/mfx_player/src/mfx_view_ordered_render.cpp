@@ -82,6 +82,11 @@ mfxStatus MFXViewOrderedRender::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReq
     return MFX_ERR_NONE;
 }
 
+mfxStatus MFXViewOrderedRender::SetVDSFCFormat(bool bVDSFCFormatSetting)
+{
+    return InterfaceProxy<IMFXVideoRender>::SetVDSFCFormat(bVDSFCFormatSetting);
+}
+
 mfxStatus MFXViewOrderedRender::RenderFrame( mfxFrameSurface1 *surface
                                            , mfxEncodeCtrl * pCtrl)
 {

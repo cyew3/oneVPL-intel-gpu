@@ -126,7 +126,12 @@ public:
 
         return pDecorator.release();
     }
-
+    mfxStatus SetVDSFCFormat(bool bVDSFCFormatSetting)
+    {
+        MFX_CHECK_POINTER(m_pTarget.get());
+        MFX_CHECK_STS(m_pTarget->SetVDSFCFormat(bVDSFCFormatSetting));
+        return MFX_ERR_NONE;
+    }
 };
 
 

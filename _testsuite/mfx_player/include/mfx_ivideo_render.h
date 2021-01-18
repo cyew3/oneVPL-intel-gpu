@@ -48,6 +48,9 @@ public:
 
     //render might have this interface
     virtual mfxStatus GetDevice(IHWDevice **pDevice) = 0;
+
+    //render might convert surface based on whether VD SFC format is set or not
+    virtual mfxStatus SetVDSFCFormat(bool bVDSFCFormatSetting) = 0;
 };
 
 #endif//__MFX_IRENDER_H

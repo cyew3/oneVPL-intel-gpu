@@ -128,6 +128,7 @@ struct sCommandlineParams
   bool           bVP9_DRC;
   bool           bDisableSurfaceAlign;
   bool           isRawSurfaceLinear;
+  bool           bVDSFCFormatSetting;
   vm_char        extractedAudioFile[MAX_FILE_PATH];
   mfxU16         nAdvanceFRCAlgorithm;//if non zero then directly specifies advanced FRC algorithm
   mfxU16         nImageStab;//image stabilization mode
@@ -334,6 +335,7 @@ struct sCommandlineParams
       bVP9_DRC = false;
       bAdaptivePlayback = false;
       nInputBitdepth = 8;
+      bVDSFCFormatSetting = false;
 
       InputPicstruct  = NOT_ASSIGNED_VALUE;
       OutputPicstruct = NOT_ASSIGNED_VALUE;
@@ -644,6 +646,7 @@ protected:
                                       , IncompatComponent ID
                                       , bool isNull);
     mfxStatus InitBitDepthByFourCC(mfxFrameInfo &info);
+    mfxStatus AdjustShiftByFourCCForVDSFC(mfxFrameInfo &info);
     //multivieencoding support
     MFXExtBufferVector m_InputExtBuffers;
     MFXExtBufferPtr<mfxExtDecVideoProcessing>  m_extDecVideoProcessing;
