@@ -6,7 +6,7 @@
     <TraceIttPropsImported>true</TraceIttPropsImported>
   </PropertyGroup>
   <PropertyGroup>
-    <UseITT>false</UseITT>
+    <UseITT>true</UseITT>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(UseITT)'=='true'">
     <ClCompile>
