@@ -10,9 +10,9 @@ $global:ProgressPreference = 'SilentlyContinue'
 $global:ErrorActionPreference = 'Stop'
 
 $CONFIG_INI_DATA = "
-version=10.0.0
+version=11.0.0
 merit=08000015
-apiversion=131
+apiversion=134
 "
 
 $SUPPORT_TXT_DATA = "Please use the following information when submitting customer support requests

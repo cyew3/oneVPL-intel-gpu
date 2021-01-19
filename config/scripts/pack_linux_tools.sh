@@ -117,7 +117,7 @@ cp -Pv ${PLUGINS[*]} $package_dir/usr/local/lib/x86_64-linux-gnu
 cp -Pv $test_behavior_dir/test_behavior $package_dir/usr/local/bin
 
 echo "Package: $package_name
-Version: 10.0.$BUILD_NUMBER
+Version: 11.0.$BUILD_NUMBER
 Section: default
 Priority: optional
 Architecture: amd64
