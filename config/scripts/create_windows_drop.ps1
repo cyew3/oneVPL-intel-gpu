@@ -3,10 +3,7 @@ Param(
     [string]$Workspace,
 
     [Parameter(Mandatory)]
-    [string]$BuildDir,
-
-    [Parameter(Mandatory)]
-    [string]$IccBinaries
+    [string]$BuildDir
 )
 
 $global:ProgressPreference = 'SilentlyContinue'
@@ -146,6 +143,10 @@ $MSDK_FILES=@(
     'msvc\x64\__bin\Release\mfx_loader_dll_hw64.dll',
     'uwp\x64\__bin\Release\intel_gfx_api-x64.dll',
     'uwp\x32\__bin\Release\intel_gfx_api-x86.dll',
+    'icc\x32\_studio\mfx_lib\plugin\mfxplugin32_av1e_gacc.dll',
+    'icc\x64\_studio\mfx_lib\plugin\mfxplugin64_av1e_gacc.dll',
+    'icc\x32\_studio\mfx_lib\plugin\mfxplugin_hw32.dll',
+    'icc\x64\_studio\mfx_lib\plugin\mfxplugin_hw64.dll',
     'VPL_build\x64\__bin\Release\libmfx64-gen.dll',
     'VPL_build\x32\__bin\Release\libmfx32-gen.dll'
 )
@@ -157,23 +158,12 @@ $MSDK_PDB_FILES=@(
     'msvc\x64\__bin\Release\libmfxhw64.pdb',
     'msvc\x32\__bin\Release\mfx_loader_dll_hw32.pdb',
     'msvc\x64\__bin\Release\mfx_loader_dll_hw64.pdb',
+    'icc\x32\_studio\mfx_lib\plugin\mfxplugin32_av1e_gacc.pdb',
+    'icc\x64\_studio\mfx_lib\plugin\mfxplugin64_av1e_gacc.pdb',
+    'icc\x32\_studio\mfx_lib\plugin\mfxplugin_hw32.pdb',
+    'icc\x64\_studio\mfx_lib\plugin\mfxplugin_hw64.pdb',
     'VPL_build\x64\__bin\Release\libmfx64-gen.pdb',
     'VPL_build\x32\__bin\Release\libmfx32-gen.pdb'
-)
-
-# TODO: It should be built in icc build
-$ICC_FILES=@(
-    'mfxplugin32_av1e_gacc.dll',
-    'mfxplugin32_hw.dll',
-    'mfxplugin64_av1e_gacc.dll',
-    'mfxplugin64_hw.dll'
-)
-
-$ICC_PDB_FILES=@(
-    'mfxplugin32_av1e_gacc.pdb',
-    'mfxplugin32_hw.pdb',
-    'mfxplugin64_av1e_gacc.pdb',
-    'mfxplugin64_hw.pdb'
 )
 
 $PACKAGE_NAMES = @(
@@ -205,9 +195,6 @@ foreach ($pkg_name in $PACKAGE_NAMES)
 
     Set-Location -Path $BuildDir; Copy-Item $MSDK_FILES -Destination $archive_dir;
       Copy-Item $MSDK_PDB_FILES -Destination $archive_dir\pdb
-
-    Set-Location -Path $IccBinaries; Copy-Item $ICC_FILES -Destination $archive_dir;
-      Copy-Item $ICC_PDB_FILES -Destination $archive_dir\pdb
 
     Compress-Archive -Path $archive_dir\* -DestinationPath "$package_dir\${pkg_name}.zip"
 }

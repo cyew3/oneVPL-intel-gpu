@@ -21,10 +21,7 @@ Param(
     [string]$TestSystem,
 
     [Parameter(Mandatory)]
-    [string]$MsdkBinaries,
-
-    [Parameter(Mandatory)]
-    [string]$IccBinaries
+    [string]$MsdkBinaries
 )
 
 $global:ProgressPreference = 'SilentlyContinue'
@@ -78,6 +75,8 @@ $FILES=@(
     'msvc\x64\__bin\Release\test_vpp_multisession.exe',
     'msvc\x64\__bin\Release\uc_conformance.exe',
     'msvc\x64\__bin\Debug\mfx_loader_dll_hw64.dll',
+    'icc\x64\_studio\mfx_lib\plugin\mfxplugin_hw64.dll',
+    'icc\x64\_testsuite\msdk_ts\unit\hevce_tests\hevce_tests.exe',
     'VPL_build\x64\__bin\Release\libmfx64-gen.dll'
 )
 
@@ -91,7 +90,6 @@ $TRACE_EVENT_FILES=@(
 
 $MSDK_FILES=@(
     'mfx-tracer_64.dll',
-    'hevce_tests.exe',
     'hevc_random_encoder.exe',
     'InstallerPreReq-x64.exe',
     'test_av1e.exe',
@@ -121,7 +119,6 @@ Copy-Item $VPABuildDir\* -Destination $package_dir\to_archive\build\win_x64\bin 
 Set-Location -Path $BuildDir; Copy-Item $FILES -Destination $package_dir\to_archive\build\win_x64\bin
 Set-Location -Path $BuildDir; Copy-Item $TRACE_EVENT_FILES -Destination $package_dir\to_archive\build\win_x64\bin\mft_tools
 Set-Location -Path $MsdkBinaries; Copy-Item $MSDK_FILES -Destination $package_dir\to_archive\build\win_x64\bin -Recurse
-Set-Location -Path $IccBinaries; Copy-Item 'mfxplugin64_hw.dll' -Destination $package_dir\to_archive\build\win_x64\bin
 
 Copy-Item $Workspace\workspace_snapshot.json -Destination $package_dir\to_archive\build
 

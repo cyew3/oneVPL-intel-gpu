@@ -64,13 +64,6 @@ components:
     asset_name: VPA_build
     asset_version: 1
     dest_dir: vpa_build
-  icc_binaries:
-    type: artifactory
-    root_url: https://gfx-assets.fm.intel.com/artifactory
-    asset_path: gfx-sandbox-fm/msdk/deployment
-    asset_name: icc_binaries
-    asset_version: 201c251804b57f1914579c47ee2c79d07344e1d1_conf_c07719c5
-    dest_dir: icc_binaries
   AMD64:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
