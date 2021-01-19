@@ -145,17 +145,23 @@ foreach( variant ${VARIANTS} )
 
   target_sources(${mfxlibname} PRIVATE ${sources_common})
  
+  if (CMAKE_SYSTEM_NAME MATCHES Windows)
+    add_custom_command(
+      OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.h ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.rc
+      COMMENT Running Windows Message Compiler to compile Media SDK ETW manifest
+      COMMAND mc ARGS -h "${CMAKE_CURRENT_BINARY_DIR}" -r "${CMAKE_CURRENT_BINARY_DIR}" -z media_sdk_etw -um "${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man"
+      DEPENDS ${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.rc PROPERTIES LANGUAGE RC)
+
+    target_sources(${mfxlibname} 
+      PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.rc
+        ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.h)
+  endif()
+
   if (variant MATCHES hw)
-    if (CMAKE_SYSTEM_NAME MATCHES Windows)
-      add_custom_command(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/../shared/mfx_trace/media_sdk_etw.rc
-        COMMENT Running Windows Message Compiler to compile Media SDK ETW manifest
-        COMMAND mc ARGS -h ${CMAKE_CURRENT_BINARY_DIR}/../shared/mfx_trace -r ${CMAKE_CURRENT_BINARY_DIR}/../shared/mfx_trace -z media_sdk_etw -um ${CMAKE_CURRENT_SOURCE_DIR}/../shared/mfx_trace/media_sdk_etw.man
-        DEPENDS media_sdk_etw.man
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../shared/mfx_trace
-      )
-      list(APPEND sources_hw ${CMAKE_CURRENT_BINARY_DIR}/../shared/mfx_trace/media_sdk_etw.rc)
-    endif()
     target_sources(${mfxlibname} PRIVATE ${sources_hw})
   endif()
 
