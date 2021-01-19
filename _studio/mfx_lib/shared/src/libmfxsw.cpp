@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 Intel Corporation
+// Copyright (c) 2007-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include <mfx_trace.h>
 
 #include <ippcore.h>
+#include <set>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -402,11 +403,15 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
     try
     {
         std::unique_ptr<mfx::ImplDescriptionHolder> holder(new mfx::ImplDescriptionHolder);
+        std::set<mfxU32> deviceIds;
 
         auto QueryImplDesc = [&](VideoCORE& core, mfxU32 deviceId) -> bool
         {
-            if (!IsVplHW(core.GetHWType()))
+            if (   !IsVplHW(core.GetHWType())
+                || deviceIds.end() != deviceIds.find(deviceId))
                 return true;
+
+            deviceIds.insert(deviceId);
 
             auto& impl = holder->PushBack();
 
