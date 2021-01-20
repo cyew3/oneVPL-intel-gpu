@@ -644,6 +644,19 @@ mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
             m_HWType         = devItem.platform;
             m_GTConfig       = devItem.config;
             this->m_deviceId = mfxU16(devItem.device_id);
+
+            const bool disableGpuCopy = false
+#ifndef STRIP_EMBARGO
+                || (this->GetHWType() >= MFX_HW_DG2)
+#endif
+                ;
+            if (disableGpuCopy)
+            {
+                mfxStatus mfxRes = this->SetCmCopyStatus(false);
+                if (MFX_ERR_NONE != mfxRes) {
+                    return mfxRes;
+                }
+            }
         }
             break;
 
