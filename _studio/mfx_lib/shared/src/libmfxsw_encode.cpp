@@ -712,7 +712,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
     mfxStatus mfxRes;
     MFX_AUTO_TRACE("MFXVideoENCODE_Query");
-    ETW_NEW_EVENT(MFX_TRACE_API_ENCODE_QUERY_TASK, 0, in->mfx.LowPower, in->mfx.TargetUsage, in->mfx.CodecId, in->mfx.FrameInfo.Height, in->mfx.FrameInfo.Width, session);
+    ETW_NEW_EVENT(MFX_TRACE_API_ENCODE_QUERY_TASK, 0, in ? in->mfx.LowPower : 0, in ? in->mfx.TargetUsage : 0, in ? in->mfx.CodecId : 0, in ? in->mfx.FrameInfo.Height : 0, in ? in->mfx.FrameInfo.Width : 0, session);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     bool bIsHWENCSupport = false;

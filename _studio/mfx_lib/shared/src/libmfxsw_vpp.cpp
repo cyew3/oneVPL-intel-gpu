@@ -71,7 +71,7 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 
     MFX_AUTO_TRACE("MFXVideoVPP_Query");
     ETW_NEW_EVENT(MFX_TRACE_API_VPP_QUERY_TASK, 0, out->mfx.CodecId, out->mfx.FrameInfo.Height, out->mfx.FrameInfo.Width,
-        in->mfx.CodecId, in->mfx.FrameInfo.Height, in->mfx.FrameInfo.Width, session);
+        in ? in->mfx.CodecId : 0, in ? in->mfx.FrameInfo.Height : 0, in ? in->mfx.FrameInfo.Width : 0, session);
 
     if ((0 != in) && (MFX_HW_VAAPI == session->m_pCORE->GetVAType()))
     {

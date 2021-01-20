@@ -168,7 +168,7 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #endif
 
     MFX_AUTO_TRACE("MFXVideoDECODE_Query");
-    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_QUERY_TASK, 0, in->mfx.CodecId, in->mfx.FrameInfo.Height, in->mfx.FrameInfo.Width, session);
+    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_QUERY_TASK, 0, in ? in->mfx.CodecId : 0, in ? in->mfx.FrameInfo.Height : 0, in ? in->mfx.FrameInfo.Width : 0, session);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     mfxStatus mfxRes;
