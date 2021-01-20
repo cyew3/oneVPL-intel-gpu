@@ -7,6 +7,7 @@ qb_variable_map:
   component_name: COMPONENT_NAME
   irepo_workspace: WORKSPACE
   parent_build_id: BUILD_ID
+  build_number: BUILD_NUMBER
 env:
   DOCKER_IMAGE: '-t dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-windows-1803:7'
   DOCKER_WORKSPACE: "C:\\workspace"
@@ -20,6 +21,10 @@ steps:
     command: (if exist %WORKSPACE%\\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\\sources\mdp_msdk-lib) &&
       (if exist mediasdk (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
       else (xcopy product %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q))
+  - name: update rc files
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -e BUILD_NUMBER=%BUILD_NUMBER% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\update_version\update_version_info.ps1
+      -ReposDir %DOCKER_WORKSPACE%\\sources -PerlPath %DOCKER_WORKSPACE%\\perl\bin\perl.exe
   - name: build
     command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat

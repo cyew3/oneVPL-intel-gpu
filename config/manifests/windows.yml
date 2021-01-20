@@ -92,3 +92,10 @@ components:
     asset_name: nuget_packages
     asset_version: 1
     dest_dir: sources/nuget_packages
+  perl:
+    type: artifactory
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-media-assets/msdk
+    asset_name: perl
+    asset_version: 5.22.0-win64
+    dest_dir: perl
