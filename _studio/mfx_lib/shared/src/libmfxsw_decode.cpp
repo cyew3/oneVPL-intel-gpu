@@ -429,12 +429,12 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
 {
     mfxStatus mfxRes;
 
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(par, MFX_ERR_NULL_PTR);
+
     MFX_AUTO_TRACE("MFXVideoDECODE_Init");
     ETW_NEW_EVENT(MFX_TRACE_API_DECODE_INIT_TASK, 0, par->mfx.CodecId, par->mfx.FrameInfo.Height, par->mfx.FrameInfo.Width, session);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(par, MFX_ERR_NULL_PTR);
 
     try
     {
