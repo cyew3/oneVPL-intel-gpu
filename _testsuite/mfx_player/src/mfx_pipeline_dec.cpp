@@ -1085,6 +1085,10 @@ mfxStatus MFXDecPipeline::AdjustShiftByFourCCForVDSFC(mfxFrameInfo &info)
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_UYVY:
+        // 10 bit
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y410:
+#endif
         info.Shift = 0;
         break;
         // 10 bit
