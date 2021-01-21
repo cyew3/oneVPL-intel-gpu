@@ -2070,6 +2070,8 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
                 offsets -= removed_bytes;
                 removed_bytes = 0;
             }
+            else
+                pSlice->m_tileByteLocation[tile] -= removed_bytes;
         }
     }
 
