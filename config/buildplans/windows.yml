@@ -1,7 +1,7 @@
 ---
 resource: windows2016v2
 working_dir: '..'
-manifest: windows.yml
+manifest: manifest.yml
 qb_variable_map:
   build_version: BUILD_VERSION
   component_name: COMPONENT_NAME
@@ -35,18 +35,18 @@ steps:
   - name: create tools drop
     command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_tools_drop.ps1
-      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\validation_tools"
-      -MsdkBinaries "C:\workspace\msdk_binaries" -VPABuildDir "C:\workspace\vpa_build"
+      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
+      -MsdkBinaries "C:\workspace\msdk_binaries\windows_pre_built_binaries" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
   - name: create lucas package
     command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_lucas_pkg.ps1
-      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\validation_tools"
+      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
   - name: create nightly package
     command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_nightly_pkg.ps1
-      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -VPABuildDir "C:\workspace\VPA_build"
-      -ValidationTools "C:\workspace\validation_tools" -Service_UWD "C:\workspace\service" -AMD64 "C:\workspace\AMD64"
-      -TestSystem "C:\workspace\test_system" -MsdkBinaries "C:\workspace\msdk_binaries"
+      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
+      -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools" -Service_UWD "C:\workspace\msdk_binaries\service" -AMD64 "C:\workspace\msdk_binaries\AMD64"
+      -TestSystem "C:\workspace\test_system" -MsdkBinaries "C:\workspace\msdk_binaries\windows_pre_built_binaries"
 types:
   release:
     env:

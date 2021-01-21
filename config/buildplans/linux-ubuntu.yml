@@ -1,6 +1,6 @@
 ---
 resource: DOCKER_LINUX_DRIVER
-manifest: linux.yml
+manifest: manifest.yml
 working_dir: '..'
 env:
   DOCKER_ENV_VARS: "-e SYSTEM=Ubuntu18.04 -e LINUX_DISTRO=ubuntu -e CCACHE_DIR=/opt/ccache \
@@ -64,7 +64,7 @@ steps:
       /opt/src/sources/mdp_msdk-lib/config/scripts/build_linux_tools.sh"
   - name: create tools drop package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_tools.sh
-      -v /opt/src/msdk_binaries/validation_tools
+      -v /opt/src/msdk_binaries/linux_validation_tools
       -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
       -l /opt/src/sources/mdp_msdk-lib/build/mediasdk/__lib/release
       -t /opt/src/msdk_binaries/test_behavior
@@ -77,7 +77,7 @@ steps:
       -p /opt/src/sources/mdp_msdk-lib/build/output"
   - name: create lucas drop package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lucas.sh
-      -v /opt/src/msdk_binaries/validation_tools
+      -v /opt/src/msdk_binaries/linux_validation_tools
       -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
       -l /opt/src/sources/mdp_msdk-lib/build/mediasdk/__lib/release
       -o /opt/src/sources/mdp_msdk-lib/build/vpl/__bin/release

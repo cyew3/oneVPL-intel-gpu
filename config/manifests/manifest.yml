@@ -50,41 +50,41 @@ components:
     branch: master
     revision: c49024cbad312303117f83cb1814f82c30f15940
     dest_dir: test_system
-  msdk_binaries:
+  windows_pre_built_binaries:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
     asset_path: gfx-sandbox-fm/msdk/deployment
     asset_name: msdk_binaries
     asset_version: 201c251804b57f1914579c47ee2c79d07344e1d1_conf_c07719c5_2
-    dest_dir: msdk_binaries
+    dest_dir: msdk_binaries/windows_pre_built_binaries
   VPA_build:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
     asset_path: gfx-sandbox-fm/msdk/deployment
     asset_name: VPA_build
     asset_version: 1
-    dest_dir: vpa_build
+    dest_dir: msdk_binaries/vpa_build
   AMD64:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
     asset_path: gfx-sandbox-fm/msdk/deployment
     asset_name: AMD64
     asset_version: 1
-    dest_dir: AMD64
+    dest_dir: msdk_binaries/AMD64
   service_UWD:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
     asset_path: gfx-sandbox-fm/msdk/deployment
     asset_name: service_UWD
     asset_version: 1
-    dest_dir: service
-  validation_tools:
+    dest_dir: msdk_binaries/service
+  windows_validation_tools:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
     asset_path: gfx-sandbox-fm/msdk/deployment
     asset_name: validation_tools
     asset_version: 1
-    dest_dir: validation_tools
+    dest_dir: msdk_binaries/windows_validation_tools
   nuget_packages:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
@@ -92,6 +92,40 @@ components:
     asset_name: nuget_packages
     asset_version: 1
     dest_dir: sources/nuget_packages
+  libva:
+    type: git
+    repository: https://github.com/intel/libva
+    branch: master
+    revision: 2.9.0.pre1
+    dest_dir: libva
+  cmrt_linux:
+    type: artifactory
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
+    asset_name: cmrt_linux
+    asset_version: 1
+    dest_dir: msdk_root/cmrt_linux
+  ipp_linux:
+    type: artifactory
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
+    asset_name: ipp_linux
+    asset_version: 1
+    dest_dir: msdk_root/ipp
+  test_behavior:
+    type: artifactory
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
+    asset_name: test_behavior
+    asset_version: dab74464a23303359fa4f2db18db0cc86c79d082
+    dest_dir: msdk_binaries/test_behavior
+  linux_validation_tools:
+    type: artifactory
+    root_url: https://gfx-assets.fm.intel.com/artifactory
+    asset_path: gfx-sandbox-fm/msdk/deployment/linux
+    asset_name: validation_tools
+    asset_version: 1
+    dest_dir: msdk_binaries/linux_validation_tools
   perl:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
