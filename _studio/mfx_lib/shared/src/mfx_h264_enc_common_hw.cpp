@@ -250,11 +250,15 @@ namespace
 
     bool hasSupportVME(eMFXHWType platform)
     {
-        return platform <= MFX_HW_DG1
+        return
+#ifndef STRIP_EMBARGO
+            (platform == MFX_HW_XE_HP) ||
+#endif
+            (platform <= MFX_HW_DG1
 #ifndef STRIP_EMBARGO
             && platform != MFX_HW_LKF
 #endif
-        ;
+            );
     }
 
     inline mfxU16 GetMaxSupportedLevel()
