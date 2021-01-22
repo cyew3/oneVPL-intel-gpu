@@ -142,7 +142,7 @@ namespace MfxHwH264Encode
         MFX_MEMTYPE_D3D_EXT | MFX_MEMTYPE_PROTECTED;
 #endif
 
-    mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par, MFX_ENCODE_CAPS const & hwCaps);
+    mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par, MFX_ENCODE_CAPS const & hwCaps, eMFXHWType platform);
 
     enum
     {
@@ -3015,9 +3015,9 @@ private:
 
         AsyncRoutineEmulator();
 
-        AsyncRoutineEmulator(MfxVideoParam const & video,  mfxU32  adaptGopDelay);
+        AsyncRoutineEmulator(MfxVideoParam const & video,  mfxU32  adaptGopDelay, eMFXHWType platform);
 
-        void Init(MfxVideoParam const & video, mfxU32  adaptGopDelay);
+        void Init(MfxVideoParam const & video, mfxU32  adaptGopDelay, eMFXHWType platform);
 
         mfxU32 GetTotalGreediness() const;
 

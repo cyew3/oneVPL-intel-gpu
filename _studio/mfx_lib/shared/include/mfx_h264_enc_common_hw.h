@@ -856,7 +856,8 @@ namespace MfxHwH264Encode
         eMFXHWType            platform);
 
     bool IsMctfSupported(
-        MfxVideoParam const & video);
+        MfxVideoParam const & video,
+        eMFXHWType            platform);
 
    mfxU32 GetPPyrSize(
         MfxVideoParam const & video,
@@ -864,7 +865,8 @@ namespace MfxHwH264Encode
         bool   bEncToolsLA);
 
     bool IsExtBrcSceneChangeSupported(
-        MfxVideoParam const & video);
+        MfxVideoParam const & video,
+        eMFXHWType            platform);
 
     bool IsCmNeededForSCD(
         MfxVideoParam const & video);

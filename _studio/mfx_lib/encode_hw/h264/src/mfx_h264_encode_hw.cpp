@@ -830,7 +830,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 #endif
     }
 
-    request->NumFrameMin = CalcNumFrameMin(tmp, hwCaps);
+    request->NumFrameMin = CalcNumFrameMin(tmp, hwCaps, core->GetHWType());
     request->NumFrameSuggested = request->NumFrameMin;
     // get FrameInfo from original VideoParam
     request->Info = tmp.mfx.FrameInfo;
@@ -1216,7 +1216,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
 #endif
 
-    m_emulatorForSyncPart.Init(m_video, adaptGopDelay);
+    m_emulatorForSyncPart.Init(m_video, adaptGopDelay, m_core->GetHWType());
     m_emulatorForAsyncPart = m_emulatorForSyncPart;
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
@@ -1554,7 +1554,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         MFX_CHECK_STS(sts);
     }
 
-    if (IsExtBrcSceneChangeSupported(m_video)
+    if (IsExtBrcSceneChangeSupported(m_video, m_core->GetHWType())
 #if defined(MFX_ENABLE_ENCTOOLS)
         && !(m_enabledEncTools)
 #endif
@@ -1587,7 +1587,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         MFX_CHECK_STS(sts);
     }
 
-    if (IsMctfSupported(m_video))
+    if (IsMctfSupported(m_video, m_core->GetHWType()))
     {
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
         if (!m_cmDevice)
@@ -2030,7 +2030,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
 #if defined(MFX_ENABLE_ENCTOOLS)
     adaptGopDelay =  m_encTools.GetPreEncDelay(newPar);
 #endif
-    m_emulatorForSyncPart.Init(newPar, adaptGopDelay);
+    m_emulatorForSyncPart.Init(newPar, adaptGopDelay, m_core->GetHWType());
     m_emulatorForAsyncPart = m_emulatorForSyncPart;
 
     m_hrd.Reset(newPar);
@@ -2873,7 +2873,7 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
 #endif
 
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
-    if (IsMctfSupported(m_video) && task->m_midMCTF)
+    if (IsMctfSupported(m_video, m_core->GetHWType()) && task->m_midMCTF)
     {
         ReleaseResource(m_mctf, task->m_midMCTF);
         task->m_midMCTF = MID_INVALID;
@@ -3995,7 +3995,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if (!m_video.mfx.EncodedOrder)
         {
-            if (IsExtBrcSceneChangeSupported(m_video)
+            if (IsExtBrcSceneChangeSupported(m_video, m_core->GetHWType())
 #if defined(MFX_ENABLE_ENCTOOLS)
                 || (m_enabledEncTools && m_encTools.IsAdaptiveGOP())
 #endif
@@ -4078,7 +4078,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             MFX_CHECK_STS(sts);
         }
 #endif
-        if (IsExtBrcSceneChangeSupported(m_video))
+        if (IsExtBrcSceneChangeSupported(m_video, m_core->GetHWType()))
         {
             MFX_CHECK_STS(SCD_Put_Frame(task));
         }
@@ -4103,7 +4103,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 #endif
         }
 #endif
-        if (IsExtBrcSceneChangeSupported(m_video))
+        if (IsExtBrcSceneChangeSupported(m_video, m_core->GetHWType()))
         {
 
             if (task.m_type[0] == 0)
@@ -4119,7 +4119,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_MCTF)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_START_MCTF");
-        if (IsMctfSupported(m_video))
+        if (IsMctfSupported(m_video, m_core->GetHWType()))
         {
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
             DdiTask & task = m_MctfStarted.back();
@@ -4132,7 +4132,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_MCTF)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_WAIT_MCTF");
-        if (IsMctfSupported(m_video))
+        if (IsMctfSupported(m_video, m_core->GetHWType()))
         {
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
             DdiTask & task = m_MctfFinished.front();
@@ -4536,7 +4536,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 }
 #endif //!MFX_ONEVPL
 
-                if (IsExtBrcSceneChangeSupported(m_video)
+                if (IsExtBrcSceneChangeSupported(m_video, m_core->GetHWType())
                     && (task->GetFrameType() & MFX_FRAMETYPE_I) && (task->m_encOrder == 0 || m_video.mfx.GopPicSize != 1))
                 {
                     mfxStatus sts = CalculateFrameCmplx(*task, task->m_brcFrameParams.FrameCmplx);

@@ -49,7 +49,7 @@ namespace MfxHwH264Encode
 {
     const mfxU32 NUM_CLOCK_TS[9] = { 1, 1, 1, 2, 2, 3, 3, 2, 3 };
 
-    mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par, MFX_ENCODE_CAPS const & hwCaps)
+    mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par, MFX_ENCODE_CAPS const & hwCaps, eMFXHWType platform)
     {
         mfxU16 numFrameMin = 0;
 
@@ -102,7 +102,7 @@ namespace MfxHwH264Encode
         {
             mfxExtCodingOption2 *       extOpt2 = GetExtBuffer(par);
             mfxExtCodingOption3 *       extOpt3 = GetExtBuffer(par);
-            mfxU16 mctfFrames = IsMctfSupported(par) ? (par.AsyncDepth > 1 ? 0 : 1) : 0;
+            mfxU16 mctfFrames = IsMctfSupported(par, platform) ? (par.AsyncDepth > 1 ? 0 : 1) : 0;
             mfxU32  adaptGopDelay = 0;
 #if defined(MFX_ENABLE_ENCTOOLS)
             adaptGopDelay = H264EncTools::GetPreEncDelay(par);
@@ -113,7 +113,7 @@ namespace MfxHwH264Encode
             }
             else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
             {
-                numFrameMin = (mfxU16)AsyncRoutineEmulator(par, adaptGopDelay).GetTotalGreediness() + par.AsyncDepth - 1;
+                numFrameMin = (mfxU16)AsyncRoutineEmulator(par, adaptGopDelay, platform).GetTotalGreediness() + par.AsyncDepth - 1;
 
                 mfxExtCodingOptionDDI & extDdi = GetExtBufferRef(par);
                 numFrameMin += IsOn(extDdi.RefRaw)

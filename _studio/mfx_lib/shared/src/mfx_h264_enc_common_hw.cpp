@@ -1425,13 +1425,15 @@ mfxU32 MfxHwH264Encode::GetPPyrSize(MfxVideoParam const & video, mfxU32 miniGopS
 
 }
 bool MfxHwH264Encode::IsExtBrcSceneChangeSupported(
-    MfxVideoParam const & video)
+    MfxVideoParam const & video,
+    eMFXHWType            platform)
 {
     bool extbrcsc = false;
 #if (MFX_VERSION >= 1026)
     // extbrc API change dependency
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
-    extbrcsc = (IsOn(extOpt2.ExtBRC) &&
+    extbrcsc = (hasSupportVME(platform) &&
+        IsOn(extOpt2.ExtBRC) &&
         (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
         && (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) && !video.mfx.EncodedOrder);
 #endif
@@ -1455,15 +1457,17 @@ bool MfxHwH264Encode::IsCmNeededForSCD(
 }
 
 bool MfxHwH264Encode::IsMctfSupported(
-    MfxVideoParam const & video)
+    MfxVideoParam const & video,
+    eMFXHWType            platform)
 {
     (void)video;
     bool
         isSupported = false;
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
-    isSupported = (IsOn(extOpt2.ExtBRC) &&
-        IsExtBrcSceneChangeSupported(video) &&
+    isSupported = (hasSupportVME(platform) &&
+        IsOn(extOpt2.ExtBRC) &&
+        IsExtBrcSceneChangeSupported(video, platform) &&
         (video.mfx.FrameInfo.Width <= 3840 && video.vpp.In.Height <= 2160) &&
         (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || video.mfx.RateControlMethod == MFX_RATECONTROL_VBR) &&
         (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) &&
@@ -2304,7 +2308,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     {
         mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(par);
 
-        mfxU32 numFrameMin = CalcNumFrameMin(par, hwCaps);
+        mfxU32 numFrameMin = CalcNumFrameMin(par, hwCaps, platform);
 
         MFX_CHECK(extOpaq.In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
     }
@@ -5214,7 +5218,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
     if (IsOn(extOpt2->AdaptiveI) &&
-        (!(IsExtBrcSceneChangeSupported(par) && !(extBRC->pthis))
+        (!(IsExtBrcSceneChangeSupported(par, platform) && !(extBRC->pthis))
 #if defined(MFX_ENABLE_ENCTOOLS)
         && IsOff(extConfig->AdaptiveI)
 #endif
@@ -5230,7 +5234,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (IsOn(extOpt3->ExtBrcAdaptiveLTR) &&
-        (!(IsExtBrcSceneChangeSupported(par) && !(extBRC->pthis))))
+        (!(IsExtBrcSceneChangeSupported(par, platform) && !(extBRC->pthis))))
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
         changed = true;
@@ -5238,7 +5242,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (!CheckTriStateOption(extOpt2->AdaptiveB)) changed = true;
     if (IsOn(extOpt2->AdaptiveB) &&
-        (!(IsExtBrcSceneChangeSupported(par) && !(extBRC->pthis))
+        (!(IsExtBrcSceneChangeSupported(par, platform) && !(extBRC->pthis))
 #if defined(MFX_ENABLE_ENCTOOLS)
             && IsOff(extConfig->AdaptiveB)
 #endif
@@ -6592,7 +6596,7 @@ void MfxHwH264Encode::SetDefaults(
             par.calcParam.numTemporalLayer == 0 &&
             extDdi->NumActiveRefP != 1 &&
             (par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) &&
-            ((IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
+            ((IsExtBrcSceneChangeSupported(par, platform) && !extBRC.pthis)
  #if defined(MFX_ENABLE_LP_LOOKAHEAD)
              || IsLpLookaheadSupported(extOpt3->ScenarioInfo, extOpt2->LookAheadDepth, par.mfx.RateControlMethod)
 #endif
@@ -6747,7 +6751,7 @@ void MfxHwH264Encode::SetDefaults(
         #ifndef MFX_AUTOLTR_FEATURE_DISABLE
         // remove check when sample extbrc is same as implicit extbrc
         // currently added for no behaviour change in sample extbrc
-        if (IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
+        if (IsExtBrcSceneChangeSupported(par, platform) && !extBRC.pthis)
         {
             extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_ON;
             // make sure to call CheckVideoParamQueryLike
@@ -6758,7 +6762,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->AdaptiveI == MFX_CODINGOPTION_UNKNOWN)
     {
-        if ((IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
+        if ((IsExtBrcSceneChangeSupported(par, platform) && !extBRC.pthis)
 #if defined(MFX_ENABLE_ENCTOOLS)
            || (!IsOff(extConfig->AdaptiveI))
 #endif
@@ -6770,7 +6774,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->AdaptiveB == MFX_CODINGOPTION_UNKNOWN)
     {
-        if ((IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
+        if ((IsExtBrcSceneChangeSupported(par, platform) && !extBRC.pthis)
 #if defined(MFX_ENABLE_ENCTOOLS)
         || (!IsOff(extConfig->AdaptiveB) && !IsOff(extConfig->AdaptiveI))
 #endif
