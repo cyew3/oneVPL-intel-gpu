@@ -298,8 +298,7 @@ if (CMAKE_C_COMPILER_ID MATCHES Intel)
 else()
   target_compile_options(mfx_require_sse4_properties
     INTERFACE
-      # on Windows MSVC AVX includes SSE4
-      $<$<PLATFORM_ID:Windows>: /arch:AVX>
+      # on Windows MSVC SSE4.2 supported by default
       $<$<PLATFORM_ID:Linux>:   -msse4.2>
     )
 endif()
