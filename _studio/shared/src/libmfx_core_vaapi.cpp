@@ -471,7 +471,8 @@ typedef struct {
     { 0x46E0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
 
     /* PVC */
-    { 0x0BD0, MFX_HW_PVC, MFX_GT4 }
+    { 0x0BD0, MFX_HW_PVC, MFX_GT4 },
+    { 0x0BD5, MFX_HW_PVC, MFX_GT4 }
 #endif
 };
 
