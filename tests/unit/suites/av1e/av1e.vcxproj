@@ -25,6 +25,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\tools\bs_parser_av1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -39,6 +40,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\contrib\build\googletest\gtest_main.vcxproj">
       <Project>{c2b706a6-968d-355a-ae3d-c834291c9dfd}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\tools\bs_parser_av1\bs_parser_av1.vcxproj">
+      <Project>{b672181e-c5fc-48a7-aecd-c06253696631}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\encode_hw\encode_hw.vcxproj">
       <Project>{6e291a7c-090c-4922-bf63-cc83f06fb8b0}</Project>
