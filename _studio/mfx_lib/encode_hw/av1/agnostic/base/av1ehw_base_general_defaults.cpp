@@ -909,6 +909,13 @@ public:
         invalid += CheckOrZero(par.mfx.FrameInfo.BitDepthLuma, itFourCCPar->second[1], 0);
         invalid += CheckOrZero(par.mfx.FrameInfo.BitDepthChroma, itFourCCPar->second[1], 0);
 
+        if (par.mfx.FrameInfo.BitDepthLuma != par.mfx.FrameInfo.BitDepthChroma)
+        {
+            par.mfx.FrameInfo.BitDepthLuma   = 0;
+            par.mfx.FrameInfo.BitDepthChroma = 0;
+            invalid += 1;
+        }
+
         MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
         return MFX_ERR_NONE;
     }
@@ -956,6 +963,14 @@ public:
         // caps check
         invalid = (b8bit && !dpar.caps.BitDepthSupportFlags.fields.eight_bits) ||
                   (b10bit && !dpar.caps.BitDepthSupportFlags.fields.ten_bits);
+
+        if (pCO3->TargetBitDepthLuma != pCO3->TargetBitDepthChroma)
+        {
+            pCO3->TargetBitDepthLuma   = 0;
+            pCO3->TargetBitDepthChroma = 0;
+            invalid += 1;
+        }
+
         MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
 
         return MFX_ERR_NONE;
