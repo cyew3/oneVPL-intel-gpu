@@ -30,8 +30,6 @@
 
 using namespace MfxHwMJpegEncode;
 
-#define DEFAULT_TIMEOUT_MJPEG_HW 60000
-
 D3DXCommonEncoder::D3DXCommonEncoder()
 {
 }
@@ -90,9 +88,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task)
         // use GPUTaskSync call to wait task completion.
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
 
-        mfxU32 timeOutMs = DEFAULT_TIMEOUT_MJPEG_HW;
-
-        sts = WaitTaskSync(task, timeOutMs);
+        sts = WaitTaskSync(task, DEFAULT_WAIT_HW_TIMEOUT_MS);
         MFX_CHECK_STS(sts);
 
         m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);

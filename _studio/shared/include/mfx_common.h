@@ -67,5 +67,13 @@ struct SynchronizedTask
 };
 #endif
 
+inline bool IsPreSiPlatform(eMFXHWType type)
+{
+    return
+#ifndef STRIP_EMBARGO
+        (type > MFX_HW_DG2) ||
+#endif
+        false;
+}
 
 #endif //_MFX_COMMON_H_

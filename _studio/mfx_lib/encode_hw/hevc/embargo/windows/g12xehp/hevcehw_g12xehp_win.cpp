@@ -44,8 +44,8 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     : TBaseImpl(core, status, mode)
 {
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-    const mfxU32 DEFAULT_H265_TIMEOUT_MS_SIM = 3600000; // 1 hour
-    GetFeature<Base::BlockingSync>(HEVCEHW::Base::FEATURE_BLOCKING_SYNC).SetTimeout(DEFAULT_H265_TIMEOUT_MS_SIM);
+    if (IsPreSiPlatform(core.GetHWType()))
+        GetFeature<Base::BlockingSync>(HEVCEHW::Base::FEATURE_BLOCKING_SYNC).SetTimeout(3600000); // 1 hour
 #endif
 
     TFeatureList newFeatures;

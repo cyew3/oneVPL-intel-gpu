@@ -161,6 +161,7 @@ namespace MfxHwVideoProcessing
 
         // ddi object
         AuxiliaryDevice *m_pAuxDevice;
+        VideoCORE*       m_core;
 
         struct D3D9Frc
         {

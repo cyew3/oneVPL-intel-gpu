@@ -20,8 +20,6 @@
 
 using namespace MfxHwMpeg2Encode;
 
-#define DEFAULT_TIMEOUT_MPEG2_HW 60000
-
 D3DXCommonEncoder::D3DXCommonEncoder()
     :m_bIsBlockingTaskSyncEnabled(false)
 {
@@ -74,7 +72,7 @@ mfxStatus D3DXCommonEncoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, m
     mfxStatus sts = MFX_ERR_NONE;
     if (m_bIsBlockingTaskSyncEnabled)
     {
-        sts = WaitTaskSync(DEFAULT_TIMEOUT_MPEG2_HW, pEvent);
+        sts = WaitTaskSync(DEFAULT_WAIT_HW_TIMEOUT_MS, pEvent);
         MFX_CHECK_STS(sts);
     }
 

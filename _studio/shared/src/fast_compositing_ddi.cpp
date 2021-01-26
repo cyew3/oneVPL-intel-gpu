@@ -176,6 +176,7 @@ FastCompositingDDI::FastCompositingDDI(FASTCOMP_MODE iMode)
 ,m_pDummySurface(NULL)
 ,m_pD3DDecoderService(NULL)
 ,m_pAuxDevice(NULL)
+,m_core(NULL)
 {
     memset(&m_caps,         0, sizeof(FASTCOMP_CAPS));
     memset(&m_caps2,        0, sizeof(FASTCOMP_CAPS2));
@@ -204,6 +205,8 @@ mfxStatus FastCompositingDDI::CreateDevice(VideoCORE * core, mfxVideoParam* par,
     MFX_CHECK_STS(sts);
 
     sts = Initialize(hwCore->GetD3D9DeviceManager(), pVideoService);
+
+    m_core = core;
 
     return sts;
 
@@ -660,8 +663,8 @@ mfxStatus FastCompositingDDI::QueryTaskStatus(SynchronizedTask* pSyncTask)
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
     if (pSyncTask->m_GpuEvent.gpuSyncEvent)
     {
-        HRESULT waitRes = WAIT_OBJECT_0;
-        waitRes = WaitForSingleObject(pSyncTask->m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
+        auto timeOut = IsPreSiPlatform(m_core->GetHWType()) ? 120000 : DEFAULT_WAIT_HW_TIMEOUT_MS;
+        HRESULT waitRes = WaitForSingleObject(pSyncTask->m_GpuEvent.gpuSyncEvent, timeOut);
         if (WAIT_OBJECT_0 != waitRes)
         {
             return MFX_ERR_GPU_HANG;

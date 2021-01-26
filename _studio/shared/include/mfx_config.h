@@ -405,8 +405,7 @@
     #endif
 #endif
 
-#define VP_OPERATION_TIMEOUT 120000
-
+#define DEFAULT_WAIT_HW_TIMEOUT_MS 60000
 
 #endif//#if defined(_WIN32) || defined(_WIN64)
 
@@ -484,7 +483,6 @@
 #if !defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
     #define MFX_PROTECTED_FEATURE_DISABLE
 #endif
-//    #define VP_OPERATION_TIMEOUT 5000
 
     #if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER

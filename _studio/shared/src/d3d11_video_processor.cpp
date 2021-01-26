@@ -1382,7 +1382,8 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(SynchronizedTask* pSyncTask)
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
     if (pSyncTask->m_GpuEvent.gpuSyncEvent)
     {
-        DWORD waitRes = WaitForSingleObject(pSyncTask->m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
+        auto timeOut = IsPreSiPlatform(m_core->GetHWType()) ? 3600000 : DEFAULT_WAIT_HW_TIMEOUT_MS;
+        DWORD waitRes = WaitForSingleObject(pSyncTask->m_GpuEvent.gpuSyncEvent, timeOut);
         if (WAIT_OBJECT_0 != waitRes)
         {
             return MFX_ERR_GPU_HANG;

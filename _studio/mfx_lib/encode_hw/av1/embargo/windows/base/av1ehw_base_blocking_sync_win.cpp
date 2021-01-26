@@ -46,7 +46,7 @@ void Windows::Base::BlockingSync::InitInternal(const FeatureBlocks& /*blocks*/, 
 
         m_bEnabled = pEnable && *pEnable;
 
-        if (core.GetHWType() >= MFX_HW_JSL)
+        if (IsPreSiPlatform(core.GetHWType()))
         {
             const mfxU32 DEFAULTE_AV1_TIMEOUT_MS_SIM = 3600000; // 1 hour
             SetTimeout(DEFAULTE_AV1_TIMEOUT_MS_SIM);

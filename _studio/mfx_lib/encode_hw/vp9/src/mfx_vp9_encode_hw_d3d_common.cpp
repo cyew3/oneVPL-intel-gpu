@@ -81,8 +81,7 @@ namespace MfxHwVP9Encode
             m_EventCache->SetGlobalHwEvent(pScheduler->GetHwEvent());
         }
 
-        eMFXHWType platform = pCore->GetHWType();
-        if (platform > MFX_HW_DG1)
+        if (IsPreSiPlatform(pCore->GetHWType()))
             m_TaskSyncTimeOutMs = DEFAULT_TIMEOUT_VP9_HW_SIM;
 
         return MFX_ERR_NONE;

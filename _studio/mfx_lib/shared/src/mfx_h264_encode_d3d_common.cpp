@@ -33,7 +33,6 @@
 
 using namespace MfxHwH264Encode;
 
-#define DEFAULT_TIMEOUT_AVCE_HW 60000
 #define DEFAULT_TIMEOUT_AVCE_HW_SIM 600000
 
 D3DXCommonEncoder::D3DXCommonEncoder()
@@ -69,10 +68,10 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
     {
         m_bSingleThreadMode = true;
 
-        m_timeoutForTDR = (platform > MFX_HW_DG1) ? MFX_H264ENC_HW_TASK_TIMEOUT_SIM : MFX_H264ENC_HW_TASK_TIMEOUT;
+        m_timeoutForTDR = IsPreSiPlatform(platform) ? MFX_H264ENC_HW_TASK_TIMEOUT_SIM : MFX_H264ENC_HW_TASK_TIMEOUT;
     }
 
-    m_timeoutSync = (platform > MFX_HW_DG1) ? DEFAULT_TIMEOUT_AVCE_HW_SIM : DEFAULT_TIMEOUT_AVCE_HW;
+    m_timeoutSync = IsPreSiPlatform(platform) ? DEFAULT_TIMEOUT_AVCE_HW_SIM : DEFAULT_WAIT_HW_TIMEOUT_MS;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     m_EventCache.reset(new EventCache());
