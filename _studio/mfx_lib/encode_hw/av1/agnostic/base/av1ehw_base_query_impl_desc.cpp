@@ -72,8 +72,8 @@ void QueryImplDesc::QueryImplsDescription(const FeatureBlocks& blocks, TPushQID 
         const Config cfgs[] =
         {
               //TODO: replace w/ MFX_PROFILE_AV1_..., currently none of API profiles supported
-              {AV1_SEQ_PROFILE_0_420_8or10bit, MFX_FOURCC_NV12,  8, 0, MFX_CHROMAFORMAT_YUV420}
-            , {AV1_SEQ_PROFILE_0_420_8or10bit, MFX_FOURCC_P010, 10, 1, MFX_CHROMAFORMAT_YUV420}
+              {MFX_PROFILE_AV1_MAIN, MFX_FOURCC_NV12,  8, 0, MFX_CHROMAFORMAT_YUV420}
+            , {MFX_PROFILE_AV1_MAIN, MFX_FOURCC_P010, 10, 1, MFX_CHROMAFORMAT_YUV420}
         };
 
         auto& queryNC = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks);
@@ -179,4 +179,4 @@ void QueryImplDesc::QueryImplsDescription(const FeatureBlocks& blocks, TPushQID 
     Push(BLK_Query, Query);
 }
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ONEVPL)
+#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && defined(MFX_ONEVPL)

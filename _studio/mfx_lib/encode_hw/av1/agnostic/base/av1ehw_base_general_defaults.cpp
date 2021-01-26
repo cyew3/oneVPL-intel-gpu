@@ -426,8 +426,8 @@ public:
 
         return
             bPassThrough * par.mvp.mfx.CodecProfile
-            + bMain10 * AV1_SEQ_PROFILE_0_420_8or10bit
-            + bMain * AV1_SEQ_PROFILE_0_420_8or10bit;
+            + bMain10 * MFX_PROFILE_AV1_MAIN
+            + bMain * MFX_PROFILE_AV1_MAIN;
     }
 
     static bool GUID(
@@ -861,19 +861,15 @@ public:
 
     static mfxStatus Profile(
         Defaults::TCheckAndFix::TExt
-        , const Defaults::Param& defPar
+        , const Defaults::Param& /*dpar*/
         , mfxVideoParam& par)
     {
-        defPar;
+        bool bInvalid = CheckOrZero<mfxU16
+            , 0
+            , MFX_PROFILE_AV1_MAIN>
+            (par.mfx.CodecProfile);
 
-        bool bValid =
-            !par.mfx.CodecProfile
-            || (par.mfx.CodecProfile == AV1_SEQ_PROFILE_0_420_8or10bit);
-
-        par.mfx.CodecProfile *= bValid;
-
-        MFX_CHECK(bValid, MFX_ERR_UNSUPPORTED);
-
+        MFX_CHECK(!bInvalid, MFX_ERR_UNSUPPORTED);
         return MFX_ERR_NONE;
     }
 

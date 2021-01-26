@@ -32,7 +32,6 @@ namespace AV1EHW
 {
 namespace Base
 {
-    const uint16_t AV1_SEQ_PROFILE_0_420_8or10bit = 0x0;
     const uint16_t SB_SIZE                        = 64;
     const uint16_t AV1_DIRTY_BLOCK_SIZE           = 32;
     const uint8_t  AV1_MAX_Q_INDEX                = 255;
@@ -159,7 +158,7 @@ namespace Base
     struct SH
     {
         //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in sequence_header_obu()
-        uint32_t seq_profile                        = AV1_SEQ_PROFILE_0_420_8or10bit;
+        uint32_t seq_profile                        = 0;
         uint32_t still_picture                      = 0;
         uint32_t reduced_still_picture_header       = 0;
 
