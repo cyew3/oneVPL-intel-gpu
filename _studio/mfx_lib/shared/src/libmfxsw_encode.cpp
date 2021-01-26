@@ -1199,6 +1199,11 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 
 #if defined(MFX_ONEVPL)
 
+mfxStatus MFXMemory_GetSurfaceForEncode(mfxSession session, mfxFrameSurface1** output_surf)
+{
+    return MFX_ERR_NOT_IMPLEMENTED;
+}
+
 mfxStatus QueryImplsDescription(VideoCORE& core, mfxEncoderDescription& caps, mfx::PODArraysHolder& ah)
 {
     for (auto& c : codecId2Handlers)

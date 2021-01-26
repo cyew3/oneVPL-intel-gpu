@@ -77,3 +77,8 @@ EXPORTS
     MFXInitialize
     MFXQueryImplsDescription
     MFXReleaseImplDescription
+
+    MFXMemory_GetSurfaceForVPP
+    MFXMemory_GetSurfaceForVPPOut
+    MFXMemory_GetSurfaceForEncode
+    MFXMemory_GetSurfaceForDecode

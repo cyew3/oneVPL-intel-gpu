@@ -100,4 +100,8 @@ LIBMFXGEN_1.2.1 {
     MFXInitialize;
     MFXQueryImplsDescription;
     MFXReleaseImplDescription;
+    MFXMemory_GetSurfaceForVPP;
+    MFXMemory_GetSurfaceForVPPOut;
+    MFXMemory_GetSurfaceForEncode;
+    MFXMemory_GetSurfaceForDecode;
 } LIBMFXHW_1.19;

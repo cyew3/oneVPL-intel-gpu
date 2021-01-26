@@ -81,6 +81,24 @@ mfxStatus MFXVideoCORE_QueryPlatform(mfxSession session, mfxPlatform* platform)
     }
 }
 
+#if defined(MFX_ONEVPL)
+
+mfxStatus MFXMemory_GetSurfaceForDecode(mfxSession session, mfxFrameSurface1** output_surf)
+{
+    return MFX_ERR_NOT_IMPLEMENTED;
+}
+
+#define FUNCTION_GET_SURFACE_IMPL_VPP(FUNCTION_NAME, TYPE)                                                                             \
+mfxStatus FUNCTION_NAME##TYPE (mfxSession session, mfxFrameSurface1** output_surf)                                                     \
+{                                                                                                                                      \
+    return MFX_ERR_NOT_IMPLEMENTED;                                                                                                    \
+}
+
+FUNCTION_GET_SURFACE_IMPL_VPP(MFXMemory_GetSurfaceForVPP, In)
+FUNCTION_GET_SURFACE_IMPL_VPP(MFXMemory_GetSurfaceForVPP, Out)
+
+#undef FUNCTION_GET_SURFACE_IMPL_VPP
+#endif
 
 // no HEVC FEI, always false
 bool CommonCORE::s_bHEVCFEIEnabled = false;
