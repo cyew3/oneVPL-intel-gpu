@@ -71,7 +71,7 @@ inline bool IsPreSiPlatform(eMFXHWType type)
 {
     return
 #ifndef STRIP_EMBARGO
-        (type > MFX_HW_DG2) ||
+        (type >= MFX_HW_DG2) ||
 #endif
         false;
 }
