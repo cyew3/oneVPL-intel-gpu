@@ -111,9 +111,9 @@ New-Item -ItemType "directory" -Path $package_dir\to_archive\build\win_x64\bin\m
 
 Copy-Item $TestSystem\* -Destination $package_dir\to_archive -Exclude '.git*' -Recurse
 Set-Location -Path $ValidationTools; Copy-Item 'on_platform_changed.bat','after_extract.bat','mfx_binmanager.ps1' -Destination $package_dir\to_archive
-Copy-Item $Service_UWD -Destination $package_dir\to_archive -Recurse
-Copy-Item $AMD64 -Destination $package_dir\to_archive -Recurse
-Copy-Item $VPABuildDir\* -Destination $package_dir\to_archive\build\win_x64\bin -Recurse
+Copy-Item $Service_UWD -Destination $package_dir\to_archive -Exclude '.assetversion' -Recurse
+Copy-Item $AMD64 -Destination $package_dir\to_archive -Exclude '.assetversion' -Recurse
+Copy-Item $VPABuildDir\* -Destination $package_dir\to_archive\build\win_x64\bin -Exclude '.assetversion' -Recurse
 
 # Binaries
 Set-Location -Path $BuildDir; Copy-Item $FILES -Destination $package_dir\to_archive\build\win_x64\bin

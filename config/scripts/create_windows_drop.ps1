@@ -176,7 +176,7 @@ $package_name = "WindowsDrop.zip"
 
 foreach ($pkg_name in $PACKAGE_NAMES)
 {
-    $archive_dir = "$package_dir\${pkg_name}_zip"
+    $archive_dir = "$package_dir\tmp_dir\${pkg_name}_zip"
     New-Item -Path $archive_dir\pdb -ItemType "directory"
 
     New-Item -Path $archive_dir -Name $SUPPORT_FILE_NAME -ItemType "file" -Value $SUPPORT_TXT_DATA.Replace("<ID>", $pkg_name)
@@ -196,5 +196,7 @@ foreach ($pkg_name in $PACKAGE_NAMES)
     Set-Location -Path $BuildDir; Copy-Item $MSDK_FILES -Destination $archive_dir;
       Copy-Item $MSDK_PDB_FILES -Destination $archive_dir\pdb
 
-    Compress-Archive -Path $archive_dir\* -DestinationPath "$package_dir\${pkg_name}.zip"
+    Compress-Archive -Path $archive_dir\* -DestinationPath "$package_dir\tmp_dir\${pkg_name}.zip"
 }
+
+Compress-Archive -Path $package_dir\tmp_dir\*.zip -DestinationPath "$package_dir\${package_name}"
