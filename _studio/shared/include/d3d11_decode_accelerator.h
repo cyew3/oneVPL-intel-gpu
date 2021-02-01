@@ -32,6 +32,13 @@
 #include "umc_va_dxva2.h"
 #include "mfxvideo.h"
 
+template<class Base> class D3D9ON11VideoCORE_T;
+template<class Base> class D3D11VideoCORE_T;
+class CommonCORE;
+using D3D9ON11VideoCORE = D3D9ON11VideoCORE_T<D3D11VideoCORE_T<CommonCORE>>;
+class mfx_UMC_FrameAllocator_D3D;
+
+
 class mfx_UMC_FrameAllocator;
 
 struct MFXD3D11AcceleratorParams
@@ -81,6 +88,9 @@ public:
 
     UMC::Status GetVideoDecoderDriverHandle(HANDLE*);
 
+    UMC::Status CreateWrapBuffers(VideoCORE* core, mfxFrameAllocRequest* req, mfxFrameAllocResponse* res);
+    UMC::Status UnwrapBuffer(mfxMemId bufferId) override;
+
     void GetVideoDecoder(void **handle)
     {
         *handle = m_pDecoder;
@@ -110,6 +120,10 @@ private:
     CComPtr<ID3D11VideoDecoderOutputView> m_pVDOView;
 
     mfxU32                           m_numberSurfaces;
+
+    mfxFrameAllocResponse            m_dx9on11response;
+    D3D9ON11VideoCORE*               m_pDX9ON11Core;
+    mfx_UMC_FrameAllocator_D3D*      m_umcAllocatorD3D;
 };
 
 

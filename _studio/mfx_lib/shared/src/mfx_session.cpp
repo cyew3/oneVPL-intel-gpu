@@ -31,6 +31,7 @@
 #if defined (MFX_VA_WIN)
 #include <libmfx_core_d3d9.h>
 #include <atlbase.h>
+#include "mfx_dxva2_device.h"
 #elif defined(MFX_VA_LINUX)
 #include <libmfx_core_vaapi.h>
 #endif
@@ -879,6 +880,30 @@ mfxU32 _mfxSession_1_10::GetNumRef(void) const
 
 } // mfxU32 _mfxSession_1_10::GetNumRef(void) const
 
+#ifdef MFX_VA_WIN
+static inline bool HasNativeDX9Support(mfxU32 adapter_n)
+{
+    MFX::DXVA2Device dxvaDevice;
+
+    if (!dxvaDevice.InitDXGI1(adapter_n))
+        return false;
+
+    mfxU32 DeviceID = dxvaDevice.GetDeviceID();
+
+    auto const* listLegalDevEnd = listLegalDevIDs + (sizeof(listLegalDevIDs) / sizeof(mfx_device_item));
+    auto devItem = std::find_if(listLegalDevIDs, listLegalDevEnd, [DeviceID](mfx_device_item devItem) {
+        return static_cast<mfxU32>(devItem.device_id) == DeviceID;
+    });
+
+    if (devItem == listLegalDevEnd) return false;
+
+    if (devItem->platform == MFX_HW_ADL_S || devItem->platform == MFX_HW_DG2)
+        return false;
+
+    return true;
+}
+#endif
+
 mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
 {
     mfxStatus mfxRes;
@@ -970,7 +995,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
             if (d3d9hlp.isD3D9Available() == false)
                 return  MFX_ERR_UNSUPPORTED;
 
-            m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_D3D9, m_adapterNum, maxNumThreads, this));
+            m_pCORE.reset(FactoryCORE::CreateCORE(HasNativeDX9Support(m_adapterNum) ? MFX_HW_D3D9 : MFX_HW_D3D9ON11, m_adapterNum, maxNumThreads, this));
         }
 
     }

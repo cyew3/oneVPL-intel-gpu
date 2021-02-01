@@ -101,7 +101,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\shared\src\mfx_check_hardware_support.cpp" />
     <ClCompile Include="..\..\..\..\_studio\shared\src\auxiliary_device.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\d3d11_decode_accelerator.cpp" />
     <ClCompile Include="..\..\..\..\_studio\shared\src\d3d11_video_processor.cpp" />
     <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_allocator.cpp" />
     <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_allocator_d3d9.cpp" />
@@ -116,6 +118,12 @@
     <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_tgllp_copy_isa.cpp" />
     <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_tgl_copy_isa.cpp" />
     <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_dg2_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_core.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_core_d3d11.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_core_d3d9on11.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_core_hw.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\mfx_dxva2_device.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\mfx_umc_alloc_wrapper.cpp" />
     <ClCompile Include="hevce_disp.cpp" />
     <ClCompile Include="hevce_feature_blocks_dx11_ddi.cpp" />
     <ClCompile Include="hevce_feature_blocks_g11_interlace.cpp" />

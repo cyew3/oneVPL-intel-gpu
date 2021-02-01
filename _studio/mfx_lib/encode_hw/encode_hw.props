@@ -69,7 +69,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared\embargo;
     $(MSDK_STUDIO_ROOT)\mfx_lib\lpla;
     </MfxIncludes>
-    <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;MFX_VA_WIN;</MfxDefinitions>
+    <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;MFX_VA_WIN;MFX_DX9ON11;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
     <MfxDefinitions Condition="'$(Configuration)'=='Debug'">_CRT_SECURE_NO_WARNINGS;$(MfxDefinitions)</MfxDefinitions>

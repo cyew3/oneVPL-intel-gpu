@@ -41,6 +41,9 @@
 #if defined (MFX_ENABLE_MFE)
 #include "mfx_mfe_adapter_dxva.h"
 #endif
+
+#include "libmfx_core_d3d9on11.h"
+
 namespace MfxHwH264Encode
 {
     class OutputBitstream;
@@ -115,6 +118,11 @@ namespace MfxHwH264Encode
             mfxU32    fieldId,
             bool useEvent = true) override;
 
+        virtual
+        mfxStatus CreateWrapBuffers(
+            const mfxU16& numFrameMin,
+            const mfxVideoParam& par) override;
+
     protected:
         // async call
         virtual
@@ -185,6 +193,9 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
         CachedFeedback                              m_feedbackCached;
         HeaderPacker                                m_headerPacker;
+
+        mfxFrameAllocResponse                       m_dx9on11response;
+        D3D9ON11VideoCORE *                         m_pDX9ON11Core;
 
         std::vector<mfxHDLPair>                     m_reconQueue;
         std::vector<mfxHDLPair>                     m_bsQueue;

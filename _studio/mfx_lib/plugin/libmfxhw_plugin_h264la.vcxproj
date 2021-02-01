@@ -38,6 +38,7 @@
     <ClCompile Include="..\..\shared\src\libmfx_core.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_d3d11.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_d3d9.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core_d3d9on11.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_vaapi.cpp" />
@@ -93,6 +94,7 @@
     <ClInclude Include="..\..\shared\include\libmfx_core.h" />
     <ClInclude Include="..\..\shared\include\libmfx_core_d3d11.h" />
     <ClInclude Include="..\..\shared\include\libmfx_core_d3d9.h" />
+    <ClInclude Include="..\..\shared\include\libmfx_core_d3d9on11.h" />
     <ClInclude Include="..\..\shared\include\libmfx_core_factory.h" />
     <ClInclude Include="..\..\shared\include\libmfx_core_hw.h" />
     <ClInclude Include="..\..\shared\include\libmfx_core_interface.h" />

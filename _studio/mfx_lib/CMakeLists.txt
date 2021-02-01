@@ -99,6 +99,7 @@ set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_vaapi.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d11.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9on11.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
@@ -228,6 +229,7 @@ foreach( variant ${VARIANTS} )
     target_compile_definitions(${mfxlibname}
       PRIVATE
         MFX_VA
+        $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>
     )
   endif()
 

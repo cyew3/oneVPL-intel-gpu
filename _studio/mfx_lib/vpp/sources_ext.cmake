@@ -53,3 +53,5 @@ target_link_libraries(vpp_hw
     scene_analyzer
   PRIVATE
   )
+
+target_compile_definitions(vpp_hw PRIVATE $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>)

@@ -1363,6 +1363,11 @@ mfxStatus MFXVideoDECODEVC1::PostProcessFrameHW(mfxFrameSurface1 *surface_work, 
     else
         surface_out = surface_disp;
 
+    UMC::VideoAccelerator* va = nullptr;
+    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+    if (va)
+        MFX_CHECK(!va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_INVALID_HANDLE);
+
     memIDdisp = m_qMemID.front();
     m_qMemID.pop_front();
     memID = m_pVC1VideoDecoder->ProcessQueuesForNextFrame(isSkip, Corrupted);

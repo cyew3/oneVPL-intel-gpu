@@ -44,6 +44,7 @@
     <ClCompile Include="..\shared\src\libmfx_core.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_d3d11.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_d3d9.cpp" />
+    <ClCompile Include="..\shared\src\libmfx_core_d3d9on11.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_vaapi.cpp" />
@@ -89,6 +90,7 @@
     <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo++.h" />
     <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo.h" />
     <ClInclude Include="..\..\..\build\win_x64\lib\media_sdk_etw.h" />
+    <ClInclude Include="..\shared\include\libmfx_core_d3d9on11.h" />
     <ClInclude Include="encode_hw\h265\include\hevce_ddi_main.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="..\shared\include\cm_mem_copy.h" />

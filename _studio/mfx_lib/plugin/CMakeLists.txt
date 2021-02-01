@@ -126,6 +126,7 @@ target_link_libraries(fast_copy_sse4_plugin PRIVATE bitrate_control mfx_require_
     ${prefix}/libmfx_core_vaapi.cpp
     ${prefix}/libmfx_core_d3d9.cpp
     ${prefix}/libmfx_core_d3d11.cpp
+    ${prefix}/libmfx_core_d3d9on11.cpp
     ${prefix}/mfx_dxva2_device.cpp
     ${prefix}/d3d11_decode_accelerator.cpp
     ${prefix}/d3d11_video_processor.cpp
@@ -252,6 +253,7 @@ if( DEFINED H264LA_ENCODER_GUID )
   target_link_libraries(${plugin_name}
     PRIVATE
       lpla
+      encode_hw
       genx
       asc
       $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>

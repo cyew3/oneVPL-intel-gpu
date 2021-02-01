@@ -85,7 +85,6 @@ bool SetPROParameters (mfxU8 TargetUsages,mfxU8 &MESpeed, bool &UseFB, bool &Fas
 bool SetUFParameters(mfxU8 TargetUsages, bool& mixed,mfxU32& twoRef );
 
 mfxU32 CalculateUMCBitrate(mfxU16    TargetKbps);
-
 double CalculateUMCFramerate(mfxU32 FrameRateExtN, mfxU32 FrameRateExtD);
 void CalculateMFXFramerate(double framerate, mfxU32* FrameRateExtN, mfxU32* FrameRateExtD);
 void ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &frame_rate_code, mfxI32 &frame_rate_extension_n, mfxI32 &frame_rate_extension_d);
@@ -94,6 +93,7 @@ void ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &f
 mfxStatus CheckFrameRateMPEG2(mfxU32 &FrameRateExtD, mfxU32 &FrameRateExtN);
 mfxStatus CheckAspectRatioMPEG2 (mfxU16 &aspectRatioW, mfxU16 &aspectRatioH, mfxU32 frame_width, mfxU32 frame_heigth, mfxU16 cropW, mfxU16 cropH);
 
+mfxStatus AllocInternalEncBuffer(VideoCORE* pCore, const mfxU16& numFrameMin, const mfxVideoParam& par, mfxFrameAllocResponse& response);
 
 bool IsFrameRateMPEG2Supported(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN);
 bool IsAspectRatioMPEG2Supported (mfxU32 aspectRatioW, mfxU32 aspectRatioH, mfxU32 frame_width, mfxU32 frame_heigth, mfxU32 cropW, mfxU32 cropH);

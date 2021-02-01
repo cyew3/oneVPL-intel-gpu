@@ -30,6 +30,9 @@
 #include "libmfx_core_interface.h"
 #include "vm_time.h"
 
+#include "libmfx_core_d3d9on11.h"
+#include "mfx_enc_common.h"
+
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
 #endif
@@ -69,6 +72,9 @@ D3D11Encoder::D3D11Encoder(VideoCORE* core)
     //memset (&m_recFrames,0,sizeof(mfxRecFrames));
     //m_pDevice = 0;
     memset (&m_rawFrames,0,sizeof(mfxRawFrames));
+    memset (&m_dx9on11response,0,sizeof(mfxFrameAllocResponse));
+    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(core);
+
     m_bENC_PAK = false;
 
 } // D3D11Encoder::D3D11Encoder(VideoCORE* core) : m_core(core)
@@ -90,6 +96,8 @@ D3D11Encoder::~D3D11Encoder()
 
     memset (&m_allocResponseMB,0,sizeof(mfxFrameAllocResponse));
     memset (&m_allocResponseBS,0,sizeof(mfxFrameAllocResponse));
+    memset(&m_dx9on11response, 0, sizeof(mfxFrameAllocResponse));
+
 } // D3D11Encoder::~D3D11Encoder()
 
 mfxStatus D3D11Encoder::CreateAuxilliaryDevice(mfxU16)
@@ -674,6 +682,18 @@ mfxStatus D3D11Encoder::CreateCompBuffers(
 
 } // mfxStatus D3D11Encoder::CreateCompBuffers(...)
 
+mfxStatus D3D11Encoder::CreateWrapBuffers(const mfxU16& numFrameMin, const mfxVideoParam& par)
+{
+    MFX_CHECK(!AllocInternalEncBuffer(m_pDX9ON11Core, numFrameMin, par, m_dx9on11response), MFX_ERR_MEMORY_ALLOC);
+    return MFX_ERR_NONE;
+}
+mfxStatus D3D11Encoder::UnwrapBuffer(mfxMemId bufferId)
+{
+    if (m_pDX9ON11Core && m_dx9on11response.mids)
+        MFX_CHECK(m_pDX9ON11Core->UnWrapSurface(bufferId, true), MFX_ERR_INVALID_HANDLE);
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus D3D11Encoder::Register(
     const mfxFrameAllocResponse* pResponse, 
@@ -851,6 +871,19 @@ mfxStatus D3D11Encoder::Execute(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     HRESULT hr = S_OK;
     mfxHDLPair* inputPair = &(pExecuteBuffers->m_pSurfacePair);
+
+    if (m_pDX9ON11Core && m_dx9on11response.mids)
+    {
+        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(pExecuteBuffers->m_CurrFrameMemID, m_dx9on11response);
+        MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+        mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(pExecuteBuffers->m_CurrFrameMemID, dx11MemId);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxRes = m_core->GetFrameHDL(dx11MemId, &inputPair->first);
+        MFX_CHECK_STS(mfxRes);
+    }
+
     ID3D11Resource*   pInputD3D11Res = static_cast<ID3D11Resource*>(inputPair->first);
     ENCODE_PACKEDHEADER_DATA payload = {0};
 

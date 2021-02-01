@@ -23,10 +23,26 @@ target_sources(scheduler_tests
     ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_task_management.cpp
     ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_thread.cpp
     $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/fast_compositing_ddi.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/auxiliary_device.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_alloc_wrapper.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp>
     $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator.cpp>
     $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d11.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d9.cpp>
     $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_hw.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9on11.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d11.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/cm_mem_copy.cpp>
     $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/shared/src/mfx_common_int.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/shared/src/mfx_common_decode_int.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/shared/src/mfx_check_hardware_support.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/shared/src/mfx_check_hardware_support.cpp>
+    $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_factory.cpp>
+
     #test sources
     scheduler_api.cpp
     scheduler_event.cpp
@@ -52,9 +68,13 @@ target_link_libraries(scheduler_tests
     ${ITT_LIBRARIES}
     mfx_static_lib
     mfx_shared_lib
+    $<$<PLATFORM_ID:Windows>:cmrt_cross_platform_hw>
+    $<$<PLATFORM_ID:Windows>:vc1_dec>
+    $<$<PLATFORM_ID:Windows>:genx>
     $<$<PLATFORM_ID:Windows>:IPP::core>
     $<$<PLATFORM_ID:Windows>:IPP::s>
     $<$<PLATFORM_ID:Windows>:IPP::i>
+    $<$<PLATFORM_ID:Windows>:IPP::cc>
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
 )

@@ -483,6 +483,21 @@ mfxU8 GetAspectRatioCode (mfxU32 dispAspectRatioW, mfxU32 dispAspectRatioH)
      return 1;
 }
 
+mfxStatus AllocInternalEncBuffer(VideoCORE* pCore, const mfxU16& numFrameMin, const mfxVideoParam& par, mfxFrameAllocResponse& response)
+{
+    MFX_CHECK(pCore && par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY, MFX_ERR_NONE);
+
+    mfxFrameAllocRequest request = {};
+    request.Info = par.mfx.FrameInfo;
+    request.Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SHARED_RESOURCE;
+    request.NumFrameMin = request.NumFrameSuggested = numFrameMin;
+
+    mfxStatus sts = pCore->AllocFrames(&request, &response);
+    MFX_CHECK_STS(sts);
+
+    return MFX_ERR_NONE;
+}
+
 bool CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 h, mfxF64 frame_rate, mfxU32 bitrate, mfxU32 GopRefDist)
 {
     mfxU16 oldLevel   = level;

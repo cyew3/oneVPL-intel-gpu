@@ -50,3 +50,5 @@ target_link_libraries(mfx_common_sw PUBLIC mfx_static_lib umc_io umc)
 # ====================================== mfx_common_hw ======================================
 
 target_link_libraries(mfx_common_hw PUBLIC mfx_common_sw lpla)
+
+target_compile_definitions(mfx_common_hw PRIVATE $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>)

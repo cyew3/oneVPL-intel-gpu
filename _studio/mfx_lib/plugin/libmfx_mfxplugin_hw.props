@@ -28,7 +28,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\genx\field_copy\include;
     </MfxIncludes>
-    <MfxDefinitions>MFX_D3D11_ENABLED;LIBMFXSW_EXPORTS;AS_CAMERA_PLUGIN;AS_HEVCE_PLUGIN;AS_VP9E_PLUGIN;MFX_VA;MFX_VA_WIN;UNIFIED_PLUGIN;</MfxDefinitions>
+    <MfxDefinitions>MFX_D3D11_ENABLED;LIBMFXSW_EXPORTS;AS_CAMERA_PLUGIN;AS_HEVCE_PLUGIN;AS_VP9E_PLUGIN;MFX_VA;MFX_VA_WIN;UNIFIED_PLUGIN;MFX_DX9ON11;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
   </PropertyGroup>

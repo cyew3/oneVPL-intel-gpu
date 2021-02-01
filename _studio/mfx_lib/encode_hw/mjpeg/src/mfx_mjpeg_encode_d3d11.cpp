@@ -38,6 +38,8 @@
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "fast_copy.h"
 
+#include "libmfx_core_d3d9on11.h"
+
 using namespace MfxHwMJpegEncode;
 
 mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format);
@@ -51,6 +53,8 @@ D3D11Encoder::D3D11Encoder()
 , m_guid(GUID_NULL)
 , m_width(0)
 , m_height(0)
+, m_dx9on11response()
+, m_pDX9ON11Core(nullptr)
 {
     memset(&m_caps, 0, sizeof(m_caps));
 }
@@ -86,6 +90,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         height);
 
     m_core = core;
+
+    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(core);
 
     return sts;
 }
@@ -224,10 +230,30 @@ mfxStatus D3D11Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     return MFX_ERR_NONE;
 }
 
+
+mfxStatus D3D11Encoder::CreateWrapBuffers(const mfxU16& numFrameMin, const mfxVideoParam& par)
+{
+    MFX_CHECK(!AllocInternalEncBuffer(m_pDX9ON11Core, numFrameMin, par, m_dx9on11response), MFX_ERR_MEMORY_ALLOC);
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3D11Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
 {
     HRESULT hr  = S_OK;
     mfxHDLPair* inputPair = static_cast<mfxHDLPair*>(surface);
+
+    if (m_pDX9ON11Core && m_dx9on11response.mids)
+    {
+        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(task.surface->Data.MemId, m_dx9on11response);
+        MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+        mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(task.surface->Data.MemId, dx11MemId);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxRes = m_core->GetFrameHDL(dx11MemId, &inputPair->first);
+        MFX_CHECK_STS(mfxRes);
+    }
+
     ID3D11Resource* pInputD3D11Res = static_cast<ID3D11Resource*>(inputPair->first);
     ExecuteBuffers* pExecuteBuffers = task.m_pDdiData;
     // prepare resource list
@@ -428,6 +454,8 @@ mfxStatus D3D11Encoder::QueryStatusAsync(DdiTask & task)
     case ENCODE_OK:
         task.m_bsDataLength = feedback->bitstreamSize;
         m_feedbackCached.Remove(task.m_statusReportNumber);
+        if (m_pDX9ON11Core && m_dx9on11response.mids)
+            MFX_CHECK(m_pDX9ON11Core->UnWrapSurface(task.surface->Data.MemId, true), MFX_ERR_INVALID_HANDLE);
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:

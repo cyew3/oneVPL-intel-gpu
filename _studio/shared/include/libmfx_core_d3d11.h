@@ -152,7 +152,8 @@ public:
 
     virtual bool         IsCompatibleForOpaq() override;
 
-private:
+protected:
+
     D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session = nullptr);
 
     mfxStatus InternalInit();
@@ -162,7 +163,7 @@ private:
     std::unique_ptr<D3D11Adapter> m_pid3d11Adapter;
 
     mfxStatus InitializeDevice(bool isTemporal = false);
-    mfxStatus InternalCreateDevice();
+    virtual mfxStatus InternalCreateDevice();
     virtual mfxStatus DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)                      override;
     mfxStatus ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
     // this function should not be virtual

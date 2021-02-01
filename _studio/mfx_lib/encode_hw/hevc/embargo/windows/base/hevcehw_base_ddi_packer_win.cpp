@@ -23,6 +23,8 @@
 #include "hevcehw_base_ddi_packer_win.h"
 #include <numeric>
 
+#include <libmfx_core_d3d9on11.h>
+
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
 using namespace HEVCEHW::Windows;
@@ -119,7 +121,7 @@ void DDIPacker::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 {
     Push(BLK_Init
-        , [this](StorageRW& strg, StorageRW&) -> mfxStatus
+        , [this](StorageRW& strg, StorageRW& local) -> mfxStatus
     {
         auto& core = Glob::VideoCore::Get(strg);
 
@@ -204,6 +206,22 @@ void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
         Glob::DDI_SubmitParam::GetOrConstruct(strg).emplace_back(std::move(submit));
 
+        m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(&core);
+
+        MFX_CHECK(m_pDX9ON11Core && par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY, MFX_ERR_NONE);
+
+        auto& rawInfo = Tmp::RawInfo::Get(local);
+
+        mfxFrameAllocRequest request = rawInfo;
+        request.Info = par.mfx.FrameInfo;
+        request.Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SHARED_RESOURCE;
+
+        std::unique_ptr<IAllocation> pAlloc(Tmp::MakeAlloc::Get(local)(Glob::VideoCore::Get(strg)));
+        sts = pAlloc->Alloc(request, true);
+        MFX_CHECK_STS(sts);
+
+        strg.Insert(Glob::AllocWrap::Key, std::move(pAlloc));
+
         return MFX_ERR_NONE;
     });
 }
@@ -231,6 +249,19 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         , [this, &blocks](StorageW& global, StorageW& s_task) -> mfxStatus
     {
         auto& task = Task::Common::Get(s_task);
+
+
+        if (m_pDX9ON11Core && global.Contains(Glob::AllocWrap::Key))
+        {
+            mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(task.pSurfReal->Data.MemId, Glob::AllocWrap::Get(global).GetResponse());
+            MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+            mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(task.pSurfReal->Data.MemId, dx11MemId);
+            MFX_CHECK_STS(mfxRes);
+
+            mfxRes = m_pDX9ON11Core->GetFrameHDL(dx11MemId, &task.HDLRaw.first);
+            MFX_CHECK_STS(mfxRes);
+        }
 
         m_bResetBRC |= task.bResetBRC;
 
@@ -366,6 +397,9 @@ void DDIPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
         cc.UpdateCqmHint(task, ((ENCODE_QUERY_STATUS_PARAMS_HEVC *)pFeedback)->lookaheadInfo);
 #endif
+
+        if (m_pDX9ON11Core && global.Contains(Glob::AllocWrap::Key))
+            MFX_CHECK(m_pDX9ON11Core->UnWrapSurface(task.pSurfIn->Data.MemId, true), MFX_ERR_INVALID_HANDLE);
 
         fb.Remove(task.StatusReportId);
 

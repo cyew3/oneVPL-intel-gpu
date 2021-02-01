@@ -1663,6 +1663,7 @@ namespace MPEG2EncoderHW
             mfxFrameAllocRequest request = {};
             sts = QueryIOSurf(m_pCore, par, &request);
             MFX_CHECK(sts>=0,sts);
+            m_VideoParamsEx.encNumFrameMin = request.NumFrameMin;
             sts = m_InputSurfaces.Reset (par, request.NumFrameMin);
             MFX_CHECK(sts != MFX_ERR_INVALID_VIDEO_PARAM, m_bInitialized ? MFX_ERR_INCOMPATIBLE_VIDEO_PARAM: sts);
             MFX_CHECK_STS(sts);

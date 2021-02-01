@@ -1916,6 +1916,10 @@ mfxStatus  VideoVPPHW::CopyPassThrough(mfxFrameSurface1 *pInputSurface, mfxFrame
         dstPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
     }
 
+    // point that this is passthru copy.
+    srcPattern |= MFX_MEMTYPE_FROM_VPPIN;
+    dstPattern |= MFX_MEMTYPE_FROM_VPPOUT;
+
     sts = m_pCore->DoFastCopyWrapper(pOutputSurface,
         dstPattern,
         pInputSurface,
@@ -2371,8 +2375,11 @@ mfxStatus  VideoVPPHW::Init(
     m_config.m_surfCount[VPP_IN]  = (mfxU16)(m_config.m_surfCount[VPP_IN]  * m_asyncDepth + 1);
 
     //-----------------------------------------------------
-    // [3] internal frames allocation (make sense fo SYSTEM_MEMORY only)
+    // [3] internal frames allocation (make sense fo SYSTEM_MEMORY and D3D9ON11)
     //-----------------------------------------------------
+    sts = (*m_ddi)->CreateWrapBuffers(m_config.m_surfCount[VPP_IN], m_config.m_surfCount[VPP_OUT], m_params);
+    MFX_CHECK_STS(sts);
+
     mfxFrameAllocRequest request;
 
     if (D3D_TO_SYS == m_ioMode || SYS_TO_SYS == m_ioMode) // [OUT == SYSTEM_MEMORY]
@@ -2978,8 +2985,11 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
     m_config.m_surfCount[VPP_IN]  = (mfxU16)(m_config.m_surfCount[VPP_IN]  * m_asyncDepth + 1);
 
     //-----------------------------------------------------
-    // [3] internal frames allocation (make sense fo SYSTEM_MEMORY only)
+    // [3] internal frames allocation (make sense fo SYSTEM_MEMORY and D3D9ON11 only)
     //-----------------------------------------------------
+    sts = (*m_ddi)->CreateWrapBuffers(m_config.m_surfCount[VPP_IN], m_config.m_surfCount[VPP_OUT], m_params);
+    MFX_CHECK_STS(sts);
+
     mfxFrameAllocRequest request;
 
     if (D3D_TO_SYS == m_ioMode || SYS_TO_SYS == m_ioMode) // [OUT == SYSTEM_MEMORY]
@@ -4732,6 +4742,14 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
                 pHwVpp->m_taskMngr.CompleteTask(pTask);
             }
 
+            MFX_CHECK_STS(sts);
+            sts = (*pHwVpp->m_ddi)->UnwrapBuffers(pTask->input.pSurf->Data.MemId, pTask->
+#ifdef MFX_ENABLE_MCTF
+                outputForApp
+#else
+                output
+#endif
+                .pSurf->Data.MemId);
             MFX_CHECK_STS(sts);
         }
 

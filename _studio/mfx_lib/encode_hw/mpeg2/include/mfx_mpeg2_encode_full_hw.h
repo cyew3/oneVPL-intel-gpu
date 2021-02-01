@@ -130,6 +130,9 @@ namespace MPEG2EncoderHW
                   ENCODE_ENC_PAK_ID);
               MFX_CHECK_STS(sts);
 
+              sts = m_pDdiEncoder->CreateWrapBuffers(par->encNumFrameMin, par->mfxVideoParams);
+              MFX_CHECK_STS(sts);
+
               m_bStage2Ready = false;
               m_bHWInput = (par->mfxVideoParams.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) != 0;
 
@@ -258,6 +261,9 @@ public:
 #else
               sts = m_pDdiEncoder->FillBSBuffer(pIntTask->m_FeedbackNumber, pIntTask->m_BitstreamFrameNumber, pIntTask->m_pBitstream, &m_pExecuteBuffers->m_encrypt);
 #endif
+              MFX_CHECK_STS(sts);
+
+              sts = m_pDdiEncoder->UnwrapBuffer(m_pExecuteBuffers->m_CurrFrameMemID);
               MFX_CHECK_STS(sts);
 
               return sts;

@@ -31,7 +31,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\vc1\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp9\include;
     </MfxIncludes>
-    <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions>MFX_D3D11_ENABLED;MFX_DX9ON11;</MfxDefinitions>
     <MfxDefinitions Condition="'$(MfxSoftwareOnly)'!='true'">MFX_VA;$(MfxDefinitions)</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>

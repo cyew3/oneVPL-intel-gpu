@@ -385,6 +385,9 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 
     m_rawFrames.Init(CalcNumSurfRaw(m_video));
 
+    sts = m_ddi->CreateWrapBuffers((mfxU16)CalcNumSurfRaw(m_video), m_video);
+    MFX_CHECK_STS(sts);
+
     mfxFrameAllocRequest request = {};
     request.Info = m_video.mfx.FrameInfo;
     request.Type = MFX_MEMTYPE_D3D_INT;

@@ -83,6 +83,9 @@
         bool                    bRawFrames;
         mfxFrameAllocResponse*  pRecFramesResponse_hw;
         mfxFrameAllocResponse*  pRecFramesResponse_sw;
+
+        mfxU16                  encNumFrameMin;
+
 #ifdef PAVP_SUPPORT
         mfxExtPAVPOption        sExtPAVPOption;
 #endif

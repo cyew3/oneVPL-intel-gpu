@@ -1314,13 +1314,9 @@ mfxU32 MfxHwH264Encode::CalcNumSurfRaw(MfxVideoParam const & video)
 {
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
     mfxExtCodingOption3 const & extOpt3 = GetExtBufferRef(video);
-
-    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-        return video.AsyncDepth + video.mfx.GopRefDist - 1 +
+    return video.AsyncDepth + video.mfx.GopRefDist - 1 +
             std::max(1u, mfxU32(extOpt2.LookAheadDepth)) + (video.AsyncDepth - 1) +
             (IsOn(extOpt2.UseRawRef) ? video.mfx.NumRefFrame : 0) + ((extOpt2.MaxSliceSize != 0 || IsOn(extOpt3.FadeDetection)) ? 1 : 0);
-    else
-        return 0;
 }
 
 mfxU32 MfxHwH264Encode::CalcNumSurfRecon(MfxVideoParam const & video)

@@ -1223,6 +1223,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(m_video);
 #endif
 
+    sts = m_ddi->CreateWrapBuffers((mfxU16)CalcNumSurfRaw(m_video), m_video);
+    MFX_CHECK_STS(sts);
+
     // Allocate raw surfaces.
     // This is required only in case of system memory at input
 

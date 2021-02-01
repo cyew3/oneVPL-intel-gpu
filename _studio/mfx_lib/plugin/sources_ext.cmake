@@ -114,6 +114,7 @@ if(NOT OPEN_SOURCE)
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d11.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9.cpp
+          ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9on11.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_factory.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_hw.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
@@ -708,6 +709,7 @@ if(NOT OPEN_SOURCE)
         ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_vaapi.cpp
         ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9.cpp
         ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d11.cpp
+        ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9on11.cpp
         ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
         ${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp
         ${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp

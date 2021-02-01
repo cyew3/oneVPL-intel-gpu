@@ -36,6 +36,9 @@
 #include "vm_time.h"
 #include "mfx_session.h"
 
+#include "libmfx_core_d3d9on11.h"
+#include "mfx_enc_common.h"
+
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
@@ -74,6 +77,8 @@ D3D11Encoder::D3D11Encoder()
 , m_feedbackUpdate()
 , m_feedbackCached()
 , m_headerPacker()
+, m_dx9on11response()
+, m_pDX9ON11Core(nullptr)
 , m_reconQueue()
 , m_bsQueue()
 , m_mbqpQueue()
@@ -123,6 +128,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         width,
         height,
         NULL); // no encryption
+
+    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(core);
 
     return sts;
 
@@ -327,6 +334,11 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
 } // mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 
+mfxStatus D3D11Encoder::CreateWrapBuffers(const mfxU16& numFrameMin, const mfxVideoParam& par)
+{
+    MFX_CHECK(!AllocInternalEncBuffer(m_pDX9ON11Core, numFrameMin, par, m_dx9on11response), MFX_ERR_MEMORY_ALLOC);
+    return MFX_ERR_NONE;
+}
 
 mfxStatus D3D11Encoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 {
@@ -470,6 +482,18 @@ mfxStatus D3D11Encoder::ExecuteImpl(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     m_packedSei = { 0 };
+
+    if (m_pDX9ON11Core && m_dx9on11response.mids)
+    {
+        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(task.m_yuv->Data.MemId, m_dx9on11response);
+        MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+        mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(task.m_yuv->Data.MemId, dx11MemId);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxRes = m_core->GetFrameHDL(dx11MemId, &pair.first);
+        MFX_CHECK_STS(mfxRes);
+    }
 
     ID3D11Resource * pSurface = static_cast<ID3D11Resource *>(pair.first);
     UINT subResourceIndex = (UINT)(UINT_PTR)(pair.second);
@@ -983,6 +1007,7 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
 #ifdef DEBUG_TRACE
     printf("\n\nstatus %d for stream %d, filed %d, feedback %d\n\n", feedback->bStatus, feedback->StreamId, fieldId, feedback->StatusReportFeedbackNumber);
 #endif
+
     switch (feedback->bStatus)
     {
     case ENCODE_OK:
@@ -1000,6 +1025,8 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
         }
 #endif
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
+        if (m_pDX9ON11Core && m_dx9on11response.mids)
+            MFX_CHECK(m_pDX9ON11Core->UnWrapSurface(task.m_yuv->Data.MemId, true), MFX_ERR_INVALID_HANDLE);
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:

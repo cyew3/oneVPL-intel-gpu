@@ -696,6 +696,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     // motion JPEG video, we'd better use multiple buffers to support async mode.
     mfxU16 surface_num = JPEG_VIDEO_SURFACE_NUM + m_vParam.AsyncDepth;
 
+    sts = m_ddi->CreateWrapBuffers(surface_num, m_vParam);
+    MFX_CHECK_STS(sts);
+
     // WA for RGB swapping issue
     if (m_vParam.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
     {

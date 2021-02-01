@@ -170,6 +170,9 @@
     <ClCompile Include="genx\copy_kernels\src\genx_dg2_copy_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\src\libmfx_core_d3d9on11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\auxiliary_device.h">
@@ -320,6 +323,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\build\win_x64\lib\media_sdk_etw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\include\libmfx_core_d3d9on11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -40,6 +40,10 @@
 
 #include <d3d11.h>
 
+template<class Base> class D3D9ON11VideoCORE_T;
+template<class Base> class D3D11VideoCORE_T;
+class CommonCORE;
+using D3D9ON11VideoCORE = D3D9ON11VideoCORE_T<D3D11VideoCORE_T<CommonCORE>>;
 
 namespace MfxHwMpeg2Encode
 {
@@ -75,6 +79,8 @@ namespace MfxHwMpeg2Encode
 
         virtual mfxStatus CreateAuxilliaryDevice(mfxU16 codecProfile) override;
 
+        virtual mfxStatus CreateWrapBuffers(const mfxU16& numFrameMin, const mfxVideoParam& par) override;
+        virtual mfxStatus UnwrapBuffer(mfxMemId bufferId) override;
 
         D3D11Encoder(const D3D11Encoder &) = delete;
         D3D11Encoder & operator = (const D3D11Encoder &) = delete;
@@ -116,14 +122,13 @@ namespace MfxHwMpeg2Encode
         mfxStatus CreateCompBuffers(
             ExecuteBuffers* pExecuteBuffers, 
             mfxU32 numRefFrames);
-        
 
         mfxStatus Register(
             const mfxFrameAllocResponse* pResponse, 
             D3D11_DDI_VIDEO_ENCODER_BUFFER_TYPE type);
 
         mfxI32    GetRecFrameIndex (mfxMemId memID);
-        mfxI32    GetRawFrameIndex (mfxMemId memIDe, bool bAddFrames);   
+        mfxI32    GetRawFrameIndex (mfxMemId memIDe, bool bAddFrames);
 
 
         VideoCORE* m_core;
@@ -152,6 +157,9 @@ namespace MfxHwMpeg2Encode
 
         mfxRecFrames                              m_reconFrames;
         mfxRawFrames                              m_rawFrames;
+
+        mfxFrameAllocResponse                     m_dx9on11response;
+        D3D9ON11VideoCORE*                        m_pDX9ON11Core;
 
         std::vector<mfxHDLPair>                   m_bsQueue;
         std::vector<mfxHDLPair>                   m_mbQueue;

@@ -77,6 +77,7 @@ target_compile_definitions(mfx_static_lib
   INTERFACE
     $<$<PLATFORM_ID:Windows>:
       MFX_D3D11_ENABLED
+      MFX_DX9ON11
       _UNICODE
       UNICODE
     >

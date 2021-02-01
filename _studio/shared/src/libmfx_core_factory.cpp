@@ -27,6 +27,9 @@
     #if defined (MFX_D3D11_ENABLED)
     #include "umc_va_dxva2_protected.h"
     #include <libmfx_core_d3d11.h>
+        #if defined(MFX_DX9ON11)
+            #include <libmfx_core_d3d9on11.h>
+        #endif
     #endif
 #elif defined(MFX_VA_LINUX)
 #include <libmfx_core_vaapi.h>
@@ -53,6 +56,10 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
 #if defined (MFX_D3D11_ENABLED)
     case MFX_HW_D3D11:
         return new D3D11VideoCORE(adapterNum, numThreadsAvailable, session);
+#if defined (MFX_DX9ON11)
+    case MFX_HW_D3D9ON11:
+        return new D3D9ON11VideoCORE(adapterNum, numThreadsAvailable, session);
+#endif
 #endif
 #elif defined(MFX_VA_LINUX)
     case MFX_HW_VAAPI:

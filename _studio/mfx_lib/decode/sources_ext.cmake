@@ -132,6 +132,7 @@ target_link_libraries(decode_hw
     media_buffers
   )
 
+target_compile_definitions(decode_hw PRIVATE $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>)
 
 # ================================ decode_ext_hw ================================
 

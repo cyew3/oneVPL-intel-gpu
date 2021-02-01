@@ -31,6 +31,7 @@
 #include "libmfx_core_interface.h"
 #include <algorithm>
 
+#include "libmfx_core_d3d9on11.h"
 //using namespace MfxHwVideoProcessing;
 
 //#define DEBUG_DETAIL_INFO
@@ -185,6 +186,8 @@ mfxStatus D3D11VideoProcessor::CreateDevice(VideoCORE * pCore,  mfxVideoParam* p
 
     m_core = pCore;
 
+    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(pCore);
+
 #ifdef DUMP_REFERENCE
     m_file =  vm_file_fopen(VM_STRING("reference.yuv"), VM_STRING("wb"));
 #endif
@@ -227,6 +230,9 @@ D3D11VideoProcessor::D3D11VideoProcessor(void)
 ,m_cachedReadyTaskIndex()
 ,m_customRateData()
 ,m_mutex()
+,m_dx9on11InWrap()
+,m_dx9on11OutWrap()
+,m_pDX9ON11Core(nullptr)
 ,m_multiplier()
 ,m_caps()
 ,m_file(NULL)
@@ -2830,6 +2836,19 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             SetOutputColorSpace(&outColorSpace);
         }
 
+        if (m_dx9on11InWrap.mids && m_pDX9ON11Core)
+        {
+            //Wrap input surface
+            mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(pParams->pRefSurfaces[startIdx + refIdx].memId, m_dx9on11InWrap);
+            MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+            mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(pParams->pRefSurfaces[startIdx + refIdx].memId, dx11MemId);
+            MFX_CHECK_STS(mfxRes);
+
+            mfxRes = m_core->GetFrameHDL(dx11MemId, &pParams->pRefSurfaces[startIdx + refIdx].hdl.first);
+            MFX_CHECK_STS(mfxRes);
+        }
+
         D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
         inputDesc.ViewDimension        = D3D11_VPIV_DIMENSION_TEXTURE2D;
         inputDesc.Texture2D.ArraySlice = PtrToUlong(pParams->pRefSurfaces[startIdx + refIdx].hdl.second);
@@ -2961,6 +2980,16 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 #endif
 
     UINT StreamCount;
+
+    if (m_dx9on11OutWrap.mids && m_pDX9ON11Core)
+    {
+        //Wrap output surface
+        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(pParams->targetSurface.memId, m_dx9on11OutWrap, true);
+        MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+        mfxStatus mfxRes = m_core->GetFrameHDL(dx11MemId, &pParams->targetSurface.hdl.first);
+        MFX_CHECK_STS(mfxRes);
+    }
 
     if (pParams->bComposite)
     {
@@ -3198,6 +3227,70 @@ mfxStatus D3D11VideoProcessor::Register(mfxHDLPair* pSurfaces, mfxU32 num, BOOL 
 
 } // mfxStatus D3D11VideoProcessor::Register(mfxHDL* pSurfaces, mfxU32 num, BOOL bRegister)
 
+
+mfxStatus D3D11VideoProcessor::CreateWrapBuffers(const mfxU16& numFrameMinInput, const mfxU16& numFrameMinOut, const mfxVideoParam& par)
+{
+    MFX_CHECK(m_pDX9ON11Core, MFX_ERR_NONE);
+
+    bool isNeedInputWrap = false, isNeedOutputWrap = false;
+
+    switch (par.IOPattern)
+    {
+    case MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY: //D3D_TO_SYS
+        isNeedInputWrap = true;
+        break;
+
+    case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY: //SYS_TO_D3D
+        isNeedOutputWrap = true;
+        break;
+
+    case MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY: //D3D_TO_D3D
+        isNeedInputWrap = isNeedOutputWrap = true;
+        break;
+    default:
+        break;
+    }
+
+    MFX_CHECK(isNeedInputWrap || isNeedOutputWrap, MFX_ERR_NONE);
+
+    mfxFrameAllocRequest request = {};
+    if (isNeedInputWrap)
+    {
+        request.Info = par.vpp.In;
+        request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SHARED_RESOURCE;
+        request.NumFrameMin = request.NumFrameSuggested = numFrameMinInput;
+        mfxStatus sts = m_core->AllocFrames(&request, &m_dx9on11InWrap);
+        MFX_CHECK_STS(sts);
+    }
+
+    if (isNeedOutputWrap)
+    {
+        request.Info = par.vpp.Out;
+        request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SHARED_RESOURCE;
+        request.NumFrameMin = request.NumFrameSuggested = numFrameMinOut;
+        mfxStatus sts = m_core->AllocFrames(&request, &m_dx9on11OutWrap);
+        MFX_CHECK_STS(sts);
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::UnwrapBuffers(mfxMemId input, mfxMemId output)
+{
+    if (m_pDX9ON11Core && m_dx9on11InWrap.mids)
+        MFX_CHECK(m_pDX9ON11Core->UnWrapSurface(input), MFX_ERR_INVALID_HANDLE);
+
+    if (m_pDX9ON11Core && m_dx9on11OutWrap.mids)
+    {
+        mfxMemId dx11MemId = m_pDX9ON11Core->UnWrapSurface(output, true);
+        MFX_CHECK(dx11MemId, MFX_ERR_INVALID_HANDLE);
+
+        mfxStatus mfxRes = m_pDX9ON11Core->CopyDX11toDX9(dx11MemId, output);
+        MFX_CHECK_STS(mfxRes);
+    }
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
 {

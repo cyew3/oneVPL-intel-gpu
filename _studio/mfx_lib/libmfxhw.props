@@ -38,7 +38,7 @@
     <!-- MediaSDK AV1 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\av1\include;
     <!-- MediaSDK LPLA --> $(MSDK_STUDIO_ROOT)\mfx_lib\lpla;
     </MfxIncludes>
-    <MfxDefinitions>_WINDOWS;LIBMFXSW_EXPORTS;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions>_WINDOWS;LIBMFXSW_EXPORTS;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;MFX_DX9ON11;</MfxDefinitions>
     <!-- DirectX libraries -->
     <MfxLibraries>dxva2.lib;D3D11.lib;DXGI.lib;d3d9.lib;</MfxLibraries>
     <!-- IPP libraries -->

@@ -25,6 +25,9 @@
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_d3d11.h"
 
+#include "libmfx_core_d3d9on11.h"
+#include "mfx_enc_common.h"
+
 namespace MfxHwVP9Encode
 {
 
@@ -59,6 +62,8 @@ D3D11Encoder::D3D11Encoder()
     , m_sps()
     , m_pps()
     , m_seg()
+    , m_dx9on11response()
+    , m_pDX9ON11Core(nullptr)
     , m_infoQueried(false)
     , m_descForFrameHeader()
     , m_seqParam()
@@ -87,6 +92,9 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     MFX_CHECK_NULL_PTR1(pCore);
 
     m_pmfxCore = pCore;
+
+    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(pCore);
+
     D3D11_VIDEO_DECODER_DESC    desc = {};
     D3D11_VIDEO_DECODER_CONFIG  config = {};
     HRESULT hr;
@@ -352,6 +360,11 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
 } // mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request, mfxU32 frameWidth, mfxU32 frameHeight)
 
+mfxStatus D3D11Encoder::CreateWrapBuffers(const mfxU16& numFrameMin, const mfxVideoParam& par)
+{
+    MFX_CHECK(!AllocInternalEncBuffer(m_pDX9ON11Core, numFrameMin, par, m_dx9on11response), MFX_ERR_MEMORY_ALLOC);
+    return MFX_ERR_NONE;
+}
 
 mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS_VP9& caps)
 {
@@ -402,6 +415,18 @@ mfxStatus D3D11Encoder::Execute(
     mfxHDLPair   pair)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
+
+    if (m_pDX9ON11Core && m_dx9on11response.mids)
+    {
+        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(task.m_pRawFrame->pSurface->Data.MemId, m_dx9on11response);
+        MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+        mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(task.m_pRawFrame->pSurface->Data.MemId, dx11MemId);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxRes = m_pmfxCore->GetFrameHDL(dx11MemId, &pair.first);
+        MFX_CHECK_STS(mfxRes);
+    }
 
     std::vector<ENCODE_COMPBUFFERDESC> compBufferDesc;
     compBufferDesc.resize(MAX_NUM_COMP_BUFFERS_VP9);
@@ -633,6 +658,8 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
         task.m_bsDataLength = feedback->bitstreamSize; // TODO: save bitstream size here
         m_feedbackCached.Remove(task.m_taskIdForDriver);
         sts = MFX_ERR_NONE;
+        if (m_pDX9ON11Core && m_dx9on11response.mids)
+            MFX_CHECK(m_pDX9ON11Core->UnWrapSurface(task.m_pRawFrame->pSurface->Data.MemId, true), MFX_ERR_INVALID_HANDLE);
         break;
     case ENCODE_NOTREADY:
         sts = MFX_WRN_DEVICE_BUSY;
