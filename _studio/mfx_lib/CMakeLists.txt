@@ -74,15 +74,11 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_timing.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_static_assert_structs.cpp
 
-    $<$<PLATFORM_ID:Windows>:libmfxhw.rc>
+    $<$<PLATFORM_ID:Windows>:$<IF:$<BOOL:${API_USE_VPL}>,libvpl.def,libmfx.def>>
+    $<$<PLATFORM_ID:Windows>:$<IF:$<BOOL:${API_USE_VPL}>,libmfx-gen.rc,libmfxhw.rc>>
+
     $<TARGET_OBJECTS:fast_copy_sse4>
   )
-
-if (Windows)
-  list (APPEND sources_common
-    $<IF:$<BOOL:${API_USE_VPL}>,libvpl.def,libmfx.def>
-  )
-endif()
 
 set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_allocator_vaapi.h
@@ -131,6 +127,23 @@ else()
   set(IPP_LIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
 endif()
 
+if (CMAKE_SYSTEM_NAME MATCHES Windows)
+
+  add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/media_sdk_etw.rc ${CMAKE_BINARY_DIR}/media_sdk_etw.h
+    SOURCES ${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man
+    COMMENT Running Windows Message Compiler to compile Media SDK ETW manifest
+    COMMAND mc ARGS -h "${CMAKE_BINARY_DIR}" -r "${CMAKE_BINARY_DIR}" -z media_sdk_etw -um "${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+
+  add_custom_target(windows_etw_generator 
+    DEPENDS 
+      ${CMAKE_BINARY_DIR}/media_sdk_etw.rc
+      ${CMAKE_BINARY_DIR}/media_sdk_etw.h
+  )
+endif()
+
 foreach( variant ${VARIANTS} )
 
   if( DEFINED MFX_LIBNAME )
@@ -145,20 +158,14 @@ foreach( variant ${VARIANTS} )
 
   target_sources(${mfxlibname} PRIVATE ${sources_common})
  
-  if (CMAKE_SYSTEM_NAME MATCHES Windows)
-    add_custom_command(
-      OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.h ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.rc
-      COMMENT Running Windows Message Compiler to compile Media SDK ETW manifest
-      COMMAND mc ARGS -h "${CMAKE_CURRENT_BINARY_DIR}" -r "${CMAKE_CURRENT_BINARY_DIR}" -z media_sdk_etw -um "${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man"
-      DEPENDS ${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-    set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.rc PROPERTIES LANGUAGE RC)
 
-    target_sources(${mfxlibname} 
+  if (CMAKE_SYSTEM_NAME MATCHES Windows)
+    add_dependencies(${mfxlibname} windows_etw_generator)
+    target_sources(${mfxlibname}
       PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.rc
-        ${CMAKE_CURRENT_BINARY_DIR}/media_sdk_etw.h)
+        ${CMAKE_BINARY_DIR}/media_sdk_etw.h
+        ${CMAKE_BINARY_DIR}/media_sdk_etw.rc
+    )
   endif()
 
   if (variant MATCHES hw)
@@ -258,9 +265,11 @@ foreach( variant ${VARIANTS} )
 
   install(TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR})
 
-  set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/lib${mfxlibname}.pc")
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
-  install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+  if (CMAKE_SYSTEM_NAME MATCHES Linux)
+    set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/lib${mfxlibname}.pc")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
+    install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+  endif()
 
 endforeach()
 
