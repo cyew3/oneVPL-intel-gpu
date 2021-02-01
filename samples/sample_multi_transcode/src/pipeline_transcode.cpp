@@ -3168,7 +3168,7 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
 
     for (i = 0; i < nSurfNum; i++)
     {
-        auto surface = std::unique_ptr<mfxFrameSurfaceWrap>(new mfxFrameSurfaceWrap);
+        auto surface = std::unique_ptr<mfxFrameSurfaceWrap>(new mfxFrameSurfaceWrap());
         surface->Info = pRequest->Info;
 
         if (m_rawInput)

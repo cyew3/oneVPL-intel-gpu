@@ -590,7 +590,7 @@ mfxStatus MFXVideoVPPPlugin::SurfacePool::Alloc(mfxFrameAllocResponse &response,
 
     for (int i = 0; i < response.NumFrameActual; i++)
     {
-        m_ppSurfacesPool[i] = new mfxFrameSurface1;
+        m_ppSurfacesPool[i] = new mfxFrameSurface1();
         MSDK_CHECK_POINTER(m_ppSurfacesPool[i], MFX_ERR_MEMORY_ALLOC);
 
         MSDK_MEMCPY_VAR(m_ppSurfacesPool[i]->Info , &info, sizeof(info));
