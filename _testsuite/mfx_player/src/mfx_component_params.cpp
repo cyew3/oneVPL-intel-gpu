@@ -514,3 +514,24 @@ ComponentParams::SurfacesContainer::iterator  ComponentParams::GetSurfaceAlloc(m
     }
     return i;
 }
+
+bool ComponentParams::IsEqualMfxVideoParams(mfxVideoParam &cmpParam) {
+
+    hash_array<tstring, tstring> values_param, values_param_cmp;
+
+    MFXStructureRef<mfxVideoParam>(cmpParam).Serialize(Formater::MapCopier(values_param_cmp));
+    MFXStructureRef<mfxVideoParam>(m_params).Serialize(Formater::MapCopier(values_param));
+
+    hash_array<tstring, tstring>::const_iterator it;
+    for (it = values_param.begin(); it != values_param.end(); it++)
+    {
+        const tstring refkey = it->first;
+
+        if (values_param_cmp[refkey] != values_param[refkey])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}

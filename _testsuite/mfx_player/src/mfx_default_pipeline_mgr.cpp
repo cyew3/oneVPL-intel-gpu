@@ -205,7 +205,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
                     {
                         //reseting all components excluding splitter
                         vm_string_printf(VM_STRING("\nERROR: incompatible params, reseting pipeline ..."));
-                        GO_OR_QUIT(LightReset());
+                        GO_OR_QUIT(LightResetWithCheckParams());
                         vm_string_printf(VM_STRING("OK\n"));
                         continue;
                     }

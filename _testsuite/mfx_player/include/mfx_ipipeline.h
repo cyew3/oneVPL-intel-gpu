@@ -38,6 +38,7 @@ public:
     virtual mfxStatus   ReleasePipeline() = 0;
     //reseting mfx part of pipeline
     virtual mfxStatus   LightReset()=0;
+    virtual mfxStatus   LightResetWithCheckParams()=0;
     virtual mfxStatus   HeavyReset()=0;
 
     //only function from large playback interface

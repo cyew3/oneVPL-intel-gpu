@@ -471,6 +471,7 @@ public:
     virtual mfxStatus        ReleasePipeline();
     virtual mfxStatus        Play();
     virtual mfxStatus        LightReset();
+    virtual mfxStatus        LightResetWithCheckParams();
     virtual mfxStatus        HeavyReset();
     vm_char *                GetLastErrString();
     virtual int              PrintHelp();
