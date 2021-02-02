@@ -4743,13 +4743,8 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
             }
 
             MFX_CHECK_STS(sts);
-            sts = (*pHwVpp->m_ddi)->UnwrapBuffers(pTask->input.pSurf->Data.MemId, pTask->
-#ifdef MFX_ENABLE_MCTF
-                outputForApp
-#else
-                output
-#endif
-                .pSurf->Data.MemId);
+
+            sts = (*pHwVpp->m_ddi)->UnwrapBuffers(pTask->input.pSurf->Data.MemId, pTask->output.pSurf->Data.MemId);
             MFX_CHECK_STS(sts);
         }
 
