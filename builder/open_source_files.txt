@@ -32,11 +32,13 @@ _studio/enctools/include/mfx_enctools_brc.h
 _studio/enctools/include/mfx_enctools_defs.h
 _studio/enctools/include/mfx_enctools_lpla.h
 _studio/enctools/include/mfx_enctools_utils.h
+_studio/enctools/include/mfx_enctools_allocator.h
 _studio/enctools/src/mfx_enctools_aenc.cpp
 _studio/enctools/src/mfx_enctools_brc.cpp
 _studio/enctools/src/mfx_enctools_common.cpp
 _studio/enctools/src/mfx_enctools_lpla.cpp
 _studio/enctools/src/mfx_enctools_utils.cpp
+_studio/enctools/src/mfx_enctools_allocator.cpp
 _studio/hevce_hw/libmfx_h265e_plugin.map
 _studio/hevce_hw/h265/include/mfx_h265_encode_plugin_hw.h
 _studio/hevce_hw/h265/src/mfx_h265_encode_plugin.cpp

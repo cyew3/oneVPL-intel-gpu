@@ -5,12 +5,14 @@ set(sources
     src/mfx_enctools_aenc.cpp
     src/mfx_enctools_utils.cpp
     src/mfx_enctools_lpla.cpp
+    src/mfx_enctools_allocator.cpp
     include/mfx_enctools.h
     include/mfx_enctools_aenc.h
     include/mfx_enctools_brc.h
     include/mfx_enctools_defs.h
     include/mfx_enctools_lpla.h
     include/mfx_enctools_utils.h
+    include/mfx_enctools_allocator.h
   )
 
 if (OPEN_SOURCE)

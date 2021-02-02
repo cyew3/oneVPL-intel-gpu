@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -84,6 +84,16 @@ public:
     virtual mfxStatus InitSession();
     virtual mfxStatus InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
     virtual mfxStatus ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
+
+    void SetAllocator(mfxFrameAllocator * pAllocator)
+    {
+        m_pAllocator = pAllocator;
+    }
+    void GetDownScaleParams(mfxFrameInfo & fInfo, mfxU32 & downscale)
+    {
+        fInfo = m_encParams.mfx.FrameInfo;
+        downscale = m_lookAheadScale;
+    }
 
 protected:
     bool                          m_bInit;

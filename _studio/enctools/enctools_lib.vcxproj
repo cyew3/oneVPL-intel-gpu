@@ -23,6 +23,7 @@
   <ItemGroup>
     <ClInclude Include="aenc\include\av1_scd.h" />
     <ClInclude Include="include\mfx_enctools.h" />
+    <ClInclude Include="include\mfx_enctools_allocator.h" />
     <ClInclude Include="include\mfx_enctools_brc.h" />
     <ClInclude Include="include\mfx_enctools_defs.h" />
     <ClInclude Include="include\mfx_enctools_lpla.h" />
@@ -35,6 +36,7 @@
     <ClCompile Include="aenc\src\av1_asc_agop_tree.cpp" />
     <ClCompile Include="aenc\src\av1_asc_tree.cpp" />
     <ClCompile Include="enctools.cpp" />
+    <ClCompile Include="src\mfx_enctools_allocator.cpp" />
     <ClCompile Include="src\mfx_enctools_brc.cpp" />
     <ClCompile Include="src\mfx_enctools_common.cpp" />
     <ClCompile Include="src\mfx_enctools_lpla.cpp" />

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,10 +35,12 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
         m_device = extDevice->DeviceHdl;
         m_deviceType = extDevice->HdlType;
     }
-    mfxEncToolsCtrlExtAllocator *extAlloc = (mfxEncToolsCtrlExtAllocator *)Et_GetExtBuffer(ctrl.ExtParam, ctrl.NumExtParam, MFX_EXTBUFF_ENCTOOLS_ALLOCATOR);
-    if (extAlloc)
-        m_pAllocator = extAlloc->pAllocator;
-
+    if (!m_pAllocator)
+    {
+        mfxEncToolsCtrlExtAllocator *extAlloc = (mfxEncToolsCtrlExtAllocator *)Et_GetExtBuffer(ctrl.ExtParam, ctrl.NumExtParam, MFX_EXTBUFF_ENCTOOLS_ALLOCATOR);
+        if (extAlloc)
+            m_pAllocator = extAlloc->pAllocator;
+    }
     MFX_CHECK_NULL_PTR2(m_device, m_pAllocator);
 
     sts = InitSession();
@@ -77,7 +79,6 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
 mfxStatus LPLA_EncTool::InitSession()
 {
     MFX_CHECK_NULL_PTR2(m_device, m_pAllocator);
-
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxInitParam initPar = {};
@@ -95,8 +96,11 @@ mfxStatus LPLA_EncTool::InitSession()
     sts = MFXQueryVersion(m_mfxSession, &version); // get real API version of the loaded library
     MFX_CHECK_STS(sts);
 
-    sts = m_mfxSession.SetFrameAllocator(m_pAllocator);
-    MFX_CHECK_STS(sts);
+    if (m_pAllocator)
+    {
+        sts = m_mfxSession.SetFrameAllocator(m_pAllocator);
+        MFX_CHECK_STS(sts);
+    }
 
     sts = m_mfxSession.SetHandle((mfxHandleType)m_deviceType, m_device);
     MFX_CHECK_STS(sts);
@@ -107,6 +111,7 @@ mfxStatus LPLA_EncTool::InitSession()
 mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    const mfxU32 LPLA_DOWNSCALE_FACTOR = 2;
 
     // following configuration comes from HW recommendation
     m_encParams.AsyncDepth = 1;
@@ -135,7 +140,8 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToo
 
     if (crW >= 720)
     {
-        m_lookAheadScale = 2;
+        m_lookAheadScale = LPLA_DOWNSCALE_FACTOR;
+
         mfxPlatform platform;
         m_mfxSession.QueryPlatform(&platform);
 
