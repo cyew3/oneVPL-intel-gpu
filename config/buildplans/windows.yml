@@ -26,7 +26,7 @@ steps:
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\update_version\update_version_info.ps1
       -ReposDir %DOCKER_WORKSPACE%\\sources -PerlPath %DOCKER_WORKSPACE%\\perl\bin\perl.exe
   - name: build
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat
   - name: create lib drop
     command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
