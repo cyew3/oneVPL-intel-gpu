@@ -163,7 +163,7 @@ protected:
     std::unique_ptr<D3D11Adapter> m_pid3d11Adapter;
 
     mfxStatus InitializeDevice(bool isTemporal = false);
-    virtual mfxStatus InternalCreateDevice();
+    mfxStatus InternalCreateDevice();
     virtual mfxStatus DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)                      override;
     mfxStatus ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
     // this function should not be virtual
