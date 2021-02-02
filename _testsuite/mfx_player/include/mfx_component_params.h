@@ -202,8 +202,6 @@ public:
     std::vector<mfxU32>             m_SkippedFrames; // List of frames to be skipped at encoding
 
     SurfacesContainer::iterator GetSurfaceAlloc(mfxU32 w, mfxU32 h);
-
-    bool                            IsEqualMfxVideoParams(mfxVideoParam &cmpParam);
 protected:
     std::vector<SurfacesContainer::iterator> m_sufacesByIDx;
 };

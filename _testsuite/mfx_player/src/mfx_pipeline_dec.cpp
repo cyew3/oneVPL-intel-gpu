@@ -1127,50 +1127,6 @@ mfxStatus MFXDecPipeline::LightReset()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXDecPipeline::LightResetWithCheckParams()
-{
-    // in case of moving on std14 can be used make_unique:
-    //std::unique_ptr<mfxVideoParam[]> oldComponentsParams = std::make_unique<mfxVideoParam[]>(m_components.size());
-    //std::unique_ptr<MFXExtBufferVector[]> oldExtBuffers = std::make_unique<MFXExtBufferVector[]>(m_components.size());
-
-    std::unique_ptr<mfxVideoParam[]> oldComponentsParams(new mfxVideoParam[m_components.size()]);
-    std::unique_ptr<MFXExtBufferVector[]> oldExtBuffers(new MFXExtBufferVector[m_components.size()]);
-
-    for (size_t i = 0; i < m_components.size(); i++) {
-        oldComponentsParams[i] = m_components[i].m_params;
-
-        for (int j = 0; j < m_components[i].m_params.NumExtParam; j++)
-        {
-            oldExtBuffers[i].push_back(m_components[i].m_params.ExtParam[j]);
-        }
-
-        if (!oldExtBuffers[i].empty())
-        {
-            if ((mfxU16)oldExtBuffers[i].size() != m_components[i].m_params.NumExtParam) {
-                return MFX_ERR_UNKNOWN;
-            }
-
-            oldComponentsParams[i].ExtParam = oldExtBuffers[i].data();
-        }
-    }
-
-    MFX_CHECK_STS(LightReset());
-
-    bool isEqual = true;
-    for (size_t i = 0; i < m_components.size(); i++) {
-        if (!m_components[i].IsEqualMfxVideoParams(oldComponentsParams[i])) {
-            isEqual = false;
-        }
-    }
-
-    if (isEqual) {
-        PipelineTrace((VM_STRING("\nERROR: Reset has no result\n")));
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    return MFX_ERR_NONE;
-}
-
 mfxStatus MFXDecPipeline::HeavyReset()
 {
     MFX_CHECK_STS(ReleaseMFXPart());
