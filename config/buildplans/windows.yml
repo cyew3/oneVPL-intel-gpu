@@ -9,7 +9,7 @@ qb_variable_map:
   parent_build_id: BUILD_ID
   build_number: BUILD_NUMBER
 env:
-  DOCKER_IMAGE: '-t dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-windows-1803:7'
+  DOCKER_IMAGE: 'dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-windows-1803:7'
   DOCKER_WORKSPACE: "C:\\workspace"
   DOCKER_ENV: "-e MEDIASDK_TRS_MODULE_PATH=C:\\workspace\\sources\\msdk_trs_module \
     -e MFX_HOME=C:\\workspace\\sources\\mdp_msdk-lib -e MEDIASDK_ROOT=C:\\workspace\\sources\\msdk_root \
@@ -21,28 +21,30 @@ steps:
     command: (if exist %WORKSPACE%\\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\\sources\mdp_msdk-lib) &&
       (if exist mediasdk (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
       else (xcopy product %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q))
+  - name: pull docker image
+    command: docker pull %DOCKER_IMAGE%
   - name: update rc files
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -e BUILD_NUMBER=%BUILD_NUMBER% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -e BUILD_NUMBER=%BUILD_NUMBER% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\update_version\update_version_info.ps1
       -ReposDir %DOCKER_WORKSPACE%\\sources -PerlPath %DOCKER_WORKSPACE%\\perl\bin\perl.exe
   - name: build
-    command: docker run --rm --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm -t --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat
   - name: create lib drop
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build"
   - name: create tools drop
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_tools_drop.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
       -MsdkBinaries "C:\workspace\msdk_binaries\windows_pre_built_binaries" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
   - name: create lucas package
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_lucas_pkg.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
   - name: create nightly package
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_nightly_pkg.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
       -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools" -Service_UWD "C:\workspace\msdk_binaries\service" -AMD64 "C:\workspace\msdk_binaries\AMD64"
