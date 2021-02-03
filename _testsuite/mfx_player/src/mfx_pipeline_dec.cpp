@@ -4351,17 +4351,29 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     else HANDLE_BOOL_OPTION(m_inParams.bFadeBackground,  VM_STRING("-fade_background"), VM_STRING("Make backgrond black"));
     else if (m_OptProc.Check(argv[0], VM_STRING("-sys|-swfrbuf"), VM_STRING("video frames in system memory")))
     {
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, (int)MFX_BUF_SW));
+        std::for_each(m_components.begin(), m_components.end(), [](ComponentParams &m_component) {
+            if (m_component.m_bufType == MFX_BUF_UNSPECIFIED) {
+                m_component.m_bufType = MFX_BUF_SW;
+            }
+        });
     }
 #ifdef LIBVA_SUPPORT
     else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf|-lva"), VM_STRING("video frames in video memory")))
     {
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
+        std::for_each(m_components.begin(), m_components.end(), [](ComponentParams &m_component) {
+            if (m_component.m_bufType == MFX_BUF_UNSPECIFIED) {
+                m_component.m_bufType = MFX_BUF_HW;
+            }
+        });
     }
 #else
     else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf"), VM_STRING("video frames in video memory")))
     {
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
+        std::for_each(m_components.begin(), m_components.end(), [](ComponentParams &m_component) {
+            if (m_component.m_bufType == MFX_BUF_UNSPECIFIED) {
+                m_component.m_bufType = MFX_BUF_HW;
+            }
+        });
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-d3d9"), VM_STRING("HW library uses d3d9 interfaces internally. SW Mediasdk library uses external memory as d3d9")))
     {
