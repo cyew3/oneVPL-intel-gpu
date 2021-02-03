@@ -1861,7 +1861,8 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
     if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
         surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
 
-    MFX_CHECK(!m_va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
+    if(m_va)
+        MFX_CHECK(!m_va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
     MFX_CHECK_STS(sts);

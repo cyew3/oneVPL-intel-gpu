@@ -1217,7 +1217,8 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         }
     }
 
-    MFX_CHECK(!decoder.m_va->UnwrapBuffer(data.surface_work->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
+    if(decoder.m_va)
+        MFX_CHECK(!decoder.m_va->UnwrapBuffer(data.surface_work->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
 

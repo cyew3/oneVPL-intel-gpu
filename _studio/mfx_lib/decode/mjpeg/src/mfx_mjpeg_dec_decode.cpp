@@ -2385,7 +2385,8 @@ mfxStatus VideoDECODEMJPEGBase_HW::RunThread(void *params, mfxU32, mfxU32 )
 
     ThreadTaskInfo * info = (ThreadTaskInfo *)params;
 
-    MFX_CHECK(!m_va->UnwrapBuffer(info->surface_out->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
+    if(m_va)
+        MFX_CHECK(!m_va->UnwrapBuffer(info->surface_out->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if (m_needVpp)
     {
