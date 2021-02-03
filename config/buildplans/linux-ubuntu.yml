@@ -53,12 +53,14 @@ steps:
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
       -h /opt/src/sources/mdp_msdk-lib/api
-      -p /opt/src/sources/mdp_msdk-lib/build/output"
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
   - name: create lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
       -h /opt/src/sources/mdp_msdk-lib/api
-      -p /opt/src/sources/mdp_msdk-lib/build/output"
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
   - name: build mediasdk tools
     command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build/mediasdk &&
       /opt/src/sources/mdp_msdk-lib/config/scripts/build_linux_tools.sh"
@@ -68,20 +70,23 @@ steps:
       -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
       -l /opt/src/sources/mdp_msdk-lib/build/mediasdk/__lib/release
       -t /opt/src/msdk_binaries/test_behavior
-      -p /opt/src/sources/mdp_msdk-lib/build/output"
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
   - name: create tools deb package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh
       -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
       -t /opt/src/msdk_binaries/test_behavior
       -h /opt/src/hevce_tests
-      -p /opt/src/sources/mdp_msdk-lib/build/output"
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
   - name: create lucas drop package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lucas.sh
       -v /opt/src/msdk_binaries/linux_validation_tools
       -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
       -l /opt/src/sources/mdp_msdk-lib/build/mediasdk/__lib/release
       -o /opt/src/sources/mdp_msdk-lib/build/vpl/__bin/release
-      -p /opt/src/sources/mdp_msdk-lib/build/output"
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
   - name: remove container
     command: docker kill $BUILD_ID
   - name: mock command on host

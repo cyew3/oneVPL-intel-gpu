@@ -97,15 +97,21 @@ PLUGINS=(
   'libva_fuzzer.so'
   )
 
-while getopts b:t:h:p: flag
+# build number arg is optional; only last number of this arg will be used for versioning: 0.0.0 -> 0
+build_number="0.0.0"
+while getopts b:t:h:p:n: flag
 do
     case "${flag}" in
         b) binaries_dir=${OPTARG};;
         t) test_behavior_dir=${OPTARG};;
         h) hevce_tests=${OPTARG};;
         p) path_to_save=${OPTARG};;
+        n) build_number=${OPTARG};;
     esac
 done
+
+# TODO: remove hardcoded path to lib repository
+RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
 package_dir=$path_to_save/tools_to_deb_pkg
 package_name="mediasdk-tools"
@@ -117,7 +123,7 @@ cp -Pv ${PLUGINS[*]} $package_dir/usr/local/lib/x86_64-linux-gnu
 cp -Pv $test_behavior_dir/test_behavior $package_dir/usr/local/bin
 
 echo "Package: $package_name
-Version: 11.0.$BUILD_NUMBER
+Version: $RELEASE_VERSION.${build_number##*.}
 Section: default
 Priority: optional
 Architecture: amd64

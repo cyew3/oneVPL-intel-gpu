@@ -1,8 +1,10 @@
 #!/bin/bash
 set -ex
 
+# TODO: remove hardcoded path to lib repository
 VERSION_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
 VERSION_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
 BIN_FILES=(
     "acctv3_read"
@@ -129,7 +131,9 @@ LIB_FILES=(
     'libaenc.a'
     )
 
-while getopts b:l:v:t:p: flag
+# build number arg is optional; only last number of this arg will be used for versioning: 0.0.0 -> 0
+build_number="0.0.0"
+while getopts b:l:v:t:p:n: flag
 do
     case "${flag}" in
         b) binaries_dir=${OPTARG};;
@@ -137,10 +141,11 @@ do
         v) validation_tools_dir=${OPTARG};;
         t) test_behavior_dir=${OPTARG};;
         p) path_to_save=${OPTARG};;
+        n) build_number=${OPTARG};;
     esac
 done
 
-package_name="tools_drop_$BUILD_NUMBER.tgz"
+package_name="tools_drop_$RELEASE_VERSION.${build_number##*.}.tgz"
 package_dir=$path_to_save/to_drop
 
 mkdir -p $package_dir/imports/mediasdk

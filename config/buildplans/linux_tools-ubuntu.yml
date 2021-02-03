@@ -14,12 +14,13 @@ qb_variable_map:
   component_name: COMPONENT_NAME
   irepo_workspace: WORKSPACE
   parent_build_id: BUILD_ID
+  build_number: BUILD_NUMBER
 steps:
   - name: copy mediasdk lib repo
     command: rm -rf ./sources/mdp_msdk-lib && cp -R mediasdk sources/mdp_msdk-lib
   - name: mock command in container
     command: docker run --name $BUILD_ID --rm -d -w /opt/src $DOCKER_ENV_VARS --init -v $WORKSPACE:/opt/src
-      -v /ccache:/opt/ccache -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` $DOCKER_IMAGE
+      -v /ccache:/opt/ccache -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` -e BUILD_NUMBER=$BUILD_NUMBER $DOCKER_IMAGE
       /bin/bash  -c "sleep 2400"
   - name: config_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu"
@@ -41,13 +42,15 @@ steps:
       -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
       -l /opt/src/sources/mdp_msdk-lib/build/__lib/release
       -t /opt/src/msdk_binaries/test_behavior
-      -p /opt/src/sources/mdp_msdk-lib/build/output"
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
   - name: create deb package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh
       -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
       -t /opt/src/msdk_binaries/test_behavior
       -h /opt/src/hevce_tests
-      -p /opt/src/sources/mdp_msdk-lib/build/output"
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
   - name: remove container
     command: docker kill $BUILD_ID
   - name: mock command on host

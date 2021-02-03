@@ -1,12 +1,15 @@
 #!/bin/bash
 set -ex
 
-while getopts b:h:p: flag
+# build number arg is optional; only last number of this arg will be used for versioning: 0.0.0 -> 0
+build_number="0.0.0"
+while getopts b:h:p:n: flag
 do
     case "${flag}" in
         b) build_dir=${OPTARG};;
         h) headers_dir=${OPTARG};;
         p) path_to_save=${OPTARG};;
+        n) build_number=${OPTARG};;
     esac
 done
 
@@ -94,8 +97,10 @@ declare -a COPY_CMDS=(
 
 
 # Create arg in cmd for API header location
+# TODO: remove hardcoded path to lib repository
 VERSION_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
 VERSION_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
 package_dir=$path_to_save/tmp_linux_lib_files
 package_name="mediasdk"
@@ -117,7 +122,7 @@ for command in "${COPY_CMDS[@]}"
   done
 
 echo "Package: $package_name
-Version: 11.0.$BUILD_NUMBER
+Version: $RELEASE_VERSION.${build_number##*.}
 Section: default
 Priority: optional
 Architecture: amd64
