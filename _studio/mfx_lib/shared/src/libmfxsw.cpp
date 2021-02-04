@@ -78,12 +78,11 @@ static inline mfxU32 MakeVersion(mfxU16 major, mfxU16 minor)
     return major * 1000 + minor;
 }
 
+static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession* session, mfxIMPL implInterface, mfxU32 adapterNum);
+
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
-    _mfxSession_1_10 * pSession = 0;
-
     (void)g_hModule;
-    mfxStatus mfxRes;
     int adapterNum = 0;
     mfxIMPL impl = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
     mfxIMPL implInterface = par.Implementation & -MFX_IMPL_VIA_ANY;
@@ -175,6 +174,15 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     }
 
+    return MFXInit_Internal(par, session, implInterface, adapterNum);
+
+} // mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
+
+static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession *session, mfxIMPL implInterface, mfxU32 adapterNum)
+{
+    _mfxSession_1_10* pSession = nullptr;
+    mfxStatus         mfxRes   = MFX_ERR_NONE;
+
     try
     {
         // reset output variable
@@ -209,7 +217,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     return mfxRes;
 
-} // mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
+} // mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession *session, mfxIMPL implInterface, mfxU32 adapterNum)
 
 mfxStatus MFXDoWork(mfxSession session)
 {
@@ -317,8 +325,14 @@ mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam param, mfxSession* sess
     par.ExternalThreads = 0;
     par.NumExtParam = param.NumExtParam;
     par.ExtParam = param.ExtParam;
-    
-    return MFXInitEx(par, session);
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    // VendorImplID is used as adapterNum in current implementation - see MFXQueryImplsDescription
+    // app. supposed just to copy VendorImplID from mfxImplDescription (returned by MFXQueryImplsDescription) to mfxInitializationParam
+    return MFXInit_Internal(par, session, par.Implementation, param.VendorImplID);
+#else
+    return MFXInit_Internal(par, session, par.Implementation, 0);
+#endif
 }
 
 namespace mfx
@@ -405,7 +419,7 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
         std::unique_ptr<mfx::ImplDescriptionHolder> holder(new mfx::ImplDescriptionHolder);
         std::set<mfxU32> deviceIds;
 
-        auto QueryImplDesc = [&](VideoCORE& core, mfxU32 deviceId) -> bool
+        auto QueryImplDesc = [&](VideoCORE& core, mfxU32 deviceId, mfxU32 adapterNum) -> bool
         {
             if (   !IsVplHW(core.GetHWType())
                 || deviceIds.end() != deviceIds.find(deviceId))
@@ -418,8 +432,9 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
             impl.Impl             = MFX_IMPL_TYPE_HARDWARE;
             impl.ApiVersion       = { MFX_VERSION_MINOR, MFX_VERSION_MAJOR };
             impl.VendorID         = 0x8086;
-            impl.VendorImplID     = 0;
-            impl.AccelerationMode = core.GetVAType() == MFX_HW_VAAPI ? MFX_ACCEL_MODE_VIA_VAAPI :  MFX_ACCEL_MODE_VIA_D3D11;
+            // use adapterNum as VendorImplID, app. supposed just to copy it from mfxImplDescription to mfxInitializationParam
+            impl.VendorImplID     = adapterNum;
+            impl.AccelerationMode = core.GetVAType() == MFX_HW_VAAPI ? MFX_ACCEL_MODE_VIA_VAAPI : MFX_ACCEL_MODE_VIA_D3D11;
 
             snprintf(impl.Dev.DeviceID, sizeof(impl.Dev.DeviceID), "%x", deviceId);
 
@@ -452,7 +467,7 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
 
             std::unique_ptr<VideoCORE> pCore(FactoryCORE::CreateCORE(MFX_HW_D3D11, adapter, 0));
 
-            if (!QueryImplDesc(*pCore, deviceId))
+            if (!QueryImplDesc(*pCore, deviceId, adapter))
                 return nullptr;
         }
 #elif defined(MFX_VA_LINUX)
@@ -511,7 +526,7 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
                     if (pCore->SetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL)displ))
                         continue;
 
-                    if (!QueryImplDesc(*pCore, deviceId))
+                    if (!QueryImplDesc(*pCore, deviceId, i))
                         return nullptr;
                 }
             }

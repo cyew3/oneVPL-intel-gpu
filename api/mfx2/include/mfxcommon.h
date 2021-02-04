@@ -426,7 +426,12 @@ typedef struct {
     mfxU16  reserved[3];                     /*!< Reserved for future use. */
     mfxU16  NumExtParam;                     /*!< The number of extra configuration structures attached to this structure. */
     mfxExtBuffer **ExtParam;                 /*!< Points to an array of pointers to the extra configuration structures; see the ExtendedBufferID enumerator for a list of extended configurations. */
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxU32      VendorImplID;                /*!< Vendor specific number with given implementation ID. Represents the same field from mfxImplDescription. */
+    mfxU32      reserved2[3];                /*!< Reserved for future use. */
+#else
     mfxU32      reserved2[4];                /*!< Reserved for future use. */
+#endif
 } mfxInitializationParam;
 MFX_PACK_END()
 
