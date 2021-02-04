@@ -24,7 +24,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.val-tools.git
     branch: master
-    revision: eb734845bc2beef484c4d6af7c2e8ffcfd3c9689
+    revision: 990dbce72d2b2d23557f2cff19fe45fab291088d
     dest_dir: sources/mdp_msdk-val-tools
   hevc-stream-generator:
     type: git
