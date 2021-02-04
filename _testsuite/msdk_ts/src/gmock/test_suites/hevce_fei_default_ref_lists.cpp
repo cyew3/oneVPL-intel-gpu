@@ -523,7 +523,7 @@ namespace hevce_fei_default_ref_lists
                    return lhs_distance < rhs_distance;
                 };
 
-                // If lists are bigger than max supported, sort them and remove extra elements
+                // If lists are bigger than max supported, sort them
                 if (L0.size() > (isB ? CO3.NumRefActiveBL0[0] : CO3.NumRefActiveP[0]))
                 {
                     if (isPPyramid)
@@ -531,41 +531,22 @@ namespace hevce_fei_default_ref_lists
                         // For P-pyramid we remove oldest references
                         // with the highest layer except the closest frame or field pair.
 
-                        if (bIsFieldCoding)
+                        auto cmp = [&](const Frame & a, const Frame & b)
                         {
+                            return (a.PLayer < b.PLayer) || ((a.PLayer == b.PLayer) && distance(a, b));
+                        };
 
-                            std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
-                                                            {
-                                                                return !preferSamePolarity(lhs_frame, rhs_frame);
-                                                            });
-                        }
-                        else
-                        {
-                            std::sort(L0.begin(), L0.end(), [&](const Frame & lhs_frame, const Frame & rhs_frame)
-                                                            {
-                                                                return !distance(lhs_frame, rhs_frame);
-                                                            });
-                        }
+                        sort(L0.begin(), L0.end(), cmp);
 
-                        while (L0.size() > CO3.NumRefActiveP[out.PLayer])
-                        {
-                            auto weak = L0.begin();
-                            for (auto it = L0.begin(); it != L0.end(); it ++)
-                            {
-                                if (weak->PLayer < it->PLayer &&
-                                    (bIsFieldCoding ?
-                                        it->poc != L0.rbegin()[0].poc && it->poc != L0.rbegin()[1].poc :
-                                        it->poc != L0.rbegin()[0].poc))
-                                {
-                                    weak = it;
-                                }
-                            }
-
-                            L0.erase(weak);
-                        }
                     } // if PPyramid
                 }
 
+                {
+                    auto it = std::min_element(L0.begin(), L0.end(), distance);
+                    std::rotate(L0.begin(), it, it + 1);
+                }
+                std::vector<Frame> list0(L0);
+                std::vector<Frame> list1(L1);
                 if (bIsFieldCoding)
                 {
                     std::sort(L0.begin(), L0.end(), preferSamePolarity);
@@ -616,8 +597,45 @@ namespace hevce_fei_default_ref_lists
                 if (L1.size() > CO3.NumRefActiveBL1[0])
                     L1.resize(CO3.NumRefActiveBL1[0]);
 
-                std::sort(L0.begin(), L0.end(), distance);
-                std::sort(L1.begin(), L1.end(), distance);
+                bool bValid = (list0.size() <= (isB ? CO3.NumRefActiveBL0[0] : CO3.NumRefActiveP[0]) && list1.size() <= CO3.NumRefActiveBL1[0]);
+                if (bIsFieldCoding && !bValid && isPPyramid)
+                {
+                    list1 = L1;
+                    auto IsNotInL0 = [&](const Frame & x)
+                    {
+                        for (auto & i : L0)
+                            if (i.poc == x.poc)
+                                return false;
+                        return true;
+                    };
+                    auto IsNotInL1 = [&](const Frame & x)
+                    {
+                        for (auto & i : L1)
+                            if (i.poc == x.poc)
+                                return false;
+                        return true;
+                    };
+
+                    list0.erase(std::remove_if(list0.begin(), list0.end(), IsNotInL0), list0.end());
+                    list1.erase(std::remove_if(list1.begin(), list1.end(), IsNotInL1), list1.end());
+
+                    L0 = list0;
+                    L1 = list1;
+                }
+                else if (!L0.empty() && !L1.empty())
+                {
+                    auto cmp = [&](const Frame & a, const Frame & b)
+                    {
+                        return (isPPyramid ? (a.PLayer < b.PLayer) || ((a.PLayer == b.PLayer) && distance(a, b)) : distance(a, b));
+                    };
+                    std::sort(L0.begin(), L0.end(), cmp);
+                    std::sort(L1.begin(), L1.end(), distance);
+                    if (isPPyramid)
+                    {
+                        auto it = std::min_element(L0.begin(), L0.end(), distance);
+                        std::rotate(L0.begin(), it, it + 1);
+                    }
+                }
             }
 
             //=================5. Save current frame in DPB=====================
