@@ -1705,11 +1705,15 @@ Values are in the 1 to 51 range,
        mfxFrameData::FrameOrder for correct operation of LTR.
     */
     mfxU16      ExtBrcAdaptiveLTR;         /* Tri-state option for ExtBRC. */
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    /*!
+       If this flag is set to ON, encoder adaptively selects one of implementation-defined quantization matrices for each frame.
+       Non-default quantization matrices aim to improve subjective visual quality under certain conditions.
+       Their number and definitions are API implementation specific.
+       If this flag is set to OFF, default quantization matrix is used for all frames.
+       This parameter is valid only during initialization.
+    */
     mfxU16      AdaptiveCQM;
-#else
-    mfxU16      reserved4;
-#endif
+
     mfxU16      reserved[162];
 } mfxExtCodingOption3;
 MFX_PACK_END()
@@ -2046,7 +2050,6 @@ enum {
     MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
     MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
     MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
-    MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM            = MFX_MAKEFOURCC('A','1','F','G'),
     MFX_EXTBUFF_AV1_LST_PARAM                   = MFX_MAKEFOURCC('A', '1', 'L', 'S'),
     MFX_EXTBUFF_AV1_SEGMENTATION                = MFX_MAKEFOURCC('1', 'S', 'E', 'G'),
     MFX_EXTBUFF_AV1_PARAM                       = MFX_MAKEFOURCC('1', 'P', 'A', 'R'),
@@ -2078,6 +2081,10 @@ enum {
     */
     MFX_EXTBUFF_CROPS = MFX_MAKEFOURCC('C', 'R', 'O', 'P'),
 
+    /*!
+       See the mfxExtAV1FilmGrainParam structure for more details.
+    */
+    MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM = MFX_MAKEFOURCC('A','1','F','G')
 
 };
 
@@ -3765,7 +3772,11 @@ enum {
     MFX_SCALING_MODE_DEFAULT    = 0, /*!< Default scaling mode. The library selects the most appropriate scaling method. */
     MFX_SCALING_MODE_LOWPOWER   = 1, /*!< Low power scaling mode which is applicable for library implementations.
                                          The exact scaling algorithm is defined by the library. */
-    MFX_SCALING_MODE_QUALITY    = 2  /*!< The best quality scaling mode */
+    MFX_SCALING_MODE_QUALITY    = 2, /*!< The best quality scaling mode */
+    MFX_SCALING_MODE_VENDOR = 1000, /*!< The enumeration to separate common scaling controls above and vendor specific. */ 
+    MFX_SCALING_MODE_INTEL_GEN_COMPUTE  = MFX_SCALING_MODE_VENDOR + 1, /*! The mode to run scaling operation on Execution Units (EUs). */
+    MFX_SCALING_MODE_INTEL_GEN_VDBOX = MFX_SCALING_MODE_VENDOR + 2, /*! The special optimization mode where scaling operation running on SFC (Scaler & Format Converter) is coupled with VDBOX (also known as Multi-Format Codec fixed-function engine). This mode is applicable for DECODE_VPP domain functions. */ 
+    MFX_SCALING_MODE_INTEL_GEN_VEBOX = MFX_SCALING_MODE_VENDOR + 3 /*! The special optimization mode where scaling operation running on SFC is coupled with VEBOX (HW video processing pipe). */ 
 };
 
 /*! The InterpolationMode enumerator specifies type of interpolation method used by VPP scaling filter. */

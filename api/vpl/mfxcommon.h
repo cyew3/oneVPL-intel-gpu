@@ -383,10 +383,27 @@ typedef enum {
     MFX_ACCEL_MODE_VIA_D3D9     = 0x0200,  /*!< Hardware acceleration goes through the Microsoft* Direct3D9* infrastructure. */
     MFX_ACCEL_MODE_VIA_D3D11    = 0x0300,  /*!< Hardware acceleration goes through the Microsoft* Direct3D11* infrastructure. */
     MFX_ACCEL_MODE_VIA_VAAPI    = 0x0400,  /*!< Hardware acceleration goes through the Linux* VA-API infrastructure. */
+    MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE    = MFX_ACCEL_MODE_VIA_VAAPI,  /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with DRM RENDER MODE as default acceleration access point. */
+    MFX_ACCEL_MODE_VIA_VAAPI_DRM_MODESET = 0x0401, /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with DRM MODESET as  default acceleration access point. */
+    MFX_ACCEL_MODE_VIA_VAAPI_GLX = 0x0402, /*! Hardware acceleration goes through the Linux* VA-API infrastructure with OpenGL Extension to the X Window System
+    MFX_ACCEL_MODE_VIA_VAAPI_X11 = 0x0403, /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with X11 as default acceleration access point. */
+    MFX_ACCEL_MODE_VIA_VAAPI_WAYLAND = 0x0404, /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with Wayland as default acceleration access point. */
     MFX_ACCEL_MODE_VIA_HDDLUNITE    = 0x0500,  /*!< Hardware acceleration goes through the HDDL* Unite*. */
 } mfxAccelerationMode;
 
-#define MFX_IMPLDESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 0)
+#define MFX_ACCELERATIONMODESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 0)
+
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+/*! This structure represents acceleration modes description. */
+typedef struct {
+    mfxStructVersion Version;                            /*!< Version of the structure. */
+    mfxU16 reserved[2];                                  /*!< reserved for future use. */
+    mfxU16 NumAccelerationModes;                         /*!< Number of supported acceleration modes. */
+    mfxAccelerationMode* Mode;                           /*!< Pointer to the array of supported acceleration modes. */
+} mfxAccelerationModeDescription;
+MFX_PACK_END()
+
+#define MFX_IMPLDESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 1)
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
 /*! This structure represents the implementation description. */
@@ -404,7 +421,12 @@ typedef struct {
     mfxDecoderDescription  Dec;                          /*!< Decoder configuration. */
     mfxEncoderDescription  Enc;                          /*!< Encoder configuration. */
     mfxVPPDescription      VPP;                          /*!< VPP configuration. */
-    mfxU32                 reserved[16];                 /*!< Reserved for future use. */
+    union
+    {
+        mfxAccelerationModeDescription   AccelerationModeDescription; /*!< Supported acceleration modes. */
+        mfxU32 reserved3[4];
+    };
+    mfxU32                 reserved[12];                 /*!< Reserved for future use. */
     mfxU32                 NumExtParam;                  /*!< Number of extension buffers. Reserved for future use. Must be 0. */
     union {
         mfxExtBuffer **ExtParam;                         /*!< Array of extension buffers. */
@@ -426,12 +448,8 @@ typedef struct {
     mfxU16  reserved[3];                     /*!< Reserved for future use. */
     mfxU16  NumExtParam;                     /*!< The number of extra configuration structures attached to this structure. */
     mfxExtBuffer **ExtParam;                 /*!< Points to an array of pointers to the extra configuration structures; see the ExtendedBufferID enumerator for a list of extended configurations. */
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU32      VendorImplID;                /*!< Vendor specific number with given implementation ID. Represents the same field from mfxImplDescription. */
     mfxU32      reserved2[3];                /*!< Reserved for future use. */
-#else
-    mfxU32      reserved2[4];                /*!< Reserved for future use. */
-#endif
 } mfxInitializationParam;
 MFX_PACK_END()
 

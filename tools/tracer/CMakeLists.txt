@@ -16,7 +16,6 @@ add_library(${tracerlibname} SHARED)
 
 target_include_directories(${tracerlibname}
   PRIVATE
-    ${MFX_API_HOME}/include
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -93,7 +92,7 @@ get_mfx_version(mfx_version_major mfx_version_minor)
 set_target_properties(${tracerlibname} PROPERTIES   VERSION ${mfx_version_major}.${mfx_version_minor})
 set_target_properties(${tracerlibname} PROPERTIES SOVERSION ${mfx_version_major})
 
-target_link_libraries(${tracerlibname} PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(${tracerlibname} PRIVATE ${MFX_API_TARGET} ${CMAKE_DL_LIBS})
 
 install(TARGETS ${tracerlibname} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

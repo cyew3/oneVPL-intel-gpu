@@ -39,7 +39,7 @@ elseif (${API} STREQUAL "master"
      OR ${API} VERSION_LESS 2.0 )
   set( MFX_API_HOME ${MFX_API_HOME} )
 elseif( ${API} VERSION_GREATER_EQUAL 2.0 )
-  set( MFX_API_HOME ${MFX_API_HOME}/mfx2)
+  set( MFX_API_HOME ${MFX_API_HOME}/vpl)
 else()
   message( FATAL_ERROR "Unknown API = ${API}")
 endif()
@@ -47,13 +47,15 @@ endif()
 unset( MFX_INCLUDE CACHE )
 find_path( MFX_INCLUDE
   NAMES mfxdefs.h
-  PATHS "${MFX_API_HOME}/include"
+  PATHS "${MFX_API_HOME}"
+  PATH_SUFFIXES include
   NO_CMAKE_FIND_ROOT_PATH
 )
 
 include (${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 find_package_handle_standard_args(MFX REQUIRED_VARS MFX_INCLUDE)
 
+set( MFX_API_HOME ${MFX_INCLUDE} )
 if (NOT MFX_FOUND)
   message( FATAL_ERROR "Unknown API = ${API}")
 endif()
@@ -63,9 +65,9 @@ macro( make_api_target target)
   add_library( ${target}-api INTERFACE )
   target_include_directories(${target}-api
     INTERFACE
-    ${MFX_API_HOME}/include
+    ${MFX_API_HOME}
     ${MFX_API_HOME}/../mediasdk_structures
-    $<$<BOOL:${API_USE_VPL}>:${MFX_API_HOME}/include/private>
+    $<$<BOOL:${API_USE_VPL}>:${MFX_API_HOME}/private>
   )
   target_compile_definitions(${target}-api
     INTERFACE $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
@@ -77,13 +79,13 @@ macro( make_api_target target)
 endmacro()
 
 function( get_mfx_version mfx_version_major mfx_version_minor )
-  file(STRINGS ${MFX_API_HOME}/include/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR" LIMIT_COUNT 1)
+  file(STRINGS ${MFX_API_HOME}/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR" LIMIT_COUNT 1)
   if(major STREQUAL "") # old style version
-     file(STRINGS ${MFX_API_HOME}/include/mfxvideo.h major REGEX "#define MFX_VERSION_MAJOR")
+     file(STRINGS ${MFX_API_HOME}/mfxvideo.h major REGEX "#define MFX_VERSION_MAJOR")
   endif()
-  file(STRINGS ${MFX_API_HOME}/include/mfxdefs.h minor REGEX "#define MFX_VERSION_MINOR" LIMIT_COUNT 1)
+  file(STRINGS ${MFX_API_HOME}/mfxdefs.h minor REGEX "#define MFX_VERSION_MINOR" LIMIT_COUNT 1)
   if(minor STREQUAL "") # old style version
-     file(STRINGS ${MFX_API_HOME}/include/mfxvideo.h minor REGEX "#define MFX_VERSION_MINOR")
+     file(STRINGS ${MFX_API_HOME}/mfxvideo.h minor REGEX "#define MFX_VERSION_MINOR")
   endif()
   string(REPLACE "#define MFX_VERSION_MAJOR " "" major ${major})
   string(REPLACE "#define MFX_VERSION_MINOR " "" minor ${minor})
@@ -127,6 +129,8 @@ else( )
 endif()
 
 set( API_VERSION "${major_vers}.${minor_vers}")
+set( MFX_VERSION_MAJOR ${major_vers})
+set( MFX_VERSION_MINOR ${minor_vers})
 
 if ( ${API_VERSION} VERSION_GREATER_EQUAL 2.0 )
   set( API_USE_VPL TRUE )
