@@ -761,8 +761,11 @@ mfxStatus InitMemoryAllocator(
             sts = CreateDeviceManager(&(pAllocator->pd3dDeviceManager));
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateDeviceManager\n")); WipeMemoryAllocator(pAllocator);});
 
-            sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, pAllocator->pd3dDeviceManager);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetHandle\n"));  WipeMemoryAllocator(pAllocator);});
+            if (isHWLib)
+            {
+                sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, pAllocator->pd3dDeviceManager);
+                CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetHandle\n"));  WipeMemoryAllocator(pAllocator);});
+            }
 
             // prepare allocator
             pd3dAllocParams->pManager = pAllocator->pd3dDeviceManager;
@@ -784,8 +787,11 @@ mfxStatus InitMemoryAllocator(
             sts = CreateD3D11Device(&(pAllocator->pD3D11Device), &(pAllocator->pD3D11DeviceContext), MSDKAdapter::GetNumber(pProcessor->mfxSession));
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateD3D11Device\n"));  WipeMemoryAllocator(pAllocator);});
 
-            sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_D3D11_DEVICE, pAllocator->pD3D11Device);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetHandle\n"));  WipeMemoryAllocator(pAllocator);});
+            if (isHWLib)
+            {
+                sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_D3D11_DEVICE, pAllocator->pD3D11Device);
+                CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetHandle\n"));  WipeMemoryAllocator(pAllocator); });
+            }
 
             // prepare allocator
             pd3d11AllocParams->pDevice = pAllocator->pD3D11Device;
