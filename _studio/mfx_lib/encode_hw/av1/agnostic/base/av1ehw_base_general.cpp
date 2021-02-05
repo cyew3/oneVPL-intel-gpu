@@ -3185,6 +3185,15 @@ mfxStatus General::CheckFrameOBU(mfxVideoParam& par,  const ENCODE_CAPS_AV1& cap
 
     MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
 
+    mfxU32 changed = 0;
+    if (IsOn(pAV1Par->PackOBUFrame) && pAV1Par->NumTileGroups > 1)
+    {   
+        pAV1Par->PackOBUFrame = MFX_CODINGOPTION_OFF;
+        changed = 1;
+    }
+
+    MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+
     return MFX_ERR_NONE;
 }
 
