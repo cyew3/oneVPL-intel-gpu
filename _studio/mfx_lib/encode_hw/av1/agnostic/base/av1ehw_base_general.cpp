@@ -2720,6 +2720,13 @@ void SetDefaultBRC(
     }
 
     SetDefault(par.mfx.BRCParamMultiplier, 1);
+
+    mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
+    if (pAuxPar && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        SetDefault(pAuxPar->QP.MinBaseQIndex, AV1_MIN_Q_INDEX);
+        SetDefault(pAuxPar->QP.MaxBaseQIndex, AV1_MAX_Q_INDEX);
+    }
 }
 
 inline void SetDefaultOrderHint(mfxExtAV1AuxData* par)
@@ -3027,14 +3034,19 @@ mfxStatus General::CheckBRC(
     mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
     if (pAuxPar)
     {
-        changed += CheckMaxOrClip(pAuxPar->QP.MinBaseQIndex, pAuxPar->QP.MaxBaseQIndex);
-        changed += CheckMaxOrClip(pAuxPar->QP.MinBaseQIndex, AV1_MAX_Q_INDEX);
-        changed += CheckMaxOrClip(pAuxPar->QP.MaxBaseQIndex, AV1_MAX_Q_INDEX);
-
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         {
             changed += CheckOrZero<mfxU8>(pAuxPar->QP.MinBaseQIndex, 0);
             changed += CheckOrZero<mfxU8>(pAuxPar->QP.MaxBaseQIndex, 0);
+        }
+        else
+        {
+            if (pAuxPar->QP.MinBaseQIndex || pAuxPar->QP.MaxBaseQIndex)
+            {
+                changed += CheckRangeOrClip(pAuxPar->QP.MinBaseQIndex, AV1_MIN_Q_INDEX, AV1_MAX_Q_INDEX);
+                changed += CheckRangeOrClip(pAuxPar->QP.MaxBaseQIndex, AV1_MIN_Q_INDEX, AV1_MAX_Q_INDEX);
+                changed += CheckMaxOrClip(pAuxPar->QP.MinBaseQIndex, pAuxPar->QP.MaxBaseQIndex);
+            }
         }
     }
 

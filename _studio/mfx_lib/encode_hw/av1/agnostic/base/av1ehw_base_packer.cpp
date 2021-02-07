@@ -989,28 +989,35 @@ void Packer::PackPPS(
     }
 
     const mfxU32 obu_extension_flag = sh.operating_points_cnt_minus_1 ? 1 : 0;
+    const mfxU32 obu_header_offset  = bs.GetOffset();
     if (insertHeaders & INSERT_FRM_OBU)
     {
+        tmp_offsets.FrameHdrOBUSizeInBits = tmpBitstream.GetOffset();
         tmpBitstream.PutAlignmentBits();
         PackOBUHeader(bs, OBU_FRAME, obu_extension_flag, oeh);
     }
     else
     {
+        tmp_offsets.FrameHdrOBUSizeInBits = tmpBitstream.GetOffset() + 1;  // trailing 1 bit is included
         tmpBitstream.PutTrailingBits(); //Trailing bit
         PackOBUHeader(bs, OBU_FRAME_HEADER, obu_extension_flag, oeh);
     }
 
     offsets.FrameHdrOBUSizeByteOffset = (bs.GetOffset() >> 3);
 
-    mfxU32 obu_size_in_bytes = (tmpBitstream.GetOffset() + 7) / 8;
+    const mfxU32 obu_size_in_bytes = (tmpBitstream.GetOffset() + 7) / 8;
     PackOBUHeaderSize(bs, obu_size_in_bytes, 4);
 
     if (!fh.show_existing_frame)
     {
-        offsets.QIndexBitOffset = bs.GetOffset() + tmp_offsets.QIndexBitOffset;
-        offsets.SegmentationBitOffset = bs.GetOffset() + tmp_offsets.SegmentationBitOffset;
-        offsets.LoopFilterParamsBitOffset = bs.GetOffset() + tmp_offsets.LoopFilterParamsBitOffset;
-        offsets.CDEFParamsBitOffset = bs.GetOffset() + tmp_offsets.CDEFParamsBitOffset;
+        // The offset is related to frame or frame header OBU. IVF, sequence, and other headers should not be counted.
+        const mfxU32 obuPayloadOffset     = bs.GetOffset() - obu_header_offset;
+        offsets.QIndexBitOffset           = obuPayloadOffset + tmp_offsets.QIndexBitOffset;
+        offsets.SegmentationBitOffset     = obuPayloadOffset + tmp_offsets.SegmentationBitOffset;
+        offsets.LoopFilterParamsBitOffset = obuPayloadOffset + tmp_offsets.LoopFilterParamsBitOffset;
+        offsets.CDEFParamsBitOffset       = obuPayloadOffset + tmp_offsets.CDEFParamsBitOffset;
+        offsets.CDEFParamsSizeInBits      = tmp_offsets.CDEFParamsSizeInBits;
+        offsets.FrameHdrOBUSizeInBits     = obuPayloadOffset + tmp_offsets.FrameHdrOBUSizeInBits;
     }
 
     bs.PutBitsBuffer(tmpBitstream.GetOffset(), tmpBitstream.GetStart());

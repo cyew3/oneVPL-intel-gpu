@@ -357,14 +357,21 @@ void DDIPacker::FillSpsBuffer(
     sps.TargetUsage = static_cast<UCHAR>(par.mfx.TargetUsage);
     sps.RateControlMethod = MapRateControlMethodToDDI(par.mfx.RateControlMethod);
 
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    {
+      sps.TargetBitRate[0]           = par.mfx.TargetKbps;
+      sps.MaxBitRate                 = par.mfx.MaxKbps;
+      sps.VBVBufferSizeInBit         = par.mfx.BufferSizeInKB * 8000;
+      sps.InitVBVBufferFullnessInBit = par.mfx.InitialDelayInKB * 8000;
+    }
+
     mfxU32 nom = par.mfx.FrameInfo.FrameRateExtN;
     mfxU32 denom = par.mfx.FrameInfo.FrameRateExtD;
 
     sps.FrameRate[0].Numerator = nom;
     sps.FrameRate[0].Denominator = denom;
 
-    //TODO: implement BRC and temporal layer related parameters in future
-    sps.SeqFlags.fields.bResetBRC = 0;
     sps.NumTemporalLayersMinus1 = 0;
 }
 
@@ -614,6 +621,7 @@ void DDIPacker::FillPpsBuffer(
 
     //offsets
     auto& offsets = task.Offsets;
+    pps.FrameHdrOBUSizeInBits = static_cast<USHORT>(offsets.FrameHdrOBUSizeInBits);
     pps.FrameHdrOBUSizeByteOffset = offsets.FrameHdrOBUSizeByteOffset;
     pps.LoopFilterParamsBitOffset = offsets.LoopFilterParamsBitOffset;
     pps.QIndexBitOffset = offsets.QIndexBitOffset;

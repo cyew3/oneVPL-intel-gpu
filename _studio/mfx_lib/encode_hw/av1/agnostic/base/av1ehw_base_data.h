@@ -35,6 +35,7 @@ namespace Base
     const uint16_t SB_SIZE                        = 64;
     const uint16_t AV1_DIRTY_BLOCK_SIZE           = 32;
     const uint8_t  AV1_MAX_Q_INDEX                = 255;
+    const uint8_t  AV1_MIN_Q_INDEX                = 1;
     const uint16_t AV1_VDENC_MAX_TILE_QNT         = 256;
 
     const uint8_t AV1_MAX_NUM_OF_SEGMENTS       = 8;
@@ -446,6 +447,7 @@ namespace Base
         mfxU32 SegmentationBitOffset;
         mfxU32 SegmentationBitSize;
         mfxU32 LoopFilterParamsBitOffset;
+        mfxU32 FrameHdrOBUSizeInBits;
         mfxU32 FrameHdrOBUSizeByteOffset;
         mfxU32 UncompressedHeaderByteOffset;
         mfxU32 CDEFParamsBitOffset;
