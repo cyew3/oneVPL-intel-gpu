@@ -372,7 +372,7 @@ void Packer::PackSPS(BitstreamWriter& bs, SH const& sh, FH const& fh, ObuExtensi
 
     //adding header data to tmp_buff to calculate size before adding to bitstream
     tmpBitstream.PutBits(3, sh.seq_profile); //seq_profile
-    tmpBitstream.PutBit(0); //still_picture
+    tmpBitstream.PutBit(sh.still_picture); //still_picture
     tmpBitstream.PutBit(0); //reduced_still_picture_header
     tmpBitstream.PutBit(0); //timing_info_present_flag
     tmpBitstream.PutBit(0); //initial_display_delay_present_flag

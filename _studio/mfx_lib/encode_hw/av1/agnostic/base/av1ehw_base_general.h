@@ -58,6 +58,7 @@ namespace Base
     DECL_BLOCK(CheckCDEF            )\
     DECL_BLOCK(CheckTemporalLayers  )\
     DECL_BLOCK(CheckGopRefDist      )\
+    DECL_BLOCK(CheckStillPicture    )\
     DECL_BLOCK(CheckGPB             )\
     DECL_BLOCK(CheckNumRefFrame     )\
     DECL_BLOCK(CheckIOPattern       )\
@@ -160,7 +161,8 @@ namespace Base
         mfxStatus CheckOrderHintBits(mfxVideoParam& par);
         mfxStatus CheckCDEF(mfxVideoParam& par, const ENCODE_CAPS_AV1& caps);
         mfxStatus CheckTemporalLayers(mfxVideoParam & par);
-        mfxStatus CheckGopRefDist(mfxVideoParam & par, const ENCODE_CAPS_AV1& caps);
+        mfxStatus CheckStillPicture(mfxVideoParam & par);
+        mfxStatus CheckGopRefDist(mfxVideoParam & par);
         mfxStatus CheckGPB(mfxVideoParam & par);
         mfxStatus CheckIOPattern(mfxVideoParam & par);
         mfxStatus CheckBRC(

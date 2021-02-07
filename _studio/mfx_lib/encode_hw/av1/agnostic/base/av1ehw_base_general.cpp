@@ -614,10 +614,16 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         return CheckTemporalLayers(out);
     });
 
+    Push(BLK_CheckStillPicture
+        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
+    {
+        return CheckStillPicture(out);
+    });
+
     Push(BLK_CheckGopRefDist
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
-        return CheckGopRefDist(out, m_pQWCDefaults->caps);
+        return CheckGopRefDist(out);
     });
 
     Push(BLK_CheckGPB
@@ -3122,7 +3128,24 @@ mfxStatus General::CheckTemporalLayers(mfxVideoParam & par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus General::CheckGopRefDist(mfxVideoParam & par, const ENCODE_CAPS_AV1& /*caps*/)
+mfxStatus General::CheckStillPicture(mfxVideoParam & par)
+{
+    mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
+    MFX_CHECK(pAV1Par && IsOn(pAV1Par->StillPictureMode), MFX_ERR_NONE);
+
+    mfxU32 changed = 0;
+    if (par.mfx.GopPicSize != 1)
+    {
+        par.mfx.GopPicSize = 1;
+        changed += 1;
+    }
+
+    MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus General::CheckGopRefDist(mfxVideoParam & par)
 {
     MFX_CHECK(par.mfx.GopRefDist, MFX_ERR_NONE);
 
