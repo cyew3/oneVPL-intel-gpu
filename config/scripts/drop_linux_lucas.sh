@@ -2,8 +2,12 @@
 set -ex
 
 # TODO: remove hardcoded path to lib repository
-VERSION_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
-VERSION_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+MSDK_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+MSDK_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+
+VPL_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/vpl/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+VPL_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/vpl/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+
 RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
 BIN_FILES=(
@@ -49,18 +53,18 @@ BIN_FILES=(
     "libbs_parser.so"
     "libcttmetrics.so"
     "libmfx-tracer.so"
-    "libmfx-tracer.so.${VERSION_MAJOR}"
-    "libmfx-tracer.so.${VERSION_MAJOR}.${VERSION_MINOR}"
+    "libmfx-tracer.so.${MSDK_MAJOR}"
+    "libmfx-tracer.so.${MSDK_MAJOR}.${MSDK_MINOR}"
     "libmfx.pc"
     "libmfx.so"
-    "libmfx.so.${VERSION_MAJOR}"
-    "libmfx.so.${VERSION_MAJOR}.${VERSION_MINOR}"
+    "libmfx.so.${MSDK_MAJOR}"
+    "libmfx.so.${MSDK_MAJOR}.${MSDK_MINOR}"
     "libmfxhw64.so"
-    "libmfxhw64.so.${VERSION_MAJOR}"
-    "libmfxhw64.so.${VERSION_MAJOR}.${VERSION_MINOR}"
+    "libmfxhw64.so.${MSDK_MAJOR}"
+    "libmfxhw64.so.${MSDK_MAJOR}.${MSDK_MINOR}"
     "libmfxsw64.so"
-    "libmfxsw64.so.${VERSION_MAJOR}"
-    "libmfxsw64.so.${VERSION_MAJOR}.${VERSION_MINOR}"
+    "libmfxsw64.so.${MSDK_MAJOR}"
+    "libmfxsw64.so.${MSDK_MAJOR}.${MSDK_MINOR}"
     "libmfx_h264la_hw64.so"
     "libmfx_hevcd_hw64.so"
     "libmfx_hevce_hw64.so"
@@ -138,9 +142,9 @@ LIB_FILES=(
     )
 
 VPL_FILES=(
-    'libmfx-gen.so'
-    'libmfx-gen.so.1.2'
-    'libmfx-gen.so.1.2.1'
+    "libmfx-gen.so"
+    "libmfx-gen.so.1.${VPL_MAJOR}"
+    "libmfx-gen.so.1.${VPL_MAJOR}.${VPL_MINOR}"
 )
 
 # build number arg is optional; only last number of this arg will be used for versioning: 0.0.0 -> 0

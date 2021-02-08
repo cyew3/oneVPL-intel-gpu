@@ -2,8 +2,8 @@
 set -ex
 
 # TODO: remove hardcoded path to lib repository
-VERSION_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
-VERSION_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+MSDK_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+MSDK_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
 RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
 BIN_FILES=(
@@ -59,8 +59,8 @@ BIN_FILES=(
     "libmfx_player_lucas.so"
     "libmfx_transcoder_lucas.so"
     "libmfxsw64.so"
-    "libmfxsw64.so.${VERSION_MAJOR}"
-    "libmfxsw64.so.${VERSION_MAJOR}.${VERSION_MINOR}"
+    "libmfxsw64.so.${MSDK_MAJOR}"
+    "libmfxsw64.so.${MSDK_MAJOR}.${MSDK_MINOR}"
     "libmock_plugin.so"
 #    "libmsdk_ts.so"   #deprecated
     "liboutline.so"

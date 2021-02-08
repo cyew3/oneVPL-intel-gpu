@@ -19,17 +19,17 @@ declare -a COPY_CMDS=(
 'cp -P $build_dir/mediasdk/__bin/release/metrics_calc_lite $package_dir/opt/intel/mediasdk/bin/metrics_calc_lite'
 'cp -P $build_dir/mediasdk/__bin/release/mfx-tracer-config $package_dir/opt/intel/mediasdk/bin/mfx-tracer-config'
 'cp -P $build_dir/mediasdk/__bin/release/libmfx-tracer.so $package_dir/opt/intel/mediasdk/lib64/libmfx-tracer.so'
-'cp -P $build_dir/mediasdk/__bin/release/libmfx-tracer.so.${VERSION_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfx-tracer.so.${VERSION_MAJOR}'
-'cp -P $build_dir/mediasdk/__bin/release/libmfx-tracer.so.${VERSION_MAJOR}.${VERSION_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfx-tracer.so.${VERSION_MAJOR}.${VERSION_MINOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfx-tracer.so.${MSDK_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfx-tracer.so.${MSDK_MAJOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfx-tracer.so.${MSDK_MAJOR}.${MSDK_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfx-tracer.so.${MSDK_MAJOR}.${MSDK_MINOR}'
 'cp -P $build_dir/mediasdk/__bin/release/libmfx.so $package_dir/opt/intel/mediasdk/lib64/libmfx.so'
-'cp -P $build_dir/mediasdk/__bin/release/libmfx.so.${VERSION_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfx.so.${VERSION_MAJOR}'
-'cp -P $build_dir/mediasdk/__bin/release/libmfx.so.${VERSION_MAJOR}.${VERSION_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfx.so.${VERSION_MAJOR}.${VERSION_MINOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfx.so.${MSDK_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfx.so.${MSDK_MAJOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfx.so.${MSDK_MAJOR}.${MSDK_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfx.so.${MSDK_MAJOR}.${MSDK_MINOR}'
 'cp -P $build_dir/mediasdk/__bin/release/libmfxhw64.so $package_dir/opt/intel/mediasdk/lib64/libmfxhw64.so'
-'cp -P $build_dir/mediasdk/__bin/release/libmfxhw64.so.${VERSION_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfxhw64.so.${VERSION_MAJOR}'
-'cp -P $build_dir/mediasdk/__bin/release/libmfxhw64.so.${VERSION_MAJOR}.${VERSION_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfxhw64.so.${VERSION_MAJOR}.${VERSION_MINOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfxhw64.so.${MSDK_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfxhw64.so.${MSDK_MAJOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfxhw64.so.${MSDK_MAJOR}.${MSDK_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfxhw64.so.${MSDK_MAJOR}.${MSDK_MINOR}'
 'cp -P $build_dir/mediasdk/__bin/release/libmfxsw64.so $package_dir/opt/intel/mediasdk/lib64/libmfxsw64.so'
-'cp -P $build_dir/mediasdk/__bin/release/libmfxsw64.so.${VERSION_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfxsw64.so.${VERSION_MAJOR}'
-'cp -P $build_dir/mediasdk/__bin/release/libmfxsw64.so.${VERSION_MAJOR}.${VERSION_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfxsw64.so.${VERSION_MAJOR}.${VERSION_MINOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfxsw64.so.${MSDK_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfxsw64.so.${MSDK_MAJOR}'
+'cp -P $build_dir/mediasdk/__bin/release/libmfxsw64.so.${MSDK_MAJOR}.${MSDK_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfxsw64.so.${MSDK_MAJOR}.${MSDK_MINOR}'
 'cp -P $build_dir/mediasdk/__bin/release/libmfx_h264la_hw64.so $package_dir/opt/intel/mediasdk/lib64/mfx/libmfx_h264la_hw64.so'
 'cp -P $build_dir/mediasdk/__bin/release/libmfx_hevcd_hw64.so $package_dir/opt/intel/mediasdk/lib64/mfx/libmfx_hevcd_hw64.so'
 'cp -P $build_dir/mediasdk/__bin/release/libmfx_hevce_hw64.so $package_dir/opt/intel/mediasdk/lib64/mfx/libmfx_hevce_hw64.so'
@@ -57,8 +57,8 @@ declare -a COPY_CMDS=(
 'cp -P $build_dir/mediasdk/__bin/release/sample_multi_transcode_mod $package_dir/opt/intel/mediasdk/share/mfx/samples/sample_multi_transcode_mod'
 'cp -P $build_dir/mediasdk/__bin/release/sample_vpp $package_dir/opt/intel/mediasdk/share/mfx/samples/sample_vpp'
 'cp -P $build_dir/vpl/__bin/release/libmfx-gen.so $package_dir/opt/intel/mediasdk/lib64/libmfx-gen.so'
-'cp -P $build_dir/vpl/__bin/release/libmfx-gen.so.1.2 $package_dir/opt/intel/mediasdk/lib64/libmfx-gen.so.1.2'
-'cp -P $build_dir/vpl/__bin/release/libmfx-gen.so.1.2.1 $package_dir/opt/intel/mediasdk/lib64/libmfx-gen.so.1.2.1'
+'cp -P $build_dir/vpl/__bin/release/libmfx-gen.so.1.${VPL_MAJOR} $package_dir/opt/intel/mediasdk/lib64/libmfx-gen.so.1.${VPL_MAJOR}'
+'cp -P $build_dir/vpl/__bin/release/libmfx-gen.so.1.${VPL_MAJOR}.${VPL_MINOR} $package_dir/opt/intel/mediasdk/lib64/libmfx-gen.so.1.${VPL_MAJOR}.${VPL_MINOR}'
 'cp -P $headers_dir/include/mfxadapter.h $package_dir/opt/intel/mediasdk/include/mfx/mfxadapter.h'
 'cp -P $headers_dir/include/mfxastructures.h $package_dir/opt/intel/mediasdk/include/mfx/mfxastructures.h'
 'cp -P $headers_dir/include/mfxaudio++.h $package_dir/opt/intel/mediasdk/include/mfx/mfxaudio++.h'
@@ -98,8 +98,12 @@ declare -a COPY_CMDS=(
 
 # Create arg in cmd for API header location
 # TODO: remove hardcoded path to lib repository
-VERSION_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
-VERSION_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+MSDK_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+MSDK_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+
+VPL_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/vpl/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+VPL_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/vpl/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+
 RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
 package_dir=$path_to_save/tmp_linux_lib_files
