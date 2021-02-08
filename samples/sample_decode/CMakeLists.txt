@@ -2,7 +2,7 @@ add_executable(sample_decode)
 set_property(TARGET sample_decode PROPERTY FOLDER "samples")
 
 target_include_directories(sample_decode PRIVATE include)
-target_link_libraries(sample_decode PRIVATE MFX::mfx sample_common)
+target_link_libraries(sample_decode PRIVATE sample_common)
 
 target_sources(sample_decode
   PRIVATE

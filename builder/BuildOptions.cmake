@@ -71,7 +71,7 @@ option( ENABLE_STAT "Enable stat tracing?" "${ENABLE_ALL}")
 option( BUILD_ALL "Build all the targets?" OFF )
 
 option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
-cmake_dependent_option( BUILD_DISPATCHER "Build dispatcher?" ON "NOT ${API_USE_VPL}" OFF)
+option( BUILD_DISPATCHER "Build dispatcher?" ON )
 cmake_dependent_option( BUILD_SAMPLES "Build samples?" ON "${BUILD_DISPATCHER}" OFF )
 # Tools depend on samples (sample_common) and can't be built without it. The
 # following BUILD_TOOLS option declaration assures that.

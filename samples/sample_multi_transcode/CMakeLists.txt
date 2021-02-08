@@ -10,11 +10,10 @@ target_include_directories(sample_multi_transcode
   )
 
 target_link_libraries(sample_multi_transcode
-	PRIVATE	  
-    MFX::mfx
+    PRIVATE
     sample_common
     vpp_plugin
-	)
+  )
 
 target_sources(sample_multi_transcode
   PRIVATE

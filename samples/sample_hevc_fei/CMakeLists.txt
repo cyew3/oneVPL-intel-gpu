@@ -12,7 +12,7 @@ add_executable(sample_hevc_fei)
 set_property(TARGET sample_hevc_fei PROPERTY FOLDER "samples")
 
 target_include_directories(sample_hevc_fei PRIVATE include)
-target_link_libraries(sample_hevc_fei PRIVATE MFX::mfx sample_common)
+target_link_libraries(sample_hevc_fei PRIVATE sample_common)
 
 if(CMAKE_SYSTEM_NAME MATCHES Linux)
   target_compile_definitions(sample_hevc_fei PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)

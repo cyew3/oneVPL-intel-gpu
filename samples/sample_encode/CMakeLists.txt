@@ -7,7 +7,7 @@ target_include_directories(sample_encode
     ${MSDK_SAMPLES_ROOT}/sample_plugins/rotate_cpu/include
   )
 
-target_link_libraries(sample_encode PRIVATE MFX::mfx sample_common)
+target_link_libraries(sample_encode PRIVATE sample_common)
 
 target_sources(sample_encode
   PRIVATE

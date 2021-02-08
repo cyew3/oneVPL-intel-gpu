@@ -38,8 +38,8 @@ target_link_libraries(sample_common
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBVA>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBVA_DRM>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
-    mfx
     mfx_common_properties
+    ${MFX_DISPATCHER}
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
   )

@@ -10,7 +10,7 @@ add_executable(sample_fei)
 set_property(TARGET sample_fei PROPERTY FOLDER "samples")
 
 target_include_directories(sample_fei PUBLIC include)
-target_link_libraries(sample_fei PRIVATE MFX::mfx sample_common)
+target_link_libraries(sample_fei PRIVATE sample_common)
 
 if(CMAKE_SYSTEM_NAME MATCHES Linux)
   target_compile_definitions(sample_fei PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)

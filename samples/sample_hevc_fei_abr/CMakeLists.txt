@@ -16,7 +16,7 @@ target_include_directories(sample_hevc_fei_abr
     include
     include/dso
   )
-target_link_libraries(sample_hevc_fei_abr PRIVATE MFX::mfx sample_common)
+target_link_libraries(sample_hevc_fei_abr PRIVATE sample_common)
 
 if(CMAKE_SYSTEM_NAME MATCHES Linux)
   target_compile_definitions(sample_hevc_fei_abr PRIVATE LIBVA_DRM_SUPPORT LIBVA_SUPPORT)

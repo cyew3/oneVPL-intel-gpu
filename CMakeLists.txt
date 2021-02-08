@@ -111,10 +111,22 @@ endif()
 
 # should prepend others to define target mfx
 if (BUILD_DISPATCHER)
-  if (CMAKE_SYSTEM_NAME MATCHES Linux)
-    add_subdirectory(api/mfx_dispatch/linux)
+  if (${API_USE_VPL})
+    set(API_VERSION_MAJOR ${MFX_VERSION_MAJOR})
+    get_filename_component(ONEVPL_API_HEADER_DIRECTORY ${MFX_API_HOME} DIRECTORY)
+    add_library(vpl-api INTERFACE)
+    target_include_directories(vpl-api
+      INTERFACE ${ONEVPL_API_HEADER_DIRECTORY}
+    )
+    add_subdirectory(api/mfx_dispatch/vpl)
+    set(MFX_DISPATCHER onevpl)
   else()
-    add_subdirectory(api/mfx_dispatch/windows)
+    if (CMAKE_SYSTEM_NAME MATCHES Linux)
+      add_subdirectory(api/mfx_dispatch/linux)
+    else()
+      add_subdirectory(api/mfx_dispatch/windows)
+    endif()
+    set(MFX_DISPATCHER mfx)
   endif()
 endif()
 

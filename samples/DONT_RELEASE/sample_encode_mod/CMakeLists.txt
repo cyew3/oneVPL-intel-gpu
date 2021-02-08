@@ -12,7 +12,7 @@ target_include_directories(sample_encode_mod
 
 target_compile_definitions(sample_encode_mod PUBLIC MOD_ENC)
 
-target_link_libraries(sample_encode_mod PRIVATE MFX::mfx sample_common)
+target_link_libraries(sample_encode_mod PRIVATE sample_common)
 
 target_sources(sample_encode_mod
   PRIVATE

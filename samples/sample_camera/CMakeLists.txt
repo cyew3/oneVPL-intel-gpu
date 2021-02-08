@@ -7,7 +7,6 @@ set_property(TARGET sample_camera PROPERTY FOLDER "samples")
 target_include_directories(sample_camera PRIVATE include)
 target_link_libraries(sample_camera
   PRIVATE
-    MFX::mfx
     sample_common
     mfx_static_lib
     mfx_shared_lib

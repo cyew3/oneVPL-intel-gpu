@@ -20,25 +20,29 @@
 
 #find_package(MFX 1.30 REQUIRED CONFIG)
 
-add_library(MFX::mfx ALIAS mfx)
-
 add_subdirectory(sample_common)
 add_subdirectory(sample_decode)
 add_subdirectory(sample_encode)
 add_subdirectory(sample_vpp)
 add_subdirectory(sample_multi_transcode)
 
+if (NOT ${API_USE_VPL})
 add_subdirectory(sample_plugins/rotate_cpu)
 add_subdirectory(sample_plugins/rotate_opencl)
 add_subdirectory(sample_plugins/vpp_plugin)
+endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES Linux)
   add_subdirectory(sample_misc/wayland)
-
-  add_subdirectory(sample_fei)
-  add_subdirectory(sample_hevc_fei)
-  add_subdirectory(sample_hevc_fei_abr)
   add_subdirectory(metrics_monitor)
+
+  if (${MFX_ENABLE_H264_VIDEO_FEI_ENCODE})
+    add_subdirectory(sample_fei)
+  endif()
+  if (${MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE})
+    add_subdirectory(sample_hevc_fei)
+    add_subdirectory(sample_hevc_fei_abr)
+  endif()
 endif()
 
 include(samples_ext.cmake OPTIONAL)

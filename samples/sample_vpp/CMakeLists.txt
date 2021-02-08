@@ -2,7 +2,7 @@ add_executable(sample_vpp)
 set_property(TARGET sample_vpp PROPERTY FOLDER "samples")
 
 target_include_directories(sample_vpp PRIVATE include)
-target_link_libraries(sample_vpp PRIVATE MFX::mfx sample_common)
+target_link_libraries(sample_vpp PRIVATE sample_common)
 
 target_sources(sample_vpp
   PRIVATE

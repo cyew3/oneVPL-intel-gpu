@@ -18,10 +18,9 @@ target_compile_definitions(sample_multi_transcode_mod PUBLIC MOD_SMT)
 
 target_link_libraries(sample_multi_transcode_mod
     PRIVATE
-    MFX::mfx
     sample_common
     vpp_plugin
-    )
+  )
 
 target_sources(sample_multi_transcode_mod
   PRIVATE
