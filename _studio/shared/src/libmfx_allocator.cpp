@@ -34,7 +34,7 @@
 
 #define ERROR_STATUS(sts) ((sts)<MFX_ERR_NONE)
 
-#define DEFAULT_ALIGNMENT_SIZE 64
+#define DEFAULT_ALIGNMENT_SIZE 32
 
 // Implementation of Internal allocators
 mfxStatus mfxDefaultAllocator::AllocBuffer(mfxHDL pthis, mfxU32 nbytes, mfxU16 type, mfxHDL *mid)
