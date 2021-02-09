@@ -2790,8 +2790,18 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     }
 #endif
 
-    /* FIELD Copy is always present*/
-    list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+    if (caps.uAdvancedDI || caps.uSimpleDI)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_DEINTERLACING);
+    }
+
+    if (caps.uFieldProcessing)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+    }
+
+    /*ColorFill is always present*/
+    list.push_back(MFX_EXTBUFF_VPP_COLORFILL);
     /* Field weaving is always present*/
     list.push_back(MFX_EXTBUFF_VPP_FIELD_WEAVING);
     /* Field splitting is always present*/

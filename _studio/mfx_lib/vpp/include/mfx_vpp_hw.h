@@ -905,6 +905,8 @@ namespace MfxHwVideoProcessing
 #if defined(MFX_ONEVPL)
         static
         mfxStatus QueryImplsDescription(VideoCORE* core, mfxVPPDescription& caps, mfx::PODArraysHolder& arrayHolder);
+        static
+        mfxStatus CheckFormatLimitation(mfxU32 filter, mfxU32 format, mfxU32& formatSupport);
 #endif
         static
         mfxStatus QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);

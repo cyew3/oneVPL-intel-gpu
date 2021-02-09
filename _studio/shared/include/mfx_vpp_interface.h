@@ -305,6 +305,8 @@ namespace MfxHwVideoProcessing
 
         mfxU32 uMaxWidth;
         mfxU32 uMaxHeight;
+        mfxU32 uMinWidth;
+        mfxU32 uMinHeight;
 
         mfxU32 uFieldWeavingControl;
 
@@ -317,6 +319,8 @@ namespace MfxHwVideoProcessing
         std::map <mfxU32, mfxU32> mFormatSupport;
 
         mfxU32 uMirroring;
+
+        mfxU32 uFieldProcessing;
 
         mfxVppCaps()
             : uAdvancedDI(0)
@@ -339,12 +343,15 @@ namespace MfxHwVideoProcessing
             , iNumForwardSamples(0)
             , uMaxWidth(0)
             , uMaxHeight(0)
+            , uMinWidth(0)
+            , uMinHeight(0)
             , uFieldWeavingControl(0)
             , uRotation(0)
             , uScaling(0)
             , uChromaSiting(0)
             , mFormatSupport()
             , uMirroring(0)
+            , uFieldProcessing(0)
         {
 #ifndef MFX_CAMERA_FEATURE_DISABLE
             memset(&cameraCaps, 0, sizeof(CameraCaps));

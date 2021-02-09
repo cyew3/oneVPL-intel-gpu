@@ -2219,19 +2219,23 @@ mfxStatus VideoVPPHW::QueryImplsDescription(VideoCORE* core, mfxVPPDescription& 
 
         auto& memCaps = arrayHolder.PushBack(filter.MemDesc);
         memCaps.MemHandleType = MFX_RESOURCE_SYSTEM_SURFACE;
-        memCaps.Width = {16, vppCaps.uMaxWidth, 16};
-        memCaps.Height = {16, vppCaps.uMaxHeight, 16};
+        memCaps.Width = {vppCaps.uMinWidth, vppCaps.uMaxWidth, 1};
+        memCaps.Height = {vppCaps.uMinHeight, vppCaps.uMaxHeight, 1};
 
         for (auto fourcc : g_TABLE_SUPPORTED_FOURCC)
         {
-            if (vppCaps.mFormatSupport[fourcc] & MFX_FORMAT_SUPPORT_INPUT)
+            mfxU32 inputFormat = 0;
+            CheckFormatLimitation(filterId, fourcc, inputFormat);
+            if (inputFormat & MFX_FORMAT_SUPPORT_INPUT)
             {
                 auto& formatIn = arrayHolder.PushBack(memCaps.Formats);
                 formatIn.InFormat = fourcc;
                 
                 for (auto fourccOut : g_TABLE_SUPPORTED_FOURCC)
                 {
-                    if (vppCaps.mFormatSupport[fourccOut] & MFX_FORMAT_SUPPORT_OUTPUT)
+                    mfxU32 outputFormat = 0;
+                    CheckFormatLimitation(filterId, fourccOut, outputFormat);
+                    if (outputFormat & MFX_FORMAT_SUPPORT_OUTPUT)
                     {
                         arrayHolder.PushBack(formatIn.OutFormats) = fourccOut;
                         ++formatIn.NumOutFormat;
@@ -2249,6 +2253,88 @@ mfxStatus VideoVPPHW::QueryImplsDescription(VideoCORE* core, mfxVPPDescription& 
         caps.NumFilters++;
     }
 
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoVPPHW::CheckFormatLimitation(mfxU32 filter, mfxU32 format, mfxU32& formatSupport)
+{
+    switch(filter)
+    {
+        case MFX_EXTBUFF_VPP_SCALING:
+        case MFX_EXTBUFF_VPP_MIRRORING:
+        case MFX_EXTBUFF_VPP_ROTATION:
+        case MFX_EXTBUFF_VPP_COMPOSITE:
+        case MFX_EXTBUFF_VPP_COLORFILL:
+        case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
+            if (format == MFX_FOURCC_NV12   ||
+                format == MFX_FOURCC_P010   ||
+                format == MFX_FOURCC_P016   ||
+                format == MFX_FOURCC_YUY2   ||
+                format == MFX_FOURCC_Y210   ||
+                format == MFX_FOURCC_Y216   ||
+                format == MFX_FOURCC_Y410   ||
+                format == MFX_FOURCC_Y416   ||
+                format == MFX_FOURCC_AYUV   ||
+                format == MFX_FOURCC_RGB565 ||
+                format == MFX_FOURCC_RGB4)
+            {
+                formatSupport = MFX_FORMAT_SUPPORT_INPUT | MFX_FORMAT_SUPPORT_OUTPUT;
+            }
+
+            if (format == MFX_FOURCC_A2RGB10 ||
+                format == MFX_FOURCC_RGBP)
+            {
+                formatSupport = MFX_FORMAT_SUPPORT_OUTPUT;
+            }
+            break;
+        case MFX_EXTBUFF_VPP_PROCAMP:
+        case MFX_EXTBUFF_VPP_DETAIL:
+        case MFX_EXTBUFF_VPP_DENOISE:
+        case MFX_EXTBUFF_VPP_FIELD_WEAVING:
+        case MFX_EXTBUFF_VPP_FIELD_SPLITTING:
+            if (format == MFX_FOURCC_NV12 ||
+                format == MFX_FOURCC_P010 ||
+                format == MFX_FOURCC_P016 ||
+                format == MFX_FOURCC_YUY2 ||
+                format == MFX_FOURCC_Y210 ||
+                format == MFX_FOURCC_Y216 ||
+                format == MFX_FOURCC_Y410 ||
+                format == MFX_FOURCC_Y416 ||
+                format == MFX_FOURCC_AYUV)
+            {
+                formatSupport = MFX_FORMAT_SUPPORT_INPUT | MFX_FORMAT_SUPPORT_OUTPUT;
+            }
+            break;
+        case MFX_EXTBUFF_VPP_DEINTERLACING:
+            if (format == MFX_FOURCC_NV12 ||
+                format == MFX_FOURCC_P010 ||
+                format == MFX_FOURCC_P016 ||
+                format == MFX_FOURCC_YUY2)
+            {
+                formatSupport = MFX_FORMAT_SUPPORT_INPUT | MFX_FORMAT_SUPPORT_OUTPUT;
+            }
+            break;
+        case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
+            if (format == MFX_FOURCC_NV12 ||
+                format == MFX_FOURCC_P010 ||
+                format == MFX_FOURCC_YUY2 ||
+                format == MFX_FOURCC_Y210 ||
+                format == MFX_FOURCC_Y410 ||
+                format == MFX_FOURCC_AYUV)
+            {
+                formatSupport = MFX_FORMAT_SUPPORT_INPUT | MFX_FORMAT_SUPPORT_OUTPUT;
+            }
+            break;
+        case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
+        case MFX_EXTBUFF_VPP_MCTF:
+            if(format == MFX_FOURCC_NV12)
+            {
+                formatSupport = MFX_FORMAT_SUPPORT_INPUT | MFX_FORMAT_SUPPORT_OUTPUT;
+            }
+            break;
+        default:
+            break;
+    }
     return MFX_ERR_NONE;
 }
 #endif
@@ -2797,6 +2883,13 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
         )
         caps.uMCTF = 1;
 #endif
+
+    caps.uFrameRateConversion = 1;
+    caps.uFieldProcessing = 1;
+    if (core->GetHWType() == MFX_HW_DG2)
+    {   
+        caps.uFieldProcessing = 0;
+    }
 
     return sts;
 

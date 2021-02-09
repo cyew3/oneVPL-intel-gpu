@@ -3310,8 +3310,10 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     }
 
     // [Max Resolution]
-    caps.uMaxWidth = 16352;
-    caps.uMaxHeight = 16352;
+    caps.uMaxWidth = 16384;
+    caps.uMaxHeight = 16384;
+    caps.uMinWidth = 16;
+    caps.uMinHeight = 16;
 
     caps.uMirroring = 1; // Mirroring supported thru special CM copy kernel
 

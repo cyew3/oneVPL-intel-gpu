@@ -445,11 +445,15 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     {
         caps.uMaxWidth = m_pipelineCaps.max_output_width;
         caps.uMaxHeight = m_pipelineCaps.max_output_height;
+        caps.uMinWidth = m_pipelineCaps.min_output_width;
+        caps.uMinHeight = m_pipelineCaps.min_output_height;
     }
     else
     {
         caps.uMaxWidth = 4096;
         caps.uMaxHeight = 4096;
+        caps.uMinWidth = 16;
+        caps.uMinHeight = 16;
     }
 
 #if defined (MFX_ENABLE_MJPEG_WEAVE_DI_VPP)
