@@ -44,6 +44,9 @@ void Windows::Base::Interlace::SubmitTask(const FeatureBlocks& blocks, TPushST P
         ddiSPS.GopPicSize = USHORT(par.mfx.GopPicSize * 2);
         ddiSPS.GopRefDist = UCHAR(par.mfx.GopRefDist * 2);
 
+        // Doesn't support for interlaced because SWBRC is used for BRC
+        ddiSPS.ParallelBRC = 0;
+
         return MFX_ERR_NONE;
     });
 }
