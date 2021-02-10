@@ -455,7 +455,8 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x46A0, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
 
     /* PVC */
-    { 0x0BD0, MFX_HW_PVC, GT_DISCRETE }
+    { 0x0BD0, MFX_HW_PVC, GT_DISCRETE },
+    { 0x0BD5, MFX_HW_PVC, GT_DISCRETE }
 #endif
 
 };
