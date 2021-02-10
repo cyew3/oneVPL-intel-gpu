@@ -102,6 +102,8 @@ set( sources
     hevc/agnostic/base/hevcehw_base_dirty_rect.h
     hevc/agnostic/base/hevcehw_base_dpb_report.h
     hevc/agnostic/base/hevcehw_base_encoded_frame_info.h
+    hevc/agnostic/base/hevcehw_base_enctools.cpp
+    hevc/agnostic/base/hevcehw_base_enctools.h
     hevc/agnostic/base/hevcehw_base_ext_brc.h
     hevc/agnostic/base/hevcehw_base_hdr_sei.h
     hevc/agnostic/base/hevcehw_base_hrd.h

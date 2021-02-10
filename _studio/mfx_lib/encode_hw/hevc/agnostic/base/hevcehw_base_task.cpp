@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -253,7 +253,7 @@ mfxStatus TaskManager::TaskReorder(StorageW& task)
 mfxStatus TaskManager::TaskSubmit(StorageW& task)
 {
     MFX_SAFE_CALL(RunExtraStages(NextStage(S_REORDER), Stage(S_SUBMIT), task));
-    if (TMInterface::Get(*m_pGlob).UpdateTask) TMInterface::Get(*m_pGlob).UpdateTask(task, GetTask(Stage(S_SUBMIT)));
+    if (TMInterface::Get(*m_pGlob).UpdateTask) TMInterface::Get(*m_pGlob).UpdateTask(GetTask(Stage(S_SUBMIT)));
     return MfxEncodeHW::TaskManager::TaskSubmit(task);
 }
 

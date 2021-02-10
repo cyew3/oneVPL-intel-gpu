@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -86,14 +86,14 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
             const mfxExtLplaParam* lpla = ExtBuffer::Get(par);
 
             pps.X16Minus1_X =
-                (lpla->LookAheadScaleX <=4) ?
+                (lpla->LookAheadScaleX <= 4) ?
                 (16 >> lpla->LookAheadScaleX) - 1 : 0;
             pps.X16Minus1_Y =
                 (lpla->LookAheadScaleY <= 4) ?
                 (16 >> lpla->LookAheadScaleY) - 1 : 0;
         });
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         ddiCC.UpdateCqmHint.Push([this](
             TCC::TUpdateCqmHint::TExt
             , TaskCommonPar& task
@@ -139,7 +139,22 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 }
                 else pLpLa->CqmHint = CQM_HINT_INVALID;
             }
-#endif //MFX_ENABLE_ENCTOOLS_LPLA
+            else
+#endif
+            if (pLPLA.ValidInfo)
+            {
+                task.LplaStatus.ValidInfo = pLPLA.ValidInfo;
+                task.LplaStatus.CqmHint = pLPLA.CqmHint;
+                task.LplaStatus.TargetFrameSize = pLPLA.TargetFrameSize;
+                task.LplaStatus.QpModulation = pLPLA.QpModulationStrength;
+            }
+            else
+            {
+                task.LplaStatus.ValidInfo = 0;
+                task.LplaStatus.CqmHint = CQM_HINT_INVALID;
+                task.LplaStatus.TargetFrameSize = 0;
+                task.LplaStatus.QpModulation = 0;
+            }
         });
 #endif //MFX_ENABLE_LP_LOOKAHEAD
 

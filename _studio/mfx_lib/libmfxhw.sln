@@ -201,6 +201,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtest", "..\..\contrib\build\googletest\gtest.vcxproj", "{BE595580-8023-35F2-8E73-C98DEBB85E23}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_hevce", "..\..\tests\unit\suites\hevce\hevce.vcxproj", "{6A003E21-DA8B-4B5B-800C-931523D80F9B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A4BED5C9-AF18-4BC6-A881-4B32031D8ADD} = {A4BED5C9-AF18-4BC6-A881-4B32031D8ADD}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_multi_adapter", "..\..\tests\unit\suites\mfx_dispatch\windows\test_multi_adapter.vcxproj", "{D24C31F9-3325-4CB5-9542-164588C2E35B}"
 EndProject

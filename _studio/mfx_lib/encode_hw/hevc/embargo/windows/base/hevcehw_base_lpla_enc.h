@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -64,10 +64,12 @@ private:
     bool                             bIsLpLookAheadSupported = false;
     bool                             bAnalysis               = false; // Hint for LookAhead Pass
     bool                             bIsLpLookaheadEnabled   = false; // Whether LPLA is enabled
+    bool                             bIsEncToolsEnabled      = false; // Whether EncTools are enabled
     mfxU16                           LADepth                 = 0;
     mfxU16                           S_LA_SUBMIT             = 0;
     mfxU16                           S_LA_QUERY              = 0;
     std::unique_ptr<MfxLpLookAhead>  pLpLookAhead;
+    std::list<mfxLplastatus>         LpLaStatus;
 };
 } //Base
 } //Windows

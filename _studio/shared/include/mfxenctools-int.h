@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2019-2020 Intel Corporation.  All rights reserved.
+Copyright (C) 2019-2021 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -272,6 +272,8 @@ MFX_PACK_END()
 #define MFX_ENCTOOLS_HINT_QUANTMATRIX_VERSION MFX_STRUCT_VERSION(1, 0)
 
 #define MFX_QP_UNDEFINED 0x1111
+
+#define MAX_QP_MODULATION 5
 
 enum
 {

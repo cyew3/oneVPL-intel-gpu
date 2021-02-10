@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,9 @@
 #if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA)
 #include "hevcehw_base_lpla_analysis.h"
 #include "hevcehw_base_lpla_enc.h"
+#endif
+#ifdef MFX_ENABLE_ENCTOOLS
+#include "hevcehw_base_enctools.h"
 #endif
 #if defined (MFX_ONEVPL)
 #include "hevcehw_base_query_impl_desc.h"
@@ -144,6 +147,9 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #endif
 #if defined (MFX_ONEVPL)
     m_features.emplace_back(new QueryImplDesc(FEATURE_QUERY_IMPL_DESC));
+#endif
+#if defined(MFX_ENABLE_ENCTOOLS)
+    m_features.emplace_back(new HevcEncTools(FEATURE_ENCTOOLS));
 #endif
 
     InternalInitFeatures(status, mode);

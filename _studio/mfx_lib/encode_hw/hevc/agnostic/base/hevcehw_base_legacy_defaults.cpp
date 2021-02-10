@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -970,13 +970,16 @@ public:
     static mfxU8 PLayer(
         Defaults::TGetPLayer::TExt
         , const Defaults::Param& par
-        , mfxU32 fo)
+        , mfxU32 fo
+        , mfxGopHints GopHints)
     {
         const mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par.mvp);
         auto num = par.base.GetPPyrInterval(par);
+        if (GopHints.MiniGopSize && par.base.GetGopRefDist(par) == 1)
+            num = std::min(num, (mfxU16) GopHints.MiniGopSize);
         mfxU32 i = fo % num;
 
-        bool bForce0 = 
+        bool bForce0 =
             (pCO3 && pCO3->PRefType != MFX_P_REF_PYRAMID)
             || i == 0
             || i >= num;
@@ -1003,7 +1006,8 @@ public:
     static mfxU8 TId(
         Defaults::TGetTId::TExt
         , const Defaults::Param& par
-        , mfxU32 fo)
+        , mfxU32 fo
+        , mfxGopHints)
     {
         const mfxExtAvcTemporalLayers* pTL = ExtBuffer::Get(par.mvp);
         if (!pTL)
@@ -1066,23 +1070,24 @@ public:
         Defaults::TGetFrameType::TExt
         , const Defaults::Param& par
         , mfxU32 displayOrder
-        , mfxU32 lastIDR)
+        , mfxGopHints GopHints
+        , mfxLastKeyFrameInfo LastKeyFrameInfo)
     {
         mfxU32 gopOptFlag = par.mvp.mfx.GopOptFlag;
         mfxU32 gopPicSize = par.mvp.mfx.GopPicSize;
-        mfxU32 gopRefDist = par.mvp.mfx.GopRefDist;
+        mfxU32 gopRefDist = GopHints.MiniGopSize ? std::min<mfxU32>(GopHints.MiniGopSize, par.mvp.mfx.GopRefDist): par.mvp.mfx.GopRefDist;
         mfxU32 idrPicDist = gopPicSize * (par.mvp.mfx.IdrInterval);
 
         //infinite GOP
         SetIf(idrPicDist, gopPicSize == 0xffff, 0xffffffff);
         SetIf(gopPicSize, gopPicSize == 0xffff, 0xffffffff);
 
-        mfxU32 fo = displayOrder - lastIDR;
+        mfxU32 fo = displayOrder - LastKeyFrameInfo.lastIDROrder;
         bool bIdr = fo == 0 || (idrPicDist && (fo % idrPicDist == 0));
         bool bIRef = !bIdr && (fo % gopPicSize == 0);
         bool bPRef =
             !bIdr && !bIRef
-            && (   (fo % gopPicSize % gopRefDist == 0)
+            && (   ((displayOrder - LastKeyFrameInfo.lastIPOrder) % gopRefDist == 0)
                 || ((fo + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED))
                 || (idrPicDist && (fo + 1) % idrPicDist == 0));
         bool bB = !(bPRef || bIdr || bPRef || bIRef);
@@ -1093,7 +1098,7 @@ public:
             + bPRef * (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF)
             + bB * (MFX_FRAMETYPE_B);
 
-        bool bForceNonRef = IsRef(ft) && par.base.GetTId(par, fo) == par.base.GetHighestTId(par);
+        bool bForceNonRef = IsRef(ft) && par.base.GetTId(par, fo, GopHints) == par.base.GetHighestTId(par);
         ft &= ~(bForceNonRef * MFX_FRAMETYPE_REF);
 
         return ft;
@@ -1377,12 +1382,12 @@ public:
         , FrameBaseInfo& fi
         , const mfxFrameSurface1* pSurfIn
         , const mfxEncodeCtrl*    pCtrl
-        , mfxU32 prevIDROrder
-        , mfxI32 prevIPOC
-        , mfxU32 frameOrder)
+        , mfxLastKeyFrameInfo LastKeyFrameInfo
+        , mfxU32 frameOrder
+        , mfxGopHints GopHints)
     {
         mfxU16 ftype = 0;
-        auto SetFrameTypeFromGOP   = [&]() { return          Res2Bool(ftype, par.base.GetFrameType(par, frameOrder, prevIDROrder)); };
+        auto SetFrameTypeFromGOP   = [&]() { return          Res2Bool(ftype, par.base.GetFrameType(par, frameOrder, GopHints, LastKeyFrameInfo)); };
         auto SetFrameTypeFromCTRL  = [&]() { return pCtrl && Res2Bool(ftype, pCtrl->FrameType); };
         auto ForceIdr              = [&]() { return          Res2Bool(ftype, mfxU16(MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR)); };
         auto SetFrameOrderFromSurf = [&]() { if (!pSurfIn) return false; frameOrder = pSurfIn->Data.FrameOrder;  return true; };
@@ -1393,16 +1398,16 @@ public:
             || SetFrameTypeFromGOP();
         MFX_CHECK(bFrameInfoValid, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        fi.POC        = !IsIdr(ftype) * (frameOrder - prevIDROrder);
+        fi.POC        = !IsIdr(ftype) * (frameOrder - LastKeyFrameInfo.lastIDROrder);
         fi.FrameType  = ftype;
-        fi.TemporalID = !IsI(ftype) * par.base.GetTId(par, fi.POC - prevIPOC);
+        fi.TemporalID = !IsI(ftype) * par.base.GetTId(par, fi.POC - LastKeyFrameInfo.lastIPoc, GopHints);
 
         if (IsP(ftype))
         {
             const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par.mvp);
 
             fi.isLDB        = IsOn(CO3.GPB);
-            fi.PyramidLevel = par.base.GetPLayer(par, fi.POC - prevIPOC);
+            fi.PyramidLevel = par.base.GetPLayer(par, fi.POC - LastKeyFrameInfo.lastIPoc, GopHints);
         }
 
         return MFX_ERR_NONE;
@@ -1651,7 +1656,7 @@ public:
             auto   LTY   = [tbY](mfxU32 y) { return tbY >= y; };
             auto   tileX = std::count_if(pColBd + 1, pColBd + nTCol, LTX);
             auto   tileY = std::count_if(pRowBd + 1, pRowBd + nTRow, LTY);
-            
+
             tso += rowHeight[tileY] * std::accumulate(pColWidth, pColWidth + tileX, 0u);
             tso += nCol             * std::accumulate(pRowHeight, pRowHeight + tileY, 0u);
             tso += (tbY - rowBd[tileY]) * colWidth[tileX] + tbX - colBd[tileX];

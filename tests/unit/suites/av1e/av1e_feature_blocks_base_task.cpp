@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -293,6 +293,7 @@ namespace Base
         );
     }
 
+/*
     TEST_F(FeatureBlocksTask, AsyncRoutinePrepTaskNoTask)
     {
         auto& queueQ1 = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks);
@@ -328,6 +329,7 @@ namespace Base
             MFX_ERR_UNDEFINED_BEHAVIOR
         );
     }
+    */
 
     TEST_F(FeatureBlocksTask, AsyncRoutineSubmitTaskNoTask)
     {

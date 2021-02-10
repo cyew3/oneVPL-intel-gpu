@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -62,9 +62,8 @@ protected:
     virtual void PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push) override;
     virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
 
-    mfxU32 m_lastIDR     = 0;
-    mfxI32 m_prevIPoc    = 0;
-    mfxU32 m_frameOrder  = 0;
+    mfxLastKeyFrameInfo LastKeyFrameInfo = {};
+    mfxU32 m_frameOrder                  = 0;
 };
 
 } //Base

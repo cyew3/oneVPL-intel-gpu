@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 Intel Corporation
+// Copyright (c) 2018-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -207,5 +207,8 @@ EXTBUF(mfxExtLplaParam                   , MFX_EXTBUFF_LP_LOOKAHEAD             
 #endif
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
 EXTBUF(mfxExtLpLaStatus                  , MFX_EXTBUFF_LPLA_STATUS               )
+#endif
+#if defined(MFX_ENABLE_ENCTOOLS)
+EXTBUF(mfxExtEncToolsConfig              , MFX_EXTBUFF_ENCTOOLS_CONFIG           )
 #endif
 #endif // defined(__MFX_EXT_BUFFERS_H__)

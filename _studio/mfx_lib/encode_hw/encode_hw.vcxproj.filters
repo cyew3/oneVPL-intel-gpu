@@ -559,6 +559,9 @@
     <ClCompile Include="hevc\linux\g12\hevcehw_g12_qp_modulation_lin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hevc\agnostic\base\hevcehw_base_enctools.cpp">
+      <Filter>hevc\open\agnostic\base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_encode_hw.h">
@@ -1058,6 +1061,9 @@
     </ClInclude>
     <ClInclude Include="shared\embargo\ehw_platforms.h">
       <Filter>shared\embargo</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\agnostic\base\hevcehw_base_enctools.h">
+      <Filter>hevc\open\agnostic\base</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

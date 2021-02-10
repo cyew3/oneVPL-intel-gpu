@@ -48,6 +48,9 @@
     <ProjectReference Include="..\..\..\..\contrib\build\googletest\gtest_main.vcxproj">
       <Project>{c2b706a6-968d-355a-ae3d-c834291c9dfd}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\enctools\enctools_lib.vcxproj">
+      <Project>{a4bed5c9-af18-4bc6-a881-4b32031d8add}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
       <Project>{a3d890f5-7362-404d-95bf-b6c8aaba786b}</Project>
     </ProjectReference>

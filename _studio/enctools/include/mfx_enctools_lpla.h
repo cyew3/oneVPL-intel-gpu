@@ -116,6 +116,7 @@ protected:
     mfxU32                        m_lastIDRFrameNumber;
     mfxU16                        m_GopPicSize;
     mfxU16                        m_IdrInterval;
+    mfxExtEncToolsConfig          m_config;
 };
 #endif
 #endif

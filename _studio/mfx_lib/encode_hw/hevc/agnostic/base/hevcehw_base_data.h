@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -758,6 +758,16 @@ namespace Base
         , REC_READY = 2
     };
 
+    struct mfxLastKeyFrameInfo {
+        mfxU32              lastIDROrder;
+        mfxU32              lastIPOrder;
+        mfxI32              lastIPoc;
+    };
+
+    struct mfxGopHints {
+        mfxU32              MiniGopSize = 0;
+    };
+
     struct TaskCommonPar
         : DpbFrame
     {
@@ -778,6 +788,7 @@ namespace Base
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxLplastatus       LplaStatus          = {};
 #endif
+        mfxGopHints         GopHints            = {};
         bool                bForceSync          = false;
         bool                bSkip               = false;
         bool                bResetBRC           = false;
@@ -785,7 +796,7 @@ namespace Base
         bool                bRecode             = false;
         bool                bForceLongStartCode = false;
         IntraRefreshState   IRState             = {};
-        mfxI32              PrevIPoc            = -1;
+        mfxLastKeyFrameInfo LastKeyFrameInfo    = {};
         mfxI32              PrevRAP             = -1;
         mfxU16              NumRecode           = 0;
         mfxI8               QpY                 = 0;
@@ -1179,13 +1190,15 @@ namespace Base
             mfxU16 // FrameType
             , const Defaults::Param&
             , mfxU32//DisplayOrder
-            , mfxU32>; //LastIDR
+            , mfxGopHints //adaptive GOP hints
+            , mfxLastKeyFrameInfo>; //LastIDR & LastIP
         TGetFrameType GetFrameType;
 
         using TGetPLayer = CallChain<
             mfxU8 //layer
             , const Defaults::Param&
-            , mfxU32>; //order
+            , mfxU32 //order
+            , mfxGopHints>; //adaptive GOP hints
         TGetPLayer GetPLayer;
         using TGetTId = TGetPLayer;
         TGetTId GetTId;
@@ -1240,9 +1253,10 @@ namespace Base
             , FrameBaseInfo&
             , const mfxFrameSurface1*   //pSurfIn
             , const mfxEncodeCtrl*      //pCtrl
-            , mfxU32                    //prevIDROrder
-            , mfxI32                    //prevIPOC
-            , mfxU32>;                  //frameOrder
+            , mfxLastKeyFrameInfo       //prevIDROrder & prevIPOC & prevIPOrder
+            , mfxU32                    //frameOrder
+            , mfxGopHints>;              //adaptive GOP hints
+
         TGetPreReorderInfo GetPreReorderInfo; // fill all info available at pre-reorder
 
         using TGetFrameNumRefActive = CallChain<
@@ -1356,6 +1370,7 @@ namespace Base
         , FEATURE_RECON_INFO
         , FEATURE_LPLA_STATUS
         , FEATURE_QUERY_IMPL_DESC
+        , FEATURE_ENCTOOLS
         , NUM_FEATURES
     };
 

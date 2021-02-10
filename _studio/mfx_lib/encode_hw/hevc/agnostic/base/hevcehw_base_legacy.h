@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -123,12 +123,13 @@ namespace Base
         TaskCommonPar m_prevTask;
         mfxU32
             m_frameOrder        = mfxU32(-1)
-            , m_lastIDR         = 0
+            , m_frameOrderTmp   = mfxU32(-1)
             , m_baseLayerOrder  = 0
             , m_forceHeaders    = 0;
         mfxU16
             m_CUQPBlkW          = 0
             , m_CUQPBlkH        = 0;
+        mfxLastKeyFrameInfo LastKeyFrameInfo = {};
         std::function<std::tuple<mfxU16, mfxU16, mfxU16>(const mfxVideoParam&)> m_GetMaxRef;
         std::unique_ptr<Defaults::Param> m_pQWCDefaults;
         NotNull<Defaults*> m_pQNCDefaults;
@@ -137,7 +138,8 @@ namespace Base
         void ResetState()
         {
             m_frameOrder     = mfxU32(-1);
-            m_lastIDR        = 0;
+            m_frameOrderTmp  = mfxU32(-1);
+            LastKeyFrameInfo = {};
             m_baseLayerOrder = 0;
             Invalidate(m_prevTask);
         }

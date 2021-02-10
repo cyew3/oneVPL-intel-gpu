@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -175,8 +175,8 @@ void ExtBRC::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
         mfxU32 changed = 0;
 
         MFX_CHECK(pCO2, MFX_ERR_NONE);
-        
-        bool bAllowed = 
+
+        bool bAllowed =
             par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
             || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR;
 
@@ -358,9 +358,9 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
                     , FrameBaseInfo& fi
                     , const mfxFrameSurface1* pSurfIn
                     , const mfxEncodeCtrl*    pCtrl
-                    , mfxU32 prevIDROrder
-                    , mfxI32 prevIPOC
-                    , mfxU32 frameOrder)
+                    , mfxLastKeyFrameInfo LastKeyFrameInfo
+                    , mfxU32 frameOrder
+                    , mfxGopHints GopHints)
                 {
                     if (pCtrl)
                     {
@@ -369,14 +369,14 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
                         ctrl.FrameType = mfxU16(stat.FrameType);
 
-                        auto sts = prev(par, fi, pSurfIn, &ctrl, prevIDROrder, prevIPOC, frameOrder);
+                        auto sts = prev(par, fi, pSurfIn, &ctrl, LastKeyFrameInfo, frameOrder, GopHints);
 
                         fi.PyramidLevel = stat.Layer;
 
                         return sts;
                     }
 
-                    return prev(par, fi, pSurfIn, pCtrl, prevIDROrder, prevIPOC, frameOrder);
+                    return prev(par, fi, pSurfIn, pCtrl, LastKeyFrameInfo, frameOrder, GopHints);
                 });
             }
         }
@@ -474,7 +474,7 @@ void ExtBRC::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         MFX_CHECK(m_brc.Update, MFX_ERR_NONE);
 
         auto& task = Task::Common::Get(s_task);
-            
+
         mfxBRCFrameParam    fp = MakeFrameParam(task);
         mfxBRCFrameCtrl     fc = {};
         mfxBRCFrameStatus   fs = {};

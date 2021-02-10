@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,20 +71,22 @@ mfxStatus TaskManager::TaskNew(
     return sts;
 }
 
-mfxStatus TaskManager::TaskPrepare(StorageW& task)
+mfxStatus TaskManager::TaskPrepare(StorageW& /*task*/ )
 {
     std::unique_lock<std::mutex> closeGuard(m_closeMtx);
 
     MFX_CHECK(!m_nRecodeTasks, MFX_ERR_NONE);
-    MFX_CHECK(GetStage(task) == Stage(S_PREPARE), MFX_ERR_NONE);
-    MFX_CHECK(IsInputTask(task), MFX_ERR_NONE);// leave fake task in "prepare" stage for now
+    auto pTask = GetTask(Stage(S_PREPARE));
 
-    auto sts = RunQueueTaskPreReorder(task);
+    MFX_CHECK(pTask, MFX_ERR_NONE);
+    MFX_CHECK(IsInputTask(*pTask), MFX_ERR_NONE);// leave fake task in "prepare" stage for now
+
+    auto sts = RunQueueTaskPreReorder(*pTask);
     MFX_CHECK_STS(sts);
 
-    auto pTask = MoveTaskForward(Stage(S_PREPARE), FixedTask(task));
+    auto pTaskToDo = MoveTaskForward(Stage(S_PREPARE), FixedTask(*pTask));
 
-    MFX_CHECK(&(StorageW&)*pTask == &task, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(&(StorageW&)*pTaskToDo == pTask, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     return MFX_ERR_NONE;
 }

@@ -220,6 +220,8 @@ mfxStatus EncTools::GetSupportedConfig(mfxExtEncToolsConfig* config, mfxEncTools
         config->SceneChange = MFX_CODINGOPTION_ON;
         config->AdaptivePyramidQuantP = MFX_CODINGOPTION_ON;
         config->AdaptiveI = MFX_CODINGOPTION_ON;
+        config->AdaptiveB = MFX_CODINGOPTION_ON;
+        config->AdaptivePyramidQuantB = MFX_CODINGOPTION_ON;
      }
 #endif
     return MFX_ERR_NONE;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,9 @@
 #include <map>
 #include <exception>
 #include <algorithm>
+#ifdef MFX_ENABLE_ENCTOOLS
+#include "mfxenctools-int.h"
+#endif
 
 #if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpcp.h"
@@ -214,7 +217,7 @@ namespace MfxExtBuffer
         }
 
         template <class T>
-        operator const T*() const 
+        operator const T*() const
         {
             return (const T*)_Get(IdMap<typename std::remove_cv<T>::type>::value);
         }

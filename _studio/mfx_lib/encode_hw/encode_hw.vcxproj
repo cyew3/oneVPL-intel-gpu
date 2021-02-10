@@ -53,6 +53,7 @@
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_win.cpp" />
     <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_win.cpp" />
     <ClCompile Include="av1\embargo\windows\g13\av1ehw_g13_win.cpp" />
+    <ClCompile Include="hevc\agnostic\base\hevcehw_base_enctools.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_impl.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_alloc.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_constraints.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_dirty_rect.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_dpb_report.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_encoded_frame_info.h" />
+    <ClInclude Include="hevc\agnostic\base\hevcehw_base_enctools.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_ext_brc.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_hdr_sei.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_hrd.h" />

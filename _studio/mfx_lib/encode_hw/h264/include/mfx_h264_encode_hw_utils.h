@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2020 Intel Corporation
+// Copyright (c) 2009-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2541,7 +2541,7 @@ public:
         {
             *bufHint = {};
             bufHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
-            bufHint->Header.BufferSz = sizeof(bufHint);
+            bufHint->Header.BufferSz = sizeof(*bufHint);
             extParams.push_back((mfxExtBuffer *)bufHint);
         }
 
@@ -2549,7 +2549,7 @@ public:
         {
             *gopHint = {};
             gopHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
-            gopHint->Header.BufferSz = sizeof(gopHint);
+            gopHint->Header.BufferSz = sizeof(*gopHint);
             extParams.push_back((mfxExtBuffer *)gopHint);
         }
 
@@ -2557,7 +2557,7 @@ public:
         {
             *cqmHint = {};
             cqmHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX;
-            cqmHint->Header.BufferSz = sizeof(cqmHint);
+            cqmHint->Header.BufferSz = sizeof(*cqmHint);
             extParams.push_back((mfxExtBuffer *)cqmHint);
         }
 

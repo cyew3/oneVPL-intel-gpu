@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -95,7 +95,7 @@ namespace MfxEncodeHW
             , {S_SUBMIT,    S_SUBMIT}
             , {S_QUERY,     S_QUERY}
         };
-        std::vector<TTaskList>  m_stages             = std::vector<TTaskList>(7);
+        std::vector<TTaskList>  m_stages             = std::vector<TTaskList>(9);
         mfxU16                  m_nPicBuffered       = 0;
         mfxU16                  m_bufferSize         = 0;
         mfxU16                  m_maxParallelSubmits = 0;

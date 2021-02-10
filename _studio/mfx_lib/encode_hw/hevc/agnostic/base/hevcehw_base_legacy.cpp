@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1426,7 +1426,8 @@ void Legacy::Reset(const FeatureBlocks& blocks, TPushR Push)
         if (bTlActive)
         {
             // calculate temporal layer for next frame
-            tempLayerIdx = defOld.base.GetTId(defOld, m_frameOrder + 1);
+            mfxGopHints GopHints = {};
+            tempLayerIdx = defOld.base.GetTId(defOld, m_frameOrder + 1, GopHints);
             changeTScalLayers = numTlOld != numTlNew;
         }
 
@@ -1528,7 +1529,6 @@ void Legacy::FrameSubmit(const FeatureBlocks& /*blocks*/, TPushFS Push)
         MFX_CHECK(LumaIsNull(pSurf) == (pSurf->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(pSurf->Info.Width >= par.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(pSurf->Info.Height >= par.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
-        
         return MFX_ERR_NONE;
     });
 
@@ -1575,7 +1575,7 @@ void Legacy::AllocTask(const FeatureBlocks& /*blocks*/, TPushAT Push)
 void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
 {
     Push(BLK_InitTask
-        , [](
+        , [this](
             mfxEncodeCtrl* pCtrl
             , mfxFrameSurface1* pSurf
             , mfxBitstream* pBs
@@ -1594,6 +1594,7 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
         MFX_CHECK(pSurf, MFX_ERR_NONE);
 
         tpar.pSurfIn = pSurf;
+        tpar.DisplayOrder = ++m_frameOrderTmp;
 
         if (pCtrl)
             tpar.ctrl = *pCtrl;
@@ -1632,9 +1633,8 @@ void Legacy::PreReorderTask(const FeatureBlocks& /*blocks*/, TPushPreRT Push)
         auto  dflts = GetRTDefaults(global);
 
         m_frameOrder = dflts.base.GetFrameOrder(dflts, s_task, m_frameOrder);
-
         auto sts = dflts.base.GetPreReorderInfo(
-            dflts, task, task.pSurfIn, &task.ctrl, m_lastIDR, m_prevTask.PrevIPoc, m_frameOrder);
+            dflts, task, task.pSurfIn, &task.ctrl, { LastKeyFrameInfo.lastIDROrder, LastKeyFrameInfo.lastIPOrder, m_prevTask.LastKeyFrameInfo.lastIPoc}, m_frameOrder, task.GopHints);
         MFX_CHECK_STS(sts);
 
         if (par.mfx.EncodedOrder)
@@ -1648,10 +1648,11 @@ void Legacy::PreReorderTask(const FeatureBlocks& /*blocks*/, TPushPreRT Push)
             MFX_CHECK(isValid(m_prevTask.DPB.After[0]) || IsIdr(task.FrameType), MFX_ERR_UNDEFINED_BEHAVIOR);
         }
         task.DisplayOrder = m_frameOrder;
-        task.PrevIPoc     = m_prevTask.PrevIPoc;
-        
-        SetIf(m_lastIDR, IsIdr(task.FrameType), m_frameOrder);
-        SetIf(task.PrevIPoc, IsI(task.FrameType), task.POC);
+        task.LastKeyFrameInfo = m_prevTask.LastKeyFrameInfo;
+
+        SetIf(LastKeyFrameInfo.lastIDROrder, IsIdr(task.FrameType), m_frameOrder);
+        SetIf(task.LastKeyFrameInfo.lastIPoc, IsI(task.FrameType), task.POC);
+        SetIf(LastKeyFrameInfo.lastIPOrder, IsI(task.FrameType) || IsP(task.FrameType), m_frameOrder);
 
         return MFX_ERR_NONE;
     });
@@ -2373,7 +2374,7 @@ void Legacy::ConfigureTask(
     task.FrameType &= ~(MFX_FRAMETYPE_P * task.isLDB);
     task.FrameType |= (MFX_FRAMETYPE_B * task.isLDB);
 
-    task.PrevIPoc = m_prevTask.PrevIPoc;
+    task.LastKeyFrameInfo = m_prevTask.LastKeyFrameInfo;
     task.PrevRAP = m_prevTask.PrevRAP;
     task.EncodedOrder = m_prevTask.EncodedOrder + 1;
 
@@ -2408,7 +2409,7 @@ void Legacy::ConfigureTask(
 
     if (isRef)
     {
-        task.PrevIPoc = isI * task.POC + !isI * task.PrevIPoc;
+        task.LastKeyFrameInfo.lastIPoc = isI * task.POC + !isI * task.LastKeyFrameInfo.lastIPoc;
 
         UpdateDPB(dflts, task, task.DPB.After, pExtListCtrl);
 
@@ -2590,7 +2591,6 @@ mfxU32 Legacy::GetMinBsSize(
     , const mfxExtCodingOption3& CO3)
 {
     mfxU32 size = HEVCParam.PicHeightInLumaSamples * HEVCParam.PicWidthInLumaSamples;
-    
     SetDefault(size, par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height);
 
     bool b10bit = (CO3.TargetBitDepthLuma == 10);
@@ -3095,7 +3095,7 @@ void Legacy::SetSTRPS(
     bool      bTL        = dflts.base.GetNumTemporalLayers(dflts) > 1;
     mfxI32    nGops      = par.mfx.IdrInterval + !par.mfx.IdrInterval * 4;
     mfxI32    stDist     = std::min<mfxI32>(par.mfx.GopPicSize * nGops, 128);
-    mfxI32    lastIPoc   = 0;
+    mfxLastKeyFrameInfo m_LastKeyFrameInfo = {};
     bool      bDone      = false;
     mfxI32    i          = 0;
 
@@ -3112,8 +3112,10 @@ void Legacy::SetSTRPS(
     {
         {
             FrameBaseInfo fi;
-            auto sts = dflts.base.GetPreReorderInfo(dflts, fi, nullptr, nullptr, 0, lastIPoc, mfxU32(i));
+            mfxGopHints GopHints = {};
+            auto sts = dflts.base.GetPreReorderInfo(dflts, fi, nullptr, nullptr, m_LastKeyFrameInfo, mfxU32(i), GopHints);
             ThrowIf(!!sts, "failed at GetPreReorderInfo");
+            SetIf(m_LastKeyFrameInfo.lastIPOrder, !IsB(fi.FrameType), i);
 
             frames.push_back(StorageRW());
             frames.back().Insert(Task::Common::Key, new FrameBaseInfo(fi));
@@ -3188,7 +3190,7 @@ void Legacy::SetSTRPS(
                 ++pCurSet->WeightInGop;
             }
 
-            SetIf(lastIPoc, bI, cur->POC);
+            SetIf(m_LastKeyFrameInfo.lastIPoc, bI, cur->POC);
 
             DpbFrame tmp;
             (FrameBaseInfo&)tmp = *cur;
@@ -3240,12 +3242,10 @@ void Legacy::SetSTRPS(
     i = 0;
     std::for_each(pSetsBegin, pSetsEnd
         , [&](STRPS& sf) { OptimizeSTRPS(sets, nSet, sf, mfxU8(i++)); });
-    
     auto ritLastRps = std::find_if(MakeRIter(pSetsEnd), MakeRIter(pSetsBegin), IsRpsOptimal);
     // Also makes sense to try cut nSet to 2^n. Shorter idx code can overweight
 
     sps.num_short_term_ref_pic_sets = mfxU8(std::distance(ritLastRps, MakeRIter(pSetsBegin)));
-    
     std::copy_n(pSetsBegin, sps.num_short_term_ref_pic_sets, sps.strps);
 }
 
@@ -4150,7 +4150,6 @@ mfxStatus Legacy::CheckBRC(
     }
 
     changed += par.mfx.BufferSizeInKB && CheckBufferSizeInKB(par, defPar, bd);
-    
     if (pCO3)
     {
         MFX_CHECK(par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR
@@ -4329,7 +4328,7 @@ mfxStatus Legacy::CheckTiles(
     {
         mfxU32 minTileWidth  = MIN_TILE_WIDTH_IN_SAMPLES;
         mfxU32 minTileHeight = MIN_TILE_HEIGHT_IN_SAMPLES;
-        
+
         // min 2x2 lcu is supported on VDEnc
         // TODO: replace indirect NumScalablePipesMinus1 by platform
         SetIf(minTileHeight, defPar.caps.NumScalablePipesMinus1 > 0 && IsOn(par.mfx.LowPower), 128);

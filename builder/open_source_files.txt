@@ -142,6 +142,8 @@ _studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_dpb_report.cpp
 _studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_dpb_report.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_encoded_frame_info.cpp
 _studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_encoded_frame_info.h
+_studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_enctools.cpp
+_studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_enctools.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_ext_brc.cpp
 _studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_ext_brc.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_impl.h

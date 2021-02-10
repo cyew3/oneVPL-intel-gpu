@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,12 +19,20 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA))
 
 #include "hevcehw_base_lpla_enc.h"
 #include "hevcehw_base_task.h"
 #include "hevcehw_base_ddi_packer_win.h"
 #include "hevcehw_base_packer.h"
+
+#include "hevcehw_base_lpla_enc.h"
+#include "hevcehw_base_ddi_packer_win.h"
+
+#ifdef MFX_ENABLE_ENCTOOLS
+#include "mfxenctools-int.h"
+#include "hevcehw_base_enctools.h"
+#endif
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
@@ -59,10 +67,21 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         , [this](StorageRW& global, StorageRW&) -> mfxStatus
     {
         auto& par = Glob::VideoParam::Get(global);
+        mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
+        MFX_CHECK(pCO3, MFX_ERR_NONE);
+
+#ifdef MFX_ENABLE_ENCTOOLS
+        mfxExtEncToolsConfig *pEncToolsConfig = ExtBuffer::Get(par);
+        bIsEncToolsEnabled = pEncToolsConfig && IsEncToolsOptOn(*pEncToolsConfig, pCO3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING);
+#endif // !MFX_ENABLE_ENCTOOLS
+
         mfxExtLplaParam& extLplaParam = ExtBuffer::Get(par);
         bAnalysis = extLplaParam.LookAheadDepth > 0;
 
-        MFX_CHECK(!bAnalysis && !bInitialized && bIsLpLookAheadSupported, MFX_ERR_NONE);
+        auto& taskMgrIface = TaskManager::TMInterface::Get(global);
+        auto& tm = taskMgrIface.Manager;
+
+        MFX_CHECK(!bAnalysis && !bInitialized && bIsLpLookAheadSupported && !bIsEncToolsEnabled, MFX_ERR_NONE);
 
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
         MFX_CHECK(pCO2, MFX_ERR_NONE);
@@ -90,8 +109,13 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         if (sts == MFX_ERR_NONE)
         {
             bIsLpLookaheadEnabled = true;
-        }
 
+        }
+        if (bIsLpLookaheadEnabled)
+        {
+            S_LA_SUBMIT = tm.AddStage(tm.S_PREPARE);
+            S_LA_QUERY = tm.AddStage(S_LA_SUBMIT);
+        }
         return sts;
     });
 
@@ -110,7 +134,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , const StorageR& global
             , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps)
         {
-            MFX_CHECK(!bAnalysis && bIsLpLookaheadEnabled, MFX_ERR_NONE);
+            MFX_CHECK(!bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled), MFX_ERR_NONE);
 
             auto& par = Glob::VideoParam::Get(global);
             const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
@@ -119,16 +143,14 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             return MFX_ERR_NONE;
         });
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        // Update LPLA realted picture params.
+        // Update LPLA related picture params.
         ddiCC.UpdateLPLAEncPPS.Push([this](
             TCC::TUpdateLPLAEncPPS::TExt
             , const StorageR& /*global*/
             , const StorageR& s_task
             , ENCODE_SET_PICTURE_PARAMETERS_HEVC& pps)
         {
-            MFX_CHECK(!bAnalysis && bIsLpLookaheadEnabled, MFX_ERR_NONE);
-
+            MFX_CHECK(!bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled), MFX_ERR_NONE);
             const auto& task = Task::Common::Get(s_task);
             if (task.LplaStatus.TargetFrameSize > 0)
             {
@@ -144,10 +166,8 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
                 pps.QpModulationStrength = 0;
 #endif
             }
-
             return MFX_ERR_NONE;
         });
-#endif //MFX_ENABLE_LP_LOOKAHEAD
 
         // Check when it is needed to pack cqm PPS to driver.
         ddiCC.PackCqmPPS.Push([this](
@@ -156,7 +176,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , const StorageR& s_task)
         {
             auto& task = Task::Common::Get(s_task);
-            return !bAnalysis && bIsLpLookaheadEnabled && (task.InsertHeaders & INSERT_PPS);
+            return !bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled) && (task.InsertHeaders & INSERT_PPS);
         });
 
         // Check whether to pack cqm PPS header.
@@ -164,7 +184,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             TPackerCC::TPackCqmHeader::TExt
             , StorageW* /*global*/)
         {
-            bool bPack = !bAnalysis && bIsLpLookaheadEnabled;
+            bool bPack = !bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled);
             return bPack;
         });
 
@@ -191,8 +211,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         auto& taskMgrIface = TaskManager::TMInterface::Get(global);
         auto& tm = taskMgrIface.Manager;
 
-        S_LA_SUBMIT = tm.AddStage(tm.S_PREPARE);
-        S_LA_QUERY = tm.AddStage(S_LA_SUBMIT);
+
 
         auto  LASubmit = [&](
             TaskManager::ExtTMInterface::TAsyncStage::TExt
@@ -221,7 +240,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         auto  LAQuery = [&](
             TaskManager::ExtTMInterface::TAsyncStage::TExt
             , StorageW& /*global*/
-            , StorageW& s_task) -> mfxStatus
+            , StorageW& /*s_task*/) -> mfxStatus
         {
             std::unique_lock<std::mutex> closeGuard(tm.m_closeMtx);
             // If In LookAhead Pass, it should be moved to the next stage
@@ -240,13 +259,13 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             MFX_CHECK(bEncRun, MFX_ERR_NONE);
 
             StorageW* pTask = tm.GetTask(tm.Stage(S_LA_QUERY));
-            auto& task = Task::Common::Get(s_task);
+            MFX_CHECK(pTask, MFX_ERR_NONE);
             mfxLplastatus laStatus = {};
             mfxStatus sts = pLpLookAhead->Query(laStatus);
 
             if (sts == MFX_ERR_NONE)
             {
-                task.LplaStatus = laStatus;
+                LpLaStatus.push_back(laStatus); //lpLaStatus is got in encoded order
             }
             tm.MoveTaskForward(tm.Stage(S_LA_QUERY), tm.FixedTask(*pTask));
 
@@ -269,20 +288,23 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         auto  UpdateTask = [&](
             TaskManager::ExtTMInterface::TUpdateTask::TExt
-            , StorageW& srcTask
             , StorageW* dstTask) -> mfxStatus
         {
             MFX_CHECK(bIsLpLookaheadEnabled, MFX_ERR_NONE);
-            auto& src_task = Task::Common::Get(srcTask);
 
             if (dstTask)
             {
                 auto& dst_task = Task::Common::Get(*dstTask);
-                dst_task.LplaStatus = src_task.LplaStatus;
+                if (LpLaStatus.size() > 0)
+                {
+                    dst_task.LplaStatus = *(LpLaStatus.begin());
+                    LpLaStatus.pop_front();
+                }
             }
-            else if (!bAnalysis && src_task.LplaStatus.TargetFrameSize > 0)
+            else if (!bAnalysis && LpLaStatus.size() > 0)
             {
-                pLpLookAhead->SetStatus(&src_task.LplaStatus);
+                pLpLookAhead->SetStatus(&(*(LpLaStatus.begin())));
+                LpLaStatus.pop_front();
             }
             return MFX_ERR_NONE;
         };

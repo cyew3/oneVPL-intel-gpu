@@ -25,7 +25,7 @@
 
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
 
-mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig)
+mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & config)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -53,7 +53,7 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
     if (m_GopPicSize)
         m_IdrInterval = ctrl.MaxIDRDist / m_GopPicSize;
 
-    sts = InitEncParams(ctrl, pConfig);
+    sts = InitEncParams(ctrl, config);
     MFX_CHECK_STS(sts);
 
     memset(&m_bitstream, 0, sizeof(mfxBitstream));
@@ -61,7 +61,7 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
     m_bitstream.Data = new mfxU8[bufferSize];
     m_bitstream.MaxLength = bufferSize;
 
-    sts = ConfigureExtBuffs(ctrl, pConfig);
+    sts = ConfigureExtBuffs(ctrl, config);
     MFX_CHECK_STS(sts);
 
     sts = m_pmfxENC->Init(&m_encParams);
@@ -132,6 +132,8 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToo
     else
         m_encParams.mfx.GopPicSize = ctrl.MaxGopSize;
 
+    m_encParams.mfx.GopRefDist = 1; //ctrl.MaxGopRefDist;
+
     m_encParams.mfx.FrameInfo = ctrl.FrameInfo;
     m_lookAheadScale = 0;
 
@@ -185,7 +187,9 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     m_extBufLPLA.InitialDelayInKB = (mfxU16)ctrl.InitialDelayInKB;
     m_extBufLPLA.BufferSizeInKB   = (mfxU16)ctrl.BufferSizeInKB;
     m_extBufLPLA.TargetKbps       = (mfxU16)ctrl.TargetKbps;
-    m_extBufLPLA.LookAheadScaleX = m_extBufLPLA.LookAheadScaleY = (mfxU8)m_lookAheadScale;
+    m_extBufLPLA.LookAheadScaleX = m_extBufLPLA.LookAheadScaleY =  (mfxU8)m_lookAheadScale;
+
+    m_extBufLPLA.GopRefDist = ctrl.MaxGopRefDist;
 
     if (IsOn(pConfig.AdaptiveI))
     {
@@ -199,7 +203,9 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     m_extBufHevcParam = {};
     m_extBufHevcParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_extBufHevcParam.Header.BufferSz = sizeof(m_extBufHevcParam);
-    m_extBufHevcParam.SampleAdaptiveOffset = MFX_SAO_DISABLE;
+    if (ctrl.CodecId  == MFX_CODEC_AVC)
+        m_extBufHevcParam.SampleAdaptiveOffset = MFX_SAO_DISABLE;
+
     extBuf[1] = (mfxExtBuffer *)&m_extBufHevcParam;
     m_encParams.NumExtParam++;
 
@@ -283,18 +289,20 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPr
         case 2:
         case 4:
         case 8:
-            pPreEncGOP->MiniGopSize = m_curEncodeHints.MiniGopSize;
+            pPreEncGOP->MiniGopSize = IsOn(m_config.AdaptiveB)? m_curEncodeHints.MiniGopSize:0;
             break;
         default:
             pPreEncGOP->MiniGopSize = 0;
         }
+        mfxU8 qpModulationHigh = MAX_QP_MODULATION;
 
-        if (m_curEncodeHints.PyramidQpHint <= MFX_QP_MODULATION_HIGH)
+        if (m_curEncodeHints.PyramidQpHint <= qpModulationHigh &&
+            (IsOn(m_config.AdaptivePyramidQuantP) || IsOn(m_config.AdaptivePyramidQuantB)))
             pPreEncGOP->QPModulation = m_curEncodeHints.PyramidQpHint;
         else
             pPreEncGOP->QPModulation = MFX_QP_MODULATION_NOT_DEFINED;
 
-        if (m_curEncodeHints.IntraHint)
+        if (m_curEncodeHints.IntraHint && IsOn(m_config.AdaptiveI))
             pPreEncGOP->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
         else
             pPreEncGOP->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
