@@ -32,6 +32,11 @@ namespace AV1EHW
 {
 namespace Base
 {
+    static const GUID DXVA2_Intel_LowpowerEncode_AV1_420_8b =
+    { 0x8090a09c, 0x6fc5, 0x48ef, {0x9f, 0x40, 0x65, 0xbf, 0x37, 0xf7, 0xac, 0xc4 } };
+    static const GUID DXVA2_Intel_LowpowerEncode_AV1_420_10b =
+    { 0xeea5b11, 0x88c0, 0x4a9f, {0x81, 0xac, 0xb1, 0xf, 0xd6, 0x6b, 0x22, 0xea } };
+
     const uint16_t SB_SIZE                        = 64;
     const uint16_t AV1_DIRTY_BLOCK_SIZE           = 32;
     const uint8_t  AV1_MAX_Q_INDEX                = 255;
@@ -611,12 +616,6 @@ namespace Base
 
     using TileGroupInfos = std::vector<TileGroupInfo>;
 
-    struct EventDescr
-    {
-        GPU_SYNC_EVENT_HANDLE Handle   = { GPU_COMPONENT_ENCODE, INVALID_HANDLE_VALUE };
-        mfxU32                ReportID = mfxU32(-1);
-    };
-
     struct SegmentInfo
     {
         UCHAR segment_id;
@@ -872,7 +871,19 @@ namespace Base
     {
         bool operator()(const GUID& l, const GUID& r) const
         {
-            return (memcmp(&l, &r, sizeof(GUID)) < 0);
+            bool bEQ = true;
+            bool bLT = l.Data1 < r.Data1;
+
+            bEQ &= l.Data1 == r.Data1;
+            bLT |= bEQ && l.Data2 < r.Data2;
+
+            bEQ &= l.Data2 == r.Data2;
+            bLT |= bEQ && l.Data3 < r.Data3;
+
+            bEQ &= l.Data3 == r.Data3;
+            bLT |= bEQ && std::lexicographical_compare(l.Data4, std::end(l.Data4), r.Data4, std::end(r.Data4));
+
+            return bLT;
         }
     };
 
@@ -881,25 +892,26 @@ namespace Base
 
     template <typename DPB
         , typename Releaser>
-        static typename std::enable_if_t<is_shared_ptr<typename DPB::value_type>::value> UpdateDPB(
+        static typename std::enable_if<is_shared_ptr<typename DPB::value_type>::value, void>::type UpdateDPB(
             DPB& dpb
-            , typename const DPB::value_type::element_type& obj
+            , const typename DPB::value_type::element_type& obj
             , const DpbRefreshType& refreshRefFrames
             , Releaser&& releaser)
     {
-        using ElemType = DPB::value_type::element_type;
+        using ElemType = typename DPB::value_type::element_type;
 
         if (std::find(refreshRefFrames.begin(), refreshRefFrames.end(), 1)
             == refreshRefFrames.end())
             return;
 
-        DPB::value_type curr(new ElemType(obj), std::forward<Releaser>(releaser));
+        typename DPB::value_type curr(new ElemType(obj), std::forward<Releaser>(releaser));
 
         for (mfxU8 i = 0; i < dpb.size(); i++)
         {
             if (refreshRefFrames[i])
                 dpb.at(i) = curr;
         }
+        return;
     }
 
     typedef std::list<StorageRW>::iterator TTaskIt;
@@ -1195,7 +1207,7 @@ namespace Base
         using FH         = StorageVar<__LINE__ - _KD, Base::FH>;
         using Segment    = StorageVar<__LINE__ - _KD, mfxExtAV1Segmentation>;
         using TileGroups = StorageVar<__LINE__ - _KD, TileGroupInfos>;
-        using TaskEvent  = StorageVar<__LINE__ - _KD, EventDescr>;
+        static const StorageR::TKey TaskEventKey = __LINE__ - _KD;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;
     };
 

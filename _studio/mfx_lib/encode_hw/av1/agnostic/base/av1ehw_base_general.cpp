@@ -1241,7 +1241,7 @@ static bool CheckRefListCtrl(mfxExtAVCRefListCtrl* refListCtrl)
     changed += CheckOrZero<mfxU16>(refListCtrl->NumRefIdxL1Active, 0);
     for (auto& preferred : refListCtrl->PreferredRefList)
     {
-        if (preferred.FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        if (preferred.FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
         {
             preferred.FrameOrder = mfxU32(MFX_FRAMEORDER_UNKNOWN);
             changed++;
@@ -1659,7 +1659,7 @@ namespace RefListRules
     template<typename Iter>
     static void CleanRules(Rules<Iter>& rules, const Iter toRemove, mfxU8 maxRefs)
     {
-        auto NeedRemove = [&toRemove](const auto& rule) { return rule.second == toRemove; };
+        auto NeedRemove = [&toRemove](const typename Rules<Iter>::value_type& rule) { return rule.second == toRemove; };
         rules.remove_if(NeedRemove);
 
         if (rules.size() > maxRefs)
@@ -1671,7 +1671,7 @@ namespace RefListRules
     {
         std::array<mfxU8, NUM_REF_FRAMES> usedDpbSlots = {};
 
-        auto ApplyRule = [&](const auto& rule)
+        auto ApplyRule = [&](const typename Rules<Iter>::value_type& rule)
         {
             const mfxU8 dpbIdx = *rule.second;
             if (!usedDpbSlots.at(dpbIdx))
@@ -1865,7 +1865,7 @@ inline void MarkLTR(TaskCommonPar& task)
     auto numberOfUniqueSTRs = std::count_if(
         tmpDPB.begin()
         , tmpDPB.end()
-        , [](const auto& f) { return f && !f->isLTR; });
+        , [](const DpbType::value_type& f) { return f && !f->isLTR; });
 
     const auto& ltrList = refListCtrl->LongTermRefList;
     for (mfxI32 i = 0; i < 16 && numberOfUniqueSTRs > 1; i++)
@@ -1877,7 +1877,7 @@ inline void MarkLTR(TaskCommonPar& task)
         auto frameToBecomeLTR = std::find_if(
             task.DPB.begin()
             , task.DPB.end()
-            , [ltrFrameOrder](const auto &f) { return f && f->DisplayOrder == ltrFrameOrder; });
+            , [ltrFrameOrder](const DpbType::value_type& f) { return f && f->DisplayOrder == ltrFrameOrder; });
 
         if (frameToBecomeLTR != task.DPB.end()
             && !(*frameToBecomeLTR)->isLTR
@@ -2157,7 +2157,7 @@ namespace CModelRefLogic
 
         DisplayOrders orders = {};
 
-        auto GetOrderFromDelta = [currDisplayOrderInGOP](auto delta) { return currDisplayOrderInGOP + delta; };
+        auto GetOrderFromDelta = [currDisplayOrderInGOP](mfxI8 delta) { return currDisplayOrderInGOP + delta; };
 
         auto deltas = &(refStructure.PerBFrameRefPics[orderInBGOP][0]);
 
@@ -2220,7 +2220,11 @@ inline void SetTaskRepeatedFrames(
         auto& refFrm = task.DPB.at(refIdx);
         if (refFrm->DisplayOrderInGOP < task.NextBufferedDisplayOrder && !refFrm->wasShown)
         {
-            task.FramesToShow.push_back({ refIdx, refFrm->DisplayOrder });
+            RepeatedFrameInfo repfrm;
+            repfrm.FrameToShowMapIdx = refIdx;
+            repfrm.DisplayOrder = refFrm->DisplayOrder;
+
+            task.FramesToShow.push_back(repfrm);
             refFrm->wasShown = true;
         }
     }
@@ -2639,7 +2643,7 @@ void General::SetFH(
 
     if (sh.enable_restoration)
     {
-        for (UINT8 i = 0; i < MAX_MB_PLANE; i++)
+        for (mfxU8 i = 0; i < MAX_MB_PLANE; i++)
         {
             fh.lr_params.lr_type[i] = RESTORE_WIENER;
         }
@@ -3794,7 +3798,7 @@ mfxStatus General::GetCurrentFrameHeader(
     }
 
     if (currFH.frame_type == SWITCH_FRAME ||
-        currFH.frame_type == KEY_FRAME && currFH.show_frame)
+        (currFH.frame_type == KEY_FRAME && currFH.show_frame))
     {
         currFH.error_resilient_mode = 1;
     }

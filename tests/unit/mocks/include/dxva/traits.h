@@ -37,6 +37,7 @@
 
 DEFINE_GUID(DXVA2_Intel_Encode_AVC,
     0x97688186, 0x56a8, 0x4094, 0xb5, 0x43, 0xfc, 0x9d, 0xaa, 0xa4, 0x9f, 0x4b);
+#endif // !__ENCODING_DDI_H__
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
 DEFINE_GUID(DXVA2_Intel_LowpowerEncode_AV1_420_8b,
@@ -44,10 +45,7 @@ DEFINE_GUID(DXVA2_Intel_LowpowerEncode_AV1_420_8b,
 
 DEFINE_GUID(DXVA2_Intel_LowpowerEncode_AV1_420_10b,
     0xeea5b11, 0x88c0, 0x4a9f, 0x81, 0xac, 0xb1, 0xf, 0xd6, 0x6b, 0x22, 0xea);
-
 #endif
-
-#endif // !__ENCODING_DDI_H__
 
 DEFINE_GUID(DXVA2_Intel_Encode_HEVC_Main,
     0x28566328, 0xf041, 0x4466, 0x8b, 0x14, 0x8f, 0x58, 0x31, 0xe7, 0x8f, 0x8b);

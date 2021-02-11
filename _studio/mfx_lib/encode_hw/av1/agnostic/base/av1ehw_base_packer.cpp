@@ -608,7 +608,7 @@ static void PackFrameRefInfo(BitstreamWriter& bs, SH const& sh, FH const& fh, mf
     if (sh.enable_order_hint)
         bs.PutBit(0); //frame_refs_short_signaling
 
-    for (mfxI8 ref = 0; ref < REFS_PER_FRAME; ref++)
+    for (mfxU8 ref = 0; ref < REFS_PER_FRAME; ref++)
         bs.PutBits(REF_FRAMES_LOG2, fh.ref_frame_idx[ref]);
 
     if (fh.frame_size_override_flag && !error_resilient_mode)

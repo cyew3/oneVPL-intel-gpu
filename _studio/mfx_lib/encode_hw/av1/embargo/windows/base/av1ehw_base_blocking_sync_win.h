@@ -55,6 +55,14 @@ namespace Base
 
         void SetTimeout(mfxU32 timeOutMs) { m_timeOutMs = timeOutMs; };
 
+        struct EventDescr
+        {
+            GPU_SYNC_EVENT_HANDLE Handle   = { GPU_COMPONENT_ENCODE, INVALID_HANDLE_VALUE };
+            mfxU32                ReportID = mfxU32(-1);
+        };
+
+        using TaskEvent  = StorageVar<AV1EHW::Base::Task::TaskEventKey, EventDescr>;
+
     protected:
         mfxU32                      m_timeOutMs         = 60000;
         MFXIScheduler2*             m_pSheduler         = nullptr;

@@ -173,6 +173,13 @@ typedef struct tagENCODE_CAPS_AV1
 
 } ENCODE_CAPS_AV1;
 
+typedef enum {
+    SINGLE_REFERENCE = 0,
+    COMPOUND_REFERENCE = 1,
+    REFERENCE_MODE_SELECT = 2,
+    REFERENCE_MODES = 3,
+} REFERENCE_MODE;
+
 #if !defined(MFX_VA_LINUX)
 typedef struct tagFRAMERATE
 {
@@ -300,13 +307,6 @@ typedef enum {
     AFFINE = 3,      // affine, 6-parameter
     TRANS_TYPES,
 } TransformationType;
-
-typedef enum {
-    SINGLE_REFERENCE = 0,
-    COMPOUND_REFERENCE = 1,
-    REFERENCE_MODE_SELECT = 2,
-    REFERENCE_MODES = 3,
-} REFERENCE_MODE;
 
 typedef struct {
     TransformationType wmtype;

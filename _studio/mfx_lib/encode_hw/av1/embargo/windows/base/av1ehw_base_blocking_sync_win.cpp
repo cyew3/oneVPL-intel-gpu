@@ -100,7 +100,7 @@ void Windows::Base::BlockingSync::AllocTask(const FeatureBlocks& /*blocks*/, TPu
     {
         MFX_CHECK(m_bEnabled, MFX_ERR_NONE);
 
-        task.Insert(Task::TaskEvent::Key, make_storable<EventDescr>());
+        task.Insert(TaskEvent::Key, make_storable<EventDescr>());
 
         return MFX_ERR_NONE;
     });
@@ -116,7 +116,7 @@ void Windows::Base::BlockingSync::SubmitTask(const FeatureBlocks& /*blocks*/, TP
         MFX_CHECK(m_bEnabled, MFX_ERR_NONE);
 
         auto& task     = Task::Common::Get(s_task);
-        auto& gpuEvent = Task::TaskEvent::Get(s_task);
+        auto& gpuEvent = TaskEvent::Get(s_task);
 
         gpuEvent = { { GPU_COMPONENT_ENCODE, INVALID_HANDLE_VALUE }, task.StatusReportId };
 
@@ -147,7 +147,7 @@ void Windows::Base::BlockingSync::QueryTask(const FeatureBlocks& /*blocks*/, TPu
     {
         MFX_CHECK(m_bEnabled, MFX_ERR_NONE);
 
-        auto& gpuEvent = Task::TaskEvent::Get(task);
+        auto& gpuEvent = TaskEvent::Get(task);
 
         MFX_CHECK(gpuEvent.Handle.gpuSyncEvent != INVALID_HANDLE_VALUE, MFX_ERR_NONE);
 

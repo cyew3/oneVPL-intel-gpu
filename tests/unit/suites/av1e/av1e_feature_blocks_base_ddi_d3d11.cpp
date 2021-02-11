@@ -91,7 +91,7 @@ namespace Base
             vp.mfx.FrameInfo.Height = 480;
             vp = mocks::mfx::make_param(
                 mocks::fourcc::tag<MFX_FOURCC_NV12>{},
-                mocks::mfx::make_param(mocks::guid<&DXVA2_Intel_LowpowerEncode_AV1_420_8b>{}, vp)
+                mocks::mfx::make_param(mocks::guid<&::DXVA2_Intel_LowpowerEncode_AV1_420_8b>{}, vp)
             );
 
             //'CreateAuxilliaryDevice' queries this decoder's extension
@@ -106,7 +106,7 @@ namespace Base
 
             device = mocks::mfx::dx11::make_encoder(nullptr, context.get(),
                 std::integral_constant<eMFXHWType, MFX_HW_DG2>{},
-                std::make_tuple(mocks::guid<&DXVA2_Intel_LowpowerEncode_AV1_420_8b>{}, vp)
+                std::make_tuple(mocks::guid<&::DXVA2_Intel_LowpowerEncode_AV1_420_8b>{}, vp)
             );
 
             EXPECT_EQ(
