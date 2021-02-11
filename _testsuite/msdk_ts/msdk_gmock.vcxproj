@@ -114,6 +114,11 @@
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>MFX_ENABLE_USER_ENCTOOLS;MFX_ENABLE_SCREEN_CAPTURE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
@@ -207,7 +212,6 @@
     <ClInclude Include="include\gmock\ts_alloc.h" />
     <ClInclude Include="include\gmock\ts_decoder.h" />
     <ClInclude Include="include\gmock\ts_enc.h" />
-    <ClInclude Include="include\gmock\ts_fei_warning.h" />
     <ClInclude Include="include\gmock\ts_mvc_warning.h" />
     <ClInclude Include="include\gmock\ts_pak.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
@@ -366,18 +370,6 @@
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\encoders_gpu_hang.cpp" />
     <ClCompile Include="src\gmock\test_suites\feature_unsupported.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_advanced_ref_lists.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_disable_deblocking.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_mbqp.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_field_coding.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_gpu_hang.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_enablembqp.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_num_active_ref.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_timestamp.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_ref_list_ctrl.cpp" />
     <ClCompile Include="src\gmock\test_suites\get_plugin.cpp" />
     <ClCompile Include="src\gmock\test_suites\gpu_hang_transcoding.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_shift.cpp" />
@@ -445,8 +437,6 @@
     <ClCompile Include="src\gmock\test_suites\multisession.cpp" />
     <ClCompile Include="src\gmock\test_suites\mvce_view_output.cpp" />
     <ClCompile Include="src\gmock\test_suites\mvc_sethandle_16.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_preenc_query_init.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_reset.cpp" />
@@ -461,7 +451,6 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp" />
-    <ClCompile Include="src\gmock\test_suites\hevce_fei_invalid_runtime_parameters.cpp" />
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
     <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp" />
@@ -551,7 +540,6 @@
     <ClCompile Include="src\gmock\test_suites\vpp_frc_interp.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_uyvy.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_oversized_surfaces.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_oversized_surfaces.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_big_resolution.cpp" />
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
     <ClCompile Include="src\gmock\ts_aux_dev.cpp" />

@@ -23,6 +23,10 @@
 # avoiding non-default symbol versioning, i.e. -Wl,--default-symver which
 # is propagated by mediasdk test system should be avoided.
 
+if(API_USE_VPL)
+  return()
+endif()
+
 if( NOT DEFINED MFX_MODULES_DIR )
   set( MFX_MODULES_DIR ${CMAKE_INSTALL_FULL_LIBDIR} )
 endif( )

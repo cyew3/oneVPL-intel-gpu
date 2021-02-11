@@ -31,6 +31,10 @@ Algorithm:
 #include "ts_vpp.h"
 #include "ts_struct.h"
 
+#if defined(MFX_ONEVPL)
+#include "mfxpavp.h"
+#endif
+
 //!Namespace of VPP Init test
 namespace vpp_init
 {

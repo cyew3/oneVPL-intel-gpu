@@ -384,7 +384,6 @@ STRUCT(mfxExtVPPDoUse,
     FIELD_T(mfxU32*, AlgList)
 )
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY) || !defined(_MFX_CONFIG_H_)
 STRUCT(mfxExtOpaqueSurfaceAlloc_InOut,
     FIELD_T(mfxFrameSurface1 ** , Surfaces  )
     FIELD_T(mfxU16              , Type      )
@@ -396,7 +395,6 @@ STRUCT(mfxExtOpaqueSurfaceAlloc,
     FIELD_S(mfxExtOpaqueSurfaceAlloc_InOut, In)
     FIELD_S(mfxExtOpaqueSurfaceAlloc_InOut, Out)
 )
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
 STRUCT(mfxExtAVCRefListCtrl_Entry,
     FIELD_T(mfxU32, FrameOrder  )
@@ -565,7 +563,7 @@ STRUCT(mfxPluginUID,
 )
 #endif //!MFX_ONEVPL
 
-#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE) || !defined(_MFX_CONFIG_H_)
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
 STRUCT(mfxExtFeiParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxFeiFunction, Func)
@@ -734,7 +732,7 @@ STRUCT(mfxExtFeiRepackCtrl,
 )
 #endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
-#if defined (MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT) || !defined(_MFX_CONFIG_H_)
+#if defined (MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
 STRUCT(mfxExtFeiDecStreamOut,
     FIELD_S(mfxExtBuffer,    Header)
     FIELD_T(mfxU32,  NumMBAlloc)
@@ -744,7 +742,7 @@ STRUCT(mfxExtFeiDecStreamOut,
 )
 #endif //MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
 
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE) || !defined(_MFX_CONFIG_H_)
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 STRUCT(mfxExtFeiHevcEncFrameCtrl,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16,       SearchPath)
@@ -919,7 +917,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16, PRefType)
     FIELD_T(mfxU16, FadeDetection) /* tri-state option */
     FIELD_T(mfxI16, DeblockingAlphaTcOffset) /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
-    FIELD_T(mfxI16, DeblockingBetaOffset) /* -12..12 (slice_beta_offset_div2 << 1) */
+    FIELD_T(mfxI16, DeblockingBetaOffset)    /* -12..12 (slice_beta_offset_div2 << 1) */
     FIELD_T(mfxU16, GPB)
     FIELD_T(mfxU32, MaxFrameSizeI)
     FIELD_T(mfxU32, MaxFrameSizeP)
@@ -1225,7 +1223,7 @@ STRUCT(mfxExtVPPMirroring,
     FIELD_T(mfxU16      , Type)
 )
 
-#if defined(MFX_ENABLE_SCREEN_CAPTURE) || !defined(_MFX_CONFIG_H_)
+#if defined(MFX_ENABLE_SCREEN_CAPTURE)
 STRUCT(mfxExtScreenCaptureParam,
     FIELD_S(mfxExtBuffer, Header             )
     FIELD_T(mfxU32      , DisplayIndex       )
@@ -1512,7 +1510,7 @@ STRUCT(mfxExtEncodedUnitsInfo,
     FIELD_T(mfxU16, NumUnitsEncoded)
 )
 
-#if defined(__MFXPCP_H__)
+#if defined(__MFXPCP_H__) && !defined(MFX_ONEVPL) || defined(__MFXPAVP_H__)
 
 #if !defined(OPEN_SOURCE)
 STRUCT(mfxAES128CipherCounter,
@@ -1697,11 +1695,14 @@ STRUCT(mfxExtAV1Segmentation,
 
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtAVCScalingMatrix,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, Type)
 )
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtDPB,
     FIELD_S(mfxExtBuffer, Header)
 )
@@ -1724,7 +1725,7 @@ STRUCT(mfxExtAV1LargeScaleTileParam,
 )
 #endif
 
-#if defined(MFX_ENABLE_USER_ENCTOOLS) || !defined(_MFX_CONFIG_H_)
+#if defined(MFX_ENABLE_USER_ENCTOOLS)
 STRUCT(mfxExtEncToolsConfig,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_S(mfxStructVersion,  Version)

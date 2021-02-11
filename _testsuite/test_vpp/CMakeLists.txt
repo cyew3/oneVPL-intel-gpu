@@ -88,15 +88,13 @@ target_sources(test_vpp
 )
 
 target_link_libraries(test_vpp
-  PUBLIC
+  PRIVATE
     mfx_shared_lib
     shared_utils
-    mfx
     umc
     vm
     vm_plus
     IPP::dc IPP::vc IPP::cc IPP::i IPP::s IPP::core
-  PRIVATE
     mfx_va_properties
     mfx_require_sse4_properties
 )

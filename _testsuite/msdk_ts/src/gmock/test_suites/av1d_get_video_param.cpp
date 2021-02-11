@@ -140,6 +140,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*04*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY}, 5},
     {/*05*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY} , 5},
+
     {/*06*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}, 5},
     {/*07*/ MFX_ERR_NONE, 0, {{IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
                               {IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY, CHECK}}, 0},
@@ -254,6 +255,7 @@ int TestSuite::RunTest(const tc_struct& tc)
     bool isSW = !!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
     UseDefaultAllocator(isSW);
     m_pFrameAllocator = GetAllocator();
+    SetFrameAllocator(m_session, GetAllocator());
     if (!isSW && !m_is_handle_set)
     {
         mfxHDL hdl = 0;
@@ -261,14 +263,8 @@ int TestSuite::RunTest(const tc_struct& tc)
         GetAllocator()->get_hdl(type, hdl);
         SetHandle(m_session, type, hdl);
     }
-    if(!(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
-    {
-        SetFrameAllocator(m_session, GetAllocator());
-    }
-    else
-    {
-        AllocOpaque();
-    }
+
+    AllocOpaque();
 
     if (FAILED_INIT == tc.mode)
     {
@@ -335,10 +331,12 @@ void TestSuite::ReadStream()
 
 void TestSuite::AllocOpaque()
 {
+#if !defined(MFX_ONEVPL)
     if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         AllocOpaqueSurfaces();
     }
+#endif //!MFX_ONEVPL
 }
 
 TS_REG_TEST_SUITE_CLASS_ROUTINE(av1d_8b_420_nv12_get_video_param,  RunTest_fourcc<MFX_FOURCC_NV12>, n_cases);

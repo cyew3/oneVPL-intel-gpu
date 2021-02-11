@@ -34,6 +34,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #if (MFX_VERSION >= 1027) && defined(LIBVA_SUPPORT)
 #include <va/va.h>
+#endif
+
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 #include "mfxfeihevc.h"
 #endif
 
@@ -140,7 +143,7 @@ public:
                 memset(&eb, 0, size);
                 eb.BufferId = id;
                 eb.BufferSz = size;
-#if (MFX_VERSION >= 1027) && defined(LIBVA_SUPPORT)
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
                 // HEVC FEI buffers uses direct exposure. 0 is correct libva buffer id, so id should be explicitly set to invalid
                 switch (eb.BufferId)
                 {

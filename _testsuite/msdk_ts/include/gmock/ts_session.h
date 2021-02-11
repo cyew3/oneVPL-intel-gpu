@@ -53,8 +53,9 @@ public:
 
     mfxStatus MFXInitEx();
     mfxStatus MFXInitEx(mfxInitParam par, mfxSession* session);
+#if !defined(MFX_ONEVPL)
     mfxStatus MFXDoWork(mfxSession session);
-
+#endif
     mfxStatus MFXJoinSession(mfxSession session);
     mfxStatus MFXDisjoinSession();
 };

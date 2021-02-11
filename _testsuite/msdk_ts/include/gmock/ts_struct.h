@@ -65,6 +65,7 @@ inline mfxU64 get(void* base, const Field& field) { mfxU64 value = 0; memcpy(&va
         fields                                      \
     };                                              \
     extern Wrap_##name const name;
+
 #define FIELD_T(type, name) Array<Field, (sizeof(((base_type*)0)->name)/sizeof(::type))> name;
 #define FIELD_S(type, name) Array<Wrap_##type, (sizeof(((base_type*)0)->name)/sizeof(::type))> name;
 

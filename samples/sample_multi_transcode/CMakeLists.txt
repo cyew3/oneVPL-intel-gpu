@@ -12,7 +12,7 @@ target_include_directories(sample_multi_transcode
 target_link_libraries(sample_multi_transcode
     PRIVATE
     sample_common
-    vpp_plugin
+    $<$<NOT:$<BOOL:${API_USE_VPL}>>:vpp_plugin>
   )
 
 target_sources(sample_multi_transcode

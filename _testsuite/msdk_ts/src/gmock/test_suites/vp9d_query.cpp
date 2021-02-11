@@ -12,6 +12,10 @@ Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
+#if defined(MFX_ONEVPL)
+#include "mfxpavp.h"
+#endif
+
 #define TEST_NAME vp9d_query
 namespace TEST_NAME
 {

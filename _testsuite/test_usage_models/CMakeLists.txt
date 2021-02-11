@@ -40,7 +40,6 @@ target_link_libraries(test_usage_models
     vm_plus
     sample_common
     mfx_shared_lib
-    mfx
     IPP::s IPP::core
     ${CMAKE_DL_LIBS}
     ${CMAKE_THREAD_LIBS_INIT}

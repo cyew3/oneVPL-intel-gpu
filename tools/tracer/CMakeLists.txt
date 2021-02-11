@@ -1,3 +1,7 @@
+if (API_USE_VPL)
+  return()
+endif()
+
 add_subdirectory(tools/configure)
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows)

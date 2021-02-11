@@ -100,6 +100,22 @@ tsTrace& tsTrace::operator<<(const mfxVideoParam& p)
 {
     m_flags = ((!!(p.IOPattern & 0x0F)) | 2 * (!!(p.IOPattern & 0xF0)));
 
+    auto PrintIO = [&](mfxU16 IOPattern)
+    {
+        *this << m_off << "IOPattern = " << p.IOPattern << " = ";
+        if(IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY  ) *this << "IN_VIDEO|";
+        if(IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ) *this << "IN_SYSTEM|";
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
+        if(IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ) *this << "IN_OPAQUE|";
+#endif
+        if(IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY ) *this << "OUT_VIDEO|";
+        if(IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) *this << "OUT_SYSTEM|";
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
+        if(IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) *this << "OUT_OPAQUE";
+#endif
+        *this << "\n";
+    };
+
     STRUCT_BODY(mfxVideoParam,
         if(m_flags != VPP || !m_flags)
         {
@@ -114,16 +130,8 @@ tsTrace& tsTrace::operator<<(const mfxVideoParam& p)
         if(!p.IOPattern)
             FIELD_T(mfxU16        , IOPattern   )
         else
-        { 
-            *this << m_off << "IOPattern = " << p.IOPattern << " = ";
-            if(p.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY  ) *this << "IN_VIDEO|";
-            if(p.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ) *this << "IN_SYSTEM|";
-            if(p.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ) *this << "IN_OPAQUE|";
-            if(p.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY ) *this << "OUT_VIDEO|";
-            if(p.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) *this << "OUT_SYSTEM|";
-            if(p.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) *this << "OUT_OPAQUE";
-            *this << "\n";
-        }
+            PrintIO(p.IOPattern);
+
         FIELD_T(mfxU16        , NumExtParam )
         if(p.NumExtParam && p.ExtParam)
         {
@@ -308,12 +316,13 @@ std::ostream &operator << (std::ostream &os, rawdata p){
     return os;
 }
 
+#if !defined(MFX_ONEVPL)
 tsTrace& tsTrace::operator<<(const mfxPluginUID& p)
 {
     *this << hexstr(p.Data, sizeof(p.Data));
     return *this;
 }
-
+#endif //!MFX_ONEVPL
 
 tsTrace& tsTrace::operator<<(const mfxFrameData& p)
 {
@@ -413,6 +422,7 @@ tsTrace& tsTrace::operator<<(const mfxExtMoveRect& p)
     return *this;
 }
 
+#if !defined(MFX_ONEVPL)
 tsTrace& tsTrace::operator<<(const mfxExtCamGammaCorrection& p)
 {
     STRUCT_BODY(mfxExtCamGammaCorrection,
@@ -475,7 +485,7 @@ tsTrace& tsTrace::operator<<(const mfxExtCamCscYuvRgb& p)
 
 	return *this;
 }
-
+#endif //!MFX_ONEVPL
 
 tsTrace& tsTrace::operator<<(const mfxEncodeCtrl& p)
 {
@@ -518,6 +528,7 @@ tsTrace& tsTrace::operator<<(const mfxExtFeiEncMV& p)
 }
 #endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
+#if !defined(MFX_ONEVPL)
 tsTrace& tsTrace::operator << (const mfxExtAVCScalingMatrix& p)
 {
     const char matrices[][10] = {
@@ -560,6 +571,7 @@ tsTrace& tsTrace::operator << (const mfxExtAVCScalingMatrix& p)
 
         return *this;
 }
+#endif //!MFX_ONEVPL
 
 tsTrace& tsTrace::operator<<(const mfxExtPartialBitstreamParam& p)
 {
@@ -571,7 +583,7 @@ tsTrace& tsTrace::operator<<(const mfxExtPartialBitstreamParam& p)
         return *this;
 }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT)
 tsTrace& tsTrace::operator<<(const mfxExtEncToolsConfig& p)
 {
     STRUCT_BODY(mfxExtEncToolsConfig,

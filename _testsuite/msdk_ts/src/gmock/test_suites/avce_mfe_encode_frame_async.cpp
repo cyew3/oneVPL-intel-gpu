@@ -223,6 +223,7 @@ void AsyncEncodeTest::SetParams(tsVideoEncoder& enc, const tc_struct& tc)
         copt2.BRefType = tc.bRefType;
     }
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if (m_fei_enabled) {
         mfxExtFeiParam& fei = enc.m_par;
         fei.Func = MFX_FEI_FUNCTION_ENCODE;
@@ -230,6 +231,7 @@ void AsyncEncodeTest::SetParams(tsVideoEncoder& enc, const tc_struct& tc)
             mfp.MaxNumFrames = 2;
         }
     }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 }
 
 void AsyncEncodeTest::InitSession(tsVideoEncoder& enc)
@@ -290,6 +292,7 @@ void AsyncEncodeTest::Init(const tc_struct& tc)
     m_enc3.AllocSurfaces();
     m_enc3.AllocBitstream();
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     if (m_fei_enabled) {
         // Initialize encode control parameters needed for FEI ENCODE
         mfxExtFeiEncFrameCtrl& fei_ctrl1 = m_enc1.m_ctrl;
@@ -299,6 +302,7 @@ void AsyncEncodeTest::Init(const tc_struct& tc)
         mfxExtFeiEncFrameCtrl& fei_ctrl3 = m_enc3.m_ctrl;
         fei_ctrl3.SearchWindow = 3;
     }
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 }
 
 void AsyncEncodeTest::WipeBitsreams()

@@ -43,7 +43,7 @@ if(WIN32)
   set_target_properties(${TARGET} PROPERTIES IMPORT_PREFIX ${IMPORT_PREFIX})
 endif()
 
-set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME "onevpl")
+set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME "vpl")
 set_target_properties(${TARGET} PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${TARGET} PROPERTIES SOVERSION ${API_VERSION_MAJOR})
 

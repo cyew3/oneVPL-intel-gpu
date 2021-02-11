@@ -23,6 +23,10 @@
 # avoiding non-default symbol versioning, i.e. -Wl,--default-symver which
 # is propagated by mediasdk test system should be avoided. 
 
+if(API_USE_VPL)
+  return()
+endif()
+
 # mfx_tracer_test relies on standard function (fgets, etc.) name shadowing,
 # and FORTIFY_SOURCE makes it impossible. 
 string(REGEX REPLACE " -D_FORTIFY_SOURCE=([0-9]+)" "" TMP_C_DEBUG "${CMAKE_C_FLAGS_DEBUG}")

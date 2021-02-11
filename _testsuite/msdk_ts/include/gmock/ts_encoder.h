@@ -94,7 +94,9 @@ public:
     tsSharedCtrl                m_ctrl_next;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true, MsdkPluginType type = MSDK_PLUGIN_TYPE_NONE);
+#if !defined(MFX_ONEVPL)
     tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId = 0, bool useDefaults = true);
+#endif
     ~tsVideoEncoder();
 
     mfxStatus Init();

@@ -9,7 +9,6 @@
 //
 #include "ts_vpp.h"
 #include "ts_struct.h"
-#include "mfxplugin++.h"
 
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 

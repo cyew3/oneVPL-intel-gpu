@@ -25,8 +25,12 @@ static void SkipDecision(mfxVideoParam& par, eDecoderFunction /*function*/)
         if (par.IOPattern == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
             g_tsLog << "Opaque memory is not supported by core20\n";
+#if !defined(MFX_ENABLE_OPAQUE_MEMORY)
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+#else
             g_tsStatus.disable();
             throw tsSKIP;
+#endif //!MFX_ENABLE_OPAQUE_MEMORY
         }
     }
 }
@@ -138,11 +142,13 @@ mfxStatus tsVideoDecoder::Init()
         {
             DecodeHeader();
         }
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
             QueryIOSurf();
             AllocOpaque(m_request, m_par);
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
     return Init(m_session, m_pPar);
 }
@@ -163,11 +169,13 @@ mfxStatus tsVideoDecoder::NoAllocatorCheckInit()
         {
             DecodeHeader();
         }
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
             QueryIOSurf();
             AllocOpaque(m_request, m_par);
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
     return Init(m_session, m_pPar);
 }

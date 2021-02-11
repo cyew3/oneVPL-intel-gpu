@@ -386,6 +386,7 @@ typedef enum {
     MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE    = MFX_ACCEL_MODE_VIA_VAAPI,  /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with DRM RENDER MODE as default acceleration access point. */
     MFX_ACCEL_MODE_VIA_VAAPI_DRM_MODESET = 0x0401, /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with DRM MODESET as  default acceleration access point. */
     MFX_ACCEL_MODE_VIA_VAAPI_GLX = 0x0402, /*! Hardware acceleration goes through the Linux* VA-API infrastructure with OpenGL Extension to the X Window System
+                                              as default acceleration access point. */
     MFX_ACCEL_MODE_VIA_VAAPI_X11 = 0x0403, /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with X11 as default acceleration access point. */
     MFX_ACCEL_MODE_VIA_VAAPI_WAYLAND = 0x0404, /*!< Hardware acceleration goes through the Linux* VA-API infrastructure with Wayland as default acceleration access point. */
     MFX_ACCEL_MODE_VIA_HDDLUNITE    = 0x0500,  /*!< Hardware acceleration goes through the HDDL* Unite*. */

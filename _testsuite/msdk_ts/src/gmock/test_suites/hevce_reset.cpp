@@ -13,6 +13,10 @@ File Name: hevce_reset.cpp
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
+#if defined(MFX_ONEVPL)
+#include "mfxpavp.h"
+#endif
+
 namespace hevce_reset
 {
 #define INVALID_WIDTH   16384

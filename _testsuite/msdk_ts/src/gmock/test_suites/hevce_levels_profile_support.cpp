@@ -121,6 +121,7 @@ public:
         m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
         m_par.AsyncDepth = 1;
 
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
         if (PluginID == MSDK_PLUGIN_TYPE_FEI)
         {
             // Set all parameters necessary for working with HEVC FEI encoder:
@@ -129,6 +130,7 @@ public:
             feiCtrl.SearchWindow       = 5; // 48 SUs 48x40 window full search
             feiCtrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
         }
+#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
     }
 
     mfxU16 CodecProfile_exp;

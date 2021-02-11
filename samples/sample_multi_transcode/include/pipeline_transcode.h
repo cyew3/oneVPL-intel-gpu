@@ -22,9 +22,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include <stddef.h>
 
-#include "mfxplugin.h"
-#include "mfxplugin++.h"
-
 #include <memory>
 #include <vector>
 #include <list>
@@ -45,11 +42,23 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo++.h"
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxla.h"
+#endif
 #include "mfxvp8.h"
 
-#include "hw_device.h"
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
+
+#include "mfxplugin.h"
+
+#if !defined(MFX_ONEVPL)
+#include "mfxplugin++.h"
 #include "plugin_loader.h"
+#endif
+
+#include "hw_device.h"
 #include "sample_defs.h"
 #include "plugin_utils.h"
 #include "preset_manager.h"
@@ -681,13 +690,15 @@ namespace TranscodingSample
         virtual mfxStatus DecodeLastFrame(ExtendedSurface *pExtSurface);
         virtual mfxStatus VPPOneFrame(ExtendedSurface *pSurfaceIn, ExtendedSurface *pExtSurface);
         virtual mfxStatus EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstreamWrapper *pBS);
+#if !defined(MFX_ONEVPL)
         virtual mfxStatus PreEncOneFrame(ExtendedSurface *pInSurface, ExtendedSurface *pOutSurface);
-
+#endif
         virtual mfxStatus DecodePreInit(sInputParams *pParams);
         virtual mfxStatus VPPPreInit(sInputParams *pParams);
         virtual mfxStatus EncodePreInit(sInputParams *pParams);
+#if !defined(MFX_ONEVPL)
         virtual mfxStatus PreEncPreInit(sInputParams *pParams);
-
+#endif
         mfxVideoParam GetDecodeParam();
 
         mfxExtOpaqueSurfaceAlloc GetDecOpaqueAlloc()
@@ -708,15 +719,17 @@ namespace TranscodingSample
         mfxStatus AllocFrames(mfxFrameAllocRequest  *pRequest, bool isDecAlloc);
         mfxStatus AllocFrames();
 
+#if !defined(MFX_ONEVPL)
         mfxStatus CorrectPreEncAuxPool(mfxU32 num_frames_in_pool);
         mfxStatus AllocPreEncAuxPool();
+        void      FreePreEncAuxPool();
+#endif //!MFX_ONEVPL
 
         // need for heterogeneous pipeline
         mfxStatus CalculateNumberOfReqFrames(mfxFrameAllocRequest  &pRequestDecOut, mfxFrameAllocRequest  &pRequestVPPOut);
         void      CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pNewReq);
         void      FreeFrames();
 
-        void      FreePreEncAuxPool();
         mfxStatus LoadStaticSurface();
 
         mfxFrameSurface1* GetFreeSurface(bool isDec, mfxU64 timeout);
@@ -729,8 +742,9 @@ namespace TranscodingSample
         mfxStatus InitVppMfxParams(sInputParams *pInParams);
         virtual mfxStatus InitEncMfxParams(sInputParams *pInParams);
         mfxStatus InitPluginMfxParams(sInputParams *pInParams);
+#if !defined(MFX_ONEVPL)
         mfxStatus InitPreEncMfxParams(sInputParams *pInParams);
-
+#endif
         virtual mfxU32 FileFourCC2EncFourCC(mfxU32 fcc);
         void FillFrameInfoForEncoding(mfxFrameInfo& info, sInputParams *pInParams);
 
@@ -773,6 +787,7 @@ namespace TranscodingSample
         std::unique_ptr<MFXVideoDECODE>   m_pmfxDEC;
         std::unique_ptr<MFXVideoENCODE>   m_pmfxENC;
         std::unique_ptr<MFXVideoMultiVPP> m_pmfxVPP; // either VPP or VPPPlugin which wraps [VPP]-Plugin-[VPP] pipeline
+#if !defined(MFX_ONEVPL)
         std::unique_ptr<MFXVideoENC>      m_pmfxPreENC;
         std::unique_ptr<MFXVideoUSER>     m_pUserDecoderModule;
         std::unique_ptr<MFXVideoUSER>     m_pUserEncoderModule;
@@ -780,7 +795,7 @@ namespace TranscodingSample
         std::unique_ptr<MFXPlugin>        m_pUserDecoderPlugin;
         std::unique_ptr<MFXPlugin>        m_pUserEncoderPlugin;
         std::unique_ptr<MFXPlugin>        m_pUserEncPlugin;
-
+#endif //!MFX_ONEVPL
         mfxFrameAllocResponse           m_mfxDecResponse;  // memory allocation response for decoder
         mfxFrameAllocResponse           m_mfxEncResponse;  // memory allocation response for encoder
 

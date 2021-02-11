@@ -31,7 +31,9 @@ add_subdirectory(mfx_lib/mctf_package)
 add_subdirectory(mfx_lib/shared)
 add_subdirectory(mfx_lib)
 
+if (NOT API_USE_VPL)
 add_subdirectory(mfx_lib/fei)
+endif()
 
 if (MFX_ENABLE_USER_ENCTOOLS)
   add_subdirectory(enctools)

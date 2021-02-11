@@ -29,11 +29,15 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
             g_tsStatus.disable();
             throw tsSKIP;
         }
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+
+        if (   par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+            || par.mfx.RateControlMethod == MFX_RATECONTROL_VME
+            )
         {
-            g_tsLog << "MFX_RATECONTROL_LA_EXT removed in OneVPL\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
+#if defined(MFX_ONEVPL)
+            g_tsLog << "Rate control mode " << par.mfx.RateControlMethod << " removed in OneVPL\n";
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+#endif //MFX_ONEVPL
         }
     }
 
@@ -87,6 +91,7 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         }
     }
 
+#if !defined(MFX_ONEVPL)
     if ( (par.mfx.CodecId == MFX_CODEC_HEVC) &&
          (uid.Data) && (0 == memcmp(uid.Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) )
     {
@@ -140,7 +145,7 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
             throw tsSKIP;
         }
     }
-
+#endif //!MFX_ONEVPL
     if ( par.mfx.CodecId == MFX_CODEC_MPEG2 )
     {
         if ( g_tsImpl != MFX_IMPL_SOFTWARE && g_tsHWtype == MFX_HW_APL )
@@ -249,6 +254,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults, MsdkPluginType 
     m_loaded = !m_uid;
 }
 
+#if !defined(MFX_ONEVPL)
 tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     : m_default(useDefaults)
     , m_initialized(false)
@@ -298,6 +304,7 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
 
     m_loaded = true;
 }
+#endif //!MFX_ONEVPL
 
 tsVideoEncoder::~tsVideoEncoder()
 {
@@ -334,17 +341,21 @@ mfxStatus tsVideoEncoder::Init()
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();TS_CHECK_MFX;
         }
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         if(m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             QueryIOSurf();
             AllocOpaque(m_request, m_par);
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     // Set single field processing flag
     mfxExtFeiParam* fei_ext = (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);
     if (fei_ext)
         m_single_field_processing = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     return Init(m_session, m_pPar);
 }
@@ -905,8 +916,9 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
     static const GUID DXVA_NoEncrypt = { 0x1b81beD0, 0xa0c7, 0x11d3, { 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
 
     HRESULT hr;
-    const mfxPluginUID * pluginId;
 
+#if !defined(MFX_ONEVPL)
+    const mfxPluginUID * pluginId;
     if (m_par.mfx.CodecId == MFX_CODEC_HEVC)
         pluginId = &MFX_PLUGINID_HEVCE_HW;
     else if (m_par.mfx.CodecId == MFX_CODEC_VP9)
@@ -921,6 +933,7 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
         }
         return MFX_ERR_UNSUPPORTED;
     }
+#endif //!MFX_ONEVPL
 
     GUID guid;
     sts = GetGuid(guid);
@@ -1405,9 +1418,11 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
     mfxSyncPoint sp;
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     mfxExtFeiParam* fei_ext= (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);
     if (fei_ext)
         m_single_field_processing = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
+#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     async = TS_MIN(n, async - 1);
 

@@ -144,7 +144,7 @@ private:
         memset(CO3, 0, sizeof(mfxExtCodingOption3));
         CO3->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
         CO3->Header.BufferSz = sizeof(mfxExtCodingOption3);
-#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
         CO3->DeblockingAlphaTcOffset = alpha;
         CO3->DeblockingBetaOffset = beta;
 #endif
@@ -222,17 +222,29 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                   { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 } } },
 #if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
     /*18*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
+#if !defined(MFX_ONEVPL)
                                                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
-                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
+                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}
+#endif //!MFX_ONEVPL
+                                               }},
     /*19*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 1 },
+#if !defined(MFX_ONEVPL)
                                                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
-                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
+                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}
+#endif //!MFX_ONEVPL
+                                               }},
     /*20*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
+#if !defined(MFX_ONEVPL)
                                                                                         { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
-                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 13}} },
+                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 13}
+#endif //!MFX_ONEVPL
+                                                                                       }},
     /*21*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
+#if !defined(MFX_ONEVPL)
                                                                                         { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 13},
-                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
+                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}
+#endif //!MFX_ONEVPL
+                                                                                       }},
     /*22*/{MFX_ERR_NONE, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INVALID_PARAMS | RUNTIME_ONLY, {}},
 #endif
 };
@@ -427,7 +439,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         cod2.DisableDeblockingIdc = 1;
         SETPARS(&cod2, EXT_COD2);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
         cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
         cod3.DeblockingBetaOffset = MAX_BETA;
         SETPARS(&cod3, EXT_COD3);
@@ -561,7 +573,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
                 cod2.DisableDeblockingIdc = 1;
                 SETPARS(&cod2, EXT_COD2);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
                 cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
                 cod3.DeblockingBetaOffset = MAX_BETA;
                 SETPARS(&cod3, EXT_COD3);
@@ -586,7 +598,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
                 mfxExtCodingOption3& cod3 = m_par;
 
                 cod2.DisableDeblockingIdc = 0;
-#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
                 cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
                 cod3.DeblockingBetaOffset = MAX_BETA;
 

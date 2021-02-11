@@ -1,3 +1,7 @@
+if (API_USE_VPL)
+  return()
+endif()
+
 add_executable(asg-hevc)
 
 target_include_directories (asg-hevc

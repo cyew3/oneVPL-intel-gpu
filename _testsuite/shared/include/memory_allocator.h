@@ -20,6 +20,10 @@ File Name: memory_allocator.h
 #include <string.h>
 #include <vector>
 
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
+
 #define MFX_MEMTYPE_XX_FOR_TEST 0x0080
 
 enum

@@ -13,6 +13,10 @@ Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 #include "mfx_ext_buffers.h"
 #include "gmock/test_suites/vp9e_utils.h"
 
+#if defined(MFX_ONEVPL)
+#include "mfxpavp.h"
+#endif
+
 namespace vp9e_query
 {
 class TestSuite : tsVideoEncoder

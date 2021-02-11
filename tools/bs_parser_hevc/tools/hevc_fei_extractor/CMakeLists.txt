@@ -1,3 +1,7 @@
+if (NOT MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+  return()
+endif()
+
 find_path( FEI_INCLUDE mfxfeihevc.h PATHS ${MFX_INCLUDE} )
 
 add_executable(hevc_fei_extractor)

@@ -13,6 +13,9 @@
 #include "ts_utils.h"
 #include "ts_encoder.h"
 
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
 
 namespace avce_mfe_fei
 {

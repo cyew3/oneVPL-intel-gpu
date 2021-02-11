@@ -22,12 +22,14 @@ static void SkipDecision(mfxVideoParam& par, eVPPFunction /*function*/)
 {
     if (g_tsConfig.core20)
     {
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         if (par.IOPattern & (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
         {
             g_tsLog << "Opaque memory is not supported by core20\n";
             g_tsStatus.disable();
             throw tsSKIP;
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
 }
 
@@ -66,6 +68,7 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
         m_par.vpp.Out = m_par.vpp.In;
         m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
+#if !defined(MFX_ONEVPL)
     if(plugin_id)
     {
         m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, plugin_id);
@@ -101,6 +104,7 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
             }
         }
     }
+#endif //!MFX_ONEVPL
 }
 
 tsVideoVPP::~tsVideoVPP()
@@ -171,14 +175,15 @@ mfxStatus tsVideoVPP::Init()
         if(set_allocator)
             SetFrameAllocator();
 
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         if(m_par.IOPattern & (MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
             QueryIOSurf();
-
         if(m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             m_pSurfPoolIn->AllocOpaque(m_request[0], m_par);
 
         if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             m_pSurfPoolOut->AllocOpaque(m_request[1], m_par);
+#endif
 
     }
     return Init(m_session, m_pPar);
@@ -509,6 +514,10 @@ mfxStatus tsVideoVPP::RunFrameVPPAsyncEx(
     mfxFrameSurface1 **surface_out,
     mfxSyncPoint *syncp)
 {
+#if defined(MFX_ONEVPL)
+    g_tsLog << "MFXVideoVPP_RunFrameVPPAsyncEx is not supported by VPL\n";
+    throw tsFAIL;
+#else
     TRACE_FUNC5(MFXVideoVPP_RunFrameVPPAsyncEx, session, in, surface_work, surface_out, syncp);
     mfxStatus mfxRes = MFXVideoVPP_RunFrameVPPAsyncEx(session, in, surface_work, surface_out, syncp);
     TS_TRACE(mfxRes);
@@ -517,6 +526,7 @@ mfxStatus tsVideoVPP::RunFrameVPPAsyncEx(
     TS_TRACE(syncp);
 
     return g_tsStatus.m_status = mfxRes;
+#endif //MFX_ONEVPL
 }
 
 mfxStatus tsVideoVPP::RunFrameVPPAsyncEx()

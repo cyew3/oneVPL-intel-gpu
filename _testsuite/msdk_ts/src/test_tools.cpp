@@ -15,10 +15,11 @@ Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 #include "test_trace.h"
 #include <string>
 #include "test_sample_allocator.h"
-#include "mfx_plugin_loader.h"
 #include "vm_time.h"
 
-
+#if !defined(MFX_ONEVPL)
+#include "mfx_plugin_loader.h"
+#endif
 
 msdk_ts_BLOCK(t_AllocSurfPool){
     mfxFrameAllocRequest& request = var_old<mfxFrameAllocRequest>("request");
@@ -922,7 +923,8 @@ msdk_ts_BLOCK(t_GetVA){
 }
 #endif //defined(LIBVA_SUPPORT)
 #endif //(defined(LINUX32) || defined(LINUX64))
-#ifdef __MFXPLUGIN_H__
+
+#if !defined(MFX_ONEVPL) && defined(__MFXPLUGIN_H__)
 msdk_ts_BLOCK(t_LoadDLLPlugin){
     mfxU32&     type     = var_def<mfxU32>     ("type", MFX_PLUGINTYPE_VIDEO_DECODE);
     char*       dll_name = var_old<char*>      ("dll_name");
@@ -969,4 +971,4 @@ msdk_ts_BLOCK(t_LoadDLLPlugin){
     }
     return msdk_ts::resOK;
 }
-#endif //#ifdef __MFXPLUGIN_H__
+#endif //!MFX_ONEVPL && __MFXPLUGIN_H__

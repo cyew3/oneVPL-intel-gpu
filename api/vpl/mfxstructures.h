@@ -238,6 +238,18 @@ typedef struct
 } mfxY410;
 MFX_PACK_END()
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct
+{
+    mfxU32 U : 16;
+    mfxU32 Y : 16;
+    mfxU32 V : 16;
+    mfxU32 A : 16;
+} mfxY416;
+MFX_PACK_END()
+#endif
+
 MFX_PACK_BEGIN_USUAL_STRUCT()
 /*! Specifies "pixel" in A2RGB10 color format */
 typedef struct
@@ -303,6 +315,9 @@ typedef struct {
         mfxU16  *U16;   /*!< U16 channel. */
         mfxU8   *G;     /*!< G channel. */
         mfxY410 *Y410;  /*!< T410 channel for Y410 format (merged AVYU). */
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxY416 *Y416;  /* for Y416 format (merged AVYU) */
+#endif
     };
     union {
         mfxU8   *Cr;    /*!< Cr channel. */
@@ -2012,15 +2027,7 @@ enum {
        This extended buffer configures HDR SEI message. See the mfxExtMasteringDisplayColourVolume structure for details.
     */
     MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D', 'C', 'V', 'S'),
-    /*!
-       This extended buffer allow to specify multi-frame submission parameters.
-    */
-    MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M', 'F', 'R', 'P'),
-    /*!
-       This extended buffer allow to manage multi-frame submission in runtime.
-    */
-    MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M', 'F', 'R', 'C'),
-    /*!
+	/*!
        See the mfxExtEncodedUnitsInfo structure for details.
     */
     MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E', 'N', 'U', 'I'),

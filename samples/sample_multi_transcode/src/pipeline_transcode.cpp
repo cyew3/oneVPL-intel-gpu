@@ -26,13 +26,14 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "pipeline_transcode.h"
 #include "transcode_utils.h"
 #include "sample_utils.h"
+#if !defined(MFX_ONEVPL)
 #include "mfx_vpp_plugin.h"
+#endif
 #include "mfx_itt_trace.h"
 #include <algorithm>
 #include <cstring>
 #include <assert.h>
 
-#include "plugin_loader.h"
 #include "parameters_dumper.h"
 
 #include "sample_utils.h"
@@ -232,6 +233,7 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
 
     if (m_bDecodeEnable)
     {
+#if !defined(MFX_ONEVPL)
         if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API))
         {
             /* Here we actually define the following codec initialization scheme:
@@ -268,6 +270,7 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
             }
             MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
         }
+#endif //!MFX_ONEVPL
 
         // create decoder
         if (!m_bUseOverlay)
@@ -363,6 +366,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
             MSDK_CHECK_STATUS(sts, "InitVppMfxParams failed");
         }
 
+#if !defined(MFX_ONEVPL)
         if (pParams->nRotationAngle) // plugin was requested
         {
             m_bIsPlugin = true;
@@ -371,6 +375,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
             sts = LoadGenericPlugin();
             MSDK_CHECK_STATUS(sts, "LoadGenericPlugin failed");
         }
+#endif //!MFX_ONEVPL
 
         if (!m_bIsPlugin && m_bIsVpp) // only VPP was requested
         {
@@ -391,6 +396,7 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
     {
         if(pParams->EncodeId != MFX_CODEC_DUMP)
         {
+#if !defined(MFX_ONEVPL)
             if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API) && (m_pUserEncPlugin.get() == NULL))
             {
                 /* Here we actually define the following codec initialization scheme:
@@ -427,6 +433,7 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
                 }
                 MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
             }
+#endif //!MFX_ONEVPL
 
             // create encoder
             m_pmfxENC.reset(new MFXVideoENCODE(*m_pmfxSession.get()));
@@ -479,6 +486,7 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
 } // mfxStatus CTranscodingPipeline::EncodeInit(sInputParams *pParams)
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CTranscodingPipeline::PreEncPreInit(sInputParams *pParams)
 {
      mfxStatus sts = MFX_ERR_NONE;
@@ -500,9 +508,10 @@ mfxStatus CTranscodingPipeline::PreEncPreInit(sInputParams *pParams)
         sts = InitPreEncMfxParams(pParams);
         MSDK_CHECK_STATUS(sts, "InitPreEncMfxParams failed");
     }
-    return sts;
 
+    return sts;
 }
+#endif //!MFX_ONEVPL
 
 mfxVideoParam CTranscodingPipeline::GetDecodeParam() {
     if (m_bIsVpp)
@@ -770,6 +779,7 @@ mfxStatus CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface, mfx
 
 } //CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface)
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CTranscodingPipeline::PreEncOneFrame(ExtendedSurface *pInSurface, ExtendedSurface *pOutSurface)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -816,6 +826,7 @@ mfxStatus CTranscodingPipeline::PreEncOneFrame(ExtendedSurface *pInSurface, Exte
     }
     return sts;
 }
+#endif //!MFX_ONEVPL
 
 // signal that there are no more frames
 void CTranscodingPipeline::NoMoreFramesSignal()
@@ -943,7 +954,11 @@ mfxStatus CTranscodingPipeline::Decode()
                     inputStatistics.ResetStatistics();
                 }
             }
-            if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
+            if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get()
+#if !defined(MFX_ONEVPL)
+                || m_pmfxPreENC.get()
+#endif
+                ))
             {
                 DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
                 sts = MFX_ERR_NONE;
@@ -1037,19 +1052,23 @@ mfxStatus CTranscodingPipeline::Decode()
                 continue; // go get next frame from Decode
             }
         }
+#if !defined(MFX_ONEVPL)
         if (sts == MFX_ERR_MORE_DATA && m_pmfxPreENC.get())
         {
            VppExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
            sts = MFX_ERR_NONE;
         }
+#endif //!MFX_ONEVPL
 
         MSDK_BREAK_ON_ERROR(sts);
 
+#if !defined(MFX_ONEVPL)
         if (m_pmfxPreENC.get())
         {
             sts = PreEncOneFrame(&VppExtSurface, &PreEncExtSurface);
         }
         else // no VPP - just copy pointers
+#endif //!MFX_ONEVPL
         {
             PreEncExtSurface.pSurface = VppExtSurface.pSurface;
             PreEncExtSurface.Syncp = VppExtSurface.Syncp;
@@ -1073,7 +1092,11 @@ mfxStatus CTranscodingPipeline::Decode()
         // If there was PreENC plugin in the pipeline - synchronize, because
         // plugin will output data to the extended buffers and mediasdk can't
         // track such dependency on its own.
-        if ((!m_bIsJoinSession && m_pParentPipeline) || m_pmfxPreENC.get())
+        if ((!m_bIsJoinSession && m_pParentPipeline)
+#if !defined(MFX_ONEVPL)
+            || m_pmfxPreENC.get()
+#endif
+            )
         {
             MFX_ITT_TASK("SyncOperation");
             sts = m_pmfxSession->SyncOperation(PreEncExtSurface.Syncp, MSDK_WAIT_INTERVAL);
@@ -2333,6 +2356,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
 
+#if !defined(MFX_ONEVPL)
 #if (MFX_VERSION >= 1025)
     if(pInParams->numMFEFrames || pInParams->MFMode)
     {
@@ -2347,6 +2371,9 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         mfeCtrl->Timeout = pInParams->mfeTimeout;
     }
 #endif
+#endif //!MFX_ONEVPL
+
+#if !defined(MFX_ONEVPL)
     if (m_pParentPipeline && m_pParentPipeline->m_pmfxPreENC.get())
     {
         m_mfxEncParams.mfx.RateControlMethod       = MFX_RATECONTROL_LA_EXT;
@@ -2354,6 +2381,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         m_mfxEncParams.AsyncDepth = m_mfxEncParams.AsyncDepth == 0 ? 2: m_mfxEncParams.AsyncDepth;
     }
     else
+#endif //!MFX_ONEVPL
     {
         m_mfxEncParams.mfx.RateControlMethod   = pInParams->nRateControlMethod;
     }
@@ -2590,10 +2618,12 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     if (pInParams->bIsMVC)
         m_mfxEncParams.AddExtBuffer<mfxExtMVCSeqDesc>();
 
+#if !defined(MFX_ONEVPL)
     if (m_pParentPipeline)
     {
         m_pParentPipeline->AddLaStreams(m_mfxEncParams.mfx.FrameInfo.Width,m_mfxEncParams.mfx.FrameInfo.Height);
     }
+#endif //!MFX_ONEVPL
 
     //--- Settings HRD buffer size
     if (pInParams->BufferSizeInKB)
@@ -2648,6 +2678,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CTranscodingPipeline::CorrectPreEncAuxPool(mfxU32 num_frames_in_pool)
 {
     if (!m_pmfxPreENC) return MFX_ERR_NONE;
@@ -2706,6 +2737,7 @@ void CTranscodingPipeline::FreePreEncAuxPool()
      }
      m_pPreEncAuxPool.resize(0);
 }
+#endif //!MFX_ONEVPL
 
 mfxStatus TranscodingSample::CTranscodingPipeline::LoadStaticSurface()
 {
@@ -2722,6 +2754,7 @@ mfxStatus TranscodingSample::CTranscodingPipeline::LoadStaticSurface()
     return MFX_ERR_NONE;
 }
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CTranscodingPipeline::InitPreEncMfxParams(sInputParams *pInParams)
 {
     MSDK_CHECK_ERROR(pInParams->bEnableExtLA, false, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -2802,6 +2835,7 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     }
     return MFX_ERR_NONE;
 }
+#endif //!MFX_ONEVPL
 
 mfxU32 CTranscodingPipeline::FileFourCC2EncFourCC(mfxU32 fcc)
 {
@@ -3331,10 +3365,12 @@ mfxStatus CTranscodingPipeline::AllocFrames()
 
             sts = AllocFrames(&DecOut, true);
             MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+#if !defined(MFX_ONEVPL)
             sts = CorrectPreEncAuxPool((VPPOut.NumFrameSuggested ? VPPOut.NumFrameSuggested : DecOut.NumFrameSuggested) + m_AsyncDepth);
             MSDK_CHECK_STATUS(sts, "CorrectPreEncAuxPool failed");
             sts = AllocPreEncAuxPool();
             MSDK_CHECK_STATUS(sts, "AllocPreEncAuxPool failed");
+#endif //!MFX_ONEVPL
         }
         else if((m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly || m_nVPPCompEnable==VppCompOnlyEncode) && m_bUseOpaqueMemory)
         {
@@ -3348,8 +3384,10 @@ mfxStatus CTranscodingPipeline::AllocFrames()
                 (0 == m_nVPPCompEnable) /* case if 1_to_N  */)
             {
                 m_pParentPipeline->CorrectNumberOfAllocatedFrames(&DecOut);
+#if !defined(MFX_ONEVPL)
                 sts = m_pParentPipeline->CorrectPreEncAuxPool(VPPOut.NumFrameSuggested + DecOut.NumFrameSuggested + m_AsyncDepth);
                 MSDK_CHECK_STATUS(sts, "m_pParentPipeline->CorrectPreEncAuxPool failed");
+#endif //!MFX_ONEVPL
             }
         }
     }
@@ -3421,6 +3459,8 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         pSumRequest = &pVPPOut;
         SumAllocRequest(*pSumRequest, VppRequest[1]);
     }
+
+#if !defined(MFX_ONEVPL)
     if (m_pmfxPreENC.get())
     {
         mfxFrameAllocRequest PreEncRequest;
@@ -3433,6 +3473,8 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
             return MFX_ERR_MEMORY_ALLOC;
         SumAllocRequest(*pSumRequest, PreEncRequest);
     }
+#endif //!MFX_ONEVPL
+
     if (m_pmfxENC.get())
     {
         mfxFrameAllocRequest EncRequest;
@@ -3536,6 +3578,7 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
         else
             return MFX_ERR_UNSUPPORTED;
     }
+#if !defined(MFX_ONEVPL)
     else if (m_pmfxENC.get() || m_pmfxPreENC.get())
     {
         encOpaq->In = decOpaq->Out;
@@ -3544,6 +3587,7 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
     {
         preencOpaq->In = encOpaq->In;
     }
+#endif //!MFX_ONEVPL
 
     return MFX_ERR_NONE;
 }
@@ -3802,9 +3846,11 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         ModifyParamsUsingPresets(*pParams, ((double)eInfo.FrameRateExtN) / eInfo.FrameRateExtD, eInfo.Width, eInfo.Height);
     }
 
+#if !defined(MFX_ONEVPL)
     // LA component initialization
     sts = PreEncPreInit(pParams);
     MSDK_CHECK_STATUS(sts, "PreEncPreInit failed");
+#endif //MFX_ONEVPL
 
     // Encode component initialization
     if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
@@ -3887,12 +3933,15 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         }
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
     }
+#if !defined(MFX_ONEVPL)
     // LA initialization
     if (m_pmfxPreENC.get())
     {
         sts = m_pmfxPreENC->Init(&m_mfxPreEncParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxPreENC->Init failed");
     }
+#endif //!MFX_ONEVPL
+
     // Init encode
     if (m_pmfxENC.get())
     {
@@ -3991,7 +4040,9 @@ mfxStatus CTranscodingPipeline::CompleteInit()
             sts = m_pmfxVPP->Init(&m_mfxVppParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
     }
-        // Pre init encode
+
+#if !defined(MFX_ONEVPL)
+    // Pre init encode
     if (m_pmfxPreENC.get())
     {
         sts = m_pmfxPreENC->Init(&m_mfxPreEncParams);
@@ -4002,6 +4053,8 @@ mfxStatus CTranscodingPipeline::CompleteInit()
         }
         MSDK_CHECK_STATUS(sts, "m_pmfxPreENC->Init failed");
     }
+#endif //!MFX_ONEVPL
+
     // Init encode
     if (m_pmfxENC.get())
     {
@@ -4170,6 +4223,7 @@ mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
     return sts;
 }
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CTranscodingPipeline::LoadGenericPlugin()
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -4193,6 +4247,7 @@ mfxStatus CTranscodingPipeline::LoadGenericPlugin()
     m_pmfxVPP.reset(pVPPPlugin.release());
     return MFX_ERR_NONE;
 }
+#endif //!MFX_ONEVPL
 
 size_t CTranscodingPipeline::GetRobustFlag()
 {
@@ -4210,6 +4265,7 @@ void CTranscodingPipeline::Close()
     if (m_pmfxVPP.get())
         m_pmfxVPP->Close();
 
+#if !defined(MFX_ONEVPL)
     if (m_pUserDecoderPlugin.get())
         m_pUserDecoderPlugin.reset();
 
@@ -4218,11 +4274,13 @@ void CTranscodingPipeline::Close()
 
     if (m_pUserEncPlugin.get())
         m_pUserEncPlugin.reset();
-
+#endif //!MFX_ONEVPL
 
     FreeVppDoNotUse();
     FreeMVCSeqDesc();
+#if !defined(MFX_ONEVPL)
     FreePreEncAuxPool();
+#endif
 
     mfxExtVPPComposite* vppCompPar = m_mfxVppParams;
     if (vppCompPar && vppCompPar->InputStream)
@@ -4253,14 +4311,17 @@ void CTranscodingPipeline::Close()
 mfxStatus CTranscodingPipeline::Reset()
 {
     mfxStatus sts = MFX_ERR_NONE;
-    bool isDec = m_pmfxDEC.get() ? true : false,
-        isEnc = m_pmfxENC.get() ? true : false,
-        isVPP = m_pmfxVPP.get() ? true : false,
-        isPreEnc = m_pmfxPreENC.get() ? true : false,
-        isGenericPLugin = m_nRotationAngle ? true : false,
-        isDecoderPlugin = m_pUserDecoderPlugin.get() ? true : false,
-        isEncoderPlugin = m_pUserEncoderPlugin.get() ? true : false,
-        isPreEncPlugin = m_pUserEncPlugin.get() ? true : false;
+    bool isDec = m_pmfxDEC.get() ? true : false
+        , isEnc = m_pmfxENC.get() ? true : false
+        , isVPP = m_pmfxVPP.get() ? true : false
+        , isGenericPLugin = m_nRotationAngle ? true : false
+#if !defined(MFX_ONEVPL)
+        , isPreEnc = m_pmfxPreENC.get() ? true : false
+        , isDecoderPlugin = m_pUserDecoderPlugin.get() ? true : false
+        , isEncoderPlugin = m_pUserEncoderPlugin.get() ? true : false
+        , isPreEncPlugin = m_pUserEncPlugin.get() ? true : false
+#endif //!MFX_ONEVPL
+        ;
 
     // Close components being used
     if (isDec)
@@ -4275,16 +4336,17 @@ mfxStatus CTranscodingPipeline::Reset()
         m_pmfxVPP.reset();
     }
 
-    if (isPreEnc)
-    {
-        m_pmfxPreENC->Close();
-        m_pmfxPreENC.reset();
-    }
-
     if (isEnc)
     {
         m_pmfxENC->Close();
         m_pmfxENC.reset();
+    }
+
+#if !defined(MFX_ONEVPL)
+    if (isPreEnc)
+    {
+        m_pmfxPreENC->Close();
+        m_pmfxPreENC.reset();
     }
 
     if (isDecoderPlugin)
@@ -4298,6 +4360,8 @@ mfxStatus CTranscodingPipeline::Reset()
         m_pUserEncoderPlugin.reset();
         m_pUserEncoderModule.reset();
     }
+#endif //!MFX_ONEVPL
+
     m_pmfxSession->Close();
     m_pmfxSession.reset();
 
@@ -4328,6 +4392,7 @@ mfxStatus CTranscodingPipeline::Reset()
     m_pBSStore->ReleaseAll();
     m_pBSStore->FlushAll();
 
+#if !defined(MFX_ONEVPL)
     // Load external decoder plugin
     if (isDecoderPlugin)
     {
@@ -4383,6 +4448,7 @@ mfxStatus CTranscodingPipeline::Reset()
         if (m_pUserEncPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
     }
+#endif //!MFX_ONEVPL
 
     sts = SetAllocatorAndHandleIfRequired();
     MSDK_CHECK_STATUS(sts, "SetAllocatorAndHandleIfRequired failed");
@@ -4391,8 +4457,11 @@ mfxStatus CTranscodingPipeline::Reset()
         m_pmfxDEC.reset(new MFXVideoDECODE((mfxSession)*m_pmfxSession));
     if (isVPP)
         m_pmfxVPP.reset(new MFXVideoMultiVPP((mfxSession)*m_pmfxSession));
+#if !defined(MFX_ONEVPL)
     if (isPreEnc)
         m_pmfxPreENC.reset(new MFXVideoENC((mfxSession)*m_pmfxSession));
+#endif //!MFX_ONEVPL
+
     if (isEnc)
         m_pmfxENC.reset(new MFXVideoENCODE((mfxSession)*m_pmfxSession));
 
@@ -4402,11 +4471,13 @@ mfxStatus CTranscodingPipeline::Reset()
         MSDK_CHECK_STATUS(sts, "m_pmfxDEC->Init failed");
     }
 
+#if !defined(MFX_ONEVPL)
     if (isGenericPLugin)
     {
         sts = LoadGenericPlugin();
         MSDK_CHECK_STATUS(sts, "LoadGenericPlugin failed");
     }
+#endif //!MFX_ONEVPL
 
     if (isVPP)
     {
@@ -4425,11 +4496,13 @@ mfxStatus CTranscodingPipeline::Reset()
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
     }
 
+#if !defined(MFX_ONEVPL)
     if (isPreEnc)
     {
         sts = m_pmfxPreENC->Init(&m_mfxPreEncParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxPreENC->Init failed");
     }
+#endif //!MFX_ONEVPL
 
     if (isEnc)
     {

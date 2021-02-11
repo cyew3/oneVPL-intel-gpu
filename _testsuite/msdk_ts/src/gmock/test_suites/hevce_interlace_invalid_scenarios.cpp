@@ -37,6 +37,7 @@ namespace hevce_interlace_invalid_scenarios
 
     using namespace BS_HEVC;
 
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
     void SetDefaultsToCtrl(mfxExtFeiHevcEncFrameCtrl& ctrl)
     {
         memset(&ctrl, 0, sizeof(ctrl));
@@ -49,6 +50,7 @@ namespace hevce_interlace_invalid_scenarios
         // enable internal L0/L1 predictors: 1 - spatial predictors
         ctrl.MultiPred[0] = ctrl.MultiPred[1] = 1;
     }
+#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
 
     class TestSuite : public tsVideoEncoder, public tsSurfaceProcessor, public tsBitstreamProcessor, public tsParserHEVCAU
     {
@@ -426,12 +428,14 @@ namespace hevce_interlace_invalid_scenarios
         m_loaded = false;
         Load();
 
+#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
         // In case of FEI ENCODE additional runtime buffer required
         if (is_HEVCeFEI)
         {
             mfxExtFeiHevcEncFrameCtrl& control = m_ctrl;
             SetDefaultsToCtrl(m_ctrl);
         }
+#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
 
         // ENCODE frames
         for (mfxU32 encoded = 0; encoded < frameNumber; ++encoded)

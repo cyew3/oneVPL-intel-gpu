@@ -25,11 +25,10 @@
 
 #include "mfxstructures.h"
 
-#if !defined(MFX_ONEVPL)
-#include "mfxplugin.h"
-#else
+#if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h"
 #endif
+#include "mfxplugin.h"
 
 #include "umc_structures.h"
 #include "mfx_trace.h"

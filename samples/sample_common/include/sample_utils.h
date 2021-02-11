@@ -34,13 +34,18 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 #include "mfxjpeg.h"
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
 #include "mfxplugin.h"
 #include "mfxbrc.h"
+#include "mfxmvc.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxfei.h"
 #include "mfxfeihevc.h"
-#include "mfxmvc.h"
 #include "mfxenctools.h"
 #include "mfxla.h"
+#endif //!MFX_ONEVPL
 
 #include "vm/strings_defs.h"
 #include "vm/file_defs.h"
@@ -105,7 +110,9 @@ enum
     MFX_FOURCC_RGBP24         = MFX_MAKEFOURCC('R','G','B','P'),
 #else
 #endif
+#if !defined(MFX_ONEVPL)
     MFX_FOURCC_I420         = MFX_MAKEFOURCC('I','4','2','0')
+#endif
 };
 
 enum ExtBRCType {
@@ -258,6 +265,7 @@ template<>struct mfx_ext_buffer_id<mfxExtAVCRefListCtrl>{
 template<>struct mfx_ext_buffer_id<mfxExtThreadsParam>{
     enum {id = MFX_EXTBUFF_THREADS_PARAM};
 };
+#if !defined(MFX_ONEVPL)
 template<>struct mfx_ext_buffer_id<mfxExtFeiParam> {
     enum {id = MFX_EXTBUFF_FEI_PARAM};
 };
@@ -269,6 +277,45 @@ template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMV>{
 };
 template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMBStat>{
     enum {id = MFX_EXTBUFF_FEI_PREENC_MB};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiCodingOption> {
+    enum { id = MFX_EXTBUFF_FEI_CODING_OPTION };
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiSliceHeader> {
+    enum {id = MFX_EXTBUFF_FEI_SLICE};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiEncFrameCtrl> {
+    enum {id = MFX_EXTBUFF_FEI_ENC_CTRL};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiEncMVPredictors> {
+    enum {id = MFX_EXTBUFF_FEI_ENC_MV_PRED};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiRepackCtrl> {
+    enum {id = MFX_EXTBUFF_FEI_REPACK_CTRL};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiEncMBCtrl> {
+    enum {id = MFX_EXTBUFF_FEI_ENC_MB};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiEncQP> {
+    enum {id = MFX_EXTBUFF_FEI_ENC_QP};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiEncMBStat> {
+    enum {id = MFX_EXTBUFF_FEI_ENC_MB_STAT};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiEncMV> {
+    enum {id = MFX_EXTBUFF_FEI_ENC_MV};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiPakMBCtrl> {
+    enum {id = MFX_EXTBUFF_FEI_PAK_CTRL};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiRepackStat> {
+    enum {id = MFX_EXTBUFF_FEI_REPACK_STAT};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiSPS> {
+    enum {id = MFX_EXTBUFF_FEI_SPS};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiPPS > {
+    enum {id = MFX_EXTBUFF_FEI_PPS};
 };
 template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncFrameCtrl>{
     enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTRL};
@@ -282,14 +329,15 @@ template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncQP>{
 template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncCtuCtrl>{
     enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL};
 };
-template<>struct mfx_ext_buffer_id<mfxExtHEVCRefLists>{
-    enum {id = MFX_EXTBUFF_HEVC_REFLISTS};
-};
 template<>struct mfx_ext_buffer_id<mfxExtFeiHevcRepackCtrl>{
     enum {id = MFX_EXTBUFF_HEVCFEI_REPACK_CTRL};
 };
 template<>struct mfx_ext_buffer_id<mfxExtFeiHevcRepackStat>{
     enum {id = MFX_EXTBUFF_HEVCFEI_REPACK_STAT};
+};
+#endif //!MFX_ONEVPL
+template<>struct mfx_ext_buffer_id<mfxExtHEVCRefLists>{
+    enum {id = MFX_EXTBUFF_HEVC_REFLISTS};
 };
 template<>struct mfx_ext_buffer_id<mfxExtBRC> {
     enum {id = MFX_EXTBUFF_BRC};
@@ -336,6 +384,7 @@ template<>struct mfx_ext_buffer_id<mfxExtVPPDetail> {
 template<>struct mfx_ext_buffer_id<mfxExtVPPFrameRateConversion> {
     enum {id = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION};
 };
+#if !defined(MFX_ONEVPL)
 template<>struct mfx_ext_buffer_id<mfxExtLAControl> {
     enum {id = MFX_EXTBUFF_LOOKAHEAD_CTRL};
 };
@@ -345,6 +394,7 @@ template<>struct mfx_ext_buffer_id<mfxExtMultiFrameControl> {
 template<>struct mfx_ext_buffer_id<mfxExtMultiFrameParam> {
     enum {id = MFX_EXTBUFF_MULTI_FRAME_PARAM};
 };
+#endif //!MFX_ONEVPL
 template<>struct mfx_ext_buffer_id<mfxExtHEVCTiles> {
     enum {id = MFX_EXTBUFF_HEVC_TILES};
 };
@@ -360,16 +410,13 @@ template<>struct mfx_ext_buffer_id<mfxExtHEVCRegion> {
 template<>struct mfx_ext_buffer_id<mfxExtAVCRoundingOffset> {
     enum {id = MFX_EXTBUFF_AVC_ROUNDING_OFFSET};
 };
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT)
 template<>struct mfx_ext_buffer_id<mfxExtEncToolsConfig> {
     enum { id = MFX_EXTBUFF_ENCTOOLS_CONFIG };
 };
 #endif
 template<>struct mfx_ext_buffer_id<mfxExtPartialBitstreamParam> {
     enum { id = MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM };
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiCodingOption> {
-    enum { id = MFX_EXTBUFF_FEI_CODING_OPTION };
 };
 template<>struct mfx_ext_buffer_id<mfxExtVPPDenoise> {
     enum {id = MFX_EXTBUFF_VPP_DENOISE};
@@ -401,45 +448,11 @@ template<>struct mfx_ext_buffer_id<mfxExtColorConversion> {
 template<>struct mfx_ext_buffer_id<mfxExtPredWeightTable> {
     enum {id = MFX_EXTBUFF_PRED_WEIGHT_TABLE};
 };
+#if !defined(MFX_ONEVPL)
 template<>struct mfx_ext_buffer_id<mfxExtFeiDecStreamOut> {
     enum {id = MFX_EXTBUFF_FEI_DEC_STREAM_OUT};
 };
-template<>struct mfx_ext_buffer_id<mfxExtFeiSliceHeader> {
-    enum {id = MFX_EXTBUFF_FEI_SLICE};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiEncFrameCtrl> {
-    enum {id = MFX_EXTBUFF_FEI_ENC_CTRL};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiEncMVPredictors> {
-    enum {id = MFX_EXTBUFF_FEI_ENC_MV_PRED};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiRepackCtrl> {
-    enum {id = MFX_EXTBUFF_FEI_REPACK_CTRL};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiEncMBCtrl> {
-    enum {id = MFX_EXTBUFF_FEI_ENC_MB};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiEncQP> {
-    enum {id = MFX_EXTBUFF_FEI_ENC_QP};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiEncMBStat> {
-    enum {id = MFX_EXTBUFF_FEI_ENC_MB_STAT};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiEncMV> {
-    enum {id = MFX_EXTBUFF_FEI_ENC_MV};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiPakMBCtrl> {
-    enum {id = MFX_EXTBUFF_FEI_PAK_CTRL};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiRepackStat> {
-    enum {id = MFX_EXTBUFF_FEI_REPACK_STAT};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiSPS> {
-    enum {id = MFX_EXTBUFF_FEI_SPS};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiPPS > {
-    enum {id = MFX_EXTBUFF_FEI_PPS};
-};
+#endif //!MFX_ONEVPL
 
 constexpr uint16_t max_num_ext_buffers = 63 * 2; // '*2' is for max estimation if all extBuffer were 'paired'
 
@@ -456,6 +469,7 @@ template <typename T> struct IsPairedMfxExtBuffer                 : std::false_t
 template <> struct IsPairedMfxExtBuffer<mfxExtAVCRefListCtrl>     : std::true_type {};
 template <> struct IsPairedMfxExtBuffer<mfxExtAVCRoundingOffset>  : std::true_type {};
 template <> struct IsPairedMfxExtBuffer<mfxExtPredWeightTable>    : std::true_type {};
+#if !defined(MFX_ONEVPL)
 template <> struct IsPairedMfxExtBuffer<mfxExtFeiSliceHeader>     : std::true_type {};
 template <> struct IsPairedMfxExtBuffer<mfxExtFeiEncFrameCtrl>    : std::true_type {};
 template <> struct IsPairedMfxExtBuffer<mfxExtFeiEncMVPredictors> : std::true_type {};
@@ -466,7 +480,7 @@ template <> struct IsPairedMfxExtBuffer<mfxExtFeiEncMBStat>       : std::true_ty
 template <> struct IsPairedMfxExtBuffer<mfxExtFeiEncMV>           : std::true_type {};
 template <> struct IsPairedMfxExtBuffer<mfxExtFeiPakMBCtrl>       : std::true_type {};
 template <> struct IsPairedMfxExtBuffer<mfxExtFeiRepackStat>      : std::true_type {};
-
+#endif //!MFX_ONEVPL
 template <typename R>
 struct ExtParamAccessor
 {
@@ -688,15 +702,17 @@ private:
             MFX_EXTBUFF_CODING_OPTION,
             MFX_EXTBUFF_CODING_OPTION2,
             MFX_EXTBUFF_CODING_OPTION3,
-            MFX_EXTBUFF_FEI_PARAM,
             MFX_EXTBUFF_BRC,
             MFX_EXTBUFF_HEVC_PARAM,
             MFX_EXTBUFF_VP9_PARAM,
+#if !defined(MFX_ONEVPL)
             MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+            MFX_EXTBUFF_FEI_PARAM,
             MFX_EXTBUFF_FEI_PPS,
             MFX_EXTBUFF_FEI_SPS,
             MFX_EXTBUFF_LOOKAHEAD_CTRL,
             MFX_EXTBUFF_LOOKAHEAD_STAT
+#endif //!MFX_ONEVPL
         };
 
         auto it = std::find_if(std::begin(allowed), std::end(allowed),

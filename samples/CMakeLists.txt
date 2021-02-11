@@ -21,12 +21,15 @@
 #find_package(MFX 1.30 REQUIRED CONFIG)
 
 add_subdirectory(sample_common)
-add_subdirectory(sample_decode)
-add_subdirectory(sample_encode)
-add_subdirectory(sample_vpp)
 add_subdirectory(sample_multi_transcode)
 
 if (NOT ${API_USE_VPL})
+#Temporary disabled for VPL
+add_subdirectory(sample_decode)
+add_subdirectory(sample_encode)
+add_subdirectory(sample_vpp)
+
+#Not supported in VPL
 add_subdirectory(sample_plugins/rotate_cpu)
 add_subdirectory(sample_plugins/rotate_opencl)
 add_subdirectory(sample_plugins/vpp_plugin)

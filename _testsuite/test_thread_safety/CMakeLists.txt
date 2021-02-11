@@ -28,12 +28,11 @@ target_sources(test_thread_safety
 )
 
 target_link_libraries(test_thread_safety
-  PUBLIC
+  PRIVATE
     mfx_trans_pipeline
     mfx_pipeline
     shared_utils
     sample_common
-    mfx
     media_buffers
     umc_io
     umc
@@ -43,7 +42,6 @@ target_link_libraries(test_thread_safety
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>
     mfx_trace
     mfx_shared_lib
-    ${ITT_LIBRARIES}
     IPP::vc IPP::cc IPP::dc IPP::i IPP::s IPP::core
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}

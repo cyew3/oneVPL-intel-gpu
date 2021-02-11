@@ -171,11 +171,13 @@ int TestSuite::RunTest(unsigned int id)
         sts_query = MFX_ERR_UNSUPPORTED;
         sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
     }
+#if !defined(MFX_ONEVPL)
     if (tc.set_par[0].ext_type == MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
     {
         sts_query = MFX_ERR_UNSUPPORTED;
         sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
     }
+#endif //!MFX_ONEVPL
     if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
     {
         sts_query = MFX_ERR_UNSUPPORTED;

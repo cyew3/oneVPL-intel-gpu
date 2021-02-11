@@ -82,7 +82,7 @@ EXTBUF(mfxExtEncodedUnitsInfo            , MFX_EXTBUFF_ENCODED_UNITS_INFO       
 #if (MFX_VERSION >= 1031)
 EXTBUF(mfxExtPartialBitstreamParam       , MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM   )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtAVCScalingMatrix            , MFX_EXTBUFF_AVC_SCALING_MATRIX        )
 #endif
 EXTBUF(mfxExtEncoderIPCMArea             , MFX_EXTBUFF_ENCODER_IPCM_AREA               )
@@ -174,7 +174,7 @@ EXTBUF(mfxExtVP9DecodedFrameInfo         , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO   
 EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 #endif // defined(__MFXBRC_H__)
 
-#if defined(__MFXPCP_H__)
+#if defined(__MFXPCP_H__) && !defined(MFX_ONEVPL) || defined(__MFXPAVP_H__)
 #if !defined(OPEN_SOURCE)
 EXTBUF(mfxExtPAVPOption                  , MFX_EXTBUFF_PAVP_OPTION               )
 #endif

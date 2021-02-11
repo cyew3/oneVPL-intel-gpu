@@ -34,8 +34,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_types.h"
 #include "mfxvp8.h"
 #include "mfxmvc.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxla.h"
-
+#endif
 #ifndef MFX_VERSION
 #error MFX_VERSION not defined
 #endif
@@ -52,7 +53,12 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 void CParametersDumper::SerializeFrameInfoStruct(msdk_ostream& sstr,msdk_string prefix,mfxFrameInfo& info)
 {
     SERIALIZE_INFO_ARRAY(reserved);
+#if defined(MFX_ONEVPL)
+    SERIALIZE_INFO(ChannelId);
+#else
     SERIALIZE_INFO(reserved4);
+#endif //MFX_ONEVPL
+
     SERIALIZE_INFO(BitDepthLuma);
     SERIALIZE_INFO(BitDepthChroma);
     SERIALIZE_INFO(Shift);
@@ -205,6 +211,7 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             END_PROC_ARRAY
         }
         break;
+#if !defined(MFX_ONEVPL)
     case MFX_EXTBUFF_LOOKAHEAD_CTRL:
         {
             mfxExtLAControl& info = *(mfxExtLAControl*)pExtBuffer;
@@ -231,6 +238,7 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             //DO_MANUALLY:     mfxFrameSurface1 *OutSurface; //reordered surface
         }
         break;
+#endif //!MFX_ONEVPL
     case MFX_EXTBUFF_MVC_SEQ_DESC:
         {
             mfxExtMVCSeqDesc& info = *(mfxExtMVCSeqDesc*)pExtBuffer;
@@ -255,11 +263,13 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO_ARRAY(ViewId);
         }
         break;
+#if !defined(MFX_ONEVPL)
     case MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION:
         {
             // No structure accociated with MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION
         }
         break;
+#endif //MFX_ONEVPL
     case MFX_EXTBUFF_CODING_OPTION:
         {
             mfxExtCodingOption& info = *(mfxExtCodingOption*)pExtBuffer;

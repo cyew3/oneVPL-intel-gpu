@@ -119,7 +119,7 @@ if (BUILD_DISPATCHER)
       INTERFACE ${ONEVPL_API_HEADER_DIRECTORY}
     )
     add_subdirectory(api/mfx_dispatch/vpl)
-    set(MFX_DISPATCHER onevpl)
+    set(MFX_DISPATCHER VPL)
   else()
     if (CMAKE_SYSTEM_NAME MATCHES Linux)
       add_subdirectory(api/mfx_dispatch/linux)

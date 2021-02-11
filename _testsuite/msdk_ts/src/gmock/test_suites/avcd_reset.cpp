@@ -10,6 +10,9 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "ts_decoder.h"
 #include "ts_struct.h"
+#if defined(MFX_ONEVPL)
+#include "mfxpavp.h"
+#endif
 
 namespace avcd_reset
 {

@@ -82,12 +82,15 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
             p->mfx.QPP = 25;
         if (!p->mfx.GopPicSize || p->mfx.GopRefDist > 1)
             p->mfx.QPB = 25;
-    } else if (p->mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
-               p->mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-               p->mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
-               p->mfx.RateControlMethod == MFX_RATECONTROL_LA ||
-               p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
-               p->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    } else if (p->mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || p->mfx.RateControlMethod == MFX_RATECONTROL_VBR
+        || p->mfx.RateControlMethod == MFX_RATECONTROL_VCM
+        || p->mfx.RateControlMethod == MFX_RATECONTROL_LA
+        || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+#if !defined(MFX_ONEVPL)
+        || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+        )
     {
         p->mfx.TargetKbps = p->mfx.MaxKbps = p->mfx.InitialDelayInKB = 0;
 
@@ -103,9 +106,12 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
         if (p->mfx.RateControlMethod == MFX_RATECONTROL_VCM)
             p->mfx.GopRefDist = 1;
 
-        if (p->mfx.RateControlMethod == MFX_RATECONTROL_LA ||
-            p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
-            p->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+        if (p->mfx.RateControlMethod == MFX_RATECONTROL_LA
+            || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
+#if !defined(MFX_ONEVPL)
+            || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
+#endif
+            )
         {
             p->mfx.InitialDelayInKB = 0;
 
@@ -349,7 +355,9 @@ void MFXVideoTest::SetUp()
     }
     sscanf(trace.c_str(), "%u", &g_tsTrace);
 
+#if !defined(MFX_ONEVPL)
     g_tsPlugin.Init(plugins, platform);
+#endif
 
     g_tsConfig.core20 = (ENV("TS_CORE20", (g_tsHWtype == MFX_HW_XE_HP || g_tsHWtype == MFX_HW_DG2) ? "1" : "0") != "0");
 

@@ -84,15 +84,13 @@ target_sources(test_vpp_multisession
 )
 
 target_link_libraries(test_vpp_multisession
-  PUBLIC
+  PRIVATE
     mfx_shared_lib
     shared_utils
-    mfx
     umc
     vm
     vm_plus
     IPP::dc IPP::vc IPP::cc IPP::i IPP::s IPP::core
-  PRIVATE
     mfx_va_properties
 )
 

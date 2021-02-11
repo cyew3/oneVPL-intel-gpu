@@ -20,15 +20,19 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
 #include "mfxpcp.h"
-#include "mfxplugin.h"
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#else
 #include "mfxcamera.h"
 #include "mfxfei.h"
 #include "mfxfeih265.h"
 #include "mfxfeihevc.h"
 #include "mfxla.h"
 #include "mfxsc.h"
-#include "mfxbrc.h"
 #include "mfxenctools.h"
+#endif //MFX_ONEVPL
+#include "mfxplugin.h"
+#include "mfxbrc.h"
 
 #include "bs_parser.h"
 #include <iostream>
@@ -123,15 +127,15 @@ public:
     tsTrace& operator << (const mfxExtCamTotalColorControl& p);
     tsTrace& operator << (const mfxExtCamCscYuvRgb& p);
     tsTrace& operator << (const mfxExtCamVignetteCorrection& p);
+    tsTrace& operator << (const mfxPluginUID& p);
+    tsTrace& operator << (const mfxExtAVCScalingMatrix& p);
+    tsTrace& operator << (const mfxExtEncToolsConfig& p);
 #endif //!MFX_ONEVPL
     tsTrace& operator << (const mfxInfoMFX& p);
-    tsTrace& operator << (const mfxPluginUID& p);
     tsTrace& operator << (const mfxFrameData& p);
-    tsTrace& operator << (const mfxExtAVCScalingMatrix& p);
     tsTrace& operator << (mfxStatus& p);
     tsTrace& operator << (BSErr& p);
     tsTrace& operator << (const mfxExtPartialBitstreamParam& p);
-    tsTrace& operator << (const mfxExtEncToolsConfig& p);
 
     tsTrace& operator << (const mfxStatus& p){
         return operator<<(const_cast<mfxStatus&>(p));

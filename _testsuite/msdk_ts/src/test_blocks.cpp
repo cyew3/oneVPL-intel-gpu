@@ -12,7 +12,7 @@ Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 //prefix "b_" for each block
 #include "stdafx.h"
 #include "test_common.h"
-#include "mfx_plugin_loader.h"
+
 #include <cassert>
 
 #define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6, p7)\

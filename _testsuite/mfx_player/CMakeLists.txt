@@ -99,14 +99,12 @@ target_link_libraries(mfx_pipeline
     mfx_static_lib
     spl_common
     media_buffers
-    mfx
     umc_io
     demuxer
     avi_spl
     vc1_spl
     asf_spl
     vm
-    ${CMAKE_DL_LIBS}
     mpeg4_spl
     $<$<PLATFORM_ID:Windows>:sample_protected>
     $<$<PLATFORM_ID:Windows>:dxva2_dump>
@@ -115,6 +113,7 @@ target_link_libraries(mfx_pipeline
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
+    ${CMAKE_DL_LIBS}
   PRIVATE
     mfx_va_properties
 )
@@ -135,7 +134,6 @@ target_link_libraries(mfx_pipeline_lucas
   PUBLIC
     vm
     mfx_static_lib
-    mfx
     media_buffers
     spl_common
     umc_io

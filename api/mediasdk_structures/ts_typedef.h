@@ -21,7 +21,7 @@
 #pragma once
 
 // Hotfix for VPL build
-#ifndef _MFX_CONFIG_H_
+#if 0 && !defined(_MFX_CONFIG_H_)
 #define MFX_ENABLE_OPAQUE_MEMORY
 #define MFX_ENABLE_USER_ENCTOOLS
 #define MFX_ENABLE_H264_VIDEO_FEI_ENCODE
@@ -34,9 +34,7 @@
 #define TYPEDEF_MEMBER(base, member, name) \
     struct name : std::decay<decltype(base::member)>::type {};
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
 TYPEDEF_MEMBER(mfxExtOpaqueSurfaceAlloc,  In,                  mfxExtOpaqueSurfaceAlloc_InOut)
-#endif
 TYPEDEF_MEMBER(mfxExtAVCRefListCtrl,      PreferredRefList[0], mfxExtAVCRefListCtrl_Entry)
 TYPEDEF_MEMBER(mfxExtPictureTimingSEI,    TimeStamp[0],        mfxExtPictureTimingSEI_TimeStamp)
 TYPEDEF_MEMBER(mfxExtAvcTemporalLayers,   Layer[0],            mfxExtAvcTemporalLayers_Layer)

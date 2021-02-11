@@ -7,6 +7,11 @@
 #include "mfxjpeg.h"
 #include "mfxpcp.h"
 #include "mfxaudio.h"
+
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#include "mfxpavp.h"
+#endif
 #include "mfxplugin.h"
 
 enum print_flags{

@@ -304,7 +304,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*07/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
     {/*08/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
     {/*09/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
+#if !defined(MFX_ONEVPL)
     {/*10/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
+#endif
 #endif
     // not CQP: Query
     {/*11/02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
@@ -318,7 +320,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*18/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
     {/*19/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
     {/*20/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
+#if !defined(MFX_ONEVPL)
     {/*21/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
+#endif
 #endif
     // progressive
     {/*22/04*/ MFX_ERR_NONE, 0},

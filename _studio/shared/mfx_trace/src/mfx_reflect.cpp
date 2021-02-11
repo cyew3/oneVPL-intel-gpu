@@ -63,6 +63,10 @@
 #include "mfxbrc.h"
 #endif
 
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
+
 #if (MFX_VERSION >= 1025)
 #include "ts_typedef.h"
 

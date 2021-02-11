@@ -13,11 +13,11 @@
 #include "atomic_defs.h"
 #include "gtest/gtest.h"
 #include "ts_trace.h"
-#include "ts_plugin.h"
 #include "ts_streams.h"
 #include "test_sample_allocator.h"
 #include "ts_platforms.h"
 #include "ts_ext_buffers.h"
+#include "ts_plugin.h"
 
 
 #ifndef REFACTORED_HEVCE

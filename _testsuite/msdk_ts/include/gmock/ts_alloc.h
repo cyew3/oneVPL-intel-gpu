@@ -41,7 +41,6 @@ public:
     void SetAllocator       (frame_allocator* allocator, bool external);
     void UseDefaultAllocator(bool isSW = false);
     void AllocOpaque        (mfxFrameAllocRequest request, mfxExtOpaqueSurfaceAlloc& osa);
-
     mfxStatus AllocSurfaces (mfxFrameAllocRequest request, bool direct_pointers = true);
     mfxStatus FreeSurfaces  ();
     mfxStatus LockSurface   (mfxFrameSurface1& s);

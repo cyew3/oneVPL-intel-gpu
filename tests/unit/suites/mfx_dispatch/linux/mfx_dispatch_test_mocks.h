@@ -22,6 +22,9 @@
 #define MFX_DISPATCH_MOCKS_H
 
 #include <mfxvideo.h>
+#if defined(MFX_ONEVPL)
+#include "mfxdeprecated.h"
+#endif
 #include <mfxplugin.h>
 #include <gmock/gmock.h>
 

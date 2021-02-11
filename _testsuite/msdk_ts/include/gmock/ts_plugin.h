@@ -9,6 +9,11 @@
 */
 #pragma once
 
+enum MsdkPluginType {
+    MSDK_PLUGIN_TYPE_NONE = 0,
+    MSDK_PLUGIN_TYPE_FEI,
+};
+
 #include "ts_trace.h"
 #include <stdio.h>
 #include <string>
@@ -18,7 +23,10 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+#include "mfxplugin.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxplugin++.h"
+#endif
 #include <unordered_set>
 
 typedef enum func_list {
@@ -53,11 +61,6 @@ typedef enum func_list {
     DecodeFrameSubmit
 } APIfuncs;
 
-enum MsdkPluginType {
-    MSDK_PLUGIN_TYPE_NONE = 0,
-    MSDK_PLUGIN_TYPE_FEI,
-};
-
 class tsPlugin {
 private:
     std::map<std::tuple<mfxU32, mfxU32, MsdkPluginType>, mfxPluginUID*> m_puid;
@@ -90,6 +93,7 @@ public:
 void func_name(std::unordered_multiset<mfxU32>::const_iterator it);
 bool check_calls(std::vector<mfxU32> real_calls, std::vector<mfxU32> expected_calls);
 
+#if !defined(MFX_ONEVPL)
 class FakeVPP: public MFXVPPPlugin
 {
 public:
@@ -396,4 +400,4 @@ public:
         return MFX_ERR_NONE;
     }
 };
-
+#endif //!MFX_ONEVPL

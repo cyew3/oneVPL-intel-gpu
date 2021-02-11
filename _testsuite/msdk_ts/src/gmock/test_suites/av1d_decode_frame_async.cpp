@@ -84,7 +84,7 @@ namespace av1d_decode_frame_async
         {/*00*/ MFX_ERR_NONE, 0, 1},
         {/*01*/ MFX_ERR_NONE, NO_EXT_ALLOCATOR, 20},
 
-        {/*02*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY, INIT} }, //opaque is not supported by decoder now
+        {/*02*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY, INIT} },
         {/*03*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, INIT} },
         {/*04*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY, INIT} },
 
@@ -271,10 +271,12 @@ namespace av1d_decode_frame_async
 
     void TestSuite::AllocOpaque()
     {
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
         if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
             AllocOpaqueSurfaces();
         }
+#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
 
     template <unsigned fourcc, unsigned profile>

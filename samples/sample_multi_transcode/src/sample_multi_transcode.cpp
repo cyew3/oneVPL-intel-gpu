@@ -32,6 +32,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #error MFX_VERSION not defined
 #endif
 
+#include <iomanip>
 #include <future>
 using namespace std;
 using namespace TranscodingSample;
@@ -141,9 +142,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     MSDK_CHECK_STATUS(sts, "VerifyCrossSessionsOptions failed");
 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if !defined(MFX_ONEVPL)
     // check available adapters
     sts = QueryAdapters();
     MSDK_CHECK_STATUS(sts, "QueryAdapters failed");
+#endif
 
     if (m_eDevType && m_DisplaysData.empty())
     {
@@ -160,8 +163,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             bNeedToCreateDevice = false;
 
 #if defined(_WIN32) || defined(_WIN64)
+#if !defined(MFX_ONEVPL)
         ForceImplForSession(i);
-
+#endif
         if (m_eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
         {
             if (bNeedToCreateDevice)
@@ -500,7 +504,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         sts = MFX_ERR_MORE_DATA;
         if (Source == m_InputParamsArray[i].eMode)
         {
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031) && !defined(MFX_ONEVPL)
             sts = CheckAndFixAdapterDependency(i, pSinkPipeline);
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
@@ -516,7 +520,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         }
         else
         {
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031) && !defined(MFX_ONEVPL)
             sts = CheckAndFixAdapterDependency(i, pParentPipeline);
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
@@ -795,7 +799,7 @@ mfxStatus Launcher::ProcessResult()
     return FinalSts;
 } // mfxStatus Launcher::ProcessResult()
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031) && !defined(MFX_ONEVPL)
 mfxStatus Launcher::QueryAdapters()
 {
     mfxU32 num_adapters_available;
@@ -915,7 +919,7 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
 
     return MFX_ERR_NONE;
 }
-#endif
+#endif //(_WIN32 || _WIN64) && (MFX_VERSION >= 1031) && !MFX_ONEVPL
 
 mfxStatus Launcher::VerifyCrossSessionsOptions()
 {

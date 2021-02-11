@@ -20,12 +20,11 @@ target_sources(${test_comp}
 )
 
 target_link_libraries(${test_comp}
-  PUBLIC
-    mfx
-    mfx_shared_lib
-    $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
   PRIVATE
+    mfx_shared_lib
     mfx_va_properties
+    ${MFX_DISPATCHER}
+    $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
 )
 
 set(common_linux_defs

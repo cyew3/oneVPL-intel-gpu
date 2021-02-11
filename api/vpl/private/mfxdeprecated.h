@@ -17,6 +17,14 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+enum
+{
+    MFX_ERR_INCOMPATIBLE_AUDIO_PARAM    = -19,  /* incompatible audio parameters */
+    MFX_ERR_INVALID_AUDIO_PARAM         = -20,  /* invalid audio parameters */
+
+    MFX_WRN_INCOMPATIBLE_AUDIO_PARAM    = 11,   /* incompatible audio parameters */
+};
+
 mfxStatus MFX_CDECL MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
@@ -32,68 +40,40 @@ MFX_PACK_END()
 
 mfxStatus MFX_CDECL MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator *allocator);
 
+#if defined(MFX_ENABLE_OPAQUE_MEMORY)
+    //Sanity check
+    #error MFX_ENABLE_OPAQUE_MEMORY should not be defined when 'mfxdeprecated.h' is included
+#endif //MFX_ENABLE_OPAQUE_MEMORY
+
+/* IOPattern */
+enum {
+    MFX_IOPATTERN_IN_OPAQUE_MEMORY  = 0x04,
+    MFX_IOPATTERN_OUT_OPAQUE_MEMORY = 0x40
+};
+
+enum {
+    MFX_MEMTYPE_OPAQUE_FRAME    = 0x0004
+};
+
+/* Extended Buffer Ids */
+enum {
+    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION       = MFX_MAKEFOURCC('O','P','Q','S')
+};
+
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU32      reserved1[2];
+    struct {
+        mfxFrameSurface1 **Surfaces;
+        mfxU32  reserved2[5];
+        mfxU16  Type;
+        mfxU16  NumSurface;
+    } In, Out;
+} mfxExtOpaqueSurfaceAlloc;
+MFX_PACK_END()
+
 mfxStatus MFX_CDECL MFXDoWork(mfxSession session);
-
-typedef enum {
-    MFX_THREADPOLICY_SERIAL    = 0,
-    MFX_THREADPOLICY_PARALLEL  = 1
-} mfxThreadPolicy;
-
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct {
-    mfxU8  Data[16];
-} mfxPluginUID;
-MFX_PACK_END()
-
-MFX_PACK_BEGIN_STRUCT_W_PTR()
-typedef struct mfxPluginParam {
-    mfxU32          reserved[6];
-    mfxU16          reserved1;
-    mfxU16          PluginVersion;
-    mfxVersion      APIVersion;
-    mfxPluginUID    PluginUID;
-    mfxU32          Type;
-    mfxU32          CodecId;
-    mfxThreadPolicy ThreadPolicy;
-    mfxU32          MaxThreadNum;
-} mfxPluginParam;
-MFX_PACK_END()
-
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct {
-    mfxHDL pthis;
-
-    mfxStatus (MFX_CDECL *PluginInit) (/*mfxHDL pthis, mfxCoreInterface *core*/);
-    mfxStatus (MFX_CDECL *PluginClose) (/*mfxHDL pthis*/);
-
-    mfxStatus (MFX_CDECL *GetPluginParam)(mfxHDL pthis, mfxPluginParam *par);
-
-    mfxStatus (MFX_CDECL *Submit)(/*mfxHDL pthis, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task*/);
-    mfxStatus (MFX_CDECL *Execute)(/*mfxHDL pthis, mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a*/);
-    mfxStatus (MFX_CDECL *FreeResources)(/*mfxHDL pthis, mfxThreadTask task, mfxStatus sts*/);
-
-    void *Video;
-    // union {
-    //     mfxVideoCodecPlugin  *Video;
-    //     mfxAudioCodecPlugin  *Audio;
-    // };
-
-    mfxHDL reserved[8];
-} mfxPlugin;
-MFX_PACK_END()
-
-mfxStatus MFX_CDECL MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par);
-mfxStatus MFX_CDECL MFXVideoUSER_Unregister(mfxSession session, mfxU32 type);
-mfxStatus MFX_CDECL MFXVideoUSER_GetPlugin(mfxSession session, mfxU32 type, mfxPlugin *par);
-mfxStatus MFX_CDECL MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp); 
-
-MFX_PACK_BEGIN_STRUCT_W_PTR()
-typedef struct {} mfxENCInput;
-MFX_PACK_END()
-
-MFX_PACK_BEGIN_STRUCT_W_PTR()
-typedef struct {} mfxENCOutput;
-MFX_PACK_END() 
 
 mfxStatus MFX_CDECL MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out);
 mfxStatus MFX_CDECL MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
@@ -101,6 +81,8 @@ mfxStatus MFX_CDECL MFXVideoENC_Init(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoENC_Reset(mfxSession session, mfxVideoParam *par);
 mfxStatus MFX_CDECL MFXVideoENC_Close(mfxSession session);
 
+typedef struct _mfxENCInput{} mfxENCInput;
+typedef struct _mfxENCOutput{} mfxENCOutput;
 mfxStatus MFX_CDECL MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp);
 
 mfxStatus MFX_CDECL MFXVideoENC_GetVideoParam(mfxSession session, mfxVideoParam *par);
@@ -122,6 +104,17 @@ mfxStatus MFX_CDECL MFXVideoPAK_Close(mfxSession session);
 mfxStatus MFX_CDECL MFXVideoPAK_ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out,  mfxSyncPoint *syncp);
 
 mfxStatus MFX_CDECL MFXVideoPAK_GetVideoParam(mfxSession session, mfxVideoParam *par);
+
+enum {
+    /*!
+       This extended buffer allow to specify multi-frame submission parameters.
+    */
+    MFX_EXTBUFF_MULTI_FRAME_PARAM               = MFX_MAKEFOURCC('M', 'F', 'R', 'P'),
+    /*!
+       This extended buffer allow to manage multi-frame submission in runtime.
+    */
+    MFX_EXTBUFF_MULTI_FRAME_CONTROL             = MFX_MAKEFOURCC('M', 'F', 'R', 'C'),
+};
 
 /* Multi-Frame Mode */
 enum {
@@ -155,6 +148,11 @@ typedef struct {
 } mfxExtMultiFrameControl;
 MFX_PACK_END()
 
+/* RateControlMethod */
+enum {
+    MFX_RATECONTROL_LA_EXT    =12,
+    MFX_RATECONTROL_VME       =15,
+};
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -1,7 +1,3 @@
-if (NOT DEFINED ENV{MEDIASDK_ROOT})
-  return()
-endif()
-
 add_library(mfx_serializer STATIC)
 
 target_include_directories(mfx_serializer
@@ -45,7 +41,5 @@ target_sources(mfx_serializer
 )
 
 target_link_libraries(mfx_serializer PUBLIC mfx_static_lib)
-
-target_compile_definitions(mfx_serializer PRIVATE MFX_VERSION_USE_LATEST)
 
 set_property(TARGET mfx_serializer PROPERTY FOLDER "testsuite")
