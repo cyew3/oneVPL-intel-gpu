@@ -17,7 +17,7 @@ Makefile text eol=lf
 */Makefile text eol=lf
 Makefile text eol=lf
 */Makefile text eol=lf
-CMake*.txt text eol=lf
+
 
 # files to be stored and checked out with CRLF endings
 *.vcxproj text eol=crlf
@@ -30,6 +30,9 @@ CMake*.txt text eol=lf
 *.def text eol=crlf
 *.txt text eol=crlf
 *.bat text eol=crlf
+
+*.cmake text eol=lf
+CMake*.txt text eol=lf
 
 # binary files which should not be modified
 *.docx binary
