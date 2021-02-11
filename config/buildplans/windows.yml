@@ -29,24 +29,27 @@ steps:
   - name: update rc files
     command: python3 %WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\update_version.py --path %WORKSPACE%\\sources\
       --revision %COMPONENT_REVISION% --build-number %BUILD_NUMBER%
-  - name: build
-    command: docker run --rm -t --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+  - name: scroll down (no log here)
+    command: docker run --rm --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat
+  - name: build (log replay)
+    command: .\sources\mdp_msdk-lib\config\scripts\windows_logs.bat
+    always_execute: true
   - name: create lib drop
-    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build"
   - name: create tools drop
-    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_tools_drop.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
       -MsdkBinaries "C:\workspace\msdk_binaries\windows_pre_built_binaries" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
   - name: create lucas package
-    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_lucas_pkg.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
   - name: create nightly package
-    command: docker run --rm -t --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
       powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_nightly_pkg.ps1
       -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
       -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools" -Service_UWD "C:\workspace\msdk_binaries\service" -AMD64 "C:\workspace\msdk_binaries\AMD64"
