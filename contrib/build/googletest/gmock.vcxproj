@@ -26,7 +26,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\googletest\googletest\src\gtest-all.cc" />
     <ClCompile Include="..\..\googletest\googlemock\src\gmock-all.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

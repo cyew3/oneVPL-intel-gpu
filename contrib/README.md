@@ -20,3 +20,16 @@ Date:   Thu Jun 20 00:13:15 2019 -0700
 
 ### Details
 You can find more detals - link to upstream project, documentation, issue tracker etc. [here](./detours/README.md).
+
+# Google Test
+
+### About
+Google's C++ test framework
+
+### Version & support
+* We use [Release 1.10](https://github.com/google/googletest/tree/release-1.10.0)
+* No changes are allowed at vendor's [sources](./googletest).
+* [Here](./build/googletest) is Visual Studio projects that are mantained by MSDK team.
+
+### Details
+You can find more detals - link to upstream project, documentation, issue tracker etc. [here](./googletest/README.md).
