@@ -119,6 +119,13 @@ if (BUILD_DISPATCHER)
       INTERFACE ${ONEVPL_API_HEADER_DIRECTORY}
     )
     add_subdirectory(api/mfx_dispatch/vpl)
+
+    #override VPL's VERSION/SOVERSION to comply 'OneVPL packaging and delivery'
+    set_target_properties(VPL PROPERTIES
+      VERSION 1.${MFX_VERSION_MAJOR}.${MFX_VERSION_MINOR}
+      SOVERSION 1.${MFX_VERSION_MAJOR}
+    )
+
     set(MFX_DISPATCHER VPL)
   else()
     if (CMAKE_SYSTEM_NAME MATCHES Linux)
@@ -126,6 +133,7 @@ if (BUILD_DISPATCHER)
     else()
       add_subdirectory(api/mfx_dispatch/windows)
     endif()
+
     set(MFX_DISPATCHER mfx)
   endif()
 endif()
