@@ -36,6 +36,7 @@ LoaderCtxVPL::LoaderCtxVPL()
           m_packageSearchDirs(),
           m_pathSearchDirs(),
           m_vplPackageDir(),
+          m_legacySearchDirs(),
           m_specialConfig(),
           m_implIdxNext(0) {
     return;
@@ -212,6 +213,44 @@ mfxStatus LoaderCtxVPL::SearchDirForLibs(STRING_TYPE searchDir,
     return MFX_ERR_NONE;
 }
 
+// get legacy MSDK dispatcher search paths
+// see "oneVPL Session" section in spec
+mfxU32 LoaderCtxVPL::ParseLegacySearchPaths(std::list<STRING_TYPE>& searchDirs) {
+    mfxStatus sts = MFX_ERR_UNSUPPORTED;
+
+    searchDirs.clear();
+
+#if defined(_WIN32) || defined(_WIN64)
+    STRING_TYPE msdkPath;
+
+    // get path to Windows driver store
+    msdkPath.clear();
+    sts = MFX::MFXLibraryIterator::GetDriverStoreDir(msdkPath, MAX_VPL_SEARCH_PATH);
+    if (sts == MFX_ERR_NONE)
+        searchDirs.push_back(msdkPath);
+
+    // get path via dispatcher regkey - HKCU
+    msdkPath.clear();
+    sts = MFX::MFXLibraryIterator::GetRegkeyDir(msdkPath,
+                                                MAX_VPL_SEARCH_PATH,
+                                                MFX::MFX_CURRENT_USER_KEY_ONEVPL);
+    if (sts == MFX_ERR_NONE)
+        searchDirs.push_back(msdkPath);
+
+    // get path via dispatcher regkey - HKLM
+    msdkPath.clear();
+    sts = MFX::MFXLibraryIterator::GetRegkeyDir(msdkPath,
+                                                MAX_VPL_SEARCH_PATH,
+                                                MFX::MFX_LOCAL_MACHINE_KEY_ONEVPL);
+    if (sts == MFX_ERR_NONE)
+        searchDirs.push_back(msdkPath);
+#else
+    // Linux
+#endif
+
+    return (mfxU32)searchDirs.size();
+}
+
 // search for implementations of oneAPI Video Processing Library (oneVPL)
 //   according to the rules in the spec
 mfxStatus LoaderCtxVPL::BuildListOfCandidateLibs() {
@@ -252,7 +291,13 @@ mfxStatus LoaderCtxVPL::BuildListOfCandidateLibs() {
     sts             = SearchDirForLibs(m_vplPackageDir, m_libInfoList, LIB_PRIORITY_SYS_DEFAULT);
 
     // fifth priority: standalone MSDK/driver installation
-    sts = SearchDirForLibs(emptyPath, m_libInfoList, LIB_PRIORITY_MSDK_PACKAGE);
+    ParseLegacySearchPaths(m_legacySearchDirs);
+    it = m_legacySearchDirs.begin();
+    while (it != m_legacySearchDirs.end()) {
+        STRING_TYPE nextDir = (*it);
+        sts                 = SearchDirForLibs(nextDir, m_libInfoList, LIB_PRIORITY_OS_PATH);
+        it++;
+    }
 
     return sts;
 }
@@ -363,6 +408,17 @@ mfxStatus LoaderCtxVPL::UnloadAllLibraries() {
     return MFX_ERR_NONE;
 }
 
+// check that all functions for this API version are available in library
+mfxStatus LoaderCtxVPL::ValidateAPIExports(VPLFunctionPtr* vplFuncTable,
+                                           mfxVersion reportedVersion) {
+    for (mfxU32 i = 0; i < NumVPLFunctions; i += 1) {
+        if (!vplFuncTable[i] && (FunctionDesc2[i].apiVersion.Version <= reportedVersion.Version))
+            return MFX_ERR_UNSUPPORTED;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 // query capabilities of all valid libraries
 //   and add to list for future calls to EnumImplementations()
 //   as well as filtering by functionality
@@ -414,15 +470,19 @@ mfxStatus LoaderCtxVPL::QueryLibraryCaps() {
             // save local index for this library
             implInfo->libImplIdx = i;
 
-            // assign unique index to each implementation
-            implInfo->vplImplIdx = m_implIdxNext++;
+            // validate that library exports all required functions for the reported API version
+            if (ValidateAPIExports(libInfo->vplFuncTable, implInfo->version)) {
+                implInfo->validImplIdx = -1;
+                delete implInfo;
+                continue;
+            }
 
             // initially all libraries have a valid, sequential value (>= 0)
             // list of valid libraries is updated with every call to MFXSetConfigFilterProperty()
             //   (see UpdateValidImplList)
             // libraries that do not support all the required props get a value of -1, and
             //   indexing of the valid libs is recalculated from 0,1,...
-            implInfo->validImplIdx = implInfo->vplImplIdx;
+            implInfo->validImplIdx = m_implIdxNext++;
 
             // add implementation to overall list
             m_implInfoList.push_back(implInfo);
@@ -501,9 +561,6 @@ mfxStatus LoaderCtxVPL::UpdateValidImplList(void) {
             it++;
             continue;
         }
-
-        // TODO(JR) - if application has set mfxImplDescription.APIVersion, validate
-        //   whether library exports all required functions for <= requested API
 
         // compare caps from this library vs. config filters
         sts = ConfigCtxVPL::ValidateConfig((mfxImplDescription*)implInfo->implDesc,

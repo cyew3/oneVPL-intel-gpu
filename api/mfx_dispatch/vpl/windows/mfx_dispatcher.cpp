@@ -195,11 +195,25 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const wchar_t* pPath,
                                                                                           &session);
         }
         else {
-            // only support MFXInitEx for 1.x
-            int tableIndex           = eMFXInitEx;
+            // Call old-style MFXInit init for older libraries
+            bool callOldInit =
+                !callTable[eMFXInitEx]; // if true call eMFXInit, if false - eMFXInitEx
+            int tableIndex           = (callOldInit) ? eMFXInit : eMFXInitEx;
             mfxFunctionPointer pFunc = callTable[tableIndex];
 
-            {
+            if (callOldInit) {
+                DISPATCHER_LOG_BLOCK(("MFXInit(%s,ver=%u.%u,session=0x%p)\n",
+                                      DispatcherLog_GetMFXImplString(impl | implInterface).c_str(),
+                                      apiVersion.Major,
+                                      apiVersion.Minor,
+                                      &session));
+
+                mfxRes = (*(mfxStatus(MFX_CDECL*)(mfxIMPL, mfxVersion*, mfxSession*))pFunc)(
+                    impl | implInterface,
+                    &version,
+                    &session);
+            }
+            else {
                 DISPATCHER_LOG_BLOCK(("MFXInitEx(%s,ver=%u.%u,ExtThreads=%d,session=0x%p)\n",
                                       DispatcherLog_GetMFXImplString(impl | implInterface).c_str(),
                                       apiVersion.Major,
@@ -276,6 +290,10 @@ mfxStatus MFX_DISP_HANDLE::UnLoadSelectedDLL(void) {
 
 } // mfxStatus MFX_DISP_HANDLE::UnLoadSelectedDLL(void)
 
+MFX_DISP_HANDLE_EX::MFX_DISP_HANDLE_EX(const mfxVersion requiredVersion)
+        : MFX_DISP_HANDLE(requiredVersion),
+          mediaAdapterType(MFX_MEDIA_UNKNOWN) {}
+
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
 static mfxStatus InitDummySession(mfxU32 adapter_n, MFXVideoSession& dummy_session) {
     mfxInitParam initPar;
@@ -334,6 +352,7 @@ static inline mfxI32 iGPU_priority(const void* ll, const void* rr) {
 
 static void RearrangeInPriorityOrder(const mfxComponentInfo& info,
                                      MFX::MFXVector<mfxAdapterInfo>& vec) {
+    (void)info;
     {
         // Move iGPU to top priority
         qsort(vec.data(), vec.size(), sizeof(mfxAdapterInfo), &iGPU_priority);
@@ -370,13 +389,17 @@ static mfxStatus PrepareAdaptersInfo(const mfxComponentInfo* info,
 static inline bool QueryAdapterInfo(mfxU32 adapter_n, mfxU32& VendorID, mfxU32& DeviceID) {
     MFX::DXVA2Device dxvaDevice;
 
-    if (!dxvaDevice.InitD3D9(adapter_n) && !dxvaDevice.InitDXGI1(adapter_n))
+    if (!dxvaDevice.InitDXGI1(adapter_n))
         return false;
 
     VendorID = dxvaDevice.GetVendorID();
     DeviceID = dxvaDevice.GetDeviceID();
 
     return true;
+}
+
+static inline mfxU32 MakeVersion(mfxU16 major, mfxU16 minor) {
+    return major * 1000 + minor;
 }
 
 mfxStatus MFXQueryAdaptersDecode(mfxBitstream* bitstream,
@@ -432,13 +455,27 @@ mfxStatus MFXQueryAdaptersDecode(mfxBitstream* bitstream,
 
         mfxAdapterInfo info;
         memset(&info, 0, sizeof(info));
-        sts = MFXVideoCORE_QueryPlatform(dummy_session.operator mfxSession(), &info.Platform);
 
-        if (sts != MFX_ERR_NONE) {
+        //WA for initialization when application built w/ new API, but lib w/ old one.
+        mfxVersion apiVersion;
+        sts = dummy_session.QueryVersion(&apiVersion);
+        if (sts != MFX_ERR_NONE)
             continue;
+
+        mfxU32 version = MakeVersion(apiVersion.Major, apiVersion.Minor);
+
+        if (version >= 1019) {
+            sts = MFXVideoCORE_QueryPlatform(dummy_session.operator mfxSession(), &info.Platform);
+
+            if (sts != MFX_ERR_NONE) {
+                continue;
+            }
+        }
+        else {
+            // for API versions greater than 1.19 Device id is set inside QueryPlatform call
+            info.Platform.DeviceId = static_cast<mfxU16>(DeviceID);
         }
 
-        //info.Platform.DeviceId = DeviceID;
         info.Number = adapter_n - 1;
 
         obtained_info.push_back(info);
@@ -509,13 +546,27 @@ mfxStatus MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapte
 
         mfxAdapterInfo info;
         memset(&info, 0, sizeof(info));
-        sts = MFXVideoCORE_QueryPlatform(dummy_session.operator mfxSession(), &info.Platform);
 
-        if (sts != MFX_ERR_NONE) {
+        //WA for initialization when application built w/ new API, but lib w/ old one.
+        mfxVersion apiVersion;
+        sts = dummy_session.QueryVersion(&apiVersion);
+        if (sts != MFX_ERR_NONE)
             continue;
+
+        mfxU32 version = MakeVersion(apiVersion.Major, apiVersion.Minor);
+
+        if (version >= 1019) {
+            sts = MFXVideoCORE_QueryPlatform(dummy_session.operator mfxSession(), &info.Platform);
+
+            if (sts != MFX_ERR_NONE) {
+                continue;
+            }
+        }
+        else {
+            // for API versions greater than 1.19 Device id is set inside QueryPlatform call
+            info.Platform.DeviceId = static_cast<mfxU16>(DeviceID);
         }
 
-        //info.Platform.DeviceId = DeviceID;
         info.Number = adapter_n - 1;
 
         obtained_info.push_back(info);

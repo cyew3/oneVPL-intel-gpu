@@ -94,7 +94,7 @@ enum eMfxImplType {
 };
 
 // declare dispatcher's version
-enum { MFX_DISPATCHER_VERSION_MAJOR = 1, MFX_DISPATCHER_VERSION_MINOR = 2 };
+enum { MFX_DISPATCHER_VERSION_MAJOR = 1, MFX_DISPATCHER_VERSION_MINOR = 3 };
 
 struct _mfxSession {
     // A real handle from MFX engine passed to a called function
@@ -157,6 +157,16 @@ private:
     // Declare assignment operator and copy constructor to prevent occasional assignment
     MFX_DISP_HANDLE(const MFX_DISP_HANDLE &);
     MFX_DISP_HANDLE &operator=(const MFX_DISP_HANDLE &);
+};
+
+// This struct extends MFX_DISP_HANDLE, we cannot extend MFX_DISP_HANDLE itself due to possible compatibility issues
+// This struct was added in dispatcher version 1.3
+// Check dispatcher handle's version when you cast session struct which came from outside of MSDK API function to this
+struct MFX_DISP_HANDLE_EX : public MFX_DISP_HANDLE {
+    explicit MFX_DISP_HANDLE_EX(const mfxVersion requiredVersion);
+
+    mfxU16 mediaAdapterType;
+    mfxU16 reserved[10];
 };
 
 // declare comparison operator

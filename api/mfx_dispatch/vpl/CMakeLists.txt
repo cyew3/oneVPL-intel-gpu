@@ -13,6 +13,7 @@ if(WIN32)
       windows/mfx_critical_section.cpp
       windows/mfx_dispatcher.cpp
       windows/mfx_dispatcher_log.cpp
+      windows/mfx_driver_store_loader.cpp
       windows/mfx_dxva2_device.cpp
       windows/mfx_function_table.cpp
       windows/mfx_library_iterator.cpp
@@ -41,6 +42,13 @@ if(WIN32)
   set(IMPORT_PREFIX lib)
   set_target_properties(${TARGET} PROPERTIES PREFIX "lib")
   set_target_properties(${TARGET} PROPERTIES IMPORT_PREFIX ${IMPORT_PREFIX})
+else()
+  # use version script on Linux
+  set_target_properties(
+    ${TARGET}
+    PROPERTIES
+      LINK_FLAGS
+      "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/linux/libvpl.map")
 endif()
 
 set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME "vpl")

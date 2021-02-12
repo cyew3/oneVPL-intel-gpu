@@ -20,6 +20,8 @@
     #include <windows.h>
 
     #include "windows/mfx_dispatcher.h"
+    #include "windows/mfx_dispatcher_defs.h"
+    #include "windows/mfx_library_iterator.h"
     #include "windows/mfx_load_dll.h"
 
     // use wide char on Windows
@@ -155,6 +157,7 @@ struct SpecialConfig {
     mfxHandleType deviceHandleType;
     mfxHDL deviceHandle;
     mfxAccelerationMode accelerationMode;
+    mfxVersion ApiVersion;
 };
 
 // config class implementation
@@ -247,9 +250,6 @@ struct ImplInfo {
     // local index for libraries with more than one implementation
     mfxU32 libImplIdx;
 
-    // globally unique index assigned after querying implementation
-    mfxU32 vplImplIdx;
-
     // index of valid libraries - updates with every call to MFXSetConfigFilterProperty()
     mfxI32 validImplIdx;
 
@@ -260,7 +260,6 @@ struct ImplInfo {
               vplParam(),
               version(),
               libImplIdx(0),
-              vplImplIdx(0),
               validImplIdx(-1) {}
 };
 
@@ -295,9 +294,13 @@ public:
 private:
     // helper functions
     mfxU32 ParseEnvSearchPaths(const CHAR_TYPE* envVarName, std::list<STRING_TYPE>& searchDirs);
+    mfxU32 ParseLegacySearchPaths(std::list<STRING_TYPE>& searchDirs);
+
     mfxStatus SearchDirForLibs(STRING_TYPE searchDir,
                                std::list<LibInfo*>& libInfoList,
                                mfxU32 priority);
+
+    mfxStatus ValidateAPIExports(VPLFunctionPtr* vplFuncTable, mfxVersion reportedVersion);
 
     std::list<LibInfo*> m_libInfoList;
     std::list<ImplInfo*> m_implInfoList;
@@ -306,7 +309,9 @@ private:
     std::list<STRING_TYPE> m_userSearchDirs;
     std::list<STRING_TYPE> m_packageSearchDirs;
     std::list<STRING_TYPE> m_pathSearchDirs;
+    std::list<STRING_TYPE> m_legacySearchDirs;
     STRING_TYPE m_vplPackageDir;
+    STRING_TYPE m_driverStoreDir;
     SpecialConfig m_specialConfig;
 
     mfxU32 m_implIdxNext;

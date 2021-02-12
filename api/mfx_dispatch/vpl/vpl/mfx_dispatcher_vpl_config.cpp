@@ -35,6 +35,7 @@ enum PropIdx {
     // settable config properties for mfxImplDescription
     ePropMain_Impl = 0,
     ePropMain_AccelerationMode,
+    ePropMain_ApiVersion,
     ePropMain_VendorID,
     ePropMain_VendorImplID,
 
@@ -79,6 +80,7 @@ enum PropIdx {
 static const PropVariant PropIdxTab[] = {
     { "ePropMain_Impl", MFX_VARIANT_TYPE_U32 },
     { "ePropMain_AccelerationMode", MFX_VARIANT_TYPE_U32 },
+    { "ePropMain_ApiVersion", MFX_VARIANT_TYPE_U32 },
     { "ePropMain_VendorID", MFX_VARIANT_TYPE_U32 },
     { "ePropMain_VendorImplID", MFX_VARIANT_TYPE_U32 },
 
@@ -351,6 +353,9 @@ mfxStatus ConfigCtxVPL::SetFilterProperty(const mfxU8 *name, mfxVariant value) {
     else if (nextProp == "AccelerationMode") {
         return ValidateAndSetProp(ePropMain_AccelerationMode, value);
     }
+    else if (nextProp == "ApiVersion") {
+        return ValidateAndSetProp(ePropMain_ApiVersion, value);
+    }
     else if (nextProp == "VendorID") {
         return ValidateAndSetProp(ePropMain_VendorID, value);
     }
@@ -522,6 +527,13 @@ mfxStatus ConfigCtxVPL::CheckPropsGeneral(mfxVariant cfgPropsAll[],
     CHECK_PROP(ePropMain_Impl, U32, libImplDesc->Impl);
     CHECK_PROP(ePropMain_VendorID, U32, libImplDesc->VendorID);
     CHECK_PROP(ePropMain_VendorImplID, U32, libImplDesc->VendorImplID);
+
+    // confirm that API version of this implementation is >= requested version
+    if (cfgPropsAll[ePropMain_ApiVersion].Type != MFX_VARIANT_TYPE_UNSET) {
+        mfxU32 versionRequested = (mfxU32)(cfgPropsAll[ePropMain_ApiVersion].Data.U32);
+        if (libImplDesc->ApiVersion.Version < versionRequested)
+            isCompatible = false;
+    }
 
     if (libImplDesc->AccelerationModeDescription.NumAccelerationModes > 0) {
         if (cfgPropsAll[ePropMain_AccelerationMode].Type != MFX_VARIANT_TYPE_UNSET) {
@@ -746,6 +758,10 @@ mfxStatus ConfigCtxVPL::ValidateConfig(mfxImplDescription *libImplDesc,
 
     if (cfgPropsAll[ePropSpecial_Handle].Type != MFX_VARIANT_TYPE_UNSET)
         specialConfig->deviceHandle = (mfxHDL)cfgPropsAll[ePropSpecial_Handle].Data.Ptr;
+
+    if (cfgPropsAll[ePropMain_ApiVersion].Type != MFX_VARIANT_TYPE_UNSET)
+        specialConfig->ApiVersion.Version =
+            (mfxAccelerationMode)cfgPropsAll[ePropMain_ApiVersion].Data.U32;
 
     if (cfgPropsAll[ePropMain_AccelerationMode].Type != MFX_VARIANT_TYPE_UNSET)
         specialConfig->accelerationMode =
