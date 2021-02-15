@@ -5,10 +5,10 @@ import re
 
 
 DELIMITER = '.'
-FILE_VERSION = "{date}{DELIMITER}{revision}"
+FILE_VERSION = "{date}{DELIMITER}{build_number}"
 MSDK_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{msdk_major_api}{DELIMITER}{msdk_minor_api}"
 VPL_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{vpl_major_api}{DELIMITER}{vpl_minor_api}"
-HIDDEN_FILE_VERSION = "{date}{DELIMITER}{build_number}"
+HIDDEN_FILE_VERSION = "{date}{DELIMITER}{revision}"
 HIDDEN_MSDK_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{msdk_major_api}{DELIMITER}{msdk_minor_api}"
 HIDDEN_VPL_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{vpl_major_api}{DELIMITER}{vpl_minor_api}"
 
