@@ -116,7 +116,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>MFX_ENABLE_USER_ENCTOOLS;MFX_ENABLE_SCREEN_CAPTURE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_ENABLE_USER_ENCTOOLS;MFX_ENABLE_SCREEN_CAPTURE;MFX_ENABLE_OPAQUE_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
