@@ -12,7 +12,8 @@ Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 #include "ts_struct.h"
 
 #if defined(_WIN32) || defined(_WIN64)
-    #include "..\mfx_dispatch\windows\include\mfx_dxva2_device.h"
+    #include <d3d9.h>
+    #include <dxgi.h>
 #endif
 
 tsTrace      g_tsLog(std::cout.rdbuf());
@@ -362,25 +363,63 @@ void MFXVideoTest::SetUp()
     g_tsConfig.core20 = (ENV("TS_CORE20", (g_tsHWtype == MFX_HW_XE_HP || g_tsHWtype == MFX_HW_DG2) ? "1" : "0") != "0");
 
 #if defined(_WIN32) || defined(_WIN64)
+    HMODULE hm = nullptr;
+    IDXGIFactory1* pIDXGIFactory1 = nullptr;
+    IDirect3D9* pD3D9 = nullptr;
+
+    if (g_tsImpl & MFX_IMPL_VIA_D3D11)
+    {
+        hm = LoadLibraryExW(L"dxgi.dll", nullptr, 0);
+        if (hm)
+        {
+            using TCreateDXGIFactory1 = HRESULT(WINAPI*) (REFIID, void**);
+            auto pCreateDXGIFactory1 = (TCreateDXGIFactory1)GetProcAddress(hm, "CreateDXGIFactory1");
+            if (pCreateDXGIFactory1 && FAILED(pCreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pIDXGIFactory1))))
+                pIDXGIFactory1 = nullptr;
+        }
+    }
+    else
+    {
+        hm = LoadLibraryExW(L"d3d9.dll", nullptr, 0);
+        if (hm)
+        {
+            using TDirect3DCreate9 = IDirect3D9 * (WINAPI* ) (UINT);
+            auto pDirect3DCreate9 = (TDirect3DCreate9)GetProcAddress(hm, "Direct3DCreate9");
+            if (pDirect3DCreate9)
+                pD3D9 = pDirect3DCreate9(D3D_SDK_VERSION);
+        }
+    }
+
     for (mfxU32 adapter = 0; adapter < 4 && !g_tsConfig.sim; adapter++)
     {
-        MFX::DXVA2Device device;
+        mfxU32 deviceId = 0, vendorId = 0;
 
-        if (g_tsImpl & MFX_IMPL_VIA_D3D11)
+        if (pIDXGIFactory1)
         {
-            if (!device.InitDXGI1(adapter))
-                break;
+            IDXGIAdapter1* pAdapter = nullptr;
+            if (SUCCEEDED(pIDXGIFactory1->EnumAdapters1(adapter, &pAdapter)))
+            {
+                DXGI_ADAPTER_DESC1 desc = {};
+                pAdapter->GetDesc1(&desc);
+                pAdapter->Release();
+
+                vendorId = desc.VendorId;
+                deviceId = desc.DeviceId;
+            }
         }
-        else if (!device.InitD3D9(adapter))
-            break;
+        else if (pD3D9)
+        {
+            D3DADAPTER_IDENTIFIER9 adapterId = {};
+            pD3D9->GetAdapterIdentifier(adapter, 0, &adapterId);
 
+            vendorId = adapterId.VendorId;
+            deviceId = adapterId.DeviceId;
+        }
 
-        if (device.GetVendorID() != 0x8086)
+        if (vendorId != 0x8086)
             continue;
 
-        auto id = device.GetDeviceID();
-
-        switch (id)
+        switch (deviceId)
         {
         //CNL Simulation:
         case 0xA00: //iCNLGT0
@@ -405,11 +444,18 @@ void MFXVideoTest::SetUp()
             break;
         }
 
-        id = ((id << 8) | (id >> 8));
-        g_tsLog << "DeviceID = 0x" << hexstr(&id, 2) << " at adapter #" << adapter << "\n";
+        deviceId = ((deviceId << 8) | (deviceId >> 8));
+        g_tsLog << "DeviceID = 0x" << hexstr(&deviceId, 2) << " at adapter #" << adapter << "\n";
 
         break;
     }
+
+    if (pIDXGIFactory1)
+        pIDXGIFactory1->Release();
+    if (pD3D9)
+        pD3D9->Release();
+    if (hm)
+        FreeLibrary(hm);
 #endif
 }
 #pragma warning(default:4996)
