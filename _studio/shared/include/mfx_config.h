@@ -577,9 +577,6 @@
     #endif
 #endif
 
-#define MFX_ENABLE_HEVCEHW_REFACTORING
-#define MFX_ENABLE_HEVCEHW_REFACTORING_FEI
-
 #define CMAPIUPDATE
 
 #endif // _MFX_CONFIG_H_

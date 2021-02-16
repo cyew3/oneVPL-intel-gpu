@@ -77,11 +77,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 #if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
 #if defined(MFX_VA)
-#if defined(MFX_ENABLE_HEVCEHW_REFACTORING)
 #include "../../encode_hw/hevc/hevcehw_disp.h"
-#else
-#include "mfx_h265_encode_hw.h"
-#endif
 #endif
 #else
 #include "mfx_h265_encode_api.h"
@@ -90,12 +86,6 @@
 
 #if defined (MFX_ENABLE_VP9_VIDEO_ENCODE_HW) && !defined (AS_VP9E_PLUGIN) && defined(MFX_VA)
 #include "mfx_vp9_encode_hw.h"
-#endif
-
-#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-#if defined(MFX_VA)
-#include "mfx_h265_fei_encode_hw.h"
-#endif
 #endif
 
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
@@ -478,7 +468,6 @@ static const CodecId2Handlers codecId2Handlers =
         {
             // .primary =
             {
-#if defined(MFX_ENABLE_HEVCEHW_REFACTORING_FEI)
                 // .ctor =
                 [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
                 -> VideoENCODE*
@@ -493,20 +482,6 @@ static const CodecId2Handlers codecId2Handlers =
                 // .queryIOSurf =
                 [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
                 { return HEVCEHW::QueryIOSurf(session->m_pCORE.get(), par, request, true); }
-#else
-                // .ctor =
-                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    return new MfxHwH265FeiEncode::H265FeiEncode_HW(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
-                { return MfxHwH265FeiEncode::H265FeiEncode_HW::Query(session->m_pCORE.get(), in, out); },
-                // .queryIOSurf =
-                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                { return MfxHwH265FeiEncode::H265FeiEncode_HW::QueryIOSurf(session->m_pCORE.get(), par, request); }
-#endif //defined(MFX_ENABLE_HEVCEHW_REFACTORING_FEI)
             }
         }
     },
@@ -520,8 +495,6 @@ static const CodecId2Handlers codecId2Handlers =
         {
             // .primary =
             {
-#if defined(MFX_ENABLE_HEVCEHW_REFACTORING)
-                
                 // .ctor =
                 [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
                 -> VideoENCODE*
@@ -541,20 +514,6 @@ static const CodecId2Handlers codecId2Handlers =
                 , [](VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
                 { return HEVCEHW::QueryImplsDescription(core, caps, ah); }
 #endif //defined(MFX_ONEVPL)
-#else
-                // .ctor =
-                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    return new MfxHwH265Encode::MFXVideoENCODEH265_HW(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
-                { return MfxHwH265Encode::MFXVideoENCODEH265_HW::Query(session->m_pCORE.get(), in, out); },
-                // .queryIOSurf =
-                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                { return MfxHwH265Encode::MFXVideoENCODEH265_HW::QueryIOSurf(session->m_pCORE.get(), par, request); }
-#endif
             },
             // .fallback =
             {
