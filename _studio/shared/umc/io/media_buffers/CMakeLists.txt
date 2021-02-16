@@ -40,4 +40,9 @@ target_include_directories(media_buffers
     include
   )
 
+target_compile_options(media_buffers
+  PRIVATE
+    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
+)
+
 target_link_libraries(media_buffers PUBLIC vm_plus)

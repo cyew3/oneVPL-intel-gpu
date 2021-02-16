@@ -90,7 +90,14 @@ public:
     virtual mfxStatus CloneSession( mfxSession *clone) { return MFXCloneSession(m_session, clone);}
     virtual mfxStatus SetPriority( mfxPriority priority) { return MFXSetPriority(m_session, priority);}
     virtual mfxStatus GetPriority( mfxPriority *priority) { return MFXGetPriority(m_session, priority);}
-    virtual mfxStatus SetBufferAllocator(mfxBufferAllocator *allocator) { return MFXVideoCORE_SetBufferAllocator(m_session, allocator); }
+    virtual mfxStatus SetBufferAllocator(mfxBufferAllocator *allocator)
+    { 
+#ifndef MFX_ONEVPL
+        return MFXVideoCORE_SetBufferAllocator(m_session, allocator);
+#else 
+        return MFX_ERR_UNSUPPORTED;
+#endif
+    }
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) 
     { 
         mfxHDL _hdl = NULL;

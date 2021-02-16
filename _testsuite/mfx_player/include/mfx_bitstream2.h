@@ -15,7 +15,12 @@ File Name: mfxstructures.h
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
-#include "mfxpcp.h" // mfxEncryptedData
+// mfxEncryptedData
+#if defined(MFX_ONEVPL)
+#include "mfxpavp.h"
+#else
+#include "mfxpcp.h"
+#endif
 
 #define mfxBitstream2_ZERO_MEM(bs2) {memset(&(bs2), 0, (size_t)(((mfxU8*)&((bs2).m_enryptedData)) - ((mfxU8*)&(bs2)))); (bs2).m_enryptedData.clear(); (bs2).m_enryptedDataBuffer.clear();}
 

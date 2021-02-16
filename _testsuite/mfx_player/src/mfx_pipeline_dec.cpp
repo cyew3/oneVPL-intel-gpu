@@ -54,7 +54,9 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 #include "mfx_perfcounter_time.h"
 #include "mfx_bitrate_limited_reader.h"
 #include "mfx_mkv_reader.h"
+#ifndef MFX_ONEVPL
 #include "mfx_bayer_reader.h"
+#endif
 #include "mfx_burst_render.h"
 #include "mfx_fps_limit_render.h"
 #include "mfx_pts_based_activator.h"
@@ -155,10 +157,12 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_bErrIncompat()
     , m_bErrIncompatValid(true)
     , m_extDecVideoProcessing(new mfxExtDecVideoProcessing())
+#ifndef MFX_ONEVPL
     , m_extExtCamBlackLevelCorrection(new mfxExtCamBlackLevelCorrection())
     , m_extExtCamWhiteBalance(new mfxExtCamWhiteBalance())
     , m_extExtCamGammaCorrection(new mfxExtCamGammaCorrection())
     , m_extExtColorCorrection3x3(new mfxExtCamColorCorrection3x3())
+#endif
     , m_externalsync()
     , m_pFactory(pFactory)
 {
@@ -1544,6 +1548,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
         pProcAmp->Saturation = m_inParams.m_ProcAmp.Saturation;
     }
 
+#ifndef MFX_ONEVPL
     // turn off scene analysis (on by default)
     if (m_inParams.bUseCameraPipe)
     {
@@ -1577,6 +1582,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     {
         m_components[eVPP].m_extParams.push_back(m_extExtColorCorrection3x3);
     }
+#endif //#ifndef MFX_ONEVPL
 
     //turn on field weaving
     if (m_inParams.bFieldWeaving)
@@ -1636,6 +1642,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
         imgStab->Mode = m_inParams.nImageStab;
     }
 
+#ifndef MFX_ONEVPL
     //weird requirement to only use douse buffer if alglist not empty certain cases - wont add this in unittest
     if (m_inParams.bPAFFDetect)
     {
@@ -1644,6 +1651,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
 
         vppDoUse->AlgList.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);
     }
+#endif
 
     if (0 != m_inParams.nSVCDownSampling)
     {
@@ -1948,6 +1956,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     else if (MFX_CONTAINER_MKV == m_inParams.m_container){
          pSpl.reset(new MKVReader());
     }
+#ifndef MFX_ONEVPL
     else if (MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC){
          sStreamInfo *pSinfo = NULL;
          pSinfo = & sInfo;
@@ -1957,6 +1966,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
          sInfo.isDefaultFC = false;
          pSpl.reset(new BayerVideoReader(pSinfo));
     }
+#endif
     else if (!m_inParams.bYuvReaderMode && 0 == m_inParams.InputCodecType)
     {
         pSpl.reset(new UMCSplWrapper(m_inParams.nCorruptionLevel));
@@ -5237,6 +5247,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 // WebM re-uses MKV reader
                 m_inParams.m_container = MFX_CONTAINER_MKV;
             }
+#ifndef MFX_ONEVPL
             else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:bg16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
             {
                 MFX_CHECK(1 + argv != argvEnd);
@@ -5246,6 +5257,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.FrameInfo.FourCC = MFX_FOURCC_R16;
                 m_inParams.bYuvReaderMode = true;
             }
+#endif
             else if (m_OptProc.Check(argv[0], VM_STRING("-input-res|--input-res"), VM_STRING("Source picture size [wxh]"), OPT_UINT_32))
             {
                 MFX_CHECK(1 + argv != argvEnd);
@@ -5255,6 +5267,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 argv++;
                 m_inParams.bYuvReaderMode = true;
             }
+#ifndef MFX_ONEVPL
             else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:gr16"), VM_STRING("input stream is in Bayer BGGR format. For camera pipe."), OPT_UNDEFINED)))
             {
                 MFX_CHECK(1 + argv != argvEnd);
@@ -5285,6 +5298,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.bYuvReaderMode = true;
                 m_inParams.nInputBitdepth = (8 == m_inParams.nInputBitdepth) ? 10 : m_inParams.nInputBitdepth;
             }
+#endif
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))
             else HANDLE_SPECIAL_OPTION(m_inParams.svc_layer, VM_STRING("-svc_layer"), VM_STRING("specify target svc_layer to decode"), OPT_SPECIAL, VM_STRING("temporalId dependencyId qualityId"))
@@ -5313,6 +5327,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
                 argv++;
             }
+#ifndef MFX_ONEVPL
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera_ccm"), VM_STRING("set specific values for camera color correction matrix. 9 float numbers expected."), OPT_INT_32))
             {
                 MFX_CHECK(9 + argv != argvEnd);
@@ -5390,6 +5405,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->R,  argv[4]);
                 argv+=4;
             }
+#endif
             else if (m_OptProc.Check(argv[0], VM_STRING("-novpp"), VM_STRING("use of VPP component is prohibited"), OPT_UNDEFINED))
             {
                 m_inParams.bNoVpp = true;

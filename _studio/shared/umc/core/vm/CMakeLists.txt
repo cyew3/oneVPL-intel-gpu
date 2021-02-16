@@ -50,4 +50,11 @@ target_include_directories(vm
 )
 target_link_libraries(vm PUBLIC umc mfx_static_lib)
 
+if (BUILD_VAL_TOOLS AND MFX_DISABLE_SW_FALLBACK)
+  target_compile_options(vm
+    PRIVATE
+      $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
+  )
+endif()
+
 include(sources_ext.cmake OPTIONAL)

@@ -16,18 +16,18 @@ if exist %WORKSPACE%\Build rmdir %WORKSPACE%\Build /S /Q
 mkdir %WORKSPACE%\Build\uwp\x32 %WORKSPACE%\Build\uwp\x64 %WORKSPACE%\Build\icc\x32 %WORKSPACE%\Build\icc\x64 %WORKSPACE%\Build\msvc\x32 %WORKSPACE%\Build\msvc\x64 %WORKSPACE%\Build\mfts\x32 %WORKSPACE%\Build\mfts\x64 %WORKSPACE%\Build\VPL_build\x32 %WORKSPACE%\Build\VPL_build\x64
 
 set BUILDTREE=%WORKSPACE%\Build\VPL_build\x64
-cmake -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -A x64 -DCMAKE_C_FLAGS_RELEASE="-Wall" -DCMAKE_CXX_FLAGS_RELEASE="-Wall" -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.1 > %BUILDTREE%\build.log 2>&1
+cmake -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -A x64 -DCMAKE_C_FLAGS_RELEASE="-Wall" -DCMAKE_CXX_FLAGS_RELEASE="-Wall" -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.1 > %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x64: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
-cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release --target libmfx64-gen >> %BUILDTREE%\build.log 2>&1
+cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release --target libmfx64-gen mfx_player mfx_transcoder >> %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x64: build failed with %ERRORLEVEL%. & exit /B 1)
 
 set BUILDTREE=%WORKSPACE%\Build\VPL_build\x32
-cmake -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -A Win32 -DCMAKE_C_FLAGS_RELEASE="-Wall" -DCMAKE_CXX_FLAGS_RELEASE="-Wall" -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.1 > %BUILDTREE%\build.log 2>&1
+cmake -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -A Win32 -DCMAKE_C_FLAGS_RELEASE="-Wall" -DCMAKE_CXX_FLAGS_RELEASE="-Wall" -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.1 > %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x32: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
-cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release --target libmfx32-gen >> %BUILDTREE%\build.log 2>&1
+cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release --target libmfx32-gen mfx_player mfx_transcoder >> %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x32: build failed with %ERRORLEVEL%. & exit /B 1)
 

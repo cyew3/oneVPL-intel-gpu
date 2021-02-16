@@ -183,6 +183,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(BufferingPeriodSEI);
     SERIALIZE_INT(UseRawRef);
 }
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
 void MFXStructureRef <mfxExtEncToolsConfig>::ConstructValues() const
 {
     SERIALIZE_INT(AdaptiveI);
@@ -197,6 +198,7 @@ void MFXStructureRef <mfxExtEncToolsConfig>::ConstructValues() const
     SERIALIZE_INT(BRCBufferHints);
     SERIALIZE_INT(BRC);
 }
+#endif
 void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
 {
     SERIALIZE_INT(NumSliceI);
@@ -677,7 +679,7 @@ void MFXStructureRef <mfxBitstream>::ConstructValues () const
     SERIALIZE_INT(DataFlag);
 }
 
-
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
 void MFXStructureRef <mfxExtCodingOptionQuantMatrix>::ConstructValues () const
 {
     SERIALIZE_INT(bIntraQM);
@@ -689,6 +691,7 @@ void MFXStructureRef <mfxExtCodingOptionQuantMatrix>::ConstructValues () const
     SERIALIZE_POD_ARRAY(ChromaIntraQM,64);
     SERIALIZE_POD_ARRAY(ChromaInterQM,64);
 }
+#endif
 
 void MFXStructureRef<mfxInfoVPP>::ConstructValues () const
 {
@@ -1255,19 +1258,22 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("DDI."), *(mfxExtCodingOptionDDI*)m_pStruct);
             break;
         }
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
         case  MFX_EXTBUFF_ENCTOOLS_CONFIG:
             SerializeStruct(VM_STRING("ET."), *(mfxExtEncToolsConfig*)m_pStruct);
             break;
-
+#endif
 
         case MFX_EXTBUFF_MULTI_FRAME_PARAM: {
             SerializeStruct(VM_STRING("MFE."), *(mfxExtMultiFrameParam*)m_pStruct);
             break;
         }
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
         case MFX_EXTBUFF_QM: {
             SerializeStruct(VM_STRING("QuantMatrix."), *(mfxExtCodingOptionQuantMatrix*)m_pStruct);
             break;
         }
+#endif
         case MFX_EXTBUFF_HEVCENC :{
             SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
             break;

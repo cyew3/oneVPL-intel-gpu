@@ -30,7 +30,14 @@ public:
     virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoVPP_GetVideoParam(m_session, par); }
     virtual mfxStatus GetVPPStat(mfxVPPStat *stat) { return MFXVideoVPP_GetVPPStat(m_session, stat); }
     virtual mfxStatus RunFrameVPPAsync(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) { return MFXVideoVPP_RunFrameVPPAsync(m_session, in, out, aux, syncp); }
-    virtual mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work,  mfxFrameSurface1 **out, mfxExtVppAuxData * /* aux */, mfxSyncPoint *syncp) { return MFXVideoVPP_RunFrameVPPAsyncEx(m_session, in, work, out, syncp); }
+    virtual mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work,  mfxFrameSurface1 **out, mfxExtVppAuxData * /* aux */, mfxSyncPoint *syncp)
+    {
+#ifndef MFX_ONEVPL
+        return MFXVideoVPP_RunFrameVPPAsyncEx(m_session, in, work, out, syncp);
+#else
+        return MFX_ERR_UNSUPPORTED;
+#endif
+    }
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXVideoCORE_SyncOperation(m_session, syncp, wait);}
 
 protected:

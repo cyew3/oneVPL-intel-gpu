@@ -1,4 +1,4 @@
-if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR MFX_DISABLE_SW_FALLBACK)
+if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR (MFX_DISABLE_SW_FALLBACK AND NOT BUILD_VAL_TOOLS))
   return()
 endif()
 
@@ -53,9 +53,15 @@ target_link_libraries(mfx_trans_pipeline
     mfx_va_properties
 )
 
+target_compile_options(mfx_trans_pipeline
+  PRIVATE
+    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
+)
+
 target_compile_definitions(mfx_trans_pipeline
   PRIVATE
     MFX_VERSION_USE_LATEST
+    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 add_library(mfx_trans_pipeline_lucas STATIC ${common_sources})
@@ -64,6 +70,11 @@ target_include_directories(mfx_trans_pipeline_lucas
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+)
+
+target_compile_options(mfx_trans_pipeline_lucas
+  PRIVATE
+    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
 )
 
 target_link_libraries(mfx_trans_pipeline_lucas
@@ -79,6 +90,7 @@ target_compile_definitions(mfx_trans_pipeline_lucas
   PRIVATE
     MFX_VERSION_USE_LATES
     LUCAS_DLL
+    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 set_property(TARGET mfx_trans_pipeline mfx_trans_pipeline_lucas PROPERTY FOLDER "testsuite")
@@ -108,6 +120,7 @@ target_link_libraries(mfx_transcoder
 target_compile_definitions(mfx_transcoder
   PRIVATE
     MFX_VERSION_USE_LATEST
+    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 

@@ -1,4 +1,4 @@
-if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR MFX_DISABLE_SW_FALLBACK)
+if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR (MFX_DISABLE_SW_FALLBACK AND NOT BUILD_VAL_TOOLS))
   return()
 endif()
 
@@ -81,6 +81,11 @@ set(common_linux_defs
 
 add_library(mfx_pipeline STATIC ${common_mfx_pipeline_sources})
 
+target_compile_options(mfx_pipeline
+  PRIVATE
+    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
+)
+
 target_include_directories(mfx_pipeline
   PUBLIC
     ${MSDK_UMC_ROOT}/test_suite/spy_test_component/include
@@ -92,6 +97,7 @@ target_compile_definitions(mfx_pipeline
   PRIVATE
     MFX_VERSION_USE_LATEST
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
+    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 target_link_libraries(mfx_pipeline
@@ -104,8 +110,10 @@ target_link_libraries(mfx_pipeline
     avi_spl
     vc1_spl
     asf_spl
-    vm
     mpeg4_spl
+    vm
+    ${MFX_API_TARGET}
+    ${MFX_DISPATCHER}
     $<$<PLATFORM_ID:Windows>:sample_protected>
     $<$<PLATFORM_ID:Windows>:dxva2_dump>
     $<$<PLATFORM_ID:Windows>:mfx_dispatch_trace>
@@ -128,6 +136,11 @@ target_include_directories(mfx_pipeline_lucas
     ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/deprecated/sample_spl_mux/api
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+)
+
+target_compile_options(mfx_pipeline_lucas
+  PRIVATE
+    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
 )
 
 target_link_libraries(mfx_pipeline_lucas
@@ -159,6 +172,7 @@ target_compile_definitions(mfx_pipeline_lucas
     MFX_VERSION_USE_LATEST
     LUCAS_DLL
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
+    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 set_property(TARGET mfx_pipeline mfx_pipeline_lucas PROPERTY FOLDER "testsuite")
@@ -177,6 +191,7 @@ target_compile_definitions(mfx_player
   PRIVATE
     MFX_VERSION_USE_LATEST
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
+    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 target_link_libraries(mfx_player

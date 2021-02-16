@@ -35,9 +35,13 @@ File Name: .h
 #include "mfxdefs.h"
 //#include "app_defs.h"
 //#include "automatic_pointer.h"
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
 #include "mfxenctools.h"
+#endif
 #include "mfxvideo.h"
+#if !defined(MFX_ONEVPL)
 #include "mfxcamera.h"
+#endif
 #include "vm_strings.h"
 #include "vm_time.h"
 #include "vm_file.h"

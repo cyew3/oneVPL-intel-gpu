@@ -10,6 +10,8 @@
 //
 */
 
+#ifndef MFX_ONEVPL 
+
 #include "mfx_bayer_reader.h"
 
 BayerVideoReader::BayerVideoReader(sStreamInfo *pParams)
@@ -142,3 +144,5 @@ mfxStatus BayerVideoReader::ReadNextFrame(mfxBitstream2 &bs)
 
     return MFX_ERR_NONE;
 }
+
+#endif // #ifndef MFX_ONEVPL

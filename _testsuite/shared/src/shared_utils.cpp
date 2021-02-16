@@ -664,9 +664,10 @@ mfxStatus CreateMFXEncode(sFrameEncoder* pEncoder, mfxVideoParam* pParams, bool 
 
     if (bMemoryAllocator)
     {
+#ifndef MFX_ONEVPL
         sts = CreateBufferAllocator(&pEncoder->pBufferAllocator);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMFXEncode(pEncoder));
-
+#endif
         sts = CreateFrameAllocator(&pEncoder->pFrameAllocator);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMFXEncode(pEncoder));
 

@@ -33,7 +33,9 @@ using namespace UMC;
 
 namespace UMC
 {
+#if defined (UMC_ENABLE_VC1_SPLITTER)
     Splitter *CreateVC1Splitter();
+#endif
     Splitter *CreateASFSplitter();
     Splitter *CreateMPEG4Splitter();
 }
@@ -139,7 +141,7 @@ mfxStatus UMCSplWrapper::Init(const vm_char *strFileName)
         m_pInitParams       = iMpegSplitterParams;
         isMp4               = true;
         break;
-
+#if defined (UMC_ENABLE_VC1_SPLITTER)
     case VC1_PURE_VIDEO_STREAM:
         MFX_CHECK_WITH_ERR(m_pInputData  = new MediaData, MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(m_pSplitter   = CreateVC1Splitter(), MFX_ERR_MEMORY_ALLOC);
@@ -147,7 +149,7 @@ mfxStatus UMCSplWrapper::Init(const vm_char *strFileName)
         MFX_CHECK_WITH_ERR(m_pConstructor= new MFXFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
         m_isVC1         = true;
         break;
-
+#endif
     case ASF_STREAM:
         MFX_CHECK_WITH_ERR(m_pInputData  = new MediaData, MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(m_pSplitter   = CreateASFSplitter(), MFX_ERR_MEMORY_ALLOC);

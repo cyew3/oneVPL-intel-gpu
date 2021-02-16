@@ -15,6 +15,10 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 #include <functional> /* for std::binary_function on Linux/Android */
 #include "mfxvideo.h"
 
+#ifdef MFX_ONEVPL
+#include "mfxdeprecated.h"
+#endif
+
 struct mfxAllocatorParams
 {
     virtual ~mfxAllocatorParams(){};

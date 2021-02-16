@@ -412,7 +412,7 @@ public:
 //    }
 //};
 
-
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
 template<>
 struct SerialTypeTrait <mfxExtCodingOptionQuantMatrix>
 {
@@ -448,3 +448,4 @@ public:
     }
 };
 
+#endif // #ifdef MFX_UNDOCUMENTED_QUANT_MATRIX

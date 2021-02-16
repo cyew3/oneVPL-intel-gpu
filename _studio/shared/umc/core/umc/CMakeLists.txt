@@ -36,8 +36,15 @@ target_include_directories(umc
     include
   )
 
-if(CMAKE_SYSTEM_NAME MATCHES Linux AND NOT MFX_DISABLE_SW_FALLBACK)
+if(CMAKE_SYSTEM_NAME MATCHES Linux AND (NOT MFX_DISABLE_SW_FALLBACK OR BUILD_VAL_TOOLS))
   target_link_libraries(umc PUBLIC SafeString)
+endif()
+
+if (BUILD_VAL_TOOLS AND MFX_DISABLE_SW_FALLBACK)
+  target_compile_options(umc
+    PRIVATE
+      $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
+  )
 endif()
 
 target_link_libraries(umc PUBLIC mfx_static_lib vm vm_plus)

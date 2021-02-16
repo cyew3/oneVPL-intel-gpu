@@ -11,7 +11,12 @@ File Name: mfx_extended_buffer_id.h
 *******************************************************************************/
 
 #pragma once
+#ifdef MFX_ONEVPL
+#include "mfxpavp.h"
+#include "mfxdeprecated.h"
+#else
 #include "mfxcamera.h"
+#endif
 #ifndef INCLUDED_FROM_MFX_EXTENDED_BUFFER_H
     #error "mfx_extended_buffer_id.h should be included only by mfx_extenedd_buffer.h"
 #endif
@@ -91,19 +96,25 @@ DECL_BUFFER_TYPE(mfxExtColorConversion, MFX_EXTBUFF_VPP_COLOR_CONVERSION);
 DECL_BUFFER_TYPE(mfxExtVPPProcAmp, MFX_EXTBUFF_VPP_PROCAMP);
 DECL_BUFFER_TYPE(mfxExtVPPFieldProcessing, MFX_EXTBUFF_VPP_FIELD_PROCESSING);
 DECL_BUFFER_TYPE(mfxExtVPPDeinterlacing, MFX_EXTBUFF_VPP_DEINTERLACING);
+#ifndef MFX_ONEVPL
 DECL_BUFFER_TYPE(mfxExtCamPipeControl,          MFX_EXTBUF_CAM_PIPECONTROL     );
 DECL_BUFFER_TYPE(mfxExtCamPadding,              MFX_EXTBUF_CAM_PADDING         );
 DECL_BUFFER_TYPE(mfxExtCamGammaCorrection,      MFX_EXTBUF_CAM_GAMMA_CORRECTION);
 DECL_BUFFER_TYPE(mfxExtCamBlackLevelCorrection, MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION);
 DECL_BUFFER_TYPE(mfxExtCamWhiteBalance,         MFX_EXTBUF_CAM_WHITE_BALANCE);
 DECL_BUFFER_TYPE(mfxExtCamColorCorrection3x3,   MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3);
+#endif
 DECL_BUFFER_TYPE(mfxExtMVCSeqDesc, MFX_EXTBUFF_MVC_SEQ_DESC);
 DECL_BUFFER_TYPE(mfxExtCodingOption, MFX_EXTBUFF_CODING_OPTION);
 DECL_BUFFER_TYPE(mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);
 DECL_BUFFER_TYPE(mfxExtCodingOption3,           MFX_EXTBUFF_CODING_OPTION3      );
 DECL_BUFFER_TYPE(mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
 DECL_BUFFER_TYPE(mfxExtEncToolsConfig, MFX_EXTBUFF_ENCTOOLS_CONFIG);
+#endif
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
 DECL_BUFFER_TYPE(mfxExtCodingOptionQuantMatrix, MFX_EXTBUFF_QM);
+#endif
 DECL_BUFFER_TYPE(mfxExtCodingOptionHEVC, MFX_EXTBUFF_HEVCENC);
 DECL_BUFFER_TYPE(mfxExtCodingOptionAV1E, MFX_EXTBUFF_AV1ENC);
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -124,7 +135,9 @@ DECL_BUFFER_TYPE(mfxExtEncoderResetOption, MFX_EXTBUFF_ENCODER_RESET_OPTION);
 DECL_BUFFER_TYPE(mfxExtMultiFrameParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
 
 DECL_BUFFER_TYPE(mfxExtAVCEncodedFrameInfo, MFX_EXTBUFF_ENCODED_FRAME_INFO);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
 DECL_BUFFER_TYPE(mfxExtDumpFiles, MFX_EXTBUFF_DUMP);
+#endif
 DECL_BUFFER_TYPE(mfxExtMVCTargetViews, MFX_EXTBUFF_MVC_TARGET_VIEWS);
 DECL_BUFFER_TYPE(mfxExtVideoSignalInfo, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
 DECL_BUFFER_TYPE(mfxExtAVCRefListCtrl, MFX_EXTBUFF_AVC_REFLIST_CTRL);

@@ -79,9 +79,10 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 #define HANDLE_EXT_OPTION3(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions3, member, OPT_TYPE, description, 0)
 #define HANDLE_DDI_OPTION(member, OPT_TYPE, description)\
     {VM_STRING("-") VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsDDI->member}, VM_STRING("[INTERNAL DDI]: ") VM_STRING(description), NULL, 0}
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
 #define HANDLE_ET_OPTION(member, OPT_TYPE, description)\
     {VM_STRING("-") VM_STRING(#member), OPT_TYPE, {&m_extEncToolsConfig->member}, VM_STRING("EncTools: ") VM_STRING(description), NULL, 0}
-
+#endif
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description, 0)
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description, 0)
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description, MFX_CODEC_HEVC)
@@ -141,9 +142,15 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extCodingOptions2(new mfxExtCodingOption2())
     , m_extCodingOptions3(new mfxExtCodingOption3())
     , m_extCodingOptionsDDI(new mfxExtCodingOptionDDI())
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
     , m_extEncToolsConfig(new mfxExtEncToolsConfig())
+#endif
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
     , m_extCodingOptionsQuantMatrix(new mfxExtCodingOptionQuantMatrix())
+#endif
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     , m_extDumpFiles(new mfxExtDumpFiles())
+#endif
     , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
     , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
     , m_extCodingOptionsAV1E(new mfxExtCodingOptionAV1E())
@@ -167,7 +174,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_svcSeqDeserial(VM_STRING(""), *m_svcSeq.get(), m_filesForDependency)
     , m_svcRateCtrl(new mfxExtSVCRateControl())
     , m_svcRateCtrlDeserial(VM_STRING(""), *m_svcRateCtrl.get())
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
     , m_QuantMatrix(VM_STRING(""),*m_extCodingOptionsQuantMatrix.get())
+#endif
     , m_extEncoderCapability(new mfxExtEncoderCapability())
     , m_extEncoderReset(new mfxExtEncoderResetOption())
     , m_extMFEParam(new mfxExtMultiFrameParam())
@@ -661,6 +670,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         // EncTools
         //et_AdaptiveI
         //et_AdaptiveB
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
         HANDLE_ET_OPTION(AdaptiveRefP, OPT_TRI_STATE, "on/off"),
         HANDLE_ET_OPTION(AdaptiveRefB, OPT_TRI_STATE, "on/off"),
         HANDLE_ET_OPTION(SceneChange, OPT_TRI_STATE, "on/off"),
@@ -670,6 +680,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_ET_OPTION(AdaptiveQuantMatrices, OPT_TRI_STATE, "on/off"),
         HANDLE_ET_OPTION(BRCBufferHints, OPT_TRI_STATE, "on/off"),
         HANDLE_ET_OPTION(BRC, OPT_TRI_STATE, "on/off"),
+#endif
 
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),
@@ -680,8 +691,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_MFE(MaxNumFrames, OPT_UINT_16, "Number of frames for MFE, pure DDI verification with single frame"),
         HANDLE_EXT_MFE(MFMode, OPT_UINT_16, "MFE mode, 0 - default, 1 - off, 2 - auto"),
         // Quant Matrix parameters
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
         {VM_STRING("-qm"), OPT_AUTO_DESERIAL, {&m_QuantMatrix}, VM_STRING("Quant Matrix structure")},
-
+#endif
 
         // video signal
         HANDLE_VSIG_OPTION(VideoFormat,             OPT_UINT_16,  ""),
@@ -904,6 +916,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             m_extCodingOptionsDDI->RefRaw = MFX_CODINGOPTION_ON;
         }
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
         else if (m_OptProc.Check(argv[0], VM_STRING("-et_AdaptiveI"), VM_STRING("adaptiveI via encTools")))
         {
             MFX_CHECK(argv + 1 != argvEnd);
@@ -921,7 +934,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             argv++;
             m_extEncToolsConfig->AdaptiveB = value;
         }
-
+#endif
 
         else if (m_OptProc.Check(argv[0], VM_STRING("-RefRec"), VM_STRING("motion estimation on reconstructed frames")))
         {
@@ -932,6 +945,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_PARSE_INT(m_extMFEParam->MaxNumFrames, argv[1]);
             argv++;
         }
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         else if (m_OptProc.Check(argv[0], VM_STRING("-dump_rec"), VM_STRING("dump reconstructed frames into YUV file"), OPT_FILENAME))
         {
             MFX_CHECK(argv + 1 != argvEnd);
@@ -939,6 +953,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             vm_string_strcpy_s(m_extDumpFiles->ReconFilename, MFX_ARRAY_SIZE(m_extDumpFiles->ReconFilename), argv[0]);
         }
+#endif
         else if (m_OptProc.Check(argv[0], VM_STRING("--qp"), VM_STRING("Base QP for CQP mode."), OPT_INT_32))
         {
             MFX_CHECK(argv + 1 != argvEnd);
@@ -1007,12 +1022,14 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             m_extCodingOptionsHEVC->BPyramid = MFX_CODINGOPTION_ON;
         }
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         else if (m_OptProc.Check(argv[0], VM_STRING("-dump_enc_input"), VM_STRING("dump encode input frames into YUV file"), OPT_FILENAME))
         {
             MFX_CHECK(argv + 1 != argvEnd);
             argv++;
             vm_string_strcpy_s(m_extDumpFiles->InputFramesFilename, MFX_ARRAY_SIZE(m_extDumpFiles->InputFramesFilename), argv[0]);
         }
+#endif
         else if (m_OptProc.Check(argv[0], VM_STRING("-c"), VM_STRING("set CAVLC/CBAC mode: 1=CAVLC, 0=CABAC"), OPT_INT_32))
         {
             MFX_CHECK(argv + 1 != argvEnd);
@@ -2781,13 +2798,14 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extCodingOptionsDDI.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsDDI);
-
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
     if (!m_extEncToolsConfig.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncToolsConfig);
-
+#endif
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     if (!m_extDumpFiles.IsZero())
         m_components[eREN].m_extParams.push_back(m_extDumpFiles);
-
+#endif
     if (!m_extVideoSignalInfo.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVideoSignalInfo);
 
@@ -2842,10 +2860,10 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_svcRateCtrl.IsZero())
         m_components[eREN].m_extParams.push_back(m_svcRateCtrl);
-
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
     if (!m_extCodingOptionsQuantMatrix.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsQuantMatrix);
-
+#endif
     if (!m_extEncoderCapability.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderCapability);
 

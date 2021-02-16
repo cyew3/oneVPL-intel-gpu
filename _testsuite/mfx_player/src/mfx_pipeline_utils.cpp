@@ -200,9 +200,11 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
 }
 #else
 #include <mfxvideo.h>
+#if !defined(MFX_ONEVPL)
 #include <mfxaudio.h>
 #include "mfxenc.h"
 #include "mfxpak.h"
+#endif
 
 #include <iostream>
 #include <string>

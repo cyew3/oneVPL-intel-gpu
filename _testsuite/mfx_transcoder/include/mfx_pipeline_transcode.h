@@ -80,9 +80,15 @@ protected:
     MFXExtBufferPtr<mfxExtCodingOption2> m_extCodingOptions2;
     MFXExtBufferPtr<mfxExtCodingOption3> m_extCodingOptions3;
     MFXExtBufferPtr<mfxExtCodingOptionDDI> m_extCodingOptionsDDI;
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
     MFXExtBufferPtr<mfxExtEncToolsConfig> m_extEncToolsConfig;
+#endif
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
     MFXExtBufferPtr<mfxExtCodingOptionQuantMatrix> m_extCodingOptionsQuantMatrix;
+#endif
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     MFXExtBufferPtr<mfxExtDumpFiles>   m_extDumpFiles;
+#endif
     MFXExtBufferPtr<mfxExtVideoSignalInfo> m_extVideoSignalInfo;
     MFXExtBufferPtr<mfxExtCodingOptionHEVC>  m_extCodingOptionsHEVC;
     MFXExtBufferPtr<mfxExtCodingOptionAV1E>  m_extCodingOptionsAV1E;
@@ -112,7 +118,9 @@ protected:
 
     MFXExtBufferPtr<mfxExtSVCRateControl> m_svcRateCtrl;
     StructureBuilder<mfxExtSVCRateControl> m_svcRateCtrlDeserial;
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
     StructureBuilder<mfxExtCodingOptionQuantMatrix> m_QuantMatrix;
+#endif
 
     MFXExtBufferPtr<mfxExtEncoderCapability> m_extEncoderCapability;
 

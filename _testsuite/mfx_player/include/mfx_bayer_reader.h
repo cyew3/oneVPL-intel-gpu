@@ -10,6 +10,8 @@
 //
 */
 
+#ifndef MFX_ONEVPL
+
 #pragma once
 #include <stdlib.h>
 #include "app_defs.h"
@@ -84,3 +86,5 @@ protected:
     mfxU32   m_FileNum;
     mfxCamBayerFormat m_BayerType;
 };
+
+#endif // #ifndef MFX_ONEVPL

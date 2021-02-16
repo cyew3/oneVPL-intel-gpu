@@ -67,4 +67,9 @@ target_include_directories(vc1_common
     ${CMAKE_CURRENT_SOURCE_DIR}/include
   )
 
+target_compile_options(vc1_common
+  PRIVATE
+    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
+)
+
 target_link_libraries(vc1_common PUBLIC vm_plus umc_va_hw)

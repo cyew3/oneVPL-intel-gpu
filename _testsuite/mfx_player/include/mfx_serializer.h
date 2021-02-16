@@ -21,6 +21,9 @@ File Name: mfxstructures.h
 #include "mfx_pipeline_types.h"
 #include "mfx_serial_formater.h"
 
+#ifdef MFX_ONEVPL
+#include "mfxdeprecated.h"
+#endif
 
 //to create not sorted map, this will allow us to save registration order
 
@@ -512,6 +515,7 @@ protected:
     virtual void ConstructValues () const;
 };
 
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
 template<>
 class MFXStructureRef <mfxExtEncToolsConfig>
     : public MFXStructureBase<mfxExtEncToolsConfig>
@@ -530,6 +534,7 @@ public:
 protected:
     virtual void ConstructValues() const;
 };
+#endif
 
 template<>
 class MFXStructureRef <mfxExtMultiFrameParam>
@@ -550,6 +555,7 @@ protected:
     virtual void ConstructValues() const;
 };
 
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
 template<>
 class MFXStructureRef <mfxExtCodingOptionQuantMatrix>
     : public MFXStructureBase<mfxExtCodingOptionQuantMatrix>
@@ -568,6 +574,7 @@ public:
 protected:
     virtual void ConstructValues () const;
 };
+#endif
 
 template<>
 class MFXStructureRef <mfxExtCodingOptionAV1E>
