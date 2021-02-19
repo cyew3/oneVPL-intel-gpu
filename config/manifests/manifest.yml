@@ -30,7 +30,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.hevc-stream-generator.git
     branch: master
-    revision: 149c98d71a724e0a3082d7217a2a39d7d15725ca
+    revision: e067d8203406dd149d9e77a7f9a4ab313d0dedd3
     dest_dir: sources/mdp_msdk-hevc-stream-generator
   mfts:
     type: git
