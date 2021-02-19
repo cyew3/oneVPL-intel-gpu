@@ -174,27 +174,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     }
 
-#if defined(MFX_ONEVPL)
-    // MFXInit / MFXInitEx in oneVPL is for work in legacy (1.x) mode only
-    // app. must use MFXInitialize for 2.x features
-    if (par.Version.Major > 1)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    mfxStatus sts = MFXInit_Internal(par, session, implInterface, adapterNum);
-
-    // oneVPL should report 1.255 API version when it was initialized through MFXInit / MFXInitEx
-    if (session && *session && sts >= MFX_ERR_NONE)
-    {
-        (*session)->m_versionToReport.Major = 1;
-        (*session)->m_versionToReport.Minor = 255;
-    }
-
-    return sts;
-#else
     return MFXInit_Internal(par, session, implInterface, adapterNum);
-#endif
 
 } // mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 

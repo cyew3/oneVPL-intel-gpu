@@ -147,10 +147,6 @@ struct _mfxSession
     mfxPriority m_priority;
     // API version requested by application
     mfxVersion  m_version;
-#if defined(MFX_ONEVPL)
-    // API version to report from MFXQueryVersion
-    mfxVersion  m_versionToReport;
-#endif
 
     MFXIPtr<OperatorCORE> m_pOperatorCore;
 
