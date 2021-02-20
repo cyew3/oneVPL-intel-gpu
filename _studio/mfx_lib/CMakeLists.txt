@@ -26,6 +26,7 @@ set(sources_common
     shared/src/libmfxsw_query.cpp
     shared/src/libmfxsw_session.cpp
     shared/src/libmfxsw_vpp.cpp
+    shared/src/libmfxsw_decode_vp.cpp
     shared/src/mfx_check_hardware_support.cpp
     shared/src/mfx_session.cpp
 

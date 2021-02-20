@@ -577,6 +577,12 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 
 } // mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task);
 
+#if defined(MFX_ONEVPL)
+mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 **out)
+{
+    return MFX_ERR_NOT_IMPLEMENTED;
+}
+#endif
 //
 // THE OTHER VPP FUNCTIONS HAVE IMPLICIT IMPLEMENTATION
 //

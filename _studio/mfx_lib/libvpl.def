@@ -48,6 +48,7 @@ EXPORTS
     MFXVideoVPP_GetVPPStat
     MFXVideoVPP_RunFrameVPPAsync
     MFXVideoVPP_RunFrameVPPAsyncEx
+    MFXVideoVPP_ProcessFrameAsync
 
     MFXVideoUSER_Register
     MFXVideoUSER_Unregister
@@ -78,7 +79,13 @@ EXPORTS
     MFXQueryImplsDescription
     MFXReleaseImplDescription
 
+    MFXMemory_GetSurfaceForDecode
+    MFXMemory_GetSurfaceForEncode
     MFXMemory_GetSurfaceForVPP
     MFXMemory_GetSurfaceForVPPOut
-    MFXMemory_GetSurfaceForEncode
-    MFXMemory_GetSurfaceForDecode
+
+    MFXVideoDECODE_VPP_Init
+    MFXVideoDECODE_VPP_DecodeFrameAsync
+    MFXVideoDECODE_VPP_Reset
+    MFXVideoDECODE_VPP_Close
+    MFXVideoDECODE_VPP_GetChannelParam

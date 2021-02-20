@@ -100,8 +100,14 @@ LIBMFXGEN_1.2.1 {
     MFXInitialize;
     MFXQueryImplsDescription;
     MFXReleaseImplDescription;
+    MFXMemory_GetSurfaceForDecode;
+    MFXMemory_GetSurfaceForEncode;
     MFXMemory_GetSurfaceForVPP;
     MFXMemory_GetSurfaceForVPPOut;
-    MFXMemory_GetSurfaceForEncode;
-    MFXMemory_GetSurfaceForDecode;
+    MFXVideoVPP_ProcessFrameAsync;
+    MFXVideoDECODE_VPP_Init;
+    MFXVideoDECODE_VPP_DecodeFrameAsync;
+    MFXVideoDECODE_VPP_Reset;
+    MFXVideoDECODE_VPP_Close;
+    MFXVideoDECODE_VPP_GetChannelParam;
 } LIBMFXHW_1.19;
