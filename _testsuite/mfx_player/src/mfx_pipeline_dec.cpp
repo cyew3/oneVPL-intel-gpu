@@ -91,7 +91,7 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 #include "mfxstructures-int.h"
 
-#if !(defined(LINUX32) || defined(LINUX64))
+#if !(defined(LINUX32) || defined(LINUX64)) && !defined(MFX_ONEVPL)
 #define MFX_DISPATCHER_LOG
 #include "mfx_dispatcher_log.h"
 #endif // #if !(defined(LINUX32) || defined(LINUX64))
@@ -1670,8 +1670,10 @@ mfxStatus MFXDecPipeline::CreateVPP()
         if (MFX_EXTBUFF_PAVP_OPTION != (**it).BufferId)
             m_components[eVPP].m_extParams.push_back(**it);
 
+#ifdef PAVP_BUILD
     if (0 != m_components[eVPP].m_params.Protected)
         m_components[eVPP].m_params.Protected = MFX_PROTECTION_PAVP;
+#endif
 
     m_components[eVPP].AssignExtBuffers();
 
@@ -3020,12 +3022,13 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
                 use_D3DPP_over = true;
                 D3DPP_over.SwapEffect = D3DSWAPEFFECT_OVERLAY;
             }
+#ifdef PAVP_BUILD
             if (0 != m_inParams.Protected)
             {
                 use_D3DPP_over = true;
                 D3DPP_over.Flags = D3DPRESENTFLAG_VIDEO | D3DPRESENTFLAG_RESTRICTED_CONTENT | D3DPRESENTFLAG_RESTRICT_SHARED_RESOURCE_DRIVER;
             }
-
+#endif
             if (use_D3DPP_over)
                 m_pHWDevice.reset(new MFXD3D9DeviceEx(D3DPP_over));
             else

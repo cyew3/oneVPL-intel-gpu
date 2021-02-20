@@ -82,7 +82,7 @@ const struct
 mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
 {
 //#if 1
-#if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
+#if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1) && !defined(MFX_ONEVPL)
     mfxStatus mfxRes = MFX_ERR_NONE;
     mfxVersion ver = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
     MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(NULL == pVer ? ver: *pVer);
@@ -144,7 +144,9 @@ mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pV
 mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSession *session)
 {
 //#if 1
-#if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
+#if defined(MFX_ONEVPL)
+    return MFXInitEx(par, session);
+#elif (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
     mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(par.Version);
     if (!pHandle) return MFX_ERR_MEMORY_ALLOC;

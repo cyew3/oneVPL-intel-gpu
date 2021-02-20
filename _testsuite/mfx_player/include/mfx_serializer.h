@@ -25,6 +25,10 @@ File Name: mfxstructures.h
 #include "mfxdeprecated.h"
 #endif
 
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
+#include "mfxenctools-int.h"
+#endif
+
 //to create not sorted map, this will allow us to save registration order
 
 //base serializeble routines

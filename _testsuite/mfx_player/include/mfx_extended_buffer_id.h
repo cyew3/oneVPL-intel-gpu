@@ -17,6 +17,12 @@ File Name: mfx_extended_buffer_id.h
 #else
 #include "mfxcamera.h"
 #endif
+#if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
+#include "mfxenctools-int.h"
+#endif
+
+#include "mfx_extended_buffer.h"
+
 #ifndef INCLUDED_FROM_MFX_EXTENDED_BUFFER_H
     #error "mfx_extended_buffer_id.h should be included only by mfx_extenedd_buffer.h"
 #endif

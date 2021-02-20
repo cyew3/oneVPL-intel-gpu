@@ -70,12 +70,23 @@ set(common_mfx_pipeline_sources
   src/vaapi_utils_x11.cpp
   src/video_window.cpp
   src/xvideo_window.cpp
+   $<$<BOOL:${API_USE_VPL}>:${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp>
 )
 
 set(common_linux_defs
   LINUX32
   $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:LINUX64>
 )
+
+set(mfx_dispatch_include "")
+if (API_USE_VPL)
+  set(mfx_dispatch_include
+    ${MFX_API_HOME}/../mfx_dispatch/vpl/$<IF:$<PLATFORM_ID:Linux>,linux,windows>
+    ${MFX_API_HOME}/../mfx_dispatch/vpl
+  )
+else()
+  set(mfx_dispatch_include ${MFX_API_HOME}/../mfx_dispatch/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include)
+endif()
 
 # ============================= mfx_pipeline ================================================
 
@@ -88,9 +99,11 @@ target_compile_options(mfx_pipeline
 
 target_include_directories(mfx_pipeline
   PUBLIC
+    ${MSDK_STUDIO_ROOT}/shared/include
     ${MSDK_UMC_ROOT}/test_suite/spy_test_component/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+    ${mfx_dispatch_include}
 )
 
 target_compile_definitions(mfx_pipeline
@@ -114,9 +127,9 @@ target_link_libraries(mfx_pipeline
     vm
     ${MFX_API_TARGET}
     ${MFX_DISPATCHER}
-    $<$<PLATFORM_ID:Windows>:sample_protected>
+     $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:sample_protected>
     $<$<PLATFORM_ID:Windows>:dxva2_dump>
-    $<$<PLATFORM_ID:Windows>:mfx_dispatch_trace>
+    $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:mfx_dispatch_trace>
     $<$<PLATFORM_ID:Windows>:sample_spl_mux_dispatcher_v15>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>
@@ -132,10 +145,12 @@ add_library(mfx_pipeline_lucas STATIC ${common_mfx_pipeline_sources})
 
 target_include_directories(mfx_pipeline_lucas
   PUBLIC
+    ${MSDK_STUDIO_ROOT}/shared/include
     ${MSDK_UMC_ROOT}/test_suite/spy_test_component/include
     ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/deprecated/sample_spl_mux/api
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
+    ${mfx_dispatch_include}
 )
 
 target_compile_options(mfx_pipeline_lucas
@@ -156,9 +171,9 @@ target_link_libraries(mfx_pipeline_lucas
     asf_spl
     mpeg4_spl
     vm
-    $<$<PLATFORM_ID:Windows>:sample_protected>
+    $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:sample_protected>
     $<$<PLATFORM_ID:Windows>:dxva2_dump>
-    $<$<PLATFORM_ID:Windows>:mfx_dispatch_trace>
+    $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:mfx_dispatch_trace>
     $<$<PLATFORM_ID:Windows>:sample_spl_mux_dispatcher_v15>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>

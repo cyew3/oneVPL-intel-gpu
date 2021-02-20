@@ -16,6 +16,7 @@ Copyright(c) 2011 - 2020 Intel Corporation. All Rights Reserved.
 #include "d3d_device.h"
 #include "sample_defs.h"
 #include "igfx_s3dcontrol.h"
+#include <algorithm>
 
 CD3D9Device::CD3D9Device()
 {

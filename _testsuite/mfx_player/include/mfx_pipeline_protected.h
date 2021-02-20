@@ -12,6 +12,8 @@ Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
 
 #include "mfx_pipeline_defs.h"
 
+#ifdef PAVP_BUILD
+
 #ifdef D3D_SURFACES_SUPPORT
     #include <d3d9.h>
     #include <dxva2api.h>
@@ -843,3 +845,5 @@ protected:
 #endif//MFX_D3D11_SUPPORT
     SOProxy m_pavpdll;
 };
+
+#endif // PAVP_BUILD
