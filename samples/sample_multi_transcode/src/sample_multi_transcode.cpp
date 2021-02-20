@@ -142,11 +142,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     MSDK_CHECK_STATUS(sts, "VerifyCrossSessionsOptions failed");
 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
-#if !defined(MFX_ONEVPL)
     // check available adapters
     sts = QueryAdapters();
     MSDK_CHECK_STATUS(sts, "QueryAdapters failed");
-#endif
 
     if (m_eDevType && m_DisplaysData.empty())
     {
@@ -163,9 +161,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             bNeedToCreateDevice = false;
 
 #if defined(_WIN32) || defined(_WIN64)
-#if !defined(MFX_ONEVPL)
         ForceImplForSession(i);
-#endif
         if (m_eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
         {
             if (bNeedToCreateDevice)
@@ -504,7 +500,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         sts = MFX_ERR_MORE_DATA;
         if (Source == m_InputParamsArray[i].eMode)
         {
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031) && !defined(MFX_ONEVPL)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
             sts = CheckAndFixAdapterDependency(i, pSinkPipeline);
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
@@ -520,7 +516,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         }
         else
         {
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031) && !defined(MFX_ONEVPL)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
             sts = CheckAndFixAdapterDependency(i, pParentPipeline);
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
@@ -799,7 +795,7 @@ mfxStatus Launcher::ProcessResult()
     return FinalSts;
 } // mfxStatus Launcher::ProcessResult()
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031) && !defined(MFX_ONEVPL)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
 mfxStatus Launcher::QueryAdapters()
 {
     mfxU32 num_adapters_available;

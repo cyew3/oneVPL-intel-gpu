@@ -59,7 +59,7 @@ namespace TranscodingSample
         virtual mfxStatus ProcessResult();
 
     protected:
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031) && !defined(MFX_ONEVPL)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
         mfxStatus QueryAdapters();
         void      ForceImplForSession(mfxU32 idxSession);
         mfxStatus CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscodingPipeline * pParentPipeline);
