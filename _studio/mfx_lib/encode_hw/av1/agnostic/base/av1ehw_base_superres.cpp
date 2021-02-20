@@ -48,6 +48,12 @@ void Superres::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
                               pAV1Par->SuperresScaleDenominator > 16),
                          DEFAULT_DENOM_FOR_SUPERRES_ON);
 
+        // HW restriction of SuperRes denominator for SuperRes + LoopRestoration
+        changed += SetIf(pAV1Par->SuperresScaleDenominator,
+                         IsOn(pAV1Par->EnableSuperres) && IsOn(pAV1Par->EnableRestoration) &&
+                             (pAV1Par->SuperresScaleDenominator % 2 ==1),
+                         DEFAULT_DENOM_FOR_SUPERRES_ON);
+
         changed += SetIf(pAV1Par->SuperresScaleDenominator,
                          IsOff(pAV1Par->EnableSuperres) &&
                              pAV1Par->SuperresScaleDenominator !=
