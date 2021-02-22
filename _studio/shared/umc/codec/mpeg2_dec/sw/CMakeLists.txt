@@ -26,6 +26,13 @@ target_sources(mpeg2_dec_sw
     include/umc_mpeg2_dec_tbl.h
 )
 
-target_link_libraries(mpeg2_dec_sw PUBLIC mfx_static_lib color_space_converter media_buffers)
+target_link_libraries(mpeg2_dec_sw
+  PUBLIC
+    mfx_static_lib
+    color_space_converter
+    media_buffers
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET mpeg2_dec_sw PROPERTY FOLDER "umc")

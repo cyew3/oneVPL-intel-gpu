@@ -566,7 +566,7 @@ namespace vp9e_big_resolution
 
             mfxU32 encoded = 0;
             mfxU32 submitted = 0;
-            mfxSyncPoint sp;
+            mfxSyncPoint sp = nullptr;
             const mfxU32 frames_count = 2;
 
             while (encoded < frames_count)

@@ -60,6 +60,7 @@ if(NOT OPEN_SOURCE)
           mfx_trace
           mfx_static_lib
           mfx_shared_lib
+          mfx_sdl_properties
           umc_io
           umc_va_hw
           hevc_pp_atom
@@ -301,6 +302,8 @@ if(NOT OPEN_SOURCE)
         vm_plus
         mfx_trace
         mfx_shared_lib
+      PRIVATE
+        mfx_sdl_properties
         ${ITT_LIBRARIES}
         ${IPP_LIBS}
         ${CMAKE_THREAD_LIBS_INIT}
@@ -433,6 +436,8 @@ if(NOT OPEN_SOURCE)
           vm_plus
           mfx_shared_lib
           mfx_trace
+        PRIVATE
+          mfx_sdl_properties
           ${ITT_LIBRARIES}
           ${IPP_LIBS}
           ${CMAKE_THREAD_LIBS_INIT}
@@ -569,25 +574,28 @@ if(NOT OPEN_SOURCE)
 
     set( description_name ${${variant}_AV1_ENCODER_DESCRIPTION} )
 
-    target_link_libraries(${plugin_name} PUBLIC
-      av1_fei
-      genx_av1_encode_embeded
-      av1_enc_hw
-      av1_pp_avx2
-      av1_pp_px
-      av1_pp_ssse3
-      media_buffers
-      umc_io
-      umc
-      vm
-      vm_plus
-      mfx_trace
-      mfx_shared_lib
-      umc_va_hw
-      ${ITT_LIBRARIES}
-      ${IPP_LIBS}
-      ${CMAKE_THREAD_LIBS_INIT}
-      ${CMAKE_DL_LIBS}
+    target_link_libraries(${plugin_name}
+      PUBLIC
+        av1_fei
+        genx_av1_encode_embeded
+        av1_enc_hw
+        av1_pp_avx2
+        av1_pp_px
+        av1_pp_ssse3
+        media_buffers
+        umc_io
+        umc
+        vm
+        vm_plus
+        mfx_trace
+        mfx_shared_lib
+        umc_va_hw
+      PRIVATE
+        mfx_sdl_properties
+        ${ITT_LIBRARIES}
+        ${IPP_LIBS}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${CMAKE_DL_LIBS}
     )
 
     target_compile_definitions(${plugin_name}
@@ -738,6 +746,8 @@ if(NOT OPEN_SOURCE)
         vm_plus
         mfx_trace
         mfx_shared_lib
+      PRIVATE
+        mfx_sdl_properties
         ${ITT_LIBRARIES}
         ${IPP_LIBS}
         ${CMAKE_THREAD_LIBS_INIT}

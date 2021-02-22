@@ -36,7 +36,11 @@ target_sources(pa
     pa/log_debug.c
   )
 
-target_link_libraries(pa PRIVATE mfx_static_lib)
+target_link_libraries(pa
+  PRIVATE
+    mfx_static_lib
+    mfx_sdl_properties
+  )
 
 ####################################################################
 
@@ -75,13 +79,13 @@ target_sources(pacm
     ../mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
   )
 
-target_link_libraries(pacm PRIVATE mfx_static_lib)
-
-target_compile_options(pacm
-  PUBLIC
-    ${CMAKE_CXX_FLAGS}
-    -std=c++0x
+target_link_libraries(pacm
+  PRIVATE
+    mfx_static_lib
+    mfx_sdl_properties
   )
+
+target_compile_features(pacm PUBLIC cxx_std_11)
 
 ####################################################################
 
@@ -146,6 +150,8 @@ target_link_libraries(mfx_ptir_hw64
       umc
       vm
       vm_plus
+    PRIVATE
+      mfx_sdl_properties
       ${CMAKE_DL_LIBS}
       ${IPP_LIBS}
     )

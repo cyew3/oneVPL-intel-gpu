@@ -220,7 +220,7 @@ target_link_libraries(mfx_player
     ${ITT_LIBRARIES}
     mfx_shared_lib
     media_buffers
-    ${CMAKE_THREAD_LIBS_INIT}
+    Threads::Threads
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
     ${CMAKE_DL_LIBS}
 )
@@ -251,7 +251,7 @@ target_link_libraries(mfx_player_lucas
     mfx_trace
     ${ITT_LIBRARIES}
     mfx_shared_lib
-    ${CMAKE_THREAD_LIBS_INIT}
+    Threads::Threads
     ${CMAKE_DL_LIBS}
 )
 

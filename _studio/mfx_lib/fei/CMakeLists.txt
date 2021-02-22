@@ -17,7 +17,14 @@ target_compile_definitions(h264_common
     MFX_VA
   )
 
-target_link_libraries(h264_common PUBLIC mfx_static_lib umc_va_hw encode_hw)
+target_link_libraries(h264_common
+  PUBLIC
+    mfx_static_lib
+    umc_va_hw
+    encode_hw
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 # =============================================================================
 

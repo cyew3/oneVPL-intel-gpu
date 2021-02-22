@@ -319,7 +319,7 @@ mfxStatus tsVideoENC::Encode1N(mfxU32 n)
     mfxU32 encoded = 0;
     mfxU32 submitted = 0;
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
-    mfxSyncPoint sp;
+    mfxSyncPoint sp = nullptr;
 
     async = TS_MIN(n, async - 1);
 

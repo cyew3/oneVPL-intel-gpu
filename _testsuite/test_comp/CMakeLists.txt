@@ -38,6 +38,7 @@ target_compile_definitions(${test_comp}
   PRIVATE
     MFX_VERSION_USE_LATEST
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
+    $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_DEPRECATE>
   )
 
 set_property(TARGET ${test_comp} PROPERTY FOLDER "testsuite")

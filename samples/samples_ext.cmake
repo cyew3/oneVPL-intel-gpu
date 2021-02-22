@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Intel Corporation
+# Copyright (c) 2018-2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ endif()
 add_subdirectory(sample_mondello)
 if (NOT ${API_USE_VPL})
   add_subdirectory(sample_camera)
-endif()
 
-add_subdirectory(DONT_RELEASE/sample_encode_mod)
-add_subdirectory(DONT_RELEASE/sample_multi_transcode_mod)
+  add_subdirectory(DONT_RELEASE/sample_encode_mod)
+  add_subdirectory(DONT_RELEASE/sample_multi_transcode_mod)
+endif()

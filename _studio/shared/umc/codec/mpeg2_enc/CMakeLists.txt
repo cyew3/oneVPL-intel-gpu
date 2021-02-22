@@ -31,5 +31,12 @@ target_include_directories(mpeg2_enc
     ${CMAKE_CURRENT_SOURCE_DIR}/../color_space_converter/include
   )
 
-target_link_libraries(mpeg2_enc PUBLIC umc umc_io mfx_static_lib)
+target_link_libraries(mpeg2_enc
+  PUBLIC
+    umc
+    umc_io
+    mfx_static_lib
+  PRIVATE
+    mfx_sdl_properties
+  )
 set_property(TARGET mpeg2_enc PROPERTY FOLDER "umc")

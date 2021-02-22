@@ -24,6 +24,12 @@ target_sources(jpeg_common
     src/membuffout.cpp
 )
 
-target_link_libraries(jpeg_common PUBLIC mfx_static_lib umc_va_hw)
+target_link_libraries(jpeg_common
+  PUBLIC
+    mfx_static_lib
+    umc_va_hw
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET jpeg_common PROPERTY FOLDER "umc")

@@ -1,5 +1,8 @@
 add_executable(sample_decode)
 set_property(TARGET sample_decode PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET sample_decode PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_include_directories(sample_decode PRIVATE include)
 target_link_libraries(sample_decode PRIVATE sample_common)

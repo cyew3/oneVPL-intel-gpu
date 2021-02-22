@@ -21,5 +21,11 @@ target_sources(me
     src/umc_vme.cpp
   )
 
-target_link_libraries(me PUBLIC umc mfx_static_lib)
+target_link_libraries(me
+  PUBLIC
+    umc
+    mfx_static_lib
+  PRIVATE
+    mfx_sdl_properties
+  )
 set_property(TARGET me PROPERTY FOLDER "umc")

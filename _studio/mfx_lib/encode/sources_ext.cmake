@@ -2,6 +2,10 @@ if(MFX_DISABLE_SW_FALLBACK)
   return()
 endif()
 
+if (NOT CMAKE_CXX_COMPILER_ID MATCHES Intel)
+  return()
+endif()
+
 list(APPEND
   common_sources
     ${MSDK_LIB_ROOT}/fs_det/src/Cleanup.cpp
@@ -89,7 +93,14 @@ target_sources(h265_enc_hw
     ${common_sources}
 )
 
-target_link_libraries(h265_enc_hw PUBLIC mfx_static_lib umc cmrt_cross_platform_hw)
+target_link_libraries(h265_enc_hw
+  PUBLIC
+    mfx_static_lib
+    umc
+    cmrt_cross_platform_hw
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 target_compile_definitions(h265_enc_hw PRIVATE AS_HEVCE_PLUGIN MFX_D3D11_ENABLED)
 
@@ -182,4 +193,10 @@ target_sources(av1_enc_hw
 
   target_compile_definitions(av1_enc_hw PRIVATE AS_AV1E_PLUGIN MFX_D3D11_ENABLED MFX_VA)
 
-target_link_libraries(av1_enc_hw PUBLIC mfx_static_lib umc cmrt_cross_platform_hw)
+target_link_libraries(av1_enc_hw
+  PUBLIC
+    mfx_static_lib
+    umc
+    cmrt_cross_platform_hw
+  PRIVATE
+    mfx_sdl_properties)

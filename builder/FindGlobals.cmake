@@ -103,12 +103,15 @@ elseif( Windows )
     set( CMAKE_INSTALL_PREFIX "C:/Program Files/mediasdk/" CACHE PATH "Install Path Prefix" FORCE )
   endif()
 
-  foreach(var
-    CMAKE_C_FLAGS CMAKE_CXX_FLAGS
-    CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELWITHDEBINFO
-    CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-    string(REPLACE "/MD" "/MT" ${var} "${${var}}")
-  endforeach()
+#  foreach(var
+#    CMAKE_C_FLAGS CMAKE_CXX_FLAGS
+#    CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELWITHDEBINFO
+#    CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+#    string(REPLACE "/MD" "/MT" ${var} "${${var}}")
+
+    # See https://gitlab.kitware.com/cmake/cmake/-/issues/19084 - we control exception-enabling flags manualy
+#    string(REPLACE "/EHsc" "" ${var} "${${var}}")
+#  endforeach()
 
   foreach(config_type ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${config_type} config_type_capital)
@@ -119,14 +122,25 @@ elseif( Windows )
 
   target_compile_definitions(mfx_common_properties
     INTERFACE
+      MFX_DX9ON11
       MFX_D3D11_ENABLED
+      UNICODE
       _UNICODE
       NOMINMAX
   )
   target_compile_options(mfx_common_properties
     INTERFACE
-      $<$<BOOL:${MFX_ENABLE_SPECTRE_MITIGATIONS}>:/Qspectre>
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<BOOL:${MFX_ENABLE_SPECTRE_MITIGATIONS}>>:/Qspectre>
+      $<$<CXX_COMPILER_ID:MSVC>:/EHa>
       /guard:cf
+      /fp:precise
+      /Zc:wchar_t
+      /Zc:inline
+      /Zc:forScope
+      /Gm-
+      /Zi
+      /GS
+      /Gy
   )
 endif( )
 

@@ -3,7 +3,10 @@ if( NOT ENABLE_MONDELLO )
 endif()
 
 add_executable( sample_modello )
-
+set_property(TARGET sample_mondello PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET sample_mondello PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_include_directories(sample_modello
   PUBLIC

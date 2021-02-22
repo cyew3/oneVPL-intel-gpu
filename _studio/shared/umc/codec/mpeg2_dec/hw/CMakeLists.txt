@@ -30,6 +30,12 @@ target_sources(mpeg2_dec_hw
 
 target_compile_definitions(mpeg2_dec_hw PRIVATE MFX_VA)
 
-target_link_libraries(mpeg2_dec_hw PUBLIC mfx_static_lib color_space_converter)
+target_link_libraries(mpeg2_dec_hw
+  PUBLIC
+    mfx_static_lib
+    color_space_converter
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET mpeg2_dec_hw PROPERTY FOLDER "umc")

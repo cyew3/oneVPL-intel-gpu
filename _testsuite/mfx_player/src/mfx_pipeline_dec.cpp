@@ -3028,7 +3028,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
                 use_D3DPP_over = true;
                 D3DPP_over.Flags = D3DPRESENTFLAG_VIDEO | D3DPRESENTFLAG_RESTRICTED_CONTENT | D3DPRESENTFLAG_RESTRICT_SHARED_RESOURCE_DRIVER;
             }
-#endif
+#endif // PAVP_BUILD
             if (use_D3DPP_over)
                 m_pHWDevice.reset(new MFXD3D9DeviceEx(D3DPP_over));
             else

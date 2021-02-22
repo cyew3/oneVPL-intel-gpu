@@ -30,7 +30,14 @@ if(NOT OPEN_SOURCE)
   endif()
 endif()
 
-target_link_libraries(mfx_vp9e_hw64 PUBLIC mfx_shared_lib mfx_plugin_properties ${IPPLIBS} umc)
+target_link_libraries(mfx_vp9e_hw64
+  PUBLIC 
+    mfx_shared_lib
+    mfx_plugin_properties
+    ${IPPLIBS}
+    umc
+  PRIVATE
+    mfx_sdl_properties)
 
 target_compile_definitions(mfx_vp9e_hw64
   PRIVATE

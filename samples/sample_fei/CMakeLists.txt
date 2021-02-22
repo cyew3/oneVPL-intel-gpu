@@ -8,6 +8,9 @@ endif()
 
 add_executable(sample_fei)
 set_property(TARGET sample_fei PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET sample_fei PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_include_directories(sample_fei PUBLIC include)
 target_link_libraries(sample_fei PRIVATE sample_common)

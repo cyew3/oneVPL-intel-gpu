@@ -18,6 +18,12 @@ target_sources(jpeg_enc
     src/umc_mjpeg_video_encoder.cpp
 )
 
-target_link_libraries(jpeg_enc PUBLIC mfx_static_lib jpeg_common)
+target_link_libraries(jpeg_enc
+  PUBLIC
+    mfx_static_lib
+    jpeg_common
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET jpeg_enc PROPERTY FOLDER "umc")

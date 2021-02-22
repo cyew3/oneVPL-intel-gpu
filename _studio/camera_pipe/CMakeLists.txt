@@ -109,6 +109,8 @@ target_link_libraries(mfx_camera_hw64
 #====MCTF
     asc
     mctf_hw
+  PRIVATE
+    mfx_sdl_properties
   )
 
 target_compile_definitions(mfx_camera_hw64

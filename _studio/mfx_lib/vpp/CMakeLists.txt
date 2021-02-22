@@ -29,6 +29,7 @@ target_link_libraries(vpp_hw
   PUBLIC
     mfx_static_lib umc_va_hw cmrt_cross_platform_hw asc mctf_hw
   PRIVATE
+    mfx_sdl_properties
     genx
     IPP::core
   )

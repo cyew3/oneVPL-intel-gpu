@@ -1,8 +1,9 @@
 add_library(mfx_serializer STATIC)
 
 target_include_directories(mfx_serializer
-  PUBLIC
+  SYSTEM PUBLIC
     ${MSDK_CONTRIB_ROOT}/yaml-cpp/include
+  PUBLIC
     ${MSDK_TSUITE_ROOT}/mfx_serializer/include
     ${MSDK_STUDIO_ROOT}/shared/include
 )

@@ -467,7 +467,7 @@ namespace avce_weight_prediction
                 mfxU32 async = TS_MIN(NumFrames, TS_MAX(0, m_par.AsyncDepth - 1));
                 mfxU32 encoded = 0;
                 mfxU32 submitted = 0;
-                mfxSyncPoint sp;
+                mfxSyncPoint sp = nullptr;
 
                 while (encoded < NumFrames)
                 {

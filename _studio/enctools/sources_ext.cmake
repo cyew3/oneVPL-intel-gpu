@@ -19,4 +19,8 @@ target_include_directories(aenc
     aenc/include
 )
 
-target_link_libraries(aenc PRIVATE mfx_static_lib)
+target_link_libraries(aenc
+  PRIVATE
+    mfx_static_lib
+    mfx_sdl_properties
+  )

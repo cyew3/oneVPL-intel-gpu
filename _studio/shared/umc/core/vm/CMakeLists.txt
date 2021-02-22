@@ -48,7 +48,13 @@ target_include_directories(vm
   PUBLIC
     include
 )
-target_link_libraries(vm PUBLIC umc mfx_static_lib)
+target_link_libraries(vm
+  PUBLIC
+    umc
+    mfx_static_lib
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 if (BUILD_VAL_TOOLS AND MFX_DISABLE_SW_FALLBACK)
   target_compile_options(vm

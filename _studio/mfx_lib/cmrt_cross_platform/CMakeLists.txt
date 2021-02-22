@@ -5,4 +5,9 @@ add_library(cmrt_cross_platform_hw STATIC
 
 target_include_directories(cmrt_cross_platform_hw PUBLIC include)
 
-target_link_libraries(cmrt_cross_platform_hw PUBLIC mfx_static_lib vm)
+target_link_libraries(cmrt_cross_platform_hw
+  PUBLIC
+    mfx_static_lib
+    vm
+  PRIVATE
+    mfx_sdl_properties)

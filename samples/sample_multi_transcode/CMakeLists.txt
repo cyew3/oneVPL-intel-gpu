@@ -1,5 +1,8 @@
 add_executable(sample_multi_transcode)
 set_property(TARGET sample_multi_transcode PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET sample_multi_transcode PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_include_directories(sample_multi_transcode
   PRIVATE

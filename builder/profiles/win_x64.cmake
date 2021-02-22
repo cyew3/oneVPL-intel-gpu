@@ -29,7 +29,9 @@ if (CMAKE_C_COMPILER_ID MATCHES Intel)
   set(ENABLE_AV1 ON)
 endif()
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(NOT CMAKE_SYSTEM_NAME MATCHES WindowsStore)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 set( MFX_BUNDLED_IPP OFF )
 

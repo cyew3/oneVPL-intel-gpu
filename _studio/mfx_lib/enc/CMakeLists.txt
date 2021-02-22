@@ -21,6 +21,9 @@ target_sources(enc
     mpeg2/src/mfx_mpeg2_enc_me.cpp
   )
 
-target_link_libraries(enc PRIVATE mfx_static_lib)
+target_link_libraries(enc
+  PRIVATE
+    mfx_static_lib
+    mfx_sdl_properties)
 
 include(sources_ext.cmake OPTIONAL)

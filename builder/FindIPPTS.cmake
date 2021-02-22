@@ -63,7 +63,11 @@ if(NOT IPPTS_INCLUDE MATCHES NOTFOUND)
 
     add_library(IPPTS::ts${postfix} STATIC IMPORTED)
     set_target_properties(IPPTS::ts${postfix} PROPERTIES IMPORTED_LOCATION "${ipp_ts_lib}/${lib_prefix}ts_${ipp_ts_libname}${lib_suffix}")
-    target_include_directories(IPPTS::ts${postfix} INTERFACE ${IPPTS_INCLUDE})
+    target_include_directories(IPPTS::ts${postfix} SYSTEM INTERFACE ${IPPTS_INCLUDE})
+    target_compile_options(IPPTS::ts${postfix} 
+      INTERFACE 
+        $<$<CXX_COMPILER_ID:MSVC>:-wd4105>
+    )
   endforeach()
 endif()
 

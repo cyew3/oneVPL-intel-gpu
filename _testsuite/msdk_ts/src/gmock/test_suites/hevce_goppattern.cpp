@@ -381,7 +381,7 @@ namespace hevce_goppattern
                 mfxU32 encoded = 0;
                 mfxU32 submitted = 0;
                 mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
-                mfxSyncPoint sp;
+                mfxSyncPoint sp = nullptr;
 
                 bool bSingleFldProc = false;
                 async = TS_MIN(MAX_IDR, async - 1);

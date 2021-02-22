@@ -1197,7 +1197,7 @@ mfxStatus tsVideoEncoder::GetVideoParam(mfxSession session, mfxVideoParam *par)
 
 mfxStatus tsVideoEncoder::EncodeFrameAsync()
 {
-    mfxEncodeCtrl* prevCtrl;
+    mfxEncodeCtrl* prevCtrl = nullptr;
     bool restoreCtrl = false;
 
     if(m_default)
@@ -1416,7 +1416,7 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
     mfxU32 encoded = 0;
     mfxU32 submitted = 0;
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
-    mfxSyncPoint sp;
+    mfxSyncPoint sp = nullptr;
 
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
     mfxExtFeiParam* fei_ext= (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);

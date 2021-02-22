@@ -43,8 +43,9 @@ target_link_libraries(vpp_sw
     cmrt_cross_platform_hw
     mctf_hw
   PRIVATE
+    mfx_sdl_properties
     genx
-)
+  )
 
 target_sources(vpp_hw PRIVATE ${sources})
 

@@ -16,16 +16,14 @@ target_include_directories(sample_common
 
 target_compile_definitions(sample_common
   PUBLIC
-    $<$<PLATFORM_ID:Windows>:NOMINMAX>
+    $<$<PLATFORM_ID:Windows>:
+      MFX_D3D11_ENABLED
+      MFX_DX9ON11
+    >
     $<$<PLATFORM_ID:Linux>: LIBVA_SUPPORT>
     $<$<PLATFORM_ID:Linux>: LIBVA_DRM_SUPPORT>
   PRIVATE
     ${WARNING_FLAGS}
-  )
-
-target_compile_options(sample_common
-  PUBLIC
-    $<$<AND:$<PLATFORM_ID:Windows>,$<BOOL:${MFX_ENABLE_SPECTRE_MITIGATIONS}>>:/Qspectre>
   )
 
 target_compile_features(sample_common PUBLIC cxx_std_11)
@@ -40,7 +38,7 @@ target_link_libraries(sample_common
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     mfx_common_properties
     ${MFX_DISPATCHER}
-    ${CMAKE_THREAD_LIBS_INIT}
+    Threads::Threads
     ${CMAKE_DL_LIBS}
   )
 

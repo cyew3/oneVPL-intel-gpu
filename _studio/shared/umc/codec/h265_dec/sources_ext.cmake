@@ -60,5 +60,14 @@ PRIVATE
     AS_HEVCD_PLUGIN
 )
 
-target_link_libraries(umc_h265_sw PUBLIC mfx_static_lib umc vm vm_plus media_buffers)
+target_link_libraries(umc_h265_sw
+  PUBLIC
+    mfx_static_lib
+    umc
+    vm
+    vm_plus
+    media_buffers
+  PRIVATE
+    mfx_sdl_properties
+  )
 set_property(TARGET umc_h265_sw PROPERTY FOLDER "umc")

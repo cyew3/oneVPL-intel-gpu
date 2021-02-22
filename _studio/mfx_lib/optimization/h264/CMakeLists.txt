@@ -22,6 +22,7 @@ target_link_libraries(h264_dispatcher
   PUBLIC
     mfx_static_lib
   PRIVATE
+    mfx_sdl_properties
     ${IPPLIBS}
     h264_px
     h264_sse3
@@ -45,6 +46,7 @@ target_link_libraries(h264_px
   PUBLIC
     mfx_static_lib
   PRIVATE
+    mfx_sdl_properties
     ${IPPLIBS}
   )
 
@@ -65,6 +67,7 @@ target_link_libraries(h264_sse3
   PUBLIC
     mfx_static_lib
   PRIVATE
+    mfx_sdl_properties
     ${IPPLIBS}
     mfx_require_ssse3_properties
   )

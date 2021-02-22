@@ -1,5 +1,8 @@
 add_executable(sample_vpp)
 set_property(TARGET sample_vpp PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET sample_vpp PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_include_directories(sample_vpp PRIVATE include)
 target_link_libraries(sample_vpp PRIVATE sample_common)

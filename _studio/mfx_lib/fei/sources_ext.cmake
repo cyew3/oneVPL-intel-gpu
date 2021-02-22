@@ -14,7 +14,15 @@ if(ENABLE_AV1)
     PRIVATE
       MFX_VA
   )
-  target_link_libraries(av1_fei PUBLIC mfx_static_lib genx_av1_encode_embeded umc cmrt_cross_platform_hw)
+  target_link_libraries(av1_fei
+    PUBLIC
+      mfx_static_lib
+      genx_av1_encode_embeded
+      umc
+      cmrt_cross_platform_hw
+    PRIVATE
+      mfx_sdl_properties
+    )
 endif()
 
 if(ENABLE_HEVC)
@@ -33,5 +41,13 @@ if(ENABLE_HEVC)
     PRIVATE
       MFX_VA
   )
-  target_link_libraries(h265_fei PUBLIC mfx_static_lib genx_h265_encode_embeded umc cmrt_cross_platform_hw)
+  target_link_libraries(h265_fei
+    PUBLIC
+      mfx_static_lib
+      genx_h265_encode_embeded
+      umc
+      cmrt_cross_platform_hw
+    PRIVATE
+      mfx_sdl_properties
+    )
 endif()

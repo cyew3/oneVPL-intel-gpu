@@ -5075,7 +5075,11 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
     mfxU32 &                  numEntryPoints)
 {
     char task_name [240];
-    sprintf(task_name,"Avc::EncodeFrameCheck - %p", surface);
+#if defined(_WIN32) || defined(_WIN64)
+    _snprintf_s(task_name, sizeof(task_name) - 1, _TRUNCATE, "Avc::EncodeFrameCheck - %p", surface);
+#else
+    snprintf(task_name, sizeof(task_name)-1, "Avc::EncodeFrameCheck - %p", surface);
+#endif
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, task_name);
     mfxExtCodingOption const & extOpt = GetExtBufferRef(m_video);
     if (IsOff(extOpt.FieldOutput))

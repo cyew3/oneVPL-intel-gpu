@@ -10,6 +10,9 @@ endif()
 
 add_executable(sample_hevc_fei)
 set_property(TARGET sample_hevc_fei PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET sample_hevc_fei PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_include_directories(sample_hevc_fei PRIVATE include)
 target_link_libraries(sample_hevc_fei PRIVATE sample_common)

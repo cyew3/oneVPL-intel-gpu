@@ -47,6 +47,13 @@ if (BUILD_VAL_TOOLS AND MFX_DISABLE_SW_FALLBACK)
   )
 endif()
 
-target_link_libraries(umc PUBLIC mfx_static_lib vm vm_plus)
+target_link_libraries(umc
+  PUBLIC
+    mfx_static_lib
+    vm
+    vm_plus
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 include(sources_ext.cmake OPTIONAL)

@@ -45,7 +45,14 @@ target_include_directories(mfx_common_sw
     ${MSDK_UMC_ROOT}/codec/vc1_dec/include
 )
 
-target_link_libraries(mfx_common_sw PUBLIC mfx_static_lib umc_io umc)
+target_link_libraries(mfx_common_sw
+  PUBLIC
+    mfx_static_lib
+    umc_io
+    umc
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 # ====================================== mfx_common_hw ======================================
 

@@ -31,7 +31,13 @@ if (ENABLE_HEVC)
       ${MSDK_LIB_ROOT}/decode/h265/include
   )
 
-  target_link_libraries(hevc_pp_dispatcher PUBLIC mfx_static_lib umc)
+  target_link_libraries(hevc_pp_dispatcher
+    PUBLIC
+      mfx_static_lib
+      umc
+    PRIVATE
+      mfx_sdl_properties
+    )
 
   target_sources(hevc_pp_dispatcher
     PRIVATE
@@ -76,7 +82,13 @@ if (ENABLE_HEVC)
       h265/src/mfx_h265_interpolation_atom.cpp
   )
 
-  target_link_libraries(hevc_pp_atom PUBLIC mfx_static_lib umc)
+  target_link_libraries(hevc_pp_atom
+    PUBLIC
+      mfx_static_lib
+      umc
+    PRIVATE
+      mfx_sdl_properties
+    )
 
   target_compile_definitions(hevc_pp_atom
     PRIVATE
@@ -166,7 +178,13 @@ if (ENABLE_HEVC)
       h265/src/mfx_h265_weighted_pred_px.cpp
   )
 
-  target_link_libraries(hevc_pp_px PUBLIC mfx_static_lib umc)
+  target_link_libraries(hevc_pp_px
+    PUBLIC
+      mfx_static_lib
+      umc
+    PRIVATE
+      mfx_sdl_properties
+    )
 
   target_compile_definitions(hevc_pp_px
     PRIVATE
@@ -343,6 +361,7 @@ if (ENABLE_AV1)
       ${IPPLIBS}
       mfx_static_lib
       mfx_require_avx2_properties
+      mfx_sdl_properties
     )
 
   list( APPEND AV1CPP_LIBS av1_pp_avx2 )
@@ -386,7 +405,12 @@ if (ENABLE_AV1)
       av1/px/mfx_av1_sse_px.cpp
   )
 
-  target_link_libraries(av1_pp_px PUBLIC ${IPPLIBS} mfx_static_lib)
+  target_link_libraries(av1_pp_px
+    PUBLIC
+      ${IPPLIBS}
+      mfx_static_lib
+    PRIVATE
+      mfx_sdl_properties)
 
   list( APPEND AV1CPP_LIBS av1_pp_px )
 
@@ -427,6 +451,7 @@ if (ENABLE_AV1)
       ${IPPLIBS}
       mfx_static_lib
     PRIVATE
+      mfx_sdl_properties
       mfx_require_ssse3_properties)
 
   find_program(YASM_EXE NAMES yasm REQUIRED)

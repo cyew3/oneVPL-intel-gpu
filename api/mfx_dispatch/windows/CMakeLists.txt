@@ -87,45 +87,94 @@ target_compile_features(mfx PRIVATE cxx_std_11)
 
 target_compile_options(mfx
   PRIVATE
-   -W4
-  )
+    $<$<CXX_COMPILER_ID:MSVC>:/EHa
+      /Qspectre
+      /sdl
+    >
+    /guard:cf
+    /Zc:wchar_t
+    /Zc:inline
+    /Zc:forScope
+    /GS
+    /Gy
+    /W4
+    /WX
+)
+
+target_compile_definitions(mfx
+  PRIVATE
+    UNICODE
+    _UNICODE
+    _ALLOW_MSC_VER_MISMATCH
+    _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH
+    _ALLOW_RUNTIME_LIBRARY_MISMATCH
+    MFX_D3D11_ENABLED
+)
 
 target_include_directories(mfx
-  PUBLIC
+  SYSTEM INTERFACE
     $<BUILD_INTERFACE:${MFX_API_FOLDER}>
     $<INSTALL_INTERFACE:include>
   PRIVATE
+    $<BUILD_INTERFACE:${MFX_API_FOLDER}>
     include
-  )
+)
 
 add_library(mfx_dispatch_trace STATIC ${sources})
 
 set_property(TARGET mfx_dispatch_trace PROPERTY FOLDER "dispatcher")
 
 target_include_directories(mfx_dispatch_trace
-  PUBLIC
+  SYSTEM INTERFACE
     $<BUILD_INTERFACE:${MFX_API_FOLDER}>
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    $<INSTALL_INTERFACE:include>
+  PRIVATE
+    $<BUILD_INTERFACE:${MFX_API_FOLDER}>
+    include
 )
 
 target_compile_features(mfx_dispatch_trace PRIVATE cxx_std_11)
 
+target_compile_options(mfx_dispatch_trace
+  PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/EHa
+      /Qspectre
+      /sdl
+    >
+    /guard:cf
+    /Zc:wchar_t
+    /Zc:inline
+    /Zc:forScope
+    /GS
+    /Gy
+    /W4
+    /WX
+  )
+
 target_compile_definitions(mfx_dispatch_trace
   PRIVATE
+    UNICODE
+    _UNICODE
     _CONSOLE
     MFX_DISPATCHER_LOG
     DXVA2DEVICE_LOG
+    _ALLOW_MSC_VER_MISMATCH
+    _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH
+    _ALLOW_RUNTIME_LIBRARY_MISMATCH
+    MFX_D3D11_ENABLED
 )
-
 
 add_library(mfx_dispatch_trace_mbcs STATIC ${sources})
 
 set_property(TARGET mfx_dispatch_trace_mbcs PROPERTY FOLDER "dispatcher")
 
 target_include_directories(mfx_dispatch_trace_mbcs
-  PUBLIC
+  SYSTEM INTERFACE
     $<BUILD_INTERFACE:${MFX_API_FOLDER}>
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    $<INSTALL_INTERFACE:include>
+  PRIVATE
+    $<BUILD_INTERFACE:${MFX_API_FOLDER}>
+    include
 )
 
 target_compile_features(mfx_dispatch_trace_mbcs PRIVATE cxx_std_11)
@@ -136,14 +185,33 @@ target_compile_definitions(mfx_dispatch_trace_mbcs
     MFX_DISPATCHER_LOG
     DXVA2DEVICE_LOG
     MFX_DISPATCHER_EXPOSED_PREFIX
+    _ALLOW_MSC_VER_MISMATCH
+    _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH
+    _ALLOW_RUNTIME_LIBRARY_MISMATCH
     _MBCS
 )
 
-target_compile_options(mfx_dispatch_trace_mbcs PRIVATE /U_UNICODE /UUNICODE)
+target_compile_options(mfx_dispatch_trace_mbcs
+  PRIVATE 
+    /U_UNICODE
+    /UUNICODE
+    $<$<CXX_COMPILER_ID:MSVC>:/EHa
+      /Qspectre
+      /sdl
+    >
+    /guard:cf
+    /Zc:wchar_t
+    /Zc:inline
+    /Zc:forScope
+    /GS
+    /Gy
+    /W4
+    /WX
+  )
 
 get_api_version(MFX_VERSION_MAJOR MFX_VERSION_MINOR)
 
-set_target_properties( mfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE} FOLDER mfx )
+set_target_properties( mfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE})
 set_target_properties( mfx PROPERTIES   VERSION ${MFX_VERSION_MAJOR}.${MFX_VERSION_MINOR})
 set_target_properties( mfx PROPERTIES SOVERSION ${MFX_VERSION_MAJOR})
 

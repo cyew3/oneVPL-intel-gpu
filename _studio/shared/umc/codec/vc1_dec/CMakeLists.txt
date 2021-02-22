@@ -73,6 +73,13 @@ target_sources(vc1_dec
     include/umc_vc1_video_decoder_sw.h
 )
 
-target_link_libraries(vc1_dec PUBLIC mfx_static_lib color_space_converter vc1_common)
+target_link_libraries(vc1_dec
+  PUBLIC
+    mfx_static_lib
+    color_space_converter
+    vc1_common
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET vc1_dec PROPERTY FOLDER "umc")

@@ -48,6 +48,7 @@ target_include_directories(dxva2_dump
 target_compile_definitions(dxva2_dump
   PUBLIC
     MFX_VA
+    $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_DEPRECATE>
   )
 
 target_link_libraries(dxva2_dump PUBLIC vm_plus mfx_common_properties PRIVATE umc_va_hw)

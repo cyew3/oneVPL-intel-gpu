@@ -252,7 +252,6 @@ if( DEFINED H264LA_ENCODER_GUID )
 
   target_link_libraries(${plugin_name}
     PRIVATE
-      lpla
       encode_hw
       genx
       asc
@@ -263,6 +262,7 @@ if( DEFINED H264LA_ENCODER_GUID )
       mfx_plugin_properties
       mfx_static_lib
       mfx_shared_lib
+      mfx_sdl_properties
       ${ITT_LIBRARIES}
       ${la_IPPLIBS}
       Threads::Threads

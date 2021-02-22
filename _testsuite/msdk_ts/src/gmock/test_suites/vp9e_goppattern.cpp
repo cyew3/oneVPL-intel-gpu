@@ -320,7 +320,7 @@ namespace vp9e_goppattern
         {
             mfxU32 encoded = 0;
             mfxU32 submitted = 0;
-            mfxSyncPoint sp;
+            mfxSyncPoint sp = nullptr;
 
             mfxU32 i = 0;
             while(encoded < frames_count)

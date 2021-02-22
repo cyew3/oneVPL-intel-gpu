@@ -3,6 +3,9 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
 endif()
 add_executable(sample_camera)
 set_property(TARGET sample_camera PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET sample_camera PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_include_directories(sample_camera PRIVATE include)
 target_link_libraries(sample_camera
@@ -10,8 +13,9 @@ target_link_libraries(sample_camera
     sample_common
     mfx_static_lib
     mfx_shared_lib
+    mfx_sdl_properties
     $<$<PLATFORM_ID:Windows>:Dwmapi>
-    ${CMAKE_THREAD_LIBS_INIT}
+    Threads::Threads
     ${CMAKE_DL_LIBS}
 )
 

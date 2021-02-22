@@ -28,6 +28,15 @@ target_sources(${intel_gfx_api_dll}
     src/resource.h
 )
 
+target_compile_options(${intel_gfx_api_dll}
+  PRIVATE
+    /EHa
+    /guard:cf
+    /sdl
+    /GS
+    /WX
+)
+
 target_compile_definitions(${intel_gfx_api_dll}
   PRIVATE
     _WINDLL
@@ -83,4 +92,5 @@ add_custom_command(TARGET ${intel_gfx_api_dll} POST_BUILD
 set_target_properties(${intel_gfx_api_dll} PROPERTIES
   VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION "${VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION}"
   PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
+  INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
 )

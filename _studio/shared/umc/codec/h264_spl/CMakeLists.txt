@@ -20,5 +20,13 @@ target_include_directories(h264_spl
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(h264_spl PUBLIC umc mfx_static_lib color_space_converter bitrate_control)
+target_link_libraries(h264_spl
+  PUBLIC
+    umc
+    mfx_static_lib
+    color_space_converter
+    bitrate_control
+  PRIVATE
+    mfx_sdl_properties
+  )
 set_property(TARGET h264_spl PROPERTY FOLDER "umc")

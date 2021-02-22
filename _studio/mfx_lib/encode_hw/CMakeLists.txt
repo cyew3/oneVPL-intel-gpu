@@ -251,6 +251,7 @@ target_link_libraries(encode_hw
     mctf_hw
     genx
   PRIVATE
+    mfx_sdl_properties
     bitrate_control
     enc_hw
   )

@@ -48,7 +48,14 @@ add_library(encode STATIC ${sources})
 
 target_include_directories(encode PUBLIC ${include_dirs})
 
-target_link_libraries(encode PUBLIC mfx_static_lib umc cmrt_cross_platform_hw)
+target_link_libraries(encode
+  PUBLIC
+    mfx_static_lib
+    umc
+    cmrt_cross_platform_hw
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set( defs "" )
 
@@ -77,7 +84,13 @@ if( MFX_ENABLE_JPEG_SW_FALLBACK )
     ${MSDK_UMC_ROOT}/codec/color_space_converter/include
     )
 
-  target_link_libraries(encode_sw PUBLIC mfx_static_lib umc)
+  target_link_libraries(encode_sw
+    PUBLIC 
+      mfx_static_lib
+      umc
+    PRIVATE
+      mfx_sdl_properties
+    )
 endif()
 
 include(sources_ext.cmake OPTIONAL)

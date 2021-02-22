@@ -15,6 +15,7 @@ if( MFX_ENABLE_KERNELS )
     PUBLIC 
       mfx_static_lib umc_va_hw cmrt_cross_platform_hw asc
     PRIVATE
+      mfx_sdl_properties
       genx)
 
 endif()

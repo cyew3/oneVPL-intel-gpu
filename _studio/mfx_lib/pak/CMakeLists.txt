@@ -29,6 +29,12 @@ target_sources(pak
     h264/src/mfx_h264_pak_utils.cpp
   )
 
-target_link_libraries(pak PUBLIC umc mfx_static_lib)
+target_link_libraries(pak
+  PUBLIC
+    umc
+    mfx_static_lib
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 include(sources_ext.cmake OPTIONAL)

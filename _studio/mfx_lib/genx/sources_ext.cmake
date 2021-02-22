@@ -73,7 +73,12 @@ if(ENABLE_AV1 AND CMAKE_SYSTEM_NAME MATCHES Windows)
       av1_encode/src/genx_av1_vartx_decision_skl_isa.cpp
   )
 
-  target_link_libraries(genx_av1_encode_embeded PUBLIC mfx_static_lib)
+  target_link_libraries(genx_av1_encode_embeded
+    PUBLIC
+      mfx_static_lib
+    PRIVATE
+      mfx_sdl_properties
+    )
 
   target_include_directories(genx_av1_encode_embeded
     PUBLIC
@@ -173,7 +178,12 @@ if(ENABLE_HEVC AND CMAKE_SYSTEM_NAME MATCHES Windows)
       h265_encode/src/genx_hevce_sao_skl_isa.cpp
   )
 
-  target_link_libraries(genx_h265_encode_embeded PUBLIC mfx_static_lib)
+  target_link_libraries(genx_h265_encode_embeded
+    PUBLIC
+      mfx_static_lib
+    PRIVATE
+      mfx_sdl_properties
+    )
 
   target_include_directories(genx_h265_encode_embeded
     PUBLIC

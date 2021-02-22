@@ -20,8 +20,12 @@
 
 cmake_minimum_required( VERSION 3.14 )
 
-cmake_policy(SET CMP0048 NEW) # version handled by project()
+cmake_policy(SET CMP0048 NEW)   # version handled by project()
+cmake_policy(SET CMP0092 NEW)   # we handle warning level programmaticaly
 
+if(NOT CMAKE_SYSTEM_NAME MATCHES WindowsStore)
+  cmake_policy(SET CMP0091 NEW) # CMAKE_MSVC_RUNTIME_LIBRARY to rule runtime selection
+endif()
 
 # Througout this project MFX_VERSION refers to uAPI version and MEDIA_VERSION refers to product version
 

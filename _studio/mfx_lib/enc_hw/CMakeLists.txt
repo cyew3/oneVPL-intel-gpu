@@ -18,7 +18,11 @@ target_sources(enc_hw
     mpeg2/src/mfx_mpeg2_enc_me_hw.cpp
   )
 
-target_link_libraries(enc_hw PRIVATE mfx_static_lib)
+target_link_libraries(enc_hw
+  PRIVATE
+    mfx_static_lib
+    mfx_sdl_properties
+  )
 
 target_compile_definitions(enc_hw PRIVATE MFX_VA)
 

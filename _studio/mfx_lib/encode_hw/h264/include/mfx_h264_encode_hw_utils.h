@@ -42,6 +42,14 @@
 #include "vm_time.h"
 #include "asc.h"
 
+#if defined(AS_H264LA_PLUGIN)
+  #undef MFX_ENABLE_ENCTOOLS
+  #undef MFX_ENABLE_LP_LOOKAHEAD
+  #ifdef MFX_ENABLE_ENCTOOLS_LPLA
+    #undef MFX_ENABLE_ENCTOOLS_LPLA
+  #endif
+#endif
+
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 #include "mfx_lp_lookahead.h"
 #endif
@@ -61,12 +69,6 @@ class MfxLpLookAhead;
 #define _MFX_H264_ENCODE_HW_UTILS_H_
 
 
-#if defined(AS_H264LA_PLUGIN) && defined(MFX_ENABLE_ENCTOOLS)
-#undef MFX_ENABLE_ENCTOOLS
-#ifdef MFX_ENABLE_ENCTOOLS_LPLA
-#undef MFX_ENABLE_ENCTOOLS_LPLA
-#endif
-#endif
 
 #include <unordered_map>
 #include <queue>

@@ -80,6 +80,8 @@ if(NOT MFX_DISABLE_SW_FALLBACK)
       vm
       vm_plus
       mfx_trace
+    PRIVATE
+      mfx_sdl_properties 
       ${ITT_LIBRARIES}
       ${CMAKE_THREAD_LIBS_INIT}
       ${CMAKE_DL_LIBS}

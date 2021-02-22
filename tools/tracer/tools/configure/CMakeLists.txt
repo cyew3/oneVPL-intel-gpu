@@ -1,4 +1,7 @@
 add_executable(mfx-tracer-config)
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET mfx-tracer-config PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_sources(mfx-tracer-config
   PRIVATE

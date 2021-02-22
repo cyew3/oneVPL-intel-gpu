@@ -49,6 +49,9 @@ file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/sample/*.cpp" )
 
 add_executable(metrics_monitor ${sources})
 set_property(TARGET metrics_monitor PROPERTY FOLDER "samples")
+if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+  set_property(TARGET metrics_monitor PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
 
 target_link_libraries(metrics_monitor PUBLIC cttmetrics)
 
@@ -75,13 +78,19 @@ if( PKG_PCIACCESS_FOUND AND
     )
 
     add_executable( test_monitor ${test_srcs})
-    set_property(TARGET test_monitor PROPERTY FOLDER "samples")
+
+    if (NOT CMAKE_C_COMPILER_ID MATCHES Intel)
+        set_property(TARGET test_monitor PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    endif()
+
+    set_target_properties(test_monitor PROPERTIES
+        FOLDER "samples"
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
+    
 
     target_include_directories( test_monitor PRIVATE ./include)
     target_link_libraries( test_monitor PRIVATE pthread rt gtest cttmetrics PkgConfig::PKG_LIBDRM)
 
-    set_target_properties(test_monitor PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
 else()
 
     if( NOT PKG_PCIACCESS_FOUND )

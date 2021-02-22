@@ -48,6 +48,7 @@ target_link_libraries(enctools_hw
     mfx_static_lib
     vm
   PRIVATE
+    mfx_sdl_properties    
     $<$<BOOL:${MFX_ENABLE_AENC}>:aenc> 
   )
 

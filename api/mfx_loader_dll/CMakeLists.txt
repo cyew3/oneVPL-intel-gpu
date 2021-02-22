@@ -33,6 +33,7 @@ target_link_libraries(${loader_dll_name}
   PRIVATE
     mfx_static_lib
     mfx_shared_lib
+    mfx_sdl_properties
     cfgmgr32
 )
 

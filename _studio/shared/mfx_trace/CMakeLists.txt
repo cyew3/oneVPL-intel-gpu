@@ -27,12 +27,23 @@ target_sources(mfx_trace
     $<$<NOT:$<BOOL:${BUILD_VPL}>>:src/mfx_reflect.cpp>
   )
 
+target_compile_definitions(mfx_trace
+  PRIVATE
+    $<$<PLATFORM_ID:Windows>:_CRT_SECURE_NO_WARNINGS>
+  )
+
 target_include_directories(mfx_trace
   PUBLIC
     include
     ${MFX_API_HOME}/mediasdk_structures
   )
 
-target_link_libraries(mfx_trace PUBLIC mfx_static_lib vm)
+target_link_libraries(mfx_trace
+  PUBLIC
+    mfx_static_lib
+    vm
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 include(sources_ext.cmake)

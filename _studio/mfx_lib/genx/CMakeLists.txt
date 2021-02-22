@@ -99,7 +99,12 @@ if(MFX_ENABLE_KERNELS)
       mctf/isa
     )
 
-  target_link_libraries(genx PUBLIC mfx_static_lib)
+  target_link_libraries(genx
+    PUBLIC
+      mfx_static_lib
+    PRIVATE
+      mfx_sdl_properties
+    )
 endif()
 
 include(sources_ext.cmake OPTIONAL)

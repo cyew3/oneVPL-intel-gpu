@@ -15,6 +15,9 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 #include <string.h>
 #include <functional>
 #include "mfxvideo.h"
+#if defined(MFX_ONEVPL)
+  #include "mfxdeprecated.h"
+#endif  // defined(MFX_ONEVPL)
 
 struct mfxAllocatorParams
 {

@@ -72,5 +72,7 @@ target_link_libraries(h264_enc_sw
     umc
     umc_io 
     mfx_static_lib
+  PRIVATE
+    mfx_sdl_properties
   )
 set_property(TARGET h264_enc_sw PROPERTY FOLDER "umc")

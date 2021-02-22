@@ -54,6 +54,7 @@ target_compile_options(libmfx_uwp
     /bigobj
     /wd4453
     /wd28204
+    /ZW:nostdlib
     ### WA SINCE CMAKE EXPLICITLY INHERITED SOME SPECIFIC DEFAULT UWP VALUES.
     /UWINAPI_FAMILY=WINAPI_FAMILY_APP
 )

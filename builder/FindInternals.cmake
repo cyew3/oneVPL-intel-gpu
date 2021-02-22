@@ -75,12 +75,6 @@ target_include_directories(mfx_static_lib
 
 target_compile_definitions(mfx_static_lib
   INTERFACE
-    $<$<PLATFORM_ID:Windows>:
-      MFX_D3D11_ENABLED
-      MFX_DX9ON11
-      _UNICODE
-      UNICODE
-    >
     ${API_FLAGS}
     ${WARNING_FLAGS}
   )
@@ -104,7 +98,7 @@ target_link_options(mfx_shared_lib
       /PDB:$<TARGET_PDB_FILE_DIR:$<TARGET_PROPERTY:NAME>>/$<TARGET_PROPERTY:NAME>_full.pdb
       /PDBSTRIPPED:$<TARGET_PDB_FILE_DIR:$<TARGET_PROPERTY:NAME>>/$<TARGET_PROPERTY:NAME>.pdb
     >
-    $<$<PLATFORM_ID:Linux>:LINKER:--no-undefined,-z,relro,-z,now,-z,noexecstack,--no-as-needed,-ldl> #FIXME ldl should be in CMAKE_DL_LIBS
+    $<$<PLATFORM_ID:Linux>:LINKER:--no-undefined,-z,relro,-z,now,-z,noexecstack,--no-as-needed>
   )
 
 target_link_libraries(mfx_shared_lib
@@ -116,14 +110,29 @@ target_link_libraries(mfx_shared_lib
       d3d9.lib
     >
     mfx_common_properties
+    ${CMAKE_DL_LIBS}
   )
 
 target_compile_definitions(mfx_shared_lib
   INTERFACE
     ${API_FLAGS}
-    ${WARNING_FLAGS}
   )
 
+add_library(mfx_sdl_properties INTERFACE)
+
+target_compile_options(mfx_sdl_properties
+  INTERFACE
+    $<$<CXX_COMPILER_ID:MSVC>:
+      /W4
+      /sdl
+      /wd5105  # macro expands to defined(smth)
+      /wd4061  # not all enum members listed in case, but default found
+      /wd4710  # no inline for inline function
+      /wd4668  # replacing undefined macro with 0
+      /wd4201  # unnamed unions in headers
+      /wd4711  # inlining of non-marked function
+      >
+  )
 #================================================
 
 add_library(mfx_plugin_properties INTERFACE)
@@ -137,7 +146,7 @@ target_link_options(mfx_plugin_properties
 target_link_libraries(mfx_plugin_properties
   INTERFACE
     umc_va_hw
-    ${CMAKE_THREAD_LIBS_INIT}
+    Threads::Threads
     ${CMAKE_DL_LIBS}
 )
 
@@ -164,7 +173,10 @@ target_compile_definitions(mfx_va_properties
       LIBVA_SUPPORT
       LIBVA_DRM_SUPPORT
     >
-    $<$<PLATFORM_ID:Windows>:MFX_D3D11_ENABLED>
+    $<$<PLATFORM_ID:Windows>:
+      MFX_D3D11_ENABLED
+      MFX_DX9ON11
+    >
   )
 
 #================================================

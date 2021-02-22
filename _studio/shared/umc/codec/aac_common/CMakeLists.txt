@@ -60,6 +60,8 @@ target_link_libraries(aac_common
     mfx_static_lib
     umc
     common
-)
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET aac_common PROPERTY FOLDER "umc")

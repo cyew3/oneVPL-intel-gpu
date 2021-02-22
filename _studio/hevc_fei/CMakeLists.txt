@@ -44,7 +44,12 @@ target_sources(${plugin_name}
     h265_fei/src/export.cpp
   )
 
-target_link_libraries(${plugin_name} PUBLIC mfx_shared_lib mfx_plugin_properties)
+target_link_libraries(${plugin_name}
+  PUBLIC
+    mfx_shared_lib
+    mfx_plugin_properties
+  PRIVATE
+    mfx_sdl_properties)
 
 gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_FEI_Encoder_HW_GUID} ${plugin_name} "02" "HEVC")
 

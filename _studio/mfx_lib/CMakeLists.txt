@@ -221,8 +221,9 @@ foreach( variant ${VARIANTS} )
     vpp_${variant}
     mfx_trace
     mfx_shared_lib
+    mfx_sdl_properties
     ${ITT_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT}
+    Threads::Threads
     ${CMAKE_DL_LIBS}
   )
 
@@ -230,7 +231,6 @@ foreach( variant ${VARIANTS} )
     target_compile_definitions(${mfxlibname}
       PRIVATE
         MFX_VA
-        $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>
     )
   endif()
 

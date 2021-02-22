@@ -150,7 +150,7 @@ namespace vp9e_cqp
         mfxU32 cycle_counter = 1;
         mfxU32 cycle_counter_encoded = 1;
         mfxU16  requested_qp  = 0;
-        mfxSyncPoint sp;
+        mfxSyncPoint sp = nullptr;
 
         async = TS_MIN(frames_count, async - 1);
 

@@ -12,7 +12,8 @@ target_include_directories(asc_sse4 PRIVATE include)
 
 target_link_libraries(asc_sse4 PRIVATE 
 	mfx_require_sse4_properties 
-	mfx_static_lib 
+	mfx_static_lib
+	mfx_sdl_properties 
 	cmrt_cross_platform_hw)
 
 #=====================================================================
@@ -28,6 +29,7 @@ target_include_directories(asc_avx2 PRIVATE include)
 target_link_libraries(asc_avx2 PRIVATE
 	mfx_require_avx2_properties
 	mfx_static_lib
+	mfx_sdl_properties
 	cmrt_cross_platform_hw)
 
 #=====================================================================
@@ -62,5 +64,6 @@ target_link_libraries(asc
   PUBLIC
     mfx_static_lib cmrt_cross_platform_hw
   PRIVATE
+    mfx_sdl_properties
     genx
   )

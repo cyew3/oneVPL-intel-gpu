@@ -224,7 +224,7 @@ SUITE(mfxExtAvcFrameInfoSuite)
         mfx_init_ext_buffer(buf);
         enc.AddExtBuffer((mfxExtBuffer & )buf);
         mfxBitstream bs = {};
-        mfxSyncPoint sp;
+        mfxSyncPoint sp = nullptr;
         CHECK_EQUAL(MFX_ERR_NONE, enc.EncodeFrameAsync(NULL, NULL, &bs, &sp));
         TEST_METHOD_TYPE(MockVideoEncode::EncodeFrameAsync) efa_params;
         CHECK(mock_encode._EncodeFrameAsync.WasCalled(&efa_params));

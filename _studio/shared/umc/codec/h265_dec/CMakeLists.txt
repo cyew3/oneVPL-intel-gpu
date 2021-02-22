@@ -47,7 +47,15 @@ target_compile_definitions(umc_h265_hw
     MFX_VA
   )
 
-target_link_libraries(umc_h265_hw PUBLIC mfx_static_lib umc_va_hw vm vm_plus)
+target_link_libraries(umc_h265_hw
+  PUBLIC
+    mfx_static_lib
+    umc_va_hw
+    vm
+    vm_plus
+  PRIVATE
+    mfx_sdl_properties
+  )
 set_property(TARGET umc_h265_hw PROPERTY FOLDER "umc")
 
 include(sources_ext.cmake OPTIONAL)

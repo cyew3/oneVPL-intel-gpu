@@ -24,6 +24,13 @@ target_include_directories(vm_plus
   PUBLIC
     include
 )
-target_link_libraries(vm_plus PUBLIC vm umc mfx_static_lib)
+target_link_libraries(vm_plus
+  PUBLIC
+    vm
+    umc
+    mfx_static_lib
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 include(sources_ext.cmake OPTIONAL)

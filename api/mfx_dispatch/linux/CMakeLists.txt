@@ -91,8 +91,8 @@ target_compile_definitions(mfx PRIVATE
 
 target_compile_options(mfx PRIVATE
   -pipe
-  -Wall 
-  -Wformat 
+  -Wall
+  -Wformat
   -Wformat-security
   -Wno-unknown-pragmas
   -Wno-unused

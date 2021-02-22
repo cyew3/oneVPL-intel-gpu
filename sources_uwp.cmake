@@ -7,7 +7,9 @@ foreach(var
   CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELWITHDEBINFO
   CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELWITHDEBINFO)
   # UWP DOES NOT SUPPORT MT
-  string(REPLACE "/MT" "/MD" ${var} "${${var}}")
+  #string(REPLACE "/MT" "/MD" ${var} "${${var}}")
+
+  string(REPLACE "/D WINAPI_FAMILY=WINAPI_FAMILY_APP" "" ${var} "${${var}}")
 endforeach()
 
 # mdp_msdk-lib\api\intel_api_uwp\dispatcher_uwp\libmfx_uwp.sln -
@@ -19,5 +21,5 @@ message(STATUS "VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION ${VS_WINDOWS_TARGET_PLATF
 
 add_subdirectory(api/intel_api_uwp/dispatcher_uwp)
 add_subdirectory(_testsuite/mfx_uwptest/mfx_uwptest)
-add_subdirectory(api/intel_api_uwp/)
+add_subdirectory(api/intel_api_uwp)
 add_subdirectory(samples/ExtendedUWPSamples)

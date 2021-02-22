@@ -38,6 +38,7 @@ target_compile_definitions(lpla
 target_link_libraries(lpla
   PRIVATE
     mfx_static_lib
+    mfx_sdl_properties
     umc_va_hw
     vm_plus
     vpp_hw

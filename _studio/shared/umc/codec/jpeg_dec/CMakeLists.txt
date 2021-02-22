@@ -29,7 +29,13 @@ target_sources(jpeg_dec_hw
     ${common_sources}
 )
 
-target_link_libraries(jpeg_dec_hw PUBLIC mfx_static_lib jpeg_common)
+target_link_libraries(jpeg_dec_hw
+  PUBLIC
+    mfx_static_lib
+    jpeg_common
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET jpeg_dec_hw PROPERTY FOLDER "umc")
 
@@ -46,6 +52,12 @@ target_sources(jpeg_dec_sw
     ${common_sources}
 )
 
-target_link_libraries(jpeg_dec_sw PUBLIC mfx_static_lib jpeg_common)
+target_link_libraries(jpeg_dec_sw
+  PUBLIC
+    mfx_static_lib
+    jpeg_common
+  PRIVATE
+    mfx_sdl_properties
+  )
 
 set_property(TARGET jpeg_dec_sw PROPERTY FOLDER "umc")

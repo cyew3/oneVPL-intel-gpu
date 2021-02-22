@@ -197,10 +197,10 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
     }
     return mfxRes;
 #else
-    return MFXInit(impl, pVer, session);
+    return MFXInitEx(par, session);
 #endif
 }
-#else
+#else     
 #include <mfxvideo.h>
 #if !defined(MFX_ONEVPL)
 #include <mfxaudio.h>

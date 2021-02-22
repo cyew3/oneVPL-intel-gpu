@@ -186,7 +186,13 @@ list(APPEND sources
 if(NOT MFX_DISABLE_SW_FALLBACK)
   add_library(decode_sw STATIC ${sources})
   set_property(TARGET decode_sw PROPERTY FOLDER "sw_fallback")
-  target_link_libraries(decode_sw PUBLIC mfx_static_lib umc)
+  target_link_libraries(decode_sw
+    PUBLIC
+      mfx_static_lib
+      umc
+    PRIVATE
+      mfx_sdl_properties
+    )
   target_include_directories(decode_sw PUBLIC ${include_dirs})
 endif()
 
@@ -209,6 +215,8 @@ target_link_libraries(decode_hw
   PUBLIC
     mfx_static_lib
     umc_va_hw
+  PRIVATE
+    mfx_sdl_properties
     ${IPP_LIBS}
   )
 
