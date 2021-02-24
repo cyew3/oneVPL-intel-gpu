@@ -1184,6 +1184,7 @@ namespace Base
         using Reorder             = StorageVar<__LINE__ - _KD, Reorderer>;
         using GuidToVa            = StorageVar<__LINE__ - _KD, std::map<::GUID, VAGUID, LessGUID>>;
         using Defaults            = StorageVar<__LINE__ - _KD, Base::Defaults>;
+        static const StorageR::TKey CallChainsKey = __LINE__ - _KD;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;
     };
 

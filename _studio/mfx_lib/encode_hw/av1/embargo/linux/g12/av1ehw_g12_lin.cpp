@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,46 +18,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
-#include "av1ehw_base.h"
+#include "av1ehw_g12_lin.h"
 #include "av1ehw_base_data.h"
+#include "av1ehw_base_general.h"
+#include "av1ehw_g12_segmentation.h"
 
-namespace AV1EHW
+using namespace AV1EHW;
+
+Linux::Gen12::MFXVideoENCODEClass_HW::MFXVideoENCODEClass_HW(
+    VideoCORE& core
+    , mfxStatus& status
+    , eFeatureMode mode)
+    : TBaseImpl(core, status, mode)
 {
-namespace Base
-{
+    TFeatureList newFeatures;
 
-class IDDIPacker
-    : public FeatureBase
-{
-public:
-#define DECL_BLOCK_LIST\
-    DECL_BLOCK(Init) \
-    DECL_BLOCK(Reset) \
-    DECL_BLOCK(SubmitTask) \
-    DECL_BLOCK(QueryTask) \
-    DECL_BLOCK(HardcodeCaps) \
-    DECL_BLOCK(SetCallChains)
-#define DECL_FEATURE_NAME "G12_IDDIPacker"
-#include "av1ehw_decl_blocks.h"
+    newFeatures.emplace_back(new AV1EHW::Gen12::Segmentation(AV1EHW::Base::FEATURE_SEGMENTATION));
 
-    IDDIPacker(mfxU32 FeatureId)
-        : FeatureBase(FeatureId)
-    {}
+    for (auto& pFeature : newFeatures)
+        pFeature->Init(mode, *this);
 
-protected:
-    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override = 0;
-    virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override = 0;
-    virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override = 0;
-    virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override = 0;
-    virtual void ResetState(const FeatureBlocks& blocks, TPushRS Push) override = 0;
-};
+    TBaseImpl::m_features.splice(TBaseImpl::m_features.end(), newFeatures);
+}
 
-} //Base
-} //namespace AV1EHW
-
-#endif
+#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

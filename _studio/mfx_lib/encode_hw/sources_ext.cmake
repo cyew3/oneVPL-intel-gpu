@@ -24,7 +24,11 @@ target_include_directories(encode_hw PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12dg2
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux/g12
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g12
@@ -186,12 +190,22 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/av1ehw_utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/av1ehw_base.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base/av1ehw_base_lin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base/av1ehw_base_lin.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base/av1ehw_base_va_lin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base/av1ehw_base_va_lin.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base/av1ehw_base_va_packer_lin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base/av1ehw_base_va_packer_lin.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux/base/av1ehw_va_private.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g12/av1ehw_g12.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g12/av1ehw_g12_segmentation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g12/av1ehw_g12_segmentation.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13/av1ehw_g13.h
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux/g12/av1ehw_g12_lin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux/g12/av1ehw_g12_lin.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/av1ehw_ddi_trace.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/av1ehw_ddi_trace.h

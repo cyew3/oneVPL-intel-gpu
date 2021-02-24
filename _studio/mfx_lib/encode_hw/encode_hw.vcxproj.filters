@@ -143,6 +143,18 @@
     <Filter Include="av1\embargo\agnostic\g13">
       <UniqueIdentifier>{97c3bd05-2483-4e05-8505-3a082b87a7bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="av1\open\linux">
+      <UniqueIdentifier>{54a39777-19fa-4e98-8eef-d9f8176bc01a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\linux">
+      <UniqueIdentifier>{133a0f8a-5b5b-4e24-81e2-1ece02df1f68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\open\linux\base">
+      <UniqueIdentifier>{c60dbca2-abb4-462e-b6e9-d6cf6e0babe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\linux\g12">
+      <UniqueIdentifier>{1fbc162a-6579-4322-afd2-bde0e760d376}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h264\src\mfx_h264_encode_hw.cpp">
@@ -538,8 +550,20 @@
     <ClCompile Include="hevc\linux\g12\hevcehw_g12_qp_modulation_lin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="av1\linux\base\av1ehw_base_va_packer_lin.cpp">
+      <Filter>av1\open\linux\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\linux\base\av1ehw_base_va_lin.cpp">
+      <Filter>av1\open\linux\base</Filter>
+    </ClCompile>
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_enctools.cpp">
       <Filter>hevc\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\linux\base\av1ehw_base_lin.cpp">
+      <Filter>av1\open\linux\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\linux\g12\av1ehw_g12_lin.cpp">
+      <Filter>av1\embargo\linux\g12</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1025,6 +1049,18 @@
     </ClInclude>
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_enctools.h">
       <Filter>hevc\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\linux\base\av1ehw_base_va_packer_lin.h">
+      <Filter>av1\open\linux\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\linux\base\av1ehw_base_va_lin.h">
+      <Filter>av1\open\linux\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\linux\base\av1ehw_base_lin.h">
+      <Filter>av1\open\linux\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\linux\g12\av1ehw_g12_lin.h">
+      <Filter>av1\embargo\linux\g12</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
