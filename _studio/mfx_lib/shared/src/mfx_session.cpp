@@ -531,6 +531,9 @@ _mfxSession::_mfxSession(const mfxU32 adapterNum)
     , m_pScheduler()
     , m_priority()
     , m_version()
+#if defined(MFX_ONEVPL)
+    , m_versionToReport()
+#endif
     , m_pOperatorCore()
     , m_bIsHWENCSupport()
     , m_bIsHWDECSupport()
@@ -539,6 +542,11 @@ _mfxSession::_mfxSession(const mfxU32 adapterNum)
     m_currentPlatform = MFX_PLATFORM_HARDWARE;
 #else
     m_currentPlatform = MFX_PLATFORM_SOFTWARE;
+#endif
+
+#if defined(MFX_ONEVPL)
+    m_versionToReport.Major = MFX_VERSION_MAJOR;
+    m_versionToReport.Minor = MFX_VERSION_MINOR;
 #endif
 
     Clear();
