@@ -36,7 +36,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.mfts.git
     branch: master
-    revision: 9d8b5f306c15c78fda2f20d60e86017ab54d02d8
+    revision: e2622dcda1e7b6c7e400e148d80d5a7bbbad125c
     dest_dir: sources/mdp_msdk-mfts
   sys-analyzer:
     type: git
