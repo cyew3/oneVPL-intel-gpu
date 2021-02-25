@@ -88,6 +88,7 @@ static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession* session, mfxIMPL
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
     (void)g_hModule;
+    mfxStatus mfxRes;
     int adapterNum = 0;
     mfxIMPL impl = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
     mfxIMPL implInterface = par.Implementation & -MFX_IMPL_VIA_ANY;
@@ -97,7 +98,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "ThreadName=MSDK app");
     }
     MFX_AUTO_TRACE("MFXInitEx");
-    ETW_NEW_EVENT(MFX_TRACE_API_MFX_INIT_EX_TASK, 0, par.GPUCopy, (mfxU32) par.Implementation, *session);
+    ETW_NEW_EVENT(MFX_TRACE_API_MFX_INIT_EX_TASK, 0, make_event_data((mfxU32) par.Implementation, par.GPUCopy), [&](){ return make_event_data(mfxRes, session ? *session : nullptr);});
     MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
 
     // check the library version
@@ -246,8 +247,9 @@ static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession *session, mfxIMPL
 
 mfxStatus MFXDoWork(mfxSession session)
 {
+    mfxStatus res;
     MFX_AUTO_TRACE("MFXDoWork");
-    ETW_NEW_EVENT(MFX_TRACE_API_DO_WORK_TASK, 0, session);
+    ETW_NEW_EVENT(MFX_TRACE_API_DO_WORK_TASK, 0, make_event_data(session), [&](){ return make_event_data(res);});
 
     // check error(s)
     if (0 == session)
@@ -265,7 +267,7 @@ mfxStatus MFXDoWork(mfxSession session)
     }
     newScheduler->Release();
 
-    mfxStatus res = newScheduler->DoWork();    
+    res = newScheduler->DoWork();
 
     return res;
 } // mfxStatus MFXDoWork(mfxSession *session)
@@ -287,7 +289,7 @@ mfxStatus MFXClose(mfxSession session)
         // since it inserts class variable on stack which calls to trace library in the
         // destructor.
         MFX_AUTO_TRACE("MFXClose");
-        ETW_NEW_EVENT(MFX_TRACE_API_MFX_CLOSE_TASK, 0, session);
+        ETW_NEW_EVENT(MFX_TRACE_API_MFX_CLOSE_TASK, 0, make_event_data(session), [&](){ return make_event_data(mfxRes);});
 
         // parent session can't be closed,
         // because there is no way to let children know about parent's death.

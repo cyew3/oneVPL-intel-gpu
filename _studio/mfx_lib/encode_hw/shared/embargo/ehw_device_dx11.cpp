@@ -265,7 +265,9 @@ mfxStatus DeviceDX11::Execute(const DDIExecParam& ep)
 {
     MFX_AUTO_TRACE("H265 ExecuteD3DX");
 
-    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK, 0, this);
+    mfxStatus mfxRes = MFX_ERR_NONE;
+
+    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK, 0, make_event_data(this), [&](){ return make_event_data(mfxRes);});
 
     try
     {
@@ -290,14 +292,15 @@ mfxStatus DeviceDX11::Execute(const DDIExecParam& ep)
             m_lastErr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
         }
         Trace(ep, true, m_lastErr);
-        MFX_CHECK(SUCCEEDED(m_lastErr), MFX_ERR_DEVICE_FAILED);
+        if (!SUCCEEDED(m_lastErr))
+            mfxRes = MFX_ERR_DEVICE_FAILED;
     }
     catch (...)
     {
-        return MFX_ERR_DEVICE_FAILED;
+        mfxRes = MFX_ERR_DEVICE_FAILED;
     }
 
-    return MFX_ERR_NONE;
+    return mfxRes;
 }
 
 mfxStatus DeviceDX11::BeginPicture(mfxHDL)

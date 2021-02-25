@@ -100,7 +100,7 @@ mfxStatus D3DXCommonEncoder::Execute(mfxHDLPair pair, DdiTask const & task, mfxU
 
     MFX_AUTO_TRACE("AVC ExecuteD3DX");
 
-    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK, 0, this);
+    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK, 0, make_event_data(this), [&](){ return make_event_data(sts);});
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     // Put dummy event in the task. Real event will be attached if the current task is not to be skipped
@@ -149,9 +149,9 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId, bool us
 {
     MFX_AUTO_TRACE("AVC QueryStatusD3DX");
 
-    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK, 0, this);
-
     mfxStatus sts = MFX_ERR_NONE;
+    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK, 0, make_event_data(this), [&](){ return make_event_data(sts);});
+
     // use GPUTaskSync call to wait task completion.
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     if(useEvent) {

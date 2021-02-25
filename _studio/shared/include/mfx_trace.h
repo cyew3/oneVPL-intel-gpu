@@ -22,6 +22,12 @@
 #define __MFX_TRACE_H__
 
 #include <stdint.h>
+#ifdef __cplusplus
+#include <functional>
+#include <tuple>
+#include <utility>
+#endif
+
 #ifndef MFX_TRACE_DISABLE
 // Uncomment one or several lines below to enable tracing
 #if (defined(_WIN32) || defined(_WIN64)) && !defined (MFX_TRACE_ENABLE_ITT)
@@ -299,15 +305,22 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 
 /*------------------------------------------------------------------------------*/
 
+// ETW traces
+
 #if defined(_WIN32) || defined(_WIN64)
 mfxTraceU32 MFXTrace_ETWEvent(uint16_t task, uint8_t opcode, uint8_t level, uint64_t size, void *ptr);
-
-#ifdef __cplusplus
-} // extern "C"
 #endif
 
-#pragma pack(push, 2)
+#ifdef __cplusplus
+}
+#endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#pragma pack(push, 2)
+#endif
+
+// struct event_data contains arguments we need to trace in ETW
+// It contains variadic amount of arguments
 template <typename ...>
 struct event_data;
 
@@ -321,7 +334,7 @@ template <typename T, typename ...Rest>
 struct event_data<T, Rest...>
     : event_data<Rest...>
 {
-    T value;
+    typename std::decay<T>::type value;
 
     template <typename A, typename ...Args>
     event_data(A&& a, Args&&... args)
@@ -330,39 +343,88 @@ struct event_data<T, Rest...>
     {}
 };
 
-#pragma pack(pop)
 
+#if defined(_WIN32) || defined(_WIN64)
+#pragma pack(pop)
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+
+// Utility function for maintaining correct arguments order in event_data<...>()
+template <typename Tuple, std::size_t... I>
+auto make_event_data(Tuple&& t, std::index_sequence<I...>)
+{
+    return event_data<
+        typename std::tuple_element<sizeof...(I) - I - 1, Tuple>::type...
+    >(std::get<sizeof...(I) - I - 1>(std::forward<Tuple>(t))...);
+}
+
+// Helper function for creating event_data<...>() object
+template <typename ...Args>
+auto make_event_data(Args&&... args)
+{
+    return make_event_data(
+        std::forward_as_tuple(std::forward<Args>(args)...),
+        std::make_index_sequence<sizeof...(args)>{}
+    );
+}
+
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+
+// ETWScopedTrace objects are created using ETW_NEW_EVENT macro
 class ETWScopedTrace
 {
-    uint16_t task;
-    uint8_t level;
+    std::function<void()> at_exit;
+
 public:
-    template <typename ...Args>
-    ETWScopedTrace(uint16_t task, uint8_t level, Args... args)
-        : task(task)
-        , level(level)
+    template <typename Func, typename ...Args>
+    ETWScopedTrace(uint16_t task, uint8_t level, event_data<Args...> data, Func at_exit_func)
     {
-        event_data <Args...> e { std::forward <Args>(args)... };
-        MFXTrace_ETWEvent(task, 1, level, sizeof(e), &e);
-    };
+        using F = typename std::decay<Func>::type;
+        auto f = new F(at_exit_func);
+        // Bind at_exit function to trace values at the end of the function execution
+        at_exit = std::bind(get_thunk<F>(), f, task, level);
+
+        // Send event data on ETWScopedTrace creation
+        MFXTrace_ETWEvent(task, 1, level, sizeof(data), &data);
+    }
 
     ~ETWScopedTrace()
     {
-        MFXTrace_ETWEvent(task, 2, level, 0, nullptr);
-    };
+        at_exit();
+    }
+
+    template <typename T>
+    static void thunk(void* f, uint16_t task, uint8_t level)
+    {
+        std::unique_ptr<T> p { static_cast<T*>(f) };
+
+        auto e = (*p)();
+
+        // Send event data at function exit
+        MFXTrace_ETWEvent(task, 2, level, sizeof(e), &e);
+    }
+
+    template <typename T>
+    static constexpr auto get_thunk() noexcept {
+        return &thunk<T>;
+    }
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define ETW_NEW_EVENT(task, level, ...) \
-    ETWScopedTrace _etw_scoped_trace##__LINE__ (task, level, __VA_ARGS__)
+// ETW macro is recommended to use instead creating ETWScopedTrace object directly
+#define ETW_NEW_EVENT(task, level, data, at_exit_func) \
+    ETWScopedTrace _etw_scoped_trace##__LINE__ (task, level, data, at_exit_func)
 
 #else
 
 #define ETW_NEW_EVENT(task, level, ...)
 
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /*------------------------------------------------------------------------------*/

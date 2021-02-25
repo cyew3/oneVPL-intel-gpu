@@ -193,7 +193,6 @@ mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
     if (!message) return 1;
 
     descriptor.Level = (UCHAR)level;
-    descriptor.Keyword = MFX_ETW_KEYWORD_NON_TYPED_EVENT;
     if (!EventEnabled(Intel_MediaSDKHandle, &descriptor))
     {
         return 0; // no ETW consumer for given GUID, Level, Keyword
@@ -351,7 +350,6 @@ mfxTraceU32 MFXTrace_ETWEvent(uint16_t task, uint8_t opcode, uint8_t level, uint
     descriptor.Task = task;
     // VERY IMPORTANT !!!
     // MANIFEST FILE SHALL FOLLOW THE SAME RULE DEFINING ID FOR EVENTS:
-    descriptor.Keyword = task ? MFX_ETW_KEYWORD_TYPED_EVENT : MFX_ETW_KEYWORD_NON_TYPED_EVENT;
     descriptor.Id = (descriptor.Task << 2) + descriptor.Opcode; // Since ONLY Info/Start/Stop opcodes are used
                                                                 // we reserve 2 lowest bits for opcode and the rest for task Id.
 

@@ -167,11 +167,11 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     }
 #endif
 
-    MFX_AUTO_TRACE("MFXVideoDECODE_Query");
-    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_QUERY_TASK, 0, in ? in->mfx.CodecId : 0, in ? in->mfx.FrameInfo.Height : 0, in ? in->mfx.FrameInfo.Width : 0, session);
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
-
     mfxStatus mfxRes;
+
+    MFX_AUTO_TRACE("MFXVideoDECODE_Query");
+    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_QUERY_TASK, 0, make_event_data(session, in ? in->mfx.FrameInfo.Width : 0, in ? in->mfx.FrameInfo.Height : 0, in ? in->mfx.CodecId : 0), [&](){ return make_event_data(mfxRes);});
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     try
     {
@@ -255,11 +255,12 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
     MFX_CHECK(request, MFX_ERR_NULL_PTR);
 
+    mfxStatus mfxRes;
+
     MFX_AUTO_TRACE("MFXVideoDECODE_QueryIOSurf");
-    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_QUERY_IOSURF_TASK, 0, par->mfx.CodecId, par->mfx.FrameInfo.Height, par->mfx.FrameInfo.Width, session);
+    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_QUERY_IOSURF_TASK, 0, make_event_data(session, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, par->mfx.CodecId), [&](){ return make_event_data(mfxRes);});
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
-    mfxStatus mfxRes;
     try
     {
 #ifdef MFX_ENABLE_USER_DECODE
@@ -342,12 +343,13 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
     MFX_CHECK(bs, MFX_ERR_NULL_PTR);
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
 
+    mfxStatus mfxRes;
+
     MFX_AUTO_TRACE("MFXVideoDECODE_DecodeHeader");
-    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_HEADER_TASK, 0, bs ? bs->DataLength : 0, bs, session);
+    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_HEADER_TASK, 0, make_event_data(session, bs, bs ? bs->DataLength : 0), [&](){ return make_event_data(mfxRes);});
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, bs);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
-    mfxStatus mfxRes;
     try
     {
 #ifdef MFX_ENABLE_USER_DECODE
@@ -433,8 +435,9 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
 
     MFX_AUTO_TRACE("MFXVideoDECODE_Init");
-    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_INIT_TASK, 0, par->mfx.CodecId, par->mfx.FrameInfo.Height, par->mfx.FrameInfo.Width, session);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
+
+    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_INIT_TASK, 0, make_event_data(session, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, par->mfx.CodecId), [&](){ return make_event_data(mfxRes);});
 
     try
     {
@@ -468,7 +471,7 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
     MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
 
     MFX_AUTO_TRACE("MFXVideoDECODE_Close");
-    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_CLOSE_TASK, 0, session);
+    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_CLOSE_TASK, 0, make_event_data(session), [&](){ return make_event_data(mfxRes);});
 
     try
     {
@@ -505,7 +508,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
     mfxStatus mfxRes;
 
     MFX_AUTO_TRACE("DecodeFrameAsync");
-    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK, 0, bs ? bs->DataLength : 0, surface_work, session);
+    ETW_NEW_EVENT(MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK, 0, make_event_data(session, surface_work, bs ? bs->DataLength : 0), [&](){ return make_event_data(mfxRes, syncp ? *syncp : nullptr);});
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, bs);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, surface_work);
 

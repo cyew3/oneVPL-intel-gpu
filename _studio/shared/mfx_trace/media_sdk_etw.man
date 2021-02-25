@@ -4,109 +4,109 @@
 		<events>
 			<provider name="Intel-MediaSDK" guid="{2D6B112A-D21C-4A40-9BF2-A3EDF212F624}" symbol="IntelMediaSDK" resourceFileName="to_be_set_manually" messageFileName="to_be_set_manually">
 				<events>
-					<event symbol="DecodeQueryEntry" value="5" version="0" task="DecodeQuery" opcode="win:Start" keywords="TypedEvent " template="DecodeQuery_Entry">
+					<event symbol="DecodeQueryEntry" value="5" version="0" task="DecodeQuery" opcode="win:Start" template="DecodeQuery_Entry">
 					</event>
-					<event symbol="DecodeQueryExit" value="6" version="0" task="DecodeQuery" opcode="win:Stop" keywords="TypedEvent " template="DecodeQuery_Exit">
+					<event symbol="DecodeQueryExit" value="6" version="0" task="DecodeQuery" opcode="win:Stop" template="DecodeQuery_Exit">
 					</event>
-					<event symbol="DecodeQueryIOSurfEntry" value="9" version="0" task="DecodeQueryIOSurf" opcode="win:Start" keywords="TypedEvent " template="DecodeQueryIOSurf_Entry">
+					<event symbol="DecodeQueryIOSurfEntry" value="9" version="0" task="DecodeQueryIOSurf" opcode="win:Start" template="DecodeQueryIOSurf_Entry">
 					</event>
-					<event symbol="DecodeQueryIOSurfExit" value="10" version="0" task="DecodeQueryIOSurf" opcode="win:Stop" keywords="TypedEvent " template="DecodeQueryIOSurf_Exit">
+					<event symbol="DecodeQueryIOSurfExit" value="10" version="0" task="DecodeQueryIOSurf" opcode="win:Stop" template="DecodeQueryIOSurf_Exit">
 					</event>
-					<event symbol="DecodeHeaderEntry" value="13" version="0" task="DecodeHeader" opcode="win:Start" keywords="TypedEvent " template="DecodeHeader_Entry">
+					<event symbol="DecodeHeaderEntry" value="13" version="0" task="DecodeHeader" opcode="win:Start" template="DecodeHeader_Entry">
 					</event>
-					<event symbol="DecodeHeaderExit" value="14" version="0" task="DecodeHeader" opcode="win:Stop" keywords="TypedEvent " template="DecodeHeader_Exit">
+					<event symbol="DecodeHeaderExit" value="14" version="0" task="DecodeHeader" opcode="win:Stop" template="DecodeHeader_Exit">
 					</event>
-					<event symbol="DecodeInitEntry" value="17" version="0" task="DecodeInit" opcode="win:Start" keywords="TypedEvent " template="DecodeInit_Entry">
+					<event symbol="DecodeInitEntry" value="17" version="0" task="DecodeInit" opcode="win:Start" template="DecodeInit_Entry">
 					</event>
-					<event symbol="DecodeInitExit" value="18" version="0" task="DecodeInit" opcode="win:Stop" keywords="TypedEvent " template="DecodeInit_Exit">
+					<event symbol="DecodeInitExit" value="18" version="0" task="DecodeInit" opcode="win:Stop" template="DecodeInit_Exit">
 					</event>
-					<event symbol="DecodeCloseEntry" value="21" version="0" task="DecodeClose" opcode="win:Start" keywords="TypedEvent " template="DecodeClose_Entry">
+					<event symbol="DecodeCloseEntry" value="21" version="0" task="DecodeClose" opcode="win:Start" template="DecodeClose_Entry">
 					</event>
-					<event symbol="DecodeCloseExit" value="22" version="0" task="DecodeClose" opcode="win:Stop" keywords="TypedEvent " template="DecodeClose_Exit">
+					<event symbol="DecodeCloseExit" value="22" version="0" task="DecodeClose" opcode="win:Stop" template="DecodeClose_Exit">
 					</event>
-					<event symbol="DecodeFrameAsyncEntry" value="25" version="0" task="DecodeFrameAsync" opcode="win:Start" keywords="TypedEvent " template="DecodeFrameAsync_Entry">
+					<event symbol="DecodeFrameAsyncEntry" value="25" version="0" task="DecodeFrameAsync" opcode="win:Start" template="DecodeFrameAsync_Entry">
 					</event>
-					<event symbol="DecodeFrameAsyncExit" value="26" version="0" task="DecodeFrameAsync" opcode="win:Stop" keywords="TypedEvent " template="DecodeFrameAsync_Exit">
+					<event symbol="DecodeFrameAsyncExit" value="26" version="0" task="DecodeFrameAsync" opcode="win:Stop" template="DecodeFrameAsync_Exit">
 					</event>
-					<event symbol="EncodeQueryEntry" value="29" version="0" task="EncodeQuery" opcode="win:Start" keywords="TypedEvent " template="EncodeQuery_Entry">
+					<event symbol="EncodeQueryEntry" value="29" version="0" task="EncodeQuery" opcode="win:Start" template="EncodeQuery_Entry">
 					</event>
-					<event symbol="EncodeQueryExit" value="30" version="0" task="EncodeQuery" opcode="win:Stop" keywords="TypedEvent " template="EncodeQuery_Exit">
+					<event symbol="EncodeQueryExit" value="30" version="0" task="EncodeQuery" opcode="win:Stop" template="EncodeQuery_Exit">
 					</event>
-					<event symbol="EncodeQueryIOSurfEntry" value="33" version="0" task="EncodeQueryIOSurf" opcode="win:Start" keywords="TypedEvent " template="EncodeQueryIOSurf_Entry">
+					<event symbol="EncodeQueryIOSurfEntry" value="33" version="0" task="EncodeQueryIOSurf" opcode="win:Start" template="EncodeQueryIOSurf_Entry">
 					</event>
-					<event symbol="EncodeQueryIOSurfExit" value="34" version="0" task="EncodeQueryIOSurf" opcode="win:Stop" keywords="TypedEvent " template="EncodeQueryIOSurf_Exit">
+					<event symbol="EncodeQueryIOSurfExit" value="34" version="0" task="EncodeQueryIOSurf" opcode="win:Stop" template="EncodeQueryIOSurf_Exit">
 					</event>
-					<event symbol="EncodeInitEntry" value="37" version="0" task="EncodeInit" opcode="win:Start" keywords="TypedEvent " template="EncodeInit_Entry">
+					<event symbol="EncodeInitEntry" value="37" version="0" task="EncodeInit" opcode="win:Start" template="EncodeInit_Entry">
 					</event>
-					<event symbol="EncodeInitExit" value="38" version="0" task="EncodeInit" opcode="win:Stop" keywords="TypedEvent " template="EncodeInit_Exit">
+					<event symbol="EncodeInitExit" value="38" version="0" task="EncodeInit" opcode="win:Stop" template="EncodeInit_Exit">
 					</event>
-					<event symbol="EncodeCloseEntry" value="41" version="0" task="EncodeClose" opcode="win:Start" keywords="TypedEvent " template="EncodeClose_Entry">
+					<event symbol="EncodeCloseEntry" value="41" version="0" task="EncodeClose" opcode="win:Start" template="EncodeClose_Entry">
 					</event>
-					<event symbol="EncodeCloseExit" value="42" version="0" task="EncodeClose" opcode="win:Stop" keywords="TypedEvent " template="EncodeClose_Exit">
+					<event symbol="EncodeCloseExit" value="42" version="0" task="EncodeClose" opcode="win:Stop" template="EncodeClose_Exit">
 					</event>
-					<event symbol="EncodeFrameAsyncEntry" value="45" version="0" task="EncodeFrameAsync" opcode="win:Start" keywords="TypedEvent " template="EncodeFrameAsync_Entry">
+					<event symbol="EncodeFrameAsyncEntry" value="45" version="0" task="EncodeFrameAsync" opcode="win:Start" template="EncodeFrameAsync_Entry">
 					</event>
-					<event symbol="EncodeFrameAsyncExit" value="46" version="0" task="EncodeFrameAsync" opcode="win:Stop" keywords="TypedEvent " template="EncodeFrameAsync_Exit">
+					<event symbol="EncodeFrameAsyncExit" value="46" version="0" task="EncodeFrameAsync" opcode="win:Stop" template="EncodeFrameAsync_Exit">
 					</event>
-					<event symbol="VppQueryEntry" value="49" version="0" task="VppQuery" opcode="win:Start" keywords="TypedEvent " template="VPPQuery_Entry">
+					<event symbol="VppQueryEntry" value="49" version="0" task="VppQuery" opcode="win:Start" template="VPPQuery_Entry">
 					</event>
-					<event symbol="VppQueryExit" value="50" version="0" task="VppQuery" opcode="win:Stop" keywords="TypedEvent " template="VPPQuery_Exit">
+					<event symbol="VppQueryExit" value="50" version="0" task="VppQuery" opcode="win:Stop" template="VPPQuery_Exit">
 					</event>
-					<event symbol="VppQueryIOSurfEntry" value="53" version="0" task="VppQueryIOSurf" opcode="win:Start" keywords="TypedEvent " template="VPPQueryIOSurf_Entry">
+					<event symbol="VppQueryIOSurfEntry" value="53" version="0" task="VppQueryIOSurf" opcode="win:Start" template="VPPQueryIOSurf_Entry">
 					</event>
-					<event symbol="VppQueryIOSurfExit" value="54" version="0" task="VppQueryIOSurf" opcode="win:Stop" keywords="TypedEvent " template="VPPQueryIOSurf_Exit">
+					<event symbol="VppQueryIOSurfExit" value="54" version="0" task="VppQueryIOSurf" opcode="win:Stop" template="VPPQueryIOSurf_Exit">
 					</event>
-					<event symbol="VppInitEntry" value="57" version="0" task="VppInit" opcode="win:Start" keywords="TypedEvent " template="VPPInit_Entry">
+					<event symbol="VppInitEntry" value="57" version="0" task="VppInit" opcode="win:Start" template="VPPInit_Entry">
 					</event>
-					<event symbol="VppInitExit" value="58" version="0" task="VppInit" opcode="win:Stop" keywords="TypedEvent " template="VPPInit_Exit">
+					<event symbol="VppInitExit" value="58" version="0" task="VppInit" opcode="win:Stop" template="VPPInit_Exit">
 					</event>
-					<event symbol="VppCloseEntry" value="61" version="0" task="VppClose" opcode="win:Start" keywords="TypedEvent " template="VPPClose_Entry">
+					<event symbol="VppCloseEntry" value="61" version="0" task="VppClose" opcode="win:Start" template="VPPClose_Entry">
 					</event>
-					<event symbol="VppCloseExit" value="62" version="0" task="VppClose" opcode="win:Stop" keywords="TypedEvent " template="VPPClose_Exit">
+					<event symbol="VppCloseExit" value="62" version="0" task="VppClose" opcode="win:Stop" template="VPPClose_Exit">
 					</event>
-					<event symbol="VppLegacyRoutineEntry" value="65" version="0" task="VppLegacyRoutine" opcode="win:Start" keywords="TypedEvent " template="VppLegacyRoutine_Entry">
+					<event symbol="VppLegacyRoutineEntry" value="65" version="0" task="VppLegacyRoutine" opcode="win:Start" template="VppLegacyRoutine_Entry">
 					</event>
-					<event symbol="VppLegacyRoutineExit" value="66" version="0" task="VppLegacyRoutine" opcode="win:Stop" keywords="TypedEvent " template="VppLegacyRoutine_Exit">
+					<event symbol="VppLegacyRoutineExit" value="66" version="0" task="VppLegacyRoutine" opcode="win:Stop" template="VppLegacyRoutine_Exit">
 					</event>
-					<event symbol="VppRunFrameAsyncEntry" value="69" version="0" task="VppRunFrameAsync" opcode="win:Start" keywords="TypedEvent " template="VppRunFrameAsync_Entry">
+					<event symbol="VppRunFrameAsyncEntry" value="69" version="0" task="VppRunFrameAsync" opcode="win:Start" template="VppRunFrameAsync_Entry">
 					</event>
-					<event symbol="VppRunFrameAsyncExit" value="70" version="0" task="VppRunFrameAsync" opcode="win:Stop" keywords="TypedEvent " template="VppRunFrameAsync_Exit">
+					<event symbol="VppRunFrameAsyncExit" value="70" version="0" task="VppRunFrameAsync" opcode="win:Stop" template="VppRunFrameAsync_Exit">
 					</event>
-					<event symbol="VppRunFrameAsyncExEntry" value="73" version="0" task="VppRunFrameAsyncEx" opcode="win:Start" keywords="TypedEvent " template="VppRunFrameAsyncEx_Entry">
+					<event symbol="VppRunFrameAsyncExEntry" value="73" version="0" task="VppRunFrameAsyncEx" opcode="win:Start" template="VppRunFrameAsyncEx_Entry">
 					</event>
-					<event symbol="VppRunFrameAsyncExExit" value="74" version="0" task="VppRunFrameAsyncEx" opcode="win:Stop" keywords="TypedEvent " template="VppRunFrameAsyncEx_Exit">
+					<event symbol="VppRunFrameAsyncExExit" value="74" version="0" task="VppRunFrameAsyncEx" opcode="win:Stop" template="VppRunFrameAsyncEx_Exit">
 					</event>
-					<event symbol="MFXInitExEntry" value="77" version="0" task="MFXInitEx" opcode="win:Start" keywords="TypedEvent " template="MfxInitEx_Entry">
+					<event symbol="MFXInitExEntry" value="77" version="0" task="MFXInitEx" opcode="win:Start" template="MfxInitEx_Entry">
 					</event>
-					<event symbol="MFXInitExExit" value="78" version="0" task="MFXInitEx" opcode="win:Stop" keywords="TypedEvent " template="MfxInitEx_Exit">
+					<event symbol="MFXInitExExit" value="78" version="0" task="MFXInitEx" opcode="win:Stop" template="MfxInitEx_Exit">
 					</event>
-					<event symbol="MFXCloseEntry" value="81" version="0" task="MFXClose" opcode="win:Start" keywords="TypedEvent " template="MfxClose_Entry">
+					<event symbol="MFXCloseEntry" value="81" version="0" task="MFXClose" opcode="win:Start" template="MfxClose_Entry">
 					</event>
-					<event symbol="MFXCloseExit" value="82" version="0" task="MFXClose" opcode="win:Stop" keywords="TypedEvent " template="MfxClose_Exit">
+					<event symbol="MFXCloseExit" value="82" version="0" task="MFXClose" opcode="win:Stop" template="MfxClose_Exit">
 					</event>
-					<event symbol="DoWorkEntry" value="85" version="0" task="DoWork" opcode="win:Start" keywords="TypedEvent " template="DoWork_Entry">
+					<event symbol="DoWorkEntry" value="85" version="0" task="DoWork" opcode="win:Start" template="DoWork_Entry">
 					</event>
-					<event symbol="DoWorkExit" value="86" version="0" task="DoWork" opcode="win:Stop" keywords="TypedEvent " template="DoWork_Exit">
+					<event symbol="DoWorkExit" value="86" version="0" task="DoWork" opcode="win:Stop" template="DoWork_Exit">
 					</event>
-					<event symbol="SyncOperationEntry" value="89" version="0" task="SyncOperation" opcode="win:Start" keywords="TypedEvent " template="SyncOperation_Entry">
+					<event symbol="SyncOperationEntry" value="89" version="0" task="SyncOperation" opcode="win:Start" template="SyncOperation_Entry">
 					</event>
-					<event symbol="SyncOperationExit" value="90" version="0" task="SyncOperation" opcode="win:Stop" keywords="TypedEvent " template="SyncOperation_Exit">
+					<event symbol="SyncOperationExit" value="90" version="0" task="SyncOperation" opcode="win:Stop" template="SyncOperation_Exit">
 					</event>
-					<event symbol="WaitForGlobalEventEntry" value="93" version="0" task="WaitForGlobalEvent" opcode="win:Start" keywords="TypedEvent " template="WaitForGlobalEvent_Entry">
+					<event symbol="WaitForGlobalEventEntry" value="93" version="0" task="WaitForGlobalEvent" opcode="win:Start" template="WaitForGlobalEvent_Entry">
 					</event>
-					<event symbol="WaitForGlobalEventExit" value="94" version="0" task="WaitForGlobalEvent" opcode="win:Stop" keywords="TypedEvent " template="WaitForGlobalEvent_Exit">
+					<event symbol="WaitForGlobalEventExit" value="94" version="0" task="WaitForGlobalEvent" opcode="win:Stop" template="WaitForGlobalEvent_Exit">
 					</event>
-					<event symbol="DDIExecuteD3dxEntry" value="97" version="0" task="DDIExecuteD3DX" opcode="win:Start" keywords="TypedEvent " template="DDIExecuteD3DX_Entry">
+					<event symbol="DDIExecuteD3dxEntry" value="97" version="0" task="DDIExecuteD3DX" opcode="win:Start" template="DDIExecuteD3DX_Entry">
 					</event>
-					<event symbol="DDIExecuteD3dxExit" value="98" version="0" task="DDIExecuteD3DX" opcode="win:Stop" keywords="TypedEvent " template="DDIExecuteD3DX_Exit">
+					<event symbol="DDIExecuteD3dxExit" value="98" version="0" task="DDIExecuteD3DX" opcode="win:Stop" template="DDIExecuteD3DX_Exit">
 					</event>
-					<event symbol="DDIQueryD3dxEntry" value="101" version="0" task="DDIQueryD3DX" opcode="win:Start" keywords="TypedEvent " template="DDIQueryD3DX_Entry">
+					<event symbol="DDIQueryD3dxEntry" value="101" version="0" task="DDIQueryD3DX" opcode="win:Start" template="DDIQueryD3DX_Entry">
 					</event>
-					<event symbol="DDIQueryD3dxExit" value="102" version="0" task="DDIQueryD3DX" opcode="win:Stop" keywords="TypedEvent " template="DDIQueryD3DX_Exit">
+					<event symbol="DDIQueryD3dxExit" value="102" version="0" task="DDIQueryD3DX" opcode="win:Stop" template="DDIQueryD3DX_Exit">
 					</event>
-					<event symbol="CmCopyEntry" value="105" version="0" task="CmCopy" opcode="win:Start" keywords="TypedEvent " template="CmCopy_Entry">
+					<event symbol="CmCopyEntry" value="105" version="0" task="CmCopy" opcode="win:Start" template="CmCopy_Entry">
 					</event>
-					<event symbol="CmCopyExit" value="106" version="0" task="CmCopy" opcode="win:Stop" keywords="TypedEvent " template="CmCopy_Exit">
+					<event symbol="CmCopyExit" value="106" version="0" task="CmCopy" opcode="win:Stop" template="CmCopy_Exit">
 					</event>
 				</events>
 				<tasks>
@@ -166,10 +166,6 @@
 				<opcodes>
 				</opcodes>
 				<keywords>
-					<keyword name="TypedEvent" symbol="MFX_ETW_KEYWORD_TYPED_EVENT" mask="0x2">
-					</keyword>
-					<keyword name="NonTypedEvent" symbol="MFX_ETW_KEYWORD_NON_TYPED_EVENT" mask="0x1">
-					</keyword>
 				</keywords>
 				<maps>
 					<valueMap name="CmCopyIOPattern">
@@ -192,6 +188,44 @@
 						<map value="540627030"  message="$(string.Map.Codec.VP9)" />
 						<map value="540104257"  message="$(string.Map.Codec.AV1)" />
 					</valueMap>
+					<valueMap name="mfxStatus">
+						<map value="0"          message="$(string.Map.mfxStatus.MFX_ERR_NONE)" />
+						<map value="4294967295" message="$(string.Map.mfxStatus.MFX_ERR_UNKNOWN)" />
+						<map value="4294967294" message="$(string.Map.mfxStatus.MFX_ERR_NULL_PTR)" />
+						<map value="4294967293" message="$(string.Map.mfxStatus.MFX_ERR_UNSUPPORTED)" />
+						<map value="4294967292" message="$(string.Map.mfxStatus.MFX_ERR_MEMORY_ALLOC)" />
+						<map value="4294967291" message="$(string.Map.mfxStatus.MFX_ERR_NOT_ENOUGH_BUFFER)" />
+						<map value="4294967290" message="$(string.Map.mfxStatus.MFX_ERR_INVALID_HANDLE)" />
+						<map value="4294967289" message="$(string.Map.mfxStatus.MFX_ERR_LOCK_MEMORY)" />
+						<map value="4294967288" message="$(string.Map.mfxStatus.MFX_ERR_NOT_INITIALIZED)" />
+						<map value="4294967287" message="$(string.Map.mfxStatus.MFX_ERR_NOT_FOUND)" />
+						<map value="4294967286" message="$(string.Map.mfxStatus.MFX_ERR_MORE_DATA)" />
+						<map value="4294967285" message="$(string.Map.mfxStatus.MFX_ERR_MORE_SURFACE)" />
+						<map value="4294967284" message="$(string.Map.mfxStatus.MFX_ERR_ABORTED)" />
+						<map value="4294967283" message="$(string.Map.mfxStatus.MFX_ERR_DEVICE_LOST)" />
+						<map value="4294967282" message="$(string.Map.mfxStatus.MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)" />
+						<map value="4294967281" message="$(string.Map.mfxStatus.MFX_ERR_INVALID_VIDEO_PARAM)" />
+						<map value="4294967280" message="$(string.Map.mfxStatus.MFX_ERR_UNDEFINED_BEHAVIOR)" />
+						<map value="4294967279" message="$(string.Map.mfxStatus.MFX_ERR_DEVICE_FAILED)" />
+						<map value="4294967278" message="$(string.Map.mfxStatus.MFX_ERR_MORE_BITSTREAM)" />
+						<map value="4294967277" message="$(string.Map.mfxStatus.MFX_ERR_INCOMPATIBLE_AUDIO_PARAM)" />
+						<map value="4294967276" message="$(string.Map.mfxStatus.MFX_ERR_INVALID_AUDIO_PARAM)" />
+						<map value="4294967275" message="$(string.Map.mfxStatus.MFX_ERR_GPU_HANG)" />
+						<map value="4294967274" message="$(string.Map.mfxStatus.MFX_ERR_REALLOC_SURFACE)" />
+						<map value="1"          message="$(string.Map.mfxStatus.MFX_WRN_IN_EXECUTION)" />
+						<map value="2"          message="$(string.Map.mfxStatus.MFX_WRN_DEVICE_BUSY)" />
+						<map value="3"          message="$(string.Map.mfxStatus.MFX_WRN_VIDEO_PARAM_CHANGED)" />
+						<map value="4"          message="$(string.Map.mfxStatus.MFX_WRN_PARTIAL_ACCELERATION)" />
+						<map value="5"          message="$(string.Map.mfxStatus.MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)" />
+						<map value="6"          message="$(string.Map.mfxStatus.MFX_WRN_VALUE_NOT_CHANGED)" />
+						<map value="7"          message="$(string.Map.mfxStatus.MFX_WRN_OUT_OF_RANGE)" />
+						<map value="8"          message="$(string.Map.mfxStatus.MFX_TASK_WORKING)" />
+						<map value="9"          message="$(string.Map.mfxStatus.MFX_TASK_BUSY)" />
+						<map value="10"         message="$(string.Map.mfxStatus.MFX_WRN_FILTER_SKIPPED)" />
+						<map value="11"         message="$(string.Map.mfxStatus.MFX_WRN_INCOMPATIBLE_AUDIO_PARAM)" />
+						<map value="12"         message="$(string.Map.mfxStatus.MFX_ERR_NONE_PARTIAL_OUTPUT)" />
+						<map value="55536"      message="$(string.Map.mfxStatus.MFX_ERR_MORE_DATA_SUBMIT_TASK)" />
+					</valueMap>
 				</maps>
 				<templates>
 					<template tid="Entry">
@@ -204,37 +238,50 @@
 						<data name="in_height" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="codec_id" inType="win:UInt32" map="Codec" />
 					</template>
-					<template tid="DecodeQuery_Exit" />
+					<template tid="DecodeQuery_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="DecodeQueryIOSurf_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_width" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="in_height" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="codec_id" inType="win:UInt32" map="Codec" />
 					</template>
-					<template tid="DecodeQueryIOSurf_Exit" />
+					<template tid="DecodeQueryIOSurf_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="DecodeHeader_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="bitstream_pointer" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="bitstream_data_length" inType="win:UInt32" outType="xs:unsignedInt" />
 					</template>
-					<template tid="DecodeHeader_Exit" />
+					<template tid="DecodeHeader_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="DecodeInit_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_width" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="in_height" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="codec_id" inType="win:UInt32" map="Codec" />
 					</template>
-					<template tid="DecodeInit_Exit" />
+					<template tid="DecodeInit_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="DecodeClose_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="DecodeClose_Exit" />
+					<template tid="DecodeClose_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="DecodeFrameAsync_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="surface" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="bitstream_data_length" inType="win:UInt32" outType="xs:unsignedInt" />
 					</template>
-					<template tid="DecodeFrameAsync_Exit" />
+					<template tid="DecodeFrameAsync_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+						<data name="syncp" inType="win:Pointer" outType="win:HexInt64" />
+					</template>
 					<template tid="EncodeQuery_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_width" inType="win:UInt16" outType="xs:unsignedShort" />
@@ -243,7 +290,9 @@
 						<data name="target_usage" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="lowpower" inType="win:UInt16" outType="xs:unsignedShort" />
 					</template>
-					<template tid="EncodeQuery_Exit" />
+					<template tid="EncodeQuery_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="EncodeQueryIOSurf_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_width" inType="win:UInt16" outType="xs:unsignedShort" />
@@ -252,7 +301,9 @@
 						<data name="target_usage" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="lowpower" inType="win:UInt16" outType="xs:unsignedShort" />
 					</template>
-					<template tid="EncodeQueryIOSurf_Exit" />
+					<template tid="EncodeQueryIOSurf_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="EncodeInit_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_width" inType="win:UInt16" outType="xs:unsignedShort" />
@@ -261,16 +312,23 @@
 						<data name="target_usage" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="lowpower" inType="win:UInt16" outType="xs:unsignedShort" />
 					</template>
-					<template tid="EncodeInit_Exit" />
+					<template tid="EncodeInit_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="EncodeClose_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="EncodeClose_Exit" />
+					<template tid="EncodeClose_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="EncodeFrameAsync_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="surface" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="EncodeFrameAsync_Exit" />
+					<template tid="EncodeFrameAsync_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+						<data name="syncp" inType="win:Pointer" outType="win:HexInt64" />
+					</template>
 					<template tid="VPPQuery_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_width" inType="win:UInt16" outType="xs:unsignedShort" />
@@ -280,78 +338,111 @@
 						<data name="out_height" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="out_codec_id" inType="win:UInt32" map="Codec" />
 					</template>
-					<template tid="VPPQuery_Exit" />
+					<template tid="VPPQuery_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="VPPQueryIOSurf_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="width" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="height" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="codec_id" inType="win:UInt32" map="Codec" />
 					</template>
-					<template tid="VPPQueryIOSurf_Exit" />
+					<template tid="VPPQueryIOSurf_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="VPPInit_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_width" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="in_height" inType="win:UInt16" outType="xs:unsignedShort" />
 						<data name="codec_id" inType="win:UInt32" map="Codec" />
 					</template>
-					<template tid="VPPInit_Exit" />
+					<template tid="VPPInit_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="VPPClose_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="VPPClose_Exit" />
+					<template tid="VPPClose_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="VppLegacyRoutine_Entry">
 						<data name="thread_number" inType="win:UInt32" outType="xs:unsignedInt" />
 						<data name="call_number" inType="win:UInt32" outType="xs:unsignedInt" />
 					</template>
-					<template tid="VppLegacyRoutine_Exit" />
+					<template tid="VppLegacyRoutine_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="VppRunFrameAsync_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_surface" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="out_surface" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="VppRunFrameAsync_Exit" />
+					<template tid="VppRunFrameAsync_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+						<data name="syncp" inType="win:Pointer" outType="win:HexInt64" />
+					</template>
 					<template tid="VppRunFrameAsyncEx_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="in_surface" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="out_surface" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="VppRunFrameAsyncEx_Exit" />
+					<template tid="VppRunFrameAsyncEx_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+						<data name="syncp" inType="win:Pointer" outType="win:HexInt64" />
+					</template>
 					<template tid="MfxInitEx_Entry">
-						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="impl" inType="win:UInt32" outType="win:HexInt32" />
 						<data name="gpu_copy" inType="win:UInt16" outType="xs:unsignedShort" />
 					</template>
-					<template tid="MfxInitEx_Exit" />
+					<template tid="MfxInitEx_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
+					</template>
 					<template tid="MfxClose_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="MfxClose_Exit" />
+					<template tid="MfxClose_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="DoWork_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="DoWork_Exit" />
+					<template tid="DoWork_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="SyncOperation_Entry">
 						<data name="session" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="syncp" inType="win:Pointer" outType="win:HexInt64" />
 						<data name="timeout" inType="win:UInt32" outType="xs:unsignedInt" />
 					</template>
-					<template tid="SyncOperation_Exit" />
+					<template tid="SyncOperation_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+						<data name="syncp" inType="win:Pointer" outType="win:HexInt64" />
+					</template>
 					<template tid="WaitForGlobalEvent_Entry">
 						<data name="scheduler" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="WaitForGlobalEvent_Exit" />
+					<template tid="WaitForGlobalEvent_Exit">
+						<data name="mfxStatus" inType="win:Int32" outType="xs:int" />
+					</template>
 					<template tid="DDIExecuteD3DX_Entry">
 						<data name="device_dx" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="DDIExecuteD3DX_Exit" />
+					<template tid="DDIExecuteD3DX_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="DDIQueryD3DX_Entry">
 						<data name="device_dx" inType="win:Pointer" outType="win:HexInt64" />
 					</template>
-					<template tid="DDIQueryD3DX_Exit" />
+					<template tid="DDIQueryD3DX_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 					<template tid="CmCopy_Entry">
 						<data name="IOPattern" inType="win:UInt32" map="CmCopyIOPattern" />
 					</template>
-					<template tid="CmCopy_Exit" />
+					<template tid="CmCopy_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
 				</templates>
 			</provider>
 		</events>
@@ -376,6 +467,7 @@
 				<string id="Map.CmCopyIOPattern.OpaqueToVideo" value="OpaqueToVideo" />
 				<string id="Map.CmCopyIOPattern.OpaqueToSystem" value="OpaqueToSystem" />
 				<string id="Map.CmCopyIOPattern.OpaqueToOpaque" value="OpaqueToOpaque" />
+
 				<string id="Map.Codec.AVC" value="AVC" />
 				<string id="Map.Codec.HEVC" value="HEVC" />
 				<string id="Map.Codec.MPEG2" value="MPEG2" />
@@ -383,6 +475,43 @@
 				<string id="Map.Codec.CAPTURE" value="CAPTURE" />
 				<string id="Map.Codec.VP9" value="VP9" />
 				<string id="Map.Codec.AV1" value="AV1" />
+
+				<string id="Map.mfxStatus.MFX_ERR_NONE" value="MFX_ERR_NONE" />
+				<string id="Map.mfxStatus.MFX_ERR_UNKNOWN" value="MFX_ERR_UNKNOWN" />
+				<string id="Map.mfxStatus.MFX_ERR_NULL_PTR" value="MFX_ERR_NULL_PTR" />
+				<string id="Map.mfxStatus.MFX_ERR_UNSUPPORTED" value="MFX_ERR_UNSUPPORTED" />
+				<string id="Map.mfxStatus.MFX_ERR_MEMORY_ALLOC" value="MFX_ERR_MEMORY_ALLOC" />
+				<string id="Map.mfxStatus.MFX_ERR_NOT_ENOUGH_BUFFER" value="MFX_ERR_NOT_ENOUGH_BUFFER" />
+				<string id="Map.mfxStatus.MFX_ERR_INVALID_HANDLE" value="MFX_ERR_INVALID_HANDLE" />
+				<string id="Map.mfxStatus.MFX_ERR_LOCK_MEMORY" value="MFX_ERR_LOCK_MEMORY" />
+				<string id="Map.mfxStatus.MFX_ERR_NOT_INITIALIZED" value="MFX_ERR_NOT_INITIALIZED" />
+				<string id="Map.mfxStatus.MFX_ERR_NOT_FOUND" value="MFX_ERR_NOT_FOUND" />
+				<string id="Map.mfxStatus.MFX_ERR_MORE_DATA" value="MFX_ERR_MORE_DATA" />
+				<string id="Map.mfxStatus.MFX_ERR_MORE_SURFACE" value="MFX_ERR_MORE_SURFACE" />
+				<string id="Map.mfxStatus.MFX_ERR_ABORTED" value="MFX_ERR_ABORTED" />
+				<string id="Map.mfxStatus.MFX_ERR_DEVICE_LOST" value="MFX_ERR_DEVICE_LOST" />
+				<string id="Map.mfxStatus.MFX_ERR_INCOMPATIBLE_VIDEO_PARAM" value="MFX_ERR_INCOMPATIBLE_VIDEO_PARAM" />
+				<string id="Map.mfxStatus.MFX_ERR_INVALID_VIDEO_PARAM" value="MFX_ERR_INVALID_VIDEO_PARAM" />
+				<string id="Map.mfxStatus.MFX_ERR_UNDEFINED_BEHAVIOR" value="MFX_ERR_UNDEFINED_BEHAVIOR" />
+				<string id="Map.mfxStatus.MFX_ERR_DEVICE_FAILED" value="MFX_ERR_DEVICE_FAILED" />
+				<string id="Map.mfxStatus.MFX_ERR_MORE_BITSTREAM" value="MFX_ERR_MORE_BITSTREAM" />
+				<string id="Map.mfxStatus.MFX_ERR_INCOMPATIBLE_AUDIO_PARAM" value="MFX_ERR_INCOMPATIBLE_AUDIO_PARAM" />
+				<string id="Map.mfxStatus.MFX_ERR_INVALID_AUDIO_PARAM" value="MFX_ERR_INVALID_AUDIO_PARAM" />
+				<string id="Map.mfxStatus.MFX_ERR_GPU_HANG" value="MFX_ERR_GPU_HANG" />
+				<string id="Map.mfxStatus.MFX_ERR_REALLOC_SURFACE" value="MFX_ERR_REALLOC_SURFACE" />
+				<string id="Map.mfxStatus.MFX_WRN_IN_EXECUTION" value="MFX_WRN_IN_EXECUTION" />
+				<string id="Map.mfxStatus.MFX_WRN_DEVICE_BUSY" value="MFX_WRN_DEVICE_BUSY" />
+				<string id="Map.mfxStatus.MFX_WRN_VIDEO_PARAM_CHANGED" value="MFX_WRN_VIDEO_PARAM_CHANGED" />
+				<string id="Map.mfxStatus.MFX_WRN_PARTIAL_ACCELERATION" value="MFX_WRN_PARTIAL_ACCELERATION" />
+				<string id="Map.mfxStatus.MFX_WRN_INCOMPATIBLE_VIDEO_PARAM" value="MFX_WRN_INCOMPATIBLE_VIDEO_PARAM" />
+				<string id="Map.mfxStatus.MFX_WRN_VALUE_NOT_CHANGED" value="MFX_WRN_VALUE_NOT_CHANGED" />
+				<string id="Map.mfxStatus.MFX_WRN_OUT_OF_RANGE" value="MFX_WRN_OUT_OF_RANGE" />
+				<string id="Map.mfxStatus.MFX_TASK_WORKING" value="MFX_TASK_WORKING" />
+				<string id="Map.mfxStatus.MFX_TASK_BUSY" value="MFX_TASK_BUSY" />
+				<string id="Map.mfxStatus.MFX_WRN_FILTER_SKIPPED" value="MFX_WRN_FILTER_SKIPPED" />
+				<string id="Map.mfxStatus.MFX_WRN_INCOMPATIBLE_AUDIO_PARAM" value="MFX_WRN_INCOMPATIBLE_AUDIO_PARAM" />
+				<string id="Map.mfxStatus.MFX_ERR_NONE_PARTIAL_OUTPUT" value="MFX_ERR_NONE_PARTIAL_OUTPUT" />
+				<string id="Map.mfxStatus.MFX_ERR_MORE_DATA_SUBMIT_TASK" value="MFX_ERR_MORE_DATA_SUBMIT_TASK" />
 			</stringTable>
 		</resources>
 	</localization>
