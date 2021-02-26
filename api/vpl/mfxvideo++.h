@@ -71,6 +71,19 @@ public:
         return MFXVideoCORE_SyncOperation(m_session, syncp, wait);
     }
 
+    virtual mfxStatus GetSurfaceForEncode(mfxFrameSurface1** output_surf) {
+        return MFXMemory_GetSurfaceForEncode(m_session, output_surf);
+    }
+    virtual mfxStatus GetSurfaceForDecode(mfxFrameSurface1** output_surf) {
+        return MFXMemory_GetSurfaceForDecode(m_session, output_surf);
+    }
+    virtual mfxStatus GetSurfaceForVPP   (mfxFrameSurface1** output_surf) {
+        return MFXMemory_GetSurfaceForVPP   (m_session, output_surf);
+    }
+    virtual mfxStatus GetSurfaceForVPPOut(mfxFrameSurface1** output_surf) {
+        return MFXMemory_GetSurfaceForVPPOut(m_session, output_surf);
+    }
+
     virtual operator mfxSession(void) {
         return m_session;
     }
@@ -119,6 +132,10 @@ public:
                                        mfxBitstream *bs,
                                        mfxSyncPoint *syncp) {
         return MFXVideoENCODE_EncodeFrameAsync(m_session, ctrl, surface, bs, syncp);
+    }
+
+    virtual mfxStatus GetSurface(mfxFrameSurface1** output_surf) {
+        return MFXMemory_GetSurfaceForEncode(m_session, output_surf);
     }
 
 protected:
@@ -171,6 +188,10 @@ public:
                                        mfxFrameSurface1 **surface_out,
                                        mfxSyncPoint *syncp) {
         return MFXVideoDECODE_DecodeFrameAsync(m_session, bs, surface_work, surface_out, syncp);
+    }
+
+    virtual mfxStatus GetSurface(mfxFrameSurface1** output_surf) {
+        return MFXMemory_GetSurfaceForDecode(m_session, output_surf);
     }
 
 protected:
@@ -271,7 +292,7 @@ public:
     }
 
 protected:
-    mfxSession m_session;                                       // (mfxSession) handle to the owning session
+    mfxSession m_session; // (mfxSession) handle to the owning session
 };
 
 #endif //__MFXVIDEOPLUSPLUS_H

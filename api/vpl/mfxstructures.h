@@ -896,14 +896,12 @@ enum {
     MFX_LEVEL_AVC_51                        =51,
     MFX_LEVEL_AVC_52                        =52,
     /*! @} */
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     /*! @{ */
     /* H.264 level 6-6.2 */
-    MFX_LEVEL_AVC_6 = 60,
-    MFX_LEVEL_AVC_61 = 61,
-    MFX_LEVEL_AVC_62 = 62,
+    MFX_LEVEL_AVC_6                         =60,
+    MFX_LEVEL_AVC_61                        =61,
+    MFX_LEVEL_AVC_62                        =62,
     /*! @} */
-#endif
 
     /*! @{ */
     /* MPEG2 Profiles. */
@@ -1514,8 +1512,7 @@ typedef struct {
     mfxU16      WinBRCSize;
 
     /*! When rate control method is MFX_RATECONTROL_QVBR, this parameter specifies quality factor.
-Values are in the 1 to 51 range,
-        where 1 corresponds to the best quality.
+        Values are in the 1 to 51 range, where 1 corresponds to the best quality.
     */
     mfxU16      QVBRQuality;
     /*!
@@ -3779,7 +3776,7 @@ enum {
     MFX_SCALING_MODE_DEFAULT    = 0, /*!< Default scaling mode. The library selects the most appropriate scaling method. */
     MFX_SCALING_MODE_LOWPOWER   = 1, /*!< Low power scaling mode which is applicable for library implementations.
                                          The exact scaling algorithm is defined by the library. */
-    MFX_SCALING_MODE_QUALITY    = 2, /*!< The best quality scaling mode */
+    MFX_SCALING_MODE_QUALITY    = 2, /*!< The best quality scaling mode. */
     MFX_SCALING_MODE_VENDOR = 1000, /*!< The enumeration to separate common scaling controls above and vendor specific. */ 
     MFX_SCALING_MODE_INTEL_GEN_COMPUTE  = MFX_SCALING_MODE_VENDOR + 1, /*! The mode to run scaling operation on Execution Units (EUs). */
     MFX_SCALING_MODE_INTEL_GEN_VDBOX = MFX_SCALING_MODE_VENDOR + 2, /*! The special optimization mode where scaling operation running on SFC (Scaler & Format Converter) is coupled with VDBOX (also known as Multi-Format Codec fixed-function engine). This mode is applicable for DECODE_VPP domain functions. */ 

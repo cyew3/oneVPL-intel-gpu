@@ -54,8 +54,7 @@ mfxStatus MFX_CDECL MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
    @brief
       Creates and initializes a session in the legacy mode for compatibility with Intel(r) Media SDK applications. 
       This function is deprecated starting from API version 2.0, applications must use MFXLoad with mfxCreateSession 
-      to select the implementation and initialize the session. 
- 
+      to select the implementation and initialize the session.
 
       Call this function before calling any other API functions.
       If the desired implementation specified by ``par`` is MFX_IMPL_AUTO, the function will search for
