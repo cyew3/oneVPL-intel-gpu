@@ -414,7 +414,7 @@ typedef struct {
     mfxAccelerationMode    AccelerationMode;             /*!< Hardware acceleration stack to use. OS dependent parameter. Use VA for Linux* and DX* for Windows*. */
     mfxVersion             ApiVersion;                   /*!< Supported API version. */
     mfxChar                ImplName[MFX_IMPL_NAME_LEN];  /*!< Null-terminated string with implementation name given by vendor. */
-    mfxChar                License[MFX_STRFIELD_LEN];    /*!< Null-terminated string with license name of the implementation. */
+    mfxChar                License[MFX_STRFIELD_LEN];    /*!< Null-terminated string with comma-separated list of license names of the implementation. */
     mfxChar                Keywords[MFX_STRFIELD_LEN];   /*!< Null-terminated string with comma-separated list of keywords specific to this implementation that dispatcher can search for. */
     mfxU32                 VendorID;                     /*!< Standard vendor ID 0x8086 - Intel. */
     mfxU32                 VendorImplID;                 /*!< Vendor specific number with given implementation ID. */
