@@ -2829,6 +2829,9 @@ bool H264ParsingCore::IsFieldOfOneFrame(const H264ParsingCore::Slice& prev, cons
     if (prev.frame_num != last.frame_num)
         return false;
 
+    if (prev.pic_parameter_set_id != last.pic_parameter_set_id)
+        return true;
+
     if (prev.bottom_field_flag == last.bottom_field_flag)
         return false;
 
@@ -3220,6 +3223,7 @@ Status H264ParsingCore::ParseSh(uint8_t *buf, int32_t len)
         if (idPps >= MaxNumPps || !m_pps[idPps].IsReady())
             return UMC_ERR_INVALID_STREAM;
         sh.SetPps(m_pps[idPps]);
+        sh.pic_parameter_set_id = (uint16_t)idPps;
 
         sh.frame_num = bs.GetBits(sh.GetPps().GetSps().log2_max_frame_num);
         if (sh.GetPps().GetSps().frame_mbs_only_flag == 0)
