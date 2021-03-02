@@ -212,8 +212,7 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
                 DISPATCHER_LOG_WRN(("WARNING: CM_Open_DevNode_Key for device %ul failed with status %ul\n", device_instance, result));
                 continue;
             }
-
-
+            
             adapter_description curr_descr;
 
             // Extract path to MSDK or VPL lib
@@ -230,13 +229,13 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
             }
             else
             {
-                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForMediaSDK\" key failed with status %l\n", n_error));
+                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForMediaSDK\" key failed with status %l, trying VPL\n", n_error));
             }
 
             path_size = sizeof(intel_dll_path);
             n_error = key.QueryStringValue(_T("DriverStorePathForVPL"), intel_dll_path, &path_size);
 
-            if (n_error == ERROR_SUCCESS)
+            if (n_error == ERROR_SUCCESS && !is_msdk_key)
             {
                 curr_descr.path_to_msdk = intel_dll_path;
                 append_lib_name(curr_descr.path_to_msdk, default_VPL_dll_name);
@@ -244,17 +243,11 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
             }
             else
             {
-                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForVPL\" key failed with status %l\n", n_error));
+                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForVPL\" key failed with status %l or MSDK already found\n", n_error));
             }
 
             if (!is_msdk_key && !is_vpl_key)
                 continue;
-
-            if (is_msdk_key && is_vpl_key)
-            {
-                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue succeeded for both VPL and MSDK which is unexpected. Continued with VPL\n"));
-            }
-
 
             // Extract description string
             path_size = sizeof(intel_dll_path);
