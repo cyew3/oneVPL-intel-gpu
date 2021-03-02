@@ -504,8 +504,9 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_transcoder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_utils.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_plugin.cpp
+
     $<$<NOT:$<BOOL:${API_USE_VPL}>>:
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_plugin.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/get_plugin.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_preenc.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_enc.cpp

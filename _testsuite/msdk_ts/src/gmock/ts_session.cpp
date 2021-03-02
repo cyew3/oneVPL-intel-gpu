@@ -121,9 +121,6 @@ mfxStatus tsSession::Load(mfxSession session, const mfxPluginUID *uid, mfxU32 ve
 #if !defined(MFX_ONEVPL)
     TRACE_FUNC3(MFXVideoUSER_Load, session, uid, version);
     g_tsStatus.check( MFXVideoUSER_Load(session, uid, version) );
-#else
-    g_tsLog << "Plugins are not supported by VPL\n";
-    throw tsFAIL;
 #endif //!MFX_ONEVPL
 
     return g_tsStatus.get();

@@ -356,9 +356,7 @@ void MFXVideoTest::SetUp()
     }
     sscanf(trace.c_str(), "%u", &g_tsTrace);
 
-#if !defined(MFX_ONEVPL)
     g_tsPlugin.Init(plugins, platform);
-#endif
 
     g_tsConfig.core20 = (ENV("TS_CORE20", (g_tsHWtype == MFX_HW_XE_HP || g_tsHWtype == MFX_HW_DG2) ? "1" : "0") != "0");
 
