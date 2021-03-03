@@ -34,7 +34,10 @@ using namespace AV1EHW::Base;
 namespace av1e {
     namespace tests
     {
-        #define IVF_SEQ_HEADER_SIZE_BYTES 32
+        const uint32_t IVF_SEQ_HEADER_SIZE_BYTES = 32;
+        const uint32_t TEST_WIDTH                = 1920;
+        const uint32_t TEST_HEIGHT               = 1080;
+        const uint32_t TEST_QP                   = 50;
 
         struct FeatureBlocksPacker
             : testing::Test
@@ -42,7 +45,7 @@ namespace av1e {
             FeatureBlocks blocks{};
             Packer        packer;
             Tile          tile;
-            StorageRW     storage;
+            StorageRW     global;
 
             FeatureBlocksPacker()
                 : packer(FEATURE_PACKER)
@@ -53,100 +56,83 @@ namespace av1e {
             {
                 packer.Init(INIT | RUNTIME, blocks);
                 tile.Init(INIT | RUNTIME, blocks);
-                Glob::EncodeCaps::GetOrConstruct(storage);
-            }
-
-            void InitFeature()
-            {
-                auto& queueQIS = FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks);
-                auto block = FeatureBlocks::Get(queueQIS, { FEATURE_PACKER, Packer::BLK_Init });
-                ASSERT_EQ(
-                    block->Call(storage, storage),
-                    MFX_ERR_NONE
-                );
-
-                const bool is_header_key_found_in_storage = storage.Contains(Glob::PackedHeaders::Key);
-                EXPECT_EQ(
-                    is_header_key_found_in_storage, true
-                );
+                Glob::EncodeCaps::GetOrConstruct(global);
             }
         };
 
         TEST_F(FeatureBlocksPacker, InitAlloc)
         {
-            InitFeature();
+            auto& block = FeatureBlocks::Get(
+                FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks),
+                { FEATURE_PACKER, Packer::BLK_Init });
+
+            ASSERT_TRUE(!global.Contains(Glob::PackedHeaders::Key));
+            EXPECT_EQ(
+                block->Call(global, global),
+                MFX_ERR_NONE
+            );
+            EXPECT_TRUE(global.Contains(Glob::PackedHeaders::Key));
         }
 
         TEST_F(FeatureBlocksPacker, SubmitTask)
         {
-            // initing Packer if not already inited
-            const bool is_header_key_found_in_storage = storage.Contains(Glob::PackedHeaders::Key);
-            if (!is_header_key_found_in_storage)
-            {
-                InitFeature();
-            }
+            Glob::PackedHeaders::GetOrConstruct(global);
 
             // creating param structs that are used by Packer
-            auto p_video_par = MfxFeatureBlocks::make_storable<ExtBuffer::Wrapper<mfxVideoParam>>();
-            auto p_sh = MfxFeatureBlocks::make_storable<SH>();
-            auto p_fh = MfxFeatureBlocks::make_storable<FH>();
+            auto& vp = Glob::VideoParam::GetOrConstruct(global);
+            auto& sh = Glob::SH::GetOrConstruct(global);
+            auto& fh = Glob::FH::GetOrConstruct(global);
 
             // filling param structs with mandatory params
-            const mfxU16 width = p_fh->FrameWidth = p_sh->max_frame_width = 1920;
-            p_video_par->mfx.FrameInfo.Width = static_cast<uint16_t>(width);
-            const mfxU16 height = p_fh->FrameHeight = p_sh->max_frame_height = 1080;
-            p_video_par->mfx.FrameInfo.Height = static_cast<uint16_t>(height);
-            p_sh->enable_order_hint = true;
-            p_fh->frame_type = KEY_FRAME;
-            const uint32_t base_q_idx = p_fh->quantization_params.base_q_idx = 50;
+            vp.mfx.FrameInfo.Width  = fh.UpscaledWidth = fh.FrameWidth = sh.max_frame_width = TEST_WIDTH;
+            vp.mfx.FrameInfo.Height = fh.FrameHeight = sh.max_frame_height = TEST_HEIGHT;
 
-            // putting param structs to the storage to let Packer use them
-            storage.Insert(Glob::FH::Key, std::move(p_fh));
-            storage.Insert(Glob::SH::Key, std::move(p_sh));
+            sh.enable_order_hint              = true;
+            fh.frame_type                     = KEY_FRAME;
+            fh.quantization_params.base_q_idx = TEST_QP;
 
-            StorageRW storage_task;
-            auto p_task_par = MfxFeatureBlocks::make_storable<TaskCommonPar>();
-            p_task_par->FrameType = MFX_FRAMETYPE_I;
-            p_task_par->InsertHeaders = INSERT_IVF_SEQ | INSERT_IVF_FRM;
-            storage_task.Insert(Task::Common::Key, std::move(p_task_par));
+            StorageRW taskStrg;
+            auto& tpar          = Task::Common::GetOrConstruct(taskStrg);
+            tpar.FrameType      = MFX_FRAMETYPE_I;
+            tpar.InsertHeaders  = INSERT_IVF_SEQ | INSERT_IVF_FRM;
 
-            p_video_par->Attach(MFX_EXTBUFF_AV1_PARAM, false);
-            mfxExtAV1Param& av1Par = ExtBuffer::Get(*p_video_par);
+            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
+            mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
 
             av1Par.UniformTileSpacing = 1;
-            av1Par.FrameHeight = height;
-            av1Par.FrameWidth = width;
-            av1Par.NumTileColumns = 1;
-            av1Par.NumTileRows = 1;
-            av1Par.TileWidthInSB[0] = CeilDiv(width, static_cast<mfxU16>(SB_SIZE));
-            av1Par.TileHeightInSB[0] = CeilDiv(height, static_cast<mfxU16>(SB_SIZE));
+            av1Par.FrameWidth         = TEST_WIDTH;
+            av1Par.FrameHeight        = TEST_HEIGHT;
+            av1Par.NumTileColumns     = 1;
+            av1Par.NumTileRows        = 1;
+            av1Par.TileWidthInSB[0]   = CeilDiv(mfxU16(TEST_WIDTH), mfxU16(SB_SIZE));
+            av1Par.TileHeightInSB[0]  = CeilDiv(mfxU16(TEST_HEIGHT), mfxU16(SB_SIZE));
 
-            storage.Insert(Glob::VideoParam::Key, std::move(p_video_par));
-
-            auto& queueII = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
-            auto& setTileInfo = FeatureBlocks::Get(queueII, { FEATURE_TILE, Tile::BLK_SetTileInfo });
-            ASSERT_EQ(
-                setTileInfo->Call(storage, storage_task),
+            auto& setTileInfo = FeatureBlocks::Get(
+                FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks),
+                { FEATURE_TILE, Tile::BLK_SetTileInfo });
+            EXPECT_EQ(
+                setTileInfo->Call(global, taskStrg),
                 MFX_ERR_NONE
             );
 
-            auto p_task_fh = MfxFeatureBlocks::make_storable<FH>(Glob::FH::Get(storage));
-            storage_task.Insert(Task::FH::Key, std::move(p_task_fh));
+            auto& taskFH = Task::FH::GetOrConstruct(taskStrg);
+            taskFH       = fh;
 
             // calling Packer's SubmitTack routing
-            auto& queueST = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
-            auto& block = FeatureBlocks::Get(queueST, { FEATURE_PACKER, Packer::BLK_SubmitTask });
-            ASSERT_EQ(
-                block->Call(storage, storage_task),
+            auto& block = FeatureBlocks::Get(
+                FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks),
+                { FEATURE_PACKER, Packer::BLK_SubmitTask });
+            EXPECT_EQ(
+                block->Call(global, taskStrg),
                 MFX_ERR_NONE
             );
 
             // requesting Packer's result (prepared frame's header)
-            auto& ph = Glob::PackedHeaders::Get(storage);
+            auto& ph = Glob::PackedHeaders::Get(global);
 
             // adding dummy frame size for the internal BSParser checks
             mfxU32 ivfFrameHeader[3] = { 10000, 0, 0x00000000 };
-            mfxU8 * pIVFPicHeader = ph.IVF.pData + IVF_SEQ_HEADER_SIZE_BYTES;
+            mfxU8 * pIVFPicHeader    = ph.IVF.pData + IVF_SEQ_HEADER_SIZE_BYTES;
             std::copy(std::begin(ivfFrameHeader), std::end(ivfFrameHeader), reinterpret_cast <mfxU32*> (pIVFPicHeader));
 
             // checkign header with BSParser
@@ -156,11 +142,11 @@ namespace av1e {
             BSErr parser_err = parser.parse_next_unit();
 
             // finally some checks that header params are expected values
-            ASSERT_EQ(parser_err && (parser_err != BS_ERR_MORE_DATA), false);
+            EXPECT_EQ(parser_err && (parser_err != BS_ERR_MORE_DATA), false);
             auto pHeader = static_cast<BS_AV1::Frame *>(parser.get_header());
-            ASSERT_EQ(pHeader->fh.FrameWidth, width);
-            ASSERT_EQ(pHeader->fh.FrameHeight, height);
-            ASSERT_EQ(pHeader->fh.quantization_params.base_q_idx, base_q_idx);
+            EXPECT_EQ(pHeader->fh.UpscaledWidth, TEST_WIDTH);
+            EXPECT_EQ(pHeader->fh.FrameHeight, TEST_HEIGHT);
+            EXPECT_EQ(pHeader->fh.quantization_params.base_q_idx, TEST_QP);
         }
     }
 }
