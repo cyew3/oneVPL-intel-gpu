@@ -22,6 +22,8 @@ steps:
     command: (if exist %WORKSPACE%\\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\\sources\mdp_msdk-lib) &&
       (if exist mediasdk (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
       else (xcopy product %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q))
+  - name: cleanup output directory
+    command: (if exist %WORKSPACE%\output\packages rmdir /s /q %WORKSPACE%\output\packages) && (mkdir %WORKSPACE%\output\packages)
   - name: pull docker image
     command: docker pull %DOCKER_IMAGE%
   - name: check python version
@@ -31,29 +33,10 @@ steps:
       --revision %COMPONENT_REVISION% --build-number %BUILD_NUMBER%
   - name: scroll down (no log here)
     command: docker run --rm --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat
+      call %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat
   - name: build (log replay)
     command: .\sources\mdp_msdk-lib\config\scripts\windows_logs.bat
     always_execute: true
-  - name: create lib drop
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
-      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build"
-  - name: create tools drop
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_tools_drop.ps1
-      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
-      -MsdkBinaries "C:\workspace\msdk_binaries\windows_pre_built_binaries" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
-  - name: create lucas package
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_lucas_pkg.ps1
-      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools"
-  - name: create nightly package
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_nightly_pkg.ps1
-      -Workspace "C:\workspace" -BuildDir "C:\workspace\Build" -VPABuildDir "C:\workspace\msdk_binaries\vpa_build"
-      -ValidationTools "C:\workspace\msdk_binaries\windows_validation_tools" -Service_UWD "C:\workspace\msdk_binaries\service" -AMD64 "C:\workspace\msdk_binaries\AMD64"
-      -TestSystem "C:\workspace\test_system" -MsdkBinaries "C:\workspace\msdk_binaries\windows_pre_built_binaries"
 types:
   release:
     env:
@@ -62,15 +45,3 @@ types:
     - source_dir: "../output/packages"
       file_patterns: "*.zip"
       destination_dir: "Windows"
-    - source_dir: "../output/WindowsDrop"
-      file_patterns: "*.zip"
-      destination_dir: "WindowsDrop"
-    - source_dir: "../output/WindowsToolsDrop"
-      file_patterns: "*.zip"
-      destination_dir: "WindowsToolsDrop"
-    - source_dir: "../output/LucasPackage"
-      file_patterns: "*.zip"
-      destination_dir: "WindowsLucasPkg"
-    - source_dir: "../output/WindowsNightlyPackage"
-      file_patterns: "*.zip"
-      destination_dir: "WindowsNightlyPackage"

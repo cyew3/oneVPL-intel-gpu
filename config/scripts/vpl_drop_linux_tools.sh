@@ -2,16 +2,16 @@
 set -ex
 
 # TODO: remove hardcoded path to lib repository
-VPL_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/vpl/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
-VPL_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/vpl/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
-
+MSDK_MINOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MINOR " '$2 ~ /^[0-9]+$/ { print $2 }')
+MSDK_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/include/mfxdefs.h | awk -F "MFX_VERSION_MAJOR " '$2 ~ /^[0-9]+$/ { print $2 }')
 RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
-VPL_FILES=(
-    "libmfx-gen.so"
-    "libmfx-gen.so.1.${VPL_MAJOR}"
-    "libmfx-gen.so.1.${VPL_MAJOR}.${VPL_MINOR}"
-)
+BIN_FILES=(
+    "mfx_player"
+    "mfx_transcoder"
+    "msdk_gmock"
+    "sample_multi_transcode"
+	)
 
 # build number arg is optional; only last number of this arg will be used for versioning: 0.0.0 -> 0
 build_number="0.0.0"
@@ -25,15 +25,15 @@ do
     esac
 done
 
-package_name="lucas_linux_drop_$RELEASE_VERSION.${build_number##*.}.zip"
-package_dir=$path_to_save/lucas_drop
+package_name="vpl_tools_drop_$RELEASE_VERSION.${build_number##*.}.zip"
+package_dir=$path_to_save/to_drop
 
 mkdir -p $package_dir
 
 tar xvfz $msdk_path --directory=$package_dir
 
 cd $binaries_dir
-cp -Pv ${VPL_FILES[*]} $package_dir/imports/mediasdk
+cp -Pv ${BIN_FILES[*]} $package_dir/imports/mediasdk
 
 # Needed to publish artifacts in QuickBuild, сopying each file causes an error
 zip -r $path_to_save/$package_name $package_dir

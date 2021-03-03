@@ -18,6 +18,10 @@ qb_variable_map:
 steps:
   - name: clean mediasdk lib repo
     command: rm -rf $WORKSPACE/sources/mdp_msdk-lib
+  - name: show content
+    command: ls $WORKSPACE
+  - name: show content v2
+    command: ls -R $WORKSPACE/linux_msdk_binaries
   - name: copy lib repo (mediasdk or product)
     command: if [ -d $WORKSPACE/mediasdk ]; then cp -R $WORKSPACE/mediasdk $WORKSPACE/sources/mdp_msdk-lib;
       elif [ -d $WORKSPACE/product ]; then cp -R $WORKSPACE/product $WORKSPACE/sources/mdp_msdk-lib; else exit 1; fi
@@ -29,62 +33,41 @@ steps:
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu"
   - name: build_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
-  - name: config mediasdk
-    command: docker exec $BUILD_ID /bin/bash -c 'mkdir -p sources/mdp_msdk-lib/build/mediasdk &&
-      cd sources/mdp_msdk-lib/build/mediasdk && /opt/tools/cmake-latest/bin/cmake
-      -DCMAKE_INSTALL_PREFIX=/opt/intel/mediasdk
-      -DCMAKE_C_FLAGS_RELEASE="-Wall -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
-      -DCMAKE_CXX_FLAGS_RELEASE="-Wall -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
-      -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_ALL=ON
-      -DBUILD_VAL_TOOLS=ON -DAPI=latest -DENABLE_ITT=OFF -DENABLE_OPENCL=OFF $MFX_HOME'
-  - name: build mediasdk
-    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build/mediasdk && make -j$(nproc)"
   - name: config vpl
-    command: docker exec $BUILD_ID /bin/bash -c 'mkdir -p sources/mdp_msdk-lib/build/vpl &&
-      cd sources/mdp_msdk-lib/build/vpl && /opt/tools/cmake-latest/bin/cmake
+    command: docker exec $BUILD_ID /bin/bash -c 'mkdir -p sources/mdp_msdk-lib/build/output &&
+      cd sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/cmake
       -DCMAKE_INSTALL_PREFIX=/opt/intel/mediasdk
-      -DCMAKE_C_FLAGS_RELEASE="-Wall -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
-      -DCMAKE_CXX_FLAGS_RELEASE="-Wall -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
+      -DCMAKE_C_FLAGS_RELEASE="-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
+      -DCMAKE_CXX_FLAGS_RELEASE="-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
       -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_ALL=ON
-      -DBUILD_VAL_TOOLS=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.1 $MFX_HOME'
+      -DBUILD_VAL_TOOLS=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.2 $MFX_HOME'
   - name: build vpl
-    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build/vpl && make -j$(nproc) mfx-gen mfx_player mfx_transcoder"
-  - name: create deb package
-    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_lib.sh
-      -b /opt/src/sources/mdp_msdk-lib/build
-      -h /opt/src/sources/mdp_msdk-lib/api
-      -p /opt/src/sources/mdp_msdk-lib/build/output
-      -n $BUILD_NUMBER"
-  - name: create lib drop
+    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build && make -j$(nproc) mfx-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode"
+  - name: create integration lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
+      -m /opt/src/linux_msdk_binaries/Linux/Ubuntu/18.04/l_MSDK_p*.tgz
+      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -n $BUILD_NUMBER"
+  - name: copy integrational tools drop
+    command: docker exec $BUILD_ID /bin/bash -c 'cp /opt/src/linux_msdk_binaries/Linux/Ubuntu/18.04/tools_drop*.tgz /opt/src/sources/mdp_msdk-lib/build/output'
+  - name: create vpl lib drop
+    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/vpl_drop_linux_lib.sh
+      -b /opt/src/sources/mdp_msdk-lib/build
       -h /opt/src/sources/mdp_msdk-lib/api
+      -m /opt/src/linux_msdk_binaries/Linux/Ubuntu/18.04/l_MSDK_p*.tgz
       -p /opt/src/sources/mdp_msdk-lib/build/output
       -n $BUILD_NUMBER"
-  - name: build mediasdk tools
-    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build/mediasdk &&
-      /opt/src/sources/mdp_msdk-lib/config/scripts/build_linux_tools.sh"
-  - name: create tools drop package
-    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_tools.sh
-      -v /opt/src/msdk_binaries/linux_validation_tools
-      -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
-      -l /opt/src/sources/mdp_msdk-lib/build/mediasdk/__lib/release
-      -t /opt/src/msdk_binaries/test_behavior
-      -p /opt/src/sources/mdp_msdk-lib/build/output
-      -n $BUILD_NUMBER"
-  - name: create tools deb package
-    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/pack_linux_tools.sh
-      -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
-      -t /opt/src/msdk_binaries/test_behavior
-      -h /opt/src/hevce_tests
+  - name: create vpl tools drop package
+    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/vpl_drop_linux_tools.sh
+      -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
+      -m /opt/src/linux_msdk_binaries/Linux/Ubuntu/18.04/tools_drop*.tgz
       -p /opt/src/sources/mdp_msdk-lib/build/output
       -n $BUILD_NUMBER"
   - name: create lucas drop package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lucas.sh
-      -v /opt/src/msdk_binaries/linux_validation_tools
-      -b /opt/src/sources/mdp_msdk-lib/build/mediasdk/__bin/release
-      -l /opt/src/sources/mdp_msdk-lib/build/mediasdk/__lib/release
-      -o /opt/src/sources/mdp_msdk-lib/build/vpl/__bin/release
+      -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
+      -m /opt/src/linux_msdk_binaries/Linux/Ubuntu/18.04/lucas_linux_drop*.tgz
       -p /opt/src/sources/mdp_msdk-lib/build/output
       -n $BUILD_NUMBER"
   - name: remove container

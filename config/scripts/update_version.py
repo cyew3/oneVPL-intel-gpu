@@ -6,41 +6,17 @@ import re
 
 DELIMITER = '.'
 FILE_VERSION = "{date}{DELIMITER}{build_number}"
-MSDK_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{msdk_major_api}{DELIMITER}{msdk_minor_api}"
 VPL_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{vpl_major_api}{DELIMITER}{vpl_minor_api}"
 HIDDEN_FILE_VERSION = "{date}{DELIMITER}{revision}"
-HIDDEN_MSDK_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{msdk_major_api}{DELIMITER}{msdk_minor_api}"
 HIDDEN_VPL_PRODUCT_VERSION = "{major_version}{DELIMITER}{minor_version}{DELIMITER}{vpl_major_api}{DELIMITER}{vpl_minor_api}"
 
-MSDK_PATTERN = {r'"FileVersion", "(.*)"': HIDDEN_FILE_VERSION,
-                r'"ProductVersion", "(.*)"': HIDDEN_MSDK_PRODUCT_VERSION,
-                r'FILEVERSION (.*)': FILE_VERSION,
-                r'PRODUCTVERSION (.*)': MSDK_PRODUCT_VERSION}
 VPL_PATTERN = {r'"FileVersion", "(.*)"': HIDDEN_FILE_VERSION,
                r'"ProductVersion", "(.*)"': HIDDEN_VPL_PRODUCT_VERSION,
                r'FILEVERSION (.*)': FILE_VERSION,
                r'PRODUCTVERSION (.*)': VPL_PRODUCT_VERSION}
-MFT_PATTERN = {r'MFX_MF_FILE_VERSION +(.*)': FILE_VERSION,
-               r'MFX_MF_PRODUCT_VERSION +(.*)': MSDK_PRODUCT_VERSION,
-               r'MFX_MF_FILE_VERSION_STR +"(.*)"': HIDDEN_FILE_VERSION,
-               r'MFX_MF_PRODUCT_VERSION_STR +(.*)': HIDDEN_MSDK_PRODUCT_VERSION}
-
 
 FILES_TO_UPDATE = {
-    r'mdp_msdk-lib\_studio\mfx_lib\libmfx-gen.rc': VPL_PATTERN,
-    r'mdp_msdk-lib\_studio\mfx_lib\libmfxsw.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\mfx_lib\libmfxhw.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\mfx_lib\plugin\libmfxsw_plugin_hevce.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\mfx_lib\plugin\libmfxsw_plugin_hevcd.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\mfx_lib\plugin\mfxplugin_hw.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\camera_pipe\camera_pipe.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\mfx_lib\plugin\libmfxhw_plugin_hevce.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\mfx_lib\plugin\libmfxhw_plugin_h264la.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\h263d\mfx_h263d_plugin.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\_studio\h263e\mfx_h263e_plugin.rc': MSDK_PATTERN,
-    r'mdp_msdk-lib\api\mfx_loader_dll\mfx_loader_dll_hw.rc': MSDK_PATTERN,
-    r'mdp_msdk-mfts\samples\sample_plugins\mfoundation\mf_utils\include\mf_version.h': MFT_PATTERN,
-    r'mdp_msdk-lib\api\intel_api_uwp\src\intel_gfx_api.rc': MSDK_PATTERN
+    r'mdp_msdk-lib\_studio\mfx_lib\libmfx-gen.rc': VPL_PATTERN
 }
 
 
@@ -48,10 +24,6 @@ def prepare_data_for_patterns(args):
     date = datetime.date.today().strftime(f"%y{DELIMITER}%m{DELIMITER}%d")
     major_version = "21"
     minor_version = "0"
-
-    msdk_api_source_file_path = r"mdp_msdk-lib\api\include\mfxdefs.h"
-    msdk_major_api = get_version_from_file(args.path / msdk_api_source_file_path, r"MFX_VERSION_MAJOR")
-    msdk_minor_api = get_version_from_file(args.path / msdk_api_source_file_path, r"MFX_VERSION_MINOR")
 
     vpl_api_source_file_path = r"mdp_msdk-lib\api\vpl\mfxdefs.h"
     vpl_major_api = get_version_from_file(args.path / vpl_api_source_file_path, r"MFX_VERSION_MAJOR")
