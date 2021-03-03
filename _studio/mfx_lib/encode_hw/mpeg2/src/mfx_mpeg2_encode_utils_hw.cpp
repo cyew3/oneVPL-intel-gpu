@@ -427,37 +427,37 @@ namespace MPEG2EncoderHW
         mfxStatus sts = MFX_ERR_NONE;
         if (m_pInputFrame)
         {
-            sts = pCore->DecreaseReference(&m_pInputFrame->Data);
+            sts = pCore->DecreaseReference(*m_pInputFrame);
             MFX_CHECK_STS(sts);
             m_pInputFrame = 0;
         }
         if (m_pRecFrame)
         {
-            sts = pCore->DecreaseReference(&m_pRecFrame->Data);
+            sts = pCore->DecreaseReference(*m_pRecFrame);
             MFX_CHECK_STS(sts);
             m_pRecFrame = 0;
         }
         if (m_pRefFrame[0])
         {
-            sts = pCore->DecreaseReference(&m_pRefFrame[0]->Data);
+            sts = pCore->DecreaseReference(*m_pRefFrame[0]);
             MFX_CHECK_STS(sts);
             m_pRefFrame[0] = 0;
         }
         if (m_pRefFrame[1])
         {
-            sts = pCore->DecreaseReference(&m_pRefFrame[1]->Data);
+            sts = pCore->DecreaseReference(*m_pRefFrame[1]);
             MFX_CHECK_STS(sts);
             m_pRefFrame[1] = 0;
         }
         if (m_pRawFrame[0])
         {
-            sts = pCore->DecreaseReference(&m_pRawFrame[0]->Data);
+            sts = pCore->DecreaseReference(*m_pRawFrame[0]);
             MFX_CHECK_STS(sts);
             m_pRawFrame[0] = 0;
         }
         if (m_pRawFrame[1])
         {
-            sts = pCore->DecreaseReference(&m_pRawFrame[1]->Data);
+            sts = pCore->DecreaseReference(*m_pRawFrame[1]);
             MFX_CHECK_STS(sts);
             m_pRawFrame[1] = 0;
         }
@@ -469,22 +469,22 @@ namespace MPEG2EncoderHW
 
         if (m_pRefFrame[0])
         {
-            sts = pCore->IncreaseReference(&m_pRefFrame[0]->Data);
+            sts = pCore->IncreaseReference(*m_pRefFrame[0]);
             MFX_CHECK_STS(sts);
         }
         if (m_pRefFrame[1])
         {
-            sts = pCore->IncreaseReference(&m_pRefFrame[1]->Data);
+            sts = pCore->IncreaseReference(*m_pRefFrame[1]);
             MFX_CHECK_STS(sts);
         }
         if (m_pRawFrame[0])
         {
-            sts = pCore->IncreaseReference(&m_pRawFrame[0]->Data);
+            sts = pCore->IncreaseReference(*m_pRawFrame[0]);
             MFX_CHECK_STS(sts);
         }
         if (m_pRawFrame[1])
         {
-            sts = pCore->IncreaseReference(&m_pRawFrame[1]->Data);
+            sts = pCore->IncreaseReference(*m_pRawFrame[1]);
             MFX_CHECK_STS(sts);
         }
         return sts;
@@ -1234,7 +1234,7 @@ namespace MPEG2EncoderHW
                 {
                     break;
                 }
-                sts = pcore->DecreaseReference(&fr.m_pFrame->Data);
+                sts = pcore->DecreaseReference(*fr.m_pFrame);
                 MFX_CHECK_STS(sts);
                 pGOP->ReleaseCurrentFrame();
             }
@@ -1248,7 +1248,7 @@ namespace MPEG2EncoderHW
                 {
                     break;
                 }
-                sts = pcore->DecreaseReference(&fr.m_pFrame->Data);
+                sts = pcore->DecreaseReference(*fr.m_pFrame);
                 MFX_CHECK_STS(sts);
                 pWaitingList->MoveOnNextFrame();
             }
@@ -1929,7 +1929,7 @@ namespace MPEG2EncoderHW
                 MFX_CHECK(surface->Data.Pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
                 CHECK_VERSION(surface->Version);
             }
-            sts = m_pCore->IncreaseReference(&surface->Data);
+            sts = m_pCore->IncreaseReference(*surface);
             MFX_CHECK_STS(sts);
             m_InputFrameOrder++;
 
@@ -2548,22 +2548,22 @@ namespace MPEG2EncoderHW
         mfxStatus sts = MFX_ERR_NONE;
         if (m_pRefFrame[0])
         {
-            sts = m_pCore->DecreaseReference(&m_pRefFrame[0]->Data);
+            sts = m_pCore->DecreaseReference(*m_pRefFrame[0]);
             MFX_CHECK_STS (sts);
         }
         if (m_pRefFrame[1])
         {
-            sts = m_pCore->DecreaseReference(&m_pRefFrame[1]->Data);
+            sts = m_pCore->DecreaseReference(*m_pRefFrame[1]);
             MFX_CHECK_STS (sts);
         }
         if (m_pRawFrame[0])
         {
-            sts = m_pCore->DecreaseReference(&m_pRawFrame[0]->Data);
+            sts = m_pCore->DecreaseReference(*m_pRawFrame[0]);
             MFX_CHECK_STS (sts);
         }
         if (m_pRawFrame[1])
         {
-            sts = m_pCore->DecreaseReference(&m_pRawFrame[1]->Data);
+            sts = m_pCore->DecreaseReference(*m_pRawFrame[1]);
             MFX_CHECK_STS (sts);
         }
 
@@ -2746,7 +2746,7 @@ namespace MPEG2EncoderHW
             pTmpFrame->Data.TimeStamp = pInputFrame->Data.TimeStamp;
             pFrames->m_pInputFrame = pTmpFrame;
         }
-        sts = m_pCore->IncreaseReference(&pFrames->m_pInputFrame->Data);
+        sts = m_pCore->IncreaseReference(*pFrames->m_pInputFrame);
         MFX_CHECK_STS(sts);
 
         // prepare reconstructed
@@ -2755,7 +2755,7 @@ namespace MPEG2EncoderHW
             sts = GetInternalRefFrame(&pTmpFrame);
             MFX_CHECK_STS(sts);
             pFrames->m_pRecFrame = pTmpFrame;
-            sts = m_pCore->IncreaseReference(&pFrames->m_pRecFrame->Data);
+            sts = m_pCore->IncreaseReference(*pFrames->m_pRecFrame);
             MFX_CHECK_STS(sts);
         }
 
@@ -2767,24 +2767,24 @@ namespace MPEG2EncoderHW
             // prepare reference
             if (m_pRefFrame[0])
             {
-                sts = m_pCore->DecreaseReference(&m_pRefFrame[0]->Data);
+                sts = m_pCore->DecreaseReference(*m_pRefFrame[0]);
                 MFX_CHECK_STS(sts);
             }
             m_pRefFrame[0] = m_pRefFrame[1];
             m_pRefFrame[1] = pFrames->m_pRecFrame;
-            sts = m_pCore->IncreaseReference(&m_pRefFrame[1]->Data);
+            sts = m_pCore->IncreaseReference(*m_pRefFrame[1]);
             MFX_CHECK_STS(sts);
 
             if (m_bRawFrame)
             {
                 if (m_pRawFrame[0])
                 {
-                    sts = m_pCore->DecreaseReference(&m_pRawFrame[0]->Data);
+                    sts = m_pCore->DecreaseReference(*m_pRawFrame[0]);
                     MFX_CHECK_STS(sts);
                 }
                 m_pRawFrame[0] = m_pRawFrame[1];
                 m_pRawFrame[1] = pFrames->m_pInputFrame;
-                sts = m_pCore->IncreaseReference(&m_pRawFrame[1]->Data);
+                sts = m_pCore->IncreaseReference(*m_pRawFrame[1]);
                 MFX_CHECK_STS(sts);
             }
         }

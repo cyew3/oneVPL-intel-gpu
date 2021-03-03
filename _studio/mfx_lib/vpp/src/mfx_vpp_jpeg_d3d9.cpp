@@ -96,7 +96,7 @@ enum
 
 };
 
-VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq)
+VideoVppJpegD3D::VideoVppJpegD3D(VideoCORE *core, bool isD3DToSys, bool isOpaq)
     : m_surfaces()
     , m_guard()
     , AssocIdx()
@@ -114,16 +114,16 @@ VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq
 
     memset(&m_response, 0, sizeof(mfxFrameAllocResponse));
 
-} // VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core)
+} // VideoVppJpegD3D::VideoVppJpegD3D(VideoCORE *core)
 
 
-VideoVppJpegD3D9::~VideoVppJpegD3D9()
+VideoVppJpegD3D::~VideoVppJpegD3D()
 {
     Close();
 
-} // VideoVppJpegD3D9::~VideoVppJpegD3D9()
+} // VideoVppJpegD3D::~VideoVppJpegD3D()
 
-mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
+mfxStatus VideoVppJpegD3D::Init(const mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -203,9 +203,9 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
 
     return sts;
 
-} // mfxStatus VideoVppJpegD3D9::Init(void)
+} // mfxStatus VideoVppJpegD3D::Init(void)
 
-mfxStatus VideoVppJpegD3D9::Close()
+mfxStatus VideoVppJpegD3D::Close()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -228,9 +228,9 @@ mfxStatus VideoVppJpegD3D9::Close()
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVppJpegD3D9::Close()
+} // mfxStatus VideoVppJpegD3D::Close()
 
-mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurface, 
+mfxStatus VideoVppJpegD3D::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurface, 
                                                   mfxFrameSurface1 *pOutputSurface, 
                                                   mfxU16* taskId)
 {
@@ -260,7 +260,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
             return MFX_ERR_MEMORY_ALLOC;
         }
         m_pCore->IncreasePureReference(m_surfaces[index].Data.Locked);
-        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
+        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index], hdl));
 
         {
             UMC::AutomaticUMCMutex guard(m_guard);
@@ -271,11 +271,11 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     {
        if(m_isOpaq)
        {
-            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pOutputSurface, hdl));
        }
        else
        {
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(*pOutputSurface, hdl));
        }
     }
 
@@ -285,7 +285,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     sts = (m_ddi)->Register(&out, 1, TRUE);
     MFX_CHECK_STS(sts);
 
-    MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurface->Data.MemId, (mfxHDL *)&hdl));
+    MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurface, hdl));
     in = hdl;
 
     // register input surface
@@ -319,9 +319,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurface, mfxFrameSurface1 *pOutputSurface, mfxU16* taskId)
+} // mfxStatus VideoVppJpegD3D::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurface, mfxFrameSurface1 *pOutputSurface, mfxU16* taskId)
 
-mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, 
+mfxStatus VideoVppJpegD3D::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, 
                                                   mfxFrameSurface1 *pInputSurfaceBottom, 
                                                   mfxFrameSurface1 *pOutputSurface, 
                                                   mfxU16* taskId)
@@ -356,7 +356,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
             return MFX_ERR_MEMORY_ALLOC;
         }
         m_pCore->IncreasePureReference(m_surfaces[index].Data.Locked);
-        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
+        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index], hdl));
 
         {
             UMC::AutomaticUMCMutex guard(m_guard);
@@ -367,11 +367,11 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     {
        if(m_isOpaq)
        {
-            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pOutputSurface, hdl));
        }
        else
        {
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(*pOutputSurface, hdl));
        }
     }
 
@@ -381,9 +381,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     sts = (m_ddi)->Register(&out, 1, TRUE);
     MFX_CHECK_STS(sts);
 
-    MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurfaceTop->Data.MemId, (mfxHDL *)&hdl));
+    MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurfaceTop, hdl));
     inTop = hdl;
-    MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurfaceBottom->Data.MemId, (mfxHDL *)&hdl));
+    MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurfaceBottom, hdl));
     inBottom = hdl;
 
     // register input surfaces
@@ -425,9 +425,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, mfxFrameSurface1 *pInputSurfaceBottom, mfxFrameSurface1 *pOutputSurface, mfxU16* taskId)
+} // mfxStatus VideoVppJpegD3D::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, mfxFrameSurface1 *pInputSurfaceBottom, mfxFrameSurface1 *pOutputSurface, mfxU16* taskId)
 
-mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, mfxFrameSurface1 *pOutputSurface)
+mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, mfxFrameSurface1 *pOutputSurface)
 {
     mfxStatus sts = MFX_ERR_NONE;
     
@@ -448,22 +448,22 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface,
             AssocIdx.erase(it);
         }
         
-        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
+        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index], hdl));
     }
     else
     {
        if(m_isOpaq)
        {
-            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pOutputSurface, hdl));
        }
        else
        {
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(*pOutputSurface, hdl));
        }
     }
     out = hdl;
     
-    MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurface->Data.MemId, (mfxHDL *)&hdl));
+    MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurface, hdl));
     in = hdl;
 
     if (m_isD3DToSys)
@@ -491,9 +491,9 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface,
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, mfxFrameSurface1 *pOutputSurface)
+} // mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, mfxFrameSurface1 *pOutputSurface)
 
-mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, 
+mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, 
                                                 mfxFrameSurface1 *pInputSurfaceBottom, 
                                                 mfxFrameSurface1 *pOutputSurface)
 {
@@ -515,24 +515,24 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceT
             AssocIdx.erase(it);
         }
         
-        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
+        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index], hdl));
     }
     else
     {
        if(m_isOpaq)
        {
-            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pOutputSurface, hdl));
        }
        else
        {
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(*pOutputSurface, hdl));
        }
     }
     out = hdl;
 
-    MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurfaceTop->Data.MemId, (mfxHDL *)&hdl));
+    MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurfaceTop, hdl));
     inTop = hdl;
-    MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurfaceBottom->Data.MemId, (mfxHDL *)&hdl));
+    MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurfaceBottom, hdl));
     inBottom = hdl;
 
     if (m_isD3DToSys)
@@ -562,9 +562,9 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceT
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, mfxFrameSurface1 *pInputSurfaceBottom, mfxFrameSurface1 *pOutputSurface)
+} // mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTop, mfxFrameSurface1 *pInputSurfaceBottom, mfxFrameSurface1 *pOutputSurface)
 
-mfxStatus VideoVppJpegD3D9::QueryTaskRoutine(mfxU16 taskId)
+mfxStatus VideoVppJpegD3D::QueryTaskRoutine(mfxU16 taskId)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -575,7 +575,7 @@ mfxStatus VideoVppJpegD3D9::QueryTaskRoutine(mfxU16 taskId)
 
     return sts;
 
-} // mfxStatus VideoVppJpegD3D9::QueryTask(mfxU16 taskId)
+} // mfxStatus VideoVppJpegD3D::QueryTask(mfxU16 taskId)
 
 #endif // MFX_ENABLE_MJPEG_VIDEO_DECODE
 #endif // MFX_VA

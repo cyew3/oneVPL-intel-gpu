@@ -80,7 +80,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
     ,  m_IOPattern( MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY )
     ,  m_valid(false)
 {
-    const int DEFAULT_HW_IMPL =
+    int hwImpl =
 #if defined(_WIN32)
         MFX_IMPL_VIA_D3D9
 #else
@@ -210,7 +210,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
                 }
                 else if (0 == msdk_strcmp(argv[i], MSDK_STRING("hw")) )
                 {
-                    m_impLib[MSDK_STRING("general")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
+                    m_impLib[MSDK_STRING("general")] = MFX_IMPL_HARDWARE;
                 }
             }
         }
@@ -221,7 +221,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-dec::hw")) )
         {
-            m_impLib[MSDK_STRING("dec")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
+            m_impLib[MSDK_STRING("dec")] = MFX_IMPL_HARDWARE;
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::sw")) )
         {
@@ -229,7 +229,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::hw")) )
         {
-            m_impLib[MSDK_STRING("vpp")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
+            m_impLib[MSDK_STRING("vpp")] = MFX_IMPL_HARDWARE;
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-enc::sw")) )
         {
@@ -237,9 +237,12 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-enc::hw")) )
         {
-            m_impLib[MSDK_STRING("enc")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
+            m_impLib[MSDK_STRING("enc")] = MFX_IMPL_HARDWARE;
         }
-
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-d3d11")))
+        {
+            hwImpl = MFX_IMPL_VIA_D3D11;
+        }
         // iopattern
         else if( 0 == msdk_strcmp(argv[i], MSDK_STRING("-iopattern")) )
         {
@@ -256,6 +259,23 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
                 m_NumSlice = (mfxU16)readVal;
             }
         }
+    }
+
+    if (m_impLib.find(MSDK_STRING("dec")) != m_impLib.end() && m_impLib[MSDK_STRING("dec")] == MFX_IMPL_HARDWARE)
+    {
+        m_impLib[MSDK_STRING("dec")] |= hwImpl;
+    }
+    if (m_impLib.find(MSDK_STRING("vpp")) != m_impLib.end() && m_impLib[MSDK_STRING("vpp")] == MFX_IMPL_HARDWARE)
+    {
+        m_impLib[MSDK_STRING("vpp")] |= hwImpl;
+    }
+    if (m_impLib.find(MSDK_STRING("enc")) != m_impLib.end() && m_impLib[MSDK_STRING("enc")] == MFX_IMPL_HARDWARE)
+    {
+        m_impLib[MSDK_STRING("enc")] |= hwImpl;
+    }
+    if (m_impLib.find(MSDK_STRING("general")) != m_impLib.end() && m_impLib[MSDK_STRING("general")] == MFX_IMPL_HARDWARE)
+    {
+        m_impLib[MSDK_STRING("general")] |= hwImpl;
     }
 
     // validate parameters

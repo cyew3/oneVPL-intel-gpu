@@ -41,6 +41,7 @@
 #include "ippi.h"
 #include "vm_time.h"
 #include "asc.h"
+#include "libmfx_core_interface.h"
 
 #if defined(AS_H264LA_PLUGIN)
   #undef MFX_ENABLE_ENCTOOLS
@@ -4705,7 +4706,7 @@ private:
 
     mfxHDL ConvertMidToNativeHandle(
         VideoCORE & core,
-        mfxMemId    mid,
+        mfxFrameSurface1& surf,
         bool        external = false);
 
     void AnalyzeVmeData(

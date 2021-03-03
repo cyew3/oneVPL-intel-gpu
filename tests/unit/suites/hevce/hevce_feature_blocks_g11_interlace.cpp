@@ -31,8 +31,8 @@ namespace hevce { namespace tests
         : testing::Test
     {
         HEVCEHW::FeatureBlocks    blocks{};
-        HEVCEHW::Base::Interlace interlace;
-        HEVCEHW::Base::Legacy    legacy;
+        HEVCEHW::Base::Legacy     legacy;
+        HEVCEHW::Base::Interlace  interlace;
         HEVCEHW::StorageRW        storage;
         mfxFrameAllocRequest      request{};
 

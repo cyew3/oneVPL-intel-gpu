@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 #include "mfx_vpp_interface.h"
 #include "mfx_vpp_defs.h"
 #include "mfx_ext_ddi.h"
+#include "libmfx_core_interface.h"
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
 #include "mfx_win_event_cache.h"
 #endif
@@ -62,6 +63,7 @@
 #include "cpu_detect.h"
 #include <list>
 #endif
+
 class CmDevice;
 
 namespace MfxHwVideoProcessing
@@ -936,6 +938,10 @@ namespace MfxHwVideoProcessing
 #endif
         );
 
+#if defined(MFX_ONEVPL)
+        mfxFrameSurface1* GetSurfaceIn();
+        mfxFrameSurface1* GetSurfaceOut();
+#endif
     private:
 
         mfxStatus MergeRuntimeParams(const DdiTask* pTask,  MfxHwVideoProcessing::mfxExecuteParams *execParams);
@@ -964,7 +970,7 @@ namespace MfxHwVideoProcessing
         // help-function to get a handle based on MemId
         mfxStatus GetFrameHandle(mfxFrameSurface1* InFrame, mfxHDLPair& handle, bool bInternalAlloc);
         // help-function to get a handle based on MemId
-        mfxStatus GetFrameHandle(mfxMemId MemId, mfxHDLPair& handle, bool bInternalAlloc);
+        mfxStatus GetFrameHandle(mfxFrameSurface1& surf, mfxHDLPair& handle, bool bInternalAlloc);
 
         // creates or extracts CmSurface2D from Hanlde
         mfxStatus CreateCmSurface2D(void *pSrcHDL, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex);
@@ -985,6 +991,11 @@ namespace MfxHwVideoProcessing
         std::vector<MfxHwVideoProcessing::mfxDrvSurface> m_executeSurf;
 
         MfxFrameAllocResponse   m_internalVidSurf[2];
+
+#if defined(MFX_ONEVPL)
+        std::unique_ptr<SurfaceCache> m_surfaceIn;
+        std::unique_ptr<SurfaceCache> m_surfaceOut;
+#endif
 
         VideoCORE *m_pCore;
         UMC::Mutex m_guard;

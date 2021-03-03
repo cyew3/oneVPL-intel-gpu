@@ -349,7 +349,8 @@ typedef struct {
 #if (MFX_VERSION >= 1034)
             mfxU16  FilmGrain;
             mfxU16  IgnoreLevelConstrain;
-            mfxU16  reserved2[5];
+            mfxU16  SkipOutput;
+            mfxU16  reserved2[4];
 #else
             mfxU16  reserved2[7];
 #endif
@@ -1228,7 +1229,7 @@ enum {
 #endif
 
 typedef enum {
-    MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9         =1,      /* IDirect3DDeviceManager9      */
+    MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9         = 1,      /* IDirect3DDeviceManager9      */
     MFX_HANDLE_D3D9_DEVICE_MANAGER              = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9,
     MFX_HANDLE_RESERVED1                        = 2,
     MFX_HANDLE_D3D11_DEVICE                     = 3,
@@ -2704,14 +2705,14 @@ enum {
     MFX_PARTIAL_BITSTREAM_NONE    = 0,     /* Don't use partial output */
     MFX_PARTIAL_BITSTREAM_SLICE   = 1,     /* Partial bitstream output will be aligned to slice granularity */
     MFX_PARTIAL_BITSTREAM_BLOCK   = 2,     /* Partial bitstream output will be aligned to user-defined block size granularity */
-    MFX_PARTIAL_BITSTREAM_ANY     = 3      /* Partial bitstream output will be return any coded data avilable at the end of SyncOperation timeout */
+    MFX_PARTIAL_BITSTREAM_ANY     = 3      /* Partial bitstream output will be return any coded data available at the end of SyncOperation timeout */
 };
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32          BlockSize;        /* define block granulatiry for Granularity = MFX_PARTIAL_BITSTREAM_BLOCK */
-    mfxU16          Granularity;      /* granulatiry of the partial bitstream: slice/block/any */
+    mfxU32          BlockSize;        /* define block granularity for Granularity = MFX_PARTIAL_BITSTREAM_BLOCK */
+    mfxU16          Granularity;      /* granularity of the partial bitstream: slice/block/any */
     mfxU16          reserved[8];
 } mfxExtPartialBitstreamParam;
 MFX_PACK_END()

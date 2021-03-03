@@ -187,6 +187,13 @@ namespace TranscodingSample
         EXTBRC_IMPLICIT
     };
 
+    enum MemoryModel {
+        UNKNOWN_ALLOC = 0, // GENERAL_ALLOC will be used by default
+        GENERAL_ALLOC = 1,
+        VISIBLE_INT_ALLOC = 2,
+        HIDDEN_INT_ALLOC = 3
+    };
+
     struct __sInputParams
     {
         // session parameters
@@ -375,6 +382,8 @@ namespace TranscodingSample
         bool shouldPrintPresets;
 
         bool rawInput;
+
+        mfxU16 nMemoryModel;
     };
 
     struct sInputParams: public __sInputParams
@@ -870,6 +879,7 @@ namespace TranscodingSample
         mfxI32         m_libvaBackend;
 
         bool           m_bUseOpaqueMemory; // indicates if opaque memory is used in the pipeline
+        mfxU16         m_MemoryModel;
 
         mfxSyncPoint   m_LastDecSyncPoint;
 

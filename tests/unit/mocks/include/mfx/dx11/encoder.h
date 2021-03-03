@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,33 @@
 
 #pragma once
 
+#include "mocks/include/mfx/guids.h"
 #include "mocks/include/mfx/dx11/component.h"
+
+#include "mfx_common_int.h"
 
 namespace mocks { namespace mfx { namespace dx11
 {
-    template <GUID const* Id, int Type>
-    inline
-    typename std::enable_if<mocks::dxva::is_encoder<Id>::value, D3D11_VIDEO_DECODER_CONFIG>::type
-    make_caps(mocks::guid<Id>, std::integral_constant<int, Type>, mfxVideoParam const& p)
+    struct encoder : component
     {
-        D3D11_VIDEO_DECODER_CONFIG caps{};
-        caps.guidConfigBitstreamEncryption = *Id;
-        caps.ConfigMBcontrolRasterOrder    = p.mfx.FrameInfo.Width;
-        caps.ConfigResidDiffHost           = p.mfx.FrameInfo.Height;
-        caps.ConfigBitstreamRaw            = mocks::mfx::family(Type);
+        encoder(int type, IDXGIAdapter* adapter, mfxVideoParam const& vp)
+            : component(type, adapter, vp)
+        {}
 
-        return caps;
-    }
+        virtual void reset(int /*type*/, mfxVideoParam const&)
+        {}
+    };
 
+} } }
+
+#include "mocks/include/mfx/dx11/h265/encoder.h"
+
+namespace mocks { namespace mfx { namespace dx11
+{
     template <GUID const* Id>
     inline
-    typename std::enable_if<mocks::dxva::is_encoder<Id>::value, D3D11_VIDEO_DECODER_CONFIG>::type
-    make_config(mocks::guid<Id>, mfxVideoParam const&)
+    typename std::enable_if<dxva::is_encoder(guid<Id>()), D3D11_VIDEO_DECODER_CONFIG>::type
+    make_config(guid<Id>, mfxVideoParam const&)
     {
         D3D11_VIDEO_DECODER_CONFIG config{};
         config.ConfigDecoderSpecific = 4;
@@ -50,26 +55,51 @@ namespace mocks { namespace mfx { namespace dx11
         return config;
     }
 
-    template <int Type, typename ...Args>
+    template <GUID const* Id, int Type>
     inline
-    std::unique_ptr<mocks::dx11::device>
-    make_encoder(IDXGIAdapter* adapter, ID3D11DeviceContext* context, std::integral_constant<int, Type>, Args&&... args)
+    typename std::enable_if<dxva::is_encoder(guid<Id>()), D3D11_VIDEO_DECODER_CONFIG>::type
+    make_caps(std::integral_constant<int, Type>, guid<Id>, mfxVideoParam const& p)
     {
-        return make_component(adapter, context,
-            std::integral_constant<int, Type>{},
-            std::forward<Args>(args)...
+        D3D11_VIDEO_DECODER_CONFIG caps{};
+        caps.guidConfigBitstreamEncryption = *Id;
+        caps.ConfigMBcontrolRasterOrder    = p.mfx.FrameInfo.Width;
+        caps.ConfigResidDiffHost           = p.mfx.FrameInfo.Height;
+        caps.ConfigBitstreamRaw            = mfx::family(Type);
+
+        return caps;
+    }
+
+    inline
+    D3D11_TEXTURE2D_DESC make_texture_desc(GUID const& id, mfxVideoParam const& vp, D3D11_USAGE usage, UINT access)
+    {
+        if (!dxva::is_encoder(id))
+            throw std::logic_error("Given \'id\' must be encoder's one");
+
+        return make_texture_desc(
+            vp, usage, D3D11_BIND_DECODER | D3D11_BIND_VIDEO_ENCODER, access
         );
     }
 
-    template <typename ...Args>
+    template <GUID const* Id>
     inline
-    std::unique_ptr<mocks::dx11::device>
-    make_encoder(IDXGIAdapter* adapter, ID3D11DeviceContext* context, int type, Args&&... args)
+    typename std::enable_if<dxva::is_encoder(guid<Id>()), D3D11_TEXTURE2D_DESC>::type
+    make_texture_desc(guid<Id>, mfxVideoParam const& vp, D3D11_USAGE usage, UINT access)
     {
-        return make_component(adapter, context,
-            type,
-            std::forward<Args>(args)...
+        return make_texture_desc(
+            *Id, vp, usage, D3D11_BIND_DECODER | D3D11_BIND_VIDEO_ENCODER, access
         );
+    }
+
+    inline
+    auto make_encoder(int type, IDXGIAdapter* adapter, mfxVideoParam const& vp)
+    {
+        switch (vp.mfx.CodecId)
+        {
+            case MFX_CODEC_HEVC: return h265::dx11::make_encoder(type, adapter, vp);
+
+            default:
+                throw std::logic_error("Codec is not supported");
+        }
     }
 
 } } }

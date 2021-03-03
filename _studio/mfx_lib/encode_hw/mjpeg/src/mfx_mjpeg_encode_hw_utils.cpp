@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -146,27 +146,23 @@ mfxStatus MfxHwMJpegEncode::CheckJpegParam(VideoCORE *core, mfxVideoParam & par,
 }
 
 mfxStatus MfxHwMJpegEncode::FastCopyFrameBufferSys2Vid(
-    VideoCORE    * core,
-    mfxMemId       vidMemId,
-    mfxFrameData & sysSurf,
-    mfxFrameInfo & frmInfo
+    VideoCORE*        core,
+    mfxMemId          vidMemId,
+    mfxFrameSurface1* sysSurf,
+    mfxFrameInfo &    frmInfo
     )
 {
     MFX_CHECK_NULL_PTR1(core);
-    mfxFrameData vidSurf = {};
-    mfxStatus sts = MFX_ERR_NONE;
-    vidSurf.MemId = vidMemId;
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->vid)");
-        mfxFrameSurface1 surfSrc = MakeSurface(frmInfo, sysSurf);
-        mfxFrameSurface1 surfDst = MakeSurface(frmInfo, vidSurf);
-        sts = core->DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET, &surfSrc,MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
-        MFX_CHECK_STS(sts);
-    }
-    MFX_CHECK_STS(sts);
+        mfxFrameSurface1 surfSrc = MakeSurface(frmInfo, *sysSurf);
+        mfxFrameSurface1 surfDst = MakeSurface(frmInfo, vidMemId);
 
-    return sts;
+        MFX_SAFE_CALL(core->DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET, &surfSrc,MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY));
+    }
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * ctrl, JpegEncCaps const * hwCaps)

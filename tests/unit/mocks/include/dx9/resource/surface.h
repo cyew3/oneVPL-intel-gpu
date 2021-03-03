@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,6 @@
 #include <vector>
 
 #include "mocks/include/dx9/winapi/surface.hxx"
-
-#include "utils/align.h"
 
 namespace mocks { namespace dx9
 {
@@ -62,7 +60,7 @@ namespace mocks { namespace dx9
                 .WillRepeatedly(testing::WithArgs<0>(testing::Invoke(
                     [width = sd.Width](D3DLOCKED_RECT* rect)
                     {
-                        rect->Pitch = utils::align2(width, 128);
+                        rect->Pitch = width; //TODO: align to 128
 
                         int dummy = 0;
                         rect->pBits = &dummy;

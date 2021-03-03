@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2020 Intel Corporation
+// Copyright (c) 2008-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,6 +83,10 @@ protected:
     T*   m_ptr;
 };
 
+#if defined(MFX_ONEVPL)
+class SurfaceCache;
+#endif
+
 struct _mfxSession
 {
     // Constructor
@@ -122,7 +126,27 @@ struct _mfxSession
     std::unique_ptr<VideoPAK> m_pPAK;
 #endif
 
-    std::unique_ptr<void *>   m_reserved;
+#if defined(MFX_ONEVPL)
+
+    struct DVP
+    {
+        //channel ID / VPP config
+        std::map<mfxU16, mfxVideoParam>                     VppParams;
+        //channel ID / VPP component
+        std::map<mfxU16, std::unique_ptr<VideoVPP>>         VPPs;
+        //channel ID / surface pool
+        std::map<mfxU16, std::unique_ptr<SurfaceCache>>     VppPools;
+        //channel ID / ext buffer for VPP HW path selection
+        std::map<mfxU16, mfxExtVPPScaling>                  ScalingModeBuffers;
+        //channel ID / buffer to store pointer to mfxExtVPPScaling, used by VppParams[id].ExtParam
+        std::map<mfxU16, mfxExtBuffer*>                     ExtBuffers;
+        //channel ID for VDBOX + SFC channel, 0 means VDBOX + SFC is not used
+        mfxU16 sfcChannelID;
+    };
+    std::unique_ptr<DVP>   m_pDVP;
+#else
+    std::unique_ptr<void*>   m_reserved;
+#endif
 
 #if !defined(MFX_ONEVPL)
     std::unique_ptr<VideoCodecUSER> m_plgDec;
@@ -204,7 +228,6 @@ private:
     #elif defined(_WIN32) || defined(LINUX32)
         static_assert(sizeof(_mfxSession) == 244, "size_of_session_is_fixed");
     #endif
-#else
 #endif
 
 
@@ -231,51 +254,55 @@ public:
 
 MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session);
 
-class _mfxSession_1_10: public _mfxSession, public MFXISession_1_10
+//--- MFX SESIION 1.33 ---------------------------------------------------------------------------
+
+// {A42A8B5B-162F-4ACC-B51D-F7B24352BDCD}
+static const MFX_GUID MFXISession_2_1_GUID =
+{ 0xa42a8b5b, 0x162f, 0x4acc, { 0xb5, 0x1d, 0xf7, 0xb2, 0x43, 0x52, 0xbd, 0xcd } };
+
+class MFXISession_2_1 : public MFXISession_1_10
 {
 public:
-    _mfxSession_1_10(mfxU32 adapterNum);
+    virtual ~MFXISession_2_1() {}
+
+};
+
+MFXIPtr<MFXISession_2_1> TryGetSession_2_1(mfxSession session);
+
+class _mfxVersionedSessionImpl: public _mfxSession, public MFXISession_2_1
+{
+public:
+    _mfxVersionedSessionImpl(mfxU32 adapterNum);
 
     // Destructor
-    virtual ~_mfxSession_1_10(void);
+    virtual ~_mfxVersionedSessionImpl(void);
 
-    //
-    // MFXISession_1_9 interface
-    //
-
-    void SetAdapterNum(const mfxU32 adapterNum);
-
-#if !defined(MFX_ONEVPL)
-    std::unique_ptr<VideoCodecUSER> &  GetPreEncPlugin();
-#endif
-
-    //
-    // MFXIUnknown interface
-    //
+    //--- MFXIUnknown interface -----------------------------------------------------------------------
 
     // Query another interface from the object. If the pointer returned is not NULL,
     // the reference counter is incremented automatically.
-    virtual
-        void *QueryInterface(const MFX_GUID &guid);
+    virtual void *QueryInterface(const MFX_GUID &guid) override;
 
     // Increment reference counter of the object.
-    virtual
-        void AddRef(void);
+    virtual void AddRef(void) override;
     // Decrement reference counter of the object.
     // If the counter is equal to zero, destructor is called and
     // object is removed from the memory.
-    virtual
-        void Release(void);
+    virtual void Release(void) override;
     // Get the current reference counter value
-    virtual
-        mfxU32 GetNumRef(void) const;
+    virtual mfxU32 GetNumRef(void) const override;
 
-    virtual 
-        mfxStatus InitEx(mfxInitParam& par);
+    /// Initialize session
+    /// @param par - initialization parameters
+    /// @return MFX_ERROR_NONE if completed successfully, error code otherwise.
+    virtual mfxStatus InitEx(mfxInitParam& par) ;
 
-public:
+    //--- MFXISession_1_9 interface -------------------------------------------------------------------
 
+    void SetAdapterNum(const mfxU32 adapterNum) override;
 #if !defined(MFX_ONEVPL)
+    std::unique_ptr<VideoCodecUSER> &  GetPreEncPlugin() override;
+
     // Declare additional session's components
     std::unique_ptr<VideoCodecUSER> m_plgPreEnc;
 #endif
@@ -284,14 +311,32 @@ protected:
     // Reference counters
     mfxU32 m_refCounter;
     mfxU16 m_externalThreads;
-};
 
+    /// Initialization routine related to 2_1 interface
+    /// @param par - initialization parameters
+    /// @return MFX_ERROR_NONE if completed successfully, error code otherwise.
+    virtual mfxStatus InitEx_2_1(mfxInitParam& par);
+};
 
 //
 // DEFINES FOR IMPLICIT FUNCTIONS IMPLEMENTATION
 //
 
 #undef FUNCTION_IMPL
+#if defined(MFX_ONEVPL)
+#define FUNCTION_IMPL(component, func_name, formal_param_list, actual_param_list) \
+mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
+{ \
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE); \
+    MFX_CHECK(session->m_p##component.get(), MFX_ERR_NOT_INITIALIZED); \
+    try { \
+        /* call the codec's method */ \
+        return session->m_p##component->func_name actual_param_list; \
+    } catch(...) { \
+        return MFX_ERR_NULL_PTR; \
+    } \
+}
+#else
 #define FUNCTION_IMPL(component, func_name, formal_param_list, actual_param_list) \
 mfxStatus MFXVideo##component##_##func_name formal_param_list \
 { \
@@ -304,6 +349,7 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
         return MFX_ERR_NULL_PTR; \
     } \
 }
+#endif
 
 #undef FUNCTION_AUDIO_IMPL
 #define FUNCTION_AUDIO_IMPL(component, func_name, formal_param_list, actual_param_list) \
@@ -321,6 +367,22 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
 
 
 #undef FUNCTION_RESET_IMPL
+#if defined(MFX_ONEVPL)
+#define FUNCTION_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \
+mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
+{ \
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE); \
+    MFX_CHECK(session->m_p##component.get(), MFX_ERR_NOT_INITIALIZED); \
+    try { \
+        /* wait until all tasks are processed */ \
+        session->m_pScheduler->WaitForAllTasksCompletion(session->m_p##component.get()); \
+        /* call the codec's method */ \
+        return session->m_p##component->func_name actual_param_list; \
+    } catch(...) { \
+        return MFX_ERR_NULL_PTR; \
+    } \
+}
+#else
 #define FUNCTION_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \
 mfxStatus MFXVideo##component##_##func_name formal_param_list \
 { \
@@ -335,6 +397,7 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
         return MFX_ERR_NULL_PTR; \
     } \
 }
+#endif
 
 #undef FUNCTION_AUDIO_RESET_IMPL
 #define FUNCTION_AUDIO_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \

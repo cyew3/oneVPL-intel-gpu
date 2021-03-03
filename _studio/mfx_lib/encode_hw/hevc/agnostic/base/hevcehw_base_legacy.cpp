@@ -28,6 +28,7 @@
 #include "hevcehw_base_constraints.h"
 #include "hevcehw_base_parser.h"
 #include "fast_copy.h"
+#include "mfx_common_int.h"
 #include <algorithm>
 #include <exception>
 #include <iterator>
@@ -1634,7 +1635,7 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
 #endif //MFX_ENABLE_OPAQUE_MEMORY
             tpar.pSurfReal = tpar.pSurfIn;
 
-        core.IncreaseReference(&tpar.pSurfIn->Data);
+        core.IncreaseReference(*tpar.pSurfIn);
 
         return MFX_ERR_NONE;
     });
@@ -1816,13 +1817,18 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
             || task.bSkip;
 
         mfxFrameSurface1* surface = task.pSurfReal;
-        MFX_CHECK(!(surface && surface->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME),
-            core.GetFrameHDL(task.pSurfReal->Data.MemId, &task.HDLRaw.first));
+        bool bIntAlloc = surface && (surface->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME);
 
-        MFX_CHECK(!bInternalFrame, core.GetFrameHDL(task.Raw.Mid, &task.HDLRaw.first));
+        // Video memory internal allocation
+        MFX_CHECK(!(bIntAlloc && par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY),
+            core.GetFrameHDL(*task.pSurfReal, task.HDLRaw));
 
+        // System memory
+        MFX_CHECK(!(bInternalFrame || bIntAlloc), core.GetFrameHDL(task.Raw.Mid, &task.HDLRaw.first));
+
+        // Video memory external allocation
         MFX_CHECK(par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY
-            , core.GetExternalFrameHDL(task.pSurfReal->Data.MemId, &task.HDLRaw.first));
+            , core.GetExternalFrameHDL(*task.pSurfReal, task.HDLRaw));
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         MFX_CHECK(par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
@@ -1854,9 +1860,8 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 
         MFX_CHECK(!(task.bSkip || videoMemory), MFX_ERR_NONE);
 
-        mfxFrameSurface1 surfSrc = MakeSurface(par.mfx.FrameInfo, task.pSurfReal->Data);
-        mfxFrameSurface1 surfDst = MakeSurface(par.mfx.FrameInfo, mfxFrameData{});
-        surfDst.Data.MemId = task.Raw.Mid;
+        mfxFrameSurface1 surfSrc = MakeSurface(par.mfx.FrameInfo, *task.pSurfReal);
+        mfxFrameSurface1 surfDst = MakeSurface(par.mfx.FrameInfo, task.Raw.Mid);
 
         surfDst.Info.Shift =
             surfDst.Info.FourCC == MFX_FOURCC_P010
@@ -2045,7 +2050,7 @@ void Legacy::FreeTask(const FeatureBlocks& /*blocks*/, TPushFT Push)
             && !ReleaseResource(Glob::AllocRaw::Get(global), task.Raw)
             , "task.Raw resource is invalid");
 
-        SetIf(task.pSurfIn, task.pSurfIn && !core.DecreaseReference(&task.pSurfIn->Data), nullptr);
+        SetIf(task.pSurfIn, task.pSurfIn && !core.DecreaseReference(*task.pSurfIn), nullptr);
         ThrowAssert(!!task.pSurfIn, "failed in core.DecreaseReference");
 
         auto& atrRec = Glob::AllocRec::Get(global);

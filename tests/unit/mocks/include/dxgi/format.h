@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,15 +37,16 @@ namespace mocks { namespace dxgi
 
             case fourcc::RGB4:    return DXGI_FORMAT_B8G8R8A8_UNORM;
             case fourcc::BGR4:    return DXGI_FORMAT_R8G8B8A8_UNORM;
-                
+
             case fourcc::P8:
+            case fourcc::P8MB:
                 return DXGI_FORMAT_P8;
 
             case fourcc::AYUV:    return DXGI_FORMAT_AYUV;
-            
+
             case fourcc::R16:
                 return DXGI_FORMAT_R16_TYPELESS;
-                
+
             case fourcc::ARGB16:
             case fourcc::ABGR16:
                 return DXGI_FORMAT_R16G16B16A16_UNORM;
@@ -65,7 +66,7 @@ namespace mocks { namespace dxgi
 
     template <unsigned F>
     inline
-    DXGI_FORMAT to_native(fourcc::tag<F> const& f)
+    DXGI_FORMAT to_native(fourcc::format<F> const& f)
     { return to_native(f.value); }
 
 } }

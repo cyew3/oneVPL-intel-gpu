@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,15 +28,20 @@ namespace mocks { namespace dx11
     struct texture
         : winapi::texture_impl
     {
+        MOCK_METHOD1(GetType, void(D3D11_RESOURCE_DIMENSION*));
         MOCK_METHOD1(GetDesc, void(D3D11_TEXTURE2D_DESC*));
     };
 
     namespace detail
     {
+        template <typename T>
         inline
-        void mock_texture(texture& t, dxgi::resource& resource)
+        typename std::enable_if<
+            std::is_base_of<IDXGIResource, T>::value
+        >::type
+        mock_texture(texture& t, T* resource)
         {
-            mock_composite(resource, &t);
+            //mimic that we're DXGI resource too
             mock_unknown(t, &resource,
                 __uuidof(IDXGIResource),
                 __uuidof(IDXGIResource1)
@@ -48,8 +53,7 @@ namespace mocks { namespace dx11
         {
             //void GetDesc(D3D11_TEXTURE2D_DESC*)
             EXPECT_CALL(t, GetDesc(testing::NotNull()))
-                .WillRepeatedly(testing::SetArgPointee<0>(td))
-                ;
+                .WillRepeatedly(testing::SetArgPointee<0>(td));
         }
 
         template <typename T>
@@ -84,6 +88,10 @@ namespace mocks { namespace dx11
         auto t = std::unique_ptr<testing::NiceMock<texture> >{
             new testing::NiceMock<texture>{}
         };
+
+        //void GetType(D3D11_RESOURCE_DIMENSION*)
+        EXPECT_CALL(*t, GetType(testing::NotNull()))
+            .WillRepeatedly(testing::SetArgPointee<0>(D3D11_RESOURCE_DIMENSION_TEXTURE2D));
 
         mock_texture(*t, std::forward<Args>(args)...);
 

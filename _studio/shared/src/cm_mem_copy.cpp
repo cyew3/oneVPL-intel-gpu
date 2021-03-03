@@ -2825,7 +2825,7 @@ mfxStatus CmCopyWrapper::Release(void)
 
 } // mfxStatus CmCopyWrapper::Release(void)
 
-CmSurface2D * CmCopyWrapper::CreateCmSurface2D(mfxMemId src, mfxU32, mfxU32, bool,
+CmSurface2D * CmCopyWrapper::CreateCmSurface2D(mfxHDLPair surfaceIdPair, mfxU32, mfxU32, bool,
                                                std::map<mfxHDLPair, CmSurface2D *> & tableCmRelations,
                                                std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex)
 {
@@ -2834,25 +2834,18 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(mfxMemId src, mfxU32, mfxU32, boo
     CmSurface2D *pCmSurface2D = nullptr;
     SurfaceIndex *pCmSrcIndex = nullptr;
 
-
-#if defined(_WIN64) || defined(_WIN32)
-     mfxHDLPair pair = static_cast<mfxHDLPair>(*(mfxHDLPair *)src);
-#elif defined(LINUX64) || defined(LINUX32)
-     mfxHDLPair pair = { src, nullptr};
-#endif
-
     std::map<mfxHDLPair, CmSurface2D *>::iterator it;
 
-    it = tableCmRelations.find(pair);
+    it = tableCmRelations.find(surfaceIdPair);
 
     if (tableCmRelations.end() == it)
     {
         UMC::AutomaticUMCMutex guard(m_guard);
 
-        cmSts = m_pCmDevice->CreateSurface2D(pair, pCmSurface2D);
+        cmSts = m_pCmDevice->CreateSurface2D(surfaceIdPair, pCmSurface2D);
 
         CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
-        tableCmRelations.insert(std::pair<mfxHDLPair, CmSurface2D *>(pair, pCmSurface2D));
+        tableCmRelations.insert(std::pair<mfxHDLPair, CmSurface2D *>(surfaceIdPair, pCmSurface2D));
 
         cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
         CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
@@ -2889,7 +2882,7 @@ mfxStatus CmCopyWrapper::IsCmCopySupported(mfxFrameSurface1 *pSurface, IppiSize 
 
 } // mfxStatus CmCopyWrapper::IsCmCopySupported(mfxFrameSurface1 *pSurface, IppiSize roi)
 
-mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(mfxMemId dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi)
+mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(mfxHDLPair dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi)
 {
     (void)dstPitch;
 
@@ -2927,7 +2920,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(mfxMemId dst, mfxU32 dstPitc
     return status;
 }
 
-mfxStatus CmCopyWrapper::CopySystemToVideoMemory(mfxMemId dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopySystemToVideoMemory(mfxHDLPair dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
 {
     (void)dstPitch;
 
@@ -2974,7 +2967,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(mfxMemId dst, mfxU32 dstPitch, 
     return status;
 }
 
-mfxStatus CmCopyWrapper::CopySwapSystemToVideoMemory(mfxMemId dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopySwapSystemToVideoMemory(mfxHDLPair dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
 {
     (void)dstPitch;
 
@@ -2992,7 +2985,7 @@ mfxStatus CmCopyWrapper::CopySwapSystemToVideoMemory(mfxMemId dst, mfxU32 dstPit
 
 }
 
-mfxStatus CmCopyWrapper::CopyShiftSystemToVideoMemory(mfxMemId dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 bitshift, mfxU32 format)
+mfxStatus CmCopyWrapper::CopyShiftSystemToVideoMemory(mfxHDLPair dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 bitshift, mfxU32 format)
 {
     (void)dstPitch;
 
@@ -3012,7 +3005,7 @@ mfxStatus CmCopyWrapper::CopyShiftSystemToVideoMemory(mfxMemId dst, mfxU32 dstPi
 
 }
 
-mfxStatus CmCopyWrapper::CopyShiftVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxMemId src, mfxU32 srcPitch, IppiSize roi, mfxU32 bitshift, mfxU32 format)
+mfxStatus CmCopyWrapper::CopyShiftVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxHDLPair src, mfxU32 srcPitch, IppiSize roi, mfxU32 bitshift, mfxU32 format)
 {
     (void)srcPitch;
 
@@ -3031,7 +3024,7 @@ mfxStatus CmCopyWrapper::CopyShiftVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPit
         return EnqueueCopyShiftP010GPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, 0, CM_FASTCOPY_OPTION_BLOCKING, bitshift, e);
 }
 
-mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxMemId src, mfxU32 srcPitch, IppiSize roi)
+mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxHDLPair src, mfxU32 srcPitch, IppiSize roi)
 {
     (void)srcPitch;
 
@@ -3065,7 +3058,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     return status;
 }
 
-mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxMemId src, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxHDLPair src, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
 {
     (void)srcPitch;
 
@@ -3108,7 +3101,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, m
     return status;
 }
 
-mfxStatus CmCopyWrapper::CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxMemId src, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxHDLPair src, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
 {
     (void)srcPitch;
 
@@ -3126,7 +3119,7 @@ mfxStatus CmCopyWrapper::CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitc
 
 }
 
-mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxMemId src, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, mfxHDLPair src, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
 {
     (void)srcPitch;
 
@@ -3144,7 +3137,7 @@ mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPi
 
 }
 
-mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(mfxMemId dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(mfxHDLPair dst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
 {
     (void)dstPitch;
 
@@ -3162,7 +3155,7 @@ mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(mfxMemId dst, mfxU32 dstP
 
 }
 
-mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(mfxMemId dst, mfxMemId src, IppiSize roi)
+mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(mfxHDLPair dst, mfxHDLPair src, IppiSize roi)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopyVideoToVideoMemoryAPI");
     cmStatus cmSts = 0;
@@ -3204,7 +3197,7 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(mfxMemId dst, mfxMemId src, I
     return status;
 }
 
-mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(mfxMemId dst, mfxMemId src, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(mfxHDLPair dst, mfxHDLPair src, IppiSize roi, mfxU32 format)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::ARGBSwapVideoToVideo");
     CmEvent* e = NULL;
@@ -3224,7 +3217,7 @@ mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(mfxMemId dst, mfxMemId src, 
     return EnqueueCopySwapRBGPUtoGPU(pSrcCmSurface2D, pDstCmSurface2D, width, height, format, CM_FASTCOPY_OPTION_BLOCKING, e);
 }
 
-mfxStatus CmCopyWrapper::CopyMirrorVideoToVideoMemory(mfxMemId dst, mfxMemId src, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopyMirrorVideoToVideoMemory(mfxHDLPair dst, mfxHDLPair src, IppiSize roi, mfxU32 format)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::MirrorVideoToVideo");
     CmEvent* e = NULL;
@@ -3352,27 +3345,25 @@ bool CmCopyWrapper::CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 
 mfxStatus CmCopyWrapper::CopyVideoToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
+    MFX_CHECK_NULL_PTR2(pDst, pSrc);
+
     IppiSize roi = {std::min(pSrc->Info.Width, pDst->Info.Width), std::min(pSrc->Info.Height, pDst->Info.Height)};
 
     // check that region of interest is valid
-    if (0 == roi.width || 0 == roi.height || m_HWType == MFX_HW_UNKNOWN)
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
+    MFX_CHECK(roi.width != 0 && roi.height != 0 && m_HWType != MFX_HW_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
-    {
-        if(isNeedSwapping(pSrc,pDst))
-            return CopySwapVideoToVideoMemory(pDst->Data.MemId,pSrc->Data.MemId, roi, pDst->Info.FourCC);
-        else
-            return CopyVideoToVideoMemoryAPI(pDst->Data.MemId,pSrc->Data.MemId, roi);
-    }
+    MFX_CHECK(pSrc->Data.MemId && pDst->Data.MemId, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    return MFX_ERR_UNDEFINED_BEHAVIOR;
+    if(isNeedSwapping(pSrc,pDst))
+        return CopySwapVideoToVideoMemory(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), roi, pDst->Info.FourCC);
+    else
+        return CopyVideoToVideoMemoryAPI(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), roi);
 }
 
 mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
+    MFX_CHECK_NULL_PTR2(pDst, pSrc);
+
     mfxStatus mfxRes = MFX_ERR_NONE;
 
     MFX_AUTO_TRACE("CmCopyWrapper::CopyVideoToSys");
@@ -3381,67 +3372,77 @@ mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1
     IppiSize roi = {std::min(pSrc->Info.Width, pDst->Info.Width), std::min(pSrc->Info.Height, pDst->Info.Height)};
 
     // check that region of interest is valid
-    if (0 == roi.width || 0 == roi.height || m_HWType == MFX_HW_UNKNOWN)
+    if (roi.width == 0 || roi.height == 0 || m_HWType == MFX_HW_UNKNOWN)
     {
         mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
-        return mfxRes;
+        MFX_RETURN(mfxRes);
     }
 
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
     mfxU8* dstPtr = GetFramePointer(pDst->Info.FourCC, pDst->Data);
 
-    if (NULL != pSrc->Data.MemId && NULL != dstPtr)
-    {
-        if (!CM_ALIGNED(pDst->Data.Pitch) )
-        {
-            mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
-            return mfxRes;
-        }
-
-        mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
-        verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
-#ifdef MFX_ENABLE_RGBP
-        if (pDst->Info.FourCC == MFX_FOURCC_RGBP)
-        {
-            verticalPitch = (mfxI64)(pDst->Data.G - pDst->Data.B);
-            verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
-        }
-#endif
-
-        if (isNeedShift(pSrc, pDst) && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
-        {
-            mfxRes = CopyShiftVideoToSystemMemory(dstPtr, pDst->Data.Pitch,(mfxU32)verticalPitch, pSrc->Data.MemId, 0, roi, 16-pDst->Info.BitDepthLuma, pDst->Info.FourCC);
-        }
-        else if (isNV12LikeFormat(pDst->Info.FourCC) && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
-        {
-            if (m_HWType >= MFX_HW_SCL)
-                mfxRes = CopyVideoToSystemMemory(dstPtr, pDst->Data.Pitch, (mfxU32)verticalPitch, pSrc->Data.MemId, pDst->Info.Height, roi, pDst->Info.FourCC);
-            else
-                mfxRes = CopyVideoToSystemMemoryAPI(dstPtr, pDst->Data.Pitch, (mfxU32)verticalPitch, pSrc->Data.MemId, 0, roi);
-        }
-        else if (isNeedSwapping(pSrc, pDst) && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi))
-        {
-            mfxRes = CopySwapVideoToSystemMemory(dstPtr, pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,pSrc->Data.MemId, 0, roi, pDst->Info.FourCC);
-        }
-        else if (isSinglePlainFormat(pDst->Info.FourCC) && isSinglePlainFormat(pSrc->Info.FourCC) && pSrc->Info.FourCC == pDst->Info.FourCC && pSrc->Info.Shift == pDst->Info.Shift && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi))
-        {
-            if (m_HWType >= MFX_HW_SCL)
-                mfxRes = CopyVideoToSystemMemory(dstPtr, pDst->Data.Pitch, (mfxU32)verticalPitch, pSrc->Data.MemId, pDst->Info.Height, roi, pDst->Info.FourCC);
-            else
-                mfxRes = CopyVideoToSystemMemoryAPI(dstPtr, pDst->Data.Pitch, (mfxU32)pDst->Info.Height, pSrc->Data.MemId, 0, roi);
-        }
-    }
-    else
+    if (!pSrc->Data.MemId || !dstPtr)
     {
         mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_RETURN(mfxRes);
     }
 
-    return mfxRes;
+    if (!CM_ALIGNED(pDst->Data.Pitch))
+    {
+        mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_RETURN(mfxRes);
+    }
+
+    mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
+    verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
+
+#ifdef MFX_ENABLE_RGBP
+    if (pDst->Info.FourCC == MFX_FOURCC_RGBP)
+    {
+        verticalPitch = (mfxI64)(pDst->Data.G - pDst->Data.B);
+        verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
+    }
+#endif
+
+    if (isNeedShift(pSrc, pDst) && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
+    {
+        mfxRes = CopyShiftVideoToSystemMemory(dstPtr, pDst->Data.Pitch,(mfxU32)verticalPitch, *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), 0, roi, 16-pDst->Info.BitDepthLuma, pDst->Info.FourCC);
+        MFX_RETURN(mfxRes);
+    }
+
+    if (isNV12LikeFormat(pDst->Info.FourCC) && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
+    {
+        if (m_HWType >= MFX_HW_SCL)
+            mfxRes = CopyVideoToSystemMemory(dstPtr, pDst->Data.Pitch, (mfxU32)verticalPitch, *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), pDst->Info.Height, roi, pDst->Info.FourCC);
+        else
+            mfxRes = CopyVideoToSystemMemoryAPI(dstPtr, pDst->Data.Pitch, (mfxU32)verticalPitch, *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), 0, roi);
+        MFX_RETURN(mfxRes);
+    }
+
+    if (isNeedSwapping(pSrc, pDst) && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi))
+    {
+        mfxRes = CopySwapVideoToSystemMemory(dstPtr, pDst->Data.Pitch, (mfxU32)pSrc->Info.Height, *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), 0, roi, pDst->Info.FourCC);
+        MFX_RETURN(mfxRes);
+    }
+
+    if (isSinglePlainFormat(pDst->Info.FourCC) && isSinglePlainFormat(pSrc->Info.FourCC) && pSrc->Info.FourCC == pDst->Info.FourCC && pSrc->Info.Shift == pDst->Info.Shift && CM_ALIGNED(dstPtr) && CM_SUPPORTED_COPY_SIZE(roi))
+    {
+        if (m_HWType >= MFX_HW_SCL)
+            mfxRes = CopyVideoToSystemMemory(dstPtr, pDst->Data.Pitch, (mfxU32)verticalPitch, *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), pDst->Info.Height, roi, pDst->Info.FourCC);
+        else
+            mfxRes = CopyVideoToSystemMemoryAPI(dstPtr, pDst->Data.Pitch, (mfxU32)pDst->Info.Height, *reinterpret_cast<mfxHDLPair*>(pSrc->Data.MemId), 0, roi);
+        MFX_RETURN(mfxRes);
+    }
+
+    mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_RETURN(mfxRes);
 }
 
 mfxStatus CmCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
+    MFX_CHECK_NULL_PTR2(pDst, pSrc);
+
     mfxStatus mfxRes = MFX_ERR_NONE;
 
     MFX_AUTO_TRACE("CmCopyWrapper::CopySysToVideo");
@@ -3452,53 +3453,60 @@ mfxStatus CmCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1
     mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);
 
     // check that region of interest is valid
-    if (0 == roi.width || 0 == roi.height || m_HWType == MFX_HW_UNKNOWN)
+    if (roi.width == 0 || roi.height == 0 || m_HWType == MFX_HW_UNKNOWN)
     {
         mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
-        return mfxRes;
+        MFX_RETURN(mfxRes);
     }
 
-    if (NULL != srcPtr && NULL != pDst->Data.MemId)
-    {
-        if (!CM_ALIGNED(pSrc->Data.Pitch) )
-        {
-            mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
-            return mfxRes;
-        }
-
-        // source are placed in system memory, destination is in video memory
-        // use common way to copy frames from system to video, most faster
-        mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
-        verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
-
-        if (isNeedShift(pSrc, pDst) && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
-        {
-            mfxRes = CopyShiftSystemToVideoMemory(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi, 16 - pSrc->Info.BitDepthLuma, pDst->Info.FourCC);
-        }
-        else if (isNV12LikeFormat(pSrc->Info.FourCC) && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
-        {
-            if (m_HWType >= MFX_HW_SCL)
-                mfxRes = CopySystemToVideoMemory(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi, pDst->Info.FourCC);
-            else
-                mfxRes = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
-        }
-        else if (isNeedSwapping(pSrc, pDst) && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi))
-        {
-            mfxRes = CopySwapSystemToVideoMemory(pDst->Data.MemId, 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, pDst->Info.FourCC);
-        }
-        else if (isSinglePlainFormat(pDst->Info.FourCC) && isSinglePlainFormat(pSrc->Info.FourCC) && pSrc->Info.FourCC == pDst->Info.FourCC && pSrc->Info.Shift == pDst->Info.Shift && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi))
-        {
-            if (m_HWType >= MFX_HW_SCL)
-                mfxRes = CopySystemToVideoMemory(pDst->Data.MemId, 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, pDst->Info.FourCC);
-            else
-                mfxRes = CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pDst->Info.Height, roi);
-        }
-    }
-    else
+    if (!srcPtr || !pDst->Data.MemId)
     {
         mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_RETURN(mfxRes);
     }
 
-    return mfxRes;
+    if (!CM_ALIGNED(pSrc->Data.Pitch))
+    {
+        mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_RETURN(mfxRes);
+    }
+
+    // source are placed in system memory, destination is in video memory
+    // use common way to copy frames from system to video, most faster
+    mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
+    verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
+
+    if (isNeedShift(pSrc, pDst) && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+    {
+        mfxRes = CopyShiftSystemToVideoMemory(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi, 16 - pSrc->Info.BitDepthLuma, pDst->Info.FourCC);
+        MFX_RETURN(mfxRes);
+    }
+
+    if (isNV12LikeFormat(pSrc->Info.FourCC) && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+    {
+        if (m_HWType >= MFX_HW_SCL)
+            mfxRes = CopySystemToVideoMemory(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi, pDst->Info.FourCC);
+        else
+            mfxRes = CopySystemToVideoMemoryAPI(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
+        MFX_RETURN(mfxRes);
+    }
+
+    if (isNeedSwapping(pSrc, pDst) && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi))
+    {
+        mfxRes = CopySwapSystemToVideoMemory(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, pDst->Info.FourCC);
+        MFX_RETURN(mfxRes);
+    }
+
+    if (isSinglePlainFormat(pDst->Info.FourCC) && isSinglePlainFormat(pSrc->Info.FourCC) && pSrc->Info.FourCC == pDst->Info.FourCC && pSrc->Info.Shift == pDst->Info.Shift && CM_ALIGNED(srcPtr) && CM_SUPPORTED_COPY_SIZE(roi))
+    {
+        if (m_HWType >= MFX_HW_SCL)
+            mfxRes = CopySystemToVideoMemory(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, pDst->Info.FourCC);
+        else
+            mfxRes = CopySystemToVideoMemoryAPI(*reinterpret_cast<mfxHDLPair*>(pDst->Data.MemId), 0, srcPtr, pSrc->Data.Pitch, (mfxU32)pDst->Info.Height, roi);
+        MFX_RETURN(mfxRes);
+    }
+
+    mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_RETURN(mfxRes);
 }
 #endif // defined (MFX_VA) && !defined(OSX)

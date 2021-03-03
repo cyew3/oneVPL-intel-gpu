@@ -151,6 +151,9 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, mfxSize
     UMC::FrameMemID frmMID;
     UMC::Status sts = m_pFrameAllocator->Alloc(&frmMID, &info, 0);
 
+    if (sts == UMC::UMC_ERR_ALLOC)
+        return UMC::UMC_ERR_ALLOC;
+
     if (sts != UMC::UMC_OK)
     {
         throw h265_exception(UMC::UMC_ERR_ALLOC);
@@ -159,12 +162,11 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, mfxSize
     UMC::FrameData frmData;
     frmData.Init(&info, frmMID, m_pFrameAllocator);
 
-    mfx_UMC_FrameAllocator* mfx_alloc =
-        DynamicCast<mfx_UMC_FrameAllocator>(m_pFrameAllocator);
-    if (mfx_alloc)
+    auto frame_source = dynamic_cast<SurfaceSource*>(m_pFrameAllocator);
+    if (frame_source)
     {
         mfxFrameSurface1* surface =
-            mfx_alloc->GetSurfaceByIndex(frmMID);
+            frame_source->GetSurfaceByIndex(frmMID);
         if (!surface)
             throw h265_exception(UMC::UMC_ERR_ALLOC);
 

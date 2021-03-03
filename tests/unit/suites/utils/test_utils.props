@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- test_utils.vcxproj specific settings -->
+  <PropertyGroup Label="test_utils settings">
+    <MfxConfigurationType Label="test_utils settings">Application</MfxConfigurationType>
+    <MfxIncludes>
+      $(MSDK_API_ROOT)\include;
+      $(MSDK_STUDIO_ROOT)\shared\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+      $(MSDK_STUDIO_ROOT)\..\tests\unit;
+      $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googletest\include;
+      $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googlemock\include;
+      $(MfxIppIncludeDir)
+    </MfxIncludes>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+    <MfxTargetName>$(ProjectName)</MfxTargetName>
+  </PropertyGroup>
+<!-- End of test_utils.vcxproj specific settings -->
+</Project>

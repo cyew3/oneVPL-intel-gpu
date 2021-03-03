@@ -402,10 +402,11 @@ Status VC1VideoDecoder::StartCodesProcessing(uint8_t*   pBStream,
         switch (*pValues)
         {
         case 0x0F010000:
+        {
             bool isFPSChange;
             VC1Context context;
             size_t alignment;
-           umcRes =  UMC_ERR_NOT_ENOUGH_DATA;
+            umcRes =  UMC_ERR_NOT_ENOUGH_DATA;
             context = *m_pContext;
             sts = SequenceLayer(&context);
             VC1_TO_UMC_CHECK_STS(sts);
@@ -440,6 +441,7 @@ Status VC1VideoDecoder::StartCodesProcessing(uint8_t*   pBStream,
                 }
              }
             VC1_TO_UMC_CHECK_STS(sts);
+        }
             break;
         case 0x0A010000:
             umcRes =  UMC_ERR_NOT_ENOUGH_DATA;

@@ -917,7 +917,7 @@ ImplementationAvc::~ImplementationAvc()
         // in case of raw references and external frame allocation, encoder needs to unlock DPB surfaces
         ArrayDpbFrame const & finDpb = m_lastTask.m_dpbPostEncoding;
         for (mfxU32 i = 0; i < finDpb.Size(); i++)
-            m_core->DecreaseReference(&finDpb[i].m_yuvRaw->Data);
+            m_core->DecreaseReference(*finDpb[i].m_yuvRaw);
     }
 }
 void ImplementationAvc::DestroyDanglingCmResources()
@@ -1084,7 +1084,12 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(m_core, MFXICORE_GT_CONFIG_GUID);
     MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
-    mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType, *pMFXGTConfig, true);
+
+    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+
+    mfxStatus checkStatus = CheckVideoParam(m_video, m_caps
+        , m_core->IsExternalFrameAllocator() || (core20_interface && *core20_interface)
+        , m_currentPlatform, m_currentVaType, *pMFXGTConfig, true);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION;
     else if (checkStatus < MFX_ERR_NONE)
@@ -1848,7 +1853,12 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(m_core, MFXICORE_GT_CONFIG_GUID);
     MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
-    mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType, *pMFXGTConfig);
+
+    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+
+    mfxStatus checkStatus = CheckVideoParam(newPar, m_caps
+        , m_core->IsExternalFrameAllocator() || (core20_interface && *core20_interface)
+        , m_currentPlatform, m_currentVaType, *pMFXGTConfig);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     else if (checkStatus < MFX_ERR_NONE)
@@ -2061,7 +2071,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         {
             if (m_raw.Unlock(m_lastTask.m_idx) == (mfxU32)-1)
             {
-               m_core->DecreaseReference(&m_lastTask.m_yuv->Data);
+               m_core->DecreaseReference(*m_lastTask.m_yuv);
             }
             if (m_cmDevice)
             {
@@ -2081,7 +2091,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         for (DdiTaskIter i = m_free.begin(); i != m_free.end(); ++i)
         {
             if (i->m_yuv)
-                m_core->DecreaseReference(&i->m_yuv->Data);
+                m_core->DecreaseReference(*i->m_yuv);
             *i = DdiTask();
         }
 
@@ -2633,7 +2643,7 @@ bool ImplementationAvc::OnAdaptiveGOPSubmitted()
     }
 
     //if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-    //    m_core->DecreaseReference(&task->m_yuv->Data);
+    //    m_core->DecreaseReference(*task->m_yuv);
     //move one ready frame to reordering queue, if any
     //check if we have surface for new task
 
@@ -2669,7 +2679,7 @@ bool ImplementationAvc::OnAdaptiveGOPSubmitted()
                 requiredFrameType |= MFX_FRAMETYPE_REF;
             task.m_type[0] = requiredFrameType;
             if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                m_core->DecreaseReference(&task.m_yuv->Data);
+                m_core->DecreaseReference(*task.m_yuv);
 
             //Clean up
             ReleaseResource(m_raw, task.m_midRaw);
@@ -2693,7 +2703,7 @@ void ImplementationAvc::OnLookaheadSubmitted(DdiTaskIter task)
     m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_LA;
 
     if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-        m_core->DecreaseReference(&task->m_yuv->Data);
+        m_core->DecreaseReference(*task->m_yuv);
     m_lookaheadStarted.splice(m_lookaheadStarted.end(), m_reordering, task);
 }
 
@@ -2843,7 +2853,7 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
             if (IsOn(extOpt2.UseRawRef))
             {
                 if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-                    m_core->DecreaseReference(&iniDpb[i].m_yuvRaw->Data);
+                    m_core->DecreaseReference(*iniDpb[i].m_yuvRaw);
 
                 ReleaseResource(m_raw, iniDpb[i].m_midRaw);
                 ReleaseResource(m_rawSkip, iniDpb[i].m_midRaw);
@@ -2854,7 +2864,7 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     if (IsOff(extOpt2.UseRawRef) || (task->m_reference[0] + task->m_reference[1]) == 0)
     {
         if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-            m_core->DecreaseReference(&task->m_yuv->Data);
+            m_core->DecreaseReference(*task->m_yuv);
 
         ReleaseResource(m_raw, task->m_midRaw);
         ReleaseResource(m_rawSkip, task->m_midRaw);
@@ -3061,12 +3071,12 @@ mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & task)
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
-            MFX_SAFE_CALL(m_core->GetFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle)));
+            MFX_SAFE_CALL(m_core->GetFrameHDL(*pSurfI, handle));
         }
         else
 #endif //MFX_ENABLE_OPAQUE_MEMORY
         {
-            MFX_SAFE_CALL(m_core->GetExternalFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle), false));
+            MFX_SAFE_CALL(m_core->GetExternalFrameHDL(*pSurfI, handle, false));
         }
 
         mfxHDLPair cmScdSurf = { nullptr,nullptr };
@@ -3375,12 +3385,12 @@ mfxStatus ImplementationAvc::CalculateFrameCmplx(DdiTask const &task, mfxU32 &ra
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
-            MFX_SAFE_CALL(m_core->GetFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle)));
+            MFX_SAFE_CALL(m_core->GetFrameHDL(*pSurfI, handle));
         }
         else
 #endif //MFX_ENABLE_OPAQUE_MEMORY
         {
-            MFX_SAFE_CALL(m_core->GetExternalFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle), false));
+            MFX_SAFE_CALL(m_core->GetExternalFrameHDL(*pSurfI, handle, false));
         }
         MFX_SAFE_CALL(amtScd.calc_RaCa_Surf(handle, raca));
     }
@@ -3874,7 +3884,7 @@ void SetupAdaptiveCQM(const MfxVideoParam &par, DdiTask &task, const QpHistory q
         if (averageQP == 0) // not enough history QP
         {
             const mfxU32 MBSIZE = 16;
-			const mfxU32 BITRATE_SCALE = 2000;
+            const mfxU32 BITRATE_SCALE = 2000;
             const mfxU32 numMB = (par.mfx.FrameInfo.Width / MBSIZE) * (par.mfx.FrameInfo.Height / MBSIZE);
             const mfxU32 normalizedBitrate = mfxU32(mfxU64(BITRATE_SCALE) * par.calcParam.targetKbps
                 * par.mfx.FrameInfo.FrameRateExtD / par.mfx.FrameInfo.FrameRateExtN / numMB);
@@ -4051,7 +4061,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     UMC::AutomaticUMCMutex guard(m_listMutex);
                     //Lock surface
                     if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                        m_core->IncreaseReference(&newTask.m_yuv->Data);
+                        m_core->IncreaseReference(*newTask.m_yuv);
                     m_MiniGopSizeBuffered.splice(m_MiniGopSizeBuffered.end(), m_incoming, m_incoming.begin());
                     m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME;
                 }
@@ -4160,7 +4170,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 //          m_MiniGopSizeBuffered.splice(m_MiniGopSizeBuffered.end(), m_incoming, m_incoming.begin());
             DdiTask& task = m_MiniGopSizeBuffered.front();
             if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                m_core->DecreaseReference(&task.m_yuv->Data);
+                m_core->DecreaseReference(*task.m_yuv);
 #if 1
             ReleaseResource(m_raw4X, task.m_cmRaw4X);
             ReleaseResource(m_mbAGOP,    task.m_cmMbAGOP);
@@ -4324,7 +4334,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         {
             if (m_raw.Unlock(m_lastTask.m_idx) == (mfxU32)-1)
             {
-                m_core->DecreaseReference(&m_lastTask.m_yuv->Data);
+                m_core->DecreaseReference(*m_lastTask.m_yuv);
             }
             ReleaseResource(m_rawLa, m_lastTask.m_cmRawLa);
             ReleaseResource(m_mb,    m_lastTask.m_cmMb);
@@ -4339,7 +4349,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         {
             if (m_raw.Lock(m_lastTask.m_idx) == 0)
             {
-                m_core->IncreaseReference(&m_lastTask.m_yuv->Data);
+                m_core->IncreaseReference(*m_lastTask.m_yuv);
             }
         }
         OnLookaheadSubmitted(task);
@@ -5163,9 +5173,11 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 {
     MFX_CHECK_STS(m_failedStatus);
 
+    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video, ctrl, surface, bs,
-        m_core->IsExternalFrameAllocator(), m_caps, m_currentPlatform);
+        m_core->IsExternalFrameAllocator() || (core20_interface && *core20_interface), m_caps, m_currentPlatform);
     if (checkSts < MFX_ERR_NONE)
         return checkSts;
 
@@ -5194,6 +5206,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
         // Copy ctrl with all settings and Extension buffers
         m_encoding.front().m_ctrl = *ctrl;
+
         return status;
     }
 #endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
@@ -5232,7 +5245,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         m_free.front().m_extFrameTag = surface->Data.FrameOrder;
         m_free.front().m_frameOrder  = surface->Data.FrameOrder;
         m_free.front().m_timeStamp   = surface->Data.TimeStamp;
-        m_core->IncreaseReference(&surface->Data);
+        m_core->IncreaseReference(*surface);
 
         mfxU16 const MaxNumOfROI = 0;
         m_free.front().m_roi.Resize(MaxNumOfROI);
@@ -6033,7 +6046,7 @@ mfxStatus ImplementationAvc::MiniGopSize(
         //fprintf(stderr,"frame type:%d  surface:%x\n", new_frame->m_frameType & MFX_FRAMETYPE_IPB, surface);
         m_bufferedInFrames.push_back(new_frame);
         //Lock surface
-        m_core->IncreaseReference(&(*surface)->Data);
+        m_core->IncreaseReference(*(*surface));
         //m_readyInFrames.push_back(new_frame);
     }
 
@@ -6171,7 +6184,7 @@ mfxStatus ImplementationAvc::MiniGopSize(
         FrameTypeAdapt* frame = m_readyInFrames.front();
         *ctrl =  frame->m_ctrl;
         *surface = frame->m_surface;
-        m_core->DecreaseReference(&frame->m_surface->Data);
+        m_core->DecreaseReference(*frame->m_surface);
         m_readyInFrames.erase(m_readyInFrames.begin());
         *requiredFrameType =  frame->m_frameType;
         if((*requiredFrameType & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_P )
@@ -6249,7 +6262,7 @@ mfxStatus ImplementationAvc::MiniGopSize1(
         new_frame->m_surface = *surface;
         //fprintf(stderr,"frame type:%d  surface:%x\n", new_frame->m_frameType & MFX_FRAMETYPE_IPB, surface);
         //downsample
-        CmSurface orig_surf(m_cmDevice, (IDirect3DSurface9 *)ConvertMidToNativeHandle(*m_core, new_frame->m_surface->Data.MemId));
+        CmSurface orig_surf(m_cmDevice, (IDirect3DSurface9 *)ConvertMidToNativeHandle(*m_core, *new_frame->m_surface));
         m_cmCtx->DownSample(orig_surf.GetIndex(),
             new_frame->m_surface4X.GetIndex());
         //drop surface to file
@@ -6282,7 +6295,7 @@ mfxStatus ImplementationAvc::MiniGopSize1(
 
         m_bufferedInFrames.push_back(new_frame);
         //Lock surface
-        m_core->IncreaseReference(&(*surface)->Data);
+        m_core->IncreaseReference(*(*surface));
         //m_readyInFrames.push_back(new_frame);
         //fnum++;
     }
@@ -6424,7 +6437,7 @@ mfxStatus ImplementationAvc::MiniGopSize1(
         if((*requiredFrameType & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_P )
             *requiredFrameType |= MFX_FRAMETYPE_REF;
         //fprintf(stderr,"submit: %d t: %d\n", frame->m_frameNum, frame->m_frameType & MFX_FRAMETYPE_IPB);
-        m_core->DecreaseReference(&frame->m_surface->Data);
+        m_core->DecreaseReference(*frame->m_surface);
         m_readyInFrames.erase(m_readyInFrames.begin());
         delete frame;
         //goto assign task
@@ -6498,7 +6511,7 @@ mfxStatus ImplementationAvc::MiniGopSize1(
         //fprintf(stderr,"frame type:%d  surface:%x\n", new_frame->m_frameType & MFX_FRAMETYPE_IPB, surface);
         m_bufferedInFrames.push_back(new_frame);
         //Lock surface
-        m_core->IncreaseReference(&(*surface)->Data);
+        m_core->IncreaseReference(*(*surface));
         //m_readyInFrames.push_back(new_frame);
     }
 
@@ -6691,7 +6704,7 @@ mfxStatus ImplementationAvc::MiniGopSize1(
         FrameTypeAdapt* frame = m_readyInFrames.front();
         *ctrl =  frame->m_ctrl;
         *surface = frame->m_surface;
-        m_core->DecreaseReference(&frame->m_surface->Data);
+        m_core->DecreaseReference(*frame->m_surface);
         m_readyInFrames.erase(m_readyInFrames.begin());
         *requiredFrameType =  frame->m_frameType;
         if((*requiredFrameType & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_P )

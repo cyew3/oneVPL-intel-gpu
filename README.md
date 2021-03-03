@@ -139,6 +139,7 @@ Media SDK depends on a number of packages which are identified and checked for t
 | BUILD_RUNTIME | ON\|OFF | Build mediasdk runtime, library and plugins (default: ON) |
 | BUILD_SAMPLES | ON\|OFF | Build samples (default: ON) |
 | BUILD_TESTS | ON\|OFF | Build unit tests (default: OFF) |
+| BUILD_TUTORIALS | ON\|OFF | Build tutorials (default: OFF) |
 | USE_SYSTEM_GTEST | ON\|OFF | Use system gtest version instead of bundled (default: OFF) |
 | BUILD_TOOLS | ON\|OFF | Build tools (default: OFF) |
 | MFX_ENABLE_KERNELS | ON\|OFF | Build mediasdk with [media shaders](https://github.com/Intel-Media-SDK/MediaSDK/wiki/Media-SDK-Shaders-(EU-Kernels)) support (default: ON) |

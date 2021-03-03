@@ -45,7 +45,7 @@ private:
     const msdk_char* m_pSrcFileName;
     const msdk_char* m_pDstFileName;
 
-    std::map<const msdk_char*, mfxIMPL> m_impLib;
+    std::map < msdk_tstring, mfxIMPL > m_impLib;
 
     mfxU16 m_IOPattern; // DEC->(SYS/D3D frames)->VPP->(SYS/D3D frames)->ENC
 

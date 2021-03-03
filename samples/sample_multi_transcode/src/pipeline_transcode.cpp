@@ -140,6 +140,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bEncodeEnable(true),
     m_nVPPCompEnable(0),
     m_bUseOpaqueMemory(false),
+    m_MemoryModel(UNKNOWN_ALLOC),
     m_LastDecSyncPoint(0),
     m_pBuffer(NULL),
     m_pParentPipeline(NULL),
@@ -541,7 +542,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     MSDK_CHECK_POINTER(pExtSurface,  MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_MORE_SURFACE;
-    mfxFrameSurface1    *pmfxSurface = NULL;
+    mfxFrameSurface1* pmfxSurface = NULL;
     pExtSurface->pSurface = NULL;
 
     //--- Time measurements
@@ -571,7 +572,8 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
             sts = m_pBSProcessor->GetInputBitstream(&m_pmfxBS); // read more data to input bit stream
             MSDK_BREAK_ON_ERROR(sts);
         }
-        else if (MFX_ERR_MORE_SURFACE == sts)
+
+        if (m_MemoryModel == GENERAL_ALLOC)
         {
             // Find new working surface
             pmfxSurface = GetFreeSurface(true, MSDK_SURFACE_WAIT_INTERVAL);
@@ -588,10 +590,24 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
             }
             MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
         }
+#if defined(MFX_ONEVPL)
+        else if (m_MemoryModel == VISIBLE_INT_ALLOC)
+        {
+            sts = m_pmfxDEC->GetSurface(&pmfxSurface);
+            MSDK_BREAK_ON_ERROR(sts);
+        }
+#endif //MFX_ONEVPL
 
         if (!m_rawInput)
         {
             sts = m_pmfxDEC->DecodeFrameAsync(m_pmfxBS, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
+#if defined(MFX_ONEVPL)
+            if (m_MemoryModel == VISIBLE_INT_ALLOC)
+            {
+                mfxStatus sts_release = pmfxSurface->FrameInterface->Release(pmfxSurface);
+                MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
+            }
+#endif //MFX_ONEVPL
         }
 
         if ( (MFX_WRN_DEVICE_BUSY == sts) &&
@@ -653,10 +669,30 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
 
         if (!m_rawInput)
         {
-            // find new working surface
-            pmfxSurface = GetFreeSurface(true, MSDK_SURFACE_WAIT_INTERVAL);
-            MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
-            sts = m_pmfxDEC->DecodeFrameAsync(NULL, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
+            if (m_MemoryModel == GENERAL_ALLOC)
+            {
+                // find new working surface
+                pmfxSurface = GetFreeSurface(true, MSDK_SURFACE_WAIT_INTERVAL);
+                MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
+
+                sts = m_pmfxDEC->DecodeFrameAsync(nullptr, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
+            }
+#if defined(MFX_ONEVPL)
+            else if (m_MemoryModel == VISIBLE_INT_ALLOC)
+            {
+                sts = m_pmfxDEC->GetSurface(&pmfxSurface);
+                MSDK_BREAK_ON_ERROR(sts);
+
+                sts = m_pmfxDEC->DecodeFrameAsync(nullptr, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
+
+                mfxStatus sts_release = pmfxSurface->FrameInterface->Release(pmfxSurface);
+                MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
+            }
+#endif //MFX_ONEVPL
+            else
+            {
+                sts = m_pmfxDEC->DecodeFrameAsync(nullptr, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
+            }
         }
 
         if ( (MFX_WRN_DEVICE_BUSY == sts) &&
@@ -682,44 +718,67 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 {
     MFX_ITT_TASK("VPPOneFrame");
     MSDK_CHECK_POINTER(pExtSurface,  MFX_ERR_NULL_PTR);
-
-    // find/wait for a free working surface
-    auto out_surface = GetFreeSurface(false, MSDK_SURFACE_WAIT_INTERVAL);
-    MSDK_CHECK_POINTER_SAFE(out_surface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces for VPP in encoder pool (during long period)\n"))); // return an error if a free surface wasn't found
-
-    // make sure picture structure has the initial value
-    // surfaces are reused and VPP may change this parameter in certain configurations
-    out_surface->Info.PicStruct = m_mfxVppParams.vpp.Out.PicStruct ? m_mfxVppParams.vpp.Out.PicStruct : (m_bEncodeEnable ? m_mfxEncParams : m_mfxDecParams).mfx.FrameInfo.PicStruct;
-
-    pExtSurface->pSurface = out_surface;
+    mfxFrameSurface1* out_surface = NULL;
     mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_MemoryModel == GENERAL_ALLOC || m_MemoryModel == VISIBLE_INT_ALLOC)
+    {
+        if (m_MemoryModel == GENERAL_ALLOC)
+        {
+            // find/wait for a free working surface
+            out_surface = GetFreeSurface(false, MSDK_SURFACE_WAIT_INTERVAL);
+            MSDK_CHECK_POINTER_SAFE(out_surface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces for VPP in encoder pool (during long period)\n"))); // return an error if a free surface wasn't found
+        }
+#if defined(MFX_ONEVPL)
+        else if (m_MemoryModel == VISIBLE_INT_ALLOC)
+        {
+            sts = m_pmfxVPP->GetSurfaceOut(&out_surface);
+            MFX_CHECK_STS(sts);
+        }
+#endif //MFX_ONEVPL
+
+        // make sure picture structure has the initial value
+        // surfaces are reused and VPP may change this parameter in certain configurations
+        out_surface->Info.PicStruct = m_mfxVppParams.vpp.Out.PicStruct ? m_mfxVppParams.vpp.Out.PicStruct : (m_bEncodeEnable ? m_mfxEncParams : m_mfxDecParams).mfx.FrameInfo.PicStruct;
+        pExtSurface->pSurface = out_surface;
+    }
 
 #ifdef ENABLE_MCTF
     const auto MCTFCurParam = m_MctfRTParams.GetCurParam();
     bool applyMCTF = !!MCTFCurParam;
-    if (pSurfaceIn->pSurface)
+
+    if (applyMCTF && pSurfaceIn->pSurface)
     {
         auto surface = static_cast<mfxFrameSurfaceWrap*>(pSurfaceIn->pSurface);
-        if (applyMCTF)
-        {
-            auto mctf = surface->AddExtBuffer<mfxExtVppMctf>();
-            mctf->FilterStrength = MCTFCurParam->FilterStrength;
+
+        auto mctf = surface->AddExtBuffer<mfxExtVppMctf>();
+        mctf->FilterStrength = MCTFCurParam->FilterStrength;
 #if defined ENABLE_MCTF_EXT
-            mctf->BitsPerPixelx100k = mfxU32(MCTF_LOSSLESS_BPP * MCTF_BITRATE_MULTIPLIER);
-            mctf->Deblocking = MFX_CODINGOPTION_OFF;
+        mctf->BitsPerPixelx100k = mfxU32(MCTF_LOSSLESS_BPP * MCTF_BITRATE_MULTIPLIER);
+        mctf->Deblocking = MFX_CODINGOPTION_OFF;
 #endif
-            m_MctfRTParams.MoveForward();
-        }
-        else
-        {
-            surface->RemoveExtBuffer<mfxExtVppMctf>();
-        }
+        m_MctfRTParams.MoveForward();
     }
 #endif
 
     for(;;)
     {
-        sts = m_pmfxVPP->RunFrameVPPAsync(pSurfaceIn->pSurface, out_surface, NULL, &pExtSurface->Syncp);
+        if (m_MemoryModel == GENERAL_ALLOC || m_MemoryModel == VISIBLE_INT_ALLOC)
+        {
+            sts = m_pmfxVPP->RunFrameVPPAsync(pSurfaceIn->pSurface, out_surface, NULL, &pExtSurface->Syncp);
+        }
+#if defined(MFX_ONEVPL)
+        else
+        {
+            sts = m_pmfxVPP->ProcessFrameAsync(pSurfaceIn->pSurface, &out_surface);
+
+            if (out_surface)
+            {
+                out_surface->Info.PicStruct = m_mfxVppParams.vpp.Out.PicStruct ? m_mfxVppParams.vpp.Out.PicStruct : (m_bEncodeEnable ? m_mfxEncParams : m_mfxDecParams).mfx.FrameInfo.PicStruct;
+                pExtSurface->pSurface = out_surface;
+            }
+        }
+#endif
 
         if (MFX_ERR_NONE < sts && !pExtSurface->Syncp) // repeat the call if warning and no output
         {
@@ -736,6 +795,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
             break;
         }
     }
+
     return sts;
 
 } // mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
@@ -775,6 +835,7 @@ mfxStatus CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface, mfx
             break;
         }
     }
+
     return sts;
 
 } //CTranscodingPipeline::EncodeOneFrame(ExtendedSurface *pExtSurface)
@@ -1026,6 +1087,14 @@ mfxStatus CTranscodingPipeline::Decode()
                 }
             }
             // check for interlaced stream
+
+#if defined(MFX_ONEVPL)
+            if (m_MemoryModel != GENERAL_ALLOC && DecExtSurface.pSurface)
+            {
+                mfxStatus sts_release = DecExtSurface.pSurface->FrameInterface->Release(DecExtSurface.pSurface);
+                MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
+            }
+#endif //MFX_ONEVPL
         }
         else // no VPP - just copy pointers
         {
@@ -1118,6 +1187,14 @@ mfxStatus CTranscodingPipeline::Decode()
                 pNextBuffer->AddSurface(PreEncExtSurface);
             }
         }
+
+#if defined(MFX_ONEVPL)
+        if (m_MemoryModel != GENERAL_ALLOC && PreEncExtSurface.pSurface)
+        {
+            mfxStatus sts_release = PreEncExtSurface.pSurface->FrameInterface->Release(PreEncExtSurface.pSurface);
+            MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
+        }
+#endif //MFX_ONEVPL
 
         // We need to synchronize oldest stored surface if we've already stored enough surfaces in buffer (buffer length >= AsyncDepth)
         // Because we have to wait for decoder to finish processing and free some internally used surfaces
@@ -1357,6 +1434,14 @@ mfxStatus CTranscodingPipeline::Encode()
             {
                 sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream, m_encoderFourCC);
             }
+
+#if defined(MFX_ONEVPL)
+            if (m_MemoryModel != GENERAL_ALLOC && VppExtSurface.pSurface)
+            {
+                mfxStatus sts_release = VppExtSurface.pSurface->FrameInterface->Release(VppExtSurface.pSurface);
+                MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
+            }
+#endif //MFX_ONEVPL
         }
 
         if(shouldReadNextFrame) // Release current decoded surface only if we're going to read next one during next iteration
@@ -1818,6 +1903,14 @@ mfxStatus CTranscodingPipeline::Transcode()
                 }
             }
             // check for interlaced stream
+
+#if defined(MFX_ONEVPL)
+            if (m_MemoryModel != GENERAL_ALLOC && DecExtSurface.pSurface)
+            {
+                mfxStatus sts_release = DecExtSurface.pSurface->FrameInterface->Release(DecExtSurface.pSurface);
+                MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
+            }
+#endif //MFX_ONEVPL
         }
         else // no VPP - just copy pointers
         {
@@ -1872,9 +1965,16 @@ mfxStatus CTranscodingPipeline::Transcode()
         }
         else
         {
-
             sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream, m_encoderFourCC);
         }
+
+#if defined(MFX_ONEVPL)
+        if (m_MemoryModel != GENERAL_ALLOC && VppExtSurface.pSurface)
+        {
+            mfxStatus sts_release = VppExtSurface.pSurface->FrameInterface->Release(VppExtSurface.pSurface);
+            MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
+        }
+#endif //MFX_ONEVPL
 
         // check if we need one more frame from decode
         if (MFX_ERR_MORE_DATA == sts)
@@ -1986,14 +2086,35 @@ mfxStatus CTranscodingPipeline::PutBS()
 mfxStatus CTranscodingPipeline::DumpSurface2File(mfxFrameSurface1* pSurf)
 {
     mfxStatus       sts = MFX_ERR_NONE;
-    sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis,pSurf->Data.MemId,&pSurf->Data);
-    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
 
-    sts =  m_dumpVppCompFileWriter.WriteNextFrame(pSurf);
+    if (m_MemoryModel == GENERAL_ALLOC)
+    {
+        sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &pSurf->Data);
+        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
+    }
+#if defined(MFX_ONEVPL)
+    else
+    {
+        sts = pSurf->FrameInterface->Map(pSurf, MFX_MAP_READ);
+        MSDK_CHECK_STATUS(sts, "FrameInterface->Map failed");
+    }
+#endif //MFX_ONEVPL
+
+    sts = m_dumpVppCompFileWriter.WriteNextFrame(pSurf);
     MSDK_CHECK_STATUS(sts, "m_dumpVppCompFileWriter.WriteNextFrame failed");
 
-    sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis,pSurf->Data.MemId,&pSurf->Data);
-    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
+    if (m_MemoryModel == GENERAL_ALLOC)
+    {
+        sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &pSurf->Data);
+        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
+    }
+#if defined(MFX_ONEVPL)
+    else
+    {
+        sts = pSurf->FrameInterface->Unmap(pSurf);
+        MSDK_CHECK_STATUS(sts, "FrameInterface->Unmap failed");
+    }
+#endif //MFX_ONEVPL
 
     return sts;
 } // mfxStatus CTranscodingPipeline::DumpSurface2File(ExtendedSurface* pSurf)
@@ -2008,37 +2129,57 @@ mfxStatus CTranscodingPipeline::Surface2BS(ExtendedSurface* pSurf,mfxBitstreamWr
         return MFX_ERR_MORE_DATA;
     }
 
-    if(pSurf->Syncp)
+    if (pSurf->Syncp)
     {
         sts = m_pmfxSession->SyncOperation(pSurf->Syncp, MSDK_WAIT_INTERVAL);
         HandlePossibleGpuHang(sts);
         MSDK_CHECK_ERR_NONE_STATUS(sts, MFX_ERR_ABORTED, "SyncOperation failed");
-        pSurf->Syncp=0;
+        pSurf->Syncp = 0;
 
         //--- Copying data from surface to bitstream
-        sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis,pSurf->pSurface->Data.MemId,&pSurf->pSurface->Data);
-        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
+        if (m_MemoryModel == GENERAL_ALLOC)
+        {
+            sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, pSurf->pSurface->Data.MemId, &pSurf->pSurface->Data);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
+        }
+#if defined(MFX_ONEVPL)
+        else
+        {
+            sts = pSurf->pSurface->FrameInterface->Map(pSurf->pSurface, MFX_MAP_READ);
+            MSDK_CHECK_STATUS(sts, "FrameInterface->Map failed");
+        }
+#endif //MFX_ONEVPL
 
-        switch(fourCC)
+        switch (fourCC)
         {
         case 0: // Default value is MFX_FOURCC_I420
         case MFX_FOURCC_I420:
             sts = NV12asI420toBS(pSurf->pSurface, pBS);
             break;
         case MFX_FOURCC_NV12:
-            sts=NV12toBS(pSurf->pSurface,pBS);
+            sts = NV12toBS(pSurf->pSurface, pBS);
             break;
         case MFX_FOURCC_RGB4:
-            sts=RGB4toBS(pSurf->pSurface,pBS);
+            sts = RGB4toBS(pSurf->pSurface, pBS);
             break;
         case MFX_FOURCC_YUY2:
-            sts=YUY2toBS(pSurf->pSurface,pBS);
+            sts = YUY2toBS(pSurf->pSurface, pBS);
             break;
         }
         MSDK_CHECK_STATUS(sts, "<FourCC>toBS failed");
 
-        sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis,pSurf->pSurface->Data.MemId,&pSurf->pSurface->Data);
-        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
+        if (m_MemoryModel == GENERAL_ALLOC)
+        {
+            sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->pSurface->Data.MemId, &pSurf->pSurface->Data);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
+        }
+#if defined(MFX_ONEVPL)
+        else
+        {
+            sts = pSurf->pSurface->FrameInterface->Unmap(pSurf->pSurface);
+            MSDK_CHECK_STATUS(sts, "FrameInterface->Unmap failed");
+        }
+#endif //MFX_ONEVPL
     }
 
     return sts;
@@ -3655,6 +3796,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_bExtMBQP = pParams->bExtMBQP;
     m_bROIasQPMAP = pParams->bROIasQPMAP;
 
+    m_MemoryModel = (UNKNOWN_ALLOC == pParams->nMemoryModel) ? GENERAL_ALLOC : pParams->nMemoryModel;
+
 #if MFX_VERSION >= 1022
     m_ROIData = pParams->m_ROIData;
 #endif //MFX_VERSION >= 1022
@@ -3762,9 +3905,14 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     m_pBuffer = pBuffer;
 
+#if defined(MFX_ONEVPL)
+    m_initPar.Version.Major = 2;
+    m_initPar.Version.Minor = 2;
+#else
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
     m_initPar.Version.Major = 1;
     m_initPar.Version.Minor = 0;
+#endif
     m_initPar.Implementation = pParams->libType;
 
     if (pParams->nThreadsNum)
@@ -3801,7 +3949,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     {
         m_bUseOpaqueMemory = true;
     }
-    if (!pParams->bUseOpaqueMemory || pParams->EncodeId == MFX_CODEC_DUMP) // Don't use opaque in case of yuv output or if it was specified explicitly
+
+    // Don't use opaque in case of yuv output or if it was specified explicitly or if use new memory models
+    if (!pParams->bUseOpaqueMemory || pParams->EncodeId == MFX_CODEC_DUMP || m_MemoryModel != GENERAL_ALLOC)
         m_bUseOpaqueMemory = false;
 
     m_bIsInterOrJoined = pParams->eMode == Sink || pParams->eMode == Source || pParams->bIsJoin;
@@ -3874,18 +4024,21 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         }
     }
 
-    // Frames allocation for all component
-    if (Native == pParams->eMode)
+    if (m_MemoryModel == GENERAL_ALLOC)
     {
-        sts = AllocFrames();
-        MSDK_CHECK_STATUS(sts, "AllocFrames failed");
-    }
-    else if (Source == pParams->eMode)// need allocate frames only for VPP and Encode if VPP exist
-    {
-        if (!m_bDecodeEnable)
+        // Frames allocation for all component
+        if (Native == pParams->eMode)
         {
             sts = AllocFrames();
             MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+        }
+        else if (Source == pParams->eMode)// need allocate frames only for VPP and Encode if VPP exist
+        {
+            if (!m_bDecodeEnable)
+            {
+                sts = AllocFrames();
+                MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+            }
         }
     }
 
@@ -4001,13 +4154,16 @@ mfxStatus CTranscodingPipeline::CompleteInit()
     if (m_bIsInit)
         return MFX_ERR_NONE;
 
-    // need to allocate remaining frames
-    if (m_bDecodeEnable)
+    if (m_MemoryModel == GENERAL_ALLOC)
     {
-        sts = AllocFrames();
-        MSDK_CHECK_STATUS(sts, "AllocFrames failed");
-        LoadStaticSurface();
-        MSDK_CHECK_STATUS(sts, "LoadStaticSurface failed");
+        // need to allocate remaining frames
+        if (m_bDecodeEnable)
+        {
+            sts = AllocFrames();
+            MSDK_CHECK_STATUS(sts, "AllocFrames failed");
+            LoadStaticSurface();
+            MSDK_CHECK_STATUS(sts, "LoadStaticSurface failed");
+        }
     }
 
     // after surfaces arrays are allocated configure mfxOpaqueAlloc buffers to be passed to components' Inits
@@ -4186,8 +4342,8 @@ mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
     mfxIMPL impl = 0;
     m_pmfxSession->QueryIMPL(&impl);
 
+    bool bIsMustSetExternalHandle = false;
     mfxHandleType handleType = (mfxHandleType)0;
-    bool bIsMustSetExternalHandle = 0;
 
     if (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl))
     {
@@ -4207,14 +4363,15 @@ mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
     }
 #endif
 
-    if (m_hdl && (bIsMustSetExternalHandle || (m_bIsInterOrJoined || !m_bUseOpaqueMemory)))
+    bool ext_allocator_exists = !m_bUseOpaqueMemory && m_MemoryModel == GENERAL_ALLOC;
+    if (m_hdl && (bIsMustSetExternalHandle || (m_bIsInterOrJoined || ext_allocator_exists)))
     {
         sts = m_pmfxSession->SetHandle(handleType, m_hdl);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetHandle failed");
     }
 
     // Media SDK session doesn't require external allocator if the application uses opaque memory
-    if (!m_bUseOpaqueMemory)
+    if (ext_allocator_exists)
     {
         sts = m_pmfxSession->SetFrameAllocator(m_pMFXAllocator);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetFrameAllocator failed");
@@ -4623,14 +4780,26 @@ mfxStatus CTranscodingPipeline::Run()
     return sts;
 }
 
-void IncreaseReference(mfxFrameData *ptr)
+void IncreaseReference(mfxFrameSurface1& surf)
 {
-    msdk_atomic_inc16((volatile mfxU16 *)(&ptr->Locked));
+    msdk_atomic_inc16((volatile mfxU16 *)(&surf.Data.Locked));
+#if defined(MFX_ONEVPL)
+    if (surf.FrameInterface)
+    {
+        std::ignore = surf.FrameInterface->AddRef(&surf);
+    }
+#endif
 }
 
-void DecreaseReference(mfxFrameData *ptr)
+void DecreaseReference(mfxFrameSurface1& surf)
 {
-    msdk_atomic_dec16((volatile mfxU16 *)&ptr->Locked);
+    msdk_atomic_dec16((volatile mfxU16 *)&surf.Data.Locked);
+#if defined(MFX_ONEVPL)
+    if (surf.FrameInterface)
+    {
+        std::ignore = surf.FrameInterface->Release(&surf);
+    }
+#endif
 }
 
 SafetySurfaceBuffer::SafetySurfaceBuffer(SafetySurfaceBuffer *pNext)
@@ -4686,7 +4855,7 @@ void SafetySurfaceBuffer::AddSurface(ExtendedSurface Surf)
 
             if (Surf.pSurface)
             {
-                IncreaseReference(&Surf.pSurface->Data);
+                IncreaseReference(*Surf.pSurface);
             }
 
             m_SList.push_back(sDescriptor);
@@ -4731,7 +4900,7 @@ mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
         {
             it->Locked--;
             if (it->ExtSurface.pSurface)
-                DecreaseReference(&it->ExtSurface.pSurface->Data);
+                DecreaseReference(*it->ExtSurface.pSurface);
             if (0 == it->Locked)
             {
                 m_SList.erase(it);

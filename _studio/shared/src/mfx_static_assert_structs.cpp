@@ -91,7 +91,7 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInitParam              ,80   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtThreadsParam        ,132  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPlatform               ,32   )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxStructVersion          ,2    )
 #endif
     #elif defined(_WIN32) || defined(LINUX32)
@@ -101,7 +101,7 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInitParam              ,68   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtThreadsParam        ,132  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPlatform               ,32   )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxStructVersion          ,2    )
 #endif
     #endif
@@ -333,9 +333,14 @@
 #endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameData                 ,96  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameSurface1             ,184 )
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameSurfaceInterface     ,112 )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxSurfaceArray              ,56  )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoChannelParam         ,96  )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInfoMFX                   ,136 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInfoVPP                   ,168 )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoParam                ,208 ) //IntelliSense wrongly marks this line
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoParam                ,208 ) //IntelliSense wrongly marks this line (looks to be outdated comment)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCodingOption           ,64  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCodingOption2          ,68  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCodingOption3          ,512 )
@@ -469,6 +474,11 @@
 #endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameData                 ,72  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameSurface1             ,160 )
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameSurfaceInterface     ,60  )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxSurfaceArray              ,36  )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoChannelParam         ,92  )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInfoMFX                   ,136 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInfoVPP                   ,168 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoParam                ,196 )
@@ -601,6 +611,11 @@
 #endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameData                 ,72  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameSurface1             ,156 )
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameSurfaceInterface     ,112 )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxSurfaceArray              ,36  )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoChannelParam         ,92  )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInfoMFX                   ,136 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxInfoVPP                   ,168 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxVideoParam                ,196 )
@@ -1028,7 +1043,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Minor                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Major                         ,2    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Version                       ,0    )
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Minor                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Major                         ,1    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Version                       ,0    )
@@ -1070,7 +1085,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Minor                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Major                         ,2    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVersion                         ,Version                       ,0    )
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if defined(MFX_ONEVPL)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Minor                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Major                         ,1    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxStructVersion                   ,Version                       ,0    )
@@ -1134,6 +1149,9 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,QualityId                     ,6    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,ViewId                        ,4    )
 
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,ChannelId                     ,16   )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,BitDepthLuma                  ,18   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,BitDepthChroma                ,20   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,Shift                         ,22   )
@@ -1176,6 +1194,9 @@
 #if (MFX_VERSION >= 1027)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Y410                          ,56   )
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Y416                          ,56   )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Cr                            ,64   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,V                             ,64   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,V16                           ,64   )
@@ -1188,8 +1209,39 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Corrupted                     ,88   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,DataFlag                      ,90   )
 
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,FrameInterface                ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Version                       ,8    )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Info                          ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Data                          ,88   )
+
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Context                       ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Version                       ,8    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,AddRef                        ,16   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Release                       ,24   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetRefCounter                 ,32   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Map                           ,40   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Unmap                         ,48   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetNativeHandle               ,56   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetDeviceHandle               ,64   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Synchronize                   ,72   )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Context                       ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Version                       ,8    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,AddRef                        ,16   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Release                       ,24   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,GetRefCounter                 ,32   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Surfaces                      ,40   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,NumSurfaces                   ,48   )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,VPP                           ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,Protected                     ,68   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,IOPattern                     ,70   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,ExtParam                      ,72   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,NumExtParam                   ,80   )
+#endif
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,LowPower                      ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,BRCParamMultiplier            ,30   )
@@ -1226,6 +1278,7 @@
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,FilmGrain                     ,122  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,IgnoreLevelConstrain          ,124  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,SkipOutput                    ,126  )
 #endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,JPEGChromaFormat              ,110  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,Rotation                      ,112  )
@@ -1985,6 +2038,9 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,QualityId                     ,6    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,ViewId                        ,4    )
 
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,ChannelId                     ,16   )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,BitDepthLuma                  ,18   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,BitDepthChroma                ,20   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,Shift                         ,22   )
@@ -2027,6 +2083,9 @@
 #if (MFX_VERSION >= 1027)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Y410                          ,52   )
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Y416                          ,52   )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Cr                            ,56   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,V                             ,56   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,V16                           ,56   )
@@ -2039,8 +2098,39 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Corrupted                     ,68   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,DataFlag                      ,70   )
 
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,FrameInterface                ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Version                       ,8    )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Info                          ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Data                          ,88   )
+
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Context                       ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Version                       ,4    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,AddRef                        ,12   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Release                       ,16   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetRefCounter                 ,20   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Map                           ,24   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Unmap                         ,28   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetNativeHandle               ,32   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetDeviceHandle               ,36   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Synchronize                   ,40   )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Context                       ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Version                       ,4    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,AddRef                        ,12   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Release                       ,16   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,GetRefCounter                 ,20   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Surfaces                      ,24   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,NumSurfaces                   ,28   )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,VPP                           ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,Protected                     ,68   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,IOPattern                     ,70   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,ExtParam                      ,72   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,NumExtParam                   ,76   )
+#endif
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,LowPower                      ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,BRCParamMultiplier            ,30   )
@@ -2077,6 +2167,7 @@
 #if (MFX_VERSION >= 1034)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,FilmGrain                     ,122  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,IgnoreLevelConstrain          ,124  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,SkipOutput                    ,126  )
 #endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,JPEGChromaFormat              ,110  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,Rotation                      ,112  )
@@ -2856,6 +2947,9 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,QualityId                     ,6    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,ViewId                        ,4    )
 
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,ChannelId                     ,16   )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,BitDepthLuma                  ,18   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,BitDepthChroma                ,20   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameInfo                       ,Shift                         ,22   )
@@ -2898,6 +2992,9 @@
 #if (MFX_VERSION >= 1027)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Y410                          ,52   )
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Y416                          ,52   )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Cr                            ,56   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,V                             ,56   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,V16                           ,56   )
@@ -2910,8 +3007,40 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,Corrupted                     ,68   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameData                       ,DataFlag                      ,70   )
 
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,FrameInterface                ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Version                       ,8    )
+#endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Info                          ,16   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurface1                   ,Data                          ,84   )
+
+#if defined(MFX_ONEVPL)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Context                       ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Version                       ,8    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,AddRef                        ,16   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Release                       ,20   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetRefCounter                 ,24   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Map                           ,28   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Unmap                         ,32   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetNativeHandle               ,36   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,GetDeviceHandle               ,40   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameSurfaceInterface           ,Synchronize                   ,44   )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Context                       ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Version                       ,4    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,AddRef                        ,12   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Release                       ,16   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,GetRefCounter                 ,20   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,Surfaces                      ,24   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxSurfaceArray                    ,NumSurfaces                   ,28   )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,Version                       ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,vpp                           ,8    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,Protected                     ,76   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,IOPattern                     ,78   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,ExtParam                      ,80   )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxVideoChannelParam               ,NumExtParam                   ,84   )
+#endif
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,LowPower                      ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,BRCParamMultiplier            ,30   )
@@ -2948,6 +3077,7 @@
 #if (MFX_VERSION >= 1034)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,FilmGrain                     ,122  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,IgnoreLevelConstrain          ,124  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,SkipOutput                    ,126  )
 #endif
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,JPEGChromaFormat              ,110  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxInfoMFX                         ,Rotation                      ,112  )

@@ -113,12 +113,7 @@ Status VC1VideoDecoderHW::Reset(void)
 
 bool VC1VideoDecoderHW::InitVAEnvironment()
 {
-    if (!m_pContext->m_frmBuff.m_pFrames)
-    {
-        m_pHeap->s_new_one(&m_pContext->m_frmBuff.m_pFrames, m_SurfaceNum);
-        if (!m_pContext->m_frmBuff.m_pFrames)
-            return false;
-    }
+    m_pContext->m_frmBuff.m_pFrames.Reset(m_FrameStorage);
 
     SetVideoHardwareAccelerator(m_va);
     return true;

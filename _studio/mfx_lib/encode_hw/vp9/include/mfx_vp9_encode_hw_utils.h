@@ -229,14 +229,14 @@ enum // identifies memory type at encoder input w/o any details
 
     inline mfxStatus LockSurface(sFrameEx*  pFrame, VideoCORE* pCore)
     {
-        return (pFrame) ? pCore->IncreaseReference(&pFrame->pSurface->Data) : MFX_ERR_NONE;
+        return (pFrame) ? pCore->IncreaseReference(*pFrame->pSurface) : MFX_ERR_NONE;
     }
     inline mfxStatus FreeSurface(sFrameEx* &pFrame, VideoCORE* pCore)
     {
         mfxStatus sts = MFX_ERR_NONE;
         if (pFrame && pFrame->pSurface)
         {
-            sts = pCore->DecreaseReference(&pFrame->pSurface->Data);
+            sts = pCore->DecreaseReference(*pFrame->pSurface);
             pFrame = 0;
         }
         return sts;
@@ -970,8 +970,8 @@ inline bool IsFeatureEnabled(mfxU16 features, mfxU8 feature)
 
 mfxStatus GetNativeHandleToRawSurface(
     VideoCORE & core,
-    mfxMemId mid,
-    mfxHDL *handle,
+    mfxFrameSurface1& surf,
+    mfxHDLPair& handle,
     VP9MfxVideoParam const & video);
 
 } // MfxHwVP9Encode

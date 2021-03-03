@@ -670,7 +670,7 @@ mfxStatus VideoVPP_SW::PreProcessOfInputSurface(mfxFrameSurface1 *in, mfxFrameSu
     sts = m_internalSystemFramesPool[VPP_IN].GetFreeSurface(ppOut);
     MFX_CHECK_STS( sts );
 
-    sts = m_core->IncreaseReference(&(*ppOut)->Data);
+    sts = m_core->IncreaseReference(**ppOut);
     MFX_CHECK_STS( sts );
 
     sts = m_core->DoFastCopyWrapper(*ppOut,
@@ -682,7 +682,7 @@ mfxStatus VideoVPP_SW::PreProcessOfInputSurface(mfxFrameSurface1 *in, mfxFrameSu
 
     (*ppOut)->Info = in->Info;
 
-    sts = m_core->DecreaseReference(&in->Data);
+    sts = m_core->DecreaseReference(*in);
     MFX_CHECK_STS(sts);
   }
 
@@ -717,7 +717,7 @@ mfxStatus VideoVPP_SW::PreProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrame
     MFX_CHECK_STS( sts );
 
     (*ppOut)->Info = out->Info;
-    sts = m_core->IncreaseReference(&((*ppOut)->Data));
+    sts = m_core->IncreaseReference(**ppOut);
   }
 
   return MFX_ERR_NONE;

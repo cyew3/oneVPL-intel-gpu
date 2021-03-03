@@ -22,6 +22,7 @@ target_include_directories(mfx_vpp_scd64
     ${MSDK_STUDIO_ROOT}/mfx_lib/genx/asc/isa
     ${MSDK_STUDIO_ROOT}/shared/include
     ${MSDK_STUDIO_ROOT}/mfx_lib/plugin/include
+    ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/include
     ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/linux/include
   )
 

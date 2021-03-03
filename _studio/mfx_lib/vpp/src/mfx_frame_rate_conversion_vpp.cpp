@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -144,14 +144,14 @@ mfxStatus MFXVideoVPPFrameRateConversion::Reset(mfxVideoParam *par)
 
     if( m_pRefSurface[0] )
     {
-        mfxStatus sts = m_core->DecreaseReference( &(m_pRefSurface[0]->Data) );
+        mfxStatus sts = m_core->DecreaseReference(*m_pRefSurface[0]);
         MFX_CHECK_STS( sts );
     }   
     m_pRefSurface[0] = NULL;
 
     if( m_pRefSurface[1] )
     {
-        mfxStatus sts = m_core->DecreaseReference( &(m_pRefSurface[1]->Data) );
+        mfxStatus sts = m_core->DecreaseReference(*m_pRefSurface[1]);
         MFX_CHECK_STS( sts );
     }
     m_pRefSurface[1] = NULL;
@@ -228,7 +228,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_NativeFRC(mfxFrameSurface1
 
         if( m_pRefSurface[0] )
         {
-            sts = m_core->DecreaseReference( &(m_pRefSurface[0]->Data) );
+            sts = m_core->DecreaseReference(*m_pRefSurface[0]);
             MFX_CHECK_STS( sts );
         }
         m_pRefSurface[0] = NULL;
@@ -256,7 +256,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_NativeFRC(mfxFrameSurface1
             m_pRefSurface[0]  = in;
             m_nativeProcessState.refPicStruct = pParam->inPicStruct;
 
-            sts = m_core->IncreaseReference( &(m_pRefSurface[0]->Data) );
+            sts = m_core->IncreaseReference(*m_pRefSurface[0]);
             MFX_CHECK_STS( sts );
 
             bool bROIControl = IsROIConstant(out, out, m_pRefSurface[0]);
@@ -285,7 +285,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_NativeFRC(mfxFrameSurface1
 
             pParam->outPicStruct = m_nativeProcessState.refPicStruct;
 
-            sts = m_core->DecreaseReference( &(m_pRefSurface[0]->Data) );
+            sts = m_core->DecreaseReference(*m_pRefSurface[0]);
             MFX_CHECK_STS( sts );
 
             m_pRefSurface[0] = NULL;
@@ -343,7 +343,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
             ptr->bReadyOutput = false;
             pParam->outPicStruct = ptr->refPicStruct[0];
 
-            sts = m_core->DecreaseReference( &(m_pRefSurface[1]->Data) );
+            sts = m_core->DecreaseReference(*m_pRefSurface[1]);
             MFX_CHECK_STS( sts );
 
             m_pRefSurface[1] = NULL;
@@ -387,11 +387,11 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
 
         if( m_pRefSurface[0] )
         {
-            sts = m_core->DecreaseReference( &(m_pRefSurface[0]->Data) );
+            sts = m_core->DecreaseReference(*m_pRefSurface[0]);
             MFX_CHECK_STS( sts );
         }
         m_pRefSurface[0] = in;
-        sts = m_core->IncreaseReference( &(m_pRefSurface[0]->Data) );
+        sts = m_core->IncreaseReference(*m_pRefSurface[0]);
         MFX_CHECK_STS( sts );
 
         ptr->refPicStruct[0] = pParam->inPicStruct;
@@ -406,7 +406,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
 
         if( m_pRefSurface[1] )
         {
-            sts = m_core->DecreaseReference( &(m_pRefSurface[1]->Data) );
+            sts = m_core->DecreaseReference(*m_pRefSurface[1]);
             MFX_CHECK_STS( sts );
 
             m_pRefSurface[1] = NULL;
@@ -414,12 +414,12 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
 
         if( m_pRefSurface[0] )
         {
-            sts = m_core->DecreaseReference( &(m_pRefSurface[0]->Data) );
+            sts = m_core->DecreaseReference(*m_pRefSurface[0]);
             MFX_CHECK_STS( sts );
         }
 
         m_pRefSurface[0] = in;
-        sts = m_core->IncreaseReference( &(m_pRefSurface[0]->Data) );
+        sts = m_core->IncreaseReference(*m_pRefSurface[0]);
         MFX_CHECK_STS( sts );
 
         sts = SurfaceCopy_ROI(out, in);
@@ -439,8 +439,8 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
     {
         if( m_pRefSurface[1] )
         {
-            sts = m_core->DecreaseReference( &(m_pRefSurface[1]->Data) );
-            MFX_CHECK_STS( sts );            
+            sts = m_core->DecreaseReference(*m_pRefSurface[1]);
+            MFX_CHECK_STS( sts );
         }
 
         m_pRefSurface[1] = m_pRefSurface[0];
@@ -451,7 +451,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
 
         m_pRefSurface[0]      = in; 
 
-        sts = m_core->IncreaseReference( &(m_pRefSurface[0]->Data) );
+        sts = m_core->IncreaseReference(*m_pRefSurface[0]);
         MFX_CHECK_STS( sts );            
 
         ptr->defferedInputTimeStamp = inputTimeStamp;

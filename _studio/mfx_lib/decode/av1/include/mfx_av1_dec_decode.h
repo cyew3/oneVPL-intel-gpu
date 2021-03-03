@@ -21,10 +21,13 @@
 #include "mfx_common.h"
 #include "mfx_common_int.h"
 
+#include "mfx_umc_alloc_wrapper.h"
+
 #include "umc_defs.h"
 #include "umc_video_decoder.h"
 #include "mfx_umc_alloc_wrapper.h"
 #include <mutex>
+#include <memory>
 
 #ifndef _MFX_AV1_DEC_DECODE_H_
 #define _MFX_AV1_DEC_DECODE_H_
@@ -75,6 +78,10 @@ public:
 
     mfxStatus QueryFrame(mfxThreadTask);
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
+
 private:
     static mfxStatus FillVideoParam(VideoCORE*, UMC_AV1_DECODER::AV1DecoderParams const*, mfxVideoParam*);
     static mfxStatus DecodeRoutine(void* state, void* param, mfxU32, mfxU32);
@@ -102,7 +109,7 @@ private:
     eMFXPlatform                                 m_platform;
 
     std::mutex                                   m_guard;
-    std::unique_ptr<mfx_UMC_FrameAllocator>      m_allocator;
+    std::unique_ptr<SurfaceSource>               m_surface_source;
     std::unique_ptr<UMC_AV1_DECODER::AV1Decoder> m_decoder;
 
     bool                                         m_opaque;
@@ -114,6 +121,7 @@ private:
 
     mfxFrameAllocRequest                         m_request;
     mfxFrameAllocResponse                        m_response;
+    mfxFrameAllocResponse                        m_response_alien;
 
     bool                                         m_is_init;
     mfxF64                                       m_in_framerate;

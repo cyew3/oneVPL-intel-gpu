@@ -26,17 +26,13 @@
 #ifndef _MFX_MJPEG_DEC_DECODE_H_
 #define _MFX_MJPEG_DEC_DECODE_H_
 
-#if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-  #define ALLOW_SW_FALLBACK
-#endif
-
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
 #include "mfx_umc_alloc_wrapper.h"
 
 #include <mutex>
 
-#ifdef ALLOW_SW_FALLBACK
+#ifdef MFX_ENABLE_JPEG_SW_FALLBACK
 #include <queue>
 #endif
 
@@ -58,7 +54,7 @@ namespace UMC
 class VideoDECODEMJPEGBase
 {
 public:
-    std::unique_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
+    std::unique_ptr<SurfaceSource>         m_surface_source;
 
     UMC::VideoDecoderParams umcVideoParams;
 
@@ -143,7 +139,7 @@ protected:
 };
 #endif
 
-#ifdef ALLOW_SW_FALLBACK
+#ifdef MFX_ENABLE_JPEG_SW_FALLBACK
 // Forward declaration of used classes
 class CJpegTask;
 
@@ -202,6 +198,10 @@ public:
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
+
 protected:
     static mfxStatus QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
@@ -218,7 +218,6 @@ protected:
 
     // Frames collecting unit
     std::unique_ptr<UMC::JpegFrameConstructor> m_frameConstructor;
-
 
     mfxVideoParamWrapper m_vFirstPar;
     mfxVideoParamWrapper m_vPar;

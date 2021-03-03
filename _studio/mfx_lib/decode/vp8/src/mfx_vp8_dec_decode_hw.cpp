@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -91,6 +91,7 @@ VideoDECODEVP8_HW::VideoDECODEVP8_HW(VideoCORE *p_core, mfxStatus *sts)
     , m_CodedCoeffTokenPartition(0)
     , m_firstFrame(true)
     , m_response()
+    , m_response_alien()
     , m_stat()
     , m_request()
     , m_p_video_accelerator(NULL)
@@ -151,7 +152,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     eMFXHWType type = m_p_core->GetHWType();
 
-    if (MFX_ERR_NONE > CheckVideoParamDecoders(p_video_param, m_p_core->IsExternalFrameAllocator(), type))
+    if (MFX_ERR_NONE > CheckVideoParamDecoders(p_video_param, m_p_core->IsExternalFrameAllocator(), type, m_p_core->IsCompatibleForOpaq()))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -160,8 +161,6 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-
-    m_p_frame_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
 
     if (MFX_VPX_Utility::CheckVideoParam(p_video_param, MFX_CODEC_VP8) == false)
     {
@@ -186,14 +185,17 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     mfxFrameAllocRequest request;
     memset(&request, 0, sizeof(request));
     memset(&m_response, 0, sizeof(m_response));
+    memset(&m_response_alien, 0, sizeof(m_response_alien));
 
     sts = MFX_VPX_Utility::QueryIOSurfInternal(&m_video_params, &request);
     MFX_CHECK_STS(sts);
 
+    mfxFrameAllocRequest request_internal = request;
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = nullptr;
     if (m_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
-        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc*)
+        pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc*)
             GetExtendedBuffer(
                 p_video_param->ExtParam, p_video_param->NumExtParam,
                 MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
@@ -212,30 +214,38 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
         request.NumFrameMin = pOpaqAlloc->Out.NumSurface;
         request.NumFrameSuggested = request.NumFrameMin;
-
-        sts = m_p_core->AllocFrames(&request, &m_response,
-            pOpaqAlloc->Out.Surfaces, pOpaqAlloc->Out.NumSurface);
     }
     else
 #endif //MFX_ENABLE_OPAQUE_MEMORY
     {
         request.AllocId = p_video_param->AllocId;
-        sts = m_p_core->AllocFrames(&request, &m_response, false);
     }
 
     MFX_CHECK_STS(sts);
 
     m_request = request;
 
-    sts = m_p_core->CreateVA(&m_on_init_video_params, &request, &m_response, m_p_frame_allocator.get());
+    try
+    {
+        m_surface_source.reset(new SurfaceSource(m_p_core, *p_video_param, m_platform, request, request_internal, m_response, m_response_alien,
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        pOpaqAlloc,
+#else
+        nullptr,
+#endif
+        m_is_opaque_memory));
+    }
+    catch (const mfx::mfxStatus_exception& ex)
+    {
+        MFX_CHECK_STS(ex.sts);
+    }
+
+    sts = m_p_core->CreateVA(&m_on_init_video_params, &request, &m_response, m_surface_source.get());
     MFX_CHECK_STS(sts);
 
     UMC::Status umcSts = UMC::UMC_OK;
 
     bool isUseExternalFrames = (p_video_param->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || m_is_opaque_memory;
-    umcSts = m_p_frame_allocator->InitMfx(0, m_p_core, p_video_param, &request, &m_response, isUseExternalFrames, false);
-    if (UMC::UMC_OK != umcSts)
-        return MFX_ERR_MEMORY_ALLOC;
 
     m_p_core->GetVA((mfxHDL*)&m_p_video_accelerator, MFX_MEMTYPE_FROM_DECODE);
 
@@ -340,7 +350,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
 
     eMFXHWType type = m_p_core->GetHWType();
 
-    if (MFX_ERR_NONE > CheckVideoParamDecoders(p_video_param, m_p_core->IsExternalFrameAllocator(), type))
+    if (MFX_ERR_NONE > CheckVideoParamDecoders(p_video_param, m_p_core->IsExternalFrameAllocator(), type, m_p_core->IsCompatibleForOpaq()))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (MFX_VPX_Utility::CheckVideoParam(p_video_param, MFX_CODEC_VP8) == false)
@@ -373,7 +383,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
     if (m_platform != m_p_core->GetPlatformType())
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (m_p_frame_allocator->Reset() != UMC::UMC_OK)
+    if (m_surface_source->Reset() != UMC::UMC_OK)
         return MFX_ERR_MEMORY_ALLOC;
 
     m_frameOrder = (mfxU16)0;
@@ -402,7 +412,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
 
     for(size_t i = 0; i < m_frames.size(); i++)
     {
-        m_p_frame_allocator.get()->DecreaseReference(m_frames[i].memId);
+        m_surface_source.get()->DecreaseReference(m_frames[i].memId);
     }
 
     m_firstFrame = true;
@@ -422,10 +432,7 @@ mfxStatus VideoDECODEVP8_HW::Close()
 
     m_is_initialized = false;
     m_is_opaque_memory = false;
-    m_p_frame_allocator->Close();
-
-    if(m_response.NumFrameActual > 0)
-        m_p_core->FreeFrames(&m_response);
+    m_surface_source->Close();
 
     m_frameOrder = (mfxU16)0;
     m_p_video_accelerator = 0;
@@ -537,7 +544,7 @@ mfxFrameSurface1 * VideoDECODEVP8_HW::GetOriginalSurface(mfxFrameSurface1 *p_sur
 
 mfxStatus VideoDECODEVP8_HW::GetOutputSurface(mfxFrameSurface1 **pp_surface_out, mfxFrameSurface1 *p_surface_work, UMC::FrameMemID index)
 {
-    mfxFrameSurface1 *p_native_surface = m_p_frame_allocator->GetSurface(index, p_surface_work, &m_video_params);
+    mfxFrameSurface1 *p_native_surface = m_surface_source->GetSurface(index, p_surface_work, &m_video_params);
 
     if (!p_native_surface)
     {
@@ -553,7 +560,7 @@ mfxStatus VideoDECODEVP8_HW::GetOutputSurface(mfxFrameSurface1 **pp_surface_out,
 
 #define VP8_START_CODE_FOUND(ptr) ((ptr)[0] == 0x9d && (ptr)[1] == 0x01 && (ptr)[2] == 0x2a)
 
-mfxStatus VideoDECODEVP8_HW::PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface)
+mfxStatus VideoDECODEVP8_HW::PreDecodeFrame(mfxBitstream *p_bs, mfxU32& w, mfxU32& h)
 {
     mfxU8 *p_bitstream = p_bs->Data + p_bs->DataOffset;
     mfxU8 *p_bitstream_end = p_bs->Data + p_bs->DataOffset + p_bs->DataLength;
@@ -568,35 +575,13 @@ mfxStatus VideoDECODEVP8_HW::PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1
         p_bitstream += 1;
     }
 
-    mfxU32 width, height;
+    w = ((p_bitstream[4] << 8) | p_bitstream[3]) & 0x3fff;
+    h = ((p_bitstream[6] << 8) | p_bitstream[5]) & 0x3fff;
 
-    width = ((p_bitstream[4] << 8) | p_bitstream[3]) & 0x3fff;
-    height = ((p_bitstream[6] << 8) | p_bitstream[5]) & 0x3fff;
+    w = (w + 15) & ~0x0f;
+    h = (h + 15) & ~0x0f;
 
-    width = (width + 15) & ~0x0f;
-    height = (height + 15) & ~0x0f;
-
-    if (m_is_opaque_memory)
-    {
-        p_surface = m_p_core->GetOpaqSurface(p_surface->Data.MemId, true);
-    }
-
-    if(p_surface->Info.CropW == 0)
-    {
-        p_surface->Info.CropW = m_on_init_video_params.mfx.FrameInfo.CropW;
-    }
-
-    if(p_surface->Info.CropH == 0)
-    {
-        p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.CropH;
-    }
-
-    if (m_init_w != width || m_init_h != height)
-    {
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    if (p_surface->Info.Width < width || p_surface->Info.Height < height)
+    if (m_init_w != w || m_init_h != h)
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -696,9 +681,9 @@ mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void * /*pp_param*/, mfxU32 
     }
 #endif
 
-    if (decoder.m_video_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+    if (decoder.m_video_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY && data.surface_work)
     {
-        sts = decoder.m_p_frame_allocator->PrepareToOutput(data.surface_work, data.memId, &decoder.m_on_init_video_params, false);
+        sts = decoder.m_surface_source->PrepareToOutput(data.surface_work, data.memId, &decoder.m_on_init_video_params, false);
     }
 
     MFX_CHECK(!decoder.m_p_video_accelerator->UnwrapBuffer(data.surface_work->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -710,7 +695,7 @@ mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void * /*pp_param*/, mfxU32 
     UMC::FrameMemID memIdToUnlock = -1;
     while ((memIdToUnlock = decoder.GetMemIdToUnlock()) != -1)
     {
-        decoder.m_p_frame_allocator.get()->DecreaseReference(memIdToUnlock);
+        decoder.m_surface_source.get()->DecreaseReference(memIdToUnlock);
     }
 
     delete &data;
@@ -738,117 +723,139 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     if (NeedToReturnCriticalStatus(p_bs))
         return ReturningCriticalStatus();
 
-    MFX_CHECK_NULL_PTR2(p_surface_work, pp_surface_out);
+    bool* core20_interface = reinterpret_cast<bool*>(m_p_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+    bool allow_null_work_surface = core20_interface && *core20_interface;
 
-    if (p_surface_work->Data.Locked != 0)
+    if (allow_null_work_surface)
     {
-        return MFX_ERR_MORE_SURFACE;
-    }
-
-    if (m_is_opaque_memory)
-    {
-        // sanity check: opaque surfaces are zero'd out
-        if (p_surface_work->Data.MemId || p_surface_work->Data.Y
-            || p_surface_work->Data.UV || p_surface_work->Data.R
-            || p_surface_work->Data.A)
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
-
-        // work with the native (original) surface
-        p_surface_work = GetOriginalSurface(p_surface_work);
-    }
-
-    sts = CheckFrameInfoCodecs(&p_surface_work->Info, MFX_CODEC_VP8);
-    MFX_CHECK_STS(sts);
-
-    sts = CheckFrameData(p_surface_work);
-    MFX_CHECK_STS(sts);
-
-    sts = p_bs ? CheckBitstream(p_bs) : MFX_ERR_NONE;
-    MFX_CHECK_STS(sts);
-
-    if (p_bs == NULL)
-        return MFX_ERR_MORE_DATA;
-
-    bool show_frame;
-    UMC::FrameType frame_type;
-
-    if (p_bs->DataLength == 0)
-        return MFX_ERR_MORE_DATA;
-
-    sts = m_p_frame_allocator->SetCurrentMFXSurface(p_surface_work, m_is_opaque_memory);
-    MFX_CHECK_STS(sts);
-
-    if (m_p_frame_allocator->FindFreeSurface() == -1)
-    {
-        return MFX_WRN_DEVICE_BUSY;
-    }
-
-    mfxU8 *pTemp = p_bs->Data + p_bs->DataOffset;
-    frame_type = (pTemp[0] & 1) ? UMC::P_PICTURE : UMC::I_PICTURE; // 1 bits
-    show_frame = (pTemp[0] >> 4) & 0x1;
-
-    if(p_surface_work->Info.CropW == 0)
-    {
-        p_surface_work->Info.CropW = m_on_init_video_params.mfx.FrameInfo.CropW;
-    }
-
-    if(p_surface_work->Info.CropH == 0)
-    {
-        p_surface_work->Info.CropH = m_on_init_video_params.mfx.FrameInfo.CropH;
-    }
-
-    if(frame_type == UMC::I_PICTURE)
-    {
-        sts = PreDecodeFrame(p_bs, p_surface_work);
-        MFX_CHECK_STS(sts);
-    }
-
-    if (m_firstFrame && frame_type != UMC::I_PICTURE)
-    {
-        MoveBitstreamData(*p_bs, p_bs->DataLength);
-        return MFX_ERR_MORE_DATA;
-    }
-
-    m_firstFrame = false;
-
-    VP8DecodeCommon::IVF_FRAME frame;
-    memset(&frame, 0, sizeof(VP8DecodeCommon::IVF_FRAME));
-
-    sts = ConstructFrame(p_bs, &m_bs, frame);
-    MFX_CHECK_STS(sts);
-
-    *pp_surface_out = 0;
-
-    sts = DecodeFrameHeader(&m_bs);
-    MFX_CHECK_STS(sts);
-
-    UMC::VideoDataInfo vdInfo;
-    vdInfo.Init(m_frame_info.frameSize.width, m_frame_info.frameSize.height, UMC::NV12, 8);
-    UMC::FrameMemID memId;
-    UMC::Status umc_sts = m_p_frame_allocator->Alloc(&memId, &vdInfo, 0);
-    if (UMC::UMC_OK != umc_sts)
-        return MFX_ERR_MEMORY_ALLOC;
-
-    sFrameInfo info;
-    info.frameType = m_frame_info.frameType;
-    info.memId = memId;
-    info.currIndex = static_cast<mfxU16>(memId);;
-    info.goldIndex = gold_indx;
-    info.altrefIndex = altref_indx;
-    info.lastrefIndex = lastrefIndex;
-
-    if (m_frame_info.frameType == UMC::I_PICTURE)
-    {
-        gold_indx = altref_indx = lastrefIndex = info.currIndex;
+        MFX_CHECK_NULL_PTR1(pp_surface_out);
     }
     else
     {
-        mfxU16 oldgold_indx = gold_indx;
+        MFX_CHECK_NULL_PTR2(p_surface_work, pp_surface_out);
+    }
 
-        switch (m_refresh_info.copy2Golden)
+    if (p_surface_work)
+    {
+        if (m_is_opaque_memory)
         {
+            // sanity check: opaque surfaces are zero'd out
+            if (p_surface_work->Data.MemId || p_surface_work->Data.Y
+                || p_surface_work->Data.UV || p_surface_work->Data.R
+                || p_surface_work->Data.A)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+
+            // work with the native (original) surface
+            p_surface_work = GetOriginalSurface(p_surface_work);
+        }
+
+        sts = CheckFrameInfoCodecs(&p_surface_work->Info, MFX_CODEC_VP8);
+        MFX_CHECK_STS(sts);
+
+        sts = CheckFrameData(p_surface_work);
+        MFX_CHECK_STS(sts);
+    }
+
+    UMC::FrameMemID memId;
+    do
+    {
+        sts = p_bs ? CheckBitstream(p_bs) : MFX_ERR_NONE;
+        MFX_CHECK_STS(sts);
+
+        if (p_bs == NULL)
+            return MFX_ERR_MORE_DATA;
+
+        bool show_frame;
+        UMC::FrameType frame_type;
+
+        if (p_bs->DataLength == 0)
+            return MFX_ERR_MORE_DATA;
+
+        sts = m_surface_source->SetCurrentMFXSurface(p_surface_work, m_is_opaque_memory);
+        MFX_CHECK_STS(sts);
+
+        if (!m_surface_source->HasFreeSurface())
+        {
+            return MFX_WRN_DEVICE_BUSY;
+        }
+
+        mfxU8 *pTemp = p_bs->Data + p_bs->DataOffset;
+        frame_type = (pTemp[0] & 1) ? UMC::P_PICTURE : UMC::I_PICTURE; // 1 bits
+        show_frame = (pTemp[0] >> 4) & 0x1;
+
+        mfxU32 bs_width = 0;
+        mfxU32 bs_height = 0;
+        if (frame_type == UMC::I_PICTURE)
+        {
+            sts = PreDecodeFrame(p_bs, bs_width, bs_height);
+            MFX_CHECK_STS(sts);
+        }
+
+        if (m_firstFrame && frame_type != UMC::I_PICTURE)
+        {
+            MoveBitstreamData(*p_bs, p_bs->DataLength);
+            return MFX_ERR_MORE_DATA;
+        }
+
+        m_firstFrame = false;
+
+        VP8DecodeCommon::IVF_FRAME frame;
+        memset(&frame, 0, sizeof(VP8DecodeCommon::IVF_FRAME));
+
+        sts = ConstructFrame(p_bs, &m_bs, frame);
+        MFX_CHECK_STS(sts);
+
+        *pp_surface_out = 0;
+
+        sts = DecodeFrameHeader(&m_bs);
+        MFX_CHECK_STS(sts);
+
+        UMC::VideoDataInfo vdInfo;
+        vdInfo.Init(m_frame_info.frameSize.width, m_frame_info.frameSize.height, UMC::NV12, 8);
+        UMC::Status umc_sts = m_surface_source->Alloc(&memId, &vdInfo, 0);
+        MFX_CHECK(umc_sts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
+
+        if (!p_surface_work && m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        {
+            p_surface_work = m_surface_source->GetSurfaceByIndex(memId);
+            MFX_CHECK_NULL_PTR1(p_surface_work);
+        }
+        else if (m_is_opaque_memory)
+        {
+            p_surface_work->Info.CropW = p_surface_work->Info.CropW ? p_surface_work->Info.CropW : m_on_init_video_params.mfx.FrameInfo.CropW;
+            p_surface_work->Info.CropH = p_surface_work->Info.CropH ? p_surface_work->Info.CropH : m_on_init_video_params.mfx.FrameInfo.CropH;
+
+            p_surface_work = m_p_core->GetOpaqSurface(p_surface_work->Data.MemId, true);
+        }
+
+        if (p_surface_work)
+        {
+            p_surface_work->Info.CropW = p_surface_work->Info.CropW ? p_surface_work->Info.CropW : m_on_init_video_params.mfx.FrameInfo.CropW;
+            p_surface_work->Info.CropH = p_surface_work->Info.CropH ? p_surface_work->Info.CropH : m_on_init_video_params.mfx.FrameInfo.CropH;
+
+            MFX_CHECK(p_surface_work->Info.Width >= bs_width && p_surface_work->Info.Height >= bs_height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+        }
+
+        sFrameInfo info;
+        info.frameType = m_frame_info.frameType;
+        info.memId = memId;
+        info.currIndex = static_cast<mfxU16>(memId);;
+        info.goldIndex = gold_indx;
+        info.altrefIndex = altref_indx;
+        info.lastrefIndex = lastrefIndex;
+
+        if (m_frame_info.frameType == UMC::I_PICTURE)
+        {
+            gold_indx = altref_indx = lastrefIndex = info.currIndex;
+        }
+        else
+        {
+            mfxU16 oldgold_indx = gold_indx;
+
+            switch (m_refresh_info.copy2Golden)
+            {
             case 1:
                 gold_indx = lastrefIndex;
                 break;
@@ -860,10 +867,10 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
             case 0:
             default:
                 break;
-        }
+            }
 
-        switch (m_refresh_info.copy2Altref)
-        {
+            switch (m_refresh_info.copy2Altref)
+            {
             case 1:
                 altref_indx = lastrefIndex;
                 break;
@@ -875,47 +882,77 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
             case 0:
             default:
                 break;
+            }
+
+            if ((m_refresh_info.refreshRefFrame & 2) != 0)
+                gold_indx = info.currIndex;
+
+            if ((m_refresh_info.refreshRefFrame & 1) != 0)
+                altref_indx = info.currIndex;
+
+            if (m_refresh_info.refreshLastFrame)
+                lastrefIndex = info.currIndex;
+
         }
 
-        if ((m_refresh_info.refreshRefFrame & 2) != 0)
-            gold_indx = info.currIndex;
+        m_frames.push_back(info);
 
-        if ((m_refresh_info.refreshRefFrame & 1) != 0)
-            altref_indx = info.currIndex;
+        m_surface_source->IncreaseReference(memId);
 
-        if (m_refresh_info.refreshLastFrame)
-           lastrefIndex = info.currIndex;
+        PackHeaders(&m_bs);
 
-    }
+        if (m_p_video_accelerator->BeginFrame(memId, 0) == UMC::UMC_OK)
+        {
+            m_p_video_accelerator->Execute();
+            m_p_video_accelerator->EndFrame();
+        }
 
-    m_frames.push_back(info);
+        if (show_frame)
+        {
+            sts = GetOutputSurface(pp_surface_out, p_surface_work, memId);
+            MFX_CHECK_STS(sts);
 
-    m_p_frame_allocator->IncreaseReference(memId);
+            (*pp_surface_out)->Info.CropW = (*pp_surface_out)->Info.CropW ? (*pp_surface_out)->Info.CropW : m_on_init_video_params.mfx.FrameInfo.CropW;
+            (*pp_surface_out)->Info.CropH = (*pp_surface_out)->Info.CropH ? (*pp_surface_out)->Info.CropH : m_on_init_video_params.mfx.FrameInfo.CropH;
 
-    PackHeaders(&m_bs);
+            MFX_CHECK((*pp_surface_out)->Info.Width >= bs_width && (*pp_surface_out)->Info.Height >= bs_height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
 
-    if (m_p_video_accelerator->BeginFrame(memId, 0) == UMC::UMC_OK)
+            SetFrameType(m_frame_info, **pp_surface_out);
+        }
+        else
+        {
+            sts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
+            if (p_surface_work)
+            {
+                pp_surface_out = nullptr;
+            }
+            else
+            {
+                m_memIdReadyToFree.push_back(memId);
+
+                UMC::FrameMemID memIdToUnlock = -1;
+                while ((memIdToUnlock = GetMemIdToUnlock()) != -1)
+                {
+                    m_surface_source.get()->DecreaseReference(memIdToUnlock);
+                }
+            }
+        }
+    } while (sts == MFX_ERR_MORE_DATA_SUBMIT_TASK && !p_surface_work);
+
+    if (pp_surface_out)
     {
-        m_p_video_accelerator->Execute();
-        m_p_video_accelerator->EndFrame();
+        (*pp_surface_out)->Data.Corrupted = 0;
+        (*pp_surface_out)->Data.FrameOrder = m_frameOrder;
+        //(*pp_surface_out)->Data.FrameOrder = p_surface_work->Data.FrameOrder;
+        m_frameOrder++;
+
+        (*pp_surface_out)->Data.TimeStamp = p_bs->TimeStamp;
+        (*pp_surface_out)->Info.FrameRateExtD = m_on_init_video_params.mfx.FrameInfo.FrameRateExtD;
+        (*pp_surface_out)->Info.FrameRateExtN = m_on_init_video_params.mfx.FrameInfo.FrameRateExtN;
+        (*pp_surface_out)->Info.AspectRatioW = 1;
+        (*pp_surface_out)->Info.AspectRatioH = 1;
+        (*pp_surface_out)->Info.PicStruct = m_on_init_video_params.mfx.FrameInfo.PicStruct;
     }
-
-    sts = GetOutputSurface(pp_surface_out, p_surface_work, memId);
-    MFX_CHECK_STS(sts);
-
-    SetFrameType(m_frame_info, **pp_surface_out);
-
-    (*pp_surface_out)->Data.Corrupted = 0;
-    (*pp_surface_out)->Data.FrameOrder = m_frameOrder;
-    //(*pp_surface_out)->Data.FrameOrder = p_surface_work->Data.FrameOrder;
-    if(show_frame) m_frameOrder++;
-
-    (*pp_surface_out)->Data.TimeStamp = p_bs->TimeStamp;
-    (*pp_surface_out)->Info.FrameRateExtD = m_on_init_video_params.mfx.FrameInfo.FrameRateExtD;
-    (*pp_surface_out)->Info.FrameRateExtN = m_on_init_video_params.mfx.FrameInfo.FrameRateExtN;
-    (*pp_surface_out)->Info.AspectRatioW = 1;
-    (*pp_surface_out)->Info.AspectRatioH = 1;
-    (*pp_surface_out)->Info.PicStruct = m_on_init_video_params.mfx.FrameInfo.PicStruct;
 
     p_entry_point->pRoutine = &VP8DECODERoutine;
     p_entry_point->pCompleteProc = &VP8CompleteProc;
@@ -923,12 +960,13 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     VP8DECODERoutineData* routineData = new VP8DECODERoutineData;
     routineData->decoder = this;
     routineData->memId = memId;
-    routineData->surface_work = p_surface_work;
+    if(pp_surface_out)
+        routineData->surface_work = *pp_surface_out;
 
     p_entry_point->pState = routineData;
     p_entry_point->requiredNumThreads = 1;
 
-    return show_frame ? MFX_ERR_NONE : MFX_ERR_MORE_DATA_SUBMIT_TASK;
+    return sts;
 
 } // mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 **pp_surface_out, MFX_ENTRY_POINT *p_entry_point)
 
@@ -1590,6 +1628,19 @@ mfxStatus VideoDECODEVP8_HW::SetSkipMode(mfxSkipMode /*mode*/)
 
     return MFX_ERR_NONE;
 }
+
+#if defined(MFX_ONEVPL)
+mfxFrameSurface1* VideoDECODEVP8_HW::GetSurface()
+{
+    if (!m_surface_source)
+    {
+        std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_INITIALIZED);
+        return nullptr;
+    }
+
+    return m_surface_source->GetSurface();
+}
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // MFX_VP8_BoolDecoder

@@ -27,6 +27,7 @@
 #include "mfx_task.h"
 #include "umc_defs.h"
 #include "mfx_ext_buffers.h"
+#include "libmfx_core_interface.h"
 
 using namespace MfxHwMJpegEncode;
 
@@ -196,6 +197,11 @@ MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
     memset(&m_raw, 0, sizeof(m_raw));
 
     *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
+}
+
+MFXVideoENCODEMJPEG_HW::~MFXVideoENCODEMJPEG_HW()
+{
+    Close();
 }
 
 
@@ -668,7 +674,12 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     if (opaqAllocReq)
         opaqAllocReq = &m_checkedOpaqAllocReq;
 #endif
-    if (!m_pCore->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
+
+    bool* core20_interface = reinterpret_cast<bool*>(m_pCore->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+
+    if (!m_pCore->IsExternalFrameAllocator()
+        && !(core20_interface && *core20_interface)
+        && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_ddi.reset( CreatePlatformMJpegEncoder( m_pCore ) );
@@ -1020,10 +1031,12 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
+    bool* core20_interface = reinterpret_cast<bool*>(m_pCore->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+
     mfxStatus checkSts = CheckEncodeFrameParam(
         surface,
         bs,
-        m_pCore->IsExternalFrameAllocator());
+        m_pCore->IsExternalFrameAllocator() || (core20_interface && *core20_interface));
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     mfxStatus status = checkSts;
@@ -1082,7 +1095,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     bs->DecodeTimeStamp = surface->Data.TimeStamp;
     bs->FrameType = MFX_FRAMETYPE_I;
 
-    m_pCore->IncreaseReference(&surface->Data);
+    m_pCore->IncreaseReference(*surface);
     task->surface = surface;
     task->bs      = bs;
     task->m_statusReportNumber = m_counter++;
@@ -1240,7 +1253,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         sts = FastCopyFrameBufferSys2Vid(
             enc.m_pCore,
             enc.m_raw.mids[task.m_idx],
-            nativeSurf->Data,
+            nativeSurf,
             enc.m_vParam.mfx.FrameInfo);
         MFX_CHECK_STS(sts);
 
@@ -1255,7 +1268,10 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     else
     {
         if (MFX_IOPATTERN_IN_VIDEO_MEMORY == enc.m_vParam.IOPattern)
-            sts = enc.m_pCore->GetExternalFrameHDL(nativeSurf->Data.MemId, pSurfaceHdl);
+        {
+            sts = enc.m_pCore->GetExternalFrameHDL(*nativeSurf, surfacePair);
+            surfaceHDL = surfacePair.first;
+        }
         else
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
@@ -1297,7 +1313,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineQueryFrame(
     sts = enc.m_ddi->UpdateBitstream(enc.m_bitstream.mids[task.m_idx], task);
     MFX_CHECK_STS(sts);
 
-    enc.m_pCore->DecreaseReference(&(task.surface->Data));
+    enc.m_pCore->DecreaseReference(*task.surface);
 
     return enc.m_TaskManager.RemoveTask(task);
 }

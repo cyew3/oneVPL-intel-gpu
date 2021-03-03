@@ -104,6 +104,9 @@ public:
 
     // Decoder instance threads entry point. Do async tasks here
     mfxStatus RunThread(void * params, mfxU32 threadNumber);
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
 
 protected:
     // Actually calculate needed frames number
@@ -138,9 +141,9 @@ protected:
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
 
     std::unique_ptr<UMC_HEVC_DECODER::MFXTaskSupplier_H265>  m_pH265VideoDecoder;
-    mfx_UMC_MemAllocator            m_MemoryAllocator;
+    mfx_UMC_MemAllocator              m_MemoryAllocator;
 
-    std::unique_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
+    std::unique_ptr<SurfaceSource>    m_surface_source;
 
     mfxVideoParamWrapper m_vInitPar;
     mfxVideoParamWrapper m_vFirstPar;
@@ -155,9 +158,9 @@ protected:
 
     mfxU16  m_frameOrder;
 
-    mfxFrameAllocResponse m_response;
-    mfxFrameAllocResponse m_response_alien;
-    mfxDecodeStat m_stat;
+    mfxFrameAllocResponse m_response = {};
+    mfxFrameAllocResponse m_response_alien = {};
+    mfxDecodeStat m_stat = {};
     eMFXPlatform m_platform;
 
     UMC::Mutex m_mGuard;

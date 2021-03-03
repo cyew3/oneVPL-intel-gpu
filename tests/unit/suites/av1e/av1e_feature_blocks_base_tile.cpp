@@ -24,6 +24,7 @@
 #include "mfxvideo++.h"
 #include "mfx_session.h"
 #include "av1ehw_base_tile.h"
+#include "mfx_utils.h"
 
 using namespace AV1EHW;
 using namespace AV1EHW::Base;
@@ -94,12 +95,12 @@ namespace av1e {
 
             ASSERT_EQ(
                 pAV1Par->TileWidthInSB[0],
-                CeilDiv(pAV1Par->FrameWidth, SB_SIZE)
+                mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE)
             );
 
             ASSERT_EQ(
                 pAV1Par->TileHeightInSB[0],
-                CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
             );
 
             ASSERT_EQ(
@@ -203,20 +204,20 @@ namespace av1e {
                 pAV1Par->NumTileRows = 2;
 
                 ASSERT_EQ(
-                    CeilDiv(pAV1Par->FrameWidth, SB_SIZE) % pAV1Par->NumTileColumns,
+                    mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE) % pAV1Par->NumTileColumns,
                     0
                 );
 
                 ASSERT_EQ(
-                    CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
+                    mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
                     0
                 );
 
                 for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
-                    pAV1Par->TileWidthInSB[i] = CeilDiv(pAV1Par->FrameWidth, SB_SIZE) / pAV1Par->NumTileColumns;
+                    pAV1Par->TileWidthInSB[i] = mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE) / pAV1Par->NumTileColumns;
 
                 for (auto i = 0; i < pAV1Par->NumTileRows; i++)
-                    pAV1Par->TileHeightInSB[i] = CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
+                    pAV1Par->TileHeightInSB[i] = mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
             }
         };
 
@@ -251,11 +252,11 @@ namespace av1e {
             InitAV1Param(vp);
             pAV1Par->NumTileRows = 4;
             ASSERT_EQ(
-                CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
+                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
                 0
             );
             for (auto i = 0; i < pAV1Par->NumTileRows; i++)
-                pAV1Par->TileHeightInSB[i] = CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
+                pAV1Par->TileHeightInSB[i] = mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
 
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
@@ -319,12 +320,12 @@ namespace av1e {
 
             ASSERT_EQ(
                 fh.sbCols,
-                CeilDiv(pAV1Par->FrameWidth, SB_SIZE)
+                mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE)
             );
 
             ASSERT_EQ(
                 fh.sbRows,
-                CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
             );
 
             ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);
@@ -477,12 +478,12 @@ namespace av1e {
 
             ASSERT_EQ(
                 pAV1Par->TileWidthInSB[0],
-                CeilDiv(downscaledWidth, SB_SIZE)
+                mfx::CeilDiv(downscaledWidth, SB_SIZE)
             );
 
             ASSERT_EQ(
                 pAV1Par->TileHeightInSB[0],
-                CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
             );
 
             ASSERT_EQ(
@@ -592,20 +593,20 @@ namespace av1e {
                 pAV1Par->NumTileRows = 2;
 
                 ASSERT_EQ(
-                    CeilDiv(downscaledWidth, SB_SIZE) % pAV1Par->NumTileColumns,
+                    mfx::CeilDiv(downscaledWidth, SB_SIZE) % pAV1Par->NumTileColumns,
                     0
                 );
 
                 ASSERT_EQ(
-                    CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
+                    mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
                     0
                 );
 
                 for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
-                    pAV1Par->TileWidthInSB[i] = CeilDiv(downscaledWidth, SB_SIZE) / pAV1Par->NumTileColumns;
+                    pAV1Par->TileWidthInSB[i] = mfx::CeilDiv(downscaledWidth, SB_SIZE) / pAV1Par->NumTileColumns;
 
                 for (auto i = 0; i < pAV1Par->NumTileRows; i++)
-                    pAV1Par->TileHeightInSB[i] = CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
+                    pAV1Par->TileHeightInSB[i] = mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
             }
         };
 
@@ -667,12 +668,12 @@ namespace av1e {
 
             ASSERT_EQ(
                 fh.sbCols,
-                CeilDiv(downscaledWidth, SB_SIZE)
+                mfx::CeilDiv(downscaledWidth, SB_SIZE)
             );
 
             ASSERT_EQ(
                 fh.sbRows,
-                CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
             );
 
             ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);

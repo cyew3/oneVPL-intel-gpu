@@ -42,7 +42,7 @@ namespace query_impls_description
 #else
             MFX_ACCEL_MODE_VIA_VAAPI,
 #endif
-            {1, 2},
+            {0, 2},
             {}, {}, {},
             0x8086, 0, {}
         };

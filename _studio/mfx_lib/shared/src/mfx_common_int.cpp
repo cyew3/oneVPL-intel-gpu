@@ -430,7 +430,7 @@ static mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type)
+mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type, bool IsCompatibleForOpaq)
 {
     mfxStatus sts = CheckVideoParamCommon(in, type);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
@@ -451,16 +451,22 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
+        MFX_CHECK(IsCompatibleForOpaq, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),  MFX_ERR_INVALID_VIDEO_PARAM);
     }
 #endif
 
-    if (in->mfx.DecodedOrder && in->mfx.CodecId != MFX_CODEC_JPEG && in->mfx.CodecId != MFX_CODEC_AVC && in->mfx.CodecId != MFX_CODEC_HEVC)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(!in->mfx.DecodedOrder || in->mfx.CodecId == MFX_CODEC_JPEG
+                                    || in->mfx.CodecId == MFX_CODEC_AVC
+                                    || in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
 
-    if (!IsExternalFrameAllocator)
-        MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
+#if MFX_VERSION < MFX_VERSION_NEXT
+     MFX_CHECK(IsExternalFrameAllocator || !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
+#else
+    // Ext allocator is not required by MSDK 2.0 to support video memory. Internal allocation of video surfaces is possible
+    std::ignore = IsExternalFrameAllocator;
+#endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (in->Protected)
@@ -489,9 +495,7 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 
         return MFX_ERR_NONE;
     }
-#endif
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     MFX_CHECK(!(GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION)), MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
 
@@ -504,18 +508,19 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type)
 {
     mfxStatus sts = CheckFrameInfoEncoders(&in->mfx.FrameInfo);
-    if (sts < MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     sts = CheckVideoParamCommon(in, type);
-    if (sts < MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
-    if (!IsExternalFrameAllocator && (in->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+#if MFX_VERSION < MFX_VERSION_NEXT
+    MFX_CHECK(IsExternalFrameAllocator || !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
+#else
+    // Ext allocator is not required by MSDK 2.0 to support video memory. Internal allocation of video surfaces is possible
+    std::ignore = IsExternalFrameAllocator;
+#endif
 
-    if (in->Protected && !(in->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(!in->Protected || (in->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
 }
@@ -1210,6 +1215,11 @@ mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const& data)
     }
 }
 
+mfxU8* GetFramePointer(const mfxFrameSurface1& surf)
+{
+    return GetFramePointer(surf.Info.FourCC, surf.Data);
+}
+
 mfxStatus GetFramePointerChecked(mfxFrameInfo const& info, mfxFrameData const& data, mfxU8** ptr)
 {
     MFX_CHECK(ptr, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1224,17 +1234,23 @@ mfxStatus GetFramePointerChecked(mfxFrameInfo const& info, mfxFrameData const& d
     mfxU32 const pitch = (data.PitchHigh << 16) | data.PitchLow;
     mfxU32 const min_pitch = GetMinPitch(info.FourCC, info.Width);
 
-    return
-        !min_pitch || pitch < min_pitch ? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_NONE;
+    MFX_CHECK(min_pitch,          MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(pitch >= min_pitch, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    return MFX_ERR_NONE;
 }
 
-mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxFrameData const& fd)
+mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, const mfxFrameSurface1& surface)
 {
-    mfxFrameSurface1 surface{};
-    surface.Info = fi;
-    surface.Data = fd;
+    mfxFrameSurface1 tmpSrf{};
+    tmpSrf.Info = fi;
+    tmpSrf.Data = surface.Data;
+#if defined(MFX_ONEVPL)
+    tmpSrf.FrameInterface = surface.FrameInterface;
+    tmpSrf.Version = surface.Version;
+#endif
 
-    return surface;
+    return tmpSrf;
 }
 
 mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxMemId mid)
@@ -1244,4 +1260,130 @@ mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxMemId mid)
     surface.Data.MemId = mid;
 
     return surface;
+}
+
+#if defined(MFX_ONEVPL)
+mfxStatus AddRefSurface(mfxFrameSurface1 & surf, bool allow_legacy_surface)
+{
+    if (allow_legacy_surface && !surf.FrameInterface) { return MFX_ERR_NONE;  }
+
+    MFX_CHECK(surf.FrameInterface && surf.FrameInterface->AddRef, MFX_ERR_UNSUPPORTED);
+
+    return surf.FrameInterface->AddRef(&surf);
+}
+
+mfxStatus ReleaseSurface(mfxFrameSurface1 & surf, bool allow_legacy_surface)
+{
+    if (allow_legacy_surface && !surf.FrameInterface) { return MFX_ERR_NONE; }
+
+    MFX_CHECK(surf.FrameInterface && surf.FrameInterface->Release, MFX_ERR_UNSUPPORTED);
+
+    return surf.FrameInterface->Release(&surf);
+}
+#endif
+
+mfxU16 BitDepthFromFourcc(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_NV16:
+    case MFX_FOURCC_YV12:
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_AYUV:
+    case MFX_FOURCC_UYVY:
+        return 8;
+
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_P210:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y410:
+#endif
+        return 10;
+
+#if (MFX_VERSION >= 1031)
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+        return 12;
+#endif
+
+        // RGB formats
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+    case MFX_FOURCC_RGB565:
+#endif
+    case MFX_FOURCC_RGB3:
+#ifdef MFX_ENABLE_RGBP
+    case MFX_FOURCC_RGBP:
+#endif
+    case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_BGR4:
+    case MFX_FOURCC_A2RGB10:
+    case MFX_FOURCC_ARGB16:
+    case MFX_FOURCC_ABGR16:
+    case MFX_FOURCC_AYUV_RGB4:
+    case MFX_FOURCC_R16:
+
+        // Plain data formats
+    case MFX_FOURCC_P8:
+    case MFX_FOURCC_P8_TEXTURE:
+    default:
+        return 0;
+    }
+}
+
+mfxU16 ChromaFormatFromFourcc(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_YV12:
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_P016:
+        return MFX_CHROMAFORMAT_YUV420;
+
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y210:
+#endif
+#if (MFX_VERSION >= 1031)
+    case MFX_FOURCC_Y216:
+#endif
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_UYVY:
+    case MFX_FOURCC_NV16:
+    case MFX_FOURCC_P210:
+        return MFX_CHROMAFORMAT_YUV422H;
+
+    case MFX_FOURCC_AYUV:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y410:
+#endif
+#if (MFX_VERSION >= 1031)
+    case MFX_FOURCC_Y416:
+#endif
+        return MFX_CHROMAFORMAT_YUV444;
+
+        // RGB formats
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+    case MFX_FOURCC_RGB565:
+#endif
+    case MFX_FOURCC_RGB3:
+#ifdef MFX_ENABLE_RGBP
+    case MFX_FOURCC_RGBP:
+#endif
+    case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_BGR4:
+    case MFX_FOURCC_A2RGB10:
+    case MFX_FOURCC_ARGB16:
+    case MFX_FOURCC_ABGR16:
+    case MFX_FOURCC_AYUV_RGB4:
+    case MFX_FOURCC_R16:
+
+        // Plain data formats
+    case MFX_FOURCC_P8:
+    case MFX_FOURCC_P8_TEXTURE:
+    default:
+        return 0;
+    }
 }

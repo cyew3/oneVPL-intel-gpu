@@ -76,6 +76,7 @@ enum VPLFunctionIdx {
     IdxMFXVideoDECODE_VPP_Init,
     IdxMFXVideoDECODE_VPP_DecodeFrameAsync,
     IdxMFXVideoDECODE_VPP_Reset,
+    IdxMFXVideoDECODE_VPP_Close,
     IdxMFXVideoDECODE_VPP_GetChannelParam,
     IdxMFXVideoVPP_ProcessFrameAsync,
 

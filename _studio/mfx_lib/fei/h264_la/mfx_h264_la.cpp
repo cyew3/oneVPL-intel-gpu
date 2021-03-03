@@ -1171,18 +1171,8 @@ mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
         (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
-        mfxFrameData sysSurf = src_sys->Data;
-        d3dSurf.MemId = dst_d3d;
-
-        MfxHwH264Encode::FrameLocker lock2(&core, sysSurf, true);
-
-        MFX_CHECK_NULL_PTR1(sysSurf.Y)
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
-            MFX_CHECK_STS(MfxHwH264Encode::CopyFrameDataBothFields(&core, d3dSurf, sysSurf, video.mfx.FrameInfo));
-        }
-
-        MFX_CHECK_STS(lock2.Unlock());
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
+        MFX_CHECK_STS(MfxHwH264Encode::CopyFrameDataBothFields(&core, dst_d3d, *src_sys, video.mfx.FrameInfo));
     }
     else
     {

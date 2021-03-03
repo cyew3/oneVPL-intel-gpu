@@ -74,6 +74,11 @@ public:
 
   virtual mfxTaskThreadingPolicy GetThreadingPolicy(void);
 
+#if defined(MFX_ONEVPL)
+  virtual mfxFrameSurface1* GetSurfaceIn() { return nullptr; }
+  virtual mfxFrameSurface1* GetSurfaceOut() { return nullptr; }
+#endif
+
 protected:
 
   typedef struct
@@ -144,6 +149,25 @@ public:
     virtual mfxStatus RunFrameVPP(mfxFrameSurface1* in, mfxFrameSurface1* out, mfxExtVppAuxData *aux);
 
     mfxStatus PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU32 taskIndex);
+
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurfaceIn() override{
+        if (!m_pHWVPP)
+        {
+            std::ignore = MFX_STS_TRACE(MFX_ERR_NULL_PTR);
+            return nullptr;
+        }
+        return m_pHWVPP->GetSurfaceIn();
+    }
+    virtual mfxFrameSurface1* GetSurfaceOut() override{
+        if (!m_pHWVPP)
+        {
+            std::ignore = MFX_STS_TRACE(MFX_ERR_NULL_PTR);
+            return nullptr;
+        }
+        return m_pHWVPP->GetSurfaceOut();
+    }
+#endif
 };
 
 #if !defined (MFX_ENABLE_HW_ONLY_VPP)

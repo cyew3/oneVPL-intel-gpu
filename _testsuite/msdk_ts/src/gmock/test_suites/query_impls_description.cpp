@@ -125,10 +125,10 @@ private:
         EXPECT_EQ(ref.Height.Max, height.Max) << "ERROR: height.Max != ref.Height.Max \n";
         EXPECT_EQ(ref.Height.Step, height.Step) << "ERROR: height.Step != ref.Height.Step \n";
 
-        EXPECT_EQ(numInFormat, ref.FormatDescs.size()) << "ERROR: InFormats numbers incorrect \n";
+        EXPECT_EQ(numInFormat, ref.InFormats.size()) << "ERROR: InFormats numbers incorrect \n";
         return MFX_ERR_NONE;
     }
-    mfxStatus CheckFormatDesc(mfxU16 numOutFormat, mfxU32* formats, const FormatDesc& ref)
+    mfxStatus CheckFormatDesc(mfxU16 numOutFormat, mfxU32* formats, const MemDescVp& ref)
     {
         EXPECT_EQ(ref.OutFormats.size(), numOutFormat) << "ERROR: OutFormats numbers incorrect \n";
 
@@ -177,7 +177,8 @@ int TestSuite::RunTest(unsigned int id)
     
     // TODO: checking device id instead of always using 1st impl
     mfxU32 NumImpls = 1;
-    mfxHDL *hdls = nullptr;
+    mfxImplDescription* implDes = nullptr;
+    mfxHDL *hdls = (mfxHDL *)&implDes;
     g_tsStatus.check(MFXEnumImplementations(loader, 0, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, hdls));
     TS_TRACE(NumImpls);
 
@@ -365,13 +366,12 @@ int TestSuite::RunTest(unsigned int id)
                             if (g_tsTrace) { INC_PADDING(); g_tsLog << g_tsLog.m_off << "pInFormat->OutFormats = "
                                 << std::string((char*)pInFormat->OutFormats, pInFormat->NumOutFormat * 4) << "\n"; DEC_PADDING(); }
 
-                            if (memDescRef.FormatDescs.find(pInFormat->InFormat) == memDescRef.FormatDescs.end())
+                            if (memDescRef.InFormats.find(pInFormat->InFormat) == memDescRef.InFormats.end())
                             {
                                 EXPECT_TRUE(false) << "ERROR: InFormat cannot be found in ref\n";
                                 continue;
                             }
-                            auto outFormatDescRef = memDescRef.FormatDescs[pInFormat->InFormat];
-                            CheckFormatDesc(pInFormat->NumOutFormat, pInFormat->OutFormats, outFormatDescRef);
+                            CheckFormatDesc(pInFormat->NumOutFormat, pInFormat->OutFormats, memDescRef);
                         }
                         DEC_PADDING();
                     }
@@ -410,8 +410,8 @@ int TestSuite::RunTest(unsigned int id)
                 EXPECT_EQ(ref.Version.Minor, impl.Version.Minor);
                 EXPECT_EQ(ref.Impl, impl.Impl);
                 EXPECT_EQ(ref.AccelerationMode, impl.AccelerationMode);
-                EXPECT_EQ(ref.ApiVersion.Major, impl.ApiVersion.Major);
-                EXPECT_EQ(ref.ApiVersion.Minor, impl.ApiVersion.Minor);
+                EXPECT_EQ(true, ref.ApiVersion.Major <= impl.ApiVersion.Major);
+                EXPECT_EQ(true, ref.ApiVersion.Minor <= impl.ApiVersion.Minor);
                 EXPECT_EQ(std::string(ref.ImplName), std::string(impl.ImplName));
                 EXPECT_EQ(std::string(ref.License), std::string(impl.License));
                 EXPECT_EQ(std::string(ref.Keywords), std::string(impl.Keywords));

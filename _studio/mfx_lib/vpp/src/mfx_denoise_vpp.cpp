@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -313,7 +313,7 @@ mfxStatus MFXVideoVPPDenoise::Reset(mfxVideoParam *par)
 
   if( m_pRefSurface )
   {
-    mfxSts = m_core->DecreaseReference( &(m_pRefSurface->Data) );
+    mfxSts = m_core->DecreaseReference(*m_pRefSurface);
     MFX_CHECK_STS(mfxSts);
 
     m_pRefSurface = NULL;
@@ -493,7 +493,7 @@ mfxStatus MFXVideoVPPDenoise::RunFrameVPP(mfxFrameSurface1 *in,
     m_stateY.firstFrame         = 0;//reset flag
 
     // this filter required prev processed frame for next iteration
-    mfxSts = m_core->IncreaseReference( outData );
+    mfxSts = m_core->IncreaseReference(*out);
     MFX_CHECK_STS( mfxSts );
     m_pRefSurface = out;// save this pointer
 
@@ -634,10 +634,10 @@ mfxStatus MFXVideoVPPDenoise::RunFrameVPP(mfxFrameSurface1 *in,
     bLockedRef = false;
   }
   // this filter required prev processed frame for next iteration
-  mfxSts = m_core->IncreaseReference( outData );
+  mfxSts = m_core->IncreaseReference(*out);
   MFX_CHECK_STS(mfxSts);
 
-  mfxSts = m_core->DecreaseReference( &(m_pRefSurface->Data) );
+  mfxSts = m_core->DecreaseReference(*m_pRefSurface);
   MFX_CHECK_STS(mfxSts);
 
   m_pRefSurface = out;
@@ -719,7 +719,7 @@ mfxStatus MFXVideoVPPDenoise::Close(void)
 
   if( m_pRefSurface )
   {
-    localSts = m_core->DecreaseReference( &(m_pRefSurface->Data) );
+    localSts = m_core->DecreaseReference(*m_pRefSurface);
     VPP_CHECK_STS_CONTINUE(localSts, mfxSts);
     m_pRefSurface = NULL;
   }

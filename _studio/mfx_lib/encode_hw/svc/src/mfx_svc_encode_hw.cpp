@@ -940,15 +940,6 @@ mfxStatus ImplementationSvc::CopyRawSurface(
 #endif
         )
     {
-        mfxFrameData d3dSurf = { 0, };
-        mfxFrameData sysSurf = task.m_yuv->Data;
-
-        //FrameLocker lock1(m_core, d3dSurf, m_raw.mids[task.m_idx]);
-        //MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-        d3dSurf.MemId = m_raw.mids[task.m_idx];
-        FrameLocker lock2(m_core, sysSurf, true);
-        MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-
         mfxFrameInfo frameInfo = m_video.mfx.FrameInfo;
         frameInfo.Width  = extSvc->DependencyLayer[task.m_did].Width;
         frameInfo.Height = extSvc->DependencyLayer[task.m_did].Height;
@@ -957,13 +948,8 @@ mfxStatus ImplementationSvc::CopyRawSurface(
         frameInfo.CropW  = extSvc->DependencyLayer[task.m_did].CropW;
         frameInfo.CropH  = extSvc->DependencyLayer[task.m_did].CropH;
 
-        sts = CopyFrameDataBothFields(m_core, d3dSurf, sysSurf, frameInfo);
+        sts = CopyFrameDataBothFields(m_core, m_raw.mids[task.m_idx], *task.m_yuv, frameInfo);
         MFX_CHECK_STS(sts);
-
-        sts = lock2.Unlock();
-        MFX_CHECK_STS(sts);
-        //sts = lock1.Unlock();
-        //MFX_CHECK_STS(sts);
     }
 
     return sts;

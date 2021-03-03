@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
@@ -162,7 +162,7 @@ static void TaskProducer(
             sts = core->AddTask(*task, &syncp);
             EXPECT_EQ(MFX_ERR_NONE, sts);
 
-            mfxStatus sts = core->Synchronize(syncp, dur.count());
+            sts = core->Synchronize(syncp, dur.count());
             EXPECT_EQ(task->get_expected_status(), sts);
 
             mfxU32 msec_task_dur;

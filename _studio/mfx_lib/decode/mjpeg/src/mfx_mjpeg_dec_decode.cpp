@@ -30,7 +30,7 @@
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
 
-#ifdef ALLOW_SW_FALLBACK
+#ifdef MFX_ENABLE_JPEG_SW_FALLBACK
 #include "mfx_mjpeg_task.h"
 #include "umc_mjpeg_mfx_decode.h"
 #include "mfx_thread_task.h"
@@ -48,6 +48,8 @@
 
 
 #include "ippcore.h" // MfxIppInit in case of bundled IPP
+
+#include "libmfx_core_interface.h"
 
 // Declare skipping constants
 enum
@@ -138,7 +140,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         type = m_core->GetHWType();
     }
 
-    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
+    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq()) < MFX_ERR_NONE)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!MFX_JPEG_Utility::CheckVideoParam(par, type))
@@ -193,9 +195,9 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
 
     mfxStatus mfxSts = MFX_ERR_NONE;
+    bool mapOpaq = false;
     // allocates external surfaces:
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    bool mapOpaq = true;
     mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
     mfxSts = UpdateAllocRequest(par, &request, pOpqAlloc, mapOpaq);
     MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
@@ -203,27 +205,15 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     if (mapOpaq)
     {
         request_internal.NumFrameMin = request_internal.NumFrameSuggested = pOpqAlloc->Out.NumSurface;
-        mfxSts = m_core->AllocFrames(&request,
-                                      &m_response,
-                                      pOpqAlloc->Out.Surfaces,
-                                      pOpqAlloc->Out.NumSurface);
-    }
-    else
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-    {
-        if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
-        {
-            request.AllocId = par->AllocId;
-            mfxSts = m_core->AllocFrames(&request, &m_response,false);
-        }
     }
 
     if (mfxSts < MFX_ERR_NONE)
         return mfxSts;
+#endif
 
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
-#ifdef ALLOW_SW_FALLBACK
+#ifdef MFX_ENABLE_JPEG_SW_FALLBACK
         decoder.reset(new VideoDECODEMJPEGBase_SW);
 #else
         return MFX_ERR_UNSUPPORTED;
@@ -236,11 +226,37 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         VideoDECODEMJPEGBase_HW * dec = new VideoDECODEMJPEGBase_HW;
         decoder.reset(dec);
         bool usePostProcessing = GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-        useInternal |= dec->AdjustFrameAllocRequest(&request_internal,
-                                                  &m_vPar.mfx,
-                                                  m_core->GetHWType(),
-                                                  m_core->GetVAType(),
-                                                  usePostProcessing);
+        mfxU32 bNeedVpp = dec->AdjustFrameAllocRequest(&request_internal,
+            &m_vPar.mfx,
+            m_core->GetHWType(),
+            m_core->GetVAType(),
+            usePostProcessing);
+        useInternal |= bNeedVpp;
+
+        if (bNeedVpp)
+        {
+            if (request_internal.Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)
+            {
+                request_internal.Type &= ~(MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT);
+            }
+
+            request_internal.Type |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+
+            try
+            {
+                dec->m_surface_source.reset(new SurfaceSourceJPEG(m_core, *par, m_platform, request, request_internal, m_response, m_response_alien,
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+                pOpqAlloc,
+#else
+                nullptr,
+#endif
+                mapOpaq));
+            }
+            catch (const mfx::mfxStatus_exception& ex)
+            {
+                MFX_CHECK_STS(ex.sts);
+            }
+        }
 
 #else // Not VA
         return MFX_ERR_UNSUPPORTED;
@@ -250,20 +266,22 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     decoder->m_vPar = m_vPar;
     decoder->m_isOpaq = m_isOpaq;
 
-    // allocates internal surfaces:
-    if (useInternal)
+    if (!decoder->m_surface_source)
     {
-        m_response_alien = m_response;
-        decoder->m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
-        request_internal.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-        request = request_internal;
-        mfxSts = m_core->AllocFrames(&request_internal, &m_response, (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
-        if (mfxSts < MFX_ERR_NONE)
-            return mfxSts;
-    }
-    else
-    {
-        decoder->m_FrameAllocator->SetExternalFramesResponse(&m_response);
+        try
+        {
+            decoder->m_surface_source.reset(new SurfaceSource(m_core, *par, m_platform, request, request_internal, m_response, m_response_alien,
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+            pOpqAlloc,
+#else
+            nullptr,
+#endif
+            mapOpaq));
+        }
+        catch (const mfx::mfxStatus_exception& ex)
+        {
+            MFX_CHECK_STS(ex.sts);
+        }
     }
 
     mfxVideoParam decPar = *par;
@@ -366,7 +384,7 @@ mfxStatus VideoDECODEMJPEG::Reset(mfxVideoParam *par)
         type = m_core->GetHWType();
     }
 
-    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
+    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq()) < MFX_ERR_NONE)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!MFX_JPEG_Utility::CheckVideoParam(par, type))
@@ -415,12 +433,6 @@ mfxStatus VideoDECODEMJPEG::Close(void)
         return MFX_ERR_NOT_INITIALIZED;
 
     decoder->Close();
-
-    if (m_response.NumFrameActual)
-        m_core->FreeFrames(&m_response);
-
-    if (m_response_alien.NumFrameActual)
-        m_core->FreeFrames(&m_response_alien);
 
     m_isOpaq = false;
     m_isInit = false;
@@ -763,7 +775,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
     {
         // output surface is always working surface
-        *surface_out = decoder->m_FrameAllocator->GetSurface(dst->GetFrameMID(),
+        *surface_out = decoder->m_surface_source->GetSurface(dst->GetFrameMID(),
                                                     GetOriginalSurface(surface_work),
                                                     &m_vPar);
         *surface_out = (m_isOpaq) ? m_core->GetOpaqSurface((*surface_out)->Data.MemId) : (*surface_out);
@@ -843,37 +855,50 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
     // make sure that there is a free task
     MFX_SAFE_CALL(decoder->CheckTaskAvailability(m_vPar.AsyncDepth ? m_vPar.AsyncDepth : m_core->GetAutoAsyncDepth()));
 
-    MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+    bool allow_null_work_surface = core20_interface && *core20_interface;
+
+    if (allow_null_work_surface)
+    {
+        MFX_CHECK_NULL_PTR1(surface_out);
+    }
+    else
+    {
+        MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+    }
 
     if (bs)
         MFX_SAFE_CALL(CheckBitstream(bs));
 
-    *surface_out = 0;
+    *surface_out = nullptr;
 
-    if (m_isOpaq)
+    if (surface_work)
     {
+        if (m_isOpaq)
+        {
+            MFX_CHECK_COND(CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_JPEG) == MFX_ERR_NONE);
+
+            if (surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV) // opaq surface
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            surface_work = GetOriginalSurface(surface_work);
+            if (!surface_work)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
         MFX_CHECK_COND(CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_JPEG) == MFX_ERR_NONE);
 
-        if (surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV) // opaq surface
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-        surface_work = GetOriginalSurface(surface_work);
-        if (!surface_work)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_SAFE_CALL(CheckFrameData(surface_work));
     }
-
-    MFX_CHECK_COND(CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_JPEG) == MFX_ERR_NONE);
-
-    MFX_SAFE_CALL(CheckFrameData(surface_work));
-
-    UMC::MJPEGVideoDecoderBaseMFX* pMJPEGVideoDecoder;
-    MFX_SAFE_CALL(decoder->ReserveUMCDecoder(pMJPEGVideoDecoder, surface_work, m_isOpaq));
 
     mfxU32 numPic = 0;
     mfxU32 picToCollect = (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) ? 1 : 2;
 
     do
     {
+        UMC::MJPEGVideoDecoderBaseMFX* pMJPEGVideoDecoder;
+        MFX_SAFE_CALL(decoder->ReserveUMCDecoder(pMJPEGVideoDecoder, surface_work, m_isOpaq));
+
         MFXMediaDataAdapter src(bs);
         UMC::MediaDataEx *pSrcData;
 
@@ -1691,6 +1716,18 @@ mfxFrameSurface1 *VideoDECODEMJPEG::GetOriginalSurface(mfxFrameSurface1 *surface
     return surface;
 }
 
+#if defined(MFX_ONEVPL)
+mfxFrameSurface1* VideoDECODEMJPEG::GetSurface()
+{
+    if (!decoder->m_surface_source)
+    {
+        std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_INITIALIZED);
+        return nullptr;
+    }
+
+    return decoder->m_surface_source->GetSurface();
+}
+#endif
 
 VideoDECODEMJPEGBase::VideoDECODEMJPEGBase()
 {
@@ -1729,7 +1766,6 @@ mfxStatus VideoDECODEMJPEGBase::GetVideoParam(mfxVideoParam *par, UMC::MJPEGVide
 VideoDECODEMJPEGBase_HW::VideoDECODEMJPEGBase_HW()
 {
     m_pMJPEGVideoDecoder.reset(new UMC::MJPEGVideoDecoderMFX_HW()); // HW
-    m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D);
     m_va = 0;
     m_dst = 0;
     m_numPic = 0;
@@ -1737,25 +1773,21 @@ VideoDECODEMJPEGBase_HW::VideoDECODEMJPEGBase_HW()
 }
 
 mfxStatus VideoDECODEMJPEGBase_HW::Init(mfxVideoParam *decPar, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxFrameAllocRequest *request_internal,
-                                            bool isUseExternalFrames, VideoCORE *core)
+                                            bool, VideoCORE *core)
 {
-    UMC::Status umcSts = m_FrameAllocator->InitMfx(0, core, decPar, request, response, isUseExternalFrames, false);
-    if (umcSts != UMC::UMC_OK)
-        return MFX_ERR_MEMORY_ALLOC;
-
     ConvertMFXParamsToUMC(decPar, &umcVideoParams);
     umcVideoParams.numThreads = m_vPar.mfx.NumThread;
 
-    mfxStatus mfxSts = core->CreateVA(decPar, request, response, m_FrameAllocator.get());
+    mfxStatus mfxSts = core->CreateVA(decPar, request, response, m_surface_source.get());
     if (mfxSts < MFX_ERR_NONE)
         return mfxSts;
 
     core->GetVA((mfxHDL*)&m_va, MFX_MEMTYPE_FROM_DECODE);
 
-    m_pMJPEGVideoDecoder->SetFrameAllocator(m_FrameAllocator.get());
+    m_pMJPEGVideoDecoder->SetFrameAllocator(m_surface_source.get());
     umcVideoParams.pVideoAccelerator = m_va;
 
-    umcSts = m_pMJPEGVideoDecoder->Init(&umcVideoParams);
+    UMC::Status umcSts = m_pMJPEGVideoDecoder->Init(&umcVideoParams);
     if (umcSts != UMC::UMC_OK)
     {
         return ConvertUMCStatusToMfx(umcSts);
@@ -1800,7 +1832,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::Reset(mfxVideoParam *par)
         }
     }
 
-    if (m_FrameAllocator->Reset() != UMC::UMC_OK)
+    if (m_surface_source->Reset() != UMC::UMC_OK)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -1836,7 +1868,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::Close(void)
     memset(&m_stat, 0, sizeof(mfxDecodeStat));
 
     m_va = 0;
-    m_FrameAllocator->Close();
+    m_surface_source->Close();
 
     return MFX_ERR_NONE;
 }
@@ -1848,7 +1880,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::GetVideoParam(mfxVideoParam *par)
 
 mfxStatus VideoDECODEMJPEGBase_HW::CheckVPPCaps(VideoCORE * core, mfxVideoParam * par)
 {
-    VideoVppJpegD3D9 cc(core, false,
+    VideoVppJpegD3D cc(core, false,
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         bool(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
 #else
@@ -1954,17 +1986,6 @@ mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *re
 
 #endif // MFX_ENABLE_MJPEG_ROTATE_VPP
     m_needVpp = needVpp;
-    if (m_needVpp)
-    {
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D_Converter());
-
-        if (request->Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)
-        {
-            request->Type = request->Type &~ MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
-            request->Type = request->Type &~ MFX_MEMTYPE_FROM_VPPOUT;
-        }
-        request->Type |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-    }
 
     return m_needVpp ? 1 : 0;
 }
@@ -2392,10 +2413,11 @@ mfxStatus VideoDECODEMJPEGBase_HW::RunThread(void *params, mfxU32, mfxU32 )
     {
         if(info->needCheckVppStatus)
         {
-            mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->CheckPreparingToOutput(info->surface_out,
+            mfxSts = ((SurfaceSourceJPEG*)m_surface_source.get())->CheckPreparingToOutput(info->surface_out,
                                                                                                               info->dst,
                                                                                                               &m_vPar,
                                                                                                               (mfxU16)info->vppTaskID);
+
             if(mfxSts != MFX_TASK_DONE)
             {
                 return mfxSts;
@@ -2434,7 +2456,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::RunThread(void *params, mfxU32, mfxU32 )
             return mfxSts;
         }
 
-        mfxSts = ((mfx_UMC_FrameAllocator_D3D *)m_FrameAllocator.get())->PrepareToOutput(info->surface_out, info->dst->GetFrameMID(), &m_vPar, m_isOpaq);
+        mfxSts = m_surface_source->PrepareToOutput(info->surface_out, info->dst->GetFrameMID(), &m_vPar, m_isOpaq);
         if (mfxSts < MFX_ERR_NONE)
         {
             return mfxSts;
@@ -2449,7 +2471,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::RunThread(void *params, mfxU32, mfxU32 )
 mfxStatus VideoDECODEMJPEGBase_HW::ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseMFX* &pMJPEGVideoDecoder, mfxFrameSurface1 *surf, bool isOpaq)
 {
     pMJPEGVideoDecoder = nullptr;
-    MFX_SAFE_CALL(m_FrameAllocator->SetCurrentMFXSurface(surf, isOpaq));
+    MFX_SAFE_CALL(m_surface_source->SetCurrentMFXSurface(surf, isOpaq));
 
     if (m_numPic == 0)
     {
@@ -2565,15 +2587,15 @@ mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
     if (m_needVpp)
     {
         UMC::ConvertInfo * convertInfo = m_pMJPEGVideoDecoder->GetConvertInfo();
-        mfx_UMC_FrameAllocator_D3D_Converter::JPEG_Info info;
+        JPEG_Info info;
         info.colorFormat = convertInfo->colorFormat;
         info.UOffset = convertInfo->UOffset;
         info.VOffset = convertInfo->VOffset;
 
-        ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->SetJPEGInfo(&info);
+        ((SurfaceSourceJPEG*)m_surface_source.get())->SetJPEGInfo(&info);
 
         // decoding is ready. prepare to output:
-        mfxStatus mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->StartPreparingToOutput(surface_out, dst, &m_vPar, &taskId, m_isOpaq);
+        mfxStatus mfxSts = ((SurfaceSourceJPEG*)m_surface_source.get())->StartPreparingToOutput(surface_out, dst, &m_vPar, &taskId, m_isOpaq);
         if (mfxSts < MFX_ERR_NONE)
         {
             return mfxSts;
@@ -2635,23 +2657,19 @@ mfxStatus VideoDECODEMJPEGBase_HW::CompleteTask(void *pParam, mfxStatus )
 }
 #endif
 
-#ifdef ALLOW_SW_FALLBACK
+#ifdef MFX_ENABLE_JPEG_SW_FALLBACK
 VideoDECODEMJPEGBase_SW::VideoDECODEMJPEGBase_SW()
 {
-    m_FrameAllocator.reset(new mfx_UMC_FrameAllocator);
     pLastTask = NULL;
     m_tasksCount = 0;
 }
 
-mfxStatus VideoDECODEMJPEGBase_SW::Init(mfxVideoParam *decPar, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxFrameAllocRequest *, bool isUseExternalFrames, VideoCORE *core)
+mfxStatus VideoDECODEMJPEGBase_SW::Init(mfxVideoParam *decPar, mfxFrameAllocRequest *, mfxFrameAllocResponse *, mfxFrameAllocRequest *, bool, VideoCORE *)
 {
 #if !defined(MSDK_USE_EXTERNAL_IPP)
     auto ippSt = MfxIppInit();
     MFX_CHECK(ippSt == ippStsNoErr, MFX_ERR_UNSUPPORTED);
 #endif
-
-    UMC::Status umcSts = m_FrameAllocator->InitMfx(0, core, decPar, request, response, isUseExternalFrames, true);
-    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     ConvertMFXParamsToUMC(decPar, &umcVideoParams);
     umcVideoParams.numThreads = m_vPar.mfx.NumThread;
@@ -2673,7 +2691,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::Reset(mfxVideoParam *par)
     memset(&m_stat, 0, sizeof(mfxDecodeStat));
     m_vPar = *par;
 
-    UMC::Status umcSts = m_FrameAllocator->Reset();
+    UMC::Status umcSts = m_surface_source->Reset();
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     return MFX_ERR_NONE;
@@ -2681,7 +2699,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::Reset(mfxVideoParam *par)
 
 mfxStatus VideoDECODEMJPEGBase_SW::Close()
 {
-    UMC::Status umcSts = m_FrameAllocator->Close();
+    UMC::Status umcSts = m_surface_source->Close();
 
     m_tasksCount = 0;
     pLastTask = nullptr;
@@ -2719,7 +2737,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::GetVideoParam(mfxVideoParam *par)
 mfxStatus VideoDECODEMJPEGBase_SW::ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseMFX* &pMJPEGVideoDecoder, mfxFrameSurface1 *surf, bool isOpaq)
 {
     pMJPEGVideoDecoder = 0;
-    MFX_SAFE_CALL(m_FrameAllocator->SetCurrentMFXSurface(surf, isOpaq));
+    MFX_SAFE_CALL(m_surface_source->SetCurrentMFXSurface(surf, isOpaq));
 
     pMJPEGVideoDecoder = m_freeTasks.front()->m_pMJPEGVideoDecoder.get();
     //pMJPEGVideoDecoder->Reset();
@@ -2802,7 +2820,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::CheckTaskAvailability(mfxU32 maxTaskNumber)
 
         // initialize the task
         MFX_SAFE_CALL(pTask->Initialize(umcVideoParams,
-                                        m_FrameAllocator.get(),
+                                        m_surface_source.get(),
                                         m_vPar.mfx.Rotation,
                                         m_vPar.mfx.JPEGChromaFormat,
                                         m_vPar.mfx.JPEGColorFormat));
@@ -2852,7 +2870,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::CompleteTask(void *pParam, mfxStatus taskRes)
         }
 
         // decoding is ready. prepare to output:
-        mfxStatus mfxSts = m_FrameAllocator->PrepareToOutput(task.surface_out,
+        mfxStatus mfxSts = m_surface_source->PrepareToOutput(task.surface_out,
                                                                     task.dst->GetFrameMID(),
                                                                     &m_vPar,
                                                                     m_isOpaq);
@@ -2873,6 +2891,6 @@ mfxStatus VideoDECODEMJPEGBase_SW::CompleteTask(void *pParam, mfxStatus taskRes)
     }
     return MFX_ERR_NONE;
 }
-#endif //ifdef ALLOW_SW_FALLBACK
+#endif //ifdef MFX_ENABLE_JPEG_SW_FALLBACK
 
 #endif // MFX_ENABLE_MJPEG_VIDEO_DECODE

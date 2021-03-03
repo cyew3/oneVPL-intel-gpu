@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ namespace mocks { namespace dx11
     struct buffer
         : winapi::buffer_impl
     {
+        MOCK_METHOD1(GetType, void(D3D11_RESOURCE_DIMENSION*));
         MOCK_METHOD1(GetDesc, void(D3D11_BUFFER_DESC*));
     };
 
@@ -37,8 +38,7 @@ namespace mocks { namespace dx11
         {
             //void GetDesc(D3D11_BUFFER_DESC*)
             EXPECT_CALL(b, GetDesc(testing::NotNull()))
-                .WillRepeatedly(testing::SetArgPointee<0>(bd))
-                ;
+                .WillRepeatedly(testing::SetArgPointee<0>(bd));
         }
 
         template <typename T>
@@ -73,6 +73,10 @@ namespace mocks { namespace dx11
         auto b = std::unique_ptr<testing::NiceMock<buffer> >{
             new testing::NiceMock<buffer>{}
         };
+
+        //void GetType(D3D11_RESOURCE_DIMENSION*)
+        EXPECT_CALL(*b, GetType(testing::NotNull()))
+            .WillRepeatedly(testing::SetArgPointee<0>(D3D11_RESOURCE_DIMENSION_BUFFER));
 
         mock_buffer(*b, std::forward<Args>(args)...);
 

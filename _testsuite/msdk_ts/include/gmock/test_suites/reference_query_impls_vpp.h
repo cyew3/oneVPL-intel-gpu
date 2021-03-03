@@ -21,16 +21,12 @@ namespace query_impls_description
         MFX_EXTBUFF_VPP_FIELD_SPLITTING = MFX_MAKEFOURCC('F', 'I', 'S', 'F'),
     };
 
-    struct FormatDesc
-    {
-        std::set<mfxU32> OutFormats;
-    };
     struct MemDescVp
     {
         mfxRange32U Width;
         mfxRange32U Height;
-        // InFormat => FormatDesc
-        std::map<mfxU32, FormatDesc> FormatDescs;
+        std::set<mfxU32> InFormats;
+        std::set<mfxU32> OutFormats;
     };
     struct FilterDesc
     {
@@ -48,218 +44,78 @@ namespace query_impls_description
 #define END_VPP_DESCRIPTION         }};
 
 #define START_FILTER(FilterID, MaxDelayInFrames)  { FilterID, { MaxDelayInFrames, {
-#define END_FILTER                                }}},
+#define END_FILTER                                }}}
 
 #define START_MEMDESC_VP(ResourceType, widthMin, widthMax, widthStep, heightMin, heightMax, heightStep)  \
-{ ResourceType, { {widthMin, widthMax, widthStep}, {heightMin, heightMax, heightStep}, {
-#define END_MEMDESC_VP                 }}},
+{ ResourceType, { {widthMin, widthMax, widthStep}, {heightMin, heightMax, heightStep},
+#define END_MEMDESC_VP                 }},
 
-#define FORMAT_DESC(InFormat, ...)  {InFormat, {{__VA_ARGS__}}},
+#define DEFAULT_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216, MFX_FOURCC_AYUV,\
+ MFX_FOURCC_Y410, MFX_FOURCC_Y416, MFX_FOURCC_RGB565, MFX_FOURCC_RGB4}
+#define DEFAULT_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216, MFX_FOURCC_AYUV,\
+ MFX_FOURCC_Y410, MFX_FOURCC_Y416, MFX_FOURCC_RGB565, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_A2RGB10}
 
-//TODO: update after double check width and height for the reference (Win : 16352,  Lin: 16384)
-#if defined(_WIN32) || defined(_WIN64)   
-#define DEFAULT_FILTER(filterId, MaxDelayInFrames)                                                                                    \
-START_FILTER(filterId, MaxDelayInFrames)                                                                                              \
-    START_MEMDESC_VP(MFX_RESOURCE_SYSTEM_SURFACE, 16, 16352, 16, 16, 16352, 16)                                                       \
-        FORMAT_DESC(MFX_FOURCC_NV12,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_YUY2,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_RGB4,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_RGB565,                                                                                                \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_RGBP,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_P010,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_A2RGB10,                                                                                               \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_AYUV,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y210,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y410,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_P016,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y216,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y416,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_BGR4,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_ARGB16,                                                                                                \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_R16,                                                                                                   \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-    END_MEMDESC_VP                                                                                                                    \
-    START_MEMDESC_VP(MFX_RESOURCE_DX11_TEXTURE, 16, 16352, 16, 16, 16352, 16)                                                         \
-        FORMAT_DESC(MFX_FOURCC_NV12,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_YUY2,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_RGB4,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_RGB565,                                                                                                \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_RGBP,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_P010,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_A2RGB10,                                                                                               \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_AYUV,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y210,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y410,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_P016,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y216,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_Y416,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_BGR4,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_ARGB16,                                                                                                \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-        FORMAT_DESC(MFX_FOURCC_R16,                                                                                                   \
-            MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, MFX_FOURCC_AYUV, \
-            MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416, MFX_FOURCC_BGR4, MFX_FOURCC_ARGB16)  \
-    END_MEMDESC_VP                                                                                                                    \
-END_FILTER
-#else
-#define DEFAULT_FILTER(filterId, MaxDelayInFrames)                                                                                    \
+#define PROCAMP_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+#define PROCAMP_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+
+#define DETAIL_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+#define DETAIL_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+
+#define DENOISE_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+#define DENOISE_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+
+#define DEINTERLACE_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016}
+#define DEINTERLACE_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016}
+
+#define FIELD_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+#define FIELD_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_P016, MFX_FOURCC_Y210, MFX_FOURCC_Y216,\
+ MFX_FOURCC_AYUV,MFX_FOURCC_Y410, MFX_FOURCC_Y416}
+
+#define FRC_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_Y210, MFX_FOURCC_AYUV,MFX_FOURCC_Y410}
+#define FRC_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12, MFX_FOURCC_YUY2, MFX_FOURCC_P010, MFX_FOURCC_Y210, MFX_FOURCC_AYUV,MFX_FOURCC_Y410}
+
+#define MCTF_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12}
+#define MCTF_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12}
+
+#define FIELD_PROCESSING_IN_FORMAT_LIST \
+{MFX_FOURCC_NV12}
+#define FIELD_PROCESSING_OUT_FORMAT_LIST \
+{MFX_FOURCC_NV12}
+
+#define DEFAULT_FILTER(filterId, MaxDelayInFrames, inFormat, outFormat)                                                               \
 START_FILTER(filterId, MaxDelayInFrames)                                                                                              \
     START_MEMDESC_VP(MFX_RESOURCE_SYSTEM_SURFACE, 16, 16384, 16, 16, 16384, 16)                                                       \
-        FORMAT_DESC(MFX_FOURCC_NV12,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10,     \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                         \
-        FORMAT_DESC(MFX_FOURCC_YV12,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_YUY2,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_RGB4,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_RGB565,                                                                                                \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_RGBP,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_P010,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_A2RGB10,                                                                                               \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_AYUV,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_UYVY,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y210,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y410,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_P016,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y216,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y416,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        END_MEMDESC_VP                                                                                                                \
-        START_MEMDESC_VP(MFX_RESOURCE_VA_SURFACE, 16, 16384, 16, 16, 16384, 16)                                                       \
-        FORMAT_DESC(MFX_FOURCC_NV12,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_YV12,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_YUY2,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_RGB4,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_RGB565,                                                                                                \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_RGBP,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_P010,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_A2RGB10,                                                                                               \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_AYUV,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_UYVY,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y210,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y410,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_P016,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y216,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
-        FORMAT_DESC(MFX_FOURCC_Y416,                                                                                                  \
-            MFX_FOURCC_NV12, MFX_FOURCC_YV12, MFX_FOURCC_YUY2, MFX_FOURCC_RGB4, MFX_FOURCC_RGBP, MFX_FOURCC_P010, MFX_FOURCC_A2RGB10, \
-            MFX_FOURCC_AYUV, MFX_FOURCC_Y210, MFX_FOURCC_Y410, MFX_FOURCC_P016, MFX_FOURCC_Y216, MFX_FOURCC_Y416)                     \
+        inFormat,                                                                                                                     \
+        outFormat                                                                                                                     \
+    END_MEMDESC_VP                                                                                                                    \
+    START_MEMDESC_VP(MFX_RESOURCE_DX11_TEXTURE, 16, 16384, 16, 16, 16384, 16)                                                         \
+        inFormat,                                                                                                                     \
+        outFormat                                                                                                                     \
     END_MEMDESC_VP                                                                                                                    \
 END_FILTER
-#endif
 
     class ReferenceVpp
     {
@@ -270,18 +126,19 @@ END_FILTER
         }
     protected:
         RefDesVpp m_reference = {{
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_PROCAMP, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_MCTF, 1)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_DENOISE, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_DETAIL, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_ROTATION, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_MIRRORING, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_SCALING, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_COLOR_CONVERSION, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_FIELD_PROCESSING, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_FIELD_WEAVING, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_FIELD_SPLITTING, 0)
-            DEFAULT_FILTER(MFX_EXTBUFF_VPP_COMPOSITE, 0)
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_SCALING,                0, DEFAULT_IN_FORMAT_LIST,     DEFAULT_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_ROTATION,               0, DEFAULT_IN_FORMAT_LIST,     DEFAULT_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_MIRRORING,              0, DEFAULT_IN_FORMAT_LIST,     DEFAULT_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_COLORFILL,              0, DEFAULT_IN_FORMAT_LIST,     DEFAULT_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_COLOR_CONVERSION,       0, DEFAULT_IN_FORMAT_LIST,     DEFAULT_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_COMPOSITE,              0, DEFAULT_IN_FORMAT_LIST,     DEFAULT_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_PROCAMP,                0, PROCAMP_IN_FORMAT_LIST,     PROCAMP_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_DETAIL,                 0, DETAIL_IN_FORMAT_LIST,      DETAIL_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_DENOISE,                0, DENOISE_IN_FORMAT_LIST,     DENOISE_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_DEINTERLACING,          0, DEINTERLACE_IN_FORMAT_LIST, DEINTERLACE_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_FIELD_WEAVING,          0, FIELD_IN_FORMAT_LIST,       FIELD_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_FIELD_SPLITTING,        0, FIELD_IN_FORMAT_LIST,       FIELD_OUT_FORMAT_LIST),
+            DEFAULT_FILTER(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,  0, FRC_IN_FORMAT_LIST,         FRC_OUT_FORMAT_LIST)
         }};
     };
     class ReferenceVppDefault : public ReferenceVpp
@@ -295,7 +152,14 @@ END_FILTER
     static ReferenceVppDefault ref_default_vpp;
 
     class ReferenceVppATS : public ReferenceVpp
-    {};
+    {
+    public:
+        ReferenceVppATS()
+        {
+            m_reference.Filters.insert(DEFAULT_FILTER(MFX_EXTBUFF_VPP_MCTF,             0, MCTF_IN_FORMAT_LIST,             MCTF_OUT_FORMAT_LIST));
+            m_reference.Filters.insert(DEFAULT_FILTER(MFX_EXTBUFF_VPP_FIELD_PROCESSING, 0, FIELD_PROCESSING_IN_FORMAT_LIST, FIELD_PROCESSING_OUT_FORMAT_LIST));
+        }
+    };
     static ReferenceVppATS ref_ATS_vpp;
 
     class ReferenceVppDG2 : public ReferenceVpp
@@ -303,8 +167,6 @@ END_FILTER
     public:
         ReferenceVppDG2()
         {
-            // No MCTF starting from DG2
-            m_reference.Filters.erase(MFX_EXTBUFF_VPP_MCTF);
         }
     };
     static ReferenceVppDG2 ref_DG2_vpp;

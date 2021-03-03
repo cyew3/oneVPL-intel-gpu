@@ -104,6 +104,9 @@
     <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="shared\src\libmfxsw_decode_vp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\fast_copy_sse4_impl.h">

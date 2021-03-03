@@ -689,7 +689,12 @@ mfxStatus D3D9Encoder::SetFrames (ExecuteBuffers* pExecuteBuffers)
     {
         pExecuteBuffers->m_pps.RefFrameList[1].bPicEntry = 0xff;
     }
-    if (pExecuteBuffers->m_bExternalCurrFrame)
+
+    if (pExecuteBuffers->m_bExternalCurrFrameHDL)
+    {
+        MFX_CHECK(pExecuteBuffers->m_pSurface, MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+    else if (pExecuteBuffers->m_bExternalCurrFrame)
     {
         sts = m_core->GetExternalFrameHDL(pExecuteBuffers->m_CurrFrameMemID,(mfxHDL *)&pExecuteBuffers->m_pSurface);
     }

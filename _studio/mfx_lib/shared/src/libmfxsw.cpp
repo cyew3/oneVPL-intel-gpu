@@ -177,7 +177,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     default:
         adapterNum = 0;
         break;
-
     }
 
 #if defined(MFX_ONEVPL)
@@ -206,8 +205,8 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
 static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession *session, mfxIMPL implInterface, mfxU32 adapterNum)
 {
-    _mfxSession_1_10* pSession = nullptr;
-    mfxStatus         mfxRes   = MFX_ERR_NONE;
+    _mfxVersionedSessionImpl* pSession = nullptr;
+    mfxStatus                 mfxRes   = MFX_ERR_NONE;
 
     try
     {
@@ -216,7 +215,7 @@ static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession *session, mfxIMPL
         // prepare initialization parameters
 
         // create new session instance
-        pSession = new _mfxSession_1_10(adapterNum);
+        pSession = new _mfxVersionedSessionImpl(adapterNum);
 
         mfxInitParam init_param = par;
         init_param.Implementation = implInterface;
@@ -310,7 +309,7 @@ mfxStatus MFXClose(mfxSession session)
         }
 
         // deallocate the object
-        _mfxSession_1_10 *newSession  = (_mfxSession_1_10 *)session;
+        _mfxVersionedSessionImpl *newSession  = (_mfxVersionedSessionImpl *)session;
         delete newSession;
     }
     // handle error(s)

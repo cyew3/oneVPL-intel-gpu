@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,15 +23,16 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#define ENABLE_MFX_INTEL_GUID_DECODE
+#define ENABLE_MFX_INTEL_GUID_PRIVATE
+
+#include <initguid.h>
 #include "mocks/include/guid.h"
 
 #include "mocks/include/dxgi/format.h"
 #include "mocks/include/dxgi/device/factory.h"
 
 #include "mocks/include/dx9/device/d3d.h"
-
-#include "mocks/include/dx11/device/device.h"
-#include "mocks/include/dx11/device/video.h"
 
 #include "mocks/include/mfx/dispatch.h"
 #include "mocks/include/mfx/dx11/decoder.h"
@@ -79,13 +80,14 @@ namespace test
             vp.mfx.FrameInfo.Width  = 640;
             vp.mfx.FrameInfo.Height = 480;
             vp = mocks::mfx::make_param(
-                mocks::fourcc::tag<MFX_FOURCC_NV12>{},
+                mocks::fourcc::format<MFX_FOURCC_NV12>{},
                 mocks::mfx::make_param(mocks::guid<&DXVA_ModeHEVC_VLD_Main>{}, vp)
             );
 
             //let iGFX be SCL & support HEVC Main (AVC is implicitly supported for private reporting)
-            iGFX = mocks::mfx::dx11::make_decoder(adapter1.p, nullptr,
-                std::integral_constant<int, mocks::mfx::HW_SKL>{},
+            iGFX = mocks::mfx::dx11::make_component(
+                std::integral_constant<int, mocks::mfx::HW_SCL>{},
+                adapter1.p, nullptr,
                 std::make_tuple(mocks::guid<&DXVA_ModeHEVC_VLD_Main>{}, vp)
             );
         }
@@ -153,7 +155,7 @@ namespace test
 
         //make unsupported video param
         auto vpx = mocks::mfx::make_param(
-            mocks::fourcc::tag<MFX_FOURCC_P010>{},
+            mocks::fourcc::format<MFX_FOURCC_P010>{},
             mocks::mfx::make_param(mocks::guid<&DXVA_ModeHEVC_VLD_Main10>{}, vp)
         );
 
@@ -200,7 +202,7 @@ namespace test
         };
 
         auto vp2 = mocks::mfx::make_param(
-            mocks::fourcc::tag<MFX_FOURCC_P016>{},
+            mocks::fourcc::format<MFX_FOURCC_P016>{},
             mocks::mfx::make_param(mocks::guid<&DXVA_Intel_ModeHEVC_VLD_Main12Profile>{}, vp)
         );
         vp2.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
@@ -211,8 +213,9 @@ namespace test
         );
 
         //let dGFX be DG1 & support both HEVC Main & Main12
-        auto dGFX = mocks::mfx::dx11::make_decoder(adapter3.p, nullptr,
+        auto dGFX = mocks::mfx::dx11::make_component(
             std::integral_constant<int, mocks::mfx::HW_DG1>{},
+            adapter3.p, nullptr,
             std::make_tuple(mocks::guid<&DXVA_ModeHEVC_VLD_Main>{}, vp),
             std::make_tuple(mocks::guid<&DXVA_Intel_ModeHEVC_VLD_Main12Profile>{}, vp2)
         );

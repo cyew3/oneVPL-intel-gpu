@@ -92,6 +92,7 @@
 #include "../../encode_hw/av1/av1ehw_disp.h"
 #endif
 
+#include "libmfx_core.h"
 #include <libmfx_core_interface.h> // for MFXIFEIEnabled_GUID
 
 #if defined (MFX_RT)
@@ -1156,12 +1157,44 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 
 } // mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)
 
-
 #if defined(MFX_ONEVPL)
-
 mfxStatus MFXMemory_GetSurfaceForEncode(mfxSession session, mfxFrameSurface1** output_surf)
 {
-    return MFX_ERR_NOT_IMPLEMENTED;
+    MFX_CHECK_NULL_PTR1(output_surf);
+    MFX_CHECK_HDL(session);
+    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(session->m_pENCODE,     MFX_ERR_NOT_INITIALIZED);
+
+    try
+    {
+        auto& pCache = session->m_pENCODE->m_pSurfaceCache;
+
+        if (!pCache)
+        {
+            auto pCore20 = dynamic_cast<CommonCORE20*>(session->m_pCORE.get());
+            MFX_CHECK(pCore20, MFX_ERR_UNSUPPORTED);
+
+            mfxVideoParam        par = {};
+            mfxFrameAllocRequest req = {};
+
+            MFX_SAFE_CALL(session->m_pENCODE->GetVideoParam(&par));
+            MFX_SAFE_CALL(MFXVideoENCODE_QueryIOSurf(session, &par, &req));
+
+            using TCachePtr = std::remove_reference<decltype(pCache)>::type;
+
+            pCache = TCachePtr(new SurfaceCache(*pCore20, req.Type, req.Info), [](SurfaceCache* p) { delete p; });
+        }
+
+        *output_surf = pCache->GetSurface();
+    }
+    catch (...)
+    {
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
+    }
+
+    MFX_CHECK(*output_surf, MFX_ERR_MEMORY_ALLOC);
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus QueryImplsDescription(VideoCORE& core, mfxEncoderDescription& caps, mfx::PODArraysHolder& ah)

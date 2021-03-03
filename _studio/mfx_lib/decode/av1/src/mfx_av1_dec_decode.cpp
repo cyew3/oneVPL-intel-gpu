@@ -54,6 +54,8 @@
 #endif
 #endif
 
+#include "libmfx_core_interface.h"
+
 namespace MFX_VPX_Utility
 {
     inline
@@ -193,7 +195,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
         type = m_core->GetHWType();
     }
 
-    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq()) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -205,11 +207,11 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
 #else
     m_decoder.reset(new UMC_AV1_DECODER::AV1DecoderVA());
-    m_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #endif
 
     m_request = {};
     m_response = {};
+    m_response_alien = {};
 
     mfxStatus sts = MFX_VPX_Utility::QueryIOSurfInternal(par, &m_request);
     MFX_CHECK_STS(sts);
@@ -272,20 +274,20 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     }
 #endif
 
+    mfxFrameAllocRequest request_internal = m_request;
+
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
+    mfxExtOpaqueSurfaceAlloc *opaq = nullptr;
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
 #endif
     {
         if (!internal)
             m_request.AllocId = par->AllocId;
-
-        sts = m_core->AllocFrames(&m_request, &m_response, internal);
     }
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else
     {
-        auto opaq =
-            reinterpret_cast<mfxExtOpaqueSurfaceAlloc*>(GetExtendedBuffer(par->ExtParam, par->NumExtParam,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
+        opaq = reinterpret_cast<mfxExtOpaqueSurfaceAlloc*>(GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
 
         MFX_CHECK(opaq && m_request.NumFrameMin <= opaq->Out.NumSurface, MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -297,32 +299,28 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
         m_request.NumFrameMin       = opaq->Out.NumSurface;
         m_request.NumFrameSuggested = m_request.NumFrameMin;
-
-        sts = m_core->AllocFrames(&m_request, &m_response,
-            opaq->Out.Surfaces, opaq->Out.NumSurface);
     }
 #endif //MFX_ENABLE_OPAQUE_MEMORY
 
     MFX_CHECK_STS(sts);
-    if (!internal || m_opaque)
-    {
-        m_allocator->SetExternalFramesResponse(&m_response);
-    }
 
-    UMC::Status umcSts = m_allocator->InitMfx(0, m_core, par, &m_request, &m_response, !internal, m_platform == MFX_PLATFORM_SOFTWARE);
-    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
-
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    if (videoProcessing)
+    try
     {
-        MFX_CHECK(internal || MFX_HW_D3D11 == m_core->GetVAType(), MFX_ERR_UNSUPPORTED);
-        m_allocator->SetSfcPostProcessingFlag(true);
-    }
+        m_surface_source.reset(new SurfaceSource(m_core, *par, m_platform, m_request, request_internal, m_response, m_response_alien,
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        opaq,
+#else
+        nullptr,
 #endif
-
+        m_opaque));
+    }
+    catch (const mfx::mfxStatus_exception& ex)
+    {
+        MFX_CHECK_STS(ex.sts);
+    }
 
     UMC_AV1_DECODER::AV1DecoderParams vp{};
-    vp.allocator = m_allocator.get();
+    vp.allocator = m_surface_source.get();
     vp.async_depth = par->AsyncDepth;
     vp.film_grain = par->mfx.FilmGrain ? 1 : 0; // 0 - film grain is forced off, 1 - film grain is controlled by apply_grain syntax parameter
     if (!vp.async_depth)
@@ -330,7 +328,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     vp.io_pattern = par->IOPattern;
 
 #if defined (MFX_VA)
-    sts = m_core->CreateVA(par, &m_request, &m_response, m_allocator.get());
+    sts = m_core->CreateVA(par, &m_request, &m_response, m_surface_source.get());
     MFX_CHECK_STS(sts);
 
     m_core->GetVA((mfxHDL*)&vp.pVideoAccelerator, MFX_MEMTYPE_FROM_DECODE);
@@ -338,7 +336,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     ConvertMFXParamsToUMC(par, &vp);
 
-    umcSts = m_decoder->Init(&vp);
+    UMC::Status umcSts = m_decoder->Init(&vp);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_NOT_INITIALIZED);
 
     m_first_run = true;
@@ -478,7 +476,7 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
 
         if (!opaqueNew || !opaqueOld)
             return false;
-            
+
         if (opaqueNew->In.Type != opaqueOld->In.Type)
             return false;
 
@@ -574,13 +572,13 @@ mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 #endif
     eMFXPlatform platform = MFX_VPX_Utility::GetPlatform(m_core, par);
 
-    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq()) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(IsNeedChangeVideoParam(par, &m_init_par, type), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     MFX_CHECK(m_platform == platform, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    MFX_CHECK(m_allocator->Reset() == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
+    MFX_CHECK(m_surface_source->Reset() == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     m_first_par = *par;
 
@@ -602,15 +600,13 @@ mfxStatus VideoDECODEAV1::Close()
 
     MFX_CHECK(m_is_init, MFX_ERR_NOT_INITIALIZED);
 
-    m_allocator->Close();
 
-    if (0 < m_response.NumFrameActual)
-    {
-        m_core->FreeFrames(&m_response);
-    }
+    m_surface_source->Close();
 
     m_request = {};
     m_response = {};
+    m_response_alien = {};
+
     m_is_init = false;
 
     return MFX_ERR_NONE;
@@ -976,7 +972,7 @@ mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderF
         MFX_CHECK(!va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_INVALID_HANDLE);
 
     UMC::FrameMemID id = frame->GetFrameData()->GetFrameMID();
-    mfxStatus sts = m_allocator->PrepareToOutput(surface_out, id, &m_video_par, m_opaque);
+    mfxStatus sts = m_surface_source->PrepareToOutput(surface_out, id, &m_video_par, m_opaque);
 #ifdef MFX_VA
     frame->Displayed(true);
 #else
@@ -995,7 +991,7 @@ mfxStatus VideoDECODEAV1::QueryFrame(mfxThreadTask task)
     auto info =
         reinterpret_cast<TaskInfo*>(task);
     UMC_AV1_DECODER::AV1DecoderFrame* frame = NULL;
-    mfxFrameSurface1* surface_out = info->surface_out;;
+    mfxFrameSurface1* surface_out = info->surface_out;
     if(info->copyfromframe != UMC::FRAME_MID_INVALID)
     {
         frame = m_decoder->FindFrameByMemID(info->copyfromframe);
@@ -1003,7 +999,7 @@ mfxStatus VideoDECODEAV1::QueryFrame(mfxThreadTask task)
     else
     {
         MFX_CHECK(surface_out, MFX_ERR_UNDEFINED_BEHAVIOR);
-        UMC::FrameMemID id = m_allocator->FindSurface(surface_out, m_opaque);
+        UMC::FrameMemID id = m_surface_source->FindSurface(surface_out, m_opaque);
         frame = m_decoder->FindFrameByMemID(id);
         MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(frame->DecodingStarted(), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1048,45 +1044,52 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo &info)
 
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out)
 {
-    MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+    bool allow_null_work_surface = core20_interface && *core20_interface;
 
-    bool workSfsIsClean =
-        !(surface_work->Data.MemId || surface_work->Data.Y
-            || surface_work->Data.UV || surface_work->Data.R
-            || surface_work->Data.A);
-
-    if (m_opaque)
+    if (allow_null_work_surface)
     {
-        MFX_CHECK(workSfsIsClean, MFX_ERR_UNDEFINED_BEHAVIOR);
-        // work with the native (original) surface
-        surface_work = GetOriginalSurface(surface_work);
-        MFX_CHECK(surface_work, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK_NULL_PTR1(surface_out);
     }
     else
     {
-        MFX_CHECK(!workSfsIsClean, MFX_ERR_LOCK_MEMORY);
+        MFX_CHECK_NULL_PTR2(surface_work, surface_out);
     }
 
-    mfxStatus sts = MFX_ERR_NONE;
-    if (m_is_cscInUse != true)
+    if (surface_work)
     {
-        sts = CheckFrameInfo(surface_work->Info);
+        bool workSfsIsClean =
+            !(surface_work->Data.MemId || surface_work->Data.Y
+                || surface_work->Data.UV || surface_work->Data.R
+                || surface_work->Data.A);
+
+        if (m_opaque)
+        {
+            MFX_CHECK(workSfsIsClean, MFX_ERR_UNDEFINED_BEHAVIOR);
+            // work with the native (original) surface
+            surface_work = GetOriginalSurface(surface_work);
+            MFX_CHECK(surface_work, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+        else
+        {
+            MFX_CHECK(!workSfsIsClean, MFX_ERR_LOCK_MEMORY);
+        }
+
+        mfxStatus sts = MFX_ERR_NONE;
+        if (m_is_cscInUse != true)
+        {
+            sts = CheckFrameInfo(surface_work->Info);
+            MFX_CHECK_STS(sts);
+        }
+
+        sts = CheckFrameData(surface_work);
         MFX_CHECK_STS(sts);
     }
-
-    sts = CheckFrameData(surface_work);
-    MFX_CHECK_STS(sts);
 
     if (!bs)
         return MFX_ERR_MORE_DATA;
 
-    sts = CheckBitstream(bs);
-    MFX_CHECK_STS(sts);
-
-    if (surface_work->Data.Locked)
-        return MFX_ERR_MORE_SURFACE;
-
-    sts = m_allocator->SetCurrentMFXSurface(surface_work, m_opaque);
+    mfxStatus sts = CheckBitstream(bs);
     MFX_CHECK_STS(sts);
 
     try
@@ -1095,7 +1098,10 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
 
         for (;;)
         {
-            UMC::Status umcRes = m_allocator->FindFreeSurface() != -1 ?
+            sts = m_surface_source->SetCurrentMFXSurface(surface_work, m_opaque);
+            MFX_CHECK_STS(sts);
+
+            UMC::Status umcRes = m_surface_source->HasFreeSurface() ?
                 m_decoder->GetFrame(bs ? &src : 0, nullptr) : UMC::UMC_ERR_NEED_FORCE_OUTPUT;
 
             UMC::Status umcFrameRes = umcRes;
@@ -1118,7 +1124,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
             switch (umcRes)
             {
                 case UMC::UMC_OK:
-                    if (m_allocator->FindFreeSurface() == -1)
+                    if (!m_surface_source->HasFreeSurface())
                     {
                         sts = MFX_ERR_MORE_SURFACE;
                         umcFrameRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -1405,13 +1411,13 @@ inline void CopyFilmGrainParam(mfxExtAV1FilmGrainParam &extBuf, UMC_AV1_DECODER:
 
 mfxStatus VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1** surf_out, mfxFrameSurface1* surface_work, UMC_AV1_DECODER::AV1DecoderFrame* pFrame)
 {
-    MFX_CHECK_NULL_PTR3(surface_work, pFrame, surf_out);
+    MFX_CHECK_NULL_PTR2(pFrame, surf_out);
 
     UMC::FrameData const* fd = pFrame->GetFrameData();
     MFX_CHECK(fd, MFX_ERR_DEVICE_FAILED);
 
     mfxVideoParam vp;
-    *surf_out = m_allocator->GetSurface(fd->GetFrameMID(), surface_work, &vp);
+    *surf_out = m_surface_source->GetSurface(fd->GetFrameMID(), surface_work, &vp);
     if (m_opaque)
        *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId);
 
@@ -1461,5 +1467,18 @@ mfxStatus VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1** surf_out, mfxFram
 
     return MFX_ERR_NONE;
 }
+
+#if defined(MFX_ONEVPL)
+mfxFrameSurface1* VideoDECODEAV1::GetSurface()
+{
+    if (!m_surface_source)
+    {
+        std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_INITIALIZED);
+        return nullptr;
+    }
+
+    return m_surface_source->GetSurface();
+}
+#endif
 
 #endif

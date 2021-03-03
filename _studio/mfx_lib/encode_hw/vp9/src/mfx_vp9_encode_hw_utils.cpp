@@ -881,10 +881,10 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 }
 
 mfxStatus GetNativeHandleToRawSurface(
-    VideoCORE & core,
-    mfxMemId mid,
-    mfxHDL *handle,
-    VP9MfxVideoParam const & video)
+    VideoCORE& core,
+    mfxFrameSurface1& surf,
+    mfxHDLPair& handle,
+    VP9MfxVideoParam const& video)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -900,13 +900,13 @@ mfxStatus GetNativeHandleToRawSurface(
         || (iopattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq_type & MFX_MEMTYPE_SYSTEM_MEMORY))
 #endif
         )
-        sts = core.GetFrameHDL(mid, handle);
+        sts = core.GetFrameHDL(surf, handle);
     else if (iopattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        sts = core.GetExternalFrameHDL(mid, handle);
+        sts = core.GetExternalFrameHDL(surf, handle);
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (iopattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
-        sts = core.GetFrameHDL(mid, handle);
-#endif //MFX_ENABLE_OPAQUE_MEMORY
+        sts = core.GetFrameHDL(surf, handle);
+#endif
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 

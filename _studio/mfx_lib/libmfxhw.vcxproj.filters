@@ -173,6 +173,9 @@
     <ClCompile Include="..\shared\src\libmfx_core_d3d9on11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="shared\src\libmfxsw_decode_vp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\auxiliary_device.h">

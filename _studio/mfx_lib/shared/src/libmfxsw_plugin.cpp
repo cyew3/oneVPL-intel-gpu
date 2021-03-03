@@ -18,8 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <mfxvideo.h>
-#include <mfx_utils.h>
+#include "mfx_common.h"
 #include <algorithm>
 
 #if defined(MFX_ONEVPL)
@@ -41,7 +40,7 @@ const mfxPluginUID NativePlugins[] =
 #if defined(MFX_ONEVPL)
 #include "mfxstructures-int.h"
 #define FUNCTION_DEPRECATED_IMPL(component, func_name, formal_param_list) \
-mfxStatus MFXVideo##component##_##func_name formal_param_list \
+mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
 { \
     return MFX_ERR_UNSUPPORTED; \
 }
@@ -138,8 +137,7 @@ namespace
                     // _mfxSession_1_10 - should be used always to get versioned session instance
                     // interface MFXISession_1_10/MFXISession_1_10_GUID may differs
                     // here we use MFXISession_1_10 because it is first version which introduces Pre-Enc plugins
-                    _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
-                    MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
+                    MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
                     if (newSession)
                     {
                         _ptr = &newSession->GetPreEncPlugin(); 

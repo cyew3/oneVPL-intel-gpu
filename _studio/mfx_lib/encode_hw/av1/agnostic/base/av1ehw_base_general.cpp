@@ -25,14 +25,13 @@
 #include "av1ehw_base_data.h"
 #include "av1ehw_base_constraints.h"
 #include "fast_copy.h"
+#include "mfx_common_int.h"
 #include <algorithm>
 #include <exception>
 #include <iterator>
 #include <numeric>
 #include <set>
 #include <iterator>
-
-#include "mfx_common_int.h"
 
 using namespace AV1EHW::Base;
 
@@ -993,7 +992,7 @@ void General::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         if (mfxU32(req.Info.Width * req.Info.Height) < minBS)
         {
             MFX_CHECK(req.Info.Width != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
-            req.Info.Height = (mfxU16)CeilDiv<mfxU32>(minBS, req.Info.Width);
+            req.Info.Height = (mfxU16)mfx::CeilDiv<mfxU32>(minBS, req.Info.Width);
         }
 
         sts = pAlloc->Alloc(req, false);
@@ -1297,7 +1296,7 @@ void General::InitTask(const FeatureBlocks& blocks, TPushIT Push)
 #endif
             tpar.pSurfReal = tpar.pSurfIn;
 
-        core.IncreaseReference(&tpar.pSurfIn->Data);
+        core.IncreaseReference(*tpar.pSurfIn);
 
         tpar.DPB.resize(par.mfx.NumRefFrame);
 
@@ -1392,7 +1391,7 @@ void General::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         MFX_CHECK(!bInternalFrame, core.GetFrameHDL(task.Raw.Mid, &task.HDLRaw.first));
 
         MFX_CHECK(par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY
-            , core.GetExternalFrameHDL(task.pSurfReal->Data.MemId, &task.HDLRaw.first));
+            , core.GetExternalFrameHDL(*task.pSurfReal, task.HDLRaw));
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         MFX_CHECK(par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
@@ -1429,9 +1428,8 @@ void General::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
         auto& core = Glob::VideoCore::Get(global);
 
-        mfxFrameSurface1 surfSrc = MakeSurface( par.mfx.FrameInfo, task.pSurfReal->Data );
-        mfxFrameSurface1 surfDst = MakeSurface( par.mfx.FrameInfo, {} );
-        surfDst.Data.MemId = task.Raw.Mid;
+        mfxFrameSurface1 surfSrc = MakeSurface(par.mfx.FrameInfo, *task.pSurfReal);
+        mfxFrameSurface1 surfDst = MakeSurface(par.mfx.FrameInfo, task.Raw.Mid);
 
         surfDst.Info.Shift =
             surfDst.Info.FourCC == MFX_FOURCC_P010
@@ -1529,7 +1527,7 @@ void General::FreeTask(const FeatureBlocks& /*blocks*/, TPushFT Push)
             && !ReleaseResource(Glob::AllocRaw::Get(global), task.Raw)
             , "task.Raw resource is invalid");
 
-        SetIf(task.pSurfIn, task.pSurfIn && !core.DecreaseReference(&task.pSurfIn->Data), nullptr);
+        SetIf(task.pSurfIn, task.pSurfIn && !core.DecreaseReference(*task.pSurfIn), nullptr);
         ThrowAssert(!!task.pSurfIn, "failed in core.DecreaseReference");
 
         auto& atrRec = Glob::AllocRec::Get(global);

@@ -40,6 +40,7 @@ set(include_dirs
   ${MSDK_LIB_ROOT}/fei/include
   ${MSDK_LIB_ROOT}/fei/h265/include
   ${MSDK_LIB_ROOT}/fs_det/include
+  ${MSDK_LIB_ROOT}/scheduler/include
   ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
 )
 

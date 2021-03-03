@@ -31,6 +31,8 @@
 // sheduling and threading stuff
 #include <mfx_task.h>
 
+#include <libmfx_allocator.h>
+
 #ifdef MFX_ENABLE_VPP
 // VPP include files here
 #include "mfx_vpp_main.h"       // this VideoVPP class builds VPP pipeline and run the VPP pipeline
@@ -291,7 +293,7 @@ enum
     MFX_NUM_ENTRY_POINTS = 2
 };
 
-mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+mfxStatus MFXVideoVPP_RunFrameVPPAsync_impl(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
 {
     mfxStatus mfxRes;
 
@@ -340,6 +342,15 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
               {
                   return mfxAddRes;
               }
+
+#if defined(MFX_ONEVPL)
+              if (syncPoint && out && out->FrameInterface)
+              {
+                  MFX_CHECK_HDL(out->FrameInterface->Context);
+                  static_cast<mfxFrameSurfaceBaseInterface*>(out->FrameInterface->Context)->SetSyncPoint(syncPoint);
+              }
+#endif
+
               *syncp = syncPoint;
           }
       }
@@ -469,6 +480,14 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
                 mfxRes = MFX_ERR_MORE_DATA;
                 syncPoint = NULL;
             }
+
+#if defined(MFX_ONEVPL)
+            if (syncPoint && out && out->FrameInterface)
+            {
+                MFX_CHECK_HDL(out->FrameInterface->Context);
+                static_cast<mfxFrameSurfaceBaseInterface*>(out->FrameInterface->Context)->SetSyncPoint(syncPoint);
+            }
+#endif
         }
 
         // return pointer to synchronization point
@@ -493,6 +512,12 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
     return mfxRes;
 
 } // mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+
+// This separation is required for avoiding possible linkage conflict with function loaded from dispatcher
+mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+{
+    return MFXVideoVPP_RunFrameVPPAsync_impl(session, in, out, aux, syncp);
+}
 
 mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
 {
@@ -549,6 +574,15 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
               {
                   return mfxAddRes;
               }
+
+#if defined(MFX_ONEVPL)
+              if (syncPoint && (*surface_out) && (*surface_out)->FrameInterface)
+              {
+                  MFX_CHECK_HDL((*surface_out)->FrameInterface->Context);
+                  static_cast<mfxFrameSurfaceBaseInterface*>((*surface_out)->FrameInterface->Context)->SetSyncPoint(syncPoint);
+              }
+#endif
+
               *syncp = syncPoint;
           }
       }
@@ -582,7 +616,16 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 #if defined(MFX_ONEVPL)
 mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 **out)
 {
-    return MFX_ERR_NOT_IMPLEMENTED;
+    MFX_CHECK_NULL_PTR1(out);
+
+    MFX_CHECK_HDL(session);
+    MFX_CHECK(session->m_pVPP.get(), MFX_ERR_NOT_INITIALIZED);
+
+    *out = session->m_pVPP->GetSurfaceOut();
+    MFX_CHECK(*out, MFX_ERR_MEMORY_ALLOC);
+
+    mfxSyncPoint syncPoint;
+    return MFXVideoVPP_RunFrameVPPAsync_impl(session, in, *out, nullptr, &syncPoint);
 }
 #endif
 //

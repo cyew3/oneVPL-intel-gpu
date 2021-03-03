@@ -37,6 +37,8 @@
 #endif
 
 #include "mfxprivate.h"
+#include <memory>
+#include <functional>
 
 #ifdef _MSVC_LANG
 #pragma warning(push)
@@ -327,6 +329,122 @@ public:
     virtual mfxU16 GetAutoAsyncDepth() = 0;
 
     virtual bool IsCompatibleForOpaq() = 0;
+
+    mfxStatus GetFrameHDL(mfxFrameSurface1& surf, mfxHDLPair& handle, bool ExtendedSearch = true)
+    {
+        handle = {};
+
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            mfxResourceType rt = mfxResourceType(0);
+            mfxStatus sts = surf.FrameInterface->GetNativeHandle ? surf.FrameInterface->GetNativeHandle(&surf, &handle.first, &rt) : MFX_ERR_NULL_PTR;
+
+            if (sts != MFX_ERR_NONE)
+                return sts;
+
+            eMFXVAType type = GetVAType();
+            bool bValidType =
+                   (type == MFX_HW_D3D11 && rt == MFX_RESOURCE_DX11_TEXTURE)
+                || (type == MFX_HW_D3D9 && rt == MFX_RESOURCE_DX9_SURFACE)
+                || (type == MFX_HW_VAAPI && rt == MFX_RESOURCE_VA_SURFACE);
+
+            return bValidType ? MFX_ERR_NONE : MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+#endif
+        return GetFrameHDL(surf.Data.MemId, &handle.first, ExtendedSearch);
+    }
+
+    mfxStatus IncreaseReference(mfxFrameSurface1& surf)
+    {
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            mfxStatus sts = surf.FrameInterface->AddRef ? surf.FrameInterface->AddRef(&surf) : MFX_ERR_NULL_PTR;
+
+            if (sts != MFX_ERR_NONE)
+                return sts;
+        }
+#endif
+        return IncreaseReference(&surf.Data);
+    }
+
+    mfxStatus DecreaseReference(mfxFrameSurface1& surf)
+    {
+        mfxStatus sts = DecreaseReference(&surf.Data);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            sts = surf.FrameInterface->Release ? surf.FrameInterface->Release(&surf) : MFX_ERR_NULL_PTR;
+
+            if (sts != MFX_ERR_NONE)
+                return sts;
+        }
+#endif
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus LockFrame(mfxFrameSurface1& surf, mfxU32 flags = 3u /*MFX_MAP_READ_WRITE*/)
+    {
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            return surf.FrameInterface->Map ? surf.FrameInterface->Map(&surf, flags) : MFX_ERR_NULL_PTR;
+        }
+#else
+        std::ignore = flags;
+#endif
+        return LockFrame(surf.Data.MemId, &surf.Data);
+    }
+
+    mfxStatus UnlockFrame(mfxFrameSurface1& surf)
+    {
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            return surf.FrameInterface->Unmap ? surf.FrameInterface->Unmap(&surf) : MFX_ERR_NULL_PTR;
+        }
+#endif
+        return UnlockFrame(surf.Data.MemId, &surf.Data);
+    }
+
+    mfxStatus GetExternalFrameHDL(mfxFrameSurface1& surf, mfxHDLPair& handle, bool ExtendedSearch = true)
+    {
+        handle = {};
+
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            return GetFrameHDL(surf, handle, ExtendedSearch);
+        }
+#endif
+        return GetExternalFrameHDL(surf.Data.MemId, &handle.first, ExtendedSearch);
+    }
+
+    mfxStatus LockExternalFrame(mfxFrameSurface1& surf, bool ExtendedSearch = true)
+    {
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            return LockFrame(surf);
+        }
+#endif
+        return LockExternalFrame(surf.Data.MemId, &surf.Data, ExtendedSearch);
+    }
+
+    mfxStatus UnlockExternalFrame(mfxFrameSurface1& surf, bool ExtendedSearch = true)
+    {
+#if defined(MFX_ONEVPL)
+        if (surf.FrameInterface)
+        {
+            return UnlockFrame(surf);
+        }
+#endif
+        return UnlockExternalFrame(surf.Data.MemId, &surf.Data, ExtendedSearch);
+    }
 };
 
 
@@ -341,7 +459,6 @@ public:
 class VideoENC
 {
 public:
-    // Destructor
     virtual
     ~VideoENC(void){}
 
@@ -364,7 +481,6 @@ public:
 class VideoPAK
 {
 public:
-    // Destructor
     virtual
     ~VideoPAK(void) {}
 
@@ -403,10 +519,11 @@ typedef struct _mfxEncodeInternalParams : public mfxEncodeCtrl
     mfxFrameSurface1    *surface;
 } mfxEncodeInternalParams;
 
+class SurfaceCache;
+
 class VideoENCODE
 {
 public:
-    // Destructor
     virtual
     ~VideoENCODE(void) {}
 
@@ -448,7 +565,7 @@ public:
     {
         mfxStatus mfxRes;
 
-        // call the overweighted version
+        // call the overloaded version
         mfxRes = EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams, pEntryPoints);
         numEntryPoints = 1;
         return mfxRes;
@@ -460,12 +577,14 @@ public:
     virtual
     mfxStatus CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) = 0;
 
+#if defined(MFX_ONEVPL)
+    std::unique_ptr<SurfaceCache, std::function<void(SurfaceCache*)>> m_pSurfaceCache;
+#endif
 };
 
 class VideoDECODE
 {
 public:
-    // Destructor
     virtual
     ~VideoDECODE(void) {}
 
@@ -494,12 +613,15 @@ public:
     }
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) = 0;
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() { return nullptr; }
+    virtual mfxFrameSurface1* GetInternalSurface(mfxFrameSurface1 * /*surface*/) { return nullptr; };
+#endif
 };
 
 class VideoVPP
 {
 public:
-    // Destructor
     virtual
     ~VideoVPP(void) {}
 
@@ -537,7 +659,7 @@ public:
     {
         mfxStatus mfxRes;
 
-        // call the overweighted version
+        // call the overloaded version
         mfxRes = VppFrameCheck(in, out, aux, pEntryPoints);
         numEntryPoints = 1;
 
@@ -549,6 +671,10 @@ public:
     virtual
     mfxStatus RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux) = 0;
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurfaceIn() { return nullptr; }
+    virtual mfxFrameSurface1* GetSurfaceOut() { return nullptr; }
+#endif
 };
 
 #if !defined(MFX_ONEVPL)
@@ -559,7 +685,6 @@ struct mfxCoreInterface;
 class VideoUSER
 {
 public:
-    // Destructor
     virtual
     ~VideoUSER(void) {};
 
@@ -575,7 +700,7 @@ public:
     virtual
     mfxTaskThreadingPolicy GetThreadingPolicy(void) {return MFX_TASK_THREADING_DEFAULT;}
 
-    // Check the parameters to start a new tasl
+    // Check the parameters to start a new task
     virtual
     mfxStatus Check(const mfxHDL *in, mfxU32 in_num,
                     const mfxHDL *out, mfxU32 out_num,

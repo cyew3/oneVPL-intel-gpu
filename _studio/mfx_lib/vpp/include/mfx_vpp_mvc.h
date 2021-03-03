@@ -90,6 +90,10 @@ namespace MfxVideoProcessing
 
         mfxStatus ResetTaskCounters();
 
+#if defined(MFX_ONEVPL)
+        virtual mfxFrameSurface1* GetSurfaceIn();
+        virtual mfxFrameSurface1* GetSurfaceOut();
+#endif
 
     private:
 

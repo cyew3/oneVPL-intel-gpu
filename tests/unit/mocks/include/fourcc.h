@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,23 +23,75 @@
 #include <type_traits>
 #include <string>
 
+#include "mocks/include/common.h"
+
 #if defined(ENABLE_MOCKS_MFX)
 #include "umc_structures.h"
 #endif
 
 namespace mocks { namespace fourcc
 {
-    template <unsigned F>
-    struct tag
-        : std::integral_constant<unsigned, F>
-    {};
-
     constexpr
     inline unsigned make(char a, char b, char c, char d)
     {
         return
             (unsigned(a) + (unsigned(b) << 8) + (unsigned(c) << 16) + (unsigned(d) << 24));
     }
+
+    enum
+    {
+        CHROMA_SUBSAMPLING_400,
+        CHROMA_SUBSAMPLING_420,
+        CHROMA_SUBSAMPLING_422,
+        CHROMA_SUBSAMPLING_444,
+        CHROMA_SUBSAMPLING_411,
+        CHROMA_SUBSAMPLING_410,
+    };
+
+    template <unsigned>
+    struct subsampling;
+
+    template <>
+    struct subsampling<CHROMA_SUBSAMPLING_400>
+    {
+        static size_t constexpr v = size_t(-1);
+        static size_t constexpr h = size_t(-1);
+    };
+
+    template <>
+    struct subsampling<CHROMA_SUBSAMPLING_410>
+    {
+        static size_t constexpr v = 4;
+        static size_t constexpr h = 4;
+    };
+
+    template <>
+    struct subsampling<CHROMA_SUBSAMPLING_411>
+    {
+        static size_t constexpr v = 4;
+        static size_t constexpr h = 1;
+    };
+
+    template <>
+    struct subsampling<CHROMA_SUBSAMPLING_420>
+    {
+        static size_t constexpr v = 2;
+        static size_t constexpr h = 2;
+    };
+
+    template <>
+    struct subsampling<CHROMA_SUBSAMPLING_422>
+    {
+        static size_t constexpr v = 2;
+        static size_t constexpr h = 1;
+    };
+
+    template <>
+    struct subsampling<CHROMA_SUBSAMPLING_444>
+    {
+        static size_t constexpr v = 1;
+        static size_t constexpr h = 1;
+    };
 } }
 
 constexpr
@@ -51,40 +103,176 @@ unsigned int operator"" _fourcc(char const* fourcc, std::size_t)
 
 namespace mocks { namespace fourcc
 {
-    constexpr auto RGB3 = "RGB3"_fourcc;
-    constexpr auto RGB4 = "RGB4"_fourcc;
-    constexpr auto RGBA = "RGBA"_fourcc;
-    constexpr auto BGR4 = "BGR4"_fourcc;
-    constexpr auto ARGB = "ARGB"_fourcc;
-    constexpr auto BGRA = "BGRA"_fourcc;
+    namespace detail
+    {
+        template <unsigned F, unsigned B, unsigned P, int C>
+        struct format_impl
+            : std::integral_constant<unsigned, F>
+        {
+            using bits      = std::integral_constant<unsigned, B>;
+            using planes    = std::integral_constant<unsigned, P>;
+            using chroma    = std::integral_constant<unsigned, C>;
+            using subsample = subsampling<C>;
+        };
+    };
+
+    template <unsigned F>
+    struct format : std::integral_constant<unsigned, F> {};
+
+    template <unsigned F>
+    struct format_of
+    { using type = format<F>; };
+
+#define MAKE_FOURCC_EX(Name, Format, Bits, Planes, Chroma) \
+    constexpr auto Name = Format; \
+    template <>                   \
+    struct format<Name> : detail::format_impl<Name, Bits, Planes, Chroma> {};
+
+#define MAKE_FOURCC(Name, Bits, Planes, Chroma) \
+    MAKE_FOURCC_EX(Name, #Name##_fourcc, Bits, Planes, Chroma)
+
+    MAKE_FOURCC(RGB3,  8, 1, CHROMA_SUBSAMPLING_444)
+
+    MAKE_FOURCC(RGB4,  8, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC(RGBA,  8, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC(BGR4,  8, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC(ARGB,  8, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC(BGRA,  8, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC(RGBP,  8, 3, CHROMA_SUBSAMPLING_444)
 
     //420
-    constexpr auto YV12 = "YV12"_fourcc;
-    constexpr auto YV16 = "YV16"_fourcc;
-    constexpr auto NV12 = "NV12"_fourcc;
-    constexpr auto NV16 = "NV16"_fourcc;
-    constexpr auto P010 = "P010"_fourcc;
+    MAKE_FOURCC(YV12,  8, 3, CHROMA_SUBSAMPLING_420)
+    MAKE_FOURCC(YV16,  8, 3, CHROMA_SUBSAMPLING_420)
+    MAKE_FOURCC(NV12,  8, 2, CHROMA_SUBSAMPLING_420)
+    MAKE_FOURCC(NV16,  8, 2, CHROMA_SUBSAMPLING_420)
+    MAKE_FOURCC(P010, 10, 2, CHROMA_SUBSAMPLING_420)
+    MAKE_FOURCC(P016, 16, 2, CHROMA_SUBSAMPLING_420)
 
     //422
-    constexpr auto YUY2 = "YUY2"_fourcc;
-    constexpr auto YUYV = "YUYV"_fourcc;
-    constexpr auto UYVY = "UYVY"_fourcc;
-    constexpr auto Y210 = "Y210"_fourcc;
-    constexpr auto Y216 = "Y216"_fourcc;
-    constexpr auto P016 = "P016"_fourcc;
+    MAKE_FOURCC(YUY2,  8, 1, CHROMA_SUBSAMPLING_422)
+    MAKE_FOURCC(YUYV,  8, 1, CHROMA_SUBSAMPLING_422)
+    MAKE_FOURCC(UYVY,  8, 1, CHROMA_SUBSAMPLING_422)
+    MAKE_FOURCC(Y210, 10, 1, CHROMA_SUBSAMPLING_422)
+    MAKE_FOURCC(Y216, 16, 1, CHROMA_SUBSAMPLING_422)
 
     //444
-    constexpr auto AYUV = "AYUV"_fourcc;
-    constexpr auto Y410 = "Y410"_fourcc;
-    constexpr auto Y416 = "Y416"_fourcc;
+    MAKE_FOURCC(AYUV,  8, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC(Y410, 10, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC(Y416, 16, 1, CHROMA_SUBSAMPLING_444)
 
-    constexpr auto P8      = 41;
-    constexpr auto R16     = "R16U"_fourcc;
-    constexpr auto ARGB16  = "RG16"_fourcc;
-    constexpr auto ABGR16  = "BG16"_fourcc;
-    constexpr auto A2RGB10 = "RG10"_fourcc;
+    MAKE_FOURCC_EX(A2RGB10, "RG10"_fourcc, 10, 1, CHROMA_SUBSAMPLING_444)
+
+    MAKE_FOURCC_EX(R16,    "R16U"_fourcc, 16, 1, CHROMA_SUBSAMPLING_400)
+    MAKE_FOURCC_EX(ARGB16, "RG16"_fourcc, 16, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC_EX(ABGR16, "BG16"_fourcc, 16, 1, CHROMA_SUBSAMPLING_444)
+    MAKE_FOURCC_EX(P8,                41,  8, 1, CHROMA_SUBSAMPLING_400)
+    MAKE_FOURCC_EX(P8MB,   "P8MB"_fourcc,  8, 1, CHROMA_SUBSAMPLING_400)
+    MAKE_FOURCC_EX(RGB565, "RGB2"_fourcc, 16, 1, CHROMA_SUBSAMPLING_444)
+
+    using formats_rgb = pack<
+          format<RGB3>
+        , format<RGB4>
+        , format<RGBA>
+        , format<BGR4>
+        , format<ARGB>
+        , format<BGRA>
+        , format<A2RGB10>
+        , format<ARGB16>
+        , format<ABGR16>
+        , format<RGB565>
+    >;
+
+    using formats_420 = pack<
+          format<YV12>
+        , format<YV16>
+        , format<NV12>
+        , format<NV16>
+        , format<P010>
+        , format<P016>
+    >;
+
+    using formats_422 = pack<
+          format<YUY2>
+        , format<YUYV>
+        , format<UYVY>
+        , format<Y210>
+        , format<Y216>
+    >;
+
+    using formats_444 = pack<
+          format<AYUV>
+        , format<Y410>
+        , format<Y416>
+    >;
+
+    using formats_all = cat<
+        typename cat<
+            typename cat<
+                formats_420, formats_422
+            >::type, formats_444
+        >::type, formats_rgb
+    >::type;
+
+    template <typename F, typename... Types>
+    inline constexpr
+    auto attribute_of(unsigned format, F&& f, pack<Types...>)
+    {
+        return invoke_if(
+            std::forward<F>(f),
+            [format](auto&& xf) { return xf == format; },
+            pack<Types...>{}
+        );
+    }
+
+    template <typename F>
+    inline constexpr
+    auto attribute_of(unsigned format, F&& f)
+    {
+        return attribute_of(
+            format,
+            std::forward<F>(f),
+            formats_all{}
+        );
+    }
+
+    inline constexpr
+    unsigned bits_of(unsigned format)
+    {
+        return attribute_of(
+            format,
+            [](auto&& f)
+            { return std::decay<decltype(f)>::type::bits::value; }
+        );
+    };
+
+    inline constexpr
+    unsigned chroma_of(unsigned format)
+    {
+        return attribute_of(
+            format,
+            [](auto&& f)
+            { return std::decay<decltype(f)>::type::chroma::value; }
+        );
+    };
+
+    inline constexpr
+    unsigned planes_of(unsigned format)
+    {
+        return attribute_of(
+            format,
+            [](auto&& f)
+            { return std::decay<decltype(f)>::type::planes::value; }
+        );
+    };
 
 #if defined(ENABLE_MOCKS_MFX)
+
+    /* stub for unknown/unsupported color formats */
+    template <UMC::ColorFormat F>
+    constexpr
+    inline unsigned to_fourcc(std::integral_constant<UMC::ColorFormat, F>)
+    { return 0; }
+
     constexpr
     inline unsigned to_fourcc(std::integral_constant<UMC::ColorFormat, UMC::YV12>)
     { return make('Y', 'V', '1', '2'); }
@@ -128,6 +316,9 @@ namespace mocks { namespace fourcc
     inline unsigned to_fourcc(std::integral_constant<UMC::ColorFormat, UMC::P210>)
     { return make('P', '2', '1', '0'); }
     constexpr
+    inline unsigned to_fourcc(std::integral_constant<UMC::ColorFormat, UMC::P216>)
+    { return make('P', '2', '1', '6'); }
+    constexpr
     inline unsigned to_fourcc(std::integral_constant<UMC::ColorFormat, UMC::Y210>)
     { return make('Y', '2', '1', '0'); }
     constexpr
@@ -139,15 +330,6 @@ namespace mocks { namespace fourcc
     constexpr
     inline unsigned to_fourcc(std::integral_constant<UMC::ColorFormat, UMC::Y416>)
     { return make('Y', '4', '1', '6'); }
-
-    template <UMC::ColorFormat F>
-    struct format
-        : std::integral_constant<UMC::ColorFormat, F>
-    {
-        using fourcc_t = tag<to_fourcc(std::integral_constant<UMC::ColorFormat, F>{})>;
-        static constexpr
-        typename fourcc_t::value_type fourcc_v = fourcc_t::value;
-    };
 
     namespace detail
     {
@@ -161,9 +343,8 @@ namespace mocks { namespace fourcc
         {
             switch (format)
             {
-                case F:             return to_fourcc(std::integral_constant<UMC::ColorFormat, F>{});
-                default:            return to_fourcc_impl(format, std::integral_constant<UMC::ColorFormat, static_cast<UMC::ColorFormat>(F + 1)>{});
-
+                case F:  return to_fourcc(std::integral_constant<UMC::ColorFormat, F>{});
+                default: return to_fourcc_impl(format, std::integral_constant<UMC::ColorFormat, static_cast<UMC::ColorFormat>(F + 1)>{});
             }
         }
     }
@@ -182,7 +363,7 @@ namespace std
 {
     template <unsigned F>
     inline
-    string to_string(mocks::fourcc::tag<F> const& f)
+    string to_string(mocks::fourcc::format<F> const& f)
     {
         return
             f.value < '0' ? to_string(f.value) : std::string{ reinterpret_cast<char const*>(&f.value), 4 };
@@ -191,8 +372,8 @@ namespace std
 
 namespace mocks
 {
-    template <unsigned F>
+    template <unsigned F, unsigned C>
     inline
-    std::ostream& operator<<(std::ostream& os, fourcc::tag<F> const& f)
+    std::ostream& operator<<(std::ostream& os, fourcc::format<F> const& f)
     { return os << std::to_string(f); }
 }

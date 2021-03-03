@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 Intel Corporation
+// Copyright (c) 2018-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 #include <mutex>
 #include "mfx_common.h"
 #include "mfx_common_int.h"
+#include "mfx_umc_alloc_wrapper.h"
 
 #include "umc_defs.h"
 
@@ -80,6 +81,10 @@ public:
     // Return scheduler threading policy
     mfxTaskThreadingPolicy GetThreadingPolicy() override;
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
+
 private:
     // Internal implementation of API QueryIOSurf function
     static mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam*, mfxFrameAllocRequest*);
@@ -122,11 +127,12 @@ private:
     eMFXPlatform                                     m_platform;
 
     std::mutex                                       m_guard;
-    std::unique_ptr<mfx_UMC_FrameAllocator>          m_allocator;
+    std::unique_ptr<SurfaceSource>                   m_surface_source;
     std::unique_ptr<UMC_MPEG2_DECODER::MPEG2Decoder> m_decoder;
 
     bool                                             m_opaque;
     bool                                             m_first_run;
+    bool                                             m_allow_null_work_surface;
 
     mfxVideoParamWrapper                             m_init_video_par;
     mfxVideoParamWrapper                             m_first_video_par;

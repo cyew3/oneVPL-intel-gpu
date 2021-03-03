@@ -935,6 +935,26 @@ mfxStatus MFXVideoDECODE_VPP_Reset(mfxSession session,
     return sts;
 }
 
+mfxStatus MFXVideoDECODE_VPP_Close(mfxSession session) {
+    mfxStatus sts = MFX_ERR_INVALID_HANDLE;
+
+    if (!session)
+        return MFX_ERR_INVALID_HANDLE;
+
+    struct _mfxSession *pHandle = (struct _mfxSession *)session;
+
+    mfxFunctionPointer pFunc;
+    pFunc = pHandle->callVideoTable2[eMFXVideoDECODE_VPP_Close];
+    if (pFunc) {
+        session = pHandle->session;
+        sts =
+            (*(mfxStatus(MFX_CDECL *)(mfxSession))
+                 pFunc)(session);
+    }
+
+    return sts;
+}
+
 mfxStatus MFXVideoDECODE_VPP_GetChannelParam(mfxSession session,
                                              mfxVideoChannelParam *par,
                                              mfxU32 channel_id) {
@@ -969,7 +989,7 @@ mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session,
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
 
-    if (!in)
+    if (!out)
         return MFX_ERR_NULL_PTR;
 
     struct _mfxSession *pHandle = (struct _mfxSession *)session;

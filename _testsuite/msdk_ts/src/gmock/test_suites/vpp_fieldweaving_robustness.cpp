@@ -188,12 +188,18 @@ int TestSuite::RunCloseInitTest(tc_struct const& tc)
                 m_pSurfOut = m_pSurfPoolOut->GetSurface();
 
             sts = RunFrameVPPAsync(m_session, m_pSurfIn, m_pSurfOut, 0, m_pSyncPoint);
-            if (sts >= MFX_ERR_NONE)
-                nframes++;
+
             if (sts != MFX_ERR_MORE_DATA && sts != MFX_ERR_MORE_SURFACE && sts < MFX_ERR_NONE)
             {
                 g_tsLog << "ERROR: unexpected status in RunFrameVPPAsync\n";
                 g_tsStatus.check(sts);
+            }
+
+            if (sts >= MFX_ERR_NONE)
+            {
+                sts = MFXVideoCORE_SyncOperation(m_session, *m_pSyncPoint, MFX_INFINITE);
+                g_tsStatus.check(sts);
+                nframes++;
             }
         }
 

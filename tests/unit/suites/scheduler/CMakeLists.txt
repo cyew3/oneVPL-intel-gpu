@@ -7,6 +7,7 @@ add_executable(scheduler_tests)
 # Includes
 target_include_directories(scheduler_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/include
   ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
   # gtest/gmock
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include
@@ -22,6 +23,8 @@ target_sources(scheduler_tests
     ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_task.cpp
     ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_task_management.cpp
     ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_thread.cpp
+    ${MSDK_LIB_ROOT}/shared/src/mfx_session.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core.cpp
     $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp>
     $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/fast_compositing_ddi.cpp>
     $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/auxiliary_device.cpp>
@@ -68,6 +71,7 @@ target_link_libraries(scheduler_tests
     ${ITT_LIBRARIES}
     mfx_static_lib
     mfx_shared_lib
+    mfx_require_sse4_properties
     $<$<PLATFORM_ID:Windows>:cmrt_cross_platform_hw>
     $<$<PLATFORM_ID:Windows>:vc1_dec>
     $<$<PLATFORM_ID:Windows>:genx>

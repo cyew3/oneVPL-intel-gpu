@@ -32,21 +32,21 @@ public:
 
     mfxStatus FindFree(SrfEncCtl & surface_and_ctrl, mfxU64 nTimeout)
     {
-        mfxU32 SleepInterval = 10; // milliseconds    
+        mfxU32 SleepInterval = 10; // milliseconds
 
         for (mfxU32 j = 0; j < nTimeout; j += SleepInterval)
         {
             for (mfxU32 i = 0; i < m_Surfaces.size(); i++)
             {
                 if (0 == m_Surfaces[i].pSurface->Data.Locked)
-                {       
+                {
                     surface_and_ctrl = m_Surfaces[i];
                     return MFX_ERR_NONE;
                 }
             }
             //wait if there's no free surface
             m_pTime->Wait(SleepInterval);
-        }          
+        }
 
         return MFX_WRN_IN_EXECUTION;
     }
@@ -54,12 +54,10 @@ public:
     mfxStatus Create(mfxFrameAllocResponse &nresponse, mfxFrameInfo &info)
     {
         for (int i = 0; i < nresponse.NumFrameActual; i++)
-        { 
-            mfxFrameSurface1 *pSrf;
-            MFX_CHECK_POINTER(pSrf = new mfxFrameSurface1);
-            
-            memcpy(&pSrf->Info, &info, sizeof(info));
-            memset(&pSrf->Data, 0, sizeof(mfxFrameData));
+        {
+            mfxFrameSurface1 *pSrf = new mfxFrameSurface1();
+            memset(pSrf, 0, sizeof(mfxFrameSurface1));
+            pSrf->Info       = info;
             pSrf->Data.MemId = nresponse.mids[i];
             m_Surfaces.push_back(SrfEncCtl(pSrf));
         }

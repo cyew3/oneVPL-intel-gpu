@@ -129,7 +129,7 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::Reset()
     return mfx_UMC_FrameAllocator_D3D::Reset();
 }
 
-mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpegD3D9(const mfxVideoParam *params)
+mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpegD3D(const mfxVideoParam *params)
 {
     bool isD3DToSys = false;
     bool isOpaque = false;
@@ -149,14 +149,14 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpegD3D9(const mfxVi
     }
 #endif //MFX_ENABLE_OPAQUE_MEMORY
 
-    m_pCc.reset(new VideoVppJpegD3D9(m_pCore, isD3DToSys, isOpaque));
+    m_pCc.reset(new VideoVppJpegD3D(m_pCore, isD3DToSys, isOpaque));
 
     mfxStatus mfxSts;
     if (params->mfx.Rotation == MFX_ROTATION_90 || params->mfx.Rotation == MFX_ROTATION_270)
     {
         mfxVideoParam localParams = *params;
 
-        // Frame allocation is possible inside VideoVppJpegD3D9::Init().
+        // Frame allocation is possible inside VideoVppJpegD3D::Init().
         // Those frames must have width/height of target image, so the swapping.
         std::swap(localParams.mfx.FrameInfo.Width, localParams.mfx.FrameInfo.Height);
         std::swap(localParams.mfx.FrameInfo.CropW, localParams.mfx.FrameInfo.CropH);
@@ -173,8 +173,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpegD3D9(const mfxVi
 
 mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::FindSurfaceByMemId(const UMC::FrameData* in, bool isOpaq,
                                                                    const mfxHDLPair &hdlPair,
-                                                                   // output param
-                                                                   mfxFrameSurface1 &surface)
+                                                                   mfxFrameSurface1 &out_surface)
 {
     MFX_CHECK_NULL_PTR1(in);
 
@@ -185,7 +184,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::FindSurfaceByMemId(const UMC::Fr
     // if memid of in is same as memid of surface_work, StartPreparingToOutput() must not be called
     MFX_CHECK_WITH_ASSERT(!hdlPair.first || hdlPair.first != memId, MFX_ERR_UNSUPPORTED);
 
-    surface = m_frameDataInternal.GetSurface(index);
+    out_surface = m_frameDataInternal.GetSurface(index);
     return MFX_ERR_NONE;
 }
 
@@ -200,7 +199,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
 
     if (!m_pCc)
     {
-        MFX_SAFE_CALL( InitVideoVppJpegD3D9(par) );
+        MFX_SAFE_CALL( InitVideoVppJpegD3D(par) );
     }
 
     mfxHDLPair hdlPair;
@@ -273,10 +272,10 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::CheckPreparingToOutput(mfxFrameS
     {
         UMC::FrameMemID index = in->GetFrameMID();
 
-        mfxFrameSurface1 src = m_frameDataInternal.GetSurface(index);
+        mfxFrameSurface1* pSrc = &m_frameDataInternal.GetSurface(index);
         //Performance issue. We need to unlock mutex to let decoding thread run async.
         guard.Unlock();
-        sts = m_pCc->EndHwJpegProcessing(&src, surface_work);
+        sts = m_pCc->EndHwJpegProcessing(pSrc, surface_work);
         guard.Lock();
         if (sts < MFX_ERR_NONE)
             return sts;
@@ -314,8 +313,292 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::CheckPreparingToOutput(mfxFrameS
     return MFX_ERR_NONE;
 }
 
-void mfx_UMC_FrameAllocator_D3D_Converter::SetJPEGInfo(mfx_UMC_FrameAllocator_D3D_Converter::JPEG_Info * jpegInfo)
+void mfx_UMC_FrameAllocator_D3D_Converter::SetJPEGInfo(JPEG_Info * jpegInfo)
 {
     m_jpegInfo = *jpegInfo;
 }
+
+SurfaceSourceJPEG::SurfaceSourceJPEG(VideoCORE* core, const mfxVideoParam & video_param, eMFXPlatform platform, mfxFrameAllocRequest& request, mfxFrameAllocRequest& request_internal,
+    mfxFrameAllocResponse& response, mfxFrameAllocResponse& response_alien, void* opaq_surfaces, bool mapOpaq)
+    : SurfaceSource(core, video_param, platform, request, request_internal, response, response_alien, opaq_surfaces, mapOpaq, true)
+{}
+
+void SurfaceSourceJPEG::SetJPEGInfo(JPEG_Info * jpegInfo)
+{
+#if defined(MFX_ONEVPL)
+    MFX_CHECK_WITH_THROW(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED, std::exception());
+#endif
+    MFX_CHECK_WITH_THROW(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED, std::exception());
+
+    if (m_redirect_to_msdk20)
+    {
+#if defined(MFX_ONEVPL)
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        m_jpegInfo = *jpegInfo;
+#else
+        MFX_CHECK_WITH_THROW(false, MFX_ERR_UNSUPPORTED, std::exception());
+#endif
+    }
+    else
+    {
+        ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->SetJPEGInfo(jpegInfo);
+    }
+}
+
+UMC::Status SurfaceSourceJPEG::Reset()
+{
+#if defined(MFX_ONEVPL)
+    MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, UMC::UMC_ERR_NOT_INITIALIZED);
+#endif
+    MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, UMC::UMC_ERR_NOT_INITIALIZED);
+
+    if (m_redirect_to_msdk20)
+    {
+#if defined(MFX_ONEVPL)
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        m_pCc.reset();
+        return SurfaceSource::Reset();
+#else
+        MFX_RETURN(UMC::UMC_ERR_UNSUPPORTED);
+#endif
+    }
+    else
+    {
+        return m_umc_allocator_adapter->Reset();
+    }
+}
+
+mfxStatus SurfaceSourceJPEG::InitVideoVppJpegD3D(const mfxVideoParam *params)
+{
+#if defined(MFX_ONEVPL)
+    MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
+#endif
+    MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
+
+    if (m_redirect_to_msdk20)
+    {
+#if defined(MFX_ONEVPL)
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        bool isD3DToSys = params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+
+        m_pCc.reset(new VideoVppJpegD3D(m_core, isD3DToSys, false));
+
+        if (params->mfx.Rotation == MFX_ROTATION_90 || params->mfx.Rotation == MFX_ROTATION_270)
+        {
+            mfxVideoParam localParams = *params;
+
+            // Frame allocation is possible inside VideoVppJpegD3D::Init().
+            // Those frames must have width/height of target image, so do the swapping.
+            std::swap(localParams.mfx.FrameInfo.Width, localParams.mfx.FrameInfo.Height);
+            std::swap(localParams.mfx.FrameInfo.CropW, localParams.mfx.FrameInfo.CropH);
+
+            return m_pCc->Init(&localParams);
+        }
+
+        return m_pCc->Init(params);
+#else
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
+#endif
+    }
+    else
+    {
+        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->InitVideoVppJpegD3D(params);
+    }
+}
+
+mfxStatus SurfaceSourceJPEG::FindSurfaceByMemId(const UMC::FrameData* in, bool isOpaq,
+    const mfxHDLPair &hdlPair,
+    mfxFrameSurface1 &out_surface)
+{
+#if defined(MFX_ONEVPL)
+    MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
+#endif
+    MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
+
+    if (m_redirect_to_msdk20)
+    {
+#if defined(MFX_ONEVPL)
+        MFX_CHECK_NULL_PTR1(in);
+
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        UMC::FrameMemID index = in->GetFrameMID();
+        auto midIt = m_umc2mfx_memid.find(index);
+        MFX_CHECK_WITH_ASSERT(midIt != m_umc2mfx_memid.end(), MFX_ERR_NOT_FOUND);
+        mfxMemId memId = midIt->second;
+
+        // if memid of in is same as memid of surface_work, StartPreparingToOutput() must not be called
+        MFX_CHECK_WITH_ASSERT(!hdlPair.first || hdlPair.first != memId, MFX_ERR_UNSUPPORTED);
+
+        mfxFrameSurface1* pSurf = m_surface20_cache_decoder_surfaces->FindSurface(memId);
+        MFX_CHECK_NULL_PTR1(pSurf);
+
+        out_surface = *pSurf;
+        return MFX_ERR_NONE;
+#else
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
+#endif
+    }
+    else
+    {
+        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->FindSurfaceByMemId(in, isOpaq, hdlPair, out_surface);
+    }
+}
+
+mfxStatus SurfaceSourceJPEG::StartPreparingToOutput(mfxFrameSurface1 *surface_work,
+    UMC::FrameData* in,
+    const mfxVideoParam *par,
+    mfxU16 *taskId,
+    bool isOpaq)
+{
+#if defined(MFX_ONEVPL)
+    MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
+#endif
+    MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
+
+    if (m_redirect_to_msdk20)
+    {
+#if defined(MFX_ONEVPL)
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        mfxStatus sts = MFX_ERR_NONE;
+
+        if (!m_pCc)
+        {
+            MFX_SAFE_CALL(InitVideoVppJpegD3D(par));
+        }
+
+        mfxHDLPair hdlPair;
+        sts = m_core->GetFrameHDL(surface_work->Data.MemId, (mfxHDL*)&hdlPair);
+
+        if (sts == MFX_ERR_UNDEFINED_BEHAVIOR // nothing found by Get*FrameHDL()
+            || sts == MFX_ERR_UNSUPPORTED)    // Get*FrameHDL() does not support obtaining OS-specific handle
+        {
+            hdlPair.first = nullptr;
+        }
+        else
+        {
+            MFX_CHECK_STS(sts);
+        }
+
+        // for interlaced case, [0] is top and [1] is bottom; for progressive only [0] is used
+        mfxFrameSurface1 srcSurface[2];
+        for (int i = 0; i < 1 + (surface_work->Info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE); ++i)
+        {
+            MFX_SAFE_CALL(FindSurfaceByMemId(&in[i], isOpaq, hdlPair, srcSurface[i]));
+
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+            /* JPEG standard does not support crops as it is done in AVC, so:
+               - CropX and CropY are always 0,
+               - CropW and CropH represents picture size for current frame (in case of rotation,
+               surface_work has rotated CropW and CropH),
+               - Width and Height represents surface allocation size (they are initialized
+               in decoder Init and are correct).
+            */
+            if (par->mfx.Rotation == MFX_ROTATION_90 || par->mfx.Rotation == MFX_ROTATION_270)
+            {
+                srcSurface[i].Info.CropW = surface_work->Info.CropH;
+                srcSurface[i].Info.CropH = surface_work->Info.CropW;
+            }
+            else
+#endif // MFX_ENABLE_MJPEG_ROTATE_VPP
+            {
+                srcSurface[i].Info.CropW = surface_work->Info.CropW;
+                srcSurface[i].Info.CropH = surface_work->Info.CropH;
+            }
+            if (surface_work->Info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+            {
+                srcSurface[i].Info.CropH /= 2;
+            }
+        }
+        return par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ?
+            m_pCc->BeginHwJpegProcessing(&srcSurface[0], surface_work, taskId) :
+            m_pCc->BeginHwJpegProcessing(&srcSurface[0], &srcSurface[1], surface_work, taskId);
+#else
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
+#endif
+    }
+    else
+    {
+        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->StartPreparingToOutput(surface_work, in, par, taskId, isOpaq);
+    }
+}
+
+mfxStatus SurfaceSourceJPEG::CheckPreparingToOutput(mfxFrameSurface1 *surface_work,
+    UMC::FrameData* in,
+    const mfxVideoParam * par,
+    mfxU16 taskId)
+{
+#if defined(MFX_ONEVPL)
+    MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
+#endif
+    MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
+
+    if (m_redirect_to_msdk20)
+    {
+#if defined(MFX_ONEVPL)
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        MFX_CHECK_NULL_PTR1(m_pCc);
+        mfxStatus sts = m_pCc->QueryTaskRoutine(taskId);
+        if (sts == MFX_TASK_BUSY)
+        {
+            return sts;
+        }
+        if (sts != MFX_TASK_DONE)
+            return sts;
+
+        if (par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+        {
+            UMC::FrameMemID index = in->GetFrameMID();
+            auto midIt = m_umc2mfx_memid.find(index);
+            MFX_CHECK_WITH_ASSERT(midIt != m_umc2mfx_memid.end(), MFX_ERR_NOT_FOUND);
+            mfxMemId memId = midIt->second;
+
+            mfxFrameSurface1* pSrc = m_surface20_cache_decoder_surfaces->FindSurface(memId);
+            MFX_CHECK_NULL_PTR1(pSrc);
+            //Performance issue. We need to unlock mutex to let decoding thread run async.
+            guard.Unlock();
+            sts = m_pCc->EndHwJpegProcessing(pSrc, surface_work);
+            guard.Lock();
+            MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+        }
+        else
+        {
+            UMC::FrameMemID indexTop = in[0].GetFrameMID();
+            UMC::FrameMemID indexBottom = in[1].GetFrameMID();
+
+            // find mfx MemId
+            auto midItTop = m_umc2mfx_memid.find(indexTop);
+            MFX_CHECK_WITH_ASSERT(midItTop != m_umc2mfx_memid.end(), MFX_ERR_NOT_FOUND);
+            auto midItBottom = m_umc2mfx_memid.find(indexBottom);
+            MFX_CHECK_WITH_ASSERT(midItBottom != m_umc2mfx_memid.end(), MFX_ERR_NOT_FOUND);
+
+            // find surface
+            mfxFrameSurface1* srcTop = m_surface20_cache_decoder_surfaces->FindSurface(midItTop->second);
+            MFX_CHECK_NULL_PTR1(srcTop);
+            mfxFrameSurface1* srcBottom = m_surface20_cache_decoder_surfaces->FindSurface(midItBottom->second);
+            MFX_CHECK_NULL_PTR1(srcBottom);
+
+            //Performance issue. We need to unlock mutex to let decoding thread run async.
+            guard.Unlock();
+            sts = m_pCc->EndHwJpegProcessing(srcTop, srcBottom, surface_work);
+            guard.Lock();
+            MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+        }
+
+        return MFX_ERR_NONE;
+#else
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
+#endif
+    }
+    else
+    {
+        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->CheckPreparingToOutput(surface_work, in, par, taskId);
+    }
+}
+
 #endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)

@@ -61,6 +61,7 @@ enum Function2 {
     eMFXVideoDECODE_VPP_Init,
     eMFXVideoDECODE_VPP_DecodeFrameAsync,
     eMFXVideoDECODE_VPP_Reset,
+    eMFXVideoDECODE_VPP_Close,
     eMFXVideoDECODE_VPP_GetChannelParam,
     eMFXVideoVPP_ProcessFrameAsync,
 
@@ -109,6 +110,7 @@ static const FunctionsTable2 g_mfxFuncTable2[] = {
     { eMFXVideoDECODE_VPP_Init, "MFXVideoDECODE_VPP_Init", VERSION(2, 1) },
     { eMFXVideoDECODE_VPP_DecodeFrameAsync, "MFXVideoDECODE_VPP_DecodeFrameAsync", VERSION(2, 1) },
     { eMFXVideoDECODE_VPP_Reset, "MFXVideoDECODE_VPP_Reset", VERSION(2, 1) },
+    { eMFXVideoDECODE_VPP_Close, "MFXVideoDECODE_VPP_Close", VERSION(2, 1) },
     { eMFXVideoDECODE_VPP_GetChannelParam, "MFXVideoDECODE_VPP_GetChannelParam", VERSION(2, 1) },
     { eMFXVideoVPP_ProcessFrameAsync, "MFXVideoVPP_ProcessFrameAsync", VERSION(2, 1) },
 };
@@ -567,6 +569,21 @@ mfxStatus MFXVideoDECODE_VPP_Reset(mfxSession session,
     return (*proc)(loader->getSession(), decode_par, vpp_par_array, num_vpp_par);
 }
 
+mfxStatus MFXVideoDECODE_VPP_Close(mfxSession session) {
+    if (!session)
+        return MFX_ERR_INVALID_HANDLE;
+
+    MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
+
+    auto proc =
+        (decltype(MFXVideoDECODE_VPP_Close)*)loader->getFunction2(MFX::eMFXVideoDECODE_VPP_Close);
+    if (!proc) {
+        return MFX_ERR_INVALID_HANDLE;
+    }
+
+    return (*proc)(loader->getSession());
+}
+
 mfxStatus MFXVideoDECODE_VPP_GetChannelParam(mfxSession session,
                                              mfxVideoChannelParam* par,
                                              mfxU32 channel_id) {
@@ -593,7 +610,7 @@ mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session,
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
 
-    if (!in || !out)
+    if (!out)
         return MFX_ERR_NULL_PTR;
 
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;

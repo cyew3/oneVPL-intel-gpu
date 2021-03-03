@@ -1026,10 +1026,10 @@ namespace MfxHwH264Encode
         mfxU32                     payloadLayout);
 
     mfxStatus CopyFrameDataBothFields(
-        VideoCORE *          core,
-        mfxFrameData const & dst,
-        mfxFrameData const & src,
-        mfxFrameInfo const & info);
+        VideoCORE *               core,
+        mfxMemId                  dstMid,
+        const mfxFrameSurface1&   srcSurf,
+        mfxFrameInfo const&       info);
 
 #if 0 // removed dependency from file operations
     void WriteFrameData(

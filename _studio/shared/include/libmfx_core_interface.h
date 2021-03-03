@@ -51,6 +51,9 @@ static const MFX_GUID MFXICOREVDAAPI_GUID =
 static const MFX_GUID MFXICORE_API_1_19_GUID =
 { 0xea851c02, 0x7f04, 0x4126, { 0x90, 0x45, 0x48, 0xd8, 0x28, 0x24, 0x34, 0xa5 } };
 
+// {B9C3862C-8AB0-4ACA-A0F1-9407509FBCEC}
+static const MFX_GUID MFXICORE_API_2_0_GUID =
+{ 0xb9c3862c, 0x8ab0, 0x4aca, { 0xa0, 0xf1, 0x94, 0x7, 0x50, 0x9f, 0xbc, 0xec } };
 
 // {6ED94B99-DB70-4EBB-BC5C-C7E348FC2396}
 static const
@@ -122,6 +125,13 @@ static const MFX_GUID MFXICORE_GT_CONFIG_GUID =
 static const
 MFX_GUID MFXIFEIEnabled_GUID =
 { 0x7df28d19, 0x889a, 0x45c1,{ 0xaa, 0x5, 0xa4, 0xf7, 0xef, 0xae, 0x95, 0x28 } };
+
+#if defined(MFX_ONEVPL)
+// {2C3163A0-B061-4931-AF0D-2301AC99DA77}
+static const
+MFX_GUID MFXAllocatorWrapper_GUID =
+{ 0x2c3163a0, 0xb061, 0x4931, {0xaf, 0x0d, 0x23, 0x01, 0xac, 0x99, 0xda, 0x77} };
+#endif
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 // {D1CF0B87-6D92-45E1-AA6D-85DAEB15183D}

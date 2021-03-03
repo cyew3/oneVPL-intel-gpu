@@ -31,15 +31,15 @@ namespace mocks { namespace dx9 { namespace winapi
     struct resource_base_impl
         : T
     {
-        HRESULT GetDevice(IDirect3DDevice9** ppDevice) override
+        HRESULT GetDevice(IDirect3DDevice9**) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        HRESULT SetPrivateData(REFGUID refguid, CONST void* pData, DWORD SizeOfData, DWORD Flags) override
+        HRESULT SetPrivateData(REFGUID, CONST void* /*pData*/, DWORD /*SizeOfData*/, DWORD /*Flags*/) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        HRESULT GetPrivateData(REFGUID refguid, void* pData, DWORD* pSizeOfData) override
+        HRESULT GetPrivateData(REFGUID, void* /*pData*/, DWORD* /*pSizeOfData*/) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        HRESULT FreePrivateData(REFGUID refguid) override
+        HRESULT FreePrivateData(REFGUID) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        DWORD SetPriority(DWORD PriorityNew) override
+        DWORD SetPriority(DWORD) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
         DWORD GetPriority() override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }

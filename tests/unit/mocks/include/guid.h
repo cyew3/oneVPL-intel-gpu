@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,35 @@
 
 #include <type_traits>
 #include <string>
+
+#if defined(_WIN32)
 #include <guiddef.h>
+#include <cguid.h>
+#else
+struct GUID
+{
+    unsigned long  Data1;
+    unsigned short Data2;
+    unsigned short Data3;
+    unsigned char  Data4[8];
+};
+#endif
 
 namespace mocks
 {
-    template <GUID const* id>
+    template <GUID const* Id>
     struct guid
-        : std::integral_constant<GUID const*, id>
+        : std::integral_constant<GUID const*, Id>
     {};
 }
 
 namespace std
 {
-    template <GUID const* G>
+    template <GUID const* Id>
     inline
-    string to_string(mocks::guid<G> g)
+    string to_string(mocks::guid<Id>)
     {
-        constexpr REFGUID id = *g.value;
+        GUID const& id = *Id;
 
         string s; s.resize(64);
         snprintf(&s[0], s.size(),
@@ -51,12 +63,27 @@ namespace std
 
         return s;
     }
+
+    template <GUID const* Id>
+    struct hash<mocks::guid<Id> >
+    {
+        size_t operator()(mocks::guid<Id> id) const
+        {
+            return
+                  std::hash<decltype(id.value->Data1)>{}(id.value->Data1)
+                ^ std::hash<decltype(id.value->Data2)>{}(id.value->Data2)
+                ^ std::hash<decltype(id.value->Data3)>{}(id.value->Data3)
+                ^ std::hash<std::string>{}(std::string(reinterpret_cast<char const*>(id.value->Data4), 8)) //std::string_view since C++17
+                ;
+        }
+    };
 }
 
 namespace mocks
 {
-    template <GUID const* G>
+    template <GUID const* Id>
     inline
-    std::ostream& operator<<(std::ostream& os, guid<G> g)
-    { return os << std::to_string(g); }
+    std::ostream& operator<<(std::ostream& os, guid<Id> id)
+    { return os << std::to_string(id); }
+
 }

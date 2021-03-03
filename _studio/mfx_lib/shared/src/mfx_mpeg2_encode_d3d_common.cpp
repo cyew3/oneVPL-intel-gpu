@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2019 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -58,7 +58,10 @@ mfxStatus D3DXCommonEncoder::WaitTaskSync(mfxU32 timeOutMs, GPU_SYNC_EVENT_HANDL
 
     HRESULT waitRes = WaitForSingleObject(pEvent->gpuSyncEvent, timeOutMs);
     if (WAIT_OBJECT_0 != waitRes)
-        return MFX_ERR_GPU_HANG;
+    {
+        MFX_CHECK(timeOutMs < DEFAULT_WAIT_HW_TIMEOUT_MS, MFX_ERR_GPU_HANG);
+        return MFX_WRN_DEVICE_BUSY;
+    }
 
     m_EventCache->ReturnEvent(pEvent->gpuSyncEvent);
 

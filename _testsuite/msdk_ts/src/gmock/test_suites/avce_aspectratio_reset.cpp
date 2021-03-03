@@ -180,6 +180,7 @@ int TestSuite::RunTest(unsigned int id)
     m_bs_processor = &verifier;
     ResChange resolution;
     m_filler = &resolution;
+    m_filler->m_max = nframes;
     EncodeFrames(nframes);
 
     for(unsigned int i = 0; i < MAX_NPARS; i++)
@@ -209,6 +210,7 @@ int TestSuite::RunTest(unsigned int id)
             resolution.Init(tc.set_par[i].v_resw, tc.set_par[i].v_resh);
         }
         Reset();
+        m_filler->m_cur = 0;
         EncodeFrames(nframes);
     }
     TS_END;

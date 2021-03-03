@@ -39,12 +39,7 @@ class BitstreamExManager
         };
         virtual ~BitstreamExManager()
         {
-            for (mfxU32 i=0; i < m_bsPool.size(); i++)
-            {
-                MSDK_SAFE_DELETE(m_bsPool[i].bitstream.Data);
-            }
             m_bsPool.clear();
-
         };
 
         mfxBitstreamEx* GetNext( void )

@@ -493,27 +493,17 @@ void InitCoreInterface(mfxCoreInterface *pCoreInterface,
 } // namespace
 
 
-//////////////////////////////////////////////////////////////////////////
-//  Global free functions
-//////////////////////////////////////////////////////////////////////////
-
-MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session)
-{
-    MFXIPtr<MFXISession_1_10> nullPtr;
-    if (session == NULL)
-    {
-        return nullPtr;
-    }
-
-    if (session->m_version.Major != 1 || session->m_version.Minor < 10)
-    {
-        return nullPtr;
-    }
-
-    _mfxSession_1_10 * newPtr = (_mfxSession_1_10 *)session;
-
-    return MFXIPtr<MFXISession_1_10>( newPtr->QueryInterface(MFXISession_1_10_GUID) );
+#define TRY_GET_SESSION(verMax,verMin) MFXIPtr<MFXISession_##verMax##_##verMin> TryGetSession_##verMax##_##verMin(mfxSession session) \
+{ \
+    if (session == NULL)\
+    { \
+        return MFXIPtr<MFXISession_##verMax##_##verMin>(); \
+    } \
+    return MFXIPtr<MFXISession_##verMax##_##verMin>(static_cast<_mfxVersionedSessionImpl *>(session)->QueryInterface(MFXISession_##verMax##_##verMin##_GUID)); \
 }
+
+TRY_GET_SESSION(1,10)
+TRY_GET_SESSION(2,1)
 
 //////////////////////////////////////////////////////////////////////////
 //  _mfxSession members
@@ -628,6 +618,10 @@ void _mfxSession::Cleanup(void)
     m_pVPP.reset();
     m_pDECODE.reset();
     m_pENCODE.reset();
+
+#if defined(MFX_ONEVPL)
+        m_pDVP.reset();
+#endif
 
     // release m_pScheduler and m_pSchedulerAllocated
     ReleaseScheduler();
@@ -805,17 +799,17 @@ mfxStatus _mfxSession::ReleaseScheduler(void)
 } // mfxStatus _mfxSession::RestoreScheduler(void)
 
 //////////////////////////////////////////////////////////////////////////
-// _mfxSession_1_10 own members
+// _mfxVersionedSessionImpl own members
 //////////////////////////////////////////////////////////////////////////
 
-_mfxSession_1_10::_mfxSession_1_10(mfxU32 adapterNum)
+_mfxVersionedSessionImpl::_mfxVersionedSessionImpl(mfxU32 adapterNum)
     : _mfxSession(adapterNum)
     , m_refCounter(1)
     , m_externalThreads(0)
 {
 }
 
-_mfxSession_1_10::~_mfxSession_1_10(void)
+_mfxVersionedSessionImpl::~_mfxVersionedSessionImpl(void)
 {
 #if defined(MFX_ENABLE_USER_ENC)
     if (m_plgPreEnc.get())
@@ -823,31 +817,31 @@ _mfxSession_1_10::~_mfxSession_1_10(void)
         m_plgPreEnc->PluginClose();
     }
     m_plgPreEnc.reset();
-#endif //MFX_ENABLE_USER_ENC
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
-// _mfxSession_1_10::MFXISession_1_10 members
+// _mfxVersionedSessionImpl::MFXISession_1_10 members
 //////////////////////////////////////////////////////////////////////////
 
 
-void _mfxSession_1_10::SetAdapterNum(const mfxU32 adapterNum)
+void _mfxVersionedSessionImpl::SetAdapterNum(const mfxU32 adapterNum)
 {
     m_adapterNum = adapterNum;
 }
 
 #if !defined(MFX_ONEVPL)
-std::unique_ptr<VideoCodecUSER> &  _mfxSession_1_10::GetPreEncPlugin()
+std::unique_ptr<VideoCodecUSER> &  _mfxVersionedSessionImpl::GetPreEncPlugin()
 {
     return m_plgPreEnc;
 }
 #endif //!MFX_ONEVPL
 
 //////////////////////////////////////////////////////////////////////////
-// _mfxSession_1_10::MFXIUnknown members
+// _mfxVersionedSessionImpl::MFXIUnknown members
 //////////////////////////////////////////////////////////////////////////
 
-void *_mfxSession_1_10::QueryInterface(const MFX_GUID &guid)
+void *_mfxVersionedSessionImpl::QueryInterface(const MFX_GUID &guid)
 {
     // Specific interface is required
     if (MFXISession_1_10_GUID == guid)
@@ -858,19 +852,27 @@ void *_mfxSession_1_10::QueryInterface(const MFX_GUID &guid)
         return (MFXISession_1_10 *) this;
     }
 
+    // Specific interface is required
+    if (MFXISession_2_1_GUID == guid)
+    {
+        // increment reference counter
+        vm_interlocked_inc32(&m_refCounter);
+
+        return (MFXISession_2_1 *)this;
+    }
+
     // it is unsupported interface
     return NULL;
+} // void *_mfxVersionedSessionImpl::QueryInterface(const MFX_GUID &guid)
 
-} // void *_mfxSession_1_10::QueryInterface(const MFX_GUID &guid)
-
-void _mfxSession_1_10::AddRef(void)
+void _mfxVersionedSessionImpl::AddRef(void)
 {
     // increment reference counter
     vm_interlocked_inc32(&m_refCounter);
 
 } // void mfxSchedulerCore::AddRef(void)
 
-void _mfxSession_1_10::Release(void)
+void _mfxVersionedSessionImpl::Release(void)
 {
     // decrement reference counter
     vm_interlocked_dec32(&m_refCounter);
@@ -880,13 +882,13 @@ void _mfxSession_1_10::Release(void)
         delete this;
     }
 
-} // void _mfxSession_1_10::Release(void)
+} // void _mfxVersionedSessionImpl::Release(void)
 
-mfxU32 _mfxSession_1_10::GetNumRef(void) const
+mfxU32 _mfxVersionedSessionImpl::GetNumRef(void) const
 {
     return m_refCounter;
 
-} // mfxU32 _mfxSession_1_10::GetNumRef(void) const
+} // mfxU32 _mfxVersionedSessionImpl::GetNumRef(void) const
 
 #ifdef MFX_VA_WIN
 static inline bool HasNativeDX9Support(mfxU32 adapter_n)
@@ -912,7 +914,7 @@ static inline bool HasNativeDX9Support(mfxU32 adapter_n)
 }
 #endif
 
-mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
+mfxStatus _mfxVersionedSessionImpl::InitEx(mfxInitParam& par)
 {
     mfxStatus mfxRes;
     mfxU32 maxNumThreads;
@@ -1099,15 +1101,37 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         }
     }
 
+    return InitEx_2_1(par);
+} // mfxStatus _mfxVersionedSessionImpl::InitEx(mfxInitParam& par);
+
+mfxStatus _mfxVersionedSessionImpl::InitEx_2_1(mfxInitParam& par)
+{
+    //--- Initialization of stuff related to 1.33 interface
+    if (par.ExtParam)
+    {
+        mfxExtBuffer** found = std::find_if(par.ExtParam, par.ExtParam + par.NumExtParam,
+            [](mfxExtBuffer* x) {
+            return x->BufferId == MFX_EXTBUFF_THREADS_PARAM && x->BufferSz == sizeof(mfxExtThreadsParam); });
+        MFX_CHECK(found!= par.ExtParam + par.NumExtParam, MFX_ERR_UNSUPPORTED);
+    }
+
     return MFX_ERR_NONE;
-} // mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par);
+} // mfxStatus _mfxVersionedSessionImpl::InitEx2_1(mfxInitParam& par);
 
 
 //explicit specification of interface creation
 template<> MFXISession_1_10*  CreateInterfaceInstance<MFXISession_1_10>(const MFX_GUID &guid)
 {
     if (MFXISession_1_10_GUID == guid)
-        return (MFXISession_1_10*) (new _mfxSession_1_10(0));
+        return (MFXISession_1_10*) (new _mfxVersionedSessionImpl(0));
+
+    return NULL;
+}
+
+template<> MFXISession_2_1*  CreateInterfaceInstance<MFXISession_2_1>(const MFX_GUID &guid)
+{
+    if (MFXISession_2_1_GUID == guid)
+        return (MFXISession_2_1*)(new _mfxVersionedSessionImpl(0));
 
     return NULL;
 }

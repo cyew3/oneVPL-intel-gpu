@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,6 @@ namespace mocks
 
         virtual ~unknown_impl() = default;
 
-        unknown_impl(IUnknown* owner = nullptr);
         template <typename ...Args>
         unknown_impl(Args&&... args);
         template <typename ...Args>
@@ -77,6 +76,8 @@ namespace mocks
                 .WillRepeatedly(testing::Invoke(
                     [&u]()
                     {
+                        assert(u.counter);
+
                         auto r = --u.counter;
                         if (!r) delete &u;
                         return r;
@@ -88,6 +89,7 @@ namespace mocks
                     {
                         *result = ptr;
                         ptr->AddRef();
+
                         return S_OK;
                     }
                 )));
@@ -117,10 +119,43 @@ namespace mocks
         return u;
     }
 
+    /* Use as mock_unknown<Interface1, Interface1, ...>(unk) */
+    template <typename ...U, typename ...T>
+    inline
+    unknown_impl<T...>& mock_unknown(unknown_impl<T...>& u)
+    {
+        for_each(
+            [&](auto p) { mock_unknown(u, p.first, p.second); },
+            std::make_pair(static_cast<U*>(&u), uuidof<U>())...
+        );
+
+        return u;
+    }
+
+    /* Use as mock_unknown(unknown_impl u, unknown_impl other) - make 'u' to support all interfaces from 'other' */
+    template <typename ...T, typename ...U>
+    inline
+    unknown_impl<T...>& mock_unknown(unknown_impl<T...>& u, unknown_impl<U...>& other)
+    {
+        return mock_unknown(u, &other,
+            uuidof<U>()...
+        );
+    }
+
+    /* Make all IUnknown's methods of given 'unknown_impl' go to give 'outer' object */
     template <typename ...T, typename U>
     inline
-    unknown_impl<T...>& mock_composite(unknown_impl<T...>& u, U* outer)
+    unknown_impl<T...>& mock_contained(unknown_impl<T...>& u, U* outer)
     {
+        assert(!u.owner);
+        assert(u.counter);
+
+        //steal object's reference counter
+        ULONG counter = 1;
+        std::swap(counter, u.counter);
+        for (ULONG i = 1; i < counter; ++i)
+            outer->AddRef();
+
         EXPECT_CALL(u, AddRef())
             .WillRepeatedly(testing::Invoke([outer]() { return outer->AddRef(); }));
 
@@ -135,22 +170,10 @@ namespace mocks
         return u;
     }
 
-    /* Use as mock_unknown<Interface1, Interface1, ...>(unk) */
-    template <typename ...U, typename ...T>
-    inline
-    unknown_impl<T...>& mock_unknown(unknown_impl<T...>& u)
-    {
-        for_each(
-            [&](auto p) { mock_unknown(u, p.first, p.second); },
-            std::make_pair(static_cast<U*>(&u), uuidof<U>())...
-        );
-
-        return u;
-    }
-
     template <typename ...T>
+    template <typename ...Args>
     inline
-    unknown_impl<T...>::unknown_impl(IUnknown* owner)
+    unknown_impl<T...>::unknown_impl(IUnknown* owner, Args&&... args)
         : owner(owner)
     {
         EXPECT_CALL(*this, QueryInterface(testing::_, testing::_))
@@ -158,32 +181,21 @@ namespace mocks
 
         for_each(
             [this](auto p) { detail::mock_unknown(*this, p.first, p.second); },
-            std::make_pair(this, IID_IUnknown), std::make_pair(static_cast<T*>(this), uuidof<T>())...
+            std::make_pair(this, IID_IUnknown),
+            std::make_pair(static_cast<T*>(this), uuidof<T>())..., //mock all Ts from 'unknown_impl<T...>'
+            std::make_pair(this, std::forward<Args>(args))...      //mock all GUIDs passed as 'args'
         );
 
         if (owner)
-            mock_composite(*this, owner);
+            //if object has an owner - it is contained object, need mock all its IUnknown's methods to go to owner (outer object)
+            mock_contained(*this, owner);
     }
 
     template <typename ...T>
     template <typename ...Args>
     inline
     unknown_impl<T...>::unknown_impl(Args&&... args)
-        : unknown_impl<T...>()
-    {
-        mock_unknown(*this, this, std::forward<Args>(args)...);
-    }
-
-    template <typename ...T>
-    template <typename ...Args>
-    inline
-    unknown_impl<T...>::unknown_impl(IUnknown* owner, Args&&... args)
-        : owner(owner)
-    {
-        mock_unknown(*this, this, std::forward<Args>(args)...);
-
-        if (owner)
-            mock_composite(*this, owner);
-    }
+        : unknown_impl<T...>(static_cast<IUnknown*>(nullptr), std::forward<Args>(args)...)
+    {}
 
 }

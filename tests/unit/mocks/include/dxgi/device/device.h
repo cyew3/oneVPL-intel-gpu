@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,8 @@ namespace mocks { namespace dxgi
     {
         MOCK_METHOD1(GetAdapter, HRESULT(IDXGIAdapter**));
         MOCK_METHOD5(CreateSurface, HRESULT(const DXGI_SURFACE_DESC*, UINT, DXGI_USAGE, const DXGI_SHARED_RESOURCE*, IDXGISurface**));
+        MOCK_METHOD1(SetGPUThreadPriority, HRESULT(INT));
+        MOCK_METHOD1(GetGPUThreadPriority, HRESULT(INT*));
     };
 
     namespace detail
@@ -76,9 +78,14 @@ namespace mocks { namespace dxgi
                 ),
                 testing::IsNull(),
                 testing::NotNull()))
-                .WillRepeatedly(testing::WithArgs<4>(testing::Invoke(
-                    [params = std::make_tuple(std::get<1>(params), std::get<2>(params))](IDXGISurface** s)
-                    { *s = make_surface(std::move(params)).release(); return S_OK; }
+                .WillRepeatedly(testing::WithArgs<1, 4>(testing::Invoke(
+                    [params = std::make_tuple(std::get<1>(params), std::get<2>(params))](UINT count, IDXGISurface** s)
+                    {
+                        for (UINT i = 0; i < count; ++i)
+                            s[i] = make_surface(std::move(params)).release();
+
+                        return S_OK;
+                    }
                 )));
         }
 
@@ -114,7 +121,29 @@ namespace mocks { namespace dxgi
 
         template <typename T>
         inline
-        void mock_device(device& d, T)
+        typename std::enable_if<
+            std::is_integral<T>::value
+        >::type
+        mock_device(device& d, T priority)
+        {
+            EXPECT_CALL(d, SetGPUThreadPriority(testing::Eq(priority)))
+                .WillRepeatedly(
+                    testing::Return(S_OK)
+                );
+
+            EXPECT_CALL(d, GetGPUThreadPriority(testing::NotNull()))
+                .WillRepeatedly(testing::DoAll(
+                    testing::SetArgPointee<0>(priority),
+                    testing::Return(S_OK)
+                ));
+        }
+
+        template <typename T>
+        inline
+        typename std::enable_if<
+            !std::is_integral<T>::value
+        >::type
+        mock_device(device& d, T)
         {
             static_assert(false,
                 "Unknown argument was passed to [make_device]"
@@ -151,6 +180,13 @@ namespace mocks { namespace dxgi
         ;
 
         EXPECT_CALL(*d, CreateSurface(_, _, _, _, _))
+            .WillRepeatedly(testing::Return(E_FAIL))
+        ;
+
+        EXPECT_CALL(*d, SetGPUThreadPriority(_))
+            .WillRepeatedly(testing::Return(E_FAIL))
+        ;
+        EXPECT_CALL(*d, GetGPUThreadPriority(_))
             .WillRepeatedly(testing::Return(E_FAIL))
         ;
 

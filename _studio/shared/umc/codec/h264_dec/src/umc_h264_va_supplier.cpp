@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -366,12 +366,10 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
     FrameData frmData;
     frmData.Init(&info, frmMID, m_pFrameAllocator);
 
-    mfx_UMC_FrameAllocator* mfx_alloc =
-        DynamicCast<mfx_UMC_FrameAllocator>(m_pFrameAllocator);
-    if (mfx_alloc)
+    auto frame_source = dynamic_cast<SurfaceSource*>(m_pFrameAllocator);
+    if (frame_source)
     {
-        mfxFrameSurface1* surface =
-            mfx_alloc->GetSurfaceByIndex(frmMID);
+        mfxFrameSurface1* surface = frame_source->GetSurfaceByIndex(frmMID);
         if (!surface)
             throw h264_exception(UMC_ERR_ALLOC);
 

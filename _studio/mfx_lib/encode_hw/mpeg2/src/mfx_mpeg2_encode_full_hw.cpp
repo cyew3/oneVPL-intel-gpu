@@ -135,6 +135,11 @@ FullEncode::FullEncode(VideoCORE *core, mfxStatus *sts)
     *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
 }
 
+FullEncode::~FullEncode()
+{
+    Close();
+}
+
 mfxStatus FullEncode::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out)
 {
     return ControllerBase::Query(core,in, out, AVBR_WA);
@@ -203,7 +208,7 @@ mfxStatus FullEncode::ResetImpl()
 
     if (!m_pFrameTasks)
     {
-        m_nFrameTasks = paramsEx->mfxVideoParams.AsyncDepth > 0 ? paramsEx->mfxVideoParams.AsyncDepth : 2;       
+        m_nFrameTasks = paramsEx->mfxVideoParams.AsyncDepth > 0 ? paramsEx->mfxVideoParams.AsyncDepth : 2;
         m_pFrameTasks = new EncodeFrameTask[m_nFrameTasks]; 
     }
 
@@ -358,7 +363,7 @@ mfxStatus FullEncode::CancelFrame(mfxEncodeCtrl * /*ctrl*/, mfxEncodeInternalPar
 {
     MFX_CHECK_NULL_PTR1(surface)
         m_pController->FinishFrame(0);
-    return m_pCore->DecreaseReference(&surface->Data);
+    return m_pCore->DecreaseReference(*surface);
 }
 
 // Async algorithm
@@ -435,7 +440,7 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
                                         (pInternalParams->InternalFlags & MFX_IFLAG_ADD_EOS) ? 1:0);
     MFX_CHECK_STS(sts);
 
-    sts = m_pCore->DecreaseReference(&surface->Data);
+    sts = m_pCore->DecreaseReference(*surface);
     MFX_CHECK_STS(sts);
 
    // coding
@@ -539,7 +544,7 @@ mfxStatus TaskRoutineSubmit(void *pState, void *param, mfxU32 /*n*/, mfxU32 /*ca
     sExtTask2 *pExtTask = (sExtTask2 *)param;
 
     sts = th->m_pExtTasks->CheckTaskForSubmit(pExtTask);
-    MFX_CHECK_STS(sts);   
+    MFX_CHECK_STS(sts);
 
     sts = th->SubmitFrame(pExtTask);
     MFX_CHECK_STS(sts);  
@@ -567,7 +572,6 @@ mfxStatus TaskRoutineQuery(void *pState, void *param, mfxU32 /*n*/, mfxU32 /*cal
         
     return MFX_TASK_DONE;
 }
-    
 
 mfxStatus FullEncode::EncodeFrameCheck(
                                        mfxEncodeCtrl *           ctrl,
@@ -601,12 +605,10 @@ mfxStatus FullEncode::EncodeFrameCheck(
         pOriginalSurface->Data.FrameOrder = surface->Data.FrameOrder;
     }
 
-
     sts_ret = EncodeFrameCheck(ctrl, pOriginalSurface, bs, reordered_surface, internalParams);
 
     if (sts_ret != MFX_ERR_NONE && sts_ret !=(mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK && sts_ret<0)
         return sts_ret;  
-
 
     sts = m_pExtTasks->AddTask( internalParams,*reordered_surface, bs, &pExtTask);
     MFX_CHECK_STS(sts);
@@ -644,32 +646,32 @@ mfxStatus UserDataBuffer::AddUserData(mfxU8* pUserData, mfxU32 len)
             if (pCurr < (pUserData + len - 4) && pCurr[2]== 1 && pCurr[3] == 0xB2)
             {
                 //user data start code
-                if (pCurr == pUserData) bFirstUDSCode = true; 
-                pCurr += 3;                    
+                if (pCurr == pUserData) bFirstUDSCode = true;
+                pCurr += 3;
             }
             else
             {
                 bProhibitedSymbols = true;
-                break;                    
-            }         
+                break;
+            }
 
         }
         pCurr ++;  
     } 
-    size = bProhibitedSymbols ? static_cast<mfxU32>(pCurr - pUserData) : len ;            
+    size = bProhibitedSymbols ? static_cast<mfxU32>(pCurr - pUserData) : len ;
     // copy into buffer
     if (size > 0)
     {
         pCurr = m_pBuffer + m_dataSize;
         m_dataSize += size + (bFirstUDSCode ? 0 : 4) ;
 
-        MFX_CHECK( m_dataSize < m_bufSize, MFX_ERR_UNDEFINED_BEHAVIOR);                
+        MFX_CHECK( m_dataSize < m_bufSize, MFX_ERR_UNDEFINED_BEHAVIOR);
         if (!bFirstUDSCode)
         {
             *(pCurr++) = 0; 
             *(pCurr++) = 0; 
             *(pCurr++) = 1;
-            *(pCurr++) = 0xB2;           
+            *(pCurr++) = 0xB2;
         }
         std::copy(pUserData, pUserData + std::min(m_bufSize - m_dataSize, size), pCurr);
     }

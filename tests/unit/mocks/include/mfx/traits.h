@@ -20,43 +20,44 @@
 
 #pragma once
 
+#include "mocks/include/fourcc.h"
 #include "mocks/include/dxva/traits.h"
 
 #include "mfxstructures.h"
 
 namespace mocks { namespace mfx
 {
-    template <GUID const*, typename Enable = void>
-    struct codecof;
+    template <GUID const* Id>
+    inline constexpr
+    unsigned codec_of(guid<Id>)
+    {
+        return
+            dxva::is_h264_codec(guid<Id>{}) ? MFX_CODEC_AVC  :
+            dxva::is_h265_codec(guid<Id>{}) ? MFX_CODEC_HEVC :
+            dxva::is_av1_codec (guid<Id>{}) ? MFX_CODEC_AV1  : 0;
+    }
 
-    template <GUID const* id>
-    struct codecof<id, typename std::enable_if<dxva::is_h264_codec<id>::value>::type>
-        : std::integral_constant<unsigned, MFX_CODEC_AVC>
-    {};
+    inline constexpr
+    unsigned codec_of(GUID const& id)
+    {
+        return
+            dxva::is_h264_codec(id) ? MFX_CODEC_AVC  :
+            dxva::is_h265_codec(id) ? MFX_CODEC_HEVC :
+            dxva::is_av1_codec (id) ? MFX_CODEC_AV1  : 0;
+    }
 
-    template <GUID const* id>
-    struct codecof<id, typename std::enable_if<dxva::is_h265_codec<id>::value>::type>
-        : std::integral_constant<unsigned, MFX_CODEC_HEVC>
-    {};
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
-    template <GUID const* id>
-    struct codecof<id, typename std::enable_if<dxva::is_av1_codec<id>::value>::type>
-        : std::integral_constant<unsigned, MFX_CODEC_AV1>
-    {};
-#endif
-
-    template <GUID const* id>
+    template <GUID const* Id>
     inline
-    mfxVideoParam make_param(guid<id>, mfxVideoParam const& p)
+    mfxVideoParam make_param(guid<Id>, mfxVideoParam const& p)
     {
         mfxVideoParam r = p;
-        r.mfx.CodecId = codecof<id>::value;
+        r.mfx.CodecId = codec_of(guid<Id>{});
+
         return r;
     }
 
     inline
-    mfxVideoParam make_param(fourcc::tag<MFX_FOURCC_NV12>, mfxVideoParam const& p)
+    mfxVideoParam make_param(fourcc::format<MFX_FOURCC_NV12>, mfxVideoParam const& p)
     {
         mfxVideoParam r = p;
         r.mfx.FrameInfo.BitDepthLuma = 8;
@@ -66,7 +67,7 @@ namespace mocks { namespace mfx
     }
 
     inline
-    mfxVideoParam make_param(fourcc::tag<MFX_FOURCC_P010>, mfxVideoParam const& p)
+    mfxVideoParam make_param(fourcc::format<MFX_FOURCC_P010>, mfxVideoParam const& p)
     {
         mfxVideoParam r = p;
         r.mfx.FrameInfo.BitDepthLuma = 10;
@@ -76,12 +77,32 @@ namespace mocks { namespace mfx
     }
 
     inline
-    mfxVideoParam make_param(fourcc::tag<MFX_FOURCC_P016>, mfxVideoParam const& p)
+    mfxVideoParam make_param(fourcc::format<MFX_FOURCC_P016>, mfxVideoParam const& p)
     {
         mfxVideoParam r = p;
         r.mfx.FrameInfo.BitDepthLuma = 12;
         r.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
         r.mfx.FrameInfo.FourCC       = MFX_FOURCC_P016;
+        return r;
+    }
+
+    inline
+    mfxVideoParam make_param(GUID const& id, mfxVideoParam const& p)
+    {
+        mfxVideoParam r = p;
+
+        r.mfx.CodecId = codec_of(id);
+        return r;
+    }
+
+    inline
+    mfxVideoParam make_param(unsigned format, mfxVideoParam const& p)
+    {
+        mfxVideoParam r = p;
+        r.mfx.FrameInfo.BitDepthLuma = mfxU16(fourcc::bits_of(format));
+        r.mfx.FrameInfo.ChromaFormat = mfxU16(fourcc::chroma_of(format));
+        r.mfx.FrameInfo.FourCC       = format;
+
         return r;
     }
 

@@ -146,25 +146,34 @@ VAAPIVideoProcessing::~VAAPIVideoProcessing()
 
 mfxStatus VAAPIVideoProcessing::CreateDevice(VideoCORE * core, mfxVideoParam* pParams, bool /*isTemporal*/)
 {
-    MFX_CHECK_NULL_PTR1( core );
+    MFX_CHECK_NULL_PTR1(core);
 
-    VAAPIVideoCORE* hwCore = dynamic_cast<VAAPIVideoCORE*>(core);
+    VAAPIVideoCORE* hwCore_10 = dynamic_cast<VAAPIVideoCORE*>(core);
+    if (hwCore_10)
+    {
+        // Legacy MSDK 1.x case
+        MFX_SAFE_CALL(hwCore_10->GetVAService(&m_vaDisplay));
+    }
+    else
+    {
+#if defined(MFX_ONEVPL)
+        // MSDK 2.0 case
+        VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(core);
+        MFX_CHECK_NULL_PTR1(hwCore_20);
 
-    MFX_CHECK_NULL_PTR1( hwCore );
+        MFX_SAFE_CALL(hwCore_20->GetVAService(&m_vaDisplay));
+#else
+        MFX_RETURN(MFX_ERR_NULL_PTR);
+#endif
+    }
 
-    mfxStatus sts = hwCore->GetVAService( &m_vaDisplay);
-    MFX_CHECK_STS( sts );
-
-    sts = Init( &m_vaDisplay, pParams);
-
-    MFX_CHECK_STS(sts);
+    MFX_SAFE_CALL(Init(&m_vaDisplay, pParams));
 
     m_cachedReadyTaskIndex.clear();
 
     m_core = core;
 
     return MFX_ERR_NONE;
-
 } // mfxStatus VAAPIVideoProcessing::CreateDevice(VideoCORE * core, mfxInitParams* pParams)
 
 
@@ -573,8 +582,25 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     bool bUseReference = false;
     VAStatus vaSts = VA_STATUS_SUCCESS;
 
-    VAAPIVideoCORE* hwCore = dynamic_cast<VAAPIVideoCORE*>(m_core);
-    eMFXHWType hwType = hwCore->GetHWType();
+    eMFXHWType hwType;
+    VAAPIVideoCORE* hwCore_10 = dynamic_cast<VAAPIVideoCORE*>(m_core);
+    if (hwCore_10)
+    {
+        // Legacy MSDK 1.x case
+        hwType = hwCore_10->GetHWType();
+    }
+    else
+    {
+#if defined(MFX_ONEVPL)
+        // MSDK 2.0 case
+        VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
+        MFX_CHECK_NULL_PTR1(hwCore_20);
+
+        hwType = hwCore_20->GetHWType();
+#else
+        MFX_RETURN(MFX_ERR_NULL_PTR);
+#endif
+    }
 
     // NOTE the following variables should be visible till vaRenderPicture/vaEndPicture,
     // not till vaCreateBuffer as the data they hold are passed to the driver via a pointer

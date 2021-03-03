@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,24 +30,9 @@
 #include "mfx_utils.h"
 #include "mfx_common.h"
 #include "mfxpcp.h"
-
-#define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
-#define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
-#define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
-#define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
-
-#define D3DFMT_YUV400   (D3DFORMAT)MAKEFOURCC('4','0','0','P')
-#define D3DFMT_YUV411   (D3DFORMAT)MAKEFOURCC('4','1','1','P')
-#define D3DFMT_YUV422H  (D3DFORMAT)MAKEFOURCC('4','2','2','H')
-#define D3DFMT_YUV422V  (D3DFORMAT)MAKEFOURCC('4','2','2','V')
-#define D3DFMT_YUV444   (D3DFORMAT)MAKEFOURCC('4','4','4','P')
-
-#define MFX_FOURCC_P8_MBDATA  (D3DFORMAT)MFX_MAKEFOURCC('P','8','M','B')
-
-#define DXGI_FORMAT_BGGR MAKEFOURCC('I','R','W','0')
-#define DXGI_FORMAT_RGGB MAKEFOURCC('I','R','W','1')
-#define DXGI_FORMAT_GRBG MAKEFOURCC('I','R','W','2')
-#define DXGI_FORMAT_GBRG MAKEFOURCC('I','R','W','3')
+#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "mfxpavp.h"
+#endif
 
 DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 {
@@ -77,7 +62,7 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
         return DXGI_FORMAT_R8G8B8A8_UNORM;
 
     case MFX_FOURCC_P8:
-    case MFX_FOURCC_P8_MBDATA:
+    case MFX_FOURCC_P8_TEXTURE:
         return DXGI_FORMAT_P8;
 
     case MFX_FOURCC_AYUV:
@@ -115,14 +100,10 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 
 } // mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 
-// D3D11 surface working
-mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+static inline bool check_supported_fourcc(mfxU32 fourcc)
 {
-    if (!pthis)
-        return MFX_ERR_INVALID_HANDLE;
-
     // only NV12 and D3DFMT_P8 buffers are supported by HW
-    switch(request->Info.FourCC)
+    switch (fourcc)
     {
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_P010:
@@ -137,7 +118,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_BGR4:
     case MFX_FOURCC_P8:
-    case MFX_FOURCC_P8_MBDATA:
+    case MFX_FOURCC_P8_TEXTURE:
     case DXGI_FORMAT_AYUV:
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_R16_RGGB:
@@ -156,10 +137,17 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
 #endif
-        break;
+        return true;
     default:
-        return MFX_ERR_UNSUPPORTED;
+        return false;
     }
+}
+
+// D3D11 surface working
+mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+{
+    MFX_CHECK_HDL(pthis);
+    MFX_CHECK(check_supported_fourcc(request->Info.FourCC), MFX_ERR_UNSUPPORTED);
 
     mfxU16 numAllocated, maxNumFrames;
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
@@ -276,7 +264,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
             Desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
         }
 
-#if !defined(OPEN_SOURCE) && !defined(MFX_ONEVPL)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (request->Type & MFX_MEMTYPE_PROTECTED)
         {
             Desc.MiscFlags |= D3D11_RESOURCE_MISC_HW_PROTECTED;
@@ -317,7 +305,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
                 return MFX_ERR_MEMORY_ALLOC;
         }
 
-#if !defined(OPEN_SOURCE) && !defined(MFX_ONEVPL)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (request->Type & MFX_MEMTYPE_PROTECTED)
         {
             Desc.MiscFlags &= ~D3D11_RESOURCE_MISC_HW_PROTECTED;
@@ -364,8 +352,10 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     return MFX_ERR_NONE;
 }
 
-mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Desc, const D3D11_MAPPED_SUBRESOURCE  &LockedRect, mfxFrameData *ptr)
+mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Desc, const D3D11_MAPPED_SUBRESOURCE &LockedRect, mfxFrameData &frame_data)
 {
+    clear_frame_data(frame_data);
+
     // not sure about commented formats
     switch (Desc.Format)
     {
@@ -373,105 +363,80 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_P016:
 #endif
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->Y = (mfxU8 *)LockedRect.pData;
-        ptr->U = (mfxU8 *)LockedRect.pData + Desc.Height * LockedRect.RowPitch;
-        ptr->V = ptr->U + 1;
+        frame_data.Y = (mfxU8 *)LockedRect.pData;
+        frame_data.U = (mfxU8 *)LockedRect.pData + Desc.Height * LockedRect.RowPitch;
+        frame_data.V = frame_data.U + 2;
         break;
     case DXGI_FORMAT_NV12:
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->Y = (mfxU8 *)LockedRect.pData;
-        ptr->U = (mfxU8 *)LockedRect.pData + Desc.Height * LockedRect.RowPitch;
-        ptr->V = ptr->U + 1;
+        frame_data.Y = (mfxU8 *)LockedRect.pData;
+        frame_data.U = (mfxU8 *)LockedRect.pData + Desc.Height * LockedRect.RowPitch;
+        frame_data.V = frame_data.U + 1;
         break;
-    case  DXGI_FORMAT_420_OPAQUE: // YV12 ????
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->Y = (mfxU8 *)LockedRect.pData;
-        ptr->V = ptr->Y + Desc.Height * LockedRect.RowPitch;
-        ptr->U = ptr->V + (Desc.Height * LockedRect.RowPitch) / 4;
+    case DXGI_FORMAT_420_OPAQUE: // YV12 ????
+        frame_data.Y = (mfxU8 *)LockedRect.pData;
+        frame_data.V = frame_data.Y + Desc.Height * LockedRect.RowPitch;
+        frame_data.U = frame_data.V + (Desc.Height * LockedRect.RowPitch) / 4;
         break;
     case DXGI_FORMAT_YUY2:
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->Y = (mfxU8 *)LockedRect.pData;
-        ptr->U = ptr->Y + 1;
-        ptr->V = ptr->Y + 3;
+        frame_data.Y = (mfxU8 *)LockedRect.pData;
+        frame_data.U = frame_data.Y + 1;
+        frame_data.V = frame_data.Y + 3;
         break;
-    case DXGI_FORMAT_B8G8R8A8_UNORM :
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->B = (mfxU8 *)LockedRect.pData;
-        ptr->G = ptr->B + 1;
-        ptr->R = ptr->B + 2;
-        ptr->A = ptr->B + 3;
+    case DXGI_FORMAT_B8G8R8A8_UNORM:
+        frame_data.B = (mfxU8 *)LockedRect.pData;
+        frame_data.G = frame_data.B + 1;
+        frame_data.R = frame_data.B + 2;
+        frame_data.A = frame_data.B + 3;
         break;
-    case DXGI_FORMAT_R8G8B8A8_UNORM :
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->R = (mfxU8 *)LockedRect.pData;
-        ptr->G = ptr->R + 1;
-        ptr->B = ptr->R + 2;
-        ptr->A = ptr->R + 3;
+    case DXGI_FORMAT_R8G8B8A8_UNORM:
+        frame_data.R = (mfxU8 *)LockedRect.pData;
+        frame_data.G = frame_data.R + 1;
+        frame_data.B = frame_data.R + 2;
+        frame_data.A = frame_data.R + 3;
         break;
-    case DXGI_FORMAT_AYUV :
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->B = (mfxU8 *)LockedRect.pData;
-        ptr->G = ptr->B + 1;
-        ptr->R = ptr->B + 2;
-        ptr->A = ptr->B + 3;
+    case DXGI_FORMAT_AYUV:
+        frame_data.B = (mfxU8 *)LockedRect.pData;
+        frame_data.G = frame_data.B + 1;
+        frame_data.R = frame_data.B + 2;
+        frame_data.A = frame_data.B + 3;
         break;
-    case DXGI_FORMAT_P8 :
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->Y = (mfxU8 *)LockedRect.pData;
-        ptr->U = 0;
-        ptr->V = 0;
+    case DXGI_FORMAT_P8:
+        frame_data.Y = (mfxU8 *)LockedRect.pData;
         break;
     case DXGI_FORMAT_R10G10B10A2_UNORM:
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->R = ptr->G = ptr->B = ptr->A = (mfxU8 *)LockedRect.pData;
+        frame_data.R = frame_data.G = frame_data.B = frame_data.A = (mfxU8 *)LockedRect.pData;
         break;
 
 #if (MFX_VERSION >= 1027)
     case DXGI_FORMAT_Y410:
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->Y410 = (mfxY410 *)LockedRect.pData;
-        ptr->Y = 0;
-        ptr->V = 0;
-        ptr->A = 0;
+        frame_data.Y410 = (mfxY410 *)LockedRect.pData;
         break;
     case DXGI_FORMAT_Y210:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_Y216:
 #endif
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->Y16 = (mfxU16*)LockedRect.pData;
-        ptr->U16 = ptr->Y16 + 1;
-        ptr->V16 = ptr->Y16 + 3;
+        frame_data.Y16 = (mfxU16*)LockedRect.pData;
+        frame_data.U16 = frame_data.Y16 + 1;
+        frame_data.V16 = frame_data.Y16 + 3;
         break;
 #endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_Y416:
-        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
-        ptr->PitchLow = (mfxU16)(LockedRect.RowPitch % (1 << 16));
-        ptr->U16 = (mfxU16*)LockedRect.pData;
-        ptr->Y16 = ptr->U16 + 1;
-        ptr->V16 = ptr->Y16 + 1;
-        ptr->A   = (mfxU8 *)(ptr->V16 + 1);
+        frame_data.U16 = (mfxU16*)LockedRect.pData;
+        frame_data.Y16 = frame_data.U16 + 1;
+        frame_data.V16 = frame_data.Y16 + 1;
+        frame_data.A   = (mfxU8 *)(frame_data.V16 + 1);
         break;
 #endif
 
     default:
-        return MFX_ERR_LOCK_MEMORY;
+        MFX_RETURN(MFX_ERR_LOCK_MEMORY);
     }
+
+    frame_data.PitchHigh = mfxU16(LockedRect.RowPitch >> 16);
+    frame_data.PitchLow  = mfxU16(LockedRect.RowPitch & 0xffff);
+
     return MFX_ERR_NONE;
 }
 
@@ -512,7 +477,7 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
     while (DXGI_ERROR_WAS_STILL_DRAWING == hr);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    return mfxDefaultAllocatorD3D11::SetFrameData(Desc, LockedRect, ptr);
+    return mfxDefaultAllocatorD3D11::SetFrameData(Desc, LockedRect, *ptr);
 }
 mfxStatus mfxDefaultAllocatorD3D11::GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {
@@ -670,7 +635,7 @@ mfxStatus mfxDefaultAllocatorD3D11::ReallocFrameHW(mfxHDL pthis, const mfxMemId 
         if (pSelf->m_SrfPool[index] != NULL)
             MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
 
-        //reallocate realeased surface with new desc
+        //reallocate released surface with new desc
         hRes = pSelf->m_pD11Device->CreateTexture2D(&desc, NULL, &pSelf->m_SrfPool[index]);
         if (FAILED(hRes))
         {
@@ -697,6 +662,419 @@ mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator::mfxWideHWFrameAllocator(mfxU1
     frameAllocator.Free =   &mfxDefaultAllocatorD3D11::FreeFramesHW;
 }
 
+#if defined(MFX_ONEVPL)
+
+staging_texture* staging_adapter_d3d11_texture::get_staging_texture(d3d11_texture_wrapper* main_texture, const D3D11_TEXTURE2D_DESC& descr)
+{
+    std::unique_lock<std::mutex> lock(m_mutex);
+
+    auto it = m_textures.find(main_texture);
+    bool contains_main_texture = it != std::end(m_textures);
+
+    if (contains_main_texture && !it->second->m_acquired)
+    {
+        return it->second.get();
+    }
+
+    it = std::find_if(std::begin(m_textures), std::end(m_textures),
+        [&descr](const std::pair <d3d11_texture_wrapper*, std::shared_ptr<staging_texture>>& texture)
+                {
+                    return !texture.second->m_acquired && texture.second->m_description == descr;
+                });
+
+    if (it != std::end(m_textures))
+    {
+        it->second->m_acquired = true;
+
+        m_textures.insert({ main_texture, it->second });
+
+        return it->second.get();
+    }
+
+    lock.unlock();
+    // If no suitable cached surface found - allocate another one
+    D3D11_TEXTURE2D_DESC Descr = descr;
+    Descr.Usage          = D3D11_USAGE_STAGING;
+    Descr.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+    Descr.BindFlags      = 0;
+
+    ID3D11Texture2D* texture;
+    HRESULT hr = m_pD11Device->CreateTexture2D(&Descr, nullptr, &texture);
+    MFX_CHECK_WITH_THROW(SUCCEEDED(hr), MFX_ERR_MEMORY_ALLOC, mfx::mfxStatus_exception(MFX_ERR_MEMORY_ALLOC));
+
+    auto new_staging_texture = std::make_shared<staging_texture>(false, texture, descr, m_mutex);
+    lock.lock();
+
+    if (contains_main_texture)
+    {
+        m_textures[main_texture] = std::move(new_staging_texture);
+    }
+    else
+    {
+        m_textures.insert({ std::move(main_texture), std::move(new_staging_texture) });
+    }
+
+    m_textures[main_texture]->m_acquired = true;
+    return m_textures[main_texture].get();
+}
+
+inline mfxStatus mfx_to_d3d11_flags(mfxU32 flags, D3D11_MAP& map_type, UINT& map_flags)
+{
+    switch (flags & 0xf)
+    {
+    case MFX_MAP_READ:
+        map_type = D3D11_MAP_READ;
+        break;
+    case MFX_MAP_WRITE:
+        map_type = D3D11_MAP_WRITE;
+        break;
+    case MFX_MAP_READ_WRITE:
+        map_type = D3D11_MAP_READ_WRITE;
+        break;
+    default:
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
+    }
+
+    map_flags = (flags & MFX_MAP_NOWAIT) ? D3D11_MAP_FLAG_DO_NOT_WAIT : 0;
+
+    return MFX_ERR_NONE;
+}
+
+d3d11_buffer_wrapper::d3d11_buffer_wrapper(const mfxFrameInfo &info, mfxHDL device)
+    : d3d11_resource_wrapper(reinterpret_cast<ID3D11Device*>(device))
+{
+    mfxStatus sts = AllocBuffer(info);
+    MFX_CHECK_WITH_THROW(MFX_SUCCEEDED(sts), MFX_ERR_MEMORY_ALLOC, mfx::mfxStatus_exception(MFX_ERR_MEMORY_ALLOC));
+}
+
+mfxStatus d3d11_buffer_wrapper::AllocBuffer(const mfxFrameInfo & info)
+{
+    D3D11_BUFFER_DESC desc = { mfxU32(info.Width * info.Height), D3D11_USAGE_STAGING, 0u, D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE, 0u, 0u };
+
+    ID3D11Buffer* buffer;
+    HRESULT hr = m_pD11Device->CreateBuffer(&desc, nullptr, &buffer);
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_MEMORY_ALLOC);
+
+    m_resource.Attach(buffer);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus d3d11_buffer_wrapper::Lock(mfxFrameData& frame_data, mfxU32 flags)
+{
+    MFX_CHECK(FrameAllocatorBase::CheckMemoryFlags(flags), MFX_ERR_LOCK_MEMORY);
+
+    D3D11_MAP MapType;
+    UINT MapFlags;
+
+    MFX_SAFE_CALL(mfx_to_d3d11_flags(flags, MapType, MapFlags));
+
+    CComPtr<ID3D11DeviceContext> pImmediateContext;
+    m_pD11Device->GetImmediateContext(&pImmediateContext);
+
+    HRESULT hr = pImmediateContext->Map(m_resource, 0, MapType, MapFlags, &m_LockedRect);
+    MFX_CHECK(hr != DXGI_ERROR_WAS_STILL_DRAWING, MFX_ERR_RESOURCE_MAPPED);
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_LOCK_MEMORY);
+
+    D3D11_TEXTURE2D_DESC Desc = {};
+    Desc.Format = DXGI_FORMAT_P8;
+    return mfxDefaultAllocatorD3D11::SetFrameData(Desc, m_LockedRect, frame_data);
+}
+
+mfxStatus d3d11_buffer_wrapper::Unlock()
+{
+    CComPtr<ID3D11DeviceContext> pImmediateContext;
+    m_pD11Device->GetImmediateContext(&pImmediateContext);
+
+    pImmediateContext->Unmap(m_resource, 0);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus d3d11_buffer_wrapper::Realloc(const mfxFrameInfo & info)
+{
+    return AllocBuffer(info);
+}
+
+d3d11_texture_wrapper::d3d11_texture_wrapper(const mfxFrameInfo &info, mfxU16 type, staging_adapter_d3d11_texture & stg_adapter, mfxHDL device)
+    : d3d11_resource_wrapper(reinterpret_cast<ID3D11Device*>(device))
+    , m_staging_adapter(stg_adapter)
+    , m_staging_surface(nullptr)
+    , m_type(type)
+{
+    mfxStatus sts = AllocFrame(info);
+    MFX_CHECK_WITH_THROW(MFX_SUCCEEDED(sts), MFX_ERR_MEMORY_ALLOC, mfx::mfxStatus_exception(MFX_ERR_MEMORY_ALLOC));
+}
+
+mfxStatus d3d11_texture_wrapper::AllocFrame(const mfxFrameInfo & info)
+{
+    D3D11_TEXTURE2D_DESC Desc = {};
+    Desc.Width                = info.Width;
+    Desc.Height               = info.Height;
+    Desc.MipLevels            = 1;
+    Desc.ArraySize            = 1;
+    Desc.Format               = mfxDefaultAllocatorD3D11::MFXtoDXGI(info.FourCC);
+    Desc.SampleDesc.Count     = 1;
+    Desc.Usage                = D3D11_USAGE_DEFAULT;
+    Desc.BindFlags            = D3D11_BIND_DECODER;
+
+    if ((m_type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && (m_type & MFX_MEMTYPE_INTERNAL_FRAME))
+    {
+        Desc.BindFlags |= D3D11_BIND_VIDEO_ENCODER;
+    }
+
+    if ((MFX_MEMTYPE_FROM_VPPIN & m_type) && (DXGI_FORMAT_YUY2 == Desc.Format)
+     || (MFX_MEMTYPE_FROM_VPPOUT & m_type)
+     || (DXGI_FORMAT_B8G8R8A8_UNORM    == Desc.Format)
+     || (DXGI_FORMAT_R8G8B8A8_UNORM    == Desc.Format)
+     || (DXGI_FORMAT_R10G10B10A2_UNORM == Desc.Format))
+    {
+        Desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+    }
+
+    if (m_type & MFX_MEMTYPE_SHARED_RESOURCE)
+    {
+        // 420 OPAQUE formats don't support shader binding, but we have to set those two following flags
+        // in as many situations as possible to provide maximal compatibility for internally allocated and
+        // exposed to user HW surfaces
+        if (Desc.Format != DXGI_FORMAT_420_OPAQUE)
+            Desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+
+        Desc.MiscFlags  = D3D11_RESOURCE_MISC_SHARED;
+    }
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    if (m_type & MFX_MEMTYPE_PROTECTED)
+    {
+        Desc.MiscFlags |= D3D11_RESOURCE_MISC_HW_PROTECTED;
+    }
+#endif
+
+    // d3d11 wo
+    if (DXGI_FORMAT_P8 == Desc.Format)
+    {
+        Desc.BindFlags = 0;
+    }
+
+    HRESULT hr;
+    if (DXGI_FORMAT_R16_TYPELESS == Desc.Format)
+    {
+        // R16 Bayer requires having special resource extension reflecting
+        // real Bayer format
+        Desc.SampleDesc.Quality = 0;
+        Desc.BindFlags          = 0;
+        Desc.CPUAccessFlags     = 0;// = D3D11_CPU_ACCESS_WRITE;
+        Desc.MiscFlags          = 0;
+
+        RESOURCE_EXTENSION extnDesc = {};
+
+        static_assert (sizeof(RESOURCE_EXTENSION_KEY) <= sizeof(extnDesc.Key), "ERROR: Array size mismatch between extnDesc.Key and RESOURCE_EXTENSION_KEY");
+        std::copy(std::begin(RESOURCE_EXTENSION_KEY), std::end(RESOURCE_EXTENSION_KEY), extnDesc.Key);
+
+        extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+        extnDesc.Type               = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
+        extnDesc.Data[0]            = BayerFourCC2FormatFlag(info.FourCC);
+
+        hr = SetResourceExtension(m_pD11Device, &extnDesc);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_MEMORY_ALLOC);
+    }
+
+    ID3D11Texture2D* texture;
+    hr = m_pD11Device->CreateTexture2D(&Desc, nullptr, &texture);
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_MEMORY_ALLOC);
+
+    m_resource.Attach(texture);
+
+    return MFX_ERR_NONE;
+}
+
+
+mfxStatus d3d11_texture_wrapper::Lock(mfxFrameData& frame_data, mfxU32 flags)
+{
+    MFX_CHECK(FrameAllocatorBase::CheckMemoryFlags(flags), MFX_ERR_LOCK_MEMORY);
+
+    D3D11_TEXTURE2D_DESC Desc = {};
+    reinterpret_cast<ID3D11Texture2D *>((ID3D11Resource*)m_resource)->GetDesc(&Desc);
+
+    // TODO: not clear if we need this restriction
+    MFX_CHECK(Desc.Format != DXGI_FORMAT_420_OPAQUE, MFX_ERR_LOCK_MEMORY);
+
+    CComPtr<ID3D11DeviceContext> pImmediateContext;
+    m_pD11Device->GetImmediateContext(&pImmediateContext);
+
+    // In d3d11 mapping is performed on staging surfaces
+    unique_ptr_staging_texture staging_surface(m_staging_adapter.get_staging_texture(this, Desc));
+
+    // If read access requested need to copy actual pixel values to staging surface
+    if (flags & MFX_MAP_READ)
+    {
+        pImmediateContext->CopySubresourceRegion(staging_surface->m_texture, 0, 0, 0, 0, m_resource, 0, nullptr);
+    }
+
+    D3D11_MAP MapType;
+    UINT MapFlags;
+    MFX_SAFE_CALL(mfx_to_d3d11_flags(flags, MapType, MapFlags));
+
+    HRESULT hr = pImmediateContext->Map(staging_surface->m_texture, 0, MapType, MapFlags, &m_LockedRect);
+    MFX_CHECK(hr != DXGI_ERROR_WAS_STILL_DRAWING, MFX_ERR_RESOURCE_MAPPED);
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_LOCK_MEMORY);
+
+    m_staging_surface = std::move(staging_surface);
+
+    mfxStatus sts = mfxDefaultAllocatorD3D11::SetFrameData(Desc, m_LockedRect, frame_data);
+
+    if (sts != MFX_ERR_NONE)
+    {
+        // If Lock fails, all resources should be released
+        MFX_STS_TRACE(Unlock());
+
+        return sts;
+    }
+
+    // If user requested write access need to copy back from staging surface on unmap
+    m_was_locked_for_write = flags & MFX_MAP_WRITE;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus d3d11_texture_wrapper::Unlock()
+{
+    // Here staging texture should be already acquired
+    MFX_CHECK(m_staging_surface, MFX_ERR_UNKNOWN);
+
+    CComPtr<ID3D11DeviceContext> pImmediateContext;
+    m_pD11Device->GetImmediateContext(&pImmediateContext);
+
+    pImmediateContext->Unmap(m_staging_surface->m_texture, 0);
+
+    // If write access requested need to copy actual pixel values from staging surface
+    if (m_was_locked_for_write)
+    {
+        pImmediateContext->CopySubresourceRegion(m_resource, 0, 0, 0, 0, m_staging_surface->m_texture, 0, nullptr);
+
+        m_was_locked_for_write = false;
+    }
+
+    m_staging_surface.reset();
+    m_LockedRect = {};
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus d3d11_texture_wrapper::Realloc(const mfxFrameInfo & info)
+{
+    MFX_SAFE_CALL(AllocFrame(info));
+
+    D3D11_TEXTURE2D_DESC Desc = {};
+    reinterpret_cast<ID3D11Texture2D *>((ID3D11Resource*)m_resource)->GetDesc(&Desc);
+
+    m_staging_adapter.UpdateCache(this, Desc);
+
+    return MFX_ERR_NONE;
+}
+
+mfxFrameSurface1_hw_d3d11::mfxFrameSurface1_hw_d3d11(const mfxFrameInfo & info, mfxU16 type, mfxMemId mid, staging_adapter_d3d11_texture & stg_adapter, mfxHDL device, mfxU32, FrameAllocatorBase& allocator)
+    : RWAcessSurface(info, type, mid, allocator)
+    , m_pD11Device(reinterpret_cast<ID3D11Device*>(device))
+    , m_staging_adapter(stg_adapter)
+
+{
+    MFX_CHECK_WITH_THROW(check_supported_fourcc(info.FourCC), MFX_ERR_UNSUPPORTED, mfx::mfxStatus_exception(MFX_ERR_UNSUPPORTED));
+    MFX_CHECK_WITH_THROW(!(type & MFX_MEMTYPE_SYSTEM_MEMORY), MFX_ERR_UNSUPPORTED, mfx::mfxStatus_exception(MFX_ERR_UNSUPPORTED));
+
+    if (info.FourCC == MFX_FOURCC_P8)
+    {
+        m_resource_wrapper.reset(new d3d11_buffer_wrapper(info, m_pD11Device));
+    }
+    else
+    {
+        m_resource_wrapper.reset(new d3d11_texture_wrapper(info, type, m_staging_adapter, m_pD11Device));
+    }
+}
+
+mfxStatus mfxFrameSurface1_hw_d3d11::Lock(mfxU32 flags)
+{
+
+    MFX_CHECK(FrameAllocatorBase::CheckMemoryFlags(flags), MFX_ERR_LOCK_MEMORY);
+
+    std::unique_lock<std::mutex> guard(m_mutex);
+
+    mfxStatus sts = LockRW(guard, flags & MFX_MAP_WRITE, flags & MFX_MAP_NOWAIT);
+    MFX_CHECK_STS(sts);
+
+    auto Unlock = [](RWAcessSurface* s){ s->UnlockRW(); };
+
+    // Scope guard to decrease locked count if real lock fails
+    std::unique_ptr<RWAcessSurface, decltype(Unlock)> scoped_lock(this, Unlock);
+
+    if (NumReaders() < 2)
+    {
+        // First reader or unique writer has just acquired resource
+        sts = m_resource_wrapper->Lock(m_internal_surface.Data, flags);
+        MFX_CHECK_STS(sts);
+    }
+
+    // No error, remove guard without decreasing locked counter
+    scoped_lock.release();
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus mfxFrameSurface1_hw_d3d11::Unlock()
+{
+    std::unique_lock<std::mutex> guard(m_mutex);
+
+    MFX_SAFE_CALL(UnlockRW());
+
+    if (NumReaders() == 0) // So it was 1 before UnlockRW
+    {
+        MFX_SAFE_CALL(m_resource_wrapper->Unlock());
+
+        clear_frame_data(m_internal_surface.Data);
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus mfxFrameSurface1_hw_d3d11::GetHDL(mfxHDL& handle) const
+{
+    std::shared_lock<std::shared_timed_mutex> guard(m_hdl_mutex);
+
+    mfxHDLPair &pair = reinterpret_cast<mfxHDLPair&>(handle);
+
+    // resource pool handle
+    pair.first  = m_resource_wrapper->GetHandle();
+    // index of pool
+    pair.second = mfxHDL(0);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus mfxFrameSurface1_hw_d3d11::Realloc(const mfxFrameInfo & info)
+{
+    std::lock_guard<std::mutex>              guard(m_mutex);
+    std::lock_guard<std::shared_timed_mutex> guard_hdl(m_hdl_mutex);
+
+    MFX_CHECK(!Locked(), MFX_ERR_LOCK_MEMORY);
+
+    m_internal_surface.Info = info;
+
+    return m_resource_wrapper->Realloc(info);
+}
+
+std::pair<mfxHDL, mfxResourceType> mfxFrameSurface1_hw_d3d11::GetNativeHandle() const
+{
+    std::shared_lock<std::shared_timed_mutex> guard(m_hdl_mutex);
+
+    return { m_resource_wrapper->GetHandle(), MFX_RESOURCE_DX11_TEXTURE };
+}
+
+std::pair<mfxHDL, mfxHandleType> mfxFrameSurface1_hw_d3d11::GetDeviceHandle() const
+{
+    return { m_pD11Device, MFX_HANDLE_D3D11_DEVICE };
+}
+
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 #endif
 #endif

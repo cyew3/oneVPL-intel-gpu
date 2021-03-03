@@ -143,6 +143,10 @@ void CParametersDumper::SerializeMfxInfoMFXStruct(msdk_ostream& sstr,msdk_string
     SERIALIZE_INFO(SliceGroupsPresent);
     SERIALIZE_INFO(MaxDecFrameBuffering);
     SERIALIZE_INFO(EnableReallocRequest);
+#if defined(MFX_VERSION_NEXT) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    SERIALIZE_INFO(FilmGrain);
+    SERIALIZE_INFO(SkipOutput);
+#endif
 
     /* JPEG Decoding Options */
     SERIALIZE_INFO(JPEGChromaFormat);

@@ -33,6 +33,8 @@
 #include <assert.h>
 #include "feature_blocks/mfx_feature_blocks_utils.h"
 
+#include "mfx_utils.h"
+
 #ifdef _MSVC_LANG
 #pragma warning(push)
 #pragma warning(disable : 26812)
@@ -396,7 +398,6 @@ inline mfxU32 CountTrailingZeroes(T x)
 }
 inline mfxU32 CeilLog2(mfxU32 x) { mfxU32 l = 0; while (x > (1U << l)) l++; return l; }
 inline mfxU32 Ceil(mfxF64 x) { return (mfxU32)(.999 + x); }
-template<class T> inline T CeilDiv(T x, T y) { return (x + y - 1) / y; }
 
 template<class T, class Enable = void>
 struct DefaultFiller
@@ -485,7 +486,7 @@ inline void UpdateMultiplier(mfxInfoMFX& mfx, mfxU16 MN)
 
     if (MO != MN)
     {
-        mfx.BufferSizeInKB = (mfxU16)CeilDiv<mfxU32>(mfx.BufferSizeInKB * MO, MN);
+        mfx.BufferSizeInKB = (mfxU16)mfx::CeilDiv<mfxU32>(mfx.BufferSizeInKB * MO, MN);
 
         if (   mfx.RateControlMethod == MFX_RATECONTROL_CBR
             || mfx.RateControlMethod == MFX_RATECONTROL_VBR
@@ -496,9 +497,9 @@ inline void UpdateMultiplier(mfxInfoMFX& mfx, mfxU16 MN)
 #endif
             )
         {
-            mfx.TargetKbps = (mfxU16)CeilDiv<mfxU32>(mfx.TargetKbps * MO, MN);
-            mfx.InitialDelayInKB = (mfxU16)CeilDiv<mfxU32>(mfx.InitialDelayInKB * MO, MN);
-            mfx.MaxKbps = (mfxU16)CeilDiv<mfxU32>(mfx.MaxKbps * MO, MN);
+            mfx.TargetKbps       = (mfxU16)mfx::CeilDiv<mfxU32>(mfx.TargetKbps * MO, MN);
+            mfx.InitialDelayInKB = (mfxU16)mfx::CeilDiv<mfxU32>(mfx.InitialDelayInKB * MO, MN);
+            mfx.MaxKbps          = (mfxU16)mfx::CeilDiv<mfxU32>(mfx.MaxKbps * MO, MN);
         }
 
         MO = MN;
@@ -527,11 +528,11 @@ public:
         {
             mfxU16 MN = std::max<mfxU16>(1, pcMfx->BRCParamMultiplier);
 
-            while (CeilDiv<mfxU32>(x, MN) >= (1 << 16))
+            while (mfx::CeilDiv<mfxU32>(x, MN) >= (1 << 16))
                 MN++;
 
             UpdateMultiplier(*pMfx, MN);
-            V() = (mfxU16)CeilDiv<mfxU32>(x, MN);
+            V() = (mfxU16)mfx::CeilDiv<mfxU32>(x, MN);
         }
         return *this;
     }

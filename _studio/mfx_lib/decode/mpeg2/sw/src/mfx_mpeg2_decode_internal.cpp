@@ -487,7 +487,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
 
     eMFXHWType type = MFX_HW_UNKNOWN;
 
-    mfxSts = CheckVideoParamDecoders(par, m_pCore->IsExternalFrameAllocator(), type);
+    mfxSts = CheckVideoParamDecoders(par, m_pCore->IsExternalFrameAllocator(), type, m_pCore->IsCompatibleForOpaq());
 
     if (mfxSts != MFX_ERR_NONE)
     {
@@ -531,7 +531,7 @@ mfxStatus VideoDECODEMPEG2::Reset(mfxVideoParam *par)
 
     eMFXHWType type = m_pCore->GetHWType();
 
-    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_pCore->IsExternalFrameAllocator(), type);
+    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_pCore->IsExternalFrameAllocator(), type, m_pCore->IsCompatibleForOpaq());
     if (MFX_ERR_NONE != mfxSts)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2221,7 +2221,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrame(mfxBitstream *bs, mfxFram
 
     mfxStatus sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaqueMemory);
     MFX_CHECK_STS(sts);
-    if (m_FrameAllocator->FindFreeSurface() == -1)
+    if (!m_FrameAllocator->HasFreeSurface())
         return MFX_WRN_DEVICE_BUSY;
 
     if (false == SetCurr_m_frame() && bs)

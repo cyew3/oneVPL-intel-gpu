@@ -74,7 +74,7 @@ struct AppParam
     const msdk_char* pSrcFileName;
     const msdk_char* pDstFileName;
 
-    std::map<const msdk_char*, mfxIMPL>  impLib; // type of MediaSDK library (HW/SW)
+    std::map<msdk_tstring, mfxIMPL>  impLib; // type of MediaSDK library (HW/SW)
 
     mfxU16   IOPattern;
 

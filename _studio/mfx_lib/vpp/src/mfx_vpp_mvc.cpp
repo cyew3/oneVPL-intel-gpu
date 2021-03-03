@@ -327,5 +327,48 @@ mfxStatus ImplementationMvc::Close(void)
 
 } // mfxStatus ImplementationMvc::Close( void )
 
+#if defined(MFX_ONEVPL)
+mfxFrameSurface1* ImplementationMvc::GetSurfaceIn()
+{
+    if (!m_bInit)
+    {
+        std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_INITIALIZED);
+        return nullptr;
+    }
+    mfxU16 viewId = 0;
+    if (m_bMultiViewMode)
+    {
+        viewId = m_iteratorVPP->first;
+        if (m_VPP.find(viewId) == m_VPP.end())
+        {
+            std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_FOUND);
+            return nullptr;
+        }
+    }
+
+    return m_VPP[viewId]->GetSurfaceIn();
+}
+
+mfxFrameSurface1* ImplementationMvc::GetSurfaceOut()
+{
+    if (!m_bInit)
+    {
+        std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_INITIALIZED);
+        return nullptr;
+    }
+    mfxU16 viewId = 0;
+    if (m_bMultiViewMode)
+    {
+        viewId = m_iteratorVPP->first;
+        if (m_VPP.find(viewId) == m_VPP.end())
+        {
+            std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_FOUND);
+            return nullptr;
+        }
+    }
+
+    return m_VPP[viewId]->GetSurfaceOut();
+}
+#endif
 #endif // MFX_ENABLE_VPP
 /* EOF */

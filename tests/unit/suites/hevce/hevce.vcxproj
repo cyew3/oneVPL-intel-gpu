@@ -127,6 +127,7 @@
     <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\..\..\_studio\shared\src\mfx_dxva2_device.cpp" />
     <ClCompile Include="..\..\..\..\_studio\shared\src\mfx_umc_alloc_wrapper.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\mfx_umc_mjpeg_vpp.cpp" />
     <ClCompile Include="hevce_disp.cpp" />
     <ClCompile Include="hevce_feature_blocks_dx11_ddi.cpp" />
     <ClCompile Include="hevce_feature_blocks_g11_interlace.cpp" />
@@ -134,6 +135,10 @@
     <ClCompile Include="hevce_feature_utils_blocks.cpp" />
     <ClCompile Include="hevce_feature_utils_storage.cpp" />
     <ClCompile Include="hevce_utils_misc.cpp" />
+    <ClCompile Include="mfxmemory_getsurfaceforencode.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="hevce_coremock.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)..\run_suite.props" />

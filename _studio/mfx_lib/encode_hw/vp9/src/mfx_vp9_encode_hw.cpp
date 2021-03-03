@@ -962,7 +962,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Execute(mfxThreadTask task, mfxU32 /*uid_p*/, mf
             MFX_CHECK_STS(sts);
 
             // get handle to input frame in VIDEO memory (either external or local)
-            sts = GetNativeHandleToRawSurface(*m_pCore, pSurface->Data.MemId, &surfaceHDL.first, m_video);
+            sts = GetNativeHandleToRawSurface(*m_pCore, *pSurface, surfaceHDL, m_video);
             MFX_CHECK_STS(sts);
 
             MFX_CHECK_STS(sts);

@@ -30,6 +30,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\shared\src\mfx_common_int.cpp" />
     <ClCompile Include="av1\agnostic\av1ehw_base.cpp" />
     <ClCompile Include="av1\agnostic\base\av1ehw_base_alloc.cpp" />
     <ClCompile Include="av1\agnostic\base\av1ehw_base_impl.cpp" />
@@ -168,6 +169,7 @@
     <ClCompile Include="svc\src\mfx_svc_encode_simulcast_over_avc.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\shared\include\mfx_common_int.h" />
     <ClInclude Include="av1\agnostic\av1ehw_base.h" />
     <ClInclude Include="av1\agnostic\av1ehw_block_queues.h" />
     <ClInclude Include="av1\agnostic\av1ehw_ddi.h" />

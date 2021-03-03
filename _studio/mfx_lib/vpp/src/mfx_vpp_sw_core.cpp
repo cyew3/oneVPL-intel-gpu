@@ -109,11 +109,11 @@ VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatu
 {                                                      \
     if (sts != MFX_ERR_NONE && in)                       \
 {                                                    \
-    m_core->DecreaseReference( &(in->Data) );          \
+    m_core->DecreaseReference(*in);                  \
 }                                                    \
     if (sts != MFX_ERR_NONE && out)                      \
 {                                                    \
-    m_core->DecreaseReference( &(out->Data) );         \
+    m_core->DecreaseReference(*out);                 \
 }                                                    \
     MFX_CHECK_STS( sts );                                \
 }
@@ -128,7 +128,7 @@ VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatu
 
 #define VPP_UNLOCK_SURFACE(sts, surface)                  \
 {                                                         \
-    if( MFX_ERR_NONE == sts )  m_core->DecreaseReference( &surface->Data );\
+    if( MFX_ERR_NONE == sts )  m_core->DecreaseReference(*surface);\
 }
 
 /* ******************************************************************** */
@@ -338,10 +338,10 @@ mfxStatus VideoVPPBase::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *ou
         return MFX_ERR_NULL_PTR;
     }
 
-    if (out->Data.Locked)
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
+#if defined(MFX_ONEVPL)
+    if (!out->FrameInterface)
+#endif
+       MFX_CHECK(!out->Data.Locked, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     /* *************************************** */
     /*              check info                 */
@@ -590,10 +590,12 @@ mfxStatus VideoVPPBase::CheckIOPattern( mfxVideoParam* par )
       return MFX_ERR_INVALID_VIDEO_PARAM;
   }
 
-  if (!m_core->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
-  {
-    return MFX_ERR_INVALID_VIDEO_PARAM;
-  }
+#if defined(MFX_ONEVPL)
+  // MSDK 2.0 supports internal allocation without Ext. allocator set
+  bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+  if (!core20_interface || !*core20_interface)
+#endif
+    MFX_CHECK(m_core->IsExternalFrameAllocator() || !(par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)), MFX_ERR_INVALID_VIDEO_PARAM);
 
   if ((par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) &&
       (par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY))
@@ -1606,7 +1608,7 @@ mfxStatus VideoVPP_HW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
         //internalSts = (mfxStatus) MFX_ERR_MORE_DATA_SUBMIT_TASK;
     }
 
-    if( out && (MFX_ERR_NONE == internalSts || MFX_ERR_MORE_SURFACE == internalSts) )
+    if( out && pTask && (MFX_ERR_NONE == internalSts || MFX_ERR_MORE_SURFACE == internalSts) )
     {
         sts = PassThrough(NULL != in ? &(in->Info) : NULL, &(out->Info), pTask->taskIndex);
         //MFX_CHECK_STS( sts );
@@ -1911,14 +1913,14 @@ mfxStatus VideoVPP_SW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
         static_cast<int>(MFX_ERR_MORE_DATA_SUBMIT_TASK) == static_cast<int>(stsReadinessPipeline) ||
         MFX_ERR_MORE_SURFACE == stsReadinessPipeline) )
     {
-        sts = m_core->IncreaseReference( &(in->Data) );
+        sts = m_core->IncreaseReference(*in);
         MFX_CHECK_STS( sts );
     }
 
     mfxStatus stsPicStruct = MFX_ERR_NONE;
     if( out && (MFX_ERR_NONE == stsReadinessPipeline || MFX_ERR_MORE_SURFACE == stsReadinessPipeline) )
     {
-        sts = m_core->IncreaseReference( &(out->Data) );
+        sts = m_core->IncreaseReference(*out);
         MFX_CHECK_STS( sts );
 
         stsPicStruct = PassThrough( (NULL != in) ? &(in->Info) : NULL, &(out->Info), out->Info.PicStruct);
@@ -2109,19 +2111,19 @@ mfxStatus VideoVPP_SW::RunFrameVPP(mfxFrameSurface1* in, mfxFrameSurface1* out, 
         if (!m_bDoFastCopyFlag[VPP_IN])
         {
             /* for each non zero input frame */
-            sts = m_core->DecreaseReference( &in->Data );
+            sts = m_core->DecreaseReference(*in);
             MFX_CHECK_STS( sts );
         }
 
         /* for each non zero input frame */
-        sts = m_core->DecreaseReference( &pInSurf->Data );
+        sts = m_core->DecreaseReference(*pInSurf);
         MFX_CHECK_STS( sts );
     }
 
     sts = PostProcessOfOutputSurface(out, pOutSurf, processingSts);
     MFX_CHECK_STS( sts );
 
-    sts = m_core->DecreaseReference( &pOutSurf->Data );
+    sts = m_core->DecreaseReference(*pOutSurf);
     MFX_CHECK_STS( sts );
 
     // unlock internal surfaces
@@ -2138,7 +2140,7 @@ mfxStatus VideoVPP_SW::RunFrameVPP(mfxFrameSurface1* in, mfxFrameSurface1* out, 
     /* once per RunFrameVPP */
     if( out && MFX_ERR_NONE == processingSts )
     {
-        sts = m_core->DecreaseReference( &(out->Data) );
+        sts = m_core->DecreaseReference(*out);
         MFX_CHECK_STS( sts );
     }
 

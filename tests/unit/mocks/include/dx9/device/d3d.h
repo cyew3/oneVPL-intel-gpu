@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,9 @@
 #include "mocks/include/hook.h"
 
 #include "mocks/include/dx9/winapi/d3d.hxx"
+#include "mocks/include/dx9/device/device.h"
+#include "mocks/include/dx9/device/manager.h"
+#include "mocks/include/dx9/device/service.h"
 
 #include <array>
 
@@ -34,20 +37,28 @@ namespace mocks { namespace dx9
         std::vector<D3DDEVTYPE> adapters;
 
         MOCK_METHOD1(CreateD3D, IDirect3D9*(UINT));
+        MOCK_METHOD2(CreateDeviceManager, HRESULT(UINT*, IDirect3DDeviceManager9**));
+        MOCK_METHOD3(CreateVideoService, HRESULT(IDirect3DDevice9*, REFIID, void**));
 
         MOCK_METHOD0(GetAdapterCount, UINT());
         MOCK_METHOD3(GetAdapterIdentifier, HRESULT(UINT, DWORD, D3DADAPTER_IDENTIFIER9*));
         MOCK_METHOD2(GetAdapterLUID, HRESULT(UINT, LUID*));
         MOCK_METHOD4(CheckDeviceFormatConversion, HRESULT(UINT, D3DDEVTYPE, D3DFORMAT, D3DFORMAT));
+        MOCK_METHOD3(GetDeviceCaps, HRESULT(UINT, D3DDEVTYPE, D3DCAPS9*));
+
+        MOCK_METHOD6(CreateDevice, HRESULT(UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**));
+        MOCK_METHOD7(CreateDeviceEx, HRESULT(UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, D3DDISPLAYMODEEX*, IDirect3DDevice9Ex**));
 
         void detour()
         {
             if (thunk)
                 return;
 
-            std::array<std::pair<void*, void*>, 2> functions{
+            std::array<std::pair<void*, void*>, 4> functions{
                 std::make_pair(Direct3DCreate9,   CreateDirect3D9),
-                std::make_pair(Direct3DCreate9Ex, CreateDirect3D9Ex)
+                std::make_pair(Direct3DCreate9Ex, CreateDirect3D9Ex),
+                std::make_pair(DXVA2CreateDirect3DDeviceManager9, CreateDXVA2DeviceManager),
+                std::make_pair(DXVA2CreateVideoService, CreateDXVA2VideoService)
             };
 
             thunk.reset(
@@ -63,7 +74,7 @@ namespace mocks { namespace dx9
         IDirect3D9* CreateDirect3D9(UINT version)
         {
             auto instance = hook<d3d>::owner();
-            assert(instance && "No factory instance but \'Direct3DCreate9\' is hooked");
+            assert(instance && "No d3d instance but \'Direct3DCreate9\' is hooked");
 
             return
                 instance ? instance->CreateD3D(version) : nullptr;
@@ -74,6 +85,26 @@ namespace mocks { namespace dx9
         {
             auto d3d = CreateDirect3D9(version);
             return d3d->QueryInterface(__uuidof(IDirect3D9Ex), reinterpret_cast<void**>(result));
+        }
+
+        static
+        HRESULT CreateDXVA2DeviceManager(UINT* token, IDirect3DDeviceManager9** result)
+        {
+            auto instance = hook<d3d>::owner();
+            assert(instance && "No d3d instance but \'DXVA2CreateDeviceManager\' is hooked");
+
+            return
+                instance ? instance->CreateDeviceManager(token, result) : E_FAIL;
+        }
+
+        static
+        HRESULT CreateDXVA2VideoService(IDirect3DDevice9* device, REFIID id, void** result)
+        {
+            auto instance = hook<d3d>::owner();
+            assert(instance && "No d3d instance but \'DXVA2CreateVideoService\' is hooked");
+
+            return
+                instance ? instance->CreateVideoService(device, id, result) : E_FAIL;
         }
     };
 
@@ -161,6 +192,94 @@ namespace mocks { namespace dx9
 
         template <typename T>
         inline
+        typename std::enable_if<
+            std::is_integral<T>::value
+        >::type
+        mock_d3d(d3d& d, std::tuple<T, D3DCAPS9> params)
+        {
+            //HRESULT GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9*)
+            EXPECT_CALL(d, GetDeviceCaps(
+                testing::Eq(UINT(std::get<0>(params))),
+                testing::Eq(std::get<1>(params).DeviceType),
+                testing::NotNull()))
+                .WillRepeatedly(testing::DoAll(
+                    testing::SetArgPointee<2>(std::get<1>(params)),
+                    testing::Return(S_OK)
+                ));
+        }
+
+        inline
+        void mock_d3d(d3d& d, D3DCAPS9 caps)
+        {
+            return mock_d3d(d,
+                std::make_tuple(0, caps)
+            );
+        }
+
+        template <typename T, typename U>
+        inline
+        typename std::enable_if<
+            std::conjunction<std::is_integral<T>, std::is_integral<U> >::value
+        >::type
+        mock_d3d(d3d& d, std::tuple<T, D3DDEVTYPE, HWND, U, D3DPRESENT_PARAMETERS, D3DDISPLAYMODEEX> params)
+        {
+            //HRESULT CreateDeviceEx(UINT /*Adapter*/, D3DDEVTYPE, HWND /*hFocusWindow*/, DWORD /*BehaviorFlags*/, D3DPRESENT_PARAMETERS*, D3DDISPLAYMODEEX*, IDirect3DDevice9Ex**)
+            EXPECT_CALL(d, CreateDeviceEx(
+                testing::Eq(std::get<0>(params)),
+                testing::Eq(std::get<1>(params)),
+                testing::AnyOf( //HWND
+                    testing::IsNull(),
+                    testing::Eq(std::get<2>(params))
+                ),
+                testing::Eq(std::get<3>(params)),
+                testing::AllOf(
+                    testing::NotNull(),
+                    testing::Truly([pp = std::get<4>(params)](D3DPRESENT_PARAMETERS const* xp)
+                    {
+                        //Not all fields at 'D3DPRESENT_PARAMETERS' are properly aligned and
+                        //thus these structures can't be compared by 'memcmp'
+                        return
+                               pp.BackBufferWidth            == xp->BackBufferWidth
+                            && pp.BackBufferHeight           == xp->BackBufferHeight
+                            && pp.BackBufferFormat           == xp->BackBufferFormat
+                            && pp.BackBufferCount            == xp->BackBufferCount
+                            && pp.MultiSampleType            == xp->MultiSampleType
+                            && pp.MultiSampleQuality         == xp->MultiSampleQuality
+                            && pp.SwapEffect                 == xp->SwapEffect
+                            && pp.hDeviceWindow              == xp->hDeviceWindow
+                            && pp.Windowed                   == xp->Windowed
+                            && pp.EnableAutoDepthStencil     == xp->EnableAutoDepthStencil
+                            && pp.AutoDepthStencilFormat     == xp->AutoDepthStencilFormat
+                            && pp.Flags                      == xp->Flags
+                            && pp.FullScreen_RefreshRateInHz == xp->FullScreen_RefreshRateInHz
+                            && pp.PresentationInterval       == xp->PresentationInterval
+                            ;
+                    })
+                ),
+                testing::Truly(
+                    [pp = std::get<4>(params), dm = std::get<5>(params)](D3DDISPLAYMODEEX const* xm)
+                    { return pp.Windowed ? !xm : xm && equal(*xm, dm); }
+                ),
+                testing::NotNull()))
+                .WillRepeatedly(testing::WithArgs<6>(testing::Invoke(
+                    [params](IDirect3DDevice9Ex** result)
+                    {
+                        *result = make_device(
+                            D3DDEVICE_CREATION_PARAMETERS{
+                                UINT(std::get<0>(params)), //Adapter
+                                std::get<1>(params),       //Type
+                                std::get<2>(params),       //HWDN
+                                UINT(std::get<3>(params))  //Flags
+                            }
+                        ).release();
+
+                        return S_OK;
+                    }
+                )));
+        }
+
+        template <typename T>
+        inline
         void mock_d3d(d3d&, T)
         {
             /* If you trap here it means that you passed an argument to [make_d3d]
@@ -206,6 +325,25 @@ namespace mocks { namespace dx9
                 }
             ));
 
+        //HRESULT CreateDeviceManager(UINT* token, IDirect3DDeviceManager9** result) [DXVA2CreateDirect3DDeviceManager9]
+        EXPECT_CALL(*d, CreateDeviceManager(testing::NotNull(), testing::NotNull()))
+            .WillRepeatedly(testing::Invoke(
+                [d = d.get()](UINT* token, IDirect3DDeviceManager9** m)
+                {
+                    *token = PtrToUlong(d);
+                    *m = make_manager(*token).release();
+
+                    return S_OK;
+                }
+            ));
+
+        //HRESULT CreateVideoService(IDirect3DDevice9*, REFIID, void** result) [DXVA2CreateVideoService]
+        EXPECT_CALL(*d, CreateVideoService(testing::NotNull(), _, testing::NotNull()))
+            .WillRepeatedly(testing::WithArgs<2>(testing::Invoke(
+                [](void** s)
+                { *s = make_service().release(); return S_OK; }
+            )));
+
         //UINT GetAdapterCount()
         EXPECT_CALL(*d, GetAdapterCount())
             .WillRepeatedly(testing::InvokeWithoutArgs(
@@ -223,6 +361,27 @@ namespace mocks { namespace dx9
         //HRESULT CheckDeviceFormatConversion(UINT Adapter, D3DDEVTYPE, D3DFORMAT SourceFormat, D3DFORMAT TargetFormat)
         EXPECT_CALL(*d, CheckDeviceFormatConversion(_, _, _, _))
             .WillRepeatedly(testing::Return(E_FAIL));
+
+        //HRESULT GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9*)
+        EXPECT_CALL(*d, GetDeviceCaps(_, _, _))
+            .WillRepeatedly(testing::Return(E_FAIL));
+
+        //HRESULT CreateDeviceEx(UINT /*Adapter*/, D3DDEVTYPE, HWND /*hFocusWindow*/, DWORD /*BehaviorFlags*/, D3DPRESENT_PARAMETERS*, D3DDISPLAYMODEEX*, IDirect3DDevice9Ex**)
+        EXPECT_CALL(*d, CreateDeviceEx(_, _, _, _, _, _, _))
+            .WillRepeatedly(testing::Return(E_FAIL));
+
+        //HRESULT CreateDevice(UINT /*Adapter*/, D3DDEVTYPE, HWND /*hFocusWindow*/, DWORD /*BehaviorFlags*/, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**)
+        ON_CALL(*d, CreateDevice(_, _, _, _, _, _))
+            .WillByDefault(testing::Invoke(
+            [d = d.get()](UINT adapter, D3DDEVTYPE type, HWND hwnd, DWORD flags, D3DPRESENT_PARAMETERS* pp, IDirect3DDevice9** d9)
+            {
+                D3DDISPLAYMODEEX dm{};
+                CComPtr<IDirect3DDevice9Ex> d9ex;
+                HRESULT hr = d->CreateDeviceEx(adapter, type, hwnd, flags, pp, &dm, &d9ex);
+                
+                return SUCCEEDED(hr) ?
+                    hr = d9ex.QueryInterface(&d9) : hr;
+            }));
 
         mock_d3d(*d, std::forward<Args>(args)...);
 

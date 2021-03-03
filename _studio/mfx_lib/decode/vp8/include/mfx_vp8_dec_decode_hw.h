@@ -195,13 +195,17 @@ public:
     virtual mfxStatus GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
+
 private:
 
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *);
     mfxStatus GetOutputSurface(mfxFrameSurface1 **, mfxFrameSurface1 *, UMC::FrameMemID);
 
     mfxStatus ConstructFrame(mfxBitstream *, mfxBitstream *, VP8DecodeCommon::IVF_FRAME&);
-    mfxStatus PreDecodeFrame(mfxBitstream *, mfxFrameSurface1 *);
+    mfxStatus PreDecodeFrame(mfxBitstream *, mfxU32&, mfxU32&);
 
     mfxStatus DecodeFrameHeader(mfxBitstream *p_bistream);
     void UpdateSegmentation(MFX_VP8_BoolDecoder &);
@@ -265,10 +269,11 @@ private:
     std::vector<UMC::FrameMemID> m_memIdReadyToFree;
 
     mfxFrameAllocResponse   m_response;
+    mfxFrameAllocResponse   m_response_alien;
     mfxDecodeStat           m_stat;
     mfxFrameAllocRequest    m_request;
 
-    std::unique_ptr<mfx_UMC_FrameAllocator> m_p_frame_allocator;
+    std::unique_ptr<SurfaceSource>    m_surface_source;
     UMC::VideoAccelerator *m_p_video_accelerator;
 
     UMC::Mutex              m_mGuard;

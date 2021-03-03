@@ -105,6 +105,10 @@ public:
                         mfxU32 threadNumber, 
                         mfxU32 taskID);
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
+
 
 protected:
 
@@ -177,7 +181,7 @@ protected:
     bool                NeedToGetStatus(UMC::VC1FrameDescriptor *pCurrDescriptor);
 #endif
 
-    void SetFrameOrder(mfx_UMC_FrameAllocator* pFrameAlloc, mfxVideoParam* par, bool isLast, VC1TSDescriptor tsd, bool isSamePolar);
+    void SetFrameOrder(SurfaceSource* pFrameAlloc, mfxVideoParam* par, bool isLast, VC1TSDescriptor tsd, bool isSamePolar);
     void FillVideoSignalInfo(mfxExtVideoSignalInfo *pVideoSignal);
 
     static const        mfxU16 disp_queue_size = 2; // looks enough for Linux now and disable on Windows.
@@ -188,9 +192,9 @@ protected:
     UMC::VideoData             m_InternMediaDataOut;
     UMC::MediaData             m_FrameConstrData;
 
-    mfx_UMC_MemAllocator       m_MemoryAllocator;
-    // TBD
-    std::unique_ptr<mfx_UMC_FrameAllocator>    m_pFrameAlloc;
+    mfx_UMC_MemAllocator                   m_MemoryAllocator;
+
+    std::unique_ptr<SurfaceSource>         m_surface_source;
     std::unique_ptr<UMC::VC1VideoDecoder>      m_pVC1VideoDecoder;
 
     UMC::vc1_frame_constructor*     m_frame_constructor;
@@ -221,7 +225,7 @@ protected:
     std::deque<mfxU64>               m_qBSTS;
 
     mfxFrameAllocResponse            m_response;
-    mfxFrameAllocResponse            m_response_op;
+    mfxFrameAllocResponse            m_response_alien;
 
     uint32_t                           m_SHSize;
     mfxU8                            m_pSaveBytes[4];  // 4 bytes enough 

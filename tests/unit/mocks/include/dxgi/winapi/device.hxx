@@ -22,22 +22,57 @@
 
 #include "object.hxx"
 
+#include <dxgi1_5.h>
+
 namespace mocks { namespace dxgi { namespace winapi
 {
     struct device_impl
-        : object_impl<IDXGIDevice>
+        : object_impl<IDXGIDevice4>
     {
-        using type = IDXGIDevice;
+        device_impl()
+        {
+            mock_unknown<
+                IDXGIDevice,
+                IDXGIDevice1,
+                IDXGIDevice2,
+                IDXGIDevice3
+                //'IDXGIDevice4' is automatically mocked by default ctor
+            >(*this);
+        }
 
-        HRESULT GetAdapter(IDXGIAdapter**)
+        HRESULT GetAdapter(IDXGIAdapter**) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        HRESULT CreateSurface(const DXGI_SURFACE_DESC*, UINT, DXGI_USAGE, const DXGI_SHARED_RESOURCE*, IDXGISurface**)
+        HRESULT CreateSurface(const DXGI_SURFACE_DESC*, UINT, DXGI_USAGE, const DXGI_SHARED_RESOURCE*, IDXGISurface**) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        HRESULT QueryResourceResidency(IUnknown* const*, DXGI_RESIDENCY*, UINT)
+        HRESULT QueryResourceResidency(IUnknown* const*, DXGI_RESIDENCY*, UINT) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        HRESULT SetGPUThreadPriority(INT)
+        HRESULT SetGPUThreadPriority(INT) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
-        HRESULT GetGPUThreadPriority(INT*)
+        HRESULT GetGPUThreadPriority(INT*) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+
+        //IDXGIDevice1
+        HRESULT SetMaximumFrameLatency(UINT) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT GetMaximumFrameLatency(UINT*) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+
+        //IDXGIDevice2
+        HRESULT OfferResources(UINT /*NumResources*/, IDXGIResource* const*, DXGI_OFFER_RESOURCE_PRIORITY) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT ReclaimResources(UINT /*NumResources*/, IDXGIResource* const*, BOOL* /*pDiscarded*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT EnqueueSetEvent(HANDLE) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+
+        //IDXGIDevice3
+        void Trim() override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+
+        //IDXGIDevice4
+        HRESULT OfferResources1(UINT /*NumResources*/, IDXGIResource* const*, DXGI_OFFER_RESOURCE_PRIORITY, UINT /*Flags*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT ReclaimResources1(UINT /*NumResources*/, IDXGIResource* const*, DXGI_RECLAIM_RESOURCE_RESULTS*) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
     };
 

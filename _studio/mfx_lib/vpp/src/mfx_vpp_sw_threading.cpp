@@ -151,19 +151,19 @@ mfxStatus VideoVPP_SW::PostWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
         if (!m_bDoFastCopyFlag[VPP_IN])
         {
             /* for each non zero input frame */
-            sts = m_core->DecreaseReference(&in->Data);
+            sts = m_core->DecreaseReference(*in);
             MFX_CHECK_STS(sts);
         }
 
         /* for each non zero input frame */
-        sts = m_core->DecreaseReference(&pInSurf->Data);
+        sts = m_core->DecreaseReference(*pInSurf);
         MFX_CHECK_STS(sts);
     }
 
     sts = PostProcessOfOutputSurface(out, pOutSurf, processingSts);
     MFX_CHECK_STS(sts);
 
-    sts = m_core->DecreaseReference(&pOutSurf->Data);
+    sts = m_core->DecreaseReference(*pOutSurf);
     MFX_CHECK_STS(sts);
 
     // unlock internal surfaces
@@ -180,7 +180,7 @@ mfxStatus VideoVPP_SW::PostWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
     /* once per RunFrameVPP */
     if(out && MFX_ERR_NONE == processingSts )
     {
-        sts = m_core->DecreaseReference(&(out->Data));
+        sts = m_core->DecreaseReference(*out);
         MFX_CHECK_STS( sts );
     }
 

@@ -154,6 +154,8 @@ int TestSuite::RunTest(unsigned int id)
             m_pSurfOut = m_pSurfPoolOut->GetSurface();
             mfxStatus sts = RunFrameVPPAsync(m_session, m_pSurfIn, m_pSurfOut, 0, m_pSyncPoint);
             g_tsStatus.check(sts);
+            sts = MFXVideoCORE_SyncOperation(m_session, *m_pSyncPoint, MFX_INFINITE);
+            g_tsStatus.check(sts);
         }
 
         Close();

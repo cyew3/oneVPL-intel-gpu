@@ -42,8 +42,6 @@
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
             0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
-template class D3D11VideoCORE_T<CommonCORE  >;
-
 template <class Base>
 D3D11VideoCORE_T<Base>::D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
     :   Base(numThreadsAvailable, session)
@@ -1059,7 +1057,7 @@ mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfx
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
             srcPitch = sLockRect.RowPitch;
-            sts = mfxDefaultAllocatorD3D11::SetFrameData(sSurfDesc, sLockRect, &pSrc->Data);
+            sts = mfxDefaultAllocatorD3D11::SetFrameData(sSurfDesc, sLockRect, pSrc->Data);
             MFX_CHECK_STS(sts);
 
             mfxMemId saveMemId = pSrc->Data.MemId;
@@ -1162,7 +1160,7 @@ mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfx
                 break;
             default:
                 {
-                    sts = mfxDefaultAllocatorD3D11::SetFrameData(sSurfDesc, sLockRect, &pDst->Data);
+                    sts = mfxDefaultAllocatorD3D11::SetFrameData(sSurfDesc, sLockRect, pDst->Data);
                     MFX_CHECK_STS(sts);
 
                     mfxMemId saveMemId = pDst->Data.MemId;
@@ -1199,13 +1197,14 @@ mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfx
 template <class Base>
 mfxStatus D3D11VideoCORE_T<Base>::SetHandle(mfxHandleType type, mfxHDL handle)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
     try
     {
         switch (type)
         {
         case MFX_HANDLE_D3D11_DEVICE:
         {
+            UMC::AutomaticUMCMutex guard(m_guard);
+
             // SetHandle should be first since 1.6 version
             bool isRequeredEarlySetHandle = (m_session->m_version.Major > 1 ||
                 (m_session->m_version.Major == 1 && m_session->m_version.Minor >= 6));
@@ -1276,5 +1275,442 @@ bool D3D11VideoCORE_T<Base>::IsCompatibleForOpaq()
     }
     return true;
 }
+
+#if defined(MFX_ONEVPL)
+
+D3D11VideoCORE20::D3D11VideoCORE20(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
+    : D3D11VideoCORE20_base(adapterNum, numThreadsAvailable, session)
+{
+#if !defined STRIP_EMBARGO
+    int deviceId = MFX::GetDeviceId(adapterNum);
+    auto itDev = std::find_if(std::begin(listLegalDevIDs), std::end(listLegalDevIDs)
+        , [deviceId](mfx_device_item dev) { return dev.device_id == deviceId; });
+
+    // TODO: restore switchers
+    m_enabled20Interface = false;
+        /*itDev != std::end(listLegalDevIDs) && (itDev->platform == MFX_HW_XE_HP || itDev->platform == MFX_HW_DG2); */
+#else
+    m_enabled20Interface = false;
+#endif
+
+    if (m_enabled20Interface)
+        m_frame_allocator_wrapper.allocator_hw.reset(new FlexibleFrameAllocatorHW_D3D11(nullptr, m_session));
+}
+
+D3D11VideoCORE20::~D3D11VideoCORE20()
+{}
+
+mfxStatus D3D11VideoCORE20::AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, bool isNeedCopy)
+{
+    if (!m_enabled20Interface)
+        return D3D11VideoCORE_T<CommonCORE20>::AllocFrames(request, response, isNeedCopy);
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE20::AllocFrames");
+
+    MFX_CHECK_NULL_PTR2(request, response);
+    MFX_CHECK(!(request->Type & 0x0004), MFX_ERR_UNSUPPORTED); // 0x0004 means MFX_MEMTYPE_OPAQUE_FRAME
+
+    UMC::AutomaticUMCMutex guard(m_guard);
+    try
+    {
+        if (request->Info.FourCC == MFX_FOURCC_P8
+
+            // use internal allocator for R16 since creating requires
+            // Intel's internal resource extensions that are not
+            // exposed for external application
+            || IsBayerFormat(request->Info.FourCC))
+        {
+            request->Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        }
+
+        // Create Service - first call
+        mfxStatus sts = InitializeDevice();
+        MFX_CHECK_STS(sts);
+
+        m_frame_allocator_wrapper.SetDevice(m_pD11Device);
+
+        if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
+        {
+            m_pCmCopy.reset(new CmCopyWrapper);
+
+            if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device))
+            {
+                //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
+                //if failed to create CM device, continue without CmCopy
+                m_bCmCopy = false;
+                m_bCmCopyAllowed = false;
+
+                m_pCmCopy.reset();
+                //return MFX_ERR_DEVICE_FAILED;
+            }
+            else
+            {
+                sts = m_pCmCopy->Initialize(GetHWType());
+                MFX_CHECK_STS(sts);
+                m_bCmCopy = true;
+            }
+        }
+        else if (m_bCmCopy)
+        {
+            if (m_pCmCopy)
+                m_pCmCopy->ReleaseCmSurfaces();
+            else
+                m_bCmCopy = false;
+        }
+        if (m_pCmCopy && !m_bCmCopySwap &&
+                              (  request->Info.FourCC == MFX_FOURCC_BGR4
+                              || request->Info.FourCC == MFX_FOURCC_RGB4
+                              || request->Info.FourCC == MFX_FOURCC_ARGB16
+                              || request->Info.FourCC == MFX_FOURCC_ARGB16
+                              || request->Info.FourCC == MFX_FOURCC_P010))
+        {
+            sts = m_pCmCopy->InitializeSwapKernels(GetHWType());
+            m_bCmCopySwap = true;
+        }
+
+        return m_frame_allocator_wrapper.Alloc(*request, *response);
+    }
+    catch (...)
+    {
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
+    }
+}
+
+mfxStatus D3D11VideoCORE20::ReallocFrame(mfxFrameSurface1 *surf)
+{
+    if (!m_enabled20Interface)
+        return D3D11VideoCORE_T<CommonCORE20>::ReallocFrame(surf);
+
+    MFX_CHECK_NULL_PTR1(surf);
+
+    return m_frame_allocator_wrapper.ReallocSurface(surf->Info, surf->Data.MemId);
+}
+
+mfxStatus D3D11VideoCORE20::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType)
+{
+    if (!m_enabled20Interface)
+        return D3D11VideoCORE_T<CommonCORE20>::DoFastCopyWrapper(pDst, dstMemType, pSrc, srcMemType);
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE20::DoFastCopyWrapper");
+
+    MFX_CHECK_NULL_PTR2(pSrc, pDst);
+
+    // TODO: consider uncommenting underlying checks later after additional validation
+    //MFX_CHECK(!pSrc->Data.MemType || MFX_MEMTYPE_BASE(pSrc->Data.MemType) == MFX_MEMTYPE_BASE(srcMemType), MFX_ERR_UNSUPPORTED);
+    //MFX_CHECK(!pDst->Data.MemType || MFX_MEMTYPE_BASE(pDst->Data.MemType) == MFX_MEMTYPE_BASE(dstMemType), MFX_ERR_UNSUPPORTED);
+
+    mfxFrameSurface1 srcTempSurface = *pSrc, dstTempSurface = *pDst;
+    srcTempSurface.Data.MemType = srcMemType;
+    dstTempSurface.Data.MemType = dstMemType;
+
+    mfxFrameSurface1_scoped_lock src_surf_lock(&srcTempSurface, this), dst_surf_lock(&dstTempSurface, this);
+    mfxHDLPair handle_pair_src, handle_pair_dst;
+
+    mfxStatus sts;
+    if (srcTempSurface.Data.MemType & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
+    {
+        clear_frame_data(srcTempSurface.Data);
+        sts = SwitchMemidInSurface(srcTempSurface, handle_pair_src);
+        MFX_CHECK_STS(sts);
+    }
+    else
+    {
+        sts = src_surf_lock.lock(MFX_MAP_READ, SurfaceLockType::LOCK_GENERAL);
+        MFX_CHECK_STS(sts);
+        srcTempSurface.Data.MemId = 0;
+    }
+
+    if (dstTempSurface.Data.MemType & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
+    {
+        clear_frame_data(dstTempSurface.Data);
+        sts = SwitchMemidInSurface(dstTempSurface, handle_pair_dst);
+        MFX_CHECK_STS(sts);
+    }
+    else
+    {
+        sts = dst_surf_lock.lock(MFX_MAP_WRITE, SurfaceLockType::LOCK_GENERAL);
+        MFX_CHECK_STS(sts);
+        dstTempSurface.Data.MemId = 0;
+    }
+
+    sts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
+    MFX_CHECK_STS(sts);
+
+    sts = src_surf_lock.unlock();
+    MFX_CHECK_STS(sts);
+
+    return dst_surf_lock.unlock();
+}
+
+class TextureScopedLock
+{
+public:
+    TextureScopedLock(ID3D11Device& device, ID3D11DeviceContext& context)
+        : device(device)
+        , context(context)
+    {}
+
+    ~TextureScopedLock()
+    {
+        context.Unmap(texture, 0);
+        if (copy_after_unmap)
+            context.CopySubresourceRegion(dst_texture, dst_texture_index, 0, 0, 0, texture, 0, nullptr);
+    }
+
+    CComPtr<ID3D11Texture2D> texture;
+    ID3D11Device&            device;
+    ID3D11DeviceContext&     context;
+    // Copy Back to
+    bool                     copy_after_unmap  = false;
+    ID3D11Texture2D *        dst_texture       = nullptr;
+    mfxU32                   dst_texture_index = 0;
+};
+
+mfxStatus CreateAndLockStagingSurf(mfxFrameSurface1 & mfx_frame_surface, TextureScopedLock& texture_scoped_lock, mfxU32 flags)
+{
+    MFX_CHECK(flags & MFX_MAP_READ_WRITE, MFX_ERR_UNSUPPORTED);
+
+    ID3D11Texture2D * input_texture = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)mfx_frame_surface.Data.MemId)->first);
+    MFX_CHECK_HDL(input_texture);
+
+    D3D11_TEXTURE2D_DESC surf_descr = {};
+    input_texture->GetDesc(&surf_descr);
+
+    D3D11_TEXTURE2D_DESC desc = {};
+    desc.Width            = surf_descr.Width;
+    desc.Height           = surf_descr.Height;
+    desc.MipLevels        = 1;
+    desc.Format           = surf_descr.Format;
+    desc.SampleDesc.Count = 1;
+    desc.ArraySize        = 1;
+    desc.Usage            = D3D11_USAGE_STAGING;
+    desc.BindFlags        = 0;
+
+    D3D11_MAP mapType = D3D11_MAP_READ_WRITE;
+    if (flags & MFX_MAP_READ)
+    {
+        mapType = D3D11_MAP_READ;
+        desc.CPUAccessFlags |= D3D11_CPU_ACCESS_READ;
+    }
+
+    if (flags & MFX_MAP_WRITE)
+    {
+        mapType = D3D11_MAP_WRITE;
+        desc.CPUAccessFlags |= D3D11_CPU_ACCESS_WRITE;
+    }
+
+    if ((flags & MFX_MAP_READ_WRITE) == MFX_MAP_READ_WRITE)
+    {
+        mapType = D3D11_MAP_READ_WRITE;
+    }
+
+    HRESULT hRes;
+
+    if (DXGI_FORMAT_R16_TYPELESS == surf_descr.Format)
+    {
+        RESOURCE_EXTENSION extnDesc = {};
+
+        static_assert (sizeof RESOURCE_EXTENSION_KEY <= sizeof extnDesc.Key, "sizeof RESOURCE_EXTENSION_KEY > sizeof extnDesc.Key");
+        std::copy(std::begin(RESOURCE_EXTENSION_KEY), std::end(RESOURCE_EXTENSION_KEY), extnDesc.Key);
+
+        extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+        extnDesc.Type               = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
+        extnDesc.Data[0]            = BayerFourCC2FormatFlag(mfx_frame_surface.Info.FourCC);
+
+        hRes = SetResourceExtension(&texture_scoped_lock.device, &extnDesc);
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_MEMORY_ALLOC);
+    }
+
+    ID3D11Texture2D *pStaging;
+    hRes = texture_scoped_lock.device.CreateTexture2D(&desc, nullptr, &pStaging);
+    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_MEMORY_ALLOC);
+
+    texture_scoped_lock.texture.Attach(pStaging);
+
+    size_t index = (size_t)((mfxHDLPair*)mfx_frame_surface.Data.MemId)->second;
+
+    if (flags & MFX_MAP_READ)
+    {
+        texture_scoped_lock.context.CopySubresourceRegion(pStaging, 0, 0, 0, 0, input_texture, (mfxU32)index, nullptr);
+
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Dx11 Core Fast Copy SSE");
+    }
+
+    D3D11_MAPPED_SUBRESOURCE sLockRect = {};
+    do
+    {
+        hRes = texture_scoped_lock.context.Map(pStaging, 0, mapType, D3D11_MAP_FLAG_DO_NOT_WAIT, &sLockRect);
+    } while (DXGI_ERROR_WAS_STILL_DRAWING == hRes);
+
+    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+    texture_scoped_lock.copy_after_unmap = flags & MFX_MAP_WRITE;
+
+    if (texture_scoped_lock.copy_after_unmap)
+    {
+        texture_scoped_lock.dst_texture       = input_texture;
+        texture_scoped_lock.dst_texture_index = mfxU32(index);
+    }
+
+    return mfxDefaultAllocatorD3D11::SetFrameData(desc, sLockRect, mfx_frame_surface.Data);
+}
+
+mfxStatus D3D11VideoCORE20::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+{
+    if (!m_enabled20Interface)
+        return D3D11VideoCORE_T<CommonCORE20>::DoFastCopyExtended(pDst, pSrc);
+
+    MFX_CHECK_NULL_PTR2(pDst, pSrc);
+
+    mfxU8 *srcPtr, *dstPtr;
+
+    mfxStatus sts = GetFramePointerChecked(pSrc->Info, pSrc->Data, &srcPtr);
+    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    sts = GetFramePointerChecked(pDst->Info, pDst->Data, &dstPtr);
+    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    // check that only memId or pointer are passed
+    // otherwise don't know which type of memory copying is requested
+    MFX_CHECK(!!dstPtr != !!pDst->Data.MemId, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(!!srcPtr != !!pSrc->Data.MemId, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    IppiSize roi = { std::min(pSrc->Info.Width, pDst->Info.Width), std::min(pSrc->Info.Height, pDst->Info.Height) };
+
+    // check that region of interest is valid
+    MFX_CHECK(roi.width && roi.height, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    bool canUseCMCopy = m_bCmCopy && CmCopyWrapper::CanUseCmCopy(pDst, pSrc);
+
+    if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
+    {
+        if (canUseCMCopy)
+        {
+            return m_pCmCopy->CopyVideoToVideo(pDst, pSrc);
+        }
+
+        ID3D11Texture2D * pSurfaceSrc = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pSrc->Data.MemId)->first);
+        ID3D11Texture2D * pSurfaceDst = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pDst->Data.MemId)->first);
+
+        size_t indexSrc = (size_t)((mfxHDLPair*)pSrc->Data.MemId)->second;
+        size_t indexDst = (size_t)((mfxHDLPair*)pDst->Data.MemId)->second;
+
+        m_pD11Context->CopySubresourceRegion(pSurfaceDst, (mfxU32)indexDst, 0, 0, 0, pSurfaceSrc, (mfxU32)indexSrc, nullptr);
+
+        return MFX_ERR_NONE;
+    }
+
+    if (NULL != pSrc->Data.MemId && NULL != dstPtr)
+    {
+        if (canUseCMCopy)
+        {
+            return m_pCmCopy->CopyVideoToSys(pDst, pSrc);
+        }
+
+        TextureScopedLock texture_lock(*m_pD11Device, *m_pD11Context);
+        sts = CreateAndLockStagingSurf(*pSrc, texture_lock, MFX_MAP_READ);
+        MFX_CHECK_STS(sts);
+
+        mfxMemId saveMemId = pSrc->Data.MemId;
+        pSrc->Data.MemId = 0;
+
+        if (pDst->Info.FourCC == DXGI_FORMAT_AYUV)
+            pDst->Info.FourCC = MFX_FOURCC_AYUV;
+
+        sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_VIDEO_TO_SYS); // sw copy
+        MFX_CHECK_STS(sts);
+
+        pSrc->Data.MemId = saveMemId;
+
+        return MFX_ERR_NONE;
+    }
+
+    if (NULL != srcPtr && NULL != dstPtr)
+    {
+        // system memories were passed
+        // use common way to copy frames
+
+        if (pDst->Info.FourCC == DXGI_FORMAT_AYUV)
+            pDst->Info.FourCC = MFX_FOURCC_AYUV;
+
+        return CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_SYS); // sw copy
+    }
+
+    if (NULL != srcPtr && NULL != pDst->Data.MemId)
+    {
+        // TODO: support of Bayer formats in CopySysToVideo
+        /*
+        // source are placed in system memory, destination is in video memory
+        // use common way to copy frames from system to video, most faster
+        mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
+        verticalPitch = (verticalPitch % pSrc->Data.Pitch) ? 0 : verticalPitch / pSrc->Data.Pitch;
+        if ( IsBayerFormat(pSrc->Info.FourCC) )
+        {
+            // Only one plane is used for Bayer and vertical pitch calculation is not correct for it.
+            verticalPitch = pDst->Info.Height;
+        }*/
+
+        if (canUseCMCopy)
+        {
+            return m_pCmCopy->CopySysToVideo(pDst, pSrc);
+        }
+
+        TextureScopedLock texture_lock(*m_pD11Device, *m_pD11Context);
+        sts = CreateAndLockStagingSurf(*pDst, texture_lock, MFX_MAP_WRITE);
+        MFX_CHECK_STS(sts);
+
+        switch (pDst->Info.FourCC)
+        {
+        case MFX_FOURCC_R16_BGGR:
+        case MFX_FOURCC_R16_RGGB:
+        case MFX_FOURCC_R16_GRBG:
+        case MFX_FOURCC_R16_GBRG:
+        {
+            mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
+            mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
+
+            IppStatus ippSts = ippiCopy_16u_C1R(pSrc->Data.Y16, srcPitch, pDst->Data.Y16, dstPitch, roi);
+            MFX_CHECK(ippSts == ippStsNoErr, MFX_ERR_UNKNOWN);
+        }
+        break;
+        default:
+        {
+            mfxMemId saveMemId = pDst->Data.MemId;
+            pDst->Data.MemId = 0;
+
+            if (pDst->Info.FourCC == DXGI_FORMAT_AYUV)
+                pDst->Info.FourCC = MFX_FOURCC_AYUV;
+
+            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
+            MFX_CHECK_STS(sts);
+
+            pDst->Data.MemId = saveMemId;
+        }
+        break;
+        }
+
+        return MFX_ERR_NONE;
+    }
+
+    MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
+}
+
+mfxStatus D3D11VideoCORE20::CreateSurface(mfxU16 type, const mfxFrameInfo& info, mfxFrameSurface1* & surf)
+{
+    MFX_CHECK(m_enabled20Interface, MFX_ERR_UNSUPPORTED);
+
+    MFX_SAFE_CALL(InitializeDevice());
+    m_frame_allocator_wrapper.SetDevice(m_pD11Device);
+
+    return m_frame_allocator_wrapper.CreateSurface(type, info, surf);
+}
+
+#endif
+
+template class D3D11VideoCORE_T<CommonCORE  >;
+#if defined(MFX_ONEVPL)
+template class D3D11VideoCORE_T<CommonCORE20>;
+#endif
+
 #endif
 #endif

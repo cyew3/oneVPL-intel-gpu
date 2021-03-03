@@ -30,6 +30,7 @@
 #include "ippvc.h"
 #include "umc_vc1_common_macros_defs.h"
 #include "umc_structures.h"
+#include <deque>
 
 #define VC1_ENC_RECODING_MAX_NUM 3
 #define START_CODE_NUMBER 600
@@ -860,16 +861,16 @@ struct Frame
     uint32_t      m_iYPitch;
     uint32_t      m_iUPitch;
     uint32_t      m_iVPitch;
-    int32_t      m_AllocatedMemorySize;
+    int32_t      m_AllocatedMemorySize = 0;
 
-    uint8_t      LumaTable[4][256]; //0,1 - top/bottom fields of first field. 2,3 of second field
-    uint8_t      ChromaTable[4][256];
+    uint8_t      LumaTable[4][256]   = {}; //0,1 - top/bottom fields of first field. 2,3 of second field
+    uint8_t      ChromaTable[4][256] = {};
 
-    uint8_t*     LumaTablePrev[4];
-    uint8_t*     ChromaTablePrev[4];
+    uint8_t*     LumaTablePrev[4]    = {};
+    uint8_t*     ChromaTablePrev[4]  = {};
 
-    uint8_t*     LumaTableCurr[2];
-    uint8_t*     ChromaTableCurr[2];
+    uint8_t*     LumaTableCurr[2]    = {};
+    uint8_t*     ChromaTableCurr[2]  = {};
     uint32_t      TFF;
 
     uint32_t      isIC;
@@ -878,9 +879,41 @@ struct Frame
 
 #define VC1MAXFRAMENUM 9*VC1FRAMEPARALLELPAIR + 9 // for <= 8 threads. Change if numThreads > 8
 #define VC1NUMREFFRAMES 2 // 2 - reference frames
+
+class VC1FrameStorageProxy
+{
+public:
+
+    void Reset(std::deque<Frame>& frames_storage)
+    {
+        if (frames)
+            frames->clear();
+
+        frames = &frames_storage;
+        frames->clear();
+    }
+
+    void AdjustToIndex(size_t idx)
+    {
+        if (frames && frames->size() <= idx)
+            frames->resize(idx + 1);
+    }
+
+    Frame& operator [] (size_t index)
+    {
+        if (!frames)
+            throw std::exception();
+
+        return (*frames)[index];
+    }
+
+private:
+    std::deque<Frame>* frames = nullptr;
+};
+
 struct VC1FrameBuffer
 {
-    Frame*        m_pFrames;
+    VC1FrameStorageProxy m_pFrames;
 
     int32_t        m_iPrevIndex;
     int32_t        m_iNextIndex;

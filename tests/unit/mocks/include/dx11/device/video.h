@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,12 +53,12 @@ namespace mocks { namespace dx11
 
             auto MatchVD = testing::Truly([vd](D3D11_VIDEO_DECODER_DESC const* xd)
             {
-                    return
-                           xd->Guid         == vd.Guid
-                        && xd->OutputFormat == vd.OutputFormat
-                        && xd->SampleWidth  <= vd.SampleWidth
-                        && xd->SampleHeight <= vd.SampleHeight
-                        ;
+                return
+                       xd->Guid         == vd.Guid
+                    && xd->OutputFormat == vd.OutputFormat
+                    && xd->SampleWidth  <= vd.SampleWidth
+                    && xd->SampleHeight <= vd.SampleHeight
+                    ;
             });
 
             //HRESULT CreateVideoDecoder(const D3D11_VIDEO_DECODER_DESC*, const D3D11_VIDEO_DECODER_CONFIG*, ID3D11VideoDecoder**)

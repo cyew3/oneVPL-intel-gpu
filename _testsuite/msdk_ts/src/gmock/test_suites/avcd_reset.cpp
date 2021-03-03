@@ -167,7 +167,7 @@ int TestSuite::RunTest(unsigned int id)
         MFXVideoDECODE_Query(m_session, 0, &tmp_par);
     }
 
-    if (tc.mode & ALLOC_OPAQUE)
+    if (tc.mode > ALLOC_OPAQUE)
     {
         AllocSurfaces();
 
@@ -199,7 +199,7 @@ int TestSuite::RunTest(unsigned int id)
         pPar_reset->mfx.FrameInfo.CropH = (pPar_reset->mfx.FrameInfo.Height + 15) & ~0xF;
     }
 
-    if (!(tc.mode & ALLOC_OPAQUE))
+    if (tc.mode < ALLOC_OPAQUE)
     {
         AllocSurfaces();
         if(!m_pFrameAllocator && (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))

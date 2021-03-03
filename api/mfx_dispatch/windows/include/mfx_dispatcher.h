@@ -85,7 +85,7 @@ enum eAudioFunc
     eAudioFuncTotal
 };
 
-// declare max buffer length for regsitry key name
+// declare max buffer length for registry key name
 enum
 {
     MFX_MAX_REGISTRY_KEY_NAME = 256
@@ -160,7 +160,7 @@ struct MFX_DISP_HANDLE : public _mfxSession
     mfxVersion actualApiVersion;
     // Status of loaded dll
     mfxStatus loadStatus;
-    // Resgistry subkey name for windows version
+    // Registry subkey name for windows version
     wchar_t subkeyName[MFX_MAX_REGISTRY_KEY_NAME];
     // Storage ID for windows version
     int storageID;

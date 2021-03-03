@@ -47,6 +47,8 @@ typedef struct _mfxSession *mfxSession;
    @return
       MFX_ERR_NONE        The function completed successfully. The output parameter contains the handle of the session.\n
       MFX_ERR_UNSUPPORTED The function cannot find the desired legacy Intel(r) Media SDK implementation or version.
+   
+   @since This function is available since API version 1.0.
 */
 mfxStatus MFX_CDECL MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
 
@@ -77,6 +79,8 @@ mfxStatus MFX_CDECL MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
    @return
       MFX_ERR_NONE        The function completed successfully. The output parameter contains the handle of the session.\n
       MFX_ERR_UNSUPPORTED The function cannot find the desired implementation or version.
+
+   @since This function is available since API version 1.14.
 */
 mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session);
 
@@ -93,6 +97,8 @@ mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session);
    @return
       MFX_ERR_NONE        The function completed successfully. The output parameter contains the handle of the session.\n
       MFX_ERR_UNSUPPORTED The function cannot find the desired implementation or version.
+
+   @since This function is available since API version 2.0.
 */
 mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam par, mfxSession *session);
 
@@ -104,6 +110,8 @@ mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam par, mfxSession *sessio
    @param[in] session session handle.
 
    @return MFX_ERR_NONE The function completed successfully.
+
+   @since This function is available since API version 1.0.
 */
 mfxStatus MFX_CDECL MFXClose(mfxSession session);
 
@@ -114,6 +122,8 @@ mfxStatus MFX_CDECL MFXClose(mfxSession session);
    @param[out] impl    Pointer to the implementation type
 
    @return MFX_ERR_NONE The function completed successfully.
+
+   @since This function is available since API version 1.0.
 */
 mfxStatus MFX_CDECL MFXQueryIMPL(mfxSession session, mfxIMPL *impl);
 
@@ -124,6 +134,8 @@ mfxStatus MFX_CDECL MFXQueryIMPL(mfxSession session, mfxIMPL *impl);
    @param[out] version Pointer to the returned implementation version.
 
    @return MFX_ERR_NONE The function completed successfully.
+
+   @since This function is available since API version 1.0.
 */
 mfxStatus MFX_CDECL MFXQueryVersion(mfxSession session, mfxVersion *version);
 
@@ -148,6 +160,8 @@ mfxStatus MFX_CDECL MFXQueryVersion(mfxSession session, mfxVersion *version);
            MFX_WRN_IN_EXECUTION Active tasks are executing or in queue in one of the
                                 sessions. Call this function again after all tasks are completed. \n
            MFX_ERR_UNSUPPORTED  The child session cannot be joined with the current session.
+
+   @since This function is available since API version 1.1.
 */
 mfxStatus MFX_CDECL MFXJoinSession(mfxSession session, mfxSession child);
 
@@ -162,6 +176,8 @@ mfxStatus MFX_CDECL MFXJoinSession(mfxSession session, mfxSession child);
            MFX_WRN_IN_EXECUTION        Active tasks are executing or in queue in one of the
                                        sessions. Call this function again after all tasks are completed. \n
            MFX_ERR_UNDEFINED_BEHAVIOR  The session is independent, or this session is the parent of all joined sessions.
+
+   @since This function is available since API version 1.1.
 */
 mfxStatus MFX_CDECL MFXDisjoinSession(mfxSession session);
 
@@ -175,6 +191,8 @@ mfxStatus MFX_CDECL MFXDisjoinSession(mfxSession session);
    @param[out] clone     Pointer to the cloned session handle.
 
    @return MFX_ERR_NONE                The function completed successfully.
+
+   @since This function is available since API version 1.1.
 */
 mfxStatus MFX_CDECL MFXCloneSession(mfxSession session, mfxSession *clone);
 
@@ -185,6 +203,8 @@ mfxStatus MFX_CDECL MFXCloneSession(mfxSession session, mfxSession *clone);
    @param[in] priority   Priority value.
 
    @return MFX_ERR_NONE                The function completed successfully.
+
+   @since This function is available since API version 1.1.
 */
 mfxStatus MFX_CDECL MFXSetPriority(mfxSession session, mfxPriority priority);
 
@@ -195,6 +215,8 @@ mfxStatus MFX_CDECL MFXSetPriority(mfxSession session, mfxPriority priority);
    @param[out] priority   Pointer to the priority value.
 
    @return MFX_ERR_NONE                The function completed successfully.
+
+   @since This function is available since API version 1.1.
 */
 mfxStatus MFX_CDECL MFXGetPriority(mfxSession session, mfxPriority *priority);
 

@@ -81,6 +81,7 @@ foreach( dir
 endforeach()
 
 add_subdirectory( mdp_msdk-lib/samples )
+add_subdirectory( mdp_msdk-lib/tutorials )
 
 message("")
 message("********************** Media SDK Configuration Summary **********************")

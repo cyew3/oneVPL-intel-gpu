@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,23 +38,39 @@
 #endif
 
 
-VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type, 
-                                   mfxU32 adapterNum, 
-                                   mfxU32 numThreadsAvailable, 
+VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
+                                   mfxU32 adapterNum,
+                                   mfxU32 numThreadsAvailable,
                                    mfxSession session)
 {
     (void)adapterNum;
-    switch(va_type)
+
+    // TODO: currently oneVPL core is switched off. Switch on will be a separate commit
+    bool create_msdk20_core = false; //mfx::GetEnv("MFX_CORE_INTERNAL_ALLOCATION_API_ENABLE", true);
+    std::ignore = create_msdk20_core;
+
+    switch (va_type)
     {
     case MFX_HW_NO:
+#if defined(MFX_ONEVPL)
+        if (create_msdk20_core)
+            return new CommonCORE20(numThreadsAvailable, session);
+#endif
+
         return new CommonCORE(numThreadsAvailable, session);
-#if defined (MFX_VA_WIN) 
+
+#if defined (MFX_VA_WIN)
 #if defined(MFX_D3D9_ENABLED)
     case MFX_HW_D3D9:
         return new D3D9VideoCORE(adapterNum, numThreadsAvailable, session);
 #endif
 #if defined (MFX_D3D11_ENABLED)
     case MFX_HW_D3D11:
+#if defined(MFX_ONEVPL)
+        if (create_msdk20_core)
+            return new D3D11VideoCORE20(adapterNum, numThreadsAvailable, session);
+#endif
+
         return new D3D11VideoCORE(adapterNum, numThreadsAvailable, session);
 #if defined (MFX_DX9ON11)
     case MFX_HW_D3D9ON11:
@@ -63,13 +79,18 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
 #endif
 #elif defined(MFX_VA_LINUX)
     case MFX_HW_VAAPI:
+#if defined(MFX_ONEVPL)
+        if (create_msdk20_core)
+            return new VAAPIVideoCORE20(adapterNum, numThreadsAvailable, session);
+#endif
+
         return new VAAPIVideoCORE(adapterNum, numThreadsAvailable, session);
 #elif defined(MFX_VA_OSX)
     case MFX_HW_VDAAPI:
         return new VDAAPIVideoCORE(adapterNum, numThreadsAvailable, session);
-#endif    
+#endif
     default:
-        return NULL;
+        return nullptr;
     }
 
 } // VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type)

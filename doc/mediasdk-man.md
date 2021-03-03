@@ -5251,12 +5251,12 @@ The SDK behavior is undefined when using an incompletely defined external alloca
 
 | | |
 --- | ---
-`pthis` | Pointer to the allocator object
-[Alloc](#Alloc) | Pointer to the function that allocates frames
-[Lock](#FrameLock) | Pointer to the function that locks a frame and obtain its pointers
+`pthis` | Pointer to the allocator object.
+[Alloc](#Alloc) | Pointer to the function that allocates frames.
+[Lock](#FrameLock) | Pointer to the function that locks a frame and obtain its pointers.
 [Unlock](#FrameUnlock) | Pointer to the function that unlocks a frame; after unlocking, any pointers to the frame are invalid.
-[GetHDL](#FrameGetHDL) | Pointer to the function that obtains the OS-specific handle
-[Free](#FrameFree) | Pointer to the function that de-allocates a frame
+[GetHDL](#FrameGetHDL) | Pointer to the function that obtains the OS-specific handle.
+[Free](#FrameFree) | Pointer to the function that de-allocates a frame.
 
 **Change History**
 
@@ -5310,7 +5310,7 @@ This function is available since SDK API 1.0.
 
 **Description**
 
-This function de-allocates all allocated frames.
+This function de-allocates all allocated frames listed in `response`. SDK doesn't require partial or combined de-allocation. Only support of de-allocation of `response` obtained from `Alloc` required.
 
 **Return Status**
 
@@ -9166,7 +9166,7 @@ Successful operation
 
 | | |
 --- | ---
-`MFX_ERR_NONE` | No error
+`MFX_ERR_NONE` | No error.
 
 Reserved status code
 
@@ -9179,8 +9179,8 @@ Programming related errors
 | | |
 --- | ---
 `MFX_ERR_NOT_INITIALIZED` | Member functions called without initialization.
-`MFX_ERR_INVALID_HANDLE` | Invalid session or MemId handle
-`MFX_ERR_NULL_PTR` | `NULL` pointer in the input or output arguments
+`MFX_ERR_INVALID_HANDLE` | Invalid session or MemId handle.
+`MFX_ERR_NULL_PTR` | `NULL` pointer in the input or output arguments.
 `MFX_ERR_UNDEFINED_BEHAVIOR` | The behavior is undefined.
 `MFX_ERR_NOT_ENOUGH_BUFFER` | Insufficient buffer for input or output.
 `MFX_ERR_NOT_FOUND` | Specified object/item/sync point not found.
@@ -9197,7 +9197,7 @@ Configuration related errors or warnings
 
 | | |
 --- | ---
-`MFX_ERR_UNSUPPORTED` | Unsupported configurations, parameters, or features
+`MFX_ERR_UNSUPPORTED` | Unsupported configurations, parameters, or features.
 `MFX_ERR_INVALID_VIDEO_PARAM` | Invalid video parameters detected. **Init** and **Reset** functions return this status code to indicate either that mandated input parameters are unspecified, or the functions failed to correct them.
 `MFX_ERR_INCOMPATIBLE_VIDEO_PARAM` | Incompatible video parameters detected. If a **Reset** function returns this status code, a component—decoder, encoder or video preprocessor—cannot process the specified configuration with existing structures and frame buffers. If the function [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync) returns this status code, the bitstream contains an incompatible video parameter configuration that the decoder cannot follow.
 `MFX_WRN_VIDEO_PARAM_CHANGED` | The decoder detected a new sequence header in the bitstream. Video parameters may have changed.

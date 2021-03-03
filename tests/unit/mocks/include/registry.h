@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -162,30 +162,30 @@ namespace mocks
                 testing::StrCaseEq(std::get<1>(params)), //name
                 testing::IsNull(), _, _, _))
                 .WillRepeatedly(testing::WithArgs<3, 4, 5>(testing::Invoke(
-                    [params](LPDWORD type, LPBYTE data, LPDWORD size)
+                    [params, value = CComVariant(std::get<2>(params))] //need to copy 'value' because it could be pointer (usually wchar_t*)
+                    (LPDWORD type, LPBYTE data, LPDWORD size)
                     {
                         if (type) *type = std::get<3>(params);
                         if (!data) return ERROR_SUCCESS;
                         if (!size) return ERROR_INVALID_PARAMETER;
 
-                        CComVariant value(std::get<2>(params));
                         ULARGE_INTEGER sz; value.GetSizeMax(&sz);
                         sz.LowPart -= sizeof(VARTYPE); //'GetSizeMax' includes size of 'VARIANT::vt'
-                        
-                        LPBYTE dst = nullptr;
+
+                        BYTE const* src = nullptr;
                         switch (value.vt)
                         {
                             case VT_BSTR:
                                 sz.LowPart -= sizeof(ULONG); //'GetStreamSize' includes also size of 'ULONG'
-                                dst = LPBYTE(value.bstrVal);
+                                src = LPBYTE(value.bstrVal);
                                 break;
 
                             default:
-                                dst = &value.bVal;
+                                src = &value.bVal;
                         }
 
                         *size = sz.LowPart;
-                        std::copy(dst, dst + *size, data);
+                        std::copy(src, src + *size, data);
 
                         return *size ?
                             ERROR_SUCCESS : ERROR_INVALID_DATA;

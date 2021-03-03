@@ -30,8 +30,8 @@
 #include "libmfx_core.h"
 #include "libmfx_allocator_vaapi.h"
 #include "libmfx_core_interface.h"
-
 #include "mfx_platform_headers.h"
+#include "mfx_session.h"
 
 #include "va/va.h"
 #include "vaapi_ext_interface.h"
@@ -122,6 +122,10 @@ class VAAPIVideoCORE_T : public Base
 {
 public:
     friend class FactoryCORE;
+#if defined(MFX_ONEVPL)
+    friend class VAAPIVideoCORE20;
+    friend class VAAPIVideoCORE_T<CommonCORE20>;
+#endif
     class VAAPIAdapter : public VAAPIInterface
     {
     public:
@@ -253,6 +257,32 @@ inline bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
     return false;
 #endif
 }
+#endif
+
+#if defined(MFX_ONEVPL)
+// Refactored MSDK 2.0 core
+
+using VAAPIVideoCORE20_base = deprecate_from_base < VAAPIVideoCORE_T<CommonCORE20> >;
+
+class VAAPIVideoCORE20 : public VAAPIVideoCORE20_base
+{
+public:
+    friend class FactoryCORE;
+
+    virtual ~VAAPIVideoCORE20();
+
+    virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL handle)                                                                                    override;
+
+    virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, bool isNeedCopy = true)                             override;
+            mfxStatus ReallocFrame(mfxFrameSurface1 *surf);
+
+    virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)                                                              override;
+    virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType)                         override;
+
+protected:
+    VAAPIVideoCORE20(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session = nullptr);
+};
+
 #endif
 
 #endif // __LIBMFX_CORE__VAAPI_H__

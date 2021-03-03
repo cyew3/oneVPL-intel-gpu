@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2020 Intel Corporation
+# Copyright (c) 2017-2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,7 @@ option( BUILD_ALL "Build all the targets?" OFF )
 option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
 option( BUILD_DISPATCHER "Build dispatcher?" ON )
 cmake_dependent_option( BUILD_SAMPLES "Build samples?" ON "${BUILD_DISPATCHER}" OFF )
+cmake_dependent_option(BUILD_TUTORIALS "Build tutorials?" ON "BUILD_DISPATCHER" OFF )
 # Tools depend on samples (sample_common) and can't be built without it. The
 # following BUILD_TOOLS option declaration assures that.
 cmake_dependent_option( BUILD_TOOLS "Build tools?" ON "${BUILD_ALL};${BUILD_SAMPLES}" OFF)
@@ -80,6 +81,10 @@ cmake_dependent_option( BUILD_VAL_TOOLS "Build validation tools?" ON "${BUILD_DI
 
 option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
 option(USE_SYSTEM_GTEST "Use system installed gtest?" OFF)
+
+option(BUILD_MOCK_TESTS "Build all mocks' self tests?" ${BUILD_TESTS} )
+
+option(BUILD_TUTORIALS "Build tutorials?" "${BUILD_ALL}")
 
 option(ENABLE_HEVC_ON_GCC "Build SW versions of HEVC plugins using GCC?" OFF )
 

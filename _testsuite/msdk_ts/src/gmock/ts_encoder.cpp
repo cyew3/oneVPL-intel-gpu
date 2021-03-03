@@ -26,18 +26,17 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             g_tsLog << "Opaque memory is not supported by core20\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
+            g_tsStatus.expect(function == QUERY ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM);
+            g_tsStatus.last();
         }
 
         if (   par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
             || par.mfx.RateControlMethod == MFX_RATECONTROL_VME
             )
         {
-#if defined(MFX_ONEVPL)
             g_tsLog << "Rate control mode " << par.mfx.RateControlMethod << " removed in OneVPL\n";
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-#endif //MFX_ONEVPL
+            g_tsStatus.expect(function == QUERY ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM);
+            g_tsStatus.last();
         }
     }
 

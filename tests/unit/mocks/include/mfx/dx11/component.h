@@ -20,8 +20,12 @@
 
 #pragma once
 
+#include "mocks/include/dxgi/format.h"
 #include "mocks/include/dx11/device/device.h"
 #include "mocks/include/dx11/device/video.h"
+#include "mocks/include/dx11/device/resource.h"
+
+#include "mocks/include/dx11/context/context.h"
 #include "mocks/include/dx11/context/video.h"
 
 #include "mocks/include/mfx/platform.h"
@@ -29,29 +33,97 @@
 
 namespace mocks { namespace mfx { namespace dx11
 {
-    template <int Type, GUID const* Id>
     inline
-    void mock_component(mocks::dx11::device& d, std::integral_constant<int, Type>, guid<Id>, mfxVideoParam const& vp)
+    D3D11_TEXTURE2D_DESC make_texture_desc(mfxVideoParam const& vp, D3D11_USAGE usage, UINT bind, UINT access)
     {
-        mock_device(d,
-            std::make_tuple(
-                make_desc(DXVADDI_Intel_Decode_PrivateData_Report, vp),
-                make_caps(guid<Id>{}, std::integral_constant<int, Type>{}, vp)
-            ),
-            std::make_tuple(
-                make_desc( *guid<Id>::value, vp),
-                make_config(guid<Id>{}, vp)
-            )
+        return D3D11_TEXTURE2D_DESC{
+            vp.mfx.FrameInfo.Width, vp.mfx.FrameInfo.Height,
+            1, 1,
+            dxgi::to_native(vp.mfx.FrameInfo.FourCC),
+            { 1, 0 },
+            usage,
+            bind,
+            access
+        };
+    }
+
+    inline
+    D3D11_BUFFER_DESC make_buffer_desc(mfxVideoParam const& vp, D3D11_USAGE usage, UINT bind, UINT access)
+    {
+        return D3D11_BUFFER_DESC{
+            UINT(vp.mfx.FrameInfo.Width * vp.mfx.FrameInfo.Height),
+            usage,
+            bind,
+            access
+        };
+    }
+
+    namespace detail
+    {
+        template <int Type, GUID const* Id>
+        inline
+        void mock_component(std::integral_constant<int, Type>, mocks::dx11::device& d, std::tuple<guid<Id>, mfxVideoParam> params)
+        {
+            auto&& vp = std::get<1>(params);
+            auto vp_check = vp; //most components request support of NV12 as default check
+            vp_check.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+            mock_device(d,
+                std::make_tuple(
+                    make_desc(DXVADDI_Intel_Decode_PrivateData_Report, vp),
+                    make_caps(std::integral_constant<int, Type>{}, guid<Id>{}, vp)
+                ),
+                std::make_tuple(
+                    make_desc( *guid<Id>::value, vp),
+                    make_config(guid<Id>{}, vp)
+                ),
+                std::make_tuple(
+                    make_desc( *guid<Id>::value, vp_check),
+                    make_config(guid<Id>{}, vp_check)
+                )
+            );
+        }
+
+        template <int Type>
+        inline
+        void mock_component(std::integral_constant<int, Type>, mocks::dx11::device& d, D3D11_TEXTURE2D_DESC td)
+        {
+            mock_device(d, td);
+        }
+
+        template <int Type>
+        inline
+        void mock_component(std::integral_constant<int, Type>, mocks::dx11::device& d, D3D11_BUFFER_DESC bd)
+        {
+            mock_device(d, bd);
+        }
+    }
+
+    template <int Type, typename ...Args>
+    inline
+    mocks::dx11::device&
+    mock_component(std::integral_constant<int, Type>, mocks::dx11::device& d, Args&&... args)
+    {
+        mocks::for_each(
+            [&](auto&& x)
+            {
+                detail::mock_component(std::integral_constant<int, Type>{}, d,
+                    std::forward<decltype(x)>(x)
+                );
+            },
+            std::forward<Args>(args)...
         );
+
+        return d;
     }
 
     template <int Type, typename ...Args>
     inline
     std::unique_ptr<mocks::dx11::device>
-    make_component(IDXGIAdapter* adapter, ID3D11DeviceContext* ctx, std::integral_constant<int, Type>, Args&&... args)
+    make_component(std::integral_constant<int, Type>, IDXGIAdapter* adapter, ID3D11DeviceContext* ctx, Args&&... args)
     {
         auto d = mocks::dx11::make_device(
-            std::make_tuple(adapter, D3D_DRIVER_TYPE_HARDWARE, std::make_tuple(D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_11_1), ctx)
+            std::make_tuple(adapter, adapter ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE, std::make_tuple(D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_11_1), ctx)
         );
 
         //[MFX core] uses this resolution & GUID while querying private report
@@ -59,19 +131,16 @@ namespace mocks { namespace mfx { namespace dx11
         vp.mfx.FrameInfo.Width  = 640;
         vp.mfx.FrameInfo.Height = 480;
         vp = make_param(
-            fourcc::tag<MFX_FOURCC_NV12>{},
-            make_param(mocks::guid<&DXVA2_ModeH264_VLD_NoFGT>{}, vp)
+            fourcc::format<MFX_FOURCC_NV12>{},
+            make_param(guid<&DXVA2_ModeH264_VLD_NoFGT>{}, vp)
         );
 
-        mocks::for_each(
-            [&](auto&& x)
-            {
-                mock_component(*d,
-                    std::integral_constant<int, Type>{},
-                    std::get<0>(std::forward<decltype(x)>(x)), std::get<1>(std::forward<decltype(x)>(x))
-                );
-            },
-            std::make_tuple(guid<&DXVA2_ModeH264_VLD_NoFGT>{}, vp), std::forward<Args>(args)...
+        detail::mock_component(std::integral_constant<int, Type>{}, *d,
+            std::make_tuple(guid<&DXVA2_ModeH264_VLD_NoFGT>{}, vp)
+        );
+
+        mock_component(std::integral_constant<int, Type>{}, *d,
+            std::forward<Args>(args)...
         );
 
         return d;
@@ -79,33 +148,57 @@ namespace mocks { namespace mfx { namespace dx11
 
     template <typename ...Args>
     inline
-    std::unique_ptr<mocks::dx11::device>
-    make_component(IDXGIAdapter* adapter, ID3D11DeviceContext* ctx, int type, Args&&... args)
+    mocks::dx11::device&
+    mock_component(int type, mocks::dx11::device& d, Args&&... args)
     {
-        switch (type)
-        {
-            case HW_HSW:
-            case HW_HSW_ULT: return make_component(adapter, ctx, std::integral_constant<int, HW_HSW>{},     std::forward<Args>(args)...);
-            case HW_IVB:     return make_component(adapter, ctx, std::integral_constant<int, HW_IVB>{},     std::forward<Args>(args)...);
-            case HW_VLV:     return make_component(adapter, ctx, std::integral_constant<int, HW_VLV>{},     std::forward<Args>(args)...);
-            case HW_SKL:     return make_component(adapter, ctx, std::integral_constant<int, HW_SKL>{},     std::forward<Args>(args)...);
-            case HW_BDW:     return make_component(adapter, ctx, std::integral_constant<int, HW_BDW>{},     std::forward<Args>(args)...);
-            case HW_KBL:     return make_component(adapter, ctx, std::integral_constant<int, HW_KBL>{},     std::forward<Args>(args)...);
-            case HW_CFL:     return make_component(adapter, ctx, std::integral_constant<int, HW_CFL>{},     std::forward<Args>(args)...);
-            case HW_APL:     return make_component(adapter, ctx, std::integral_constant<int, HW_APL>{},     std::forward<Args>(args)...);
-            case HW_GLK:     return make_component(adapter, ctx, std::integral_constant<int, HW_GLK>{},     std::forward<Args>(args)...);
-            case HW_CNL:     return make_component(adapter, ctx, std::integral_constant<int, HW_CNL>{},     std::forward<Args>(args)...);
-            case HW_ICL:     return make_component(adapter, ctx, std::integral_constant<int, HW_ICL>{},     std::forward<Args>(args)...);
-            case HW_JSL:     return make_component(adapter, ctx, std::integral_constant<int, HW_JSL>{},     std::forward<Args>(args)...);
-            case HW_TGL:     return make_component(adapter, ctx, std::integral_constant<int, HW_TGL>{},     std::forward<Args>(args)...);
-            case HW_DG1:     return make_component(adapter, ctx, std::integral_constant<int, HW_DG1>{},     std::forward<Args>(args)...);
-#ifndef STRIP_EMBARGO
-            case HW_LKF:     return make_component(adapter, ctx, std::integral_constant<int, HW_LKF>{},     std::forward<Args>(args)...);
-            case HW_XEHP:    return make_component(adapter, ctx, std::integral_constant<int, HW_XEHP>{},     std::forward<Args>(args)...);
-            case HW_DG2:     return make_component(adapter, ctx, std::integral_constant<int, HW_DG2>{},     std::forward<Args>(args)...);
-#endif
-            default:         return make_component(adapter, ctx, std::integral_constant<int, HW_UNKNOWN>{}, std::forward<Args>(args)...);
-        }
+        return invoke(type,
+            MOCKS_LIFT(mock_component),
+            d,
+            std::forward<Args>(args)...
+        );
     }
+
+    template <typename ...Args>
+    inline
+    std::unique_ptr<mocks::dx11::device>
+    make_component(int type, IDXGIAdapter* adapter, ID3D11DeviceContext* ctx, Args&&... args)
+    {
+        return invoke(type,
+            MOCKS_LIFT(make_component),
+            adapter, ctx,
+            std::forward<Args>(args)...
+        );
+    }
+
+    struct component
+    {
+        CComPtr<mocks::dx11::context>                  context;
+        CComPtr<mocks::dx11::device>                   device;
+
+        component(int type, IDXGIAdapter* adapter, mfxVideoParam const&)
+        {
+            context.Attach(
+                mocks::dx11::make_context().release()
+            );
+
+            device.Attach(
+                make_component(type, adapter, nullptr).release()
+            );
+
+            //need DX11 device mimics DXGI device
+            //dx11::device will hold reference to DXGI device itself
+            CComPtr<IDXGIDevice> d;
+            d.Attach(mocks::dxgi::make_device().release());
+            mock_device(*device, d.p);
+        }
+
+        virtual ~component()
+        {}
+
+        virtual void reset(int /*type*/, mfxVideoParam const&)
+        {
+            assert(device);
+        }
+    };
 
 } } }

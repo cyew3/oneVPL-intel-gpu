@@ -1107,16 +1107,21 @@ int TestSuite::RunTest(unsigned int id)
 
     if (m_par.vpp.In.FourCC == MFX_FOURCC_P210)
     {
-        if (g_tsHWtype <= MFX_HW_ICL)
-        {
-            sts_query = MFX_ERR_UNSUPPORTED;
-            sts_init = MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-        else
-        {
-            sts_query = MFX_WRN_PARTIAL_ACCELERATION;
-            sts_init = MFX_WRN_PARTIAL_ACCELERATION;
-        }
+#if defined(MFX_ONEVPL)
+       sts_query = MFX_ERR_UNSUPPORTED;
+       sts_init = MFX_ERR_UNSUPPORTED;
+#else
+       if (g_tsHWtype <= MFX_HW_ICL)
+       {
+           sts_query = MFX_ERR_UNSUPPORTED;
+           sts_init = MFX_ERR_INVALID_VIDEO_PARAM;
+       }
+       else
+       {
+           sts_query = MFX_WRN_PARTIAL_ACCELERATION;
+           sts_init = MFX_WRN_PARTIAL_ACCELERATION;
+       }
+#endif
     }
 
     if (m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.In.FourCC == MFX_FOURCC_Y410)

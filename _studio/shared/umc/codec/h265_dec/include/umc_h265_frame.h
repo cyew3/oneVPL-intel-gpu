@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -203,7 +203,7 @@ public:
         m_pFutureFrame = pFut;
     }
 
-    bool        isDisplayable()    { return m_isDisplayable != 0; }
+    bool        isDisplayable() const { return m_isDisplayable != 0; }
 
     void        SetisDisplayable(bool isDisplayable)
     {
@@ -220,16 +220,16 @@ public:
     // Check reference frames for error status and flag this frame if error is found
     void UpdateErrorWithRefFrameStatus();
 
-    bool        wasDisplayed()    { return m_wasDisplayed != 0; }
+    bool        wasDisplayed() const { return m_wasDisplayed != 0; }
     void        setWasDisplayed() { m_wasDisplayed = 1; }
 
-    bool        wasOutputted()    { return m_wasOutputted != 0; }
+    bool        wasOutputted() const { return m_wasOutputted != 0; }
     void        setWasOutputted(); // Flag frame after it was output
 
-    bool        isDisposable()    { return (!m_isShortTermRef &&
-                                            !m_isLongTermRef &&
-                                            ((m_wasOutputted != 0 && m_wasDisplayed != 0) || (m_isDisplayable == 0)) &&
-                                            !GetRefCounter()); }
+    bool        isDisposable() const { return (!m_isShortTermRef &&
+                                               !m_isLongTermRef &&
+                                               ((m_wasOutputted != 0 && m_wasDisplayed != 0) || (m_isDisplayable == 0)) &&
+                                               !GetRefCounter()); }
 
     bool isShortTermRef() const
     {

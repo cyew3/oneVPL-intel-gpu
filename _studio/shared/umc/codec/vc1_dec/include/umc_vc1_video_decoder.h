@@ -64,8 +64,8 @@ namespace UMC
         // Reset decoder to initial state
         virtual Status   Reset(void);
 
-        // Perfomance tools. Improve speed or quality.
-        //Accelarate Decoder (remove some features like deblockng, smoothing or change InvTransform and Quant)
+        // Performance tools. Improve speed or quality.
+        // Accelerate Decoder (remove some features like deblocking, smoothing or change InvTransform and Quant)
         // speed_mode - return current mode
 
         // Change Decoding speed
@@ -180,6 +180,8 @@ namespace UMC
         mfxU32                   m_frameOrder;
         UMC::FrameMemID               m_RMIndexToFree;
         UMC::FrameMemID               m_CurrIndexToFree;
+
+        std::deque<Frame>             m_FrameStorage;
 
     protected:
         UMC::FrameMemID GetSkippedIndex(UMC::VC1FrameDescriptor *desc, bool isIn);

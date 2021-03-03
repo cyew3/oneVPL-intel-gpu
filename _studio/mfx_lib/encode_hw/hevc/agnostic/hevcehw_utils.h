@@ -92,32 +92,6 @@ inline T& Deref(T* ptr)
     return *((NotNull<T*>(ptr)).get());
 }
 
-class OnExit
-    : public std::function<void()>
-{
-public:
-    OnExit(const OnExit&) = delete;
-
-    template<class... TArg>
-    OnExit(TArg&& ...arg)
-        : std::function<void()>(std::forward<TArg>(arg)...)
-    {}
-
-    ~OnExit()
-    {
-        if (operator bool())
-            operator()();
-    }
-
-    template<class... TArg>
-    OnExit& operator=(TArg&& ...arg)
-    {
-        std::function<void()> tmp(std::forward<TArg>(arg)...);
-        swap(tmp);
-        return *this;
-    }
-};
-
 inline void ThrowAssert(bool bThrow, const char* msg)
 {
     if (bThrow)
@@ -189,7 +163,6 @@ inline mfxU32 CountTrailingZeroes(T x)
         ++l;
     return l;
 }
-template<class T> inline T CeilDiv(T x, T y) { return (x + y - 1) / y; }
 
 template<class T, class Enable = void>
 struct DefaultFiller

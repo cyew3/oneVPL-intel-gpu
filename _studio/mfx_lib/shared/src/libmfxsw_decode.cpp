@@ -579,6 +579,14 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             // register input and call the task
             mfxAddRes = session->m_pScheduler->AddTask(task, &syncPoint);
             MFX_CHECK_STS(mfxAddRes);
+
+#if defined(MFX_ONEVPL)
+            if (syncPoint && *surface_out && (*surface_out)->FrameInterface)
+            {
+                MFX_CHECK_HDL((*surface_out)->FrameInterface->Context);
+                static_cast<mfxFrameSurfaceBaseInterface*>((*surface_out)->FrameInterface->Context)->SetSyncPoint(syncPoint);
+            }
+#endif
         }
 
         if (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes))

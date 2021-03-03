@@ -331,6 +331,8 @@ namespace UMC
         if (Idx < 0)
             return Idx;
 
+        pMainVC1Decoder->m_pContext->m_frmBuff.m_pFrames.AdjustToIndex(static_cast<uint32_t>(Idx));
+
         if (!pMainVC1Decoder->m_va)
             throw  VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
 

@@ -85,6 +85,7 @@ LIBVPL_2.1 {
     MFXVideoDECODE_VPP_DecodeFrameAsync;
     MFXVideoDECODE_VPP_Reset;
     MFXVideoDECODE_VPP_GetChannelParam;
+    MFXVideoDECODE_VPP_Close;
     MFXVideoVPP_ProcessFrameAsync;
 
   local:

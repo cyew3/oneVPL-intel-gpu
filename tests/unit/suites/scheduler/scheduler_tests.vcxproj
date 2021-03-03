@@ -28,10 +28,6 @@
     <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_task.cpp" />
     <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_task_management.cpp" />
     <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_thread.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\d3d11_video_processor.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_allocator.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_allocator_d3d11.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_core.cpp" />
     <ClCompile Include="scheduler_api.cpp" />
     <ClCompile Include="scheduler_event.cpp" />
     <ClCompile Include="scheduler_tasks.cpp" />

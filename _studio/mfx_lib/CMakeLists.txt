@@ -17,6 +17,7 @@ set(sources_common
     shared/src/libmfxsw_async.cpp
     shared/src/libmfxsw_decode.cpp
     shared/src/libmfxsw_encode.cpp
+    shared/src/libmfxsw_functions.cpp
     shared/src/libmfxsw_enc.cpp
     shared/src/libmfxsw_pak.cpp
     shared/src/libmfxsw_plugin.cpp
@@ -236,6 +237,7 @@ foreach( variant ${VARIANTS} )
 
   target_include_directories(${mfxlibname}
     PRIVATE
+      scheduler/include
       scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
       fei/include
     )

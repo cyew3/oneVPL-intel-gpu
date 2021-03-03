@@ -54,6 +54,7 @@
 #if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
+#include "libmfx_core_interface.h"
 
 inline bool IsNeedToUseHWBuffering(eMFXHWType /*type*/)
 {
@@ -89,12 +90,11 @@ mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 Buff
 
 struct ThreadTaskInfo
 {
-    mfxFrameSurface1* surface_work = nullptr;
-    mfxFrameSurface1* surface_out  = nullptr;
+    mfxFrameSurface1* surface_out      = nullptr;
+    bool              is_decoding_done = false;
 
-    ThreadTaskInfo(mfxFrameSurface1* work, mfxFrameSurface1* out)
-        : surface_work(work)
-        , surface_out(out)
+    ThreadTaskInfo(mfxFrameSurface1* out)
+        : surface_out(out)
     {}
 };
 
@@ -229,7 +229,6 @@ VideoDECODEH264::VideoDECODEH264(VideoCORE *core, mfxStatus * sts)
     , m_globalTask(false)
     , m_isFirstRun(true)
 {
-    memset(&m_stat, 0, sizeof(m_stat));
     if (sts)
     {
         *sts = MFX_ERR_NONE;
@@ -257,7 +256,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         type = m_core->GetHWType();
     }
 
-    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type);
+    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq());
     MFX_CHECK(mfxSts >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
     bool videoParamIsValid = MFX_Utility::CheckVideoParam(par, type);
@@ -295,7 +294,6 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #else
         m_pH264VideoDecoder.reset(new UMC::MFX_SW_TaskSupplier());
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
 #endif
     }
     else
@@ -306,17 +304,14 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         bool bUseBigSurfaceWA = IsBigSurfacePoolApplicable(type);
 
         m_pH264VideoDecoder.reset(bUseBigSurfaceWA ? new UMC::VATaskSupplierBigSurfacePool<UMC::VATaskSupplier>() : new UMC::VATaskSupplier()); // HW
-
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #elif defined(MFX_VA_OSX)
         m_pH264VideoDecoder.reset(new UMC::VDATaskSupplier()); // HW, OS X VDA version
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator);
 #else
         MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #endif
     }
 
-    int32_t useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
+    bool useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
@@ -373,9 +368,9 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #endif
                       );
         }
-       MFX_CHECK(is_fourcc_supported,MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(is_fourcc_supported,MFX_ERR_UNSUPPORTED);
         if (m_core->GetVAType() == MFX_HW_VAAPI)
-            useInternal = 1;
+            useInternal = true;
     }
 #endif
 
@@ -406,53 +401,29 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     request.Type |= useInternal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
     request_internal = request;
 
+    bool mapOpaq = false;
     // allocates external surfaces:
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    bool mapOpaq = true;
     mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
     mfxSts = UpdateAllocRequest(par, &request, pOpqAlloc, mapOpaq);
     MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
 
     MFX_CHECK(!m_isOpaq || m_core->IsCompatibleForOpaq(), MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    if (mapOpaq)
-    {
-        mfxSts = m_core->AllocFrames(&request,
-                                      &m_response,
-                                      pOpqAlloc->Out.Surfaces,
-                                      pOpqAlloc->Out.NumSurface);
-    }
-    else
 #endif
 
-#if !defined (MFX_VA_OSX)
+    try
     {
-        if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
-        {
-            request.AllocId = par->AllocId;
-            mfxSts = m_core->AllocFrames(&request, &m_response, false);
-        }
-    }
+        m_surface_source.reset(new SurfaceSource(m_core, *par, m_platform, request, request_internal, m_response, m_response_alien,
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        pOpqAlloc,
+#else
+        nullptr,
 #endif
-
-    MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
-
-    // allocates internal surfaces:
-    if (useInternal)
-    {
-        m_response_alien = m_response;
-        m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
-#ifdef MFX_VA_WIN
-        request_internal.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
-        request = request_internal;
-        mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
-        MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
-
+        mapOpaq));
     }
-    else
+    catch (const mfx::mfxStatus_exception& ex)
     {
-        m_FrameAllocator->SetExternalFramesResponse(&m_response);
+        MFX_CHECK_STS(ex.sts);
     }
 
     mfxU16 oldProfile = m_vFirstPar.mfx.CodecProfile;
@@ -461,31 +432,15 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
     if (m_platform != MFX_PLATFORM_SOFTWARE)
     {
-        mfxSts = m_core->CreateVA(&m_vFirstPar, &request, &m_response, m_FrameAllocator.get());
+        mfxSts = m_core->CreateVA(&m_vFirstPar, &request, &m_response, m_surface_source.get());
         MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
     }
 #endif
 
-#if defined(__APPLE__)
-    UMC::Status umcSts = m_FrameAllocator->InitMfx(0, m_core, &m_vFirstPar, &request, &m_response, !useInternal, true);
-#else
-    UMC::Status umcSts = m_FrameAllocator->InitMfx(0, m_core, &m_vFirstPar, &request, &m_response, !useInternal, m_platform == MFX_PLATFORM_SOFTWARE);
-#endif
-
+    UMC::Status umcSts = m_MemoryAllocator.InitMem(0, m_core);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    if (videoProcessing)
-    {
-        MFX_CHECK(useInternal || MFX_HW_D3D11 == m_core->GetVAType(), MFX_ERR_UNSUPPORTED);
-        m_FrameAllocator->SetSfcPostProcessingFlag(true);
-    }
-#endif
-
-    umcSts = m_MemoryAllocator.InitMem(0, m_core);
-    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
-
-    m_pH264VideoDecoder->SetFrameAllocator(m_FrameAllocator.get());
+    m_pH264VideoDecoder->SetFrameAllocator(m_surface_source.get());
 
     UMC::H264VideoDecoderParams umcVideoParams;
     ConvertMFXParamsToUMC(&m_vFirstPar, &umcVideoParams);
@@ -645,7 +600,18 @@ mfxStatus VideoDECODEH264::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
+
+mfxFrameSurface1* VideoDECODEH264::GetSurface()
+{
+    if (!m_surface_source)
+    {
+        std::ignore = MFX_STS_TRACE(MFX_ERR_NOT_INITIALIZED);
+        return nullptr;
+    }
+
+    return m_surface_source->GetSurface();
+}
+#endif
 
 mfxU16 VideoDECODEH264::GetChangedProfile(mfxVideoParam *par)
 {
@@ -754,7 +720,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
 
     eMFXPlatform platform = MFX_Utility::GetPlatform(m_core, par);
 
-    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type);
+    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq());
     MFX_CHECK(mfxSts >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
     bool videoParamIsValid = MFX_Utility::CheckVideoParam(par, type);
@@ -769,7 +735,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
 
     SetTargetViewList(par);
 
-    UMC::Status umcSts = m_FrameAllocator->Reset();
+    UMC::Status umcSts = m_surface_source->Reset();
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
@@ -832,13 +798,7 @@ mfxStatus VideoDECODEH264::Close(void)
     MFX_CHECK(m_isInit && m_pH264VideoDecoder.get(), MFX_ERR_NOT_INITIALIZED);
 
     m_pH264VideoDecoder->Close();
-    m_FrameAllocator->Close();
-
-    if (m_response.NumFrameActual)
-        m_core->FreeFrames(&m_response);
-
-    if (m_response_alien.NumFrameActual)
-        m_core->FreeFrames(&m_response_alien);
+    m_surface_source->Close();
 
     m_isOpaq = false;
     m_isInit = false;
@@ -1242,7 +1202,7 @@ mfxStatus VideoDECODEH264::GetDecodeStat(mfxDecodeStat *stat)
     return MFX_ERR_NONE;
 }
 
-static mfxStatus AVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 )
+static mfxStatus AVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "AVCDECODERoutine");
 
@@ -1267,6 +1227,8 @@ mfxStatus VideoDECODEH264::RunThread(ThreadTaskInfo* info, mfxU32 threadNumber)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::RunThread");
 
+    MFX_CHECK_NULL_PTR1(info);
+
     mfxStatus sts = MFX_TASK_WORKING;
 
     if (!info->surface_out)
@@ -1288,10 +1250,10 @@ mfxStatus VideoDECODEH264::RunThread(ThreadTaskInfo* info, mfxU32 threadNumber)
     {
         UMC::AutomaticUMCMutex guard(m_mGuard);
 
-        if (!info->surface_work)
+        if (info->is_decoding_done)
             return MFX_TASK_DONE;
 
-        mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
+        mfxI32 index = m_surface_source->FindSurface(info->surface_out, m_isOpaq);
         pFrame = m_pH264VideoDecoder->FindSurface((UMC::FrameMemID)index);
 
         if (!pFrame || pFrame->m_UID == -1)
@@ -1313,13 +1275,13 @@ mfxStatus VideoDECODEH264::RunThread(ThreadTaskInfo* info, mfxU32 threadNumber)
 
     {
         UMC::AutomaticUMCMutex guard(m_mGuard);
-        if (!info->surface_work)
+        if (info->is_decoding_done)
             return MFX_TASK_DONE;
 
         isDecoded = m_pH264VideoDecoder->CheckDecoding(pFrame);
         if (isDecoded)
         {
-            info->surface_work = 0;
+            info->is_decoding_done = true;
         }
     }
 
@@ -1327,7 +1289,7 @@ mfxStatus VideoDECODEH264::RunThread(ThreadTaskInfo* info, mfxU32 threadNumber)
     {
         if (!pFrame->wasDisplayed())
         {
-            sts = DecodeFrame(0, info->surface_work, info->surface_out);
+            sts = DecodeFrame(nullptr, nullptr, info->surface_out);
             MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_ERR_NOT_FOUND, sts);
 
             return sts;
@@ -1359,16 +1321,13 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs,
                 return MFX_WRN_DEVICE_BUSY;
         }
 
-        ThreadTaskInfo * info = new ThreadTaskInfo{
-            GetOriginalSurface(surface_work),
-            GetOriginalSurface(*surface_out)
-        };
+        ThreadTaskInfo * info = new ThreadTaskInfo{ GetOriginalSurface(*surface_out) };
 
-        pEntryPoint->pRoutine      = &AVCDECODERoutine;
-        pEntryPoint->pCompleteProc = &AVCCompleteProc;
-        pEntryPoint->pState        = this;
+        pEntryPoint->pRoutine           = &AVCDECODERoutine;
+        pEntryPoint->pCompleteProc      = &AVCCompleteProc;
+        pEntryPoint->pState             = this;
         pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
-        pEntryPoint->pParam        = info;
+        pEntryPoint->pParam             = info;
     }
 
     MFX_CHECK_STS(mfxSts);
@@ -1379,7 +1338,17 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 {
     MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
-    MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+    bool allow_null_work_surface = core20_interface && *core20_interface;
+
+    if (allow_null_work_surface)
+    {
+        MFX_CHECK_NULL_PTR1(surface_out);
+    }
+    else
+    {
+        MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+    }
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1389,55 +1358,41 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     UMC::Status umcRes = UMC::UMC_OK;
 
-    *surface_out = 0;
+    *surface_out = nullptr;
 
-    if (m_isOpaq)
+    if (surface_work)
     {
+        if (m_isOpaq)
+        {
+            sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AVC);
+            MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
+
+            // opaq surface
+            MFX_CHECK(!(surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            surface_work = GetOriginalSurface(surface_work);
+            MFX_CHECK(surface_work, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+
         sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AVC);
         MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
-        // opaq surface
-        MFX_CHECK(!(surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV), MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        surface_work = GetOriginalSurface(surface_work);
-        MFX_CHECK(surface_work, MFX_ERR_UNDEFINED_BEHAVIOR);
+        sts = CheckFrameData(surface_work);
+        MFX_CHECK_STS(sts);
     }
 
-    sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AVC);
-    MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
-
-    sts = CheckFrameData(surface_work);
-    MFX_CHECK_STS(sts);
-
-    sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaq);
+    sts = m_surface_source->SetCurrentMFXSurface(surface_work, m_isOpaq);
     MFX_CHECK_STS(sts);
 
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
-#if defined(MFX_VA)
-#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if defined(MFX_VA) && (defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE))
     if (bs && IS_PROTECTION_ANY(m_vPar.Protected))
     {
         MFX_CHECK(m_va->GetProtectedVA() && (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME), MFX_ERR_UNDEFINED_BEHAVIOR);
         m_va->GetProtectedVA()->SetBitstream(bs);
     }
-#endif // #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
-
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    if (m_va->GetVideoProcessingVA() && m_core->GetVAType() == MFX_HW_VAAPI)
-    {
-        mfxHDL surfHDL = {};
-        if(!m_isOpaq)
-            sts = m_core->GetExternalFrameHDL(surface_work->Data.MemId, &surfHDL, false);
-        else
-            sts = m_core->GetFrameHDL(surface_work->Data.MemId, &surfHDL, false);
-
-        MFX_CHECK_STS(sts);
-
-        m_va->GetVideoProcessingVA()->SetOutputSurface(surfHDL);
-    }
-#endif // !MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-#endif // #if defined(MFX_VA)
+#endif
 
     try
     {
@@ -1645,7 +1600,7 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     m_stat.NumError += pFrame->GetError() ? 1 : 0;
     const UMC::FrameData * fd = pFrame->GetFrameData();
 
-    *surf_out = m_FrameAllocator->GetSurface(fd->GetFrameMID(), surface_work, &m_vPar);
+    *surf_out = m_surface_source->GetSurface(fd->GetFrameMID(), surface_work, &m_vPar);
      if(m_isOpaq)
        *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId);
 
@@ -1827,7 +1782,7 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
     }
     else
     {
-        index = m_FrameAllocator->FindSurface(surface_out, m_isOpaq);
+        index = m_surface_source->FindSurface(surface_out, m_isOpaq);
         pFrame = m_pH264VideoDecoder->FindSurface((UMC::FrameMemID)index);
         MFX_CHECK(pFrame, MFX_ERR_NOT_FOUND);
     }
@@ -1864,7 +1819,7 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
     if(m_va)
         MFX_CHECK(!m_va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
+    mfxStatus sts = m_surface_source->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
     MFX_CHECK_STS(sts);
 
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -2238,5 +2193,12 @@ mfxFrameSurface1 *VideoDECODEH264::GetOriginalSurface(mfxFrameSurface1 *surface)
         return m_core->GetNativeSurface(surface);
     return surface;
 }
+
+#if defined(MFX_ONEVPL)
+mfxFrameSurface1 *VideoDECODEH264::GetInternalSurface(mfxFrameSurface1 *surface)
+{
+    return m_surface_source->GetInternalSurface(surface);
+}
+#endif
 
 #endif // MFX_ENABLE_H264_VIDEO_DECODE

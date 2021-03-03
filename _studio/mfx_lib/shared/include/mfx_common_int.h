@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ mfxStatus CheckFrameInfoEncoders(mfxFrameInfo  *info);
 mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId = MFX_CODEC_AVC, bool isHW = false);
 
 mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
-mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
+mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type, bool IsCompatibleForOpaq);
 
 #if !defined(MFX_ONEVPL)
 mfxStatus CheckAudioParamEncoders(mfxAudioParam *in);
@@ -148,9 +148,17 @@ private:
 };
 
 mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const&);
+mfxU8* GetFramePointer(const mfxFrameSurface1& surf);
 mfxStatus GetFramePointerChecked(mfxFrameInfo const& info, mfxFrameData const&, mfxU8**);
 
-mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxFrameData const& fd);
+mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, const mfxFrameSurface1& surface);
 mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxMemId mid);
+mfxU16 BitDepthFromFourcc(mfxU32 fourcc);
+mfxU16 ChromaFormatFromFourcc(mfxU32 fourcc);
+
+#if defined(MFX_ONEVPL)
+mfxStatus AddRefSurface(mfxFrameSurface1 & surf,  bool allow_legacy_surface = false);
+mfxStatus ReleaseSurface(mfxFrameSurface1 & surf, bool allow_legacy_surface = false);
+#endif
 
 #endif

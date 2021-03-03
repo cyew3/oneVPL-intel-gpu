@@ -359,6 +359,7 @@ _studio/shared/include/mfxvideo++int.h
 _studio/shared/include/mfx_cenc.h
 _studio/shared/include/mfx_common.h
 _studio/shared/include/mfx_config.h
+_studio/shared/include/mfx_error.h
 _studio/shared/include/mfx_ext_buffers.h
 _studio/shared/include/mfx_ext_ddi.h
 _studio/shared/include/mfx_mfe_adapter.h

@@ -408,7 +408,7 @@ public:
 
     void ResetRefCounter() {m_refCounter = 0;}
 
-    uint32_t GetRefCounter() {return m_refCounter;}
+    uint32_t GetRefCounter() const {return m_refCounter;}
 
 protected:
     mutable int32_t m_refCounter;

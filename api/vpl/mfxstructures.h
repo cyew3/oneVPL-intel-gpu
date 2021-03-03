@@ -1,5 +1,5 @@
 /*############################################################################
-  # Copyright (C) 2018-2020 Intel Corporation
+  # Copyright (C) 2018-2021 Intel Corporation
   #
   # SPDX-License-Identifier: MIT
   ############################################################################*/
@@ -228,7 +228,7 @@ enum {
 };
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
-/*! Specifies "pixel" in Y410 color format */
+/*! Specifies "pixel" in Y410 color format. */
 typedef struct
 {
     mfxU32 U : 10; /*!< U component. */
@@ -240,12 +240,13 @@ MFX_PACK_END()
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 MFX_PACK_BEGIN_USUAL_STRUCT()
+/*! Specifies "pixel" in Y416 color format. */
 typedef struct
 {
-    mfxU32 U : 16;
-    mfxU32 Y : 16;
-    mfxU32 V : 16;
-    mfxU32 A : 16;
+    mfxU32 U : 16; /*!< U component. */
+    mfxU32 Y : 16; /*!< Y component. */
+    mfxU32 V : 16; /*!< V component. */
+    mfxU32 A : 16; /*!< A component. */
 } mfxY416;
 MFX_PACK_END()
 #endif
@@ -316,7 +317,7 @@ typedef struct {
         mfxU8   *G;     /*!< G channel. */
         mfxY410 *Y410;  /*!< T410 channel for Y410 format (merged AVYU). */
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        mfxY416 *Y416;  /* for Y416 format (merged AVYU) */
+        mfxY416 *Y416;  /*!< This format is a packed 16-bit representation that includes 16 bits of alpha. */
 #endif
     };
     union {
@@ -2024,7 +2025,7 @@ enum {
        This extended buffer configures HDR SEI message. See the mfxExtMasteringDisplayColourVolume structure for details.
     */
     MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME = MFX_MAKEFOURCC('D', 'C', 'V', 'S'),
-	/*!
+    /*!
        See the mfxExtEncodedUnitsInfo structure for details.
     */
     MFX_EXTBUFF_ENCODED_UNITS_INFO              = MFX_MAKEFOURCC('E', 'N', 'U', 'I'),
@@ -2133,7 +2134,7 @@ MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
          buffer is submitted for processing.
 */
 typedef struct {
-    mfxExtBuffer    Header; /*!< Extension buffer header. Header.BufferId must be equal to FX_EXTBUFF_VPP_PROCAMP. */
+    mfxExtBuffer    Header; /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_VPP_PROCAMP. */
     mfxF64   Brightness;    /*!< The brightness parameter is in the range of -100.0F to 100.0F, in increments of 0.1F.
                                  Setting this field to 0.0F will disable brightness adjustment. */
     mfxF64   Contrast;      /*!< The contrast parameter in the range of 0.0F to 10.0F, in increments of 0.01F, is used for manual

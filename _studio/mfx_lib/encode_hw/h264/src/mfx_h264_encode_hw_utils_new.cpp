@@ -23,8 +23,8 @@
 
 #include <algorithm>
 
-#include "mfx_common_int.h"
 #include "mfx_h264_encode_hw_utils.h"
+#include "mfx_common_int.h"
 #include "ippi.h"
 
 using namespace MfxHwH264Encode;
@@ -2674,31 +2674,13 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
         }
 #endif
 
-        mfxFrameData d3dSurf = {};
-        mfxFrameData sysSurf = surface->Data;
-
-        //FrameLocker lock1(&core, d3dSurf, task.m_midRaw);
-        FrameLocker lock2(&core, sysSurf, true);
-        d3dSurf.MemId = task.m_midRaw;
-
-        if (sysSurf.Y == 0)
-            return Error(MFX_ERR_LOCK_MEMORY);
-
         mfxStatus sts = MFX_ERR_NONE;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
-            sts = CopyFrameDataBothFields(&core, d3dSurf, sysSurf, video.mfx.FrameInfo);
+            sts = CopyFrameDataBothFields(&core, task.m_midRaw, *surface, video.mfx.FrameInfo);
             if (sts != MFX_ERR_NONE)
                 return Error(sts);
         }
-
-        sts = lock2.Unlock();
-        if (sts != MFX_ERR_NONE)
-            return Error(sts);
-
-        //sts = lock1.Unlock();
-        //if (sts != MFX_ERR_NONE)
-        //    return Error(sts);
     }
 
     return MFX_ERR_NONE;
@@ -2769,13 +2751,10 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
         MFX_CHECK(ind < 15, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         DpbFrame& refFrame = task.m_dpb[0][ind];
-        mfxFrameData curr = {};
-        mfxFrameData ref = {};
-        curr.MemId = task.m_midRaw;
-        ref.MemId  = refFrame.m_midRec;
 
-        mfxFrameSurface1 surfSrc = MakeSurface(video.mfx.FrameInfo, ref);
-        mfxFrameSurface1 surfDst = MakeSurface(video.mfx.FrameInfo, curr);
+        mfxFrameSurface1 surfSrc = MakeSurface(video.mfx.FrameInfo, refFrame.m_midRec);
+        mfxFrameSurface1 surfDst = MakeSurface(video.mfx.FrameInfo, task.m_midRaw);
+
         if ((poolRec.GetFlag(refFrame.m_frameIdx) & H264_FRAME_FLAG_READY) != 0)
         {
             sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE);
@@ -2830,7 +2809,7 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
         )
         sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
     else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
+        sts = core.GetExternalFrameHDL(*surface, handle);
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     else if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
         sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
@@ -2841,20 +2820,19 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
     return sts;
 }
 
-
 mfxHDL MfxHwH264Encode::ConvertMidToNativeHandle(
     VideoCORE & core,
-    mfxMemId    mid,
+    mfxFrameSurface1& surf,
     bool        external)
 {
-    mfxHDL handle = 0;
+    mfxHDLPair handle = {};
 
     mfxStatus sts = (external)
-        ? core.GetExternalFrameHDL(mid, &handle)
-        : core.GetFrameHDL(mid, &handle);
+        ? core.GetExternalFrameHDL(surf, handle)
+        : core.GetFrameHDL(surf, handle);
     assert(sts == MFX_ERR_NONE);
 
-    return (sts == MFX_ERR_NONE) ? handle : 0;
+    return (sts == MFX_ERR_NONE) ? handle.first : 0;
 }
 
 

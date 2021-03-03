@@ -1195,12 +1195,8 @@ bool VC1VideoDecoderSW::InitAlloc(VC1Context* pContext, uint32_t MaxFrameNum)
 
 bool VC1VideoDecoderSW::InitVAEnvironment()
 {
-    if (!m_pContext->m_frmBuff.m_pFrames)
-    {
-        m_pHeap->s_new_one(&m_pContext->m_frmBuff.m_pFrames, 2 * (m_iMaxFramesInProcessing + VC1NUMREFFRAMES));
-        if (!m_pContext->m_frmBuff.m_pFrames)
-            return false;
-    }
+    m_pContext->m_frmBuff.m_pFrames.Reset(m_FrameStorage);
+
     return true;
 }
 

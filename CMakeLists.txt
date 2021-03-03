@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2020 Intel Corporation
+# Copyright (c) 2017-2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -150,6 +150,10 @@ if (BUILD_SAMPLES)
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/samples)
 endif()
 
+if (BUILD_TUTORIALS)
+  add_subdirectory(${CMAKE_HOME_DIRECTORY}/tutorials)
+endif()
+
 if (BUILD_RUNTIME)
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)
 endif()
@@ -224,7 +228,9 @@ message("Build:")
 message("  BUILD_RUNTIME                           : ${BUILD_RUNTIME}")
 message("  BUILD_DISPATCHER                        : ${BUILD_DISPATCHER}")
 message("  BUILD_SAMPLES                           : ${BUILD_SAMPLES}")
+message("  BUILD_TUTORIALS                         : ${BUILD_TUTORIALS}")
 message("  BUILD_TESTS                             : ${BUILD_TESTS}")
+message("  BUILD_MOCK_TESTS                        : ${BUILD_MOCK_TESTS}")
 message("  BUILD_TOOLS                             : ${BUILD_TOOLS}")
 message("  BUILD_VAL_TOOLS                         : ${BUILD_VAL_TOOLS}")
 message("  BUILD_KERNELS                           : ${BUILD_KERNELS}")

@@ -28,6 +28,7 @@ namespace hevce { namespace tests
     struct foo
     {
         virtual mfxStatus Call(int) = 0;
+        virtual ~foo() {}
     };
 
     struct block
@@ -104,7 +105,7 @@ namespace hevce { namespace tests
     {
         foo1 f1; EXPECT_CALL(f1, Call(testing::Eq(1))).WillOnce(testing::Return(MFX_ERR_NONE));
         foo2 f2; EXPECT_CALL(f2, Call(testing::Eq(2))).WillOnce(
-            testing::InvokeWithoutArgs([]() ->mfxStatus { throw std::exception("exception"); })
+            testing::InvokeWithoutArgs([]() ->mfxStatus { throw std::exception(); })
         );
         foo3 f3; EXPECT_CALL(f3, Call(testing::_)).Times(0);
 

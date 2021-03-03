@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,14 +20,30 @@
 
 #pragma once
 
+#include "mocks/include/mfx/guids.h"
 #include "mocks/include/mfx/dx11/component.h"
+
+namespace mocks { namespace mfx { namespace dx11
+{
+    struct decoder : component
+    {
+        using component::component;
+    };
+
+} } }
+
+#include "mocks/include/mfx/dx11/h264/decoder.h"
+#include "mocks/include/mfx/dx11/h265/decoder.h"
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
+#include "mocks/include/mfx/dx11/av1/decoder.h"
+#endif
 
 namespace mocks { namespace mfx { namespace dx11
 {
     template <GUID const* Id>
     inline
-    typename std::enable_if<mocks::dxva::is_decoder<Id>::value, D3D11_VIDEO_DECODER_CONFIG>::type
-    make_config(mocks::guid<Id>, mfxVideoParam const&)
+    typename std::enable_if<dxva::is_decoder(guid<Id>()), D3D11_VIDEO_DECODER_CONFIG>::type
+    make_config(guid<Id>, mfxVideoParam const&)
     {
         D3D11_VIDEO_DECODER_CONFIG config{};
         config.ConfigBitstreamRaw = 3; //both long & short slices
@@ -35,40 +51,36 @@ namespace mocks { namespace mfx { namespace dx11
         return config;
     }
 
-    template <GUID const* Id, int Type>
+    template <int Type, GUID const* Id>
     inline
-    typename std::enable_if<mocks::dxva::is_decoder<Id>::value, D3D11_VIDEO_DECODER_CONFIG>::type
-    make_caps(mocks::guid<Id>, std::integral_constant<int, Type>, mfxVideoParam const& p)
+    typename std::enable_if<dxva::is_decoder(guid<Id>()), D3D11_VIDEO_DECODER_CONFIG>::type
+    make_caps(std::integral_constant<int, Type>, guid<Id>, mfxVideoParam const& vp)
     {
         D3D11_VIDEO_DECODER_CONFIG caps{};
         caps.guidConfigBitstreamEncryption = *Id;
-        caps.ConfigMBcontrolRasterOrder    = p.mfx.FrameInfo.Width;
-        caps.ConfigResidDiffHost           = p.mfx.FrameInfo.Height;
-        caps.ConfigBitstreamRaw            = mocks::mfx::family(Type);
+        caps.ConfigMBcontrolRasterOrder    = vp.mfx.FrameInfo.Width;
+        caps.ConfigResidDiffHost           = vp.mfx.FrameInfo.Height;
+        caps.ConfigBitstreamRaw            = mfx::family(Type);
 
         return caps;
     }
 
-    template <int Type, typename ...Args>
     inline
-    std::unique_ptr<mocks::dx11::device>
-    make_decoder(IDXGIAdapter* adapter, ID3D11DeviceContext* context, std::integral_constant<int, Type>, Args&&... args)
+    std::unique_ptr<decoder>
+    make_decoder(int type, IDXGIAdapter* adapter, mfxVideoParam const& vp)
     {
-        return make_component(adapter, context,
-            std::integral_constant<int, Type>{},
-            std::forward<Args>(args)...
-        );
-    }
+        switch (vp.mfx.CodecId)
+        {
+            case MFX_CODEC_AVC:  return h264::dx11::make_decoder(type, adapter, vp);
+            case MFX_CODEC_HEVC: return h265::dx11::make_decoder(type, adapter, vp);
 
-    template <typename ...Args>
-    inline
-    std::unique_ptr<mocks::dx11::device>
-    make_decoder(IDXGIAdapter* adapter, ID3D11DeviceContext* context, int type, Args&&... args)
-    {
-        return make_component(adapter, context,
-            type,
-            std::forward<Args>(args)...
-        );
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
+            case MFX_CODEC_AV1:  return av1::dx11::make_decoder(type, adapter, vp);
+#endif //MFX_ENABLE_AV1_VIDEO_DECODE
+
+            default:
+                throw std::logic_error("Codec is not supported");
+        }
     }
 
 } } }

@@ -61,6 +61,7 @@
     <ClCompile Include="shared\src\libmfxsw.cpp" />
     <ClCompile Include="shared\src\libmfxsw_async.cpp" />
     <ClCompile Include="shared\src\libmfxsw_decode.cpp" />
+    <ClCompile Include="shared\src\libmfxsw_decode_vp.cpp" />
     <ClCompile Include="shared\src\libmfxsw_enc.cpp" />
     <ClCompile Include="shared\src\libmfxsw_encode.cpp" />
     <ClCompile Include="shared\src\libmfxsw_pak.cpp" />

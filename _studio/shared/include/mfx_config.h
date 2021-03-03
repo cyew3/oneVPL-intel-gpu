@@ -49,8 +49,6 @@
 #define MFX_UNDOCUMENTED_CO_DDI
 
 #if defined(_WIN32) || defined(_WIN64)
-#undef MFX_DEBUG_TOOLS
-#define MFX_DEBUG_TOOLS
 
 #ifdef MFX_ENABLE_ENCTOOLS
 #define MFX_ENABLE_ENCTOOLS_LPLA
@@ -411,6 +409,8 @@
 
 #endif // #ifndef OPEN_SOURCE
 
+#define DECODE_DEFAULT_TIMEOUT  60000
+
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
 #if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
@@ -578,5 +578,7 @@
 #endif
 
 #define CMAPIUPDATE
+
+#define MFX_ENV_CFG_ENABLE
 
 #endif // _MFX_CONFIG_H_

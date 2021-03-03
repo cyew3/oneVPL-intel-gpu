@@ -64,12 +64,11 @@ namespace mocks { namespace mfx
             IGFX_ROCKETLAKE,
             IGFX_ALDERLAKE_S,
             IGFX_ALDERLAKE_UH,
-            IGFX_DG1 = 1210,
-            IGFX_XE_HP = 1250,
+            IGFX_DG1          = 1210,
+            IGFX_TIGERLAKE_HP = 1250,
             IGFX_DG2 = 1270,
             IGFX_PVC = 1271,
             IGFX_METEORLAKE = 1272,
-            IGFX_ELASTICG = 1273,
 
             IGFX_GENNEXT               = 0x7ffffffe,
 
@@ -80,8 +79,6 @@ namespace mocks { namespace mfx
     enum HW_type
     {
         HW_UNKNOWN   = 0,
-        HW_LAKE      = 0x100000,
-        HW_LRB       = 0x200000,
         HW_SNB       = 0x300000,
 
         HW_IVB       = 0x400000,
@@ -93,34 +90,38 @@ namespace mocks { namespace mfx
 
         HW_BDW       = 0x700000,
 
-        HW_CHV       = 0x800000,
+        HW_CHT       = 0x800000,
 
-        HW_SKL       = 0x900000,
+        HW_SCL       = 0x900000,
 
-        HW_APL       = 0xa00000,
+        HW_APL       = 0x1000000,
 
-        HW_KBL       = 0xb00000,
+        HW_KBL       = 0x1100000,
         HW_GLK       = HW_KBL + 1,
         HW_CFL       = HW_KBL + 2,
 
-        HW_CNL       = 0xc00000,
+        HW_CNL       = 0x1200000,
 
-        HW_ICL       = 0xd00000,
-        HW_JSL       = HW_ICL + 11,
+        HW_ICL       = 0x1400000,
+        HW_ICL_LP    = HW_ICL + 1,
+        HW_CNX_G     = HW_ICL + 2,
+        HW_LKF       = 0x1500000,
+        HW_JSL       = 0x1500001, //HW_LKF + 1
+        HW_EHL       = 0x1500002,
 
-        HW_TGL       = 0xe00000,
-        HW_DG1       = HW_TGL + 1,
+        HW_TGL_LP    = 0x1600000,
 
-#ifndef STRIP_EMBARGO
-        HW_LKF       = HW_ICL + 10,
-        HW_XEHP      = HW_DG1  + 1,
-        HW_DG2       = HW_XEHP + 1,
-        HW_ADL_S     = HW_XEHP + 2,
-        HW_ADL_UH    = HW_XEHP + 3,
+        HW_RYF       = HW_TGL_LP + 1,
+        HW_RKL       = HW_TGL_LP + 2,
+        HW_DG1       = HW_TGL_LP + 3,
+        HW_TGL_HP    = HW_TGL_LP + 4,
+        HW_ATS       = HW_TGL_HP,
+        HW_DG2       = HW_ATS + 1,
+        HW_ADL_S     = HW_ATS + 2,
+        HW_ADL_UH    = HW_ATS + 3,
+        HW_PVC       = HW_ATS + 4,
 
-        HW_MTL       = 0xf00000,
-        HW_ELG       = HW_MTL + 1
-#endif
+        HW_MTL       = 0x1700000
     };
 
 } }

@@ -354,7 +354,11 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameInfo &
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(info.reserved) + "\n";
+#if defined(MFX_ONEVPL)
+    str += structName + ".ChannelID=" + ToString(info.ChannelId) + "\n";
+#else
     str += structName + ".reserved4=" + ToString(info.reserved4) + "\n";
+#endif
     str += structName + ".BitDepthLuma=" + ToString(info.BitDepthLuma) + "\n";
     str += structName + ".BitDepthChroma=" + ToString(info.BitDepthChroma) + "\n";
     str += structName + ".Shift=" + ToString(info.Shift) + "\n";

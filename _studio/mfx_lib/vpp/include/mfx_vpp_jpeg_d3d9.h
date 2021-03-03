@@ -33,12 +33,12 @@
 
 #include <map>
 
-class VideoVppJpegD3D9 
+class VideoVppJpegD3D
 {
 public:
 
-    VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq);
-    virtual ~VideoVppJpegD3D9(void);
+    VideoVppJpegD3D(VideoCORE *core, bool isD3DToSys, bool isOpaq);
+    virtual ~VideoVppJpegD3D(void);
 
     mfxStatus Init(const mfxVideoParam *par);
     mfxStatus Close(void);

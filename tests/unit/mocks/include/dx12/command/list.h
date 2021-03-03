@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ namespace mocks { namespace dx12
         MOCK_METHOD0(GetType, D3D12_COMMAND_LIST_TYPE());
         MOCK_METHOD0(Close, HRESULT());
         MOCK_METHOD2(Reset, HRESULT(ID3D12CommandAllocator*, ID3D12PipelineState*));
-		MOCK_METHOD6(CopyTextureRegion, void(const D3D12_TEXTURE_COPY_LOCATION*, UINT, UINT, UINT, const D3D12_TEXTURE_COPY_LOCATION*, const D3D12_BOX*));
+        MOCK_METHOD6(CopyTextureRegion, void(const D3D12_TEXTURE_COPY_LOCATION*, UINT, UINT, UINT, const D3D12_TEXTURE_COPY_LOCATION*, const D3D12_BOX*));
     };
 
     namespace detail
@@ -42,33 +42,6 @@ namespace mocks { namespace dx12
             EXPECT_CALL(l, GetType())
                 .WillRepeatedly(testing::Return(type))
             ;
-        }
-
-		template <typename T>
-        inline
-        typename std::enable_if<
-            std::is_integral<T>::value
-        >::type
-        mock_list(list& l, std::tuple<D3D12_TEXTURE_COPY_LOCATION /*dst*/, T /*DstX*/, T /*DstY*/, T /*DstZ*/,
-                                      D3D12_TEXTURE_COPY_LOCATION /*src*/, D3D12_BOX> params)
-        {
-            //void CopyTextureRegion(const D3D12_TEXTURE_COPY_LOCATION* /*pDst*/, UINT /*DstX*/, UINT /*DstY*/, UINT /*DstZ*/,
-            //                       const D3D12_TEXTURE_COPY_LOCATION* /*pSrc*/, const D3D12_BOX* /*pSrcBox*/)
-            EXPECT_CALL(l, CopyTextureRegion(
-                testing::AllOf(
-                    testing::NotNull(),
-                    testing::Truly([loc = std::get<0>(params)](D3D12_TEXTURE_COPY_LOCATION const* xl) { return equal(*xl, loc); })
-                ),
-                testing::_, testing::_, testing::_,
-                testing::AllOf(
-                    testing::NotNull(),
-                    testing::Truly([loc = std::get<4>(params)](D3D12_TEXTURE_COPY_LOCATION const* xl) { return equal(*xl, loc); })
-                ),
-                testing::AnyOf(
-                    testing::IsNull(),
-                    testing::Truly([box = std::get<5>(params)](D3D12_BOX const* xb) { return equal(*xb, box); })
-                )))
-                .Times(testing::AnyNumber());
         }
 
         template <typename T, typename U>
@@ -100,6 +73,33 @@ namespace mocks { namespace dx12
             return mock_list(l,
                 std::make_tuple(allocator, static_cast<ID3D12PipelineState*>(nullptr))
             );
+        }
+
+        template <typename T>
+        inline
+        typename std::enable_if<
+            std::is_integral<T>::value
+        >::type
+        mock_list(list& l, std::tuple<D3D12_TEXTURE_COPY_LOCATION /*dst*/, T /*DstX*/, T /*DstY*/, T /*DstZ*/,
+                                      D3D12_TEXTURE_COPY_LOCATION /*src*/, D3D12_BOX> params)
+        {
+            //void CopyTextureRegion(const D3D12_TEXTURE_COPY_LOCATION* /*pDst*/, UINT /*DstX*/, UINT /*DstY*/, UINT /*DstZ*/,
+            //                       const D3D12_TEXTURE_COPY_LOCATION* /*pSrc*/, const D3D12_BOX* /*pSrcBox*/)
+            EXPECT_CALL(l, CopyTextureRegion(
+                testing::AllOf(
+                    testing::NotNull(),
+                    testing::Truly([loc = std::get<0>(params)](D3D12_TEXTURE_COPY_LOCATION const* xl) { return equal(*xl, loc); })
+                ),
+                testing::_, testing::_, testing::_,
+                testing::AllOf(
+                    testing::NotNull(),
+                    testing::Truly([loc = std::get<4>(params)](D3D12_TEXTURE_COPY_LOCATION const* xl) { return equal(*xl, loc); })
+                ),
+                testing::AnyOf(
+                    testing::IsNull(),
+                    testing::Truly([box = std::get<5>(params)](D3D12_BOX const* xb) { return equal(*xb, box); })
+                )))
+                .Times(testing::AnyNumber());
         }
 
         template <typename T>

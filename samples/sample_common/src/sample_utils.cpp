@@ -2423,10 +2423,12 @@ msdk_string StatusToString(mfxStatus sts)
         return msdk_string(MSDK_STRING("MFX_ERR_DEVICE_FAILED"));
     case MFX_ERR_MORE_BITSTREAM:
         return msdk_string(MSDK_STRING("MFX_ERR_MORE_BITSTREAM"));
+#if !defined(MFX_ONEVPL)
     case MFX_ERR_INCOMPATIBLE_AUDIO_PARAM:
         return msdk_string(MSDK_STRING("MFX_ERR_INCOMPATIBLE_AUDIO_PARAM"));
     case MFX_ERR_INVALID_AUDIO_PARAM:
         return msdk_string(MSDK_STRING("MFX_ERR_INVALID_AUDIO_PARAM"));
+#endif
     case MFX_ERR_GPU_HANG:
         return msdk_string(MSDK_STRING("MFX_ERR_GPU_HANG"));
     case MFX_ERR_REALLOC_SURFACE:
@@ -2447,8 +2449,10 @@ msdk_string StatusToString(mfxStatus sts)
         return msdk_string(MSDK_STRING("MFX_WRN_OUT_OF_RANGE"));
     case MFX_WRN_FILTER_SKIPPED:
         return msdk_string(MSDK_STRING("MFX_WRN_FILTER_SKIPPED"));
+#if !defined(MFX_ONEVPL)
     case MFX_WRN_INCOMPATIBLE_AUDIO_PARAM:
         return msdk_string(MSDK_STRING("MFX_WRN_INCOMPATIBLE_AUDIO_PARAM"));
+#endif
     case MFX_TASK_WORKING:
         return msdk_string(MSDK_STRING("MFX_TASK_WORKING"));
     case MFX_TASK_BUSY:

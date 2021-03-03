@@ -28,6 +28,8 @@
 #include "av1ehw_base_packer.h"
 #include "av1ehw_base_tile.h"
 
+#include "mfx_utils.h"
+
 using namespace AV1EHW;
 using namespace AV1EHW::Base;
 
@@ -61,18 +63,18 @@ namespace av1e {
         };
 
         TEST_F(FeatureBlocksPacker, InitAlloc)
-        {
+            {
             auto& block = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks),
                 { FEATURE_PACKER, Packer::BLK_Init });
 
             ASSERT_TRUE(!global.Contains(Glob::PackedHeaders::Key));
-            EXPECT_EQ(
+                EXPECT_EQ(
                 block->Call(global, global),
                 MFX_ERR_NONE
-            );
+                );
             EXPECT_TRUE(global.Contains(Glob::PackedHeaders::Key));
-        }
+            }
 
         TEST_F(FeatureBlocksPacker, SubmitTask)
         {
@@ -102,10 +104,10 @@ namespace av1e {
             av1Par.UniformTileSpacing = 1;
             av1Par.FrameWidth         = TEST_WIDTH;
             av1Par.FrameHeight        = TEST_HEIGHT;
-            av1Par.NumTileColumns     = 1;
-            av1Par.NumTileRows        = 1;
-            av1Par.TileWidthInSB[0]   = CeilDiv(mfxU16(TEST_WIDTH), mfxU16(SB_SIZE));
-            av1Par.TileHeightInSB[0]  = CeilDiv(mfxU16(TEST_HEIGHT), mfxU16(SB_SIZE));
+            av1Par.NumTileColumns = 1;
+            av1Par.NumTileRows = 1;
+            av1Par.TileWidthInSB[0]   = mfx::CeilDiv(mfxU16(TEST_WIDTH), mfxU16(SB_SIZE));
+            av1Par.TileHeightInSB[0]  = mfx::CeilDiv(mfxU16(TEST_HEIGHT), mfxU16(SB_SIZE));
 
             auto& setTileInfo = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks),
@@ -132,7 +134,7 @@ namespace av1e {
 
             // adding dummy frame size for the internal BSParser checks
             mfxU32 ivfFrameHeader[3] = { 10000, 0, 0x00000000 };
-            mfxU8 * pIVFPicHeader    = ph.IVF.pData + IVF_SEQ_HEADER_SIZE_BYTES;
+            mfxU8 * pIVFPicHeader = ph.IVF.pData + IVF_SEQ_HEADER_SIZE_BYTES;
             std::copy(std::begin(ivfFrameHeader), std::end(ivfFrameHeader), reinterpret_cast <mfxU32*> (pIVFPicHeader));
 
             // checkign header with BSParser

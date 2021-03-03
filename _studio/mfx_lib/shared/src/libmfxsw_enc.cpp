@@ -24,7 +24,7 @@
 #include "mfxstructures-int.h"
 
 #define FUNCTION_DEPRECATED_IMPL(component, func_name, formal_param_list) \
-mfxStatus MFXVideo##component##_##func_name formal_param_list \
+mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
 { \
     return MFX_ERR_UNSUPPORTED; \
 }
@@ -159,8 +159,7 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 #ifdef MFX_ENABLE_USER_ENC
         mfxRes = MFX_ERR_UNSUPPORTED;
 
-        _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
-        MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
+        MFXIPtr<MFXISession_1_10> newSession = TryGetSession_1_10(session);
 
         if (newSession && newSession->GetPreEncPlugin().get())
         {
@@ -229,8 +228,7 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
     {
 #ifdef MFX_ENABLE_USER_ENC
         mfxRes = MFX_ERR_UNSUPPORTED;
-        _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
-        MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
+        MFXIPtr<MFXISession_1_10> newSession=TryGetSession_1_10(session);
         if (newSession && newSession->GetPreEncPlugin().get())
         {
             mfxRes = newSession->GetPreEncPlugin()->QueryIOSurf(session->m_pCORE.get(), par, request, 0);

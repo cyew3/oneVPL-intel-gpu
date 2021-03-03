@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@ namespace mocks { namespace dx11
         MOCK_METHOD0(GetType, D3D11_DEVICE_CONTEXT_TYPE());
         MOCK_METHOD5(Map, HRESULT(ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*));
         MOCK_METHOD2(Unmap, void(ID3D11Resource*, UINT));
+        MOCK_METHOD8(CopySubresourceRegion, void(ID3D11Resource*, UINT, UINT, UINT, UINT, ID3D11Resource*, UINT, D3D11_BOX const*));
 
         MOCK_METHOD1(SetMultithreadProtected, BOOL(BOOL));
         MOCK_METHOD0(GetMultithreadProtected, BOOL());
@@ -60,6 +61,8 @@ namespace mocks { namespace dx11
 
         MOCK_METHOD4(VideoProcessorSetStreamRect, void(ID3D11VideoProcessor*, UINT, BOOL, const RECT*));
         MOCK_METHOD4(VideoProcessorGetStreamRect, void (ID3D11VideoProcessor*, UINT, BOOL*, RECT*));
+        MOCK_METHOD4(VideoProcessorSetStreamRotation, void(ID3D11VideoProcessor*, UINT, BOOL, D3D11_VIDEO_PROCESSOR_ROTATION));
+        MOCK_METHOD4(VideoProcessorGetStreamRotation, void(ID3D11VideoProcessor*, UINT, BOOL*, D3D11_VIDEO_PROCESSOR_ROTATION*));
 
         void VideoProcessorSetStreamSourceRect(ID3D11VideoProcessor* p, UINT index, BOOL enable, const RECT* rc) override
         { VideoProcessorSetStreamRect(p, index, enable, rc); }

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
@@ -91,7 +91,7 @@ struct WaitTask: public ITask
     static mfxStatus TestTask(void * s, void * p, mfxU32, mfxU32);
 };
 
-mfxStatus WaitTask::TestTask(void * s, void * p, mfxU32, mfxU32)
+mfxStatus WaitTask::TestTask(void * , void * p, mfxU32, mfxU32)
 {
     mfxStatus sts;
     TaskParam* param = (TaskParam*)p;

@@ -62,7 +62,7 @@ public:
 #endif //defined(MFX_ONEVPL)
 
     MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts);
-    virtual ~MFXVideoENCODEMJPEG_HW() {Close();}
+    virtual ~MFXVideoENCODEMJPEG_HW();
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Reset(mfxVideoParam *par);
     virtual mfxStatus Close(void);

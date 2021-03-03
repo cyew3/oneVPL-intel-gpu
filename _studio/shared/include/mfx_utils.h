@@ -50,6 +50,16 @@
 #include <cassert>
 #include <cstddef>
 #include <algorithm>
+#include <chrono>
+#include <functional>
+
+#if defined (MFX_ENV_CFG_ENABLE) || defined(MFX_TRACE_ENABLE)
+#include <sstream>
+#endif
+
+#if defined (MFX_ENV_CFG_ENABLE) || defined(MFX_TRACE_ENABLE)
+#include <sstream>
+#endif
 
 #ifndef MFX_DEBUG_TRACE
 #define MFX_STS_TRACE(sts) sts
@@ -167,6 +177,28 @@ bool LumaIsNull(const mfxFrameSurface1 * surf)
 
 namespace mfx
 {
+template<typename T>
+T GetEnv(const char* name, T defaultVal)
+{
+#if defined (MFX_ENV_CFG_ENABLE)
+    if (const char* strVal = std::getenv(name))
+    {
+        std::istringstream(strVal) >> defaultVal;
+        MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL, name, "=%s", strVal);
+
+        return defaultVal;
+    }
+#endif
+#if defined (MFX_TRACE_ENABLE)
+    {
+        std::ostringstream ss;
+        ss << name << "=" << defaultVal;
+        MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, ss.str().c_str());
+    }
+#endif
+    return defaultVal;
+}
+
 // TODO: switch to std::clamp when C++17 support will be enabled
 // Clip value v to range [lo, hi]
 template<class T>
@@ -207,6 +239,12 @@ template <class T, size_t N>
 constexpr size_t size(const T(&)[N])
 {
     return N;
+}
+
+template<class T>
+constexpr T CeilDiv(T x, T y)
+{
+    return (x + y - 1) / y;
 }
 
 inline mfxU32 CeilLog2(mfxU32 x)
@@ -331,6 +369,32 @@ inline IterStepWrapper<T> MakeStepIter(T ptr, ptrdiff_t step = 1)
 {
     return IterStepWrapper<T>(ptr, step);
 }
+
+class OnExit
+    : public std::function<void()>
+{
+public:
+    OnExit(const OnExit&) = delete;
+
+    template<class... TArg>
+    OnExit(TArg&& ...arg)
+        : std::function<void()>(std::forward<TArg>(arg)...)
+    {}
+
+    ~OnExit()
+    {
+        if (operator bool())
+            operator()();
+    }
+
+    template<class... TArg>
+    OnExit& operator=(TArg&& ...arg)
+    {
+        std::function<void()> tmp(std::forward<TArg>(arg)...);
+        swap(tmp);
+        return *this;
+    }
+};
 
 namespace options //MSDK API options verification utilities
 {
@@ -572,7 +636,62 @@ public:
 protected:
     std::list<std::vector<uint8_t>> m_attachedData;
 };
-}
+
+template <class Duration, class Representation>
+class Timer
+{
+public:
+
+    Timer(Representation left)
+        : m_end(std::chrono::steady_clock::now() + Duration(left))
+    {}
+
+    Timer(std::chrono::steady_clock::time_point end)
+        : m_end(end)
+    {}
+
+    Representation Left() const
+    {
+        auto now = std::chrono::steady_clock::now();
+        return m_end < now ?
+            Representation{} :
+            Representation(std::chrono::duration_cast<Duration>(m_end - now).count());
+    }
+
+    std::chrono::steady_clock::time_point End() const
+    {
+        return m_end;
+    }
+
+    static
+        bool Expired(Representation left)
+    {
+        return left == Representation{};
+    }
+
+    bool Expired() const
+    {
+        return Expired(Left());
+    }
+
+private:
+    std::chrono::steady_clock::time_point m_end;
+};
+
+template <typename Representation>
+using TimerMs = Timer<std::chrono::milliseconds, Representation>;
+
+class mfxStatus_exception : public std::exception
+{
+public:
+    mfxStatus_exception(mfxStatus sts = MFX_ERR_NONE) : sts(sts) {}
+
+    operator mfxStatus() const { return sts; }
+
+    mfxStatus sts = MFX_ERR_NONE;
+};
+
+} //namespace mfx
 
 #if defined(MFX_VA_LINUX)
 inline mfxStatus CheckAndDestroyVAbuffer(VADisplay display, VABufferID & buffer_id)

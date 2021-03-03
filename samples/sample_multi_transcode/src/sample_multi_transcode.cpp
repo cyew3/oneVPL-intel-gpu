@@ -416,7 +416,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
         std::unique_ptr<CSmplBitstreamReader> reader;
         std::unique_ptr<CSmplYUVReader> yuvreader;
-        if (m_InputParamsArray[i].DecodeId == MFX_CODEC_VP9 || m_InputParamsArray[i].DecodeId == MFX_CODEC_AV1)
+        if (m_InputParamsArray[i].DecodeId == MFX_CODEC_VP9 || m_InputParamsArray[i].DecodeId == MFX_CODEC_VP8 || m_InputParamsArray[i].DecodeId == MFX_CODEC_AV1)
         {
             reader.reset(new CIVFFrameReader());
         }
@@ -915,7 +915,7 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
 
     return MFX_ERR_NONE;
 }
-#endif //(_WIN32 || _WIN64) && (MFX_VERSION >= 1031) && !MFX_ONEVPL
+#endif //(_WIN32 || _WIN64) && (MFX_VERSION >= 1031)
 
 mfxStatus Launcher::VerifyCrossSessionsOptions()
 {

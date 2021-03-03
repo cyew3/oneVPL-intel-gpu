@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -78,6 +78,10 @@ public:
     virtual mfxStatus GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
+
 protected:
     void CalculateTimeSteps(mfxFrameSurface1 *);
     static mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
@@ -111,7 +115,8 @@ private:
 
     bool                    m_adaptiveMode;
     mfxU32                  m_index;
-    std::unique_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
+
+    std::unique_ptr<SurfaceSource>  m_surface_source;
 
 #ifdef UMC_VA_DXVA
     std::unique_ptr<DXVAIndexRemapper> m_dxvaRemapper;
@@ -123,6 +128,7 @@ private:
 
     mfxFrameAllocRequest     m_request;
     mfxFrameAllocResponse    m_response;
+    mfxFrameAllocResponse    m_response_alien;
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc m_OpaqAlloc;
 #endif
@@ -131,9 +137,11 @@ private:
     friend mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
     friend mfxStatus VP9CompleteProc(void *p_state, void *pp_param, mfxStatus);
 
+    mfxStatus ReportDecodeStatus(mfxFrameSurface1* surface_work);
+
     void ResetFrameInfo();
 
-    mfxStatus PrepareInternalSurface(UMC::FrameMemID &mid, mfxFrameInfo &info);
+    mfxStatus PrepareInternalSurface(UMC::FrameMemID &mid);
 
     struct VP9DECODERoutineData
     {

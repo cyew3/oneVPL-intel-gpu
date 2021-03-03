@@ -33,7 +33,7 @@ protected:
     mfxStatus ConfigMFXComponents( AppParam& params );
     mfxStatus InitMFXComponents( void );
 
-    mfxStatus InitMFXSessions( SessionMode mode, std::map<const msdk_char*, mfxIMPL> impl );
+    mfxStatus InitMFXSessions( SessionMode mode, std::map<msdk_string, mfxIMPL> impl );
     mfxStatus CloseMFXSessions( SessionMode mode );
     mfxStatus SetAllocatorMFXSessions( mfxU16 IOPattern );
 

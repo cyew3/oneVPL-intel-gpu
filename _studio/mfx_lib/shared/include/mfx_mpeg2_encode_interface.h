@@ -141,6 +141,7 @@ namespace MfxHwMpeg2Encode
             , m_RefFrameMemID()
             , m_CurrFrameMemID()
             , m_bExternalCurrFrame()
+            , m_bExternalCurrFrameHDL()
             , m_bOutOfRangeMV()
             , m_bErrMBType()
             , m_bUseRawFrames()
@@ -204,6 +205,7 @@ namespace MfxHwMpeg2Encode
         mfxMemId                                m_RefFrameMemID[2];
         mfxMemId                                m_CurrFrameMemID;
         bool                                    m_bExternalCurrFrame;
+        bool                                    m_bExternalCurrFrameHDL;
         bool                                    m_bOutOfRangeMV;
         bool                                    m_bErrMBType;
         bool                                    m_bUseRawFrames;

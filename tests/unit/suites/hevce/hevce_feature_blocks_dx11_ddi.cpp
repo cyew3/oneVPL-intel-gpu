@@ -29,20 +29,14 @@
 #include "base/hevcehw_base_legacy.h"
 #include "base/hevcehw_base_d3d11_win.h"
 
+#include <initguid.h>
 #include "mocks/include/guid.h"
 
 #include "mocks/include/dxgi/format.h"
 
 #include "mocks/include/mfx/dispatch.h"
-#include "mocks/include/mfx/dx11/encoder.h"
 #include "mocks/include/mfx/dx11/decoder.h"
-
-#define INITGUID
-#include <guiddef.h>
-DEFINE_GUID(DXVA_NoEncrypt,   0x1b81beD0, 0xa0c7,0x11d3,0xb9,0x84,0x00,0xc0,0x4f,0x2e,0x73,0xc5);
-DEFINE_GUID(DXVA2_ModeH264_E, 0x1b81be68, 0xa0c7,0x11d3,0xb9,0x84,0x00,0xc0,0x4f,0x2e,0x73,0xc5);
-DEFINE_GUID(IID_IDirectXVideoDecoderService,      0xfc51a551,0xd5e7,0x11d9,0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
-DEFINE_GUID(IID_IDirectXVideoProcessorService,    0xfc51a552,0xd5e7,0x11d9,0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
+#include "mocks/include/mfx/dx11/encoder.h"
 
 namespace hevce { namespace tests
 {
@@ -86,7 +80,7 @@ namespace hevce { namespace tests
             vp.mfx.FrameInfo.Width  = 640;
             vp.mfx.FrameInfo.Height = 480;
             vp = mocks::mfx::make_param(
-                mocks::fourcc::tag<MFX_FOURCC_NV12>{},
+                mocks::fourcc::format<MFX_FOURCC_NV12>{},
                 mocks::mfx::make_param(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
             );
 
@@ -100,8 +94,8 @@ namespace hevce { namespace tests
                 }
             );
 
-            device = mocks::mfx::dx11::make_encoder(nullptr, context.get(),
-                std::integral_constant<int, mocks::mfx::HW_SKL>{},
+            device = mocks::mfx::dx11::make_component(std::integral_constant<int, mocks::mfx::HW_SCL>{},
+                nullptr, context.get(),
                 std::make_tuple(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
             );
 

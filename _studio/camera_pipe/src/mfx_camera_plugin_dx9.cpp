@@ -1775,32 +1775,34 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     }
 
     sts = MFX_ERR_NONE;
-    if ( m_systemMemOut )
+    if (m_systemMemOut)
     {
-        IppiSize roi = {m_width, m_height};
+        IppiSize roi = { m_width, m_height };
         mfxI64 verticalPitch = m_height;
+
+        mfxHDLPair output_hdl_pair = { reinterpret_cast<mfxHDL>(m_outputSurf[outIndex].surf), nullptr };
 
         if (  pParam->surf_out->Info.FourCC == MFX_FOURCC_ARGB16 && ! pParam->Caps.b3DLUT)
         {
             // For ARGB16 out need to do R<->B swapping.
             // 3D LUT does swapping as well.
-            sts = m_pCmCopy.get()->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, (mfxU32)m_height, &m_outputSurf[outIndex].surf, 0, roi, MFX_FOURCC_ABGR16);
+            sts = m_pCmCopy.get()->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, (mfxU32)m_height, output_hdl_pair, 0, roi, MFX_FOURCC_ABGR16);
         }
         else if (MFX_FOURCC_RGB4 == pParam->surf_out->Info.FourCC)
         {
             if (pParam->Caps.b3DLUT)
             {
                 // 3D LUT does R<->B swapping. Need to get R and B back.
-                sts = m_pCmCopy.get()->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, (mfxU32)m_height, &m_outputSurf[outIndex].surf, 0, roi, MFX_FOURCC_BGR4);
+                sts = m_pCmCopy.get()->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, (mfxU32)m_height, output_hdl_pair, 0, roi, MFX_FOURCC_BGR4);
             }
             else if (m_core->GetHWType() >= MFX_HW_SCL)
             {
-                sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, 0, &m_outputSurf[outIndex].surf, (mfxU32)verticalPitch, roi);
+                sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, 0, output_hdl_pair, (mfxU32)verticalPitch, roi);
             }
         }
         else
         {
-            sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, m_height, &m_outputSurf[outIndex].surf,  (mfxU32)verticalPitch, roi);
+            sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, m_height, output_hdl_pair, (mfxU32)verticalPitch, roi);
         }
             MFX_CHECK_STS(sts);
     }
@@ -1944,32 +1946,34 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
         appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + appInputSurface.Info.CropX*2;
         appInputSurface.Info.Height -= appInputSurface.Info.CropY;
 
+        mfxHDLPair input_hdl_pair = { reinterpret_cast<mfxHDL>(m_inputSurf[*poolIndex].surf), nullptr };
+
         // [1] Copy from system mem to the internal video frame
         if (InSurf.Info.FourCC == MFX_FOURCC_RGB4)
         {
             if (appInputSurface.Info.FourCC == MFX_FOURCC_BGR4)
-                sts = m_pCmCopy.get()->CopySwapSystemToVideoMemory(&m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi, MFX_FOURCC_BGR4);
+                sts = m_pCmCopy.get()->CopySwapSystemToVideoMemory(input_hdl_pair, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi, MFX_FOURCC_BGR4);
             else
-                sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(&m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
+                sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(input_hdl_pair, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
         }
         else if (InSurf.Info.FourCC == MFX_FOURCC_BGR4)
         {
-            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(&m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
+            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(input_hdl_pair, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
         }
         else if (InSurf.Info.FourCC == MFX_FOURCC_ARGB16) {
             if (appInputSurface.Info.FourCC == MFX_FOURCC_ABGR16)
-                sts = m_pCmCopy.get()->CopySwapSystemToVideoMemory(&m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi, MFX_FOURCC_ABGR16);
+                sts = m_pCmCopy.get()->CopySwapSystemToVideoMemory(input_hdl_pair, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi, MFX_FOURCC_ABGR16);
             else
-                sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(&m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
+                sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(input_hdl_pair, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
         }
         else if (InSurf.Info.FourCC == MFX_FOURCC_ABGR16)
         {
-            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(&m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
+            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(input_hdl_pair, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R, appInputSurface.Data.G), appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
         }
         else if (surf->Info.FourCC == MFX_FOURCC_R16 && m_core->GetHWType() >= MFX_HW_SCL)
-            sts = m_pCmCopy.get()->CopySystemToVideoMemory(&m_inputSurf[*poolIndex].surf, 0, appInputSurface.Data.Y, appInputSurface.Data.Pitch, appInputSurface.Info.Height, roi, MFX_FOURCC_R16);
+            sts = m_pCmCopy.get()->CopySystemToVideoMemory(input_hdl_pair, 0, appInputSurface.Data.Y, appInputSurface.Data.Pitch, appInputSurface.Info.Height, roi, MFX_FOURCC_R16);
         else
-            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(&m_inputSurf[*poolIndex].surf, 0, appInputSurface.Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
+            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(input_hdl_pair, 0, appInputSurface.Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
         MFX_CHECK_STS(sts);
     }
     else

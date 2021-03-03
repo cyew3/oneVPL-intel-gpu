@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,6 @@
 
 #pragma once
 
-#include "mocks/include/dx11/resource/buffer.h"
-#include "mocks/include/dx11/resource/texture.h"
-
 #include "mocks/include/dx11/device/base.h"
 #include "mocks/include/dx11/context/base.h"
 
@@ -33,50 +30,77 @@ namespace mocks { namespace dx11
 {
     namespace detail
     {
-        template <typename T>
+        template <typename Adapter>
         inline
         typename std::enable_if<
-            std::is_base_of<IDXGIAdapter, T>::value
+            std::is_base_of<IDXGIAdapter, Adapter>::value
         >::type
-        mock_device(device& d, T* adapter)
+        mock_device(device& d, Adapter* adapter)
         {
             //need to hook before we handle NULL (default) adapter
             d.detour(adapter);
 
-            d.adapter = adapter;
-            if (!d.adapter)
+            if (adapter)
+                d.xadapter = adapter;
+
+            if (!d.xadapter)
                 //create default adapter and take ownership here
-                d.adapter.Attach(dxgi::make_adapter().release());
+                d.xadapter.Attach(dxgi::make_adapter().release());
 
             //check if we already mocked IDXGIDevice
             CComPtr<IDXGIDevice> g;
             if (SUCCEEDED(d.QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&g))))
                 //also mock aggregated IDXGIDevice
-                mock_device(*static_cast<dxgi::device*>(g.p), d.adapter.p);
+                mock_device(*static_cast<dxgi::device*>(g.p), d.xadapter.p);
         }
 
+        template <typename Device>
         inline
-        void mock_device(device& d, dxgi::device& g)
+        typename std::enable_if<
+            std::is_base_of<IDXGIDevice, Device>::value
+        >::type
+        mock_device(device& d, Device* x)
         {
-            mock_composite(g, &d);
-            mock_unknown(d, &g, __uuidof(IDXGIDevice));
+            d.xdevice = x;
+
+            //mimic that we're DXGI device too
+            //NOTE: we violate COM rules here since our DXGI devive is not
+            //really aggregated object
+            mock_unknown(d, d.xdevice.p,
+                __uuidof(IDXGIDevice),
+                __uuidof(IDXGIDevice1),
+                __uuidof(IDXGIDevice2),
+                __uuidof(IDXGIDevice3),
+                __uuidof(IDXGIDevice4)
+            );
         }
 
+        template <typename Context>
         inline
-        void mock_device(device& d, ID3D11DeviceContext* context)
+        typename std::enable_if<
+            std::is_base_of<ID3D11DeviceContext, Context>::value
+        >::type
+        mock_device(device& d, Context* context)
         {
-            d.context = context;
+            if (context)
+                d.context = context;
+
             if (!d.context)
                 //create default context and take ownership here
                 d.context.Attach(static_cast<ID3D11DeviceContext*>(make_context().release()));
         }
 
-        template <typename T, typename ...Levels>
+        template <typename Adapter, typename Context, typename T, typename ...Levels>
         inline
         typename std::enable_if<
-            std::conjunction<std::is_integral<T>, std::is_same<Levels, D3D_FEATURE_LEVEL>...>::value
+            std::conjunction<
+                std::is_base_of<IDXGIAdapter, Adapter>,
+                std::is_integral<T>,
+                std::is_base_of<ID3D11DeviceContext, Context>,
+                std::is_same<Levels, D3D_FEATURE_LEVEL>...
+            >::value
         >::type
-        mock_device(device& d, std::tuple<IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, T /*flags*/, T /*version*/, std::tuple<Levels...>, ID3D11DeviceContext*> params)
+        mock_device(device& d, std::tuple<Adapter*, D3D_DRIVER_TYPE, HMODULE, T /*flags*/, T /*version*/, std::tuple<Levels...>, Context*> params)
         {
             mock_device(d, std::get<0>(params));
             mock_device(d, std::get<6>(params));
@@ -86,10 +110,15 @@ namespace mocks { namespace dx11
 
             using testing::_;
 
-            //HRESULT(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT flags,
+            //HRESULT D3D11CreateDevice(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT flags,
             //        D3D_FEATURE_LEVEL const*, UINT count, UINT version,
             //        ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext**)
-            EXPECT_CALL(d, CreateDevice(testing::Eq(std::get<0>(params)), testing::Eq(std::get<1>(params)),
+            EXPECT_CALL(d, CreateDevice(
+                testing::AnyOf(
+                    testing::IsNull(),
+                    testing::Eq(std::get<0>(params))
+                ),
+                testing::Eq(std::get<1>(params)),
                 testing::Eq(std::get<2>(params)), testing::Eq(UINT(std::get<3>(params))),
                 testing::NotNull(), _, testing::Eq(UINT(std::get<4>(params))), testing::NotNull(), _, _))
                 .With(testing::Args<4, 5>(testing::Contains(
@@ -112,36 +141,40 @@ namespace mocks { namespace dx11
                 )));
         }
 
-        template <typename ...Levels>
+        template <typename Adapter, typename Context, typename ...Levels>
         inline
         typename std::enable_if<
-            std::conjunction<std::is_same<Levels, D3D_FEATURE_LEVEL>...>::value
+            std::conjunction<
+                std::is_base_of<IDXGIAdapter, Adapter>,
+                std::is_base_of<ID3D11DeviceContext, Context>,
+                std::is_same<Levels, D3D_FEATURE_LEVEL>...
+            >::value
         >::type
-        mock_device(device& d, std::tuple<IDXGIAdapter*, D3D_DRIVER_TYPE, std::tuple<Levels...>, ID3D11DeviceContext*> params)
+        mock_device(device& d, std::tuple<Adapter*, D3D_DRIVER_TYPE, std::tuple<Levels...>, Context*> params)
         {
             return mock_device(d,
                 std::make_tuple(std::get<0>(params), std::get<1>(params), HMODULE(0), 0, D3D11_SDK_VERSION, std::get<2>(params), std::get<3>(params))
             );
         }
 
-        template <typename ...Levels>
+        template <typename Adapter, typename ...Levels>
         inline
         typename std::enable_if<
-            std::conjunction<std::is_same<Levels, D3D_FEATURE_LEVEL>...>::value
+            std::conjunction<std::is_base_of<IDXGIAdapter, Adapter>, std::is_same<Levels, D3D_FEATURE_LEVEL>...>::value
         >::type
-        mock_device(device& d, std::tuple<IDXGIAdapter*, D3D_DRIVER_TYPE, std::tuple<Levels...> > params)
+        mock_device(device& d, std::tuple<Adapter*, D3D_DRIVER_TYPE, std::tuple<Levels...> > params)
         {
             return mock_device(d,
                 std::tuple_cat(params, std::make_tuple(static_cast<ID3D11DeviceContext*>(nullptr)))
             );
         }
 
-        template <typename ...Levels>
+        template <typename Adapter, typename ...Levels>
         inline
         typename std::enable_if<
-            std::conjunction<std::is_same<Levels, D3D_FEATURE_LEVEL>...>::value
+            std::conjunction<std::is_base_of<IDXGIAdapter, Adapter>, std::is_same<Levels, D3D_FEATURE_LEVEL>...>::value
         >::type
-        mock_device(device& d, std::tuple<IDXGIAdapter*, std::tuple<Levels...> > params)
+        mock_device(device& d, std::tuple<Adapter*, std::tuple<Levels...> > params)
         {
             return mock_device(d,
                 std::make_tuple(std::get<0>(params), D3D_DRIVER_TYPE_HARDWARE, std::get<1>(params))
@@ -158,42 +191,6 @@ namespace mocks { namespace dx11
             return mock_device(d,
                 std::make_tuple(static_cast<IDXGIAdapter*>(nullptr), params)
             );
-        }
-
-        inline
-        void mock_device(device& d, D3D11_TEXTURE2D_DESC td)
-        {
-            using testing::_;
-
-            //HRESULT CreateTexture2D(const D3D11_TEXTURE2D_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Texture2D**));
-            EXPECT_CALL(d, CreateTexture2D(
-                testing::AllOf(
-                    testing::NotNull(),
-                    testing::Truly([td](D3D11_TEXTURE2D_DESC const* xd) { return equal(*xd, td); })
-                ), _, testing::NotNull()))
-                .WillRepeatedly(testing::WithArgs<0, 2>(testing::Invoke(
-                    [](D3D11_TEXTURE2D_DESC const* xd, ID3D11Texture2D** t)
-                    { *t = make_texture(*xd).release(); return S_OK; }
-                )));
-        }
-
-        inline
-        void mock_device(device& d, D3D11_BUFFER_DESC bd)
-        {
-            using testing::_;
-
-            EXPECT_CALL(d, CreateBuffer(_, _, _))
-                .WillRepeatedly(testing::Return(E_FAIL));
-
-            //HRESULT CreateBuffer(const D3D11_BUFFER_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Buffer**)
-            EXPECT_CALL(d, CreateBuffer(testing::AllOf(
-                testing::NotNull(),
-                testing::Truly([bd](D3D11_BUFFER_DESC const* xd) { return equal(*xd, bd); })
-                ), _, testing::NotNull()))
-                .WillRepeatedly(testing::WithArgs<0, 2>(testing::Invoke(
-                    [](D3D11_BUFFER_DESC const* xd, ID3D11Buffer** b)
-                    { *b = make_buffer(*xd).release(); return S_OK; }
-                )));
         }
 
         template <typename T, typename U>

@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,7 @@ void* MockCallObj::EmulateAPI(void *handle, const char *symbol)
     {
         std::string available_symbol(g_mfxFuncTable[i].name);
         mfxVersion symbol_api_version = g_mfxFuncTable[i].version;
-        if (requested_symbol == available_symbol && emulated_api_version.Version > symbol_api_version.Version)
+        if (requested_symbol == available_symbol)
         {
             if (symbol == mfxinitex_symbol)
             {

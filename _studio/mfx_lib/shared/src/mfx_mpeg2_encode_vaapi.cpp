@@ -369,13 +369,23 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(mfxU16 codecProfile)
 {
     MFX_CHECK_NULL_PTR1(m_core);
 
-    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
-    MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
-
-    if (hwcore)
+    VAAPIVideoCORE* hwCore_10 = dynamic_cast<VAAPIVideoCORE*>(m_core);
+    if (hwCore_10)
     {
-        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
-        MFX_CHECK_STS(mfxSts);
+        // Legacy MSDK 1.x case
+        MFX_SAFE_CALL(hwCore_10->GetVAService(&m_vaDisplay));
+    }
+    else
+    {
+#if defined(MFX_ONEVPL)
+        // MSDK 2.0 case
+        VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
+        MFX_CHECK_WITH_ASSERT(hwCore_20, MFX_ERR_DEVICE_FAILED);
+
+        MFX_SAFE_CALL(hwCore_20->GetVAService(&m_vaDisplay));
+#else
+        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
+#endif
     }
 
     memset(&m_caps, 0, sizeof(m_caps));
@@ -488,6 +498,8 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Init");
 
+    MFX_CHECK_NULL_PTR1(pExecuteBuffers);
+
     m_initFrameWidth  = mfx::align2_value(pExecuteBuffers->m_sps.FrameWidth, 16);
     m_initFrameHeight = mfx::align2_value(pExecuteBuffers->m_sps.FrameHeight,
                             pExecuteBuffers->m_sps.progressive_sequence ? 16 : 32);
@@ -497,11 +509,23 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
     ExtVASurface cleanSurf = {VA_INVALID_ID, 0, 0};
     std::fill(m_feedback.begin(), m_feedback.end(), cleanSurf);
 
-    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
-    if(hwcore)
+    VAAPIVideoCORE* hwCore_10 = dynamic_cast<VAAPIVideoCORE*>(m_core);
+    if (hwCore_10)
     {
-        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
-        MFX_CHECK_STS(mfxSts);
+        // Legacy MSDK 1.x case
+        MFX_SAFE_CALL(hwCore_10->GetVAService(&m_vaDisplay));
+    }
+    else
+    {
+#if defined(MFX_ONEVPL)
+        // MSDK 2.0 case
+        VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
+        MFX_CHECK_WITH_ASSERT(hwCore_20, MFX_ERR_DEVICE_FAILED);
+
+        MFX_SAFE_CALL(hwCore_20->GetVAService(&m_vaDisplay));
+#else
+        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
+#endif
     }
 
     VAStatus vaSts;
@@ -1435,7 +1459,12 @@ mfxStatus VAAPIEncoder::SetFrames (ExecuteBuffers* pExecuteBuffers)
     {
         pExecuteBuffers->m_pps.RefFrameList[1].bPicEntry = 0xff;
     }
-    if (pExecuteBuffers->m_bExternalCurrFrame)
+
+    if (pExecuteBuffers->m_bExternalCurrFrameHDL)
+    {
+        //pExecuteBuffers->m_pSurface is already set, do nothing
+    }
+    else if (pExecuteBuffers->m_bExternalCurrFrame)
     {
         sts = m_core->GetExternalFrameHDL(pExecuteBuffers->m_CurrFrameMemID,(mfxHDL *)&pExecuteBuffers->m_pSurface);
     }
@@ -1745,7 +1774,8 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
         return MFX_ERR_UNKNOWN;
     }
 
-    VASurfaceStatus surfSts = VASurfaceSkipped;
+    {
+        VASurfaceStatus surfSts = VASurfaceSkipped;
 
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 #if VA_CHECK_VERSION(1,9,0)
@@ -1755,38 +1785,39 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 #else
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
-        vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
-        // following code is workaround:
-        // because of driver bug it could happen that decoding error will not be returned after decoder sync
-        // and will be returned at subsequent encoder sync instead
-        // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
-        if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
-            vaSts = VA_STATUS_SUCCESS;
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    }
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
+            vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+            // following code is workaround:
+            // because of driver bug it could happen that decoding error will not be returned after decoder sync
+            // and will be returned at subsequent encoder sync instead
+            // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+            if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
+                vaSts = VA_STATUS_SUCCESS;
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
 #endif
-    surfSts = VASurfaceReady;
+        surfSts = VASurfaceReady;
 #else
-    vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 #endif
 
-    switch (surfSts)
-    {
-    case VASurfaceReady:
-        break;
-        // return MFX_ERR_NONE;
+        switch (surfSts)
+        {
+        case VASurfaceReady:
+            break;
+            // return MFX_ERR_NONE;
 
-    case VASurfaceRendering:
-    case VASurfaceDisplaying:
-        return MFX_WRN_DEVICE_BUSY;
+        case VASurfaceRendering:
+        case VASurfaceDisplaying:
+            return MFX_WRN_DEVICE_BUSY;
 
-    case VASurfaceSkipped:
-    default:
-        assert(!"bad feedback status");
-        return MFX_ERR_DEVICE_FAILED;
+        case VASurfaceSkipped:
+        default:
+            assert(!"bad feedback status");
+            return MFX_ERR_DEVICE_FAILED;
+        }
     }
 
 #ifdef PAVP_SUPPORT

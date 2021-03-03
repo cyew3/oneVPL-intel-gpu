@@ -36,6 +36,7 @@ mfx_include_dirs()
 
 include_directories( ${MSDK_STUDIO_ROOT}/shared/asc/include )
 include_directories( ${MSDK_LIB_ROOT}/plugin/include )
+include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 include_directories( ${MSDK_LIB_ROOT}/scheduler/linux/include )
 include_directories( ${MSDK_LIB_ROOT}/genx/copy_kernels/include )
 include_directories( ${MSDK_LIB_ROOT}/cmrt_cross_platform/include )

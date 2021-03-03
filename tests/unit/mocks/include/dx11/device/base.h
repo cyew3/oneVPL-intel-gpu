@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,23 @@ namespace mocks { namespace dx11
             )
         {}
 
-        CComPtr<IDXGIAdapter>                                    adapter;
+        ~device()
+        {
+            if (!hook<device>::owner())
+                return;
+
+            //remove ourself from adapters map of owner's instance
+            auto i = hook<device>::owner()->map.find(xadapter.p);
+            if (i == hook<device>::owner()->map.end())
+                return;
+
+            if ((*i).second == this)
+                hook<device>::owner()->map.erase(i);
+        }
+
+        CComPtr<IDXGIDevice>                                     xdevice;
+        CComPtr<IDXGIAdapter>                                    xadapter;
+
         CComPtr<ID3D11DeviceContext>                             context;
         CComPtr<ID3D11VideoProcessorEnumerator>                  enumerator;
 
@@ -69,12 +85,14 @@ namespace mocks { namespace dx11
         std::map<GUID, std::vector<D3D11_VIDEO_DECODER_CONFIG> > configs;
         std::vector<D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS>  rate_caps;
 
-        MOCK_METHOD3(CreateBuffer, HRESULT(const D3D11_BUFFER_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Buffer**));
-        MOCK_METHOD3(CreateTexture2D, HRESULT(const D3D11_TEXTURE2D_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Texture2D**));
-
+        //D3D11CreateDevice
         MOCK_METHOD10(CreateDevice,
             HRESULT(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, D3D_FEATURE_LEVEL const*, UINT, UINT, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext**)
         );
+
+        MOCK_METHOD3(CreateBuffer, HRESULT(const D3D11_BUFFER_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Buffer**));
+        MOCK_METHOD3(CreateTexture2D, HRESULT(const D3D11_TEXTURE2D_DESC*, const D3D11_SUBRESOURCE_DATA*, ID3D11Texture2D**));
+
         MOCK_METHOD1(GetImmediateContext, void(ID3D11DeviceContext**));
         MOCK_METHOD4(CreateFence, HRESULT(UINT64, D3D11_FENCE_FLAG, REFIID, void**));
 

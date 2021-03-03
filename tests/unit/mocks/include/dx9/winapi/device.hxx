@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,13 @@
 namespace mocks { namespace dx9 { namespace winapi
 {
     struct device_impl
-        : unknown_impl<IDirect3DDevice9>
+        : unknown_impl<IDirect3DDevice9Ex>
     {
+        device_impl()
+        {
+            mock_unknown<IDirect3DDevice9>(*this);
+        }
+
         HRESULT TestCooperativeLevel() override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
         UINT GetAvailableTextureMem() override
@@ -260,6 +265,41 @@ namespace mocks { namespace dx9 { namespace winapi
         HRESULT DeletePatch(UINT /*Handle*/) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
         HRESULT CreateQuery(D3DQUERYTYPE, IDirect3DQuery9**) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+
+        //IDirect3DDevice9Ex
+        HRESULT SetConvolutionMonoKernel(UINT /*width*/, UINT /*height*/, float* /*rows*/, float* /*columns*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT ComposeRects(IDirect3DSurface9* /*pSrc*/, IDirect3DSurface9* /*pDst*/, IDirect3DVertexBuffer9* /*pSrcRectDescs*/,
+            UINT /*NumRects*/, IDirect3DVertexBuffer9* /*pDstRectDescs*/, D3DCOMPOSERECTSOP, int /*Xoffset*/, int /*Yoffset*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT PresentEx(CONST RECT* /*pSourceRect*/, CONST RECT* /*pDestRect*/, HWND, CONST RGNDATA* /*pDirtyRegion*/, DWORD /*dwFlags*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT GetGPUThreadPriority(INT*) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT SetGPUThreadPriority(INT) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT WaitForVBlank(UINT /*iSwapChain*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT CheckResourceResidency(IDirect3DResource9**, UINT32 /*NumResources*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT SetMaximumFrameLatency(UINT) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT GetMaximumFrameLatency(UINT*) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT CheckDeviceState(HWND) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT CreateRenderTargetEx(UINT /*Width*/, UINT /*Height*/, D3DFORMAT, D3DMULTISAMPLE_TYPE, DWORD /*MultisampleQuality*/, BOOL /*Lockable*/,
+            IDirect3DSurface9**, HANDLE* /*pSharedHandle*/, DWORD /*Usage*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT CreateOffscreenPlainSurfaceEx(UINT /*Width*/, UINT /*Height*/, D3DFORMAT, D3DPOOL, IDirect3DSurface9**, HANDLE* /*pSharedHandle*/, DWORD /*Usage*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT CreateDepthStencilSurfaceEx(UINT /*Width*/, UINT /*Height*/, D3DFORMAT /*Format*/, D3DMULTISAMPLE_TYPE, DWORD /*MultisampleQuality*/, BOOL /*Discard*/,
+            IDirect3DSurface9**, HANDLE* /*pSharedHandle*/, DWORD /*Usage*/) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT ResetEx(D3DPRESENT_PARAMETERS*, D3DDISPLAYMODEEX*) override
+        { throw std::system_error(E_NOTIMPL, std::system_category()); }
+        HRESULT GetDisplayModeEx(UINT /*iSwapChain*/, D3DDISPLAYMODEEX*, D3DDISPLAYROTATION*) override
         { throw std::system_error(E_NOTIMPL, std::system_category()); }
     };
 

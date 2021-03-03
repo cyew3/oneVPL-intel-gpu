@@ -203,6 +203,13 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -MemType::system   Force usage of external system allocator\n"));
     msdk_printf(MSDK_STRING("  -MemType::opaque   Force usage of internal allocator\n"));
 
+    msdk_printf(MSDK_STRING("  -MemModel::GeneralAlloc (default)\n"));
+    msdk_printf(MSDK_STRING("        Force usage of:\n"));
+    msdk_printf(MSDK_STRING("              External allocator in the case of video/system memory type\n"));
+    msdk_printf(MSDK_STRING("              Internal allocator in the case of opaque memory type\n"));
+    msdk_printf(MSDK_STRING("  -MemModel::VisibleIntAlloc   Force usage of internal allocation with manual surfaces control\n"));
+    msdk_printf(MSDK_STRING("  -MemModel::HiddenIntAlloc    Force usage of internal allocation without manual surfaces control\n"));
+
     msdk_printf(MSDK_STRING("  -dec::sys     Set dec output to system memory\n"));
     msdk_printf(MSDK_STRING("  -vpp::sys     Set vpp output to system memory\n"));
     msdk_printf(MSDK_STRING("  -vpp::vid     Set vpp output to video memory\n"));
@@ -1258,6 +1265,32 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-opaq")) || 0 == msdk_strcmp(argv[i], MSDK_STRING("-MemType::opaque")))
     {
         InputParams.bUseOpaqueMemory = true;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-memory")))
+    {
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.nMemoryModel))
+        {
+            PrintError(MSDK_STRING("-memory %s is invalid"), argv[i]);
+            return MFX_ERR_UNSUPPORTED;
+        }
+        if (InputParams.nMemoryModel < 1 || InputParams.nMemoryModel > 3)
+        {
+            PrintError(MSDK_STRING(" \"%s\" memory type is invalid. Default (1) will be used."), argv[i]);
+            InputParams.nMemoryModel = GENERAL_ALLOC;
+        }
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-MemModel::GeneralAlloc")))
+    {
+        InputParams.nMemoryModel = GENERAL_ALLOC;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-MemModel::VisibleIntAlloc")))
+    {
+        InputParams.nMemoryModel = VISIBLE_INT_ALLOC;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-MemModel::HiddenIntAlloc")))
+    {
+        InputParams.nMemoryModel = HIDDEN_INT_ALLOC;
     }
     else
     {
@@ -2342,7 +2375,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i + 1 == argc, i, argv[i]);
             InputParams.decoderPluginParams = ParsePluginGuid(argv[i + 1]);
-            if (AreGuidsEqual(InputParams.encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+            if (AreGuidsEqual(InputParams.decoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
             {
                 PrintError(MSDK_STRING("Invalid decoder guid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -2662,6 +2695,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
        MFX_CODEC_VC1 != InputParams.DecodeId &&
        MFX_CODEC_JPEG != InputParams.DecodeId &&
        MFX_CODEC_VP9 != InputParams.DecodeId &&
+       MFX_CODEC_VP8 != InputParams.DecodeId &&
        MFX_CODEC_AV1 != InputParams.DecodeId &&
        MFX_CODEC_RGB4 != InputParams.DecodeId &&
        MFX_CODEC_NV12 != InputParams.DecodeId &&

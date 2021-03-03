@@ -544,6 +544,7 @@ void ExecuteBuffers::InitFramesSet(mfxMemId curr, bool bExternal, mfxMemId rec, 
 
     m_CurrFrameMemID        = curr;
     m_bExternalCurrFrame    = bExternal;
+    m_bExternalCurrFrameHDL = false;
     m_RecFrameMemID         = rec;
     m_RefFrameMemID[0]      = ref_0;
     m_RefFrameMemID[1]      = ref_1;

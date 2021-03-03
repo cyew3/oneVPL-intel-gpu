@@ -71,11 +71,11 @@ namespace hevce { namespace tests
                 registry = mocks::mfx::dispatch_to(INTEL_VENDOR_ID, DEVICE_ID, 1);
             });
 
-            mfxVideoParam vp{};
+            auto& vp = Base::Glob::VideoParam::GetOrConstruct(storage);
             vp.mfx.FrameInfo.Width  = 640;
             vp.mfx.FrameInfo.Height = 480;
             vp = mocks::mfx::make_param(
-                mocks::fourcc::tag<MFX_FOURCC_NV12>{},
+                mocks::fourcc::format<MFX_FOURCC_NV12>{},
                 mocks::mfx::make_param(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
             );
 
@@ -92,8 +92,7 @@ namespace hevce { namespace tests
 
             qmatrix.Init(HEVCEHW::INIT | HEVCEHW::RUNTIME, blocks);
 
-            Base::Glob::VideoParam::GetOrConstruct(storage)
-                .NewEB(MFX_EXTBUFF_CODING_OPTION3);
+            vp.NewEB(MFX_EXTBUFF_CODING_OPTION3);
             Base::Glob::DDI_SubmitParam::GetOrConstruct(storage);
             Base::Glob::SPS::GetOrConstruct(storage);
         }
@@ -107,8 +106,8 @@ namespace hevce { namespace tests
             FeatureBlocksQMatrix::SetUp();
 
             mfxVideoParam const& vp  = Base::Glob::VideoParam::Get(storage);
-            device = mocks::mfx::dx11::make_encoder(nullptr, nullptr,
-                std::integral_constant<int, mocks::mfx::HW_SKL>{},
+            device = mocks::mfx::dx11::make_component(std::integral_constant<int, mocks::mfx::HW_SCL>{},
+                nullptr, nullptr,
                 std::make_tuple(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
             );
         }
@@ -153,8 +152,8 @@ namespace hevce { namespace tests
             FeatureBlocksQMatrix::SetUp();
 
             mfxVideoParam const& vp  = Base::Glob::VideoParam::Get(storage);
-            device = mocks::mfx::dx11::make_encoder(nullptr, nullptr,
-                std::integral_constant<int, mocks::mfx::HW_ICL>{},
+            device = mocks::mfx::dx11::make_component(std::integral_constant<int, mocks::mfx::HW_ICL>{},
+                nullptr, nullptr,
                 std::make_tuple(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
             );
         }

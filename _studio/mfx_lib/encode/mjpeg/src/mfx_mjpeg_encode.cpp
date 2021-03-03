@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 #include "mfx_task.h"
 #include "mfx_enc_common.h"
 #include "umc_video_processing.h"
+#include "libmfx_core_interface.h"
 
 #include "ippcore.h" // MfxIppInit in case of bundled IPP
 
@@ -1204,8 +1205,11 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0)) // 0 is possible after Query
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (!m_core->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
+    MFX_CHECK((core20_interface && *core20_interface) 
+        || m_core->IsExternalFrameAllocator() 
+        || !(par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)),
+        MFX_ERR_INVALID_VIDEO_PARAM);
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     m_isOpaque = false;

@@ -1563,20 +1563,41 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     mfxU32 height,
     bool /*isTemporal*/)
 {
+    MFX_CHECK_NULL_PTR1(core);
+
     m_core = core;
 
     m_caps = {};
 
-    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
-    MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
-    if(hwcore)
+    eMFXHWType platform;
+
+    VAAPIVideoCORE* hwCore_10 = dynamic_cast<VAAPIVideoCORE*>(m_core);
+    if (hwCore_10)
     {
-        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
-        MFX_CHECK_STS(mfxSts);
-        eMFXHWType platform = hwcore->GetHWType();
+        // Legacy MSDK 1.x case
+        MFX_SAFE_CALL(hwCore_10->GetVAService(&m_vaDisplay));
+
+        platform = hwCore_10->GetHWType();
         if (MFX_HW_APL == platform || MFX_HW_CFL == platform || MFX_HW_XE_HP == platform)
             m_caps.ddi_caps.FrameSizeToleranceSupport = 1;
     }
+    else
+    {
+#if defined(MFX_ONEVPL)
+        // MSDK 2.0 case
+        VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
+        MFX_CHECK_WITH_ASSERT(hwCore_20, MFX_ERR_DEVICE_FAILED);
+
+        MFX_SAFE_CALL(hwCore_20->GetVAService(&m_vaDisplay));
+
+        platform = hwCore_20->GetHWType();
+#else
+        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
+#endif
+    }
+
+    if (MFX_HW_APL == platform || MFX_HW_CFL == platform)
+        m_caps.ddi_caps.FrameSizeToleranceSupport = 1;
 
     m_width  = width;
     m_height = height;

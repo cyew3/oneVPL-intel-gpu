@@ -40,6 +40,7 @@ const FUNCTION_DESCRIPTION APIVideoFunc2[eVideoFunc2Total] = {
     { "MFXVideoDECODE_VPP_Init", { { 1, 2 } } },
     { "MFXVideoDECODE_VPP_DecodeFrameAsync", { { 1, 2 } } },
     { "MFXVideoDECODE_VPP_Reset", { { 1, 2 } } },
+    { "MFXVideoDECODE_VPP_Close", { { 1, 2 } } },
     { "MFXVideoDECODE_VPP_GetChannelParam", { { 1, 2 } } },
     { "MFXVideoVPP_ProcessFrameAsync", { { 1, 2 } } },
 };

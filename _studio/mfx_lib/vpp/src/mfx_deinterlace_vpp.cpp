@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -236,7 +236,7 @@ mfxStatus MFXVideoVPPDeinterlace::Close(void)
     {
       if( m_diState.refList[refIndex] )
       {
-        localSts = m_core->DecreaseReference(&(m_diState.refList[refIndex]->Data));
+        localSts = m_core->DecreaseReference(*m_diState.refList[refIndex]);
         VPP_CHECK_STS_CONTINUE( localSts, mfxSts );
         m_diState.refList[refIndex] = NULL;
       }
@@ -309,7 +309,7 @@ mfxStatus MFXVideoVPPDeinterlace::Reset(mfxVideoParam *par)
   // ITC algorithm
   if( m_itcState.outBuf.Surface1.Data.Locked )
   {
-      mfxSts = m_core->DecreaseReference( &(m_itcState.outBuf.Surface1.Data) );
+      mfxSts = m_core->DecreaseReference(m_itcState.outBuf.Surface1);
       MFX_CHECK_STS( mfxSts );
   }
 
@@ -321,7 +321,7 @@ mfxStatus MFXVideoVPPDeinterlace::Reset(mfxVideoParam *par)
   {
     if( m_diState.refList[refIndex] )
     {
-      mfxSts = m_core->DecreaseReference( &(m_diState.refList[refIndex]->Data) );
+      mfxSts = m_core->DecreaseReference(*m_diState.refList[refIndex]);
       MFX_CHECK_STS( mfxSts );
       m_diState.refList[refIndex] = NULL;
     }
@@ -973,7 +973,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_AdvancedProcessing( mfxFrameSurface1* in,
             m_diState.refList[0] = in;
             m_diState.refPicStructList[0] = picStruct;
 
-            mfxSts = m_core->IncreaseReference( &(m_diState.refList[0]->Data) );
+            mfxSts = m_core->IncreaseReference(*m_diState.refList[0]);
             MFX_CHECK_STS( mfxSts );
 
             m_diState.numProcessedFrames++;
@@ -991,7 +991,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_AdvancedProcessing( mfxFrameSurface1* in,
              m_diState.refPicStructList[1] = m_diState.refPicStructList[0];
             m_diState.refPicStructList[0]  = picStruct;
 
-            mfxSts = m_core->IncreaseReference( &(m_diState.refList[0]->Data) );
+            mfxSts = m_core->IncreaseReference(*m_diState.refList[0]);
             MFX_CHECK_STS( mfxSts );
 
             m_diState.numProcessedFrames++;
@@ -1035,7 +1035,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_AdvancedProcessing( mfxFrameSurface1* in,
                 }
             }
 
-            mfxSts = m_core->DecreaseReference( &(m_diState.refList[1]->Data) );
+            mfxSts = m_core->DecreaseReference(*m_diState.refList[1]);
             MFX_CHECK_STS( mfxSts );
 
             // surfaces
@@ -1045,7 +1045,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_AdvancedProcessing( mfxFrameSurface1* in,
             m_diState.refPicStructList[1] = m_diState.refPicStructList[0];
             m_diState.refPicStructList[0] = picStruct;
 
-            mfxSts = m_core->IncreaseReference( &(m_diState.refList[0]->Data) );
+            mfxSts = m_core->IncreaseReference(*m_diState.refList[0]);
             MFX_CHECK_STS( mfxSts );
 
             m_diState.numProcessedFrames++;
@@ -1089,7 +1089,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_AdvancedProcessing( mfxFrameSurface1* in,
 
             if( m_diState.refList[1] )
             {
-                MFX_CHECK_STS( m_core->DecreaseReference( &(m_diState.refList[1]->Data) ) );
+                MFX_CHECK_STS( m_core->DecreaseReference(*m_diState.refList[1]) );
             }
 
             m_diState.refList[1] = m_diState.refList[0];//will be decreased in Close()
@@ -1160,7 +1160,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
 
             if( pState->refList[1] )
             {
-                MFX_CHECK_STS( m_core->DecreaseReference( &(pState->refList[1]->Data) ) );
+                MFX_CHECK_STS( m_core->DecreaseReference(*pState->refList[1]) );
             }
 
             pState->refList[1] = pState->refList[0];//will be decreased in Close()
@@ -1186,7 +1186,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
         pState->refList[0] = in;
         pState->refPicStructList[0] = pParam->inPicStruct;
 
-        mfxSts = m_core->IncreaseReference( &(pState->refList[0]->Data) );
+        mfxSts = m_core->IncreaseReference(*pState->refList[0]);
         MFX_CHECK_STS( mfxSts );
 
         pState->numProcessedFrames++;
@@ -1207,7 +1207,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
         pState->refPicStructList[1] = pState->refPicStructList[0];
         pState->refPicStructList[0] = pParam->inPicStruct;
 
-        mfxSts = m_core->IncreaseReference( &(pState->refList[0]->Data) );
+        mfxSts = m_core->IncreaseReference(*pState->refList[0]);
         MFX_CHECK_STS( mfxSts );
 
         pState->numProcessedFrames++;
@@ -1221,7 +1221,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
     /* ********************************************* */
     if( IsSkippedFrame( m_processReadinessState.numProcessedFrames ) )
     {
-        mfxSts = m_core->DecreaseReference( &(pState->refList[1]->Data) );
+        mfxSts = m_core->DecreaseReference(*pState->refList[1]);
         MFX_CHECK_STS( mfxSts );
 
         // surfaces
@@ -1231,7 +1231,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
         pState->refPicStructList[1] = pState->refPicStructList[0];
         pState->refPicStructList[0] = pParam->inPicStruct;
 
-        mfxSts = m_core->IncreaseReference( &(in->Data) );
+        mfxSts = m_core->IncreaseReference(*in);
         MFX_CHECK_STS( mfxSts );
 
         return MFX_ERR_MORE_DATA;
@@ -1255,7 +1255,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
         }
 
         // update
-        mfxSts = m_core->DecreaseReference( &(pState->refList[1]->Data) );
+        mfxSts = m_core->DecreaseReference(*pState->refList[1]);
         MFX_CHECK_STS( mfxSts );
 
         // surfaces
@@ -1265,7 +1265,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
         pState->refPicStructList[1] = pState->refPicStructList[0];
         pState->refPicStructList[0] = pParam->inPicStruct;
 
-        mfxSts = m_core->IncreaseReference( &(pState->refList[0]->Data) );
+        mfxSts = m_core->IncreaseReference(*pState->refList[0]);
         MFX_CHECK_STS( mfxSts );
         
         pParam->outTimeStamp = pState->prevTimeStamp;
@@ -2363,13 +2363,13 @@ mfxStatus MFXVideoVPPDeinterlace::itc_NV12( mfxFrameSurface1* in, mfxFrameSurfac
         bLockedRef = false;
     }
 
-    mfxSts = m_core->DecreaseReference( &(pDIState->refList[1]->Data) );
+    mfxSts = m_core->DecreaseReference(*pDIState->refList[1]);
     MFX_CHECK_STS( mfxSts );
 
     pDIState->refList[1] = pDIState->refList[0];
     pDIState->refList[0] = in;
 
-    mfxSts = m_core->IncreaseReference( &(in->Data) );
+    mfxSts = m_core->IncreaseReference(*in);
     MFX_CHECK_STS( mfxSts );
 
     if( bLockedOutBuf )

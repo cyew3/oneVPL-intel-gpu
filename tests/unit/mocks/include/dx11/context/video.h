@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,8 +56,12 @@ namespace mocks { namespace dx11
         }
 
         /* Mocks buffer from given (type, size, pointer) */
+        template <typename T, typename P>
         inline
-        void mock_context(context& c, std::tuple<D3D11_VIDEO_DECODER_BUFFER_TYPE, UINT, void*> buffer)
+        typename std::enable_if<
+            std::conjunction<std::is_integral<T>, std::is_pointer<P> >::value
+        >::type
+        mock_context(context& c, std::tuple<D3D11_VIDEO_DECODER_BUFFER_TYPE, T, P> buffer)
         {
             mock_context(c,
                 std::make_tuple(std::get<0>(buffer),
@@ -72,7 +76,7 @@ namespace mocks { namespace dx11
         void mock_context(context& c, D3D11_VIDEO_DECODER_BUFFER_TYPE type)
         {
             mock_context(c,
-                std::make_tuple(type, UINT(0), static_cast<void*>(nullptr))
+                std::make_tuple(type, 0, static_cast<void*>(nullptr))
             );
         }
 
@@ -148,6 +152,31 @@ namespace mocks { namespace dx11
 
             //void VideoProcessorGetStreamSourceRect(ID3D11VideoProcessor*, UINT, BOOL*, RECT*)
             EXPECT_CALL(c, VideoProcessorGetStreamRect(
+                testing::Eq(std::get<0>(params)),
+                testing::Eq(std::get<1>(params)),
+                testing::NotNull(), testing::NotNull()))
+                .WillRepeatedly(testing::DoAll(
+                    testing::SetArgPointee<2>(std::get<2>(params)),
+                    testing::SetArgPointee<3>(std::get<3>(params))
+                ));
+        }
+
+        template <typename T, typename U>
+        inline
+        typename std::enable_if<
+        std::conjunction<std::is_integral<T>, std::is_integral<U> >::value
+        >::type mock_context(context& c, std::tuple<ID3D11VideoProcessor*, T, U, D3D11_VIDEO_PROCESSOR_ROTATION> params)
+        {
+            //void VideoProcessorSetStreamRotation(ID3D11VideoProcessor*, UINT, BOOL, D3D11_VIDEO_PROCESSOR_ROTATION)
+            EXPECT_CALL(c, VideoProcessorSetStreamRotation(
+                testing::Eq(std::get<0>(params)),
+                testing::Eq(std::get<1>(params)),
+                testing::Eq(std::get<2>(params)),
+                testing::Eq(std::get<3>(params))
+            ));
+
+            //void VideoProcessorGetStreamRotation(ID3D11VideoProcessor*, UINT, BOOL*, D3D11_VIDEO_PROCESSOR_ROTATION*)
+            EXPECT_CALL(c, VideoProcessorGetStreamRotation(
                 testing::Eq(std::get<0>(params)),
                 testing::Eq(std::get<1>(params)),
                 testing::NotNull(), testing::NotNull()))

@@ -113,8 +113,8 @@ static mfxU32 CheckSegmentMap(
     const mfxU16 frameHeight = frameHeightTemp ? frameHeightTemp : fiTemp.Height;
 
     const mfxU16 blockSize = seg.SegmentIdBlockSize > 0 ? seg.SegmentIdBlockSize : MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32;
-    const mfxU16 widthInBlocks = CeilDiv(frameWidth, blockSize);
-    const mfxU16 heightInBlocks = CeilDiv(frameHeight, blockSize);
+    const mfxU16 widthInBlocks  = mfx::CeilDiv(frameWidth, blockSize);
+    const mfxU16 heightInBlocks = mfx::CeilDiv(frameHeight, blockSize);
 
     if (seg.NumSegmentIdAlloc && seg.NumSegmentIdAlloc < static_cast<mfxU32>(widthInBlocks) * heightInBlocks)
         invalid++;

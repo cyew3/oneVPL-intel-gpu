@@ -18,7 +18,7 @@
     </MfxIncludes>
     <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
     <MfxTargetName>$(ProjectName)</MfxTargetName>
-    <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;PRE_SI_TARGET_PLATFORM_GEN12;$(MfxDefinitions);</MfxDefinitions>
+    <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;$(MfxDefinitions);</MfxDefinitions>
     <MfxDefinitions Condition="'$(Platform)'=='x64'">MFX_ENABLE_UNIT_TEST_MULTI_ADAPTER;$(MfxDefinitions);</MfxDefinitions>
     <MfxLibraries>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;</MfxLibraries>
     <MfxLibraries Condition="'$(Platform)'=='Win32'">$(MSDK_STUDIO_ROOT)\..\contrib\detours\lib.X86\detours.lib;$(MfxLibraries)</MfxLibraries>

@@ -25,6 +25,8 @@
     <NMakeBuildCommandLine>$(MfxDetoursMakeCommand) $(NMakePreprocessorDefinitions)</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>$(MfxDetoursMakeCommand) $(NMakePreprocessorDefinitions) clean</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(MfxDetoursMakeCommand) $(NMakePreprocessorDefinitions) clean all</NMakeReBuildCommandLine>
+    <NMakeOutput Condition="'$(Platform)'=='Win32'">$(MSDK_STUDIO_ROOT)\..\contrib\detours\lib.X86\detours.lib</NMakeOutput>
+    <NMakeOutput Condition="'$(Platform)'=='x64'">$(MSDK_STUDIO_ROOT)\..\contrib\detours\lib.X64\detours.lib</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>

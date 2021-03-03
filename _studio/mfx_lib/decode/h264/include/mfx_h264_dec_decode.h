@@ -85,6 +85,9 @@ public:
 
     mfxStatus RunThread(ThreadTaskInfo*, mfxU32 /*threadNumber*/);
 
+#if defined(MFX_ONEVPL)
+    virtual mfxFrameSurface1* GetSurface() override;
+#endif
 protected:
     static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
@@ -113,11 +116,13 @@ protected:
 #endif
 
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
-
+#if defined(MFX_ONEVPL)
+    mfxFrameSurface1 * GetInternalSurface(mfxFrameSurface1 *surface);
+#endif
     std::unique_ptr<UMC::MFXTaskSupplier>  m_pH264VideoDecoder;
-    mfx_UMC_MemAllocator            m_MemoryAllocator;
+    mfx_UMC_MemAllocator                   m_MemoryAllocator;
 
-    std::unique_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
+    std::unique_ptr<SurfaceSource>         m_surface_source;
 
     mfxVideoParamWrapper m_vInitPar;
     mfxVideoParamWrapper m_vFirstPar;
@@ -133,7 +138,7 @@ protected:
 
     mfxFrameAllocResponse m_response;
     mfxFrameAllocResponse m_response_alien;
-    mfxDecodeStat m_stat;
+    mfxDecodeStat m_stat = {};
     eMFXPlatform m_platform;
 
     UMC::Mutex m_mGuard;

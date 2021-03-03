@@ -207,6 +207,8 @@ namespace UMC_MPEG2_DECODER
 
     MPEG2DecoderFrame::~MPEG2DecoderFrame()
     {
+        auto fd = GetFrameData();
+        fd->m_locked = false;
     }
 
     void MPEG2DecoderFrame::Reset()

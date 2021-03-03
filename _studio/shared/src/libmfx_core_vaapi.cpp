@@ -246,6 +246,13 @@ mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
                     return mfxRes;
                 }
             }
+
+#if !defined STRIP_EMBARGO && defined(MFX_ONEVPL)
+            // TODO: restore switchers
+            this->m_enabled20Interface = dynamic_cast<VAAPIVideoCORE20*>(this) && (m_HWType == MFX_HW_XE_HP /* || m_HWType == MFX_HW_DG2 */ );
+#else
+            this->m_enabled20Interface = false;
+#endif
         }
             break;
 
@@ -617,7 +624,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoCORE_T<Base>::DoFastCopyWrapper");
     mfxStatus sts;
 
-    mfxHDL srcHandle = {}, dstHandle = {};
+    mfxHDLPair srcHandle = {}, dstHandle = {};
     mfxMemId srcMemId, dstMemId;
 
     mfxFrameSurface1 srcTempSurface, dstTempSurface;
@@ -657,10 +664,10 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = this->GetExternalFrameHDL(srcMemId, &srcHandle);
+            sts = this->GetExternalFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = srcHandle;
+            srcTempSurface.Data.MemId = &srcHandle;
         }
     }
     else if (srcMemType & MFX_MEMTYPE_INTERNAL_FRAME)
@@ -682,10 +689,10 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = this->GetFrameHDL(srcMemId, &srcHandle);
+            sts = this->GetFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = srcHandle;
+            srcTempSurface.Data.MemId = &srcHandle;
         }
     }
 
@@ -708,10 +715,10 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = this->GetExternalFrameHDL(dstMemId, &dstHandle);
+            sts = this->GetExternalFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = dstHandle;
+            dstTempSurface.Data.MemId = &dstHandle;
         }
     }
     else if (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME)
@@ -733,10 +740,10 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyWrapper(
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = this->GetFrameHDL(dstMemId, &dstHandle);
+            sts = this->GetFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = dstHandle;
+            dstTempSurface.Data.MemId = &dstHandle;
         }
     }
 
@@ -830,8 +837,8 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyExtended(
         {
             MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
 
-            VASurfaceID *va_surf_src = (VASurfaceID*)(pSrc->Data.MemId);
-            VASurfaceID *va_surf_dst = (VASurfaceID*)(pDst->Data.MemId);
+            VASurfaceID *va_surf_src = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
+            VASurfaceID *va_surf_dst = (VASurfaceID*)(((mfxHDLPair *)pDst->Data.MemId)->first);
             MFX_CHECK(va_surf_src != va_surf_dst, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             VAImage va_img_src = {};
@@ -865,7 +872,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyExtended(
             }
             else
             {
-                VASurfaceID *va_surface = (VASurfaceID*)(pSrc->Data.MemId);
+                VASurfaceID *va_surface = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
                 VAImage va_image;
                 VAStatus va_sts;
                 void *pBits = NULL;
@@ -881,7 +888,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyExtended(
 
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy_vid2sys");
-                    mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, &pSrc->Data);
+                    mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, pSrc->Data);
                     MFX_CHECK_STS(sts);
 
                     mfxMemId saveMemId = pSrc->Data.MemId;
@@ -926,7 +933,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyExtended(
         else
         {
             VAStatus va_sts = VA_STATUS_SUCCESS;
-            VASurfaceID *va_surface = (VASurfaceID*)(size_t)pDst->Data.MemId;
+            VASurfaceID *va_surface = (VASurfaceID*)((mfxHDLPair *)pDst->Data.MemId)->first;
             VAImage va_image;
             void *pBits = NULL;
 
@@ -944,7 +951,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::DoFastCopyExtended(
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy_sys2vid");
 
-                mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, &pDst->Data);
+                mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, pDst->Data);
                 MFX_CHECK_STS(sts);
 
                 mfxMemId saveMemId = pDst->Data.MemId;
@@ -1207,13 +1214,328 @@ void* VAAPIVideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
     return Base::QueryCoreInterface(guid);
 } // void* VAAPIVideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
 
-template class VAAPIVideoCORE_T<CommonCORE  >;
-
 bool IsHwMvcEncSupported()
 {
     return false;
 }
 
+#if defined(MFX_ONEVPL)
+VAAPIVideoCORE20::VAAPIVideoCORE20(
+    const mfxU32 adapterNum,
+    const mfxU32 numThreadsAvailable,
+    const mfxSession session)
+    : VAAPIVideoCORE20_base(adapterNum, numThreadsAvailable, session)
+{
+    m_frame_allocator_wrapper.allocator_hw.reset(new FlexibleFrameAllocatorHW_VAAPI(nullptr, m_session));
+
+    m_enabled20Interface = false;
+}
+
+mfxStatus
+VAAPIVideoCORE20::SetHandle(
+    mfxHandleType type,
+    mfxHDL hdl)
+{
+    MFX_SAFE_CALL(VAAPIVideoCORE20_base::SetHandle(type, hdl));
+
+    if (m_enabled20Interface && type == MFX_HANDLE_VA_DISPLAY)
+    {
+        // Pass display to allocator
+        m_frame_allocator_wrapper.SetDevice(m_Display);
+    }
+
+    return MFX_ERR_NONE;
+}
+
+VAAPIVideoCORE20::~VAAPIVideoCORE20()
+{}
+
+mfxStatus VAAPIVideoCORE20::AllocFrames(
+    mfxFrameAllocRequest* request,
+    mfxFrameAllocResponse* response,
+    bool isNeedCopy)
+{
+    if (!m_enabled20Interface)
+        return VAAPIVideoCORE_T<CommonCORE20>::AllocFrames(request, response, isNeedCopy);
+
+    MFX_CHECK_NULL_PTR2(request, response);
+
+    MFX_CHECK(!(request->Type & 0x0004), MFX_ERR_UNSUPPORTED); // 0x0004 means MFX_MEMTYPE_OPAQUE_FRAME
+
+    UMC::AutomaticUMCMutex guard(this->m_guard);
+
+    try
+    {
+        mfxStatus sts = MFX_ERR_NONE;
+
+        if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy && m_Display)
+        {
+            m_pCmCopy.reset(new CmCopyWrapper);
+
+            if (!m_pCmCopy->GetCmDevice(m_Display))
+            {
+                m_bCmCopy = false;
+                m_bCmCopyAllowed = false;
+                m_pCmCopy.reset();
+            }
+            else
+            {
+                sts = m_pCmCopy->Initialize(GetHWType());
+                MFX_CHECK_STS(sts);
+                m_bCmCopy = true;
+            }
+        }
+        else if (m_bCmCopy)
+        {
+            if (m_pCmCopy)
+                m_pCmCopy->ReleaseCmSurfaces();
+            else
+                m_bCmCopy = false;
+        }
+
+        sts = m_frame_allocator_wrapper.Alloc(*request, *response, request->Type & (MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_FROM_PAK));
+
+#if defined(ANDROID)
+        MFX_CHECK(response->NumFrameActual <= 128, MFX_ERR_UNSUPPORTED);
+#endif
+        return TraceFrames(request, response, sts);
+    }
+    catch (...)
+    {
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
+    }
+} // mfxStatus VAAPIVideoCORE20::AllocFrames(...)
+
+
+mfxStatus VAAPIVideoCORE20::ReallocFrame(mfxFrameSurface1 *surf)
+{
+    if (!m_enabled20Interface)
+        return VAAPIVideoCORE_T<CommonCORE20>::ReallocFrame(surf);
+
+    MFX_CHECK_NULL_PTR1(surf);
+
+    return m_frame_allocator_wrapper.ReallocSurface(surf->Info, surf->Data.MemId);
+}
+
+mfxStatus
+VAAPIVideoCORE20::DoFastCopyWrapper(
+    mfxFrameSurface1* pDst,
+    mfxU16 dstMemType,
+    mfxFrameSurface1* pSrc,
+    mfxU16 srcMemType)
+{
+    if (!m_enabled20Interface)
+        return VAAPIVideoCORE_T<CommonCORE20>::DoFastCopyWrapper(pDst, dstMemType, pSrc, srcMemType);
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoCORE20::DoFastCopyWrapper");
+
+    MFX_CHECK_NULL_PTR2(pSrc, pDst);
+
+    // TODO: uncomment underlying checks after additional validation
+    //MFX_CHECK(!pSrc->Data.MemType || MFX_MEMTYPE_BASE(pSrc->Data.MemType) == MFX_MEMTYPE_BASE(srcMemType), MFX_ERR_UNSUPPORTED);
+    //MFX_CHECK(!pDst->Data.MemType || MFX_MEMTYPE_BASE(pDst->Data.MemType) == MFX_MEMTYPE_BASE(dstMemType), MFX_ERR_UNSUPPORTED);
+
+    mfxFrameSurface1 srcTempSurface = *pSrc, dstTempSurface = *pDst;
+    srcTempSurface.Data.MemType = srcMemType;
+    dstTempSurface.Data.MemType = dstMemType;
+
+    mfxFrameSurface1_scoped_lock src_surf_lock(&srcTempSurface, this), dst_surf_lock(&dstTempSurface, this);
+    mfxHDLPair handle_pair_src, handle_pair_dst;
+
+    mfxStatus sts;
+    if (srcTempSurface.Data.MemType & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
+    {
+        clear_frame_data(srcTempSurface.Data);
+        sts = SwitchMemidInSurface(srcTempSurface, handle_pair_src);
+        MFX_CHECK_STS(sts);
+    }
+    else
+    {
+        sts = src_surf_lock.lock(MFX_MAP_READ, SurfaceLockType::LOCK_GENERAL);
+        MFX_CHECK_STS(sts);
+        srcTempSurface.Data.MemId = 0;
+    }
+
+    if (dstTempSurface.Data.MemType & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
+    {
+        clear_frame_data(dstTempSurface.Data);
+        sts = SwitchMemidInSurface(dstTempSurface, handle_pair_dst);
+        MFX_CHECK_STS(sts);
+    }
+    else
+    {
+        sts = dst_surf_lock.lock(MFX_MAP_WRITE, SurfaceLockType::LOCK_GENERAL);
+        MFX_CHECK_STS(sts);
+        dstTempSurface.Data.MemId = 0;
+    }
+
+    sts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
+    MFX_CHECK_STS(sts);
+
+    sts = src_surf_lock.unlock();
+    MFX_CHECK_STS(sts);
+
+    return dst_surf_lock.unlock();
+}
+
+mfxStatus
+VAAPIVideoCORE20::DoFastCopyExtended(
+    mfxFrameSurface1* pDst,
+    mfxFrameSurface1* pSrc)
+{
+    if (!m_enabled20Interface)
+        return VAAPIVideoCORE_T<CommonCORE20>::DoFastCopyExtended(pDst, pSrc);
+
+    MFX_CHECK_NULL_PTR2(pDst, pSrc);
+
+    mfxU8 *srcPtr, *dstPtr;
+
+    mfxStatus sts = GetFramePointerChecked(pSrc->Info, pSrc->Data, &srcPtr);
+    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
+    sts = GetFramePointerChecked(pDst->Info, pDst->Data, &dstPtr);
+    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    // check that only memId or pointer are passed
+    // otherwise don't know which type of memory copying is requested
+    MFX_CHECK(!dstPtr || !pDst->Data.MemId, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(!srcPtr || !pSrc->Data.MemId, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    IppiSize roi = { min(pSrc->Info.Width, pDst->Info.Width), min(pSrc->Info.Height, pDst->Info.Height) };
+
+    // check that region of interest is valid
+    MFX_CHECK(roi.width && roi.height, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    bool canUseCMCopy = m_bCmCopy && CmCopyWrapper::CanUseCmCopy(pDst, pSrc);
+
+    if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
+    {
+        if (canUseCMCopy)
+        {
+            return m_pCmCopy->CopyVideoToVideo(pDst, pSrc);
+        }
+
+        MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
+
+        VASurfaceID *va_surf_src = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
+        VASurfaceID *va_surf_dst = (VASurfaceID*)(((mfxHDLPair *)pDst->Data.MemId)->first);
+        MFX_CHECK(va_surf_src != va_surf_dst, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK_HDL(va_surf_src);
+        MFX_CHECK_HDL(va_surf_dst);
+
+        SurfaceScopedLock src_lock(m_Display, *va_surf_src);
+        sts = src_lock.DeriveImage();
+        MFX_CHECK_STS(sts);
+
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaPutImage");
+            VAStatus va_sts = vaPutImage(m_Display, *va_surf_dst, src_lock.m_image.image_id,
+                0, 0, roi.width, roi.height,
+                0, 0, roi.width, roi.height);
+            MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+        }
+
+        return src_lock.DestroyImage();
+    }
+
+    if (NULL != pSrc->Data.MemId && NULL != dstPtr)
+    {
+        MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
+
+        if (canUseCMCopy)
+        {
+            return m_pCmCopy->CopyVideoToSys(pDst, pSrc);
+        }
+
+        VASurfaceID *va_surface = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
+        MFX_CHECK_HDL(va_surface);
+
+        SurfaceScopedLock src_lock(m_Display, *va_surface);
+        sts = src_lock.DeriveImage();
+        MFX_CHECK_STS(sts);
+
+        mfxU8* pBits;
+        sts = src_lock.Map(pBits);
+        MFX_CHECK_STS(sts);
+
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy_vid2sys");
+            mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(src_lock.m_image, pDst->Info.FourCC, pBits, pSrc->Data);
+            MFX_CHECK_STS(sts);
+
+            mfxMemId saveMemId = pSrc->Data.MemId;
+            pSrc->Data.MemId = 0;
+
+            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_VIDEO_TO_SYS); // sw copy
+            MFX_CHECK_STS(sts);
+
+            pSrc->Data.MemId = saveMemId;
+            MFX_CHECK_STS(sts);
+        }
+
+        sts = src_lock.Unmap();
+        MFX_CHECK_STS(sts);
+
+        return src_lock.DestroyImage();
+    }
+
+    if (NULL != srcPtr && NULL != dstPtr)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy_sys2sys");
+        // system memories were passed
+        // use common way to copy frames
+        return CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_SYS); // sw copy
+    }
+
+    if (NULL != srcPtr && NULL != pDst->Data.MemId)
+    {
+        if (canUseCMCopy)
+        {
+            return m_pCmCopy->CopySysToVideo(pDst, pSrc);
+        }
+
+        MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
+
+        VASurfaceID *va_surface = (VASurfaceID*)(((mfxHDLPair *)pDst->Data.MemId)->first);
+        MFX_CHECK_HDL(va_surface);
+
+        SurfaceScopedLock dst_lock(m_Display, *va_surface);
+        sts = dst_lock.DeriveImage();
+        MFX_CHECK_STS(sts);
+
+        mfxU8* pBits;
+        sts = dst_lock.Map(pBits);
+        MFX_CHECK_STS(sts);
+
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy_sys2vid");
+
+            sts = mfxDefaultAllocatorVAAPI::SetFrameData(dst_lock.m_image, pDst->Info.FourCC, (mfxU8*)pBits, pDst->Data);
+            MFX_CHECK_STS(sts);
+
+            mfxMemId saveMemId = pDst->Data.MemId;
+            pDst->Data.MemId = 0;
+
+            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
+            MFX_CHECK_STS(sts);
+
+            pDst->Data.MemId = saveMemId;
+        }
+
+        sts = dst_lock.Unmap();
+        MFX_CHECK_STS(sts);
+
+        return dst_lock.DestroyImage();
+    }
+
+    MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
+} // mfxStatus VAAPIVideoCORE20::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+
+#endif
+
+template class VAAPIVideoCORE_T<CommonCORE  >;
+#if defined(MFX_ONEVPL)
+template class VAAPIVideoCORE_T<CommonCORE20>;
+#endif
 
 #endif
 /* EOF */

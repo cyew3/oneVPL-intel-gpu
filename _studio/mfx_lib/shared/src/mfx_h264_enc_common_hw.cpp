@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
+#include "libmfx_core.h"
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
 
@@ -8152,14 +8153,39 @@ bool MfxHwH264Encode::IsRecoveryPointSeiMessagePresent(
 }
 
 mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
-    VideoCORE *          core,
-    mfxFrameData const & dst,
-    mfxFrameData const & src,
-    mfxFrameInfo const & info)
+    VideoCORE *               core,
+    mfxMemId                  dstMid,
+    const mfxFrameSurface1&   srcSurf,
+    mfxFrameInfo const&       info)
 {
-    mfxFrameSurface1 surfSrc = MakeSurface(info, src);
-    mfxFrameSurface1 surfDst = MakeSurface(info, dst);
-    return core->DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
+    mfxFrameSurface1 sysSurf = MakeSurface(info, srcSurf);
+
+    mfxStatus sts = MFX_ERR_NONE;
+#ifdef MFX_ONEVPL
+    mfxFrameSurface1_scoped_lock lock(&sysSurf, reinterpret_cast<CommonCORE20*>(core));
+    sts = lock.lock();
+    MFX_CHECK_STS(sts);
+#else
+    FrameLocker lock(core, sysSurf.Data, true);
+#endif
+    MFX_CHECK(sysSurf.Data.Y != 0, MFX_ERR_LOCK_MEMORY);
+
+    mfxFrameSurface1 vidSurf = MakeSurface(info, dstMid);
+
+    sts = core->DoFastCopyWrapper(
+        &vidSurf,
+        MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE,
+        &sysSurf,
+        MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
+    MFX_CHECK_STS(sts);
+
+#ifdef MFX_ONEVPL
+    sts = lock.unlock();
+#else
+    sts = lock.Unlock();
+#endif
+
+    return sts;
 }
 
 #if 0 // removed dependency from file operations
@@ -8870,7 +8896,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     }
     if (   mfx.RateControlMethod == MFX_RATECONTROL_LA
         || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+#if !defined(MFX_ONEVPL)
         || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
 #endif
         )
@@ -9008,7 +9034,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
     }
     if (   mfx.RateControlMethod == MFX_RATECONTROL_LA
         || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
+#if !defined(MFX_ONEVPL)
         || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
 #endif
         )

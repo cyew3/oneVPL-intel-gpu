@@ -411,7 +411,7 @@ MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxStructVersion       Version;                      /*!< Version of the structure. */
     mfxImplType            Impl;                         /*!< Impl type: software/hardware. */
-    mfxAccelerationMode    AccelerationMode;             /*!< Hardware acceleration stack to use. OS dependent parameter. Use VA for Linux* and DX* for Windows*. */
+    mfxAccelerationMode    AccelerationMode;             /*!< Default Hardware acceleration stack to use. OS dependent parameter. Use VA for Linux* and DX* for Windows*. */
     mfxVersion             ApiVersion;                   /*!< Supported API version. */
     mfxChar                ImplName[MFX_IMPL_NAME_LEN];  /*!< Null-terminated string with implementation name given by vendor. */
     mfxChar                License[MFX_STRFIELD_LEN];    /*!< Null-terminated string with comma-separated list of license names of the implementation. */

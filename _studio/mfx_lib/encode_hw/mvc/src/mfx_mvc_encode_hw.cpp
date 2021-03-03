@@ -2860,29 +2860,16 @@ mfxStatus ImplementationMvc::CopyRawSurface(DdiTask const & task)
 {
     if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
-        mfxFrameData d3dSurf = {};
-        mfxFrameData sysSurf = task.m_yuv->Data;
-
         mfxU32 numRawSurfPerView = CalcNumSurfRaw(m_video);
 
         mfxU32 encIdx = m_numEncs > 1 ? task.m_viewIdx : 0;
-        //FrameLocker lock1(m_core, d3dSurf, m_raw[encIdx].mids[task.m_idx + m_numEncs > 1 ? 0 : task.m_viewIdx * numRawSurfPerView]);
-        //MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-        d3dSurf.MemId = m_raw[encIdx].mids[task.m_idx + m_numEncs > 1 ? 0 : task.m_viewIdx * numRawSurfPerView];
-        FrameLocker lock2(m_core, sysSurf, true);
-        MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+        mfxMemId mid = m_raw[encIdx].mids[task.m_idx + m_numEncs > 1 ? 0 : task.m_viewIdx * numRawSurfPerView];
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
-            mfxStatus sts = CopyFrameDataBothFields(m_core, d3dSurf, sysSurf, m_video.mfx.FrameInfo);
+            mfxStatus sts = CopyFrameDataBothFields(m_core, mid, *task.m_yuv, m_video.mfx.FrameInfo);
             MFX_CHECK_STS(sts);
         }
-
-        mfxStatus sts = lock2.Unlock();
-        MFX_CHECK_STS(sts);
-
-        //sts = lock1.Unlock();
-        //MFX_CHECK_STS(sts);
     }
 
     return MFX_ERR_NONE;
