@@ -463,9 +463,9 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
             impl.AccelerationMode = core.GetVAType() == MFX_HW_VAAPI ? MFX_ACCEL_MODE_VIA_VAAPI : MFX_ACCEL_MODE_VIA_D3D11;
 
             snprintf(impl.Dev.DeviceID, sizeof(impl.Dev.DeviceID), "%x", deviceId);
+            snprintf(impl.ImplName, sizeof(impl.ImplName), "mfx-gen");
 
             //TODO:
-            impl.ImplName;
             impl.License;
             impl.Keywords;
 
