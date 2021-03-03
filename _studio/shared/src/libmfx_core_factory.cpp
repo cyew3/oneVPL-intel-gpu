@@ -45,8 +45,7 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
 {
     (void)adapterNum;
 
-    // TODO: currently oneVPL core is switched off. Switch on will be a separate commit
-    bool create_msdk20_core = false; //mfx::GetEnv("MFX_CORE_INTERNAL_ALLOCATION_API_ENABLE", true);
+    bool create_msdk20_core = mfx::GetEnv("MFX_CORE_INTERNAL_ALLOCATION_API_ENABLE", true);
     std::ignore = create_msdk20_core;
 
     switch (va_type)
