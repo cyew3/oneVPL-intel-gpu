@@ -161,8 +161,6 @@ struct sCommandlineParams
   vm_char        strOutlineFile[MAX_FILE_PATH];     //output used by outline render
   vm_char        strOutlineInputFile[MAX_FILE_PATH];//input used by outline reader
 
-  vm_char        pMFXLibraryPath[MAX_FILE_PATH];
-
   mfxU32         nHRDBufSizeInKB;
   mfxU32         nHRDInitDelayInKB;
   mfxU32         nMaxBitrate;

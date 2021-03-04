@@ -906,11 +906,15 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
     m_bStat = false;
 
     if(NULL != m_components[eDEC].m_pSession)
+    {
         m_components[eDEC].m_pSession->Close();
+        m_components[eDEC].ReleaseLoader();
+    }
 
     if (m_components[eREN].m_libType != m_components[eDEC].m_libType && NULL != m_components[eREN].m_pSession)
     {
         m_components[eREN].m_pSession->Close();
+        m_components[eREN].ReleaseLoader();
     }
 
     m_bitstreamBuf.Close();
@@ -1140,7 +1144,10 @@ mfxStatus MFXDecPipeline::HeavyReset()
     m_components[eVPP].m_SyncPoints.clear();
 
     if(NULL != m_components[eDEC].m_pSession)
+    {
+        m_components[eDEC].ReleaseLoader();
         m_components[eDEC].m_pSession->Close();
+    }
 
     MFX_CHECK_STS_SET_ERR(CreateCore(), PE_INIT_CORE);
     TIME_PRINT(VM_STRING("CreateCore"));
@@ -1248,29 +1255,10 @@ mfxStatus MFXDecPipeline::CreateCore()
                 , (int)(nDriverVersion & 0xFFFF ));
         }
 #endif
-        if ( m_inParams.bInitEx )
-        {
-            mfxInitParam params;
-            MFX_ZERO_MEM(params);
-            params.ExternalThreads = 0;
-            params.GPUCopy         = m_inParams.nGpuCopyMode;
-            params.Implementation  = m_components[eDEC].m_libType;
-            params.ExtParam        = 0;
-            params.NumExtParam     = 0;
-            params.Version.Major   = MFX_VERSION_MAJOR;
-            params.Version.Minor   = MFX_VERSION_MINOR;
-            if ( m_components[eDEC].m_pLibVersion )
-                params.Version     = *(m_components[eDEC].m_pLibVersion);
-            MFX_CHECK_STS(m_components[eDEC].m_pSession->InitEx(params, m_inParams.pMFXLibraryPath));
-        }
-        else
-        {
-            MFX_CHECK_STS(m_components[eDEC].m_pSession->Init(m_components[eDEC].m_libType, m_components[eDEC].m_pLibVersion, m_inParams.pMFXLibraryPath));
-        }
 
+        MFX_CHECK_STS(m_components[eDEC].ConfigureLoader());
+        MFX_CHECK_STS(m_components[eDEC].m_pSession->CreateSession(m_components[eDEC].m_Loader, m_components[eDEC].m_implIndex));
     }
-
-    MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&m_components[eDEC].m_RealImpl));
 
     //preparation for loading second session
     ComponentParams *pSecondParams = NULL;
@@ -1312,9 +1300,8 @@ mfxStatus MFXDecPipeline::CreateCore()
 
     if (NULL != pSecondParams)
     {
-        //creating second session
-        MFX_CHECK_STS(pSecondParams->m_pSession->Init(pSecondParams->m_libType, pSecondParams->m_pLibVersion, m_inParams.pMFXLibraryPath));
-        MFX_CHECK_STS(pSecondParams->m_pSession->QueryIMPL(&pSecondParams->m_RealImpl));
+        MFX_CHECK_STS(pSecondParams->ConfigureLoader());
+        MFX_CHECK_STS(pSecondParams->m_pSession->CreateSession(pSecondParams->m_Loader, pSecondParams->m_implIndex));
 
         //join second session if necessary
 #if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
@@ -4191,7 +4178,13 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else if (m_OptProc.Check(argv[0], VM_STRING("-sw|-swlib"), VM_STRING("use pure-software MediaSDK library (libmfxswXX.dll)")))
         {
             //SET_GLOBAL_PARAM(m_libType, MFX_IMPL_SOFTWARE);
-            std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_SOFTWARE));
+            std::for_each(m_components.begin(), m_components.end(),
+                [](ComponentParams& p)
+                {
+                    p.m_accelerationMode  = MFX_ACCEL_MODE_NA;
+                    p.m_libType           = MFX_IMPL_SOFTWARE;
+                }
+            );
         }
         else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-hw( |:1|:2|:3|:4|:default)")
             , VM_STRING("use hardware-accelerated MediaSDK library (libmfxhw*.dll), also particular device id might be specified"))))
@@ -4222,12 +4215,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else if (m_OptProc.Check(argv[0], VM_STRING("-auto:any"), VM_STRING("automatically select MediaSDK library (SW or HW), for HW library any suitable device will be used")))
         {
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_AUTO_ANY));
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-mfxdll"), VM_STRING("load MediaSDK DLL library from explicit dll path"), OPT_FILENAME))
-        {
-            MFX_CHECK(1 + argv != argvEnd);
-            MFX_CHECK(0==vm_string_strcpy_s(m_inParams.pMFXLibraryPath,  MFX_ARRAY_SIZE(m_inParams.pMFXLibraryPath), argv[1]));
-            argv++;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-InputFile|-i|--input"), VM_STRING("input file"), OPT_FILENAME)||
             0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(")VM_STRING(MFX_FOURCC_PATTERN())VM_STRING(")"), VM_STRING("input file is raw YUV, or RGB color format"), OPT_FILENAME)))
@@ -4390,15 +4377,36 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-d3d9"), VM_STRING("HW library uses d3d9 interfaces internally. SW Mediasdk library uses external memory as d3d9")))
     {
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D9));
+        std::for_each(m_components.begin(), m_components.end(),
+            [](ComponentParams& p)
+            {
+                p.m_accelerationMode  = MFX_ACCEL_MODE_VIA_D3D9;
+                p.m_libType           = MFX_IMPL_VIA_D3D9;
+            }
+        );
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-d3d11"), VM_STRING("HW library uses d3d11 interfaces internally. SW Mediasdk library uses external memory as d3d11")))
     {
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D11));
+
+        std::for_each(m_components.begin(), m_components.end(),
+            [](ComponentParams& p)
+            {
+                p.m_accelerationMode  = MFX_ACCEL_MODE_VIA_D3D11;
+                p.m_libType           = MFX_IMPL_VIA_D3D11;
+            }
+        );
     }
     else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-(d|dec:d|enc:d)3d11:single_texture"), VM_STRING("HW library uses d3d11 interfaces internally. d3d11 allocator uses single texture model, instead of single subresource model for particular memory pool"))))
     {
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D11));
+
+        std::for_each(m_components.begin(), m_components.end(),
+            [](ComponentParams& p)
+            {
+                p.m_accelerationMode  = MFX_ACCEL_MODE_VIA_D3D11;
+                p.m_libType           = MFX_IMPL_VIA_D3D11;
+            }
+        );
+
         switch (nPattern)
         {
         case 1:
@@ -4607,6 +4615,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else if (!vm_string_stricmp(sub_option, VM_STRING("sw")))
         {
             component->m_libType = MFX_IMPL_SOFTWARE;
+            component->m_accelerationMode = MFX_ACCEL_MODE_NA;
         }
         else if (!vm_string_stricmp(sub_option, VM_STRING("hw")))
         {

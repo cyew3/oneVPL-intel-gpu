@@ -30,183 +30,9 @@ File Name: .h
 // TODO: decouple dispatcher logic from player
 #include "mfx_dispatcher.h"
 
-const struct
-{
-    // instance''s implementation type
-    eMfxImplType implType;
-    // real implementation
-    mfxIMPL impl;
-    // adapter's numbers
-    mfxU32 adapterID;
-
-} myimplTypes[] =
-{
-    // MFX_IMPL_AUTO case
-    {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE, 0},
-    {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE, 0},
-
-    // MFX_IMPL_ANY case
-    {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE, 0},
-    {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE2, 1},
-    {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE3, 2},
-    {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE4, 3},
-    {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE, 0}
-};
-
-const struct
-{
-    // start index in implTypes table for specified implementation
-    mfxU32 minIndex;
-    // last index in implTypes table for specified implementation
-    mfxU32 maxIndex;
-
-} myimplTypesRange[] =
-{
-    // MFX_IMPL_AUTO
-    {0, 1},
-    // MFX_IMPL_SOFTWARE
-    {1, 1},
-    // MFX_IMPL_HARDWARE
-    {0, 0},
-    // MFX_IMPL_AUTO_ANY
-    {2, 6},
-    // MFX_IMPL_HARDWARE_ANY
-    {2, 5},
-    // MFX_IMPL_HARDWARE2
-    {3, 3},
-    // MFX_IMPL_HARDWARE3
-    {4, 4},
-    // MFX_IMPL_HARDWARE4
-    {5, 5}
-};
-mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
-{
-//#if 1
-#if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1) && !defined(MFX_ONEVPL)
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    mfxVersion ver = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
-    MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(NULL == pVer ? ver: *pVer);
-    if (!pHandle) return MFX_ERR_MEMORY_ALLOC;
-
-    wchar_t path[MAX_PATH];
-#if defined(_WIN32) || defined(_WIN64)
-    #ifdef UNICODE
-        swprintf(path, L"%s", pMFXLibraryPath);
-    #else
-        swprintf(path, L"%S", pMFXLibraryPath);
-    #endif
 #else
-    vm_string_sprintf(path, "%s", pMFXLibraryPath);
-#endif
-
-    // implementation method masked from the input parameter
-    const mfxIMPL implMethod = impl & (MFX_IMPL_VIA_ANY - 1);
-    // implementation interface masked from the input parameter
-    const mfxIMPL implInterface = impl & -MFX_IMPL_VIA_ANY;
-    mfxU32 curImplIdx, maxImplIdx;
-
-    curImplIdx = myimplTypesRange[implMethod].minIndex;
-    maxImplIdx = myimplTypesRange[implMethod].maxIndex;
-
-    do
-    {
-        if (MFX_ERR_NONE == mfxRes)
-        {
-            mfxInitParam par;
-
-            memset(&par, 0, sizeof(mfxInitParam));
-            // try to load the selected DLL using default DLL search mechanism
-            mfxRes = pHandle->LoadSelectedDLL(path,
-                                     myimplTypes[curImplIdx].implType,
-                                     myimplTypes[curImplIdx].impl,
-                                     implInterface,
-                                     par);
-            // unload the failed DLL
-            if ((MFX_ERR_NONE != mfxRes) &&
-                (MFX_WRN_PARTIAL_ACCELERATION != mfxRes))
-            {
-                pHandle->UnLoadSelectedDLL();
-            }
-        }
-    }
-    while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
-
-    if (MFX_ERR_NONE == mfxRes)
-    {
-        *((MFX_DISP_HANDLE **) session) = pHandle;
-    }
-    return mfxRes;
-#else
-    return MFXInit(impl, pVer, session);
-#endif
-}
-
-mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSession *session)
-{
-//#if 1
-#if defined(MFX_ONEVPL)
-    return MFXInitEx(par, session);
-#elif (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(par.Version);
-    if (!pHandle) return MFX_ERR_MEMORY_ALLOC;
-
-    wchar_t path[MAX_PATH];
-#if defined(_WIN32) || defined(_WIN64)
-    #ifdef UNICODE
-        swprintf(path, L"%s", pMFXLibraryPath);
-    #else
-        swprintf(path, L"%S", pMFXLibraryPath);
-    #endif
-#else
-    vm_string_sprintf(path, "%s", pMFXLibraryPath);
-#endif
-
-    // implementation method masked from the input parameter
-    const mfxIMPL implMethod = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
-    // implementation interface masked from the input parameter
-    const mfxIMPL implInterface = par.Implementation & -MFX_IMPL_VIA_ANY;
-    mfxU32 curImplIdx, maxImplIdx;
-
-    curImplIdx = myimplTypesRange[implMethod].minIndex;
-    maxImplIdx = myimplTypesRange[implMethod].maxIndex;
-
-    do
-    {
-        if (MFX_ERR_NONE == mfxRes)
-        {
-            // try to load the selected DLL using default DLL search mechanism
-            mfxRes = pHandle->LoadSelectedDLL(path,
-                                     myimplTypes[curImplIdx].implType,
-                                     myimplTypes[curImplIdx].impl,
-                                     implInterface,
-                                     par);
-            // unload the failed DLL
-            if ((MFX_ERR_NONE != mfxRes) &&
-                (MFX_WRN_PARTIAL_ACCELERATION != mfxRes))
-            {
-                pHandle->UnLoadSelectedDLL();
-            }
-        }
-    }
-    while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
-
-    if (MFX_ERR_NONE == mfxRes)
-    {
-        *((MFX_DISP_HANDLE **) session) = pHandle;
-    }
-    return mfxRes;
-#else
-    return MFXInitEx(par, session);
-#endif
-}
-#else     
 #include <mfxvideo.h>
-#if !defined(MFX_ONEVPL)
-#include <mfxaudio.h>
-#include "mfxenc.h"
-#include "mfxpak.h"
-#endif
+#include "mfxdispatcher.h"
 
 #include <iostream>
 #include <string>
@@ -251,6 +77,16 @@ static int PrintLibMFXPath(struct dl_phdr_info *info, size_t size, void *data)
     return 0;
 }
 
+mfxStatus myMFXCreateSession(mfxLoader loader, mfxU32 implIndex, mfxSession *session)
+{
+    mfxStatus res = MFXCreateSession(loader, implIndex, session);
+#if (defined(LINUX32) || defined(LINUX64))
+    dl_iterate_phdr(PrintLibMFXPath, NULL);
+#endif
+    return res;
+}
+
+#if !defined(MFX_ONEVPl)
 mfxStatus MFXInitAndPrintLibMFXPath(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
 {
     mfxStatus res = MFXInit(impl, pVer, session);
@@ -268,6 +104,7 @@ mfxStatus MFXInitExAndPrintLibMFXPath(mfxInitParam par, mfxSession *session)
 #endif
     return res;
 }
+#endif // #if !defined(MFX_ONEVPl)
 
 #include "mfxvp8.h"
 #include "mfxvp9.h"

@@ -25,33 +25,10 @@ public:
     { 
     }
     virtual ~MFXVideoSessionImpl(void) { Close(); }
-    virtual  mfxStatus Init(mfxIMPL impl, mfxVersion *ver, const tstring &libraryPath)
-    {
-        m_externalImpl = impl;
-#if !(defined(LINUX32) || defined(LINUX64))
-        if (!libraryPath.empty())
-        {
 
-            return myMFXInit(libraryPath.c_str(), impl, ver, &m_session);
-        } else
-#endif // #if !(defined(LINUX32) || defined(LINUX64))
-        {
-            return MFXInitAndPrintLibMFXPath(impl, ver, &m_session);
-        }
-    }
-
-    virtual  mfxStatus InitEx(mfxInitParam par, const tstring &libraryPath)
+    virtual mfxStatus CreateSession(mfxLoader loader, mfxU32 implIndex)
     {
-        m_externalImpl = par.Implementation;
-#if !(defined(LINUX32) || defined(LINUX64))
-        if (!libraryPath.empty())
-        {
-            return myMFXInitEx(libraryPath.c_str(), par, &m_session);
-        } else
-#endif // #if !(defined(LINUX32) || defined(LINUX64))
-        {
-            return MFXInitExAndPrintLibMFXPath(par, &m_session);
-        }
+        return myMFXCreateSession(loader, implIndex, &m_session);
     }
 
     virtual mfxStatus QueryIMPLExternal(mfxIMPL *impl)

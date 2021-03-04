@@ -20,9 +20,8 @@ File Name: mfx_ivideo_session.h
 class IVideoSession : public EnableProxyForThis<IVideoSession>
 {
 public:
-    //different from mediasdk's init
-    virtual mfxStatus Init(mfxIMPL impl, mfxVersion *ver, const tstring &libraryPath) = 0;
-    virtual mfxStatus InitEx(mfxInitParam par, const tstring &libraryPath) = 0;
+
+    virtual mfxStatus CreateSession(mfxLoader loader, mfxU32 implIndex) = 0;
     virtual mfxStatus Close() = 0;
     virtual mfxStatus QueryIMPL(mfxIMPL *impl)  = 0;
     virtual mfxStatus QueryIMPLExternal(mfxIMPL *impl) = 0;
@@ -52,8 +51,8 @@ public:
         : base(std::move(pSession))
     {
     }
-    virtual mfxStatus Init(mfxIMPL impl, mfxVersion *ver, const tstring &libraryPath) { return Target().Init(impl, ver, libraryPath); }
-    virtual mfxStatus InitEx(mfxInitParam par, const tstring &libraryPath) { return Target().InitEx(par, libraryPath); }
+
+    virtual mfxStatus CreateSession(mfxLoader loader, mfxU32 implIndex) { return Target().CreateSession(loader, implIndex); };
     virtual mfxStatus Close(){ return Target().Close(); }
     virtual mfxStatus QueryIMPL(mfxIMPL *impl) { return Target().QueryIMPL(impl); }
     virtual mfxStatus QueryIMPLExternal(mfxIMPL *impl) { return Target().QueryIMPLExternal(impl);}

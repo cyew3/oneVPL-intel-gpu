@@ -14,6 +14,7 @@ File Name: .h
 
 #include "mfxstructures.h"
 #include <vector>
+#include "mfxdispatcher.h"
 
 //////////////////////////////////////////////////////////////////////////
 //trace support functions
@@ -131,10 +132,7 @@ tstring          FileNameWithId(const vm_char * pInputFileName, int nPosition);
 mfxStatus        CheckStatusMultiSkip(mfxStatus status_to_check, ... );
 
 // Load specific MFX library
-mfxStatus       myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pVer, mfxSession *session);
-mfxStatus       myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSession *session);
-mfxStatus       MFXInitAndPrintLibMFXPath(mfxIMPL impl, mfxVersion *pVer, mfxSession *session);
-mfxStatus       MFXInitExAndPrintLibMFXPath(mfxInitParam par, mfxSession *session);
+mfxStatus       myMFXCreateSession(mfxLoader loader, mfxU32 implIndex, mfxSession *session);
 
 //bitstreams utils
 class BSUtil

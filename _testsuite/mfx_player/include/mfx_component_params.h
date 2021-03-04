@@ -24,6 +24,7 @@ File Name: .h
 #include "mfx_ifactory.h"
 #include "mfx_shared_ptr.h"
 #include "mfx_factory_default.h"
+#include "mfxdispatcher.h"
 
 #define NOT_ASSIGNED_VALUE 0xFFF
 
@@ -38,6 +39,7 @@ public:
         , m_ShortName(short_name)
         , m_params()
         , m_libType(MFX_IMPL_SOFTWARE)
+        , m_accelerationMode(MFX_ACCEL_MODE_NA)
         , m_bD39Feat(false)
         , m_pLibVersion()
         , m_RealImpl(m_libType)
@@ -50,6 +52,7 @@ public:
         , m_nMaxAsync(1)
         , m_fFrameRate()
         , m_bFrameRateUnknown(false)
+        , m_implIndex(-1)
         , m_uiMaxAsyncReached()
         , m_fAverageAsync()
         , m_zoomx()
@@ -82,6 +85,7 @@ public:
               m_params.mfx.FrameInfo.Shift = (mfxU16) -1;    // not set
           m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
           m_bAdaptivePlayback = false;
+          m_idesc = nullptr;
       }
       virtual ~ComponentParams(){}
 
@@ -117,6 +121,9 @@ public:
 
       virtual SurfacesAllocated & RegisterAlloc(const mfxFrameAllocRequest &request);
 
+      virtual mfxStatus ConfigureLoader();
+      virtual mfxStatus ReleaseLoader();
+
 public:
 
     std::vector<mfxI32>            m_SkipModes;
@@ -124,6 +131,9 @@ public:
     tstring                        m_ShortName;
     mfxVideoParam                  m_params;
     mfxIMPL                        m_libType;//composite variable that combines both library type, and memory type
+
+    mfxAccelerationMode            m_accelerationMode;
+
     bool                           m_bD39Feat; // to support D3D9 feature levels when work with D3D11. Applicable with external allocator only (ignore for D3D9 and external sys memory)
     mfxVersion                     m_libVersion;
     mfxVersion                   * m_pLibVersion;
@@ -143,6 +153,12 @@ public:
     //ComponentParams
     mfx_shared_ptr<IVideoSession>  m_Session;
     IVideoSession                * m_pSession;
+
+    // params for vpl dispatcher
+    mfxLoader                           m_Loader;
+    std::vector<mfxConfig>              m_Configs;
+    mfxImplDescription                * m_idesc;
+    mfxU32                              m_implIndex;
 
     //stat params
     mfxU32                         m_uiMaxAsyncReached;
