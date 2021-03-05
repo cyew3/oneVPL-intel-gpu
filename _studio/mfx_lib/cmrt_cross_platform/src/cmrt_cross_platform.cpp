@@ -29,7 +29,7 @@
 #include <devguid.h>
 #endif
 
-#ifdef WIN64
+#if defined(_WIN64)
 
 #   ifdef CMRT_EMU
         const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64_emu.dll");
@@ -39,7 +39,7 @@
         const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64.dll");
 #   endif //CMRT_EMU
 
-#elif defined WIN32
+#elif defined(_WIN32)
 
 #   ifdef CMRT_EMU
         const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt32_emu.dll");
