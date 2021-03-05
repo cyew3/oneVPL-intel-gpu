@@ -204,9 +204,9 @@ enum {
     MFX_PLATFORM_JASPERLAKE     = 32, /*!< Code name Jasper Lake. */
     MFX_PLATFORM_ELKHARTLAKE    = 33, /*!< Code name Elkhart Lake. */
     MFX_PLATFORM_TIGERLAKE      = 40, /*!< Code name Tiger Lake. */
+    MFX_PLATFORM_ROCKETLAKE     = 42, /*!< Code name Rocket Lake. */
+    MFX_PLATFORM_ALDERLAKE_S    = 43, /*!< Code name Alder Lake S. */
 #ifndef STRIP_EMBARGO
-    MFX_PLATFORM_ROCKETLAKE     = 42,
-    MFX_PLATFORM_ALDERLAKE_S    = 43,
     MFX_PLATFORM_ALDERLAKE_P    = 44,
     MFX_PLATFORM_PONTE_VECCHIO  = 45,
     MFX_PLATFORM_DG2            = 46,
