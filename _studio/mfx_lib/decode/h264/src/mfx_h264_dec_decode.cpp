@@ -1255,12 +1255,7 @@ mfxStatus VideoDECODEH264::RunThread(ThreadTaskInfo* info, mfxU32 threadNumber)
 
         mfxI32 index = m_surface_source->FindSurface(info->surface_out, m_isOpaq);
         pFrame = m_pH264VideoDecoder->FindSurface((UMC::FrameMemID)index);
-
-        if (!pFrame || pFrame->m_UID == -1)
-        {
-            VM_ASSERT(false);
-            MFX_RETURN(MFX_ERR_NOT_FOUND);
-        }
+        MFX_CHECK(pFrame && pFrame->m_UID != -1, MFX_ERR_NOT_FOUND);
 
         isDecoded = m_pH264VideoDecoder->CheckDecoding(pFrame);
     }
