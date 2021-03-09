@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -518,7 +518,7 @@ inline void FillCDEF(
     , const FH& bs_fh
     , ENCODE_SET_PICTURE_PARAMETERS_AV1& pps)
 {
-    if (!bs_sh.enable_cdef || bs_fh.CodedLossless)
+    if (!bs_sh.enable_cdef)
         return;
 
     auto& cdef = bs_fh.cdef_params;

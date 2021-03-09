@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -176,90 +176,6 @@ mfxU32 CheckHWLimitations(mfxExtAV1Segmentation& seg)
     return invalid;
 }
 
-inline mfxU32 CheckSegFrameQP(const mfxU16& qp, mfxExtAV1Segmentation& seg)
-{
-    mfxU32 invalid = 0;
-    mfxI32 tempQpForSegs = 0;
-
-    for (mfxU8 i = 0; i < AV1_MAX_NUM_OF_SEGMENTS; i++)
-    {
-        tempQpForSegs = qp + seg.Segment[i].AltQIndex;
-
-        // HW restriction: QpForSegs cannot be negative, and when QpForSegs =0 and segDeltaQ < 0 should be treated as error
-        if (tempQpForSegs < 0 || (tempQpForSegs == 0 && seg.Segment[i].AltQIndex < 0))
-        {
-            seg.Segment[i].AltQIndex = 0;
-            invalid += 1;
-        }
-    }
-
-    return invalid;
-}
-
-inline void GetGopPattern(const mfxVideoParam& par, bool& bIOnly, bool& bIPOnly, bool& bIPB)
-{
-    bIOnly  = par.mfx.GopPicSize == 1;
-    bIPOnly = !bIOnly && par.mfx.GopRefDist <= 1;
-    bIPB    = !bIOnly && !bIPOnly && par.mfx.GopRefDist > 1;
-}
-
-inline mfxU32 CheckSegQP(const mfxVideoParam& par, mfxExtAV1Segmentation& seg)
-{
-    mfxU32 invalid = 0;
-    bool bIOnly    = false;
-    bool bIPOnly   = false;
-    bool bIPB      = false;
-
-    GetGopPattern(par, bIOnly, bIPOnly, bIPB);
-
-    if (bIOnly)
-        invalid += CheckSegFrameQP(par.mfx.QPI, seg);
-    else if (bIPOnly)
-    {
-        invalid += CheckSegFrameQP(par.mfx.QPI, seg);
-        invalid += CheckSegFrameQP(par.mfx.QPP, seg);
-    }
-    else if (bIPB)
-    {
-        invalid += CheckSegFrameQP(par.mfx.QPI, seg);
-        invalid += CheckSegFrameQP(par.mfx.QPP, seg);
-        invalid += CheckSegFrameQP(par.mfx.QPB, seg);
-    }
-    return invalid;
-}
-
-inline mfxU32 CheckSegDeltaForLossless(const mfxVideoParam& par, mfxExtAV1Segmentation& seg)
-{
-    bool bIOnly    = false;
-    bool bIPOnly   = false;
-    bool bIPB      = false;
-
-    GetGopPattern(par, bIOnly, bIPOnly, bIPB);
-
-    const mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
-
-    bool bZeroFrameDelta = !pAuxPar || (pAuxPar->QP.UAcDeltaQ == 0 && pAuxPar->QP.UDcDeltaQ == 0
-        && pAuxPar->QP.VAcDeltaQ == 0 && pAuxPar->QP.VDcDeltaQ == 0 && pAuxPar->QP.YDcDeltaQ == 0);
-
-    bool bLossI  = par.mfx.QPI == 0 && bZeroFrameDelta;
-    bool bLossP  = par.mfx.QPP == 0 && bZeroFrameDelta && (bIPOnly || bIPB);
-    bool bLossB  = par.mfx.QPB == 0 && bZeroFrameDelta && bIPB;
-
-    mfxU32 invalid = 0;
-    MFX_CHECK((bLossI || bLossP || bLossB), invalid);
-
-    for (mfxU8 i = 0; i < AV1_MAX_NUM_OF_SEGMENTS; ++i)
-    {
-        if (seg.Segment[i].AltQIndex != 0)
-        {
-            seg.Segment[i].AltQIndex = 0;
-            invalid += 1;
-        }
-    }
-  
-    return invalid;
-}
-
 mfxStatus CheckAndFixSegmentBuffers(
     const mfxVideoParam& par
     , const ENCODE_CAPS_AV1& caps
@@ -284,9 +200,6 @@ mfxStatus CheckAndFixSegmentBuffers(
     invalid += CheckNumSegments(*pSeg);
 
     invalid += CheckSegmentMap(par, *pAV1, *pSeg);
-
-    invalid += CheckSegQP(par, *pSeg);
-    invalid += CheckSegDeltaForLossless(par, *pSeg);
 
     MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
 
@@ -604,15 +517,6 @@ static void PutSegParamToDPB(const mfxExtAV1Segmentation& par
     UpdateDPB(dpb, par, refreshFrameFlags, SegParamReleaser);
 }
 
-inline void UpdateSegmentLossless(mfxExtAV1Segmentation& seg, FH& fh)
-{
-    if (seg.NumSegments && fh.CodedLossless)
-    {
-        memset(&seg.Segment[0], 0, AV1_MAX_NUM_OF_SEGMENTS * sizeof(mfxAV1SegmentParam));
-        fh.segmentation_params.segmentation_enabled = 0;
-    }
-}
-
 void Segmentation::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT Push)
 {
     Push(BLK_ConfigureTask
@@ -625,8 +529,6 @@ void Segmentation::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT 
 
         auto sts = UpdateFrameHeader(seg, fh, fh.segmentation_params);
         MFX_CHECK_STS(sts);
-
-        UpdateSegmentLossless(seg, fh);
 
         if (fh.refresh_frame_flags)
         {
@@ -643,6 +545,7 @@ void Segmentation::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT 
             seg.SegmentId = nullptr;
             seg.NumSegmentIdAlloc = 0;
         }
+
 
         return MFX_ERR_NONE;
     });

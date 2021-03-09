@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -767,8 +767,7 @@ inline void PackSegmentationParams(BitstreamWriter& bs, FH const& fh)
 
 inline void PackDeltaQParams(BitstreamWriter& bs, FH const& fh)
 {
-    if (fh.quantization_params.base_q_idx)
-        bs.PutBit(fh.delta_q_present); //delta_q_present
+    bs.PutBit(fh.delta_q_present); //delta_q_present
     if (fh.delta_q_present)
     {
         bs.PutBits(2, 0); //delta_q_res
@@ -780,9 +779,6 @@ inline void PackDeltaQParams(BitstreamWriter& bs, FH const& fh)
 
 inline void PackLoopFilterParams(BitstreamWriter& bs, FH const& fh)
 {
-    if (fh.CodedLossless)  
-        return;
-    
     bs.PutBits(6, fh.loop_filter_params.loop_filter_level[0]); //loop_filter_level[0]
     bs.PutBits(6, fh.loop_filter_params.loop_filter_level[1]); //loop_filter_level[1]
     if (fh.loop_filter_params.loop_filter_level[0] || fh.loop_filter_params.loop_filter_level[1])
@@ -797,7 +793,7 @@ inline void PackLoopFilterParams(BitstreamWriter& bs, FH const& fh)
 
 void PackCdefParams(BitstreamWriter& bs, SH const& sh, FH const& fh)
 {
-    if (!sh.enable_cdef || fh.CodedLossless)
+    if (!sh.enable_cdef)
         return;
 
     mfxU16 num_planes = sh.color_config.mono_chrome ? 1 : 3;
@@ -954,9 +950,7 @@ inline void PackFrameHeader(
     PackLRParams(bs, sh, fh);
 
     const mfxU8 tx_mode_select = fh.TxMode ? 1 : 0;
-   
-    if (!fh.CodedLossless)
-        bs.PutBit(tx_mode_select); //tx_mode_select
+    bs.PutBit(tx_mode_select); //tx_mode_select
 
     PackFrameReferenceMode(bs, fh, frameIsIntra);
     PackSkipModeParams(bs, fh);

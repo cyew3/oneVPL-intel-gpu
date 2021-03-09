@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1329,38 +1329,6 @@ void General::PreReorderTask(const FeatureBlocks& blocks, TPushPreRT Push)
 
         return MFX_ERR_NONE;
     });
-}
-
-inline void SetCDEFLossless(FH& fh)
-{
-    fh.cdef_params.cdef_bits               = 0;
-    fh.cdef_params.cdef_y_pri_strength[0]  = 0;
-    fh.cdef_params.cdef_y_sec_strength[0]  = 0;
-    fh.cdef_params.cdef_uv_pri_strength[0] = 0;
-    fh.cdef_params.cdef_uv_sec_strength[0] = 0;
-    fh.cdef_params.cdef_damping            = 3;
-}
-
-inline void SetLoopFilterLossless(FH& fh)
-{
-    fh.loop_filter_params.loop_filter_level[0]                  = 0;
-    fh.loop_filter_params.loop_filter_level[1]                  = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[INTRA_FRAME]   = 1;
-    fh.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME]    = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[LAST2_FRAME]   = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[LAST3_FRAME]   = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[BWDREF_FRAME]  = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[GOLDEN_FRAME]  = -1;
-    fh.loop_filter_params.loop_filter_ref_deltas[ALTREF_FRAME]  = -1;
-    fh.loop_filter_params.loop_filter_ref_deltas[ALTREF2_FRAME] = -1;
-    for (int i = 0; i < MAX_MODE_LF_DELTAS; i++)
-        fh.loop_filter_params.loop_filter_mode_deltas[i] = 0;
-}
-
-inline bool IsLossless(FH& fh)
-{
-    return (fh.quantization_params.base_q_idx == 0 && fh.quantization_params.DeltaQYDc == 0 && fh.quantization_params.DeltaQUAc == 0
-        && fh.quantization_params.DeltaQUDc == 0 && fh.quantization_params.DeltaQVAc == 0 && fh.quantization_params.DeltaQVDc == 0);
 }
 
 void General::PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push)
@@ -3047,6 +3015,10 @@ mfxStatus General::CheckBRC(
         changed += CheckMaxOrClip<mfxU16>(par.mfx.QPP, maxQP);
         changed += CheckMinOrClip<mfxU16>(par.mfx.QPB, minQP);
         changed += CheckMaxOrClip<mfxU16>(par.mfx.QPB, maxQP);
+
+        changed += !par.mfx.QPI && (par.mfx.QPP || par.mfx.QPB);
+        par.mfx.QPP *= !!par.mfx.QPI;
+        par.mfx.QPB *= !!par.mfx.QPI;
     }
 
     changed += par.mfx.BufferSizeInKB && CheckBufferSizeInKB(par, defPar, bd);
@@ -3837,19 +3809,8 @@ mfxStatus General::GetCurrentFrameHeader(
 
     currFH.quantization_params.base_q_idx = task.QpY;
 
-    if (IsLossless(currFH))
-    {
-        currFH.CodedLossless = 1;
-        SetCDEFLossless(currFH);
-        SetLoopFilterLossless(currFH);
-    }
-    else
-    {
-        SetCDEF(dflts, sh, currFH);
-        SetLoopFilterLevels(dflts, currFH);
-    }
-
-    currFH.TxMode = (fh.CodedLossless) ? ONLY_4X4 : TX_MODE_SELECT;
+    SetCDEF(dflts, sh, currFH);
+    SetLoopFilterLevels(dflts, currFH);
 
     currFH.reference_select = GetReferenceMode(task);
 

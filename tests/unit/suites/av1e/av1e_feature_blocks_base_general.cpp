@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -166,7 +166,7 @@ namespace av1e {
             // Todo: Do we need to test all default params? Or several of them are enough
             auto& vpNew = Glob::VideoParam::GetOrConstruct(global);
             EXPECT_EQ(vpNew.mfx.TargetUsage, MFX_TARGETUSAGE_4);
-            EXPECT_EQ(vpNew.mfx.QPI, 0);
+            EXPECT_EQ(vpNew.mfx.QPI, 128);
         }
 
         TEST_F(FeatureBlocksGeneral, SetFH)
