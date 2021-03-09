@@ -1595,7 +1595,6 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
         MFX_CHECK(pSurf, MFX_ERR_NONE);
 
         tpar.pSurfIn = pSurf;
-        tpar.DisplayOrder = ++m_frameOrderTmp;
 
         if (pCtrl)
             tpar.ctrl = *pCtrl;
@@ -1618,6 +1617,11 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
 
         core.IncreaseReference(*tpar.pSurfIn);
 
+        auto  dflts = GetRTDefaults(global);
+
+        m_frameOrder = dflts.base.GetFrameOrder(dflts, task, m_frameOrder);
+        tpar.DisplayOrder = m_frameOrder;
+
         return MFX_ERR_NONE;
     });
 }
@@ -1633,27 +1637,25 @@ void Legacy::PreReorderTask(const FeatureBlocks& /*blocks*/, TPushPreRT Push)
         auto& task = Task::Common::Get(s_task);
         auto  dflts = GetRTDefaults(global);
 
-        m_frameOrder = dflts.base.GetFrameOrder(dflts, s_task, m_frameOrder);
         auto sts = dflts.base.GetPreReorderInfo(
-            dflts, task, task.pSurfIn, &task.ctrl, { LastKeyFrameInfo.lastIDROrder, LastKeyFrameInfo.lastIPOrder, m_prevTask.LastKeyFrameInfo.lastIPoc}, m_frameOrder, task.GopHints);
+            dflts, task, task.pSurfIn, &task.ctrl, { LastKeyFrameInfo.lastIDROrder, LastKeyFrameInfo.lastIPOrder, m_prevTask.LastKeyFrameInfo.lastIPoc}, task.DisplayOrder, task.GopHints);
         MFX_CHECK_STS(sts);
 
         if (par.mfx.EncodedOrder)
         {
             auto BufferSize     = Glob::Reorder::Get(global).BufferSize;
             auto MaxReorder     = Glob::Reorder::Get(global).MaxReorder;
-            bool bFrameFromPast = m_frameOrder && (m_frameOrder < m_prevTask.DisplayOrder);
+            bool bFrameFromPast = task.DisplayOrder && (m_frameOrder < m_prevTask.DisplayOrder);
 
-            MFX_CHECK(!bFrameFromPast || ((m_prevTask.DisplayOrder - m_frameOrder) <= MaxReorder), MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(m_frameOrder <= (m_prevTask.EncodedOrder + 1 + BufferSize), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(!bFrameFromPast || ((m_prevTask.DisplayOrder - task.DisplayOrder) <= MaxReorder), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(task.DisplayOrder <= (m_prevTask.EncodedOrder + 1 + BufferSize), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(isValid(m_prevTask.DPB.After[0]) || IsIdr(task.FrameType), MFX_ERR_UNDEFINED_BEHAVIOR);
         }
-        task.DisplayOrder = m_frameOrder;
         task.LastKeyFrameInfo = m_prevTask.LastKeyFrameInfo;
 
-        SetIf(LastKeyFrameInfo.lastIDROrder, IsIdr(task.FrameType), m_frameOrder);
+        SetIf(LastKeyFrameInfo.lastIDROrder, IsIdr(task.FrameType), task.DisplayOrder);
         SetIf(task.LastKeyFrameInfo.lastIPoc, IsI(task.FrameType), task.POC);
-        SetIf(LastKeyFrameInfo.lastIPOrder, IsI(task.FrameType) || IsP(task.FrameType), m_frameOrder);
+        SetIf(LastKeyFrameInfo.lastIPOrder, IsI(task.FrameType) || IsP(task.FrameType), task.DisplayOrder);
 
         return MFX_ERR_NONE;
     });
