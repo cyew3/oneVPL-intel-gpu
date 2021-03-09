@@ -223,7 +223,21 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     UINT    UserMaxPBFrameSize;
     UCHAR   ICQQualityFactor;   // [1..51]
     UCHAR   StreamBufferSessionID;
-    USHORT  Reserved16b;
+
+    UCHAR   maxAdaptiveMiniGopSize;
+    union
+    {
+        struct
+        {
+            UCHAR    	ClosedGop    : 1;	// [0..1]
+            UCHAR    	StrictGop    : 1;	// [0..1]
+            UCHAR    	AdaptiveGop  : 1;	// [0..1]
+            UCHAR    	ReservedBits : 5;	// [0]
+        } fields;
+        UCHAR	value;
+    } GopFlags; //valid only when bLookAheadPhase equals 1
+
+
     UINT    NumOfBInGop[3];     // deprecated from Gen12
 
     union
