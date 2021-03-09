@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,14 +36,6 @@ class DeviceDX11
     : public Device
 {
 public:
-    virtual ~DeviceDX11()
-    {
-        if (!m_useDecoderInCore)
-        {
-            SAFE_RELEASE(m_vdecoder);
-        }
-    }
-
     virtual mfxStatus Create(
         VideoCORE&    core
         , GUID        guid
@@ -70,13 +62,14 @@ public:
 
     struct CreateDeviceOut
     {
-        ID3D11VideoDecoder*           vdecoder = nullptr;
+        CComPtr<ID3D11VideoDecoder>   vdecoder;
         CComQIPtr<ID3D11VideoDevice>  vdevice;
         CComQIPtr<ID3D11VideoContext> vcontext;
     };
 
 protected:
-    ID3D11VideoDecoder*                  m_vdecoder     = nullptr;
+    CComPtr<ID3D11DeviceContext>         m_context;
+    CComPtr<ID3D11VideoDecoder>          m_vdecoder;
     CComQIPtr<ID3D11VideoDevice>         m_vdevice;
     CComQIPtr<ID3D11VideoContext>        m_vcontext;
     std::vector<mfxU8>                   m_caps;
@@ -89,8 +82,6 @@ protected:
     mfxU32                               m_lastErr      = 0;
     USHORT                               m_configDecoderSpecific         = ENCODE_ENC_PAK;
     GUID                                 m_guidConfigBitstreamEncryption = DXVA_NoEncrypt;
-    // To avoid multiple re-creation of encoding device for DX11 it's stored in Core since it was created first time.
-    bool                                 m_useDecoderInCore              = false;
     std::map<mfxU32, mfxU32> m_DX9TypeToDX11 =
     {
           {(mfxU32)D3DDDIFMT_INTELENCODE_SPSDATA,          (mfxU32)D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA}
@@ -122,8 +113,6 @@ protected:
 
     mfxStatus CreateVideoDecoder(const DDIExecParam&);
     void SetDevice(const DDIExecParam&);
-
-    virtual bool UseDecoderInCore() const { return false; };
 };
 
 } //namespace MfxEncodeHW

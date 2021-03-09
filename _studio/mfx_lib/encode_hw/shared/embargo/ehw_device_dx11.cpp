@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,8 @@
 
 #include "ehw_device_dx11.h"
 #include "ehw_utils_ddi.h"
-#include "feature_blocks/mfx_feature_blocks_utils.h"
-
 #include <algorithm>
+#include "feature_blocks/mfx_feature_blocks_utils.h"
 
 namespace MfxEncodeHW
 {
@@ -85,6 +84,7 @@ mfxStatus DeviceDX11::CreateVideoDecoder(const DDIExecParam& ep)
     MFX_CHECK(!bUseCurrDevice, MFX_ERR_NONE);
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CreateAuxilliaryDevice");
+    HRESULT hr;
     D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_pCore);
     MFX_CHECK(pD3d11, MFX_ERR_DEVICE_FAILED)
 
@@ -94,83 +94,55 @@ mfxStatus DeviceDX11::CreateVideoDecoder(const DDIExecParam& ep)
     out.vcontext = pD3d11->GetD3D11VideoContext(in.bTemporal);
     MFX_CHECK(out.vcontext, MFX_ERR_DEVICE_FAILED);
 
-    out.vdecoder = nullptr;
-
-    ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_pCore, MFXID3D11DECODER_GUID);
-    MFX_CHECK(pVideoDecoder, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    m_useDecoderInCore = UseDecoderInCore();
-
-    HRESULT hr;
-    if (m_useDecoderInCore && pVideoDecoder->get())
+    // [1] Query supported decode profiles
     {
-        D3D11_VIDEO_DECODER_DESC video_desc = {};
-        D3D11_VIDEO_DECODER_CONFIG video_config = {};
-        hr = pVideoDecoder->get()->GetCreationParameters(&video_desc, &video_config);
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-        // video decoder from Core should be used if it has been created with same or greater resolution
-        if (in.desc.SampleWidth <= video_desc.SampleWidth && in.desc.SampleHeight <= video_desc.SampleHeight
-            && in.desc.Guid == video_desc.Guid)
-            out.vdecoder = pVideoDecoder->get();
+        bool isFound = false;
+
+        UINT profileCount;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
+            profileCount = out.vdevice->GetVideoDecoderProfileCount();
+        }
+        assert(profileCount > 0);
+
+        for (UINT i = 0; i < profileCount; ++i)
+        {
+            GUID profileGuid;
+
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfile");
+                hr = out.vdevice->GetVideoDecoderProfile(i, &profileGuid);
+            }
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+            if (in.desc.Guid == profileGuid)
+            {
+                isFound = true;
+                break;
+            }
+        }
+        MFX_CHECK(isFound, MFX_ERR_UNSUPPORTED);
     }
 
-    if (out.vdecoder == nullptr)
+    // [2] Query the supported encode functions
     {
-        // [1] Query supported decode profiles
-        {
-            bool isFound = false;
+        mfxU32 count = 0;
 
-            UINT profileCount;
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
-                profileCount = out.vdevice->GetVideoDecoderProfileCount();
-            }
-            assert(profileCount > 0);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
+        hr = out.vdevice->GetVideoDecoderConfigCount(&in.desc, &count);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-            for (UINT i = 0; i < profileCount; ++i)
-            {
-                GUID profileGuid;
+        // GetVideoDecoderConfigCount may return OK but the number of decoder configurations
+        // that the driver supports for a specified video description = 0.
+        // If we ignore this fact CreateVideoDecoder call will crash with an exception.
+        MFX_CHECK(count, MFX_ERR_UNSUPPORTED);
+    }
 
-                {
-                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfile");
-                    hr = out.vdevice->GetVideoDecoderProfile(i, &profileGuid);
-                }
-                MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-                if (in.desc.Guid == profileGuid)
-                {
-                    isFound = true;
-                    break;
-                }
-            }
-            MFX_CHECK(isFound, MFX_ERR_UNSUPPORTED);
-        }
-
-        // [2] Query the supported encode functions
-        {
-            mfxU32 count = 0;
-
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
-            hr = out.vdevice->GetVideoDecoderConfigCount(&in.desc, &count);
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-            // GetVideoDecoderConfigCount may return OK but the number of decoder configurations
-            // that the driver supports for a specified video description = 0.
-            // If we ignore this fact CreateVideoDecoder call will crash with an exception.
-            MFX_CHECK(count, MFX_ERR_UNSUPPORTED);
-        }
-
-        // [3] CreateVideoDecoder
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
-            hr = out.vdevice->CreateVideoDecoder(&in.desc, &in.config, &out.vdecoder);
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-            if (m_useDecoderInCore)
-            {
-                *pVideoDecoder = out.vdecoder;
-            }
-        }
+    // [3] CreateVideoDecoder
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+        hr = out.vdevice->CreateVideoDecoder(&in.desc, &in.config, &out.vdecoder);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
     return MFX_ERR_NONE;
