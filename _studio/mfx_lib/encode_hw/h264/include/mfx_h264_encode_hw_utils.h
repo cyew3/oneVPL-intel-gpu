@@ -979,7 +979,9 @@ namespace MfxHwH264Encode
     {
         mfxU16 picStruct;
         mfxU32 OptimalFrameSizeInBytes;
-        mfxU32 optimalBufferFullness;
+        mfxU32 LaAvgEncodedSize;
+        mfxU32 LaCurEncodedSize;
+        mfxU32 LaIDist;
     };
 #else
     struct BRCFrameParams
@@ -1244,7 +1246,7 @@ namespace MfxHwH264Encode
             m_brcFrameParams.FrameType = m_type[m_fid[0]];
             m_brcFrameParams.DisplayOrder = m_frameOrder;
             m_brcFrameParams.EncodedOrder = m_encOrder;
-            m_brcFrameParams.PyramidLayer = (mfxU16)m_loc.level;
+            m_brcFrameParams.PyramidLayer = (m_brcFrameParams.FrameType & MFX_FRAMETYPE_B) ? (mfxU16)m_loc.level : 0;
             m_brcFrameParams.LongTerm = (m_longTermFrameIdx != NO_INDEX_U8) ? 1 : 0;
             m_brcFrameParams.SceneChange = (mfxU16)m_SceneChange;
             if (!m_brcFrameParams.PyramidLayer && (m_type[m_fid[0]] & MFX_FRAMETYPE_P) && m_LowDelayPyramidLayer)
@@ -1252,7 +1254,9 @@ namespace MfxHwH264Encode
             m_brcFrameParams.picStruct = GetPicStructForEncode();
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
             m_brcFrameParams.OptimalFrameSizeInBytes = m_lplastatus.TargetFrameSize;
-            //m_brcFrameParams.optimalBufferFullness =  m_lplastatus.TargetBufferFullness;
+            m_brcFrameParams.LaAvgEncodedSize        = m_lplastatus.LaAvgEncodedSize;
+            m_brcFrameParams.LaCurEncodedSize        = m_lplastatus.LaCurEncodedSize;
+            m_brcFrameParams.LaIDist                 = m_lplastatus.LaIDist;
 #endif
         }
         inline bool isSEIHRDParam(mfxExtCodingOption const & extOpt, mfxExtCodingOption2 const & extOpt2)
@@ -2230,6 +2234,15 @@ static mfxStatus InitCtrl(mfxVideoParam const & par, mfxEncToolsCtrl *ctrl)
         ctrl->ExtParam[1] = GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_ENCTOOLS_ALLOCATOR);
     }
 
+    // LaScale here
+    ctrl->LaScale = 0;
+    ctrl->LaQp = 30;
+    mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+    if (crW >= 720) {
+        ctrl->LaScale = 2;
+        if(ctrl->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) ctrl->LaQp = 26;
+    }
+
     return MFX_ERR_NONE;
 
 }
@@ -2278,7 +2291,7 @@ public:
     }
     inline bool IsLookAhead()
     {
-        if (m_pEncTools && m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+        if (m_pEncTools && (m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING || m_EncToolCtrl.MaxDelayInFrames))
         {
             return
                 (IsOn(m_EncToolConfig.AdaptiveI) ||
@@ -2289,6 +2302,11 @@ public:
                     IsOn(m_EncToolConfig.AdaptiveQuantMatrices));
         }
         return false;
+    }
+    inline bool IsAdaptiveQuantMatrices()
+    {
+        return (m_pEncTools != 0 &&
+            (IsOn(m_EncToolConfig.AdaptiveQuantMatrices)));
     }
     inline bool IsAdaptiveGOP()
     {
@@ -2383,6 +2401,7 @@ public:
 
     mfxStatus  Init(MfxVideoParam &video)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "class H264EncTools::Init");
         mfxExtEncToolsConfig requiredConf = {};
         mfxExtEncToolsConfig supportedConf = {};
 
@@ -2528,12 +2547,36 @@ public:
         return m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
     }
 
+    mfxStatus QueryPreEncSChg(mfxU32 displayOrder, mfxEncToolsHintPreEncodeSceneChange &preEncodeSChg)
+    {
+        MFX_CHECK(m_pEncTools != 0, MFX_ERR_NOT_INITIALIZED);
+        MFX_CHECK(IsOn(m_EncToolConfig.AdaptiveI) ||
+            IsOn(m_EncToolConfig.AdaptiveLTR), MFX_ERR_NOT_INITIALIZED);
+
+        mfxEncToolsTaskParam par = {};
+        par.DisplayOrder = displayOrder;
+        std::vector<mfxExtBuffer*> extParams;
+        memset(&preEncodeSChg, 0, sizeof(preEncodeSChg));
+        preEncodeSChg.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_SCENE_CHANGE;
+        preEncodeSChg.Header.BufferSz = sizeof(preEncodeSChg);
+
+        extParams.push_back((mfxExtBuffer *)&preEncodeSChg);
+
+        par.ExtParam = &extParams[0];
+        par.NumExtParam = (mfxU16)extParams.size();
+
+        mfxStatus sts = MFX_ERR_NONE;
+        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
+        return sts;
+    }
+
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
+
     mfxStatus QueryLookAheadStatus(mfxU32 displayOrder, mfxEncToolsBRCBufferHint *bufHint, mfxEncToolsHintPreEncodeGOP *gopHint, mfxEncToolsHintQuantMatrix *cqmHint)
     {
         MFX_CHECK(m_pEncTools != 0, MFX_ERR_NOT_INITIALIZED);
         MFX_CHECK(bufHint || gopHint || cqmHint, MFX_ERR_NULL_PTR);
-        MFX_CHECK((m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) &&
+        MFX_CHECK((m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING || m_EncToolCtrl.MaxDelayInFrames) &&
             (IsOn(m_EncToolConfig.AdaptiveQuantMatrices) || IsOn(m_EncToolConfig.BRCBufferHints) || IsOn(m_EncToolConfig.AdaptivePyramidQuantP)), MFX_ERR_NOT_INITIALIZED);
 
         mfxEncToolsTaskParam par = {};
@@ -2544,7 +2587,7 @@ public:
         {
             *bufHint = {};
             bufHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
-            bufHint->Header.BufferSz = sizeof(*bufHint);
+            bufHint->Header.BufferSz = sizeof(bufHint);
             extParams.push_back((mfxExtBuffer *)bufHint);
         }
 
@@ -2552,7 +2595,7 @@ public:
         {
             *gopHint = {};
             gopHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
-            gopHint->Header.BufferSz = sizeof(*gopHint);
+            gopHint->Header.BufferSz = sizeof(gopHint);
             extParams.push_back((mfxExtBuffer *)gopHint);
         }
 
@@ -2560,7 +2603,7 @@ public:
         {
             *cqmHint = {};
             cqmHint->Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX;
-            cqmHint->Header.BufferSz = sizeof(*cqmHint);
+            cqmHint->Header.BufferSz = sizeof(cqmHint);
             extParams.push_back((mfxExtBuffer *)cqmHint);
         }
 
@@ -2602,29 +2645,33 @@ public:
         par.DisplayOrder = frame_par->DisplayOrder;
         std::vector<mfxExtBuffer*> extParams;
         mfxEncToolsBRCFrameParams extFrameStruct = {};
+        mfxEncToolsBRCBufferHint extBRCHints = {};
+        mfxEncToolsHintPreEncodeGOP gopHints = {};
         extFrameStruct.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_FRAME_PARAM ;
         extFrameStruct.Header.BufferSz = sizeof(extFrameStruct);
         extFrameStruct.EncodeOrder = frame_par->EncodedOrder;
         extFrameStruct.FrameType = frame_par->FrameType;
         extFrameStruct.PyramidLayer = frame_par->PyramidLayer;
+        extFrameStruct.LongTerm = frame_par->LongTerm;
+        extFrameStruct.SceneChange = frame_par->SceneChange;
         extParams.push_back((mfxExtBuffer *)&extFrameStruct);
 
-        if (frame_par->OptimalFrameSizeInBytes | frame_par->optimalBufferFullness)
+        if (frame_par->OptimalFrameSizeInBytes | frame_par->LaAvgEncodedSize)
         {
-            mfxEncToolsBRCBufferHint extBRCHints = {};
             extBRCHints.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
             extBRCHints.Header.BufferSz = sizeof(extBRCHints);
             extBRCHints.OptimalFrameSizeInBytes = frame_par->OptimalFrameSizeInBytes;
-            //extBRCHints.OptimalBufferFullness = frame_par->optimalBufferFullness;
+            extBRCHints.LaAvgEncodedSize        = frame_par->LaAvgEncodedSize;
+            extBRCHints.LaCurEncodedSize        = frame_par->LaCurEncodedSize;
+            extBRCHints.LaIDist                 = frame_par->LaIDist;
             extParams.push_back((mfxExtBuffer *)&extBRCHints);
         }
 
-        if ((task.m_bQPDelta && task.m_QPdelta) || (task.m_QPmodulation != MFX_QP_MODULATION_NOT_DEFINED))
+        if (task.m_bQPDelta || (task.m_QPmodulation != MFX_QP_MODULATION_NOT_DEFINED))
         {
-            mfxEncToolsHintPreEncodeGOP gopHints = {};
             gopHints.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
             gopHints.Header.BufferSz = sizeof(gopHints);
-            if (task.m_bQPDelta && task.m_QPdelta)
+            if (task.m_bQPDelta)
                 gopHints.QPDelta = task.m_QPdelta;
             if (task.m_QPmodulation != MFX_QP_MODULATION_NOT_DEFINED)
                 gopHints.QPModulation = task.m_QPmodulation;
@@ -2773,7 +2820,7 @@ protected:
                     (mfxU16)MFX_CODINGOPTION_ON : (mfxU16)MFX_CODINGOPTION_OFF) : config.BRC;
         }
 #ifdef MFX_ENABLE_ENCTOOLS_LPLA
-        else
+        if (extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING || extOpt2.LookAheadDepth > 0)
         {
             bool bLA = (extOpt2.LookAheadDepth > 0 &&
                 (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
@@ -2785,8 +2832,9 @@ protected:
             config.AdaptivePyramidQuantP = (mfxU16)(IsNotDefined(config.AdaptivePyramidQuantP) ?
                 (bLA ?  MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptivePyramidQuantP);
 
-            config.AdaptiveQuantMatrices = (mfxU16)(IsNotDefined(config.AdaptiveQuantMatrices) ?
-                (bLA ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptiveQuantMatrices);
+            if(extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+                config.AdaptiveQuantMatrices = (mfxU16)(IsNotDefined(config.AdaptiveQuantMatrices) ?
+                    (bLA ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptiveQuantMatrices);
 
             config.AdaptiveI = (mfxU16)(IsNotDefined(config.AdaptiveI) ?
                 MFX_CODINGOPTION_OFF : config.AdaptiveI);

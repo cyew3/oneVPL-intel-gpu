@@ -66,6 +66,23 @@ mfxStatus AEncProcessFrame(mfxHDL pthis, mfxU32 POC, mfxU8* InFrame, mfxI32 pitc
     }
 }
 
+mfxU16 AEncGetIntraDecision(mfxHDL pthis) {
+    if (!pthis) {
+        return 0;
+    }
+
+    try {
+        aenc::AEnc* a = reinterpret_cast<aenc::AEnc*>(pthis);
+        return a->GetIntraDecision();
+    }
+    catch (aenc::Error) {
+        return 0;
+    }
+    catch (...)
+    {
+        return 0;
+    }
+}
 
 void AEncUpdatePFrameBits(mfxHDL pthis, mfxU32 displayOrder, mfxU32 bits, mfxU32 QpY, mfxU32 ClassCmplx) {
     if (!pthis) {
@@ -247,7 +264,6 @@ namespace aenc {
         f.POC = POC;
         f.PPyramidIdx = 0;
 
-
         if (InFrame != nullptr) {
             //run SCD, generates stat, saves GOP size and SC
             RunScd(InFrame, pitch, f);
@@ -320,6 +336,9 @@ namespace aenc {
    void AEnc::SaveAltrStat(InternalFrame& f) {
         f.MV = (int32_t)Scd.Get_frame_MV0();
         f.highMvCount = Scd.Get_frame_RecentHighMvCount();
+        ASC_LTR_DEC scd_LTR_hint = NO_LTR;
+        Scd.get_LTR_op_hint(scd_LTR_hint);
+        f.LtrOnHint = (scd_LTR_hint == NO_LTR) ? 0 : 1;
     }
 
 
@@ -372,8 +391,8 @@ namespace aenc {
             return;
         }
 
-        //scene changed and there will be no I frame till the end of max IDR interval, insert IDR here
-        if (f.SceneChanged && CurrentIdrInterval > InitParam.MaxIDRDist - InitParam.MinGopSize) {
+        // Scene change IDR (Min IDR distance at 2*MiniGOP for compression efficiency)
+        if (f.SceneChanged && CurrentIdrInterval > InitParam.MinGopSize*2) {
             MarkFrameAsIDR(f);
             return;
         }
@@ -489,6 +508,7 @@ namespace aenc {
 
 
     void AEnc::AdjustQp(InternalFrame& f) {
+        f.DeltaQP = 0;
         if (InitParam.ALTR) AdjustQpLtr(f);
         if (InitParam.AREF) AdjustQpAref(f);
         if (InitParam.APQ) AdjustQpApq(f);
@@ -524,7 +544,6 @@ namespace aenc {
             LtrScd.SetImageAndStat(f.ScdImage, f.ScdStat, ASCCurrent_Frame, ASCcurrent_frame_data);
             LtrScd.RunFrame_LTR();
 
-
             mfxU32 sctrFlag = LtrScd.Get_frame_LTR_Decision();
             if (f.POC <= 16)
                 sctrFlag = 0;
@@ -550,7 +569,7 @@ namespace aenc {
         if (f.Type != FrameType::I && f.Type != FrameType::IDR)
         {
             m_hasLowActivity = 0;
-            m_prevTemporalActs[f.MiniGopIdx] = (f.MV > 1500) ? 1 : 0;
+            m_prevTemporalActs[f.MiniGopIdx] = (f.MV > 1000) ? 1 : 0;
             mfxI32 cnt = 0;
             for (mfxI32 i = 0; i < 8; i++) {
                 if (m_prevTemporalActs[i])
@@ -607,6 +626,23 @@ namespace aenc {
         //    frm, width, height, SC, TSC, MVQ, qp, size, BRC_CONST_MUL_P8, BRC_CONST_EXP_R_P8, BitsDesiredFrame, rat, adjust);
         LastPFrameNoisy = adjust;
         LastPFrameQp = qp;
+    }
+
+    mfxU16 AEnc::GetIntraDecision()
+    {
+        if (!FrameBuffer.empty()) {
+            switch (FrameBuffer.back().Type) {
+            case FrameType::IDR:
+                return MFX_FRAMETYPE_IDR;
+                break;
+            case FrameType::I:
+                return MFX_FRAMETYPE_I;
+                break;
+            default:
+                return 0;
+            }
+        }
+        return 0;
     }
 
     void AEnc::ComputeStatApq(InternalFrame& f) {
@@ -676,9 +712,8 @@ namespace aenc {
         }
     }
 
-
     void AEnc::BuildRefListAref(InternalFrame& f) {
-        if (f.Type == FrameType::P )
+        if (f.Type == FrameType::P)
         {
             auto KeyPFrame = std::find_if(DpbBuffer.begin(), DpbBuffer.end(), [](InternalFrame& x) {return x.LTR; });
             if (KeyPFrame != DpbBuffer.end()) {
@@ -712,10 +747,16 @@ namespace aenc {
 
 
     void AEnc::AdjustQpAref(InternalFrame& f) {
-        if (f.Type == FrameType::P && f.LTR) {
-            f.DeltaQP = m_hasLowActivity ? (-4) : (-2);
+        if (f.Type == FrameType::P) {
+            if (f.LTR) {
+                f.DeltaQP = (f.SC > 4 && m_hasLowActivity) ? (-4) : (-2);
+            }
+            else
+            {
+                f.DeltaQP = 0;
+            }
         }
-        else {
+        else if (f.Type == FrameType::B) {  // only CQP will use this DeltaQP
             if (!InitParam.APQ) {
                 //use default QP offset for non-LTR frame
                 if ((f.MiniGopType == 4 || f.MiniGopType == 8) && f.PyramidLayer) {
@@ -827,15 +868,6 @@ namespace aenc {
         }
     }
 
-    bool AEnc::isArefKeyFrame(InternalFrame f, uint32_t dist) {
-        return (
-            f.POC >= (PocOfLastArefKeyFrame + dist) &&
-            f.Type == FrameType::P &&
-            (!m_isLtrOn)
-            );
-    }
-
-
     mfxStatus AEnc::OutputDecision(AEncFrame* OutFrame) {
         if (OutputBuffer.empty()) {
             return MFX_ERR_MORE_DATA;
@@ -844,7 +876,7 @@ namespace aenc {
         ExternalFrame out = OutputBuffer.front();
         OutputBuffer.pop_front();
 
-        //out.print();
+        //OutFrame.print();
 
         //delay frame removal from DPB to I/P frame
         if (out.Type == FrameType::B) {
@@ -900,11 +932,15 @@ namespace aenc {
             return;
         }
 
-        if(f.POC == 0 || f.Type == FrameType::IDR){
+        if(f.POC == 0){
             MarkFrameAsLTR(f);
             return;
         }
 
+        if (f.Type == FrameType::IDR && (m_isLtrOn || f.LtrOnHint)) {
+            MarkFrameAsLTR(f);
+            return;
+        }
 
         if (f.SceneChanged) {
             //new LTR at SC
@@ -926,18 +962,27 @@ namespace aenc {
     }
 
     void AEnc::MakeArefDecision(InternalFrame &f) {
-        if (f.SceneChanged || f.Type == FrameType::I || f.Type == FrameType::IDR) {
+        if (f.SceneChanged || f.Type == FrameType::IDR) {
             PocOfLastArefKeyFrame = f.POC;
         }
 
-        if (!m_isLtrOn)
+        if ((!InitParam.ALTR) && (f.SceneChanged || f.Type == FrameType::IDR)) {
+            f.LTR = true;
+        }
+
+        if (f.Type == FrameType::P)
         {
-            // set P frame to Key reference frame
-            uint32_t ArefKeyFrameInterval = 32;
-            if (isArefKeyFrame(f, ArefKeyFrameInterval)) {
-                f.LTR = true;
-                f.KeepInDPB = true;
-                PocOfLastArefKeyFrame = f.POC;
+            f.LTR = false;
+            if (!m_isLtrOn || (!InitParam.ALTR))
+            {
+                // set P frame to Key reference frame
+                uint32_t ArefKeyFrameInterval = 32;  // InitParam.MaxIDRDist;
+                uint32_t minPocArefKeyFrame = PocOfLastArefKeyFrame + ArefKeyFrameInterval;
+                if (f.POC >= minPocArefKeyFrame)
+                {
+                    f.LTR = true;
+                    PocOfLastArefKeyFrame = f.POC;
+                }
             }
         }
     }
@@ -1000,12 +1045,6 @@ namespace aenc {
         if (fp != DpbBuffer.end()) {
             f.RefList.push_back(fp->POC);
         }
-    }
-
-
-    template <size_t size>
-    void AEnc::SetFrameQP(InternalFrame& f, std::array<int32_t, size> QpTable) {
-        f.DeltaQP = DeltaQpOffsetForAref + QpTable[f.POC % size];
     }
 
 } //namespace aenc

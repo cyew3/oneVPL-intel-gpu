@@ -55,6 +55,7 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
 
     sts = InitEncParams(ctrl, config);
     MFX_CHECK_STS(sts);
+    if (config.AdaptiveI && ctrl.ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) m_encParams.mfx.GopPicSize = 0xffff;
 
     memset(&m_bitstream, 0, sizeof(mfxBitstream));
     mfxU32 bufferSize = std::max((mfxU32)m_encParams.mfx.FrameInfo.Width * m_encParams.mfx.FrameInfo.Height * 3 / 2, ctrl.BufferSizeInKB * 1000);
@@ -122,9 +123,9 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToo
     m_encParams.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     m_encParams.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
     m_encParams.mfx.CodecLevel = MFX_LEVEL_HEVC_52;
-    m_encParams.mfx.QPI = 30;
-    m_encParams.mfx.QPP = 32;
-    m_encParams.mfx.QPB = 32;
+    m_encParams.mfx.QPI = ctrl.LaQp;
+    m_encParams.mfx.QPP = ctrl.LaQp+2;
+    m_encParams.mfx.QPB = ctrl.LaQp+2;
     m_encParams.mfx.NumSlice = 1;
 
     if (IsOn(pConfig.AdaptiveI))
@@ -135,15 +136,14 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToo
     m_encParams.mfx.GopRefDist = 1; //ctrl.MaxGopRefDist;
 
     m_encParams.mfx.FrameInfo = ctrl.FrameInfo;
-    m_lookAheadScale = 0;
+    m_lookAheadScale = ctrl.LaScale;
+    m_lookAheadDepth = ctrl.MaxDelayInFrames;
 
     mfxU16 crW = m_encParams.mfx.FrameInfo.CropW ? m_encParams.mfx.FrameInfo.CropW : m_encParams.mfx.FrameInfo.Width;
     mfxU16 crH = m_encParams.mfx.FrameInfo.CropH ? m_encParams.mfx.FrameInfo.CropH : m_encParams.mfx.FrameInfo.Height;
 
-    if (crW >= 720)
+    if (m_lookAheadScale)
     {
-        m_lookAheadScale = LPLA_DOWNSCALE_FACTOR;
-
         mfxPlatform platform;
         m_mfxSession.QueryPlatform(&platform);
 
@@ -221,24 +221,30 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     return sts;
 }
 
-mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface)
+mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface, mfxU16 FrameType)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
     m_bitstream.DataLength = 0;
     m_bitstream.DataOffset = 0;
     mfxSyncPoint encSyncPoint;
-    sts = m_pmfxENC->EncodeFrameAsync(nullptr,surface, &m_bitstream, &encSyncPoint);
+    mfxEncodeCtrl ctrl = { 0 };
+    ctrl.FrameType = FrameType;
+    sts = m_pmfxENC->EncodeFrameAsync(&ctrl,surface, &m_bitstream, &encSyncPoint);
     MFX_CHECK_STS(sts);
     const static mfxU32 msdk_wait_interval = 300000;
     sts = m_mfxSession.SyncOperation(encSyncPoint, msdk_wait_interval);
     MFX_CHECK_STS(sts);
 
+    m_frameSizes.push_back({surface->Data.FrameOrder, m_bitstream.DataLength, FrameType});
+
     mfxExtLpLaStatus* lplaHints = (mfxExtLpLaStatus*)Et_GetExtBuffer(m_bitstream.ExtParam, m_bitstream.NumExtParam, MFX_EXTBUFF_LPLA_STATUS);
     if(lplaHints)
     {
-        if (lplaHints->CqmHint != CQM_HINT_INVALID)
+
+        if (lplaHints->CqmHint != CQM_HINT_INVALID || (surface->Data.FrameOrder>=m_lookAheadDepth))
         {
+            //printf("Submit %d: CQM %d FrmSize %d BufferFullness %d \n", surface->Data.FrameOrder, lplaHints->CqmHint, lplaHints->TargetFrameSize, lplaHints->TargetBufferFullnessInBit);
             m_encodeHints.push_back({
                 lplaHints->StatusReportFeedbackNumber,
                 lplaHints->CqmHint,
@@ -278,6 +284,17 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPr
             m_curEncodeHints = m_encodeHints.front();
             m_curDispOrder = (mfxI32)dispOrder;
             m_encodeHints.pop_front();
+            m_curEncodeHints.LaIDist = 0;
+            mfxU32 laAvgBits = 0;
+            for (std::list<MfxFrameSize>::iterator it = m_frameSizes.begin(); it != m_frameSizes.end(); it++) {
+                laAvgBits += it->encodedFrameSize * 8;
+                if (!m_curEncodeHints.LaIDist && (it->frameType & MFX_FRAMETYPE_I)) m_curEncodeHints.LaIDist = it->dispOrder - dispOrder;
+            }
+            laAvgBits /= (mfxU32)m_frameSizes.size();
+    
+            m_curEncodeHints.LaAvgEncodedSize = laAvgBits; // m_frameSizes.front().encodedFrameSize;
+            m_curEncodeHints.LaCurEncodedSize = m_frameSizes.front().encodedFrameSize * 8;
+            m_frameSizes.pop_front();
         }
     }
 
@@ -344,6 +361,17 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqm
         m_curEncodeHints = m_encodeHints.front();
         m_curDispOrder = (mfxI32)dispOrder;
         m_encodeHints.pop_front();
+        m_curEncodeHints.LaIDist = 0;
+        mfxU32 laAvgBits = 0;
+        for (std::list<MfxFrameSize>::iterator it = m_frameSizes.begin(); it != m_frameSizes.end(); it++) {
+            laAvgBits += it->encodedFrameSize * 8;
+            if (!m_curEncodeHints.LaIDist && (it->frameType & MFX_FRAMETYPE_I)) m_curEncodeHints.LaIDist = it->dispOrder - dispOrder;
+        }
+        laAvgBits /= (mfxU32)m_frameSizes.size();
+
+        m_curEncodeHints.LaAvgEncodedSize = laAvgBits; // m_frameSizes.front().encodedFrameSize;
+        m_curEncodeHints.LaCurEncodedSize = m_frameSizes.front().encodedFrameSize * 8;
+        m_frameSizes.pop_front();
     }
    
     switch (m_curEncodeHints.CqmHint)
@@ -380,15 +408,32 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsBRCBufferHint *pBufHi
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     else if ((mfxI32)dispOrder > m_curDispOrder)
     {
-        if (m_encodeHints.empty())
-            return MFX_ERR_NOT_FOUND;
-        m_curEncodeHints = m_encodeHints.front();
-        m_curDispOrder = (mfxU32)dispOrder;
-        m_encodeHints.pop_front();
+        if (!m_encodeHints.empty()) {
+            // Starts with 0, Flush with last curEncodeHints
+            m_curEncodeHints = m_encodeHints.front();
+            m_curDispOrder = (mfxU32)dispOrder;
+            m_encodeHints.pop_front();
+            mfxU32 laAvgBits = 0;
+            for (std::list<MfxFrameSize>::iterator it = m_frameSizes.begin(); it != m_frameSizes.end(); it++) {
+                laAvgBits += it->encodedFrameSize * 8;
+                if (!m_curEncodeHints.LaIDist && (it->frameType & MFX_FRAMETYPE_I)) m_curEncodeHints.LaIDist = it->dispOrder - dispOrder;
+            }
+            laAvgBits /= (mfxU32)m_frameSizes.size();
+
+            m_curEncodeHints.LaAvgEncodedSize = laAvgBits; // m_frameSizes.front().encodedFrameSize;
+            m_curEncodeHints.LaCurEncodedSize = m_frameSizes.front().encodedFrameSize * 8;
+            m_frameSizes.pop_front();
+        }
+        else {
+            m_curEncodeHints.TargetFrameSize = 0; // unknown
+            m_curEncodeHints.LaIDist = 0;
+        }
     }
 
     pBufHint->OptimalFrameSizeInBytes = m_curEncodeHints.TargetFrameSize;
-
+    pBufHint->LaAvgEncodedSize        = m_curEncodeHints.LaAvgEncodedSize;
+    pBufHint->LaCurEncodedSize        = m_curEncodeHints.LaCurEncodedSize;
+    pBufHint->LaIDist                 = m_curEncodeHints.LaIDist;
     return MFX_ERR_NONE;
 }
 

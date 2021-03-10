@@ -697,7 +697,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 pParams->nRateControlMethod = MFX_RATECONTROL_LA_ICQ;
             }
             else if (pParams->nRateControlMethod != MFX_RATECONTROL_LA &&
-                    pParams->nRateControlMethod != MFX_RATECONTROL_LA_ICQ)
+                    pParams->nRateControlMethod != MFX_RATECONTROL_LA_ICQ && 
+                    !pParams->bEncTools)
             {
                 PrintHelp(strInput[0], MSDK_STRING("More than one BRC modes assigned, and another BRC mode isn't compatible with LA."));
                 return MFX_ERR_UNSUPPORTED;

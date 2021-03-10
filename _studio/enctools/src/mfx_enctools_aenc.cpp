@@ -201,6 +201,14 @@ mfxStatus AEnc_EncTool::GetSCDecision(mfxU32 displayOrder, mfxEncToolsHintPreEnc
     return sts;
 }
 
+mfxStatus AEnc_EncTool::GetIntraDecision(mfxU32 displayOrder, mfxU16 *frameType)
+{
+    displayOrder;
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+    *frameType = AEncGetIntraDecision(m_aenc);
+    return MFX_ERR_NONE;
+}
+
 mfxStatus AEnc_EncTool::GetGOPDecision(mfxU32 displayOrder, mfxEncToolsHintPreEncodeGOP *pPreEncGOP)
 {
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
@@ -228,20 +236,25 @@ mfxStatus AEnc_EncTool::GetGOPDecision(mfxU32 displayOrder, mfxEncToolsHintPreEn
     default:
         pPreEncGOP->FrameType = MFX_FRAMETYPE_UNKNOWN;
     }
-   pPreEncGOP->QPDelta = (mfxI16)(*m_frameIt).DeltaQP;
-
-    switch ((mfxI16)(*m_frameIt).ClassAPQ)
-    {
-    case 1:
-        pPreEncGOP->QPModulation = MFX_QP_MODULATION_HIGH;
-        break;
-    case 2:
-        pPreEncGOP->QPModulation = MFX_QP_MODULATION_MEDIUM;
-        break;
-    case 3:
-        pPreEncGOP->QPModulation = MFX_QP_MODULATION_LOW;
-        break;
-    default:
+    pPreEncGOP->QPDelta = (mfxI16)(*m_frameIt).DeltaQP;
+    if (m_aencPar.APQ) {
+        switch ((mfxI16)(*m_frameIt).ClassAPQ)
+        {
+        case 1:
+            pPreEncGOP->QPModulation = MFX_QP_MODULATION_HIGH;
+            break;
+        case 2:
+            pPreEncGOP->QPModulation = MFX_QP_MODULATION_MEDIUM;
+            break;
+        case 3:
+            pPreEncGOP->QPModulation = MFX_QP_MODULATION_LOW;
+            break;
+        default:
+            pPreEncGOP->QPModulation = MFX_QP_MODULATION_MIXED;
+            break;
+        }
+    }
+    else {
         pPreEncGOP->QPModulation = MFX_QP_MODULATION_NOT_DEFINED;
     }
 

@@ -5360,6 +5360,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, MinQPLevel, 540)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, MaxQPLevel, 546)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, PanicMode, 552)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaQp, 556)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaScale, 558)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, NumExtParam, 684)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, ExtParam, 688)
 
@@ -5409,12 +5411,17 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, Version, 8)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, OptimalFrameSizeInBytes, 16)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, LaAvgEncodedSize, 20)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, LaCurEncodedSize, 24)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, LaIDist, 28)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, Version, 8)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, FrameType, 16)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, PyramidLayer, 18)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, EncodeOrder, 20)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, SceneChange, 24)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, LongTerm, 26)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, Version, 8)
@@ -5479,6 +5486,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, MinQPLevel, 540)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, MaxQPLevel, 546)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, PanicMode, 552)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaQp, 556)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaScale, 558)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, NumExtParam, 684)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, ExtParam, 688)
 
@@ -5528,12 +5537,17 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, Version, 8)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, OptimalFrameSizeInBytes, 16)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, LaAvgEncodedSize, 20)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, LaCurEncodedSize, 24)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCBufferHint, LaIDist, 28)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, Version, 8)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, FrameType, 16)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, PyramidLayer, 18)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, EncodeOrder, 20)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, SceneChange, 24)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCFrameParams, LongTerm, 26)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, Version, 8)

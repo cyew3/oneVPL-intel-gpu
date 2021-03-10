@@ -63,6 +63,7 @@ private:
 
     std::unique_ptr<MFXVideoVPP> m_pmfxVPP;
     mfxVideoParam m_mfxVppParams;
+    mfxVideoParam m_mfxVppParams_AEnc;
     mfxFrameAllocResponse m_VppResponse;
     std::vector<mfxFrameSurface1> m_pIntSurfaces; // internal surfaces
 
@@ -76,6 +77,7 @@ public:
         m_pAllocator(nullptr),
         m_pETAllocator(nullptr),
         m_mfxVppParams(),
+        m_mfxVppParams_AEnc(),
         m_VppResponse()
     {}
 

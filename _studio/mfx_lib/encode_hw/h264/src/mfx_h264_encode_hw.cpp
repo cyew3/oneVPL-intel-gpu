@@ -1764,8 +1764,13 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_videoInit = m_video;
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    mfxU16 isEnctoolsBRC = 0;
+#if defined(MFX_ENABLE_ENCTOOLS)
+    mfxExtEncToolsConfig & extConfig = GetExtBufferRef(m_video);
+    isEnctoolsBRC = extConfig.BRC;
+#endif
     // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
-    if(IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, m_video.mfx.RateControlMethod)
+    if(IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, m_video.mfx.RateControlMethod, isEnctoolsBRC)
 #if defined(MFX_ENABLE_ENCTOOLS)
         && !(m_enabledEncTools)
 #endif
@@ -3781,8 +3786,20 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
                     task.m_ALQOffset = -1;
                 }
             }
+            else if (m_video.mfx.GopRefDist == 8) {
+                if ((task.m_type[0] & MFX_FRAMETYPE_B)) {
+                    task.m_ALQOffset = 2;
+                }
+            }
 #endif
             //printf("%d type %d, m_QPdelta %d m_QPmodulation %d, currGopRefDist %d, ALQOffset %d\n", task.m_frameOrder, st.FrameType, st.QPDelta, st.QPModulation, task.m_currGopRefDist, task.m_ALQOffset);
+        }
+
+        if (m_encTools.IsAdaptiveGOP()) {
+            mfxEncToolsHintPreEncodeSceneChange schg = {};
+            sts = m_encTools.QueryPreEncSChg(task.m_frameOrder, schg);
+            MFX_CHECK_STS(sts);
+            task.m_SceneChange = schg.SceneChangeFlag;
         }
 
         if (m_encTools.IsAdaptiveLTR() || m_encTools.IsAdaptiveRef())
@@ -3828,10 +3845,10 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
     {
         mfxEncToolsBRCBufferHint bufHint = {};
         // if QueryPreEncRes has been called above, no need to Query PreEncodeGOP again
-        mfxEncToolsHintPreEncodeGOP *pGopHint = st.Header.BufferSz > 0 ? nullptr : &st;
+        mfxEncToolsHintPreEncodeGOP gopHint = {}; // st.Header.BufferSz > 0 ? nullptr : &st;
         mfxEncToolsHintQuantMatrix cqmHint = {};
 
-        sts = m_encTools.QueryLookAheadStatus(task.m_frameOrder, &bufHint, pGopHint, &cqmHint);
+        sts = m_encTools.QueryLookAheadStatus(task.m_frameOrder, &bufHint, &gopHint, &cqmHint);
         MFX_CHECK_STS(sts);
 
         switch (cqmHint.MatrixType)
@@ -3854,10 +3871,11 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
         }
 
         task.m_lplastatus.TargetFrameSize      = bufHint.OptimalFrameSizeInBytes;
-        task.m_lplastatus.MiniGopSize          = (mfxU8)st.MiniGopSize;
-        task.m_lplastatus.QpModulation         = (mfxU8)st.QPModulation;
-
-        //task.m_targetBufferFullness = laStatus.TargetBufferFullnessInBit;
+        task.m_lplastatus.MiniGopSize          = (mfxU8)gopHint.MiniGopSize;
+        task.m_lplastatus.QpModulation         = (mfxU8)gopHint.QPModulation;
+        task.m_lplastatus.LaAvgEncodedSize     = bufHint.LaAvgEncodedSize;
+        task.m_lplastatus.LaCurEncodedSize     = bufHint.LaCurEncodedSize;
+        task.m_lplastatus.LaIDist              = bufHint.LaIDist;
     }
 #endif
 
@@ -4601,28 +4619,30 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
                 mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
                 task->m_isMBQP = task->m_mbqp && task->m_mbqp->QP && task->m_mbqp->NumQPAlloc >= wMB * hMB;
-    #ifdef ENABLE_APQ_LQ
-                    if (!task->m_isMBQP && task->m_ALQOffset != 0) {
-                        task->m_isMBQP = true;
-                        if (task->m_ALQOffset > 0) {
-                            if (task->m_cqpValue[0] > task->m_ALQOffset && task->m_cqpValue[1] > task->m_ALQOffset) {
-                                task->m_cqpValue[0] = (mfxU8)((mfxI32)task->m_cqpValue[0] - task->m_ALQOffset);
-                                task->m_cqpValue[1] = (mfxU8)((mfxI32)task->m_cqpValue[1] - task->m_ALQOffset);
-                            } else {
-                                task->m_ALQOffset = 0;
-                                task->m_isMBQP = false;
-                            }
-                        } else if (task->m_ALQOffset < 0) {
-                            if (task->m_cqpValue[0] > 51 + task->m_ALQOffset || task->m_cqpValue[1] > 51 + task->m_ALQOffset) {
-                                task->m_ALQOffset = 0;
-                                task->m_isMBQP = false;
-                            }
+#ifdef ENABLE_APQ_LQ
+                if (!task->m_isMBQP && task->m_ALQOffset != 0) {
+                    task->m_isMBQP = true;
+                    if (task->m_ALQOffset > 0) {
+                        if (task->m_cqpValue[0] > task->m_ALQOffset && task->m_cqpValue[1] > task->m_ALQOffset) {
+                            task->m_cqpValue[0] = (mfxU8)((mfxI32)task->m_cqpValue[0] - task->m_ALQOffset);
+                            task->m_cqpValue[1] = (mfxU8)((mfxI32)task->m_cqpValue[1] - task->m_ALQOffset);
+                        }
+                        else {
+                            task->m_ALQOffset = 0;
+                            task->m_isMBQP = false;
                         }
                     }
-                    else {
-                        task->m_ALQOffset = 0;
+                    else if (task->m_ALQOffset < 0) {
+                        if (task->m_cqpValue[0] > 51 + task->m_ALQOffset || task->m_cqpValue[1] > 51 + task->m_ALQOffset) {
+                            task->m_ALQOffset = 0;
+                            task->m_isMBQP = false;
+                        }
                     }
-    #endif
+                }
+                else {
+                    task->m_ALQOffset = 0;
+                }
+#endif
                 if (m_useMBQPSurf && task->m_isMBQP)
                 {
                     task->m_idxMBQP = FindFreeResourceIndex(m_mbqp);

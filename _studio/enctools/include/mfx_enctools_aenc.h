@@ -46,6 +46,7 @@ public:
     void Close();
     mfxStatus SubmitFrame(mfxFrameSurface1 *surface);
     mfxStatus ReportEncResult(mfxU32 dispOrder, mfxEncToolsBRCEncodeResult const & pEncRes);
+    mfxStatus GetIntraDecision(mfxU32 displayOrder, mfxU16 *frameType);
     mfxStatus GetSCDecision(mfxU32 displayOrder, mfxEncToolsHintPreEncodeSceneChange *pPreEncSC);
     mfxStatus GetGOPDecision(mfxU32 displayOrder, mfxEncToolsHintPreEncodeGOP *pPreEncGOP);
     mfxStatus GetARefDecision(mfxU32 displayOrder, mfxEncToolsHintPreEncodeARefFrames *pPreEncARef);

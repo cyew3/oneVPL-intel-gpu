@@ -96,6 +96,7 @@ namespace aenc {
         int32_t highMvCount = 0;
         int32_t MV = 0;
         int32_t CORR = 0;
+        int32_t LtrOnHint = 0;
 
         //APQ
         int32_t SC = 0;         // Scene complexity index
@@ -122,6 +123,7 @@ namespace aenc {
 
         mfxStatus ProcessFrame(uint32_t POC, const uint8_t* InFrame, int32_t pitch, AEncFrame* OutFrame);
         void   UpdatePFrameBits(uint32_t displayOrder, uint32_t bits, uint32_t QpY, uint32_t ClassCmplx);
+        mfxU16 GetIntraDecision();
 
     protected:
         //stat computation
@@ -159,7 +161,6 @@ namespace aenc {
         void AdjustQpAref(InternalFrame& f);
         void AdjustQpApq(InternalFrame& f);
         void AdjustQpAgop(InternalFrame& f);
-        bool isArefKeyFrame(InternalFrame f, uint32_t dist);
 
 
         //out

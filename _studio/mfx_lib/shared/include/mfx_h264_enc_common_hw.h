@@ -1056,7 +1056,8 @@ namespace MfxHwH264Encode
     bool IsLpLookaheadSupported(
         mfxU16 scenario,
         mfxU16 lookaheadDepth,
-        mfxU16 rateContrlMethod);
+        mfxU16 rateContrlMethod,
+        mfxU16 isEnctoolsBRC);
 #endif
 
     struct mfxExtBufferProxy;

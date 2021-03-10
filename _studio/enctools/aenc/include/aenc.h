@@ -73,6 +73,7 @@ extern "C" {
     mfxStatus MFX_CDECL AEncInit(mfxHDL* pthis, AEncParam param);
     void      MFX_CDECL AEncClose(mfxHDL pthis);
     mfxStatus MFX_CDECL AEncProcessFrame(mfxHDL pthis, mfxU32 POC, mfxU8* InFrame, mfxI32 pitch, AEncFrame* OutFrame);
+    mfxU16    MFX_CDECL AEncGetIntraDecision(mfxHDL pthis);
     void      MFX_CDECL AEncUpdatePFrameBits(mfxHDL pthis, mfxU32 displayOrder, mfxU32 bits, mfxU32 QpY, mfxU32 ClassCmplx);
 
 #ifdef __cplusplus

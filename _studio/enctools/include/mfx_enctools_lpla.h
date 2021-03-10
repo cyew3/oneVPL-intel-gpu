@@ -39,8 +39,18 @@ struct MfxLookAheadReport
     mfxU8  MiniGopSize;
     mfxU8  PyramidQpHint;
     mfxU32 TargetFrameSize;
-    mfxU32 TargetBufferFullnessInBit;
+    mfxU32 LaAvgEncodedSize;
+    mfxU32 LaCurEncodedSize;
+    mfxU32 LaIDist;
 };
+
+struct MfxFrameSize
+{
+    mfxU32 dispOrder;
+    mfxU32 encodedFrameSize;
+    mfxU32 frameType;
+};
+
 
 enum
 {
@@ -63,6 +73,7 @@ public:
         m_pmfxENC(nullptr),
         m_curDispOrder(-1),
         m_lookAheadScale (0),
+        m_lookAheadDepth (0),
         m_lastIFrameNumber(0),
         m_lastIDRFrameNumber(0),
         m_GopPicSize(0),
@@ -71,13 +82,14 @@ public:
         m_bitstream  = {};
         m_encParams  = {};
         m_curEncodeHints = {};
+        m_frameSizes = {};
     }
 
     virtual ~LPLA_EncTool () { Close(); }
 
     virtual mfxStatus Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
     virtual mfxStatus Close();
-    virtual mfxStatus Submit(mfxFrameSurface1 * surface);
+    virtual mfxStatus Submit(mfxFrameSurface1 * surface, mfxU16 FrameType);
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsBRCBufferHint *pBufHint);
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqmHint);
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPreEncGOP);
@@ -112,10 +124,12 @@ protected:
     mfxExtCodingOption3           m_extBufCO3;
     mfxExtLpLaStatus              m_lplaHints;
     mfxU32                        m_lookAheadScale;
+    mfxU32                        m_lookAheadDepth;
     mfxU32                        m_lastIFrameNumber;
     mfxU32                        m_lastIDRFrameNumber;
     mfxU16                        m_GopPicSize;
     mfxU16                        m_IdrInterval;
+    std::list<MfxFrameSize>       m_frameSizes;
     mfxExtEncToolsConfig          m_config;
 };
 #endif

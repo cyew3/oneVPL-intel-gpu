@@ -175,7 +175,11 @@ typedef struct
         mfxU16  MaxQPLevel[3];              /* QP range  limitations */
 
         mfxU32  PanicMode;
-        mfxU16  reserved5[64];
+
+        mfxU16  LaQp;                       /* QP used for LookAhead encode */
+        mfxU16  LaScale;                    /* Downscale Factor for LookAhead encode */
+
+        mfxU16  reserved5[62];
     };
     mfxU16 NumExtParam;
     mfxExtBuffer** ExtParam;
@@ -277,10 +281,11 @@ MFX_PACK_END()
 
 enum
 {
-    MFX_QP_MODULATION_NOT_DEFINED = 0,
-    MFX_QP_MODULATION_LOW,
-    MFX_QP_MODULATION_MEDIUM,
-    MFX_QP_MODULATION_HIGH
+    MFX_QP_MODULATION_NOT_DEFINED = 0,  /* QPModulation type for the frame is not defined. */
+    MFX_QP_MODULATION_LOW,              /* Use low pyramid delta QP for this frame. This type of content prefers low delta QP between P/B Layers. */
+    MFX_QP_MODULATION_MEDIUM,           /* Use medium pyramid delta QP for this frame. This type of content prefers medium delta QP between P/B Layers. */
+    MFX_QP_MODULATION_HIGH,             /* Use high pyramid delta QP for this frame. This type of content prefers high delta QP between P/B Layers. */
+    MFX_QP_MODULATION_MIXED             /* Use pyramid delta QP appropriate for mixed content. */
 };
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
@@ -327,8 +332,10 @@ typedef struct {
     mfxStructVersion  Version;
     mfxU16            reserved[3];
     mfxU32            OptimalFrameSizeInBytes;
-/*  mfxU32            OptimalBufferFullness; */ /* Target buffer fullness in bits, currently can be calculated from OptimalFrameSizeInBytes */
-    mfxU32            reserved2[7];
+    mfxU32            LaAvgEncodedSize;         /* Average size of encoded Lookahead frames in bits */
+    mfxU32            LaCurEncodedSize;         /* Size of encoded Lookahead frame at current frame location in bits */
+    mfxU32            LaIDist;                  /* First I Frame in Lookahead frames (0 if not found) */
+    mfxU32            reserved2[4];
 } mfxEncToolsBRCBufferHint;
 MFX_PACK_END()
 
@@ -342,7 +349,9 @@ typedef struct {
     mfxU16            FrameType;       /* See FrameType enumerator */
     mfxU16            PyramidLayer;    /* B-pyramid or P-pyramid layer frame belongs to */
     mfxU32            EncodeOrder;     /* Frame number in a sequence of reordered frames starting from encoder Init() */
-    mfxU32            reserved1[2];
+    mfxU16            SceneChange;     // Frame is Scene Chg frame
+    mfxU16            LongTerm;        // Frame is long term refrence
+    mfxU32            reserved1[1];
 } mfxEncToolsBRCFrameParams;
 MFX_PACK_END()
 

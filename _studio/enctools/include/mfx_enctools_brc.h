@@ -60,7 +60,9 @@ struct BRC_FrameStruct
         longTerm(0),
         frameCmplx(0),
         OptimalFrameSizeInBytes(0),
-        optimalBufferFullness(0),
+        LaAvgEncodedSize(0),
+        LaCurEncodedSize(0),
+        LaIDist(0),
         qpDelta(MFX_QP_UNDEFINED),
         qpModulation(MFX_QP_MODULATION_NOT_DEFINED)
     {}
@@ -75,7 +77,9 @@ struct BRC_FrameStruct
     mfxU16 longTerm;
     mfxU32 frameCmplx;
     mfxU32 OptimalFrameSizeInBytes;
-    mfxU32 optimalBufferFullness;
+    mfxU32 LaAvgEncodedSize;
+    mfxU32 LaCurEncodedSize;
+    mfxU32 LaIDist;
     mfxI16 qpDelta;
     mfxU16 qpModulation;
 };
@@ -142,6 +146,10 @@ public:
     mfxF64   mMinQstepRateEP;
     mfxI32   mMinQstepCmplxKPUpdt;
     mfxF64   mMinQstepCmplxKPUpdtErr;
+
+    mfxU16   mLaDepth;
+    mfxU16   mLaQp;
+    mfxU16   mLaScale;
 
     mfxU32  codecId;
 
@@ -312,7 +320,8 @@ struct BRC_Ctx
     mfxU32 LastIDRSceneChange; // last idr was scene change
     mfxU32 LastIQpAct;      // Qp of last intra frame
     mfxU32 LastIFrameSize; // encoded frame size of last non B frame (is used for sceneChange)
-    mfxF64 LastICmplx;      // Qp of last intra frame
+    mfxF64 LastICmplx;      // Cmplx of last intra frame
+    mfxU32 LastLaIBits;     // La bits of Last Intra Frame
     mfxU32 LastIQpSetOrder; // Qp of last intra frame
     mfxU32 LastIQpMin; // Qp of last intra frame
     mfxU32 LastIQpSet;      // Qp of last intra frame
@@ -490,10 +499,10 @@ protected:
     mfxU32     m_ReEncodeCount;
     std::vector<BRC_FrameStruct> m_FrameStruct;
 
-    mfxI32 GetCurQP(mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod) const;
-    mfxI32 GetSeqQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod) const;
-    mfxI32 GetPicQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod) const;
-    mfxF64 ResetQuantAb(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxF64 fAbLong, mfxU32 eo, bool bIdr, mfxU16 qpMod) const;
+    mfxI32 GetCurQP(mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod, mfxI32 qpDeltaP) const;
+    mfxI32 GetSeqQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod, mfxI32 qpDeltaP) const;
+    mfxI32 GetPicQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod, mfxI32 qpDeltaP) const;
+    mfxF64 ResetQuantAb(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxF64 fAbLong, mfxU32 eo, bool bIdr, mfxU16 qpMod, mfxI32 qpDeltaP) const;
 };
 
 };

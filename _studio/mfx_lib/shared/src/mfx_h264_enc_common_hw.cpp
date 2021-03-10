@@ -2319,7 +2319,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
     // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
-    if(IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, par.mfx.RateControlMethod))
+    if(extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, par.mfx.RateControlMethod, MFX_CODINGOPTION_UNKNOWN))
     {
         MFX_CHECK(hwCaps.ddi_caps.LookaheadBRCSupport, MFX_ERR_INVALID_VIDEO_PARAM);
     }
@@ -2922,6 +2922,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                     unsupported = true;
             }
             else
+#if defined(MFX_ENABLE_ENCTOOLS)
+            if(!(H264EncTools::isEncToolNeeded(par)))
+#endif
             {
 #endif
                 changed = true;
@@ -6595,7 +6598,8 @@ void MfxHwH264Encode::SetDefaults(
             (par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) &&
             ((IsExtBrcSceneChangeSupported(par, platform) && !extBRC.pthis)
  #if defined(MFX_ENABLE_LP_LOOKAHEAD)
-             || IsLpLookaheadSupported(extOpt3->ScenarioInfo, extOpt2->LookAheadDepth, par.mfx.RateControlMethod)
+             || (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && 
+                 IsLpLookaheadSupported(extOpt3->ScenarioInfo, extOpt2->LookAheadDepth, par.mfx.RateControlMethod, MFX_CODINGOPTION_UNKNOWN))
 #endif
             ))
             extOpt3->PRefType = MFX_P_REF_PYRAMID;
@@ -8282,9 +8286,9 @@ mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExt
 }
 
 #if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-bool MfxHwH264Encode::IsLpLookaheadSupported(mfxU16 scenario, mfxU16 lookaheadDepth, mfxU16 rateContrlMethod)
+bool MfxHwH264Encode::IsLpLookaheadSupported(mfxU16 scenario, mfxU16 lookaheadDepth, mfxU16 rateContrlMethod, mfxU16 enctoolsBRC)
 {
-    if (scenario == MFX_SCENARIO_GAME_STREAMING && lookaheadDepth > 0 &&
+    if ((scenario == MFX_SCENARIO_GAME_STREAMING || enctoolsBRC == MFX_CODINGOPTION_ON) && lookaheadDepth > 0 &&
         (rateContrlMethod == MFX_RATECONTROL_CBR || rateContrlMethod == MFX_RATECONTROL_VBR))
         return true;
     else
@@ -9138,7 +9142,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     mfxU16 et_default = MFX_CODINGOPTION_OFF;
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtEncToolsConfig *pConf = GetExtBuffer(par);
-    if (!pConf  && IsLpLookaheadSupported(m_extOpt3.ScenarioInfo, m_extOpt2.LookAheadDepth, mfx.RateControlMethod))
+    if (!pConf  && IsLpLookaheadSupported(m_extOpt3.ScenarioInfo, m_extOpt2.LookAheadDepth, mfx.RateControlMethod, MFX_CODINGOPTION_UNKNOWN))
     {
         et_default = MFX_CODINGOPTION_UNKNOWN;
     }
