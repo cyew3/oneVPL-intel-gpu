@@ -123,6 +123,7 @@ namespace Base
         TaskCommonPar m_prevTask;
         mfxU32
             m_frameOrder        = mfxU32(-1)
+            , m_frameOrderTmp   = mfxU32(-1)
             , m_baseLayerOrder  = 0
             , m_forceHeaders    = 0;
         mfxU16
@@ -137,6 +138,7 @@ namespace Base
         void ResetState()
         {
             m_frameOrder     = mfxU32(-1);
+            m_frameOrderTmp  = mfxU32(-1);
             LastKeyFrameInfo = {};
             m_baseLayerOrder = 0;
             Invalidate(m_prevTask);
