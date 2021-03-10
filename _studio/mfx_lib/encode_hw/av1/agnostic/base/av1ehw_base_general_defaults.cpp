@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -397,18 +397,23 @@ public:
         mfxU16 QPP = bCQP * par.mvp.mfx.QPP;
         mfxU16 QPB = bCQP * par.mvp.mfx.QPB;
 
-        bool bValid = (QPI && QPP && QPB);
-
-        if (bValid)
+        if (bCQP)
             return std::make_tuple(QPI, QPP, QPB);
+        else
+        {
+            bool bValid = ((QPI) && (QPP) && (QPB));
 
-        auto maxQP = par.base.GetMaxQPMFX(par);
+            if (bValid)
+                return std::make_tuple(QPI, QPP, QPB);
 
-        SetDefault(QPI, std::max<mfxU16>(par.base.GetMinQPMFX(par), (maxQP + 1) / 2));
-        SetDefault(QPP, std::min<mfxU16>(QPI + 5, maxQP));
-        SetDefault(QPB, std::min<mfxU16>(QPP + 5, maxQP));
+            auto maxQP = par.base.GetMaxQPMFX(par);
 
-        return std::make_tuple(QPI, QPP, QPB);
+            SetDefault(QPI, std::max<mfxU16>(par.base.GetMinQPMFX(par), (maxQP + 1) / 2));
+            SetDefault(QPP, std::min<mfxU16>(QPI + 5, maxQP));
+            SetDefault(QPB, std::min<mfxU16>(QPP + 5, maxQP));
+
+            return std::make_tuple(QPI, QPP, QPB);
+        }
     }
 
     static mfxU16 Profile(
