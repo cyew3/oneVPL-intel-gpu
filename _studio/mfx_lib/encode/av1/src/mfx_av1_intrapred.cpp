@@ -503,7 +503,7 @@ RdCost TransformIntraYSbAv1(BlockSize bsz, int32_t mode, int32_t haveTop, int32_
                 SetCulLevel(aboveNzCtx+x, leftNzCtx+y, 0, txSize);
             }
 
-            if(retEob) retEob[y*16+x] = eob;
+            if(retEob) retEob[y*16+x] = (int16_t) eob;
             rd.eob += eob;
             rd.sse += txSse;
             rd.coefBits += txBits;
@@ -798,7 +798,7 @@ uint64_t AV1CU<PixType>::CheckIntra64x64(PredMode *bestIntraMode)
                 sum += sumLeft;
                 shift = (shift == 0) ? 4 : 5;
             }
-            uint8_t recPel = shift ? ((sum + ((1 << shift) >> 1)) >> shift) : 128;
+            uint8_t recPel = (uint8_t) (shift ? ((sum + ((1 << shift) >> 1)) >> shift) : 128);
 
             // for first 16x16 block: preserve DC coef and zero out AC coefs
             // for other 16x16 blocks: zero out all coefs
@@ -1079,8 +1079,8 @@ uint8_t GetColorCount(PixType* srcSb, uint32_t width, uint32_t height, uint8_t *
             std::sort(std::begin(plt), std::begin(plt) + colors);
             for (k = 0; k < colors; k++) {
                 const int idx = plt[k];
-                map_enc[idx] = k;
-                palette[k].color = idx;
+                map_enc[idx] = (uint8_t) k;
+                palette[k].color = (uint8_t) idx;
                 palette[k].count = color_count[idx];
                 palette[k].sum1 = color_count[idx] * idx * 2;
                 palette[k].sum2 = color_count[idx] * idx * idx;
@@ -1153,7 +1153,7 @@ uint8_t GetColorCount(PixType* srcSb, uint32_t width, uint32_t height, uint8_t *
                     }
                     // Force reduction
                     while (k > MAX_PALETTE) {
-                        PaletteNode *curr = head;
+                        curr = head;
                         uint32_t bestSse = INT_MAX;
                         PaletteNode *minCand = NULL;
                         PaletteNode *minMergeL = NULL;
@@ -1197,20 +1197,20 @@ uint8_t GetColorCount(PixType* srcSb, uint32_t width, uint32_t height, uint8_t *
                 colors = k;
                 if (colors > 1 && colors <= MAX_PALETTE) {
                     PaletteNode *t = head;
-                    uint8_t i = 0;
+                    uint8_t ci = 0;
                     bits = 0;
                     while (t) {
-                        ret_palette[i] = t->GetMeanColor();
+                        ret_palette[ci] = t->GetMeanColor();
                         bits += t->bits;
                         pi->sse += t->GetTotalSse(t->GetMeanColor());
 
                         for (PaletteNode *c = t; c; c = c->C)
-                            map_enc[c->color] = i;
+                            map_enc[c->color] = ci;
 
                         t = t->R;
-                        i++;
+                        ci++;
                     }
-                    assert(i == k);
+                    assert(ci == k);
                     const __m256i shuftab = _mm256_set1_epi32(0x0C080400);
                     for (uint32_t i = 0;i < height;i++) {
                         //for (uint32_t j = 0; j < width; j++) {
@@ -1272,7 +1272,7 @@ uint8_t GetColorCountUV(PixType* srcSb, uint32_t width, uint32_t height, uint8_t
         }
 
         int max_colors = std::max(colorsU, colorsV);
-        pi->true_colors_uv = max_colors;
+        pi->true_colors_uv = (uint8_t) max_colors;
         pi->sseUV = 0;
         pi->color_map = color_map;
 
@@ -1295,13 +1295,13 @@ uint8_t GetColorCountUV(PixType* srcSb, uint32_t width, uint32_t height, uint8_t
                 for (uint32_t j = 0; j < width; j++) {
                     const int off = idx + (j << 1);
                     const int im = map_idx[srcSb[off]];
-                    color_map[idx + j] = im;
+                    color_map[idx + j] = (uint8_t) im;
                     PixType v = srcSb[off + 1];
                     const int vi = palette_v[im];
                     if (vi >= 0 && vi != v) {
                         //choose color with more count
                         if (color_countV[v] < color_countV[vi]) {
-                            v = vi;
+                            v = (PixType) vi;
                         }
                         is_dist = true;
                     }
@@ -1309,22 +1309,22 @@ uint8_t GetColorCountUV(PixType* srcSb, uint32_t width, uint32_t height, uint8_t
                 }
             }
 
-            float log2_isz = log2(1.0 / (width * height));
+            float log2_isz = (float) (log2(1.0 / (width * height)));
             for (int i = 0; i < max_colors; i++) {
                 const int color = palette_u[i];
-                uint16_t icount = color_countU[color];
-                ret_palette[i] = color;
+                uint16_t icount = (uint16_t) color_countU[color];
+                ret_palette[i] = (uint8_t) color;
                 const int color_v = palette_v[i];
-                ret_palette[MAX_PALETTE + i] = color_v == -1 ? ret_palette[MAX_PALETTE + i - 1] : color_v;
-                float si = -(log2(icount) + log2_isz);
-                uint32_t colbits = si * 512;
+                ret_palette[MAX_PALETTE + i] = (uint8_t)(color_v == -1 ? ret_palette[MAX_PALETTE + i - 1] : color_v);
+                float si = (float)(-(log2(icount) + log2_isz));
+                uint32_t colbits = (uint32_t)(si * 512.0f);
                 if (icount > 1) colbits += (uint32_t)(si * ((icount - 1) * 256));
                 bits += colbits;
             }
 
             //U palette reassign to minimize sse?
 
-            return max_colors;
+            return (uint8_t) max_colors;
         }
 
         return 0;
@@ -1476,27 +1476,27 @@ uint32_t GetPaletteDeltaCost(uint8_t *colors_xmit, uint32_t colors_xmit_size, ui
     int32_t index = 0;
     int32_t bits = 0;
     int32_t delta_bits = bitdepth - 3;
-    uint32_t max_delta_bits = delta_bits;
+    int32_t max_delta_bits = delta_bits;
     if (colors_xmit_size) {
         bits += bitdepth;
         index++;
     }
-    if (index < colors_xmit_size) {
+    if (index < (int32_t) colors_xmit_size) {
         int32_t max_delta = 0;
         for (uint32_t i = 1; i < colors_xmit_size; i++) {
-            int32_t delta = abs((int)colors_xmit[i] - (int)colors_xmit[i - 1]);
+            int32_t delta = abs((int32_t)colors_xmit[i] - (int32_t)colors_xmit[i - 1]);
             if (delta > max_delta) max_delta = delta;
         }
-        assert(max_delta >= min_delta);
+        assert(max_delta >= (int32_t) min_delta);
         int32_t max_val = (max_delta - min_delta);
         max_delta_bits = (max_val?BSR(max_val)+1:0);
         max_delta_bits = MAX(delta_bits, max_delta_bits);
         bits += 2;  // extra bits
-        for (int i = 1; i < colors_xmit_size; ++i) {
+        for (uint32_t i = 1; i < colors_xmit_size; ++i) {
             bits += max_delta_bits;
             int32_t range = (1 << bitdepth) -1 - colors_xmit[i] - min_delta;
             uint32_t range_bits = (range?BSR(range)+1:0);
-            max_delta_bits = MIN(range_bits, max_delta_bits);
+            max_delta_bits = MIN((int32_t)range_bits, max_delta_bits);
         }
     }
     return bits;
@@ -1532,12 +1532,12 @@ uint32_t GetPaletteCacheIndicesCost(uint8_t *palette, uint32_t palette_size, uin
 {
     index_bits = 0;
     if (cache_size == 0) {
-        for (int i = 0; i < palette_size; ++i) colors_xmit[i] = palette[i];
+        for (int32_t i = 0; i < (int32_t) palette_size; ++i) colors_xmit[i] = palette[i];
         return palette_size;
     }
     uint32_t colors_found = 0;
     uint8_t palette_found[MAX_PALETTE] = { 0 };
-    for (int32_t index = 0; index < cache_size && colors_found < palette_size; index++) {
+    for (int32_t index = 0; index < (int32_t) cache_size && colors_found < palette_size; index++) {
         for (uint32_t k = 0; k < palette_size; k++) {
             if (cache[index] == palette[k]) {
                 colors_found++;
@@ -1548,7 +1548,7 @@ uint32_t GetPaletteCacheIndicesCost(uint8_t *palette, uint32_t palette_size, uin
         }
     }
     uint32_t i = 0;
-    for (int32_t k = 0; k < palette_size; k++) {
+    for (int32_t k = 0; k < (int32_t) palette_size; k++) {
         if (!palette_found[k]) colors_xmit[i++] = palette[k];
     }
     assert(i == palette_size - colors_found);
@@ -1560,8 +1560,8 @@ uint32_t AV1CU<PixType>::GetPaletteCache(uint32_t miRow, bool isLuma, uint32_t m
 {
     PaletteInfo *abovePalette = NULL;
     PaletteInfo *leftPalette = NULL;
-    const int32_t haveTop = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft = (miCol > m_tileBorders.colStart);
+    const int32_t haveTop = ((int32_t) miRow > m_tileBorders.rowStart);
+    const int32_t haveLeft = ((int32_t) miCol > m_tileBorders.colStart);
     int32_t aiz = 0;
     int32_t liz = 0;
     uint8_t* a_palette{ nullptr };
@@ -1594,32 +1594,32 @@ uint32_t AV1CU<PixType>::GetPaletteCache(uint32_t miRow, bool isLuma, uint32_t m
     uint32_t ai = 0;
     uint32_t li = 0;
     uint32_t colors_found = 0;
-    while (ai < aiz  && li < liz) {
+    while ((int32_t) ai < aiz  && (int32_t) li < liz) {
         uint16_t aboveColor = a_palette[ai];
         uint16_t leftColor = l_palette[li];
         if (leftColor < aboveColor) {
             if (colors_found == 0 || leftColor != cache[colors_found - 1]) {
-                cache[colors_found++] = leftColor;
+                cache[colors_found++] = (uint8_t) leftColor;
             }
             li++;
         } else {
             if (colors_found == 0 || aboveColor != cache[colors_found - 1]) {
-                cache[colors_found++] = aboveColor;
+                cache[colors_found++] = (uint8_t) aboveColor;
             }
             ai++;
             if (leftColor == aboveColor) li++;
         }
     }
-    while (ai < aiz) {
+    while ((int32_t) ai < aiz) {
         uint16_t aboveColor = a_palette[ai++];
         if (colors_found == 0 || aboveColor != cache[colors_found - 1]) {
-            cache[colors_found++] = aboveColor;
+            cache[colors_found++] = (uint8_t) aboveColor;
         }
     }
-    while (li < liz) {
+    while ((int32_t) li < liz) {
         uint16_t leftColor = l_palette[li++];
         if (colors_found == 0 || leftColor != cache[colors_found - 1]) {
-            cache[colors_found++] = leftColor;
+            cache[colors_found++] = (uint8_t) leftColor;
         }
     }
     assert(colors_found <= 2*MAX_PALETTE);
@@ -1844,14 +1844,14 @@ RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth,
                 paletteCost = m_rdLambda * (intraModeBits[DC_PRED] + palette_bits) + pi->sse;
             }
             if (cost > paletteCost) {
-                bestCost = cost;
+                bestCost = (int32_t) cost;
                 bestMode = DC_PRED;
-                pi->palette_size_y = palette_size;
+                pi->palette_size_y = (uint8_t) palette_size;
                 pi->palette_bits = palette_bits;
                 for (int k = 0; k < palette_size; k++)
                     pi->palette_y[k] = palette[k];
 
-                rd = TransformIntraYSbAv1(bsz, bestMode, haveTop, haveLeft, maxTxSize, bsz <= BLOCK_16X16 ? IDTX : DCT_DCT, anz, lnz, srcSb,
+                rd = TransformIntraYSbAv1(bsz, bestMode, haveTop, haveLeft, maxTxSize, (TxType)(bsz <= BLOCK_16X16 ? IDTX : DCT_DCT), anz, lnz, srcSb,
                     recSb, m_pitchRecLuma, diff, coef, qcoef, coefWork, m_lumaQp, bc, m_rdLambda, miRow,
                     miCol, miColEnd, bestDelta, filtType, *m_par, m_aqparamY, NULL, pi, NULL);
             }
@@ -2083,9 +2083,6 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
         AV1PP::cfl_subtract_average_fptr_arr[txSize](chromaBuf, chromaAc);
 #endif
 
-        int best_alpha_u = 0;
-        int best_alpha_v = 0;
-        int best_sign = 0;
 
         //find max abs ac value to reduce number of test cases
         //max width, height = 16 for chroma
@@ -2105,7 +2102,7 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
         for (int alpha = 0; alpha < CFL_ALPHABET_SIZE; alpha++) {
             for (int sign = CFL_SIGN_NEG; sign < CFL_SIGNS; sign++) {
 
-                int16_t alpha_q3 = (sign == CFL_SIGN_POS) ? alpha + 1 : -alpha - 1;
+                int16_t alpha_q3 = (int16_t) ((sign == CFL_SIGN_POS) ? alpha + 1 : -alpha - 1);
 
                 AV1PP::cfl_predict_nv12_u8_fptr_arr[txSize](chromaAc, (uint8_t*)predCFL, widthSb<<1, m_predIntraAll[0], m_predIntraAll[1], alpha_q3, m_par->bitDepthChromaShift+8);
 #if 0
@@ -2129,7 +2126,6 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
                 }
 #endif
 
-                int costU, costV;
                 AV1PP::sse_p64_pw_uv(srcSb, predCFL, log2w + 1, log2w, costU, costV);
                 CostType cost[2];
                 int joint_sign_u = sign * CFL_SIGNS + 0 - 1;
@@ -2161,8 +2157,8 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
                 PixType*  cfl = predCFL;
 
                 //prediction
-                int16_t alpha_q3_u = bestSignUV[0] == CFL_SIGN_ZERO ? 0 : (bestSignUV[0] == CFL_SIGN_POS) ? bestAlphaUV[0] + 1 : -bestAlphaUV[0] - 1;
-                int16_t alpha_q3_v = bestSignUV[1] == CFL_SIGN_ZERO ? 0 : (bestSignUV[1] == CFL_SIGN_POS) ? bestAlphaUV[1] + 1 : -bestAlphaUV[1] - 1;
+                int16_t alpha_q3_u = (int16_t) (bestSignUV[0] == CFL_SIGN_ZERO ? 0 : (bestSignUV[0] == CFL_SIGN_POS) ? bestAlphaUV[0] + 1 : -bestAlphaUV[0] - 1);
+                int16_t alpha_q3_v = (int16_t) (bestSignUV[1] == CFL_SIGN_ZERO ? 0 : (bestSignUV[1] == CFL_SIGN_POS) ? bestAlphaUV[1] + 1 : -bestAlphaUV[1] - 1);
 
                 const PixType dcU = m_predIntraAll[0]; //dc the same for all pixels
                 const PixType dcV = m_predIntraAll[1];
@@ -2180,7 +2176,7 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
                     cfl += widthSb << 1;
                     acPtr += 32;
                 }
-                int costU, costV;
+
                 AV1PP::sse_p64_pw_uv(srcSb, predCFL, log2w + 1, log2w, costU, costV);
 
                 bestCost = cost;
@@ -2498,7 +2494,6 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
         palette_size = GetColorCountUV(srcSb, sbw, sbw, palette, m_par->bitDepthChroma, m_rdLambda, pi, color_map, map_bits_est, palette_has_dist);
 
         if (palette_size > 1 && palette_size <= MAX_PALETTE && !palette_has_dist) {
-            const int32_t width = sbw;
 
             uint32_t ctxBS = num_pels_log2_lookup[mi->sbType] - num_pels_log2_lookup[BLOCK_8X8];
 
@@ -2529,7 +2524,7 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
             if (cost > 0.75*palette_cost && cost < 1.25*palette_cost) {
                 // get better estimate
                 palette_bits -= map_bits_est;
-                uint32_t map_bits = GetPaletteTokensCostUV(bc, srcSb, width, width, palette, palette_size, map_src);
+                uint32_t map_bits = GetPaletteTokensCostUV(bc, srcSb, sbw, sbw, palette, palette_size, map_src);
                 palette_bits += map_bits;
                 palette_cost = m_rdLambda * (intraModeUvBits[DC_PRED] + palette_bits) + pi->sseUV;
             }
@@ -2605,8 +2600,8 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
 #ifdef ADAPTIVE_DEADZONE
             AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
             AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
-            int32_t eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
-            int32_t eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
+            eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
+            eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
             if (eobU) {
                 AV1PP::dequant(coeffU, residU, m_aqparamUv[0], txSize, sizeof(PixType) == 1 ? 8 : 10);
                 adaptDz(coefOriginU, residU, m_aqparamUv[0], txSize, &m_roundFAdjUv[0][0], eobU);
@@ -2781,8 +2776,8 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1_10bit(int32_t absPartIdx, int32_
     AV1PP::GetPredPelsAV1<PLANE_TYPE_UV>((ChromaPixType *)recSb, m_pitchRecChroma >> 1, predPels.top, predPels.left, widthSb, haveTop_, haveLeft_, pixTopRight, pixBottomLeft);
     AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll10bit + 0 * size * 2, widthSb * 2, log2w, haveLeft_, haveTop_, DC_PRED, 0, 0, 0);
 
-    int32_t bestSse = 0;    // AV1PP::sse_p64_pw(srcSb, m_predIntraAll10bit, log2w + 1, log2w);
-    CostType bestCost = 0;  // bestSse + m_rdLambda * intraModeUvBits[DC_PRED];
+    //int32_t bestSse = 0;    // AV1PP::sse_p64_pw(srcSb, m_predIntraAll10bit, log2w + 1, log2w);
+    //CostType bestCost = 0;  // bestSse + m_rdLambda * intraModeUvBits[DC_PRED];
 
 #if 0
     for (PredMode mode = DC_PRED + 1; mode < AV1_INTRA_MODES; mode++)
@@ -2809,7 +2804,7 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1_10bit(int32_t absPartIdx, int32_
         }
     }
 #endif
-    PredMode oldBest = bestMode;
+    //PredMode oldBest = bestMode;
 #if 0
     //predict CFL from best luma prediction
     alignas(32) PixType predCFL[32 * 32 * 2];

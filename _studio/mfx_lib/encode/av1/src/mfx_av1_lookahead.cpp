@@ -3384,9 +3384,9 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         int32_t picWidthInBlks = (frame->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
                         int32_t fPos = (region_row * rowsInRegion) * picWidthInBlks; // [fPos, lPos)
                         int32_t lPos = fPos + numActiveRows * picWidthInBlks;
-                        if (lPos <= stat->m_interSad.size())
+                        if (lPos <= (int32_t) stat->m_interSad.size())
                             std::fill(stat->m_interSad.begin() + fPos, stat->m_interSad.begin() + lPos, std::numeric_limits<int32_t>::max());
-                        if (lPos <= stat->m_interSatd.size())
+                        if (lPos <= (int32_t) stat->m_interSatd.size())
                             std::fill(stat->m_interSatd.begin() + fPos, stat->m_interSatd.begin() + lPos, std::numeric_limits<int32_t>::max());
                     }
                 }
@@ -3529,10 +3529,10 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 #ifdef AMT_HROI_PSY_AQ
             if (m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
                 if ((m_videoParam.DeltaQpMode & AMT_DQP_HROI) == 0) {
-                    FS_Luma_Slice_end(m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size(), in[0]->m_bitDepthLuma);
+                    FS_Luma_Slice_end(m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]), (int)(in[0]->m_stats[0]->lum_avg_8x8.size()), in[0]->m_bitDepthLuma);
                 }
                 else {
-                    FS_ProcessMode1_Slice_end(m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->roi_map_8x8[0]), &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size());
+                    FS_ProcessMode1_Slice_end(m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->roi_map_8x8[0]), &(in[0]->m_stats[0]->lum_avg_8x8[0]), (int)(in[0]->m_stats[0]->lum_avg_8x8.size()));
                 }
                 // set seg map and complexity of ctb
                 if (m_videoParam.AnalyzeCmplx) {

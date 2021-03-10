@@ -88,7 +88,7 @@ static void cfl_luma_subsampling_420_u8_px_impl(const uint8_t *input,
     }
 }
 
-static void cfl_luma_subsampling_422_u8_px_impl(const uint8_t *input,
+/*static void cfl_luma_subsampling_422_u8_px_impl(const uint8_t *input,
     int input_stride,
     uint16_t *output_q3, int width,
     int height) {
@@ -100,9 +100,9 @@ static void cfl_luma_subsampling_422_u8_px_impl(const uint8_t *input,
         input += input_stride;
         output_q3 += CFL_BUF_LINE;
     }
-}
+}*/
 
-static void cfl_luma_subsampling_444_u8_px_impl(const uint8_t *input,
+/*static void cfl_luma_subsampling_444_u8_px_impl(const uint8_t *input,
     int input_stride,
     uint16_t *output_q3, int width,
     int height) {
@@ -114,7 +114,7 @@ static void cfl_luma_subsampling_444_u8_px_impl(const uint8_t *input,
         input += input_stride;
         output_q3 += CFL_BUF_LINE;
     }
-}
+}*/
 
 static void cfl_luma_subsampling_420_u16_px_impl(const uint16_t *input,
     int input_stride,
@@ -131,7 +131,7 @@ static void cfl_luma_subsampling_420_u16_px_impl(const uint16_t *input,
     }
 }
 
-static void cfl_luma_subsampling_422_u16_px_impl(const uint16_t *input,
+/*static void cfl_luma_subsampling_422_u16_px_impl(const uint16_t *input,
     int input_stride,
     uint16_t *output_q3, int width,
     int height) {
@@ -143,9 +143,9 @@ static void cfl_luma_subsampling_422_u16_px_impl(const uint16_t *input,
         input += input_stride;
         output_q3 += CFL_BUF_LINE;
     }
-}
+}*/
 
-static void cfl_luma_subsampling_444_u16_px_impl(const uint16_t *input,
+/*static void cfl_luma_subsampling_444_u16_px_impl(const uint16_t *input,
     int input_stride,
     uint16_t *output_q3, int width,
     int height) {
@@ -157,7 +157,7 @@ static void cfl_luma_subsampling_444_u16_px_impl(const uint16_t *input,
         input += input_stride;
         output_q3 += CFL_BUF_LINE;
     }
-}
+}*/
 
 namespace AV1PP {
     template<int width, int height> void cfl_luma_subsampling_420_u8_px(const uint8_t *input, int input_stride, uint16_t *output_q3) {

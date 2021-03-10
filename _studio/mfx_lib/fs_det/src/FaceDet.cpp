@@ -158,7 +158,7 @@ void preprocess_integral_image_sums(haar_cascade *mcascade, haarclass_cascade *c
     const haar_feature *feat;
     haarclass_feature *cls_feat;
     int rx[3]={0}, ry[3]={0}, rw[3]={0}, rh[3]={0};
-    int ax, ay, sx, sy, x, y;
+    int ax, ay, sx, sy, x=0, y=0;
     int bw, bh, sbw, sbh;
     int tx, ty, tw, th;
 

@@ -96,8 +96,8 @@ static void ConvertColorSpaces444_C(const BYTE* pYUV, BYTE* pSkinColorSpace, con
             b += r + g;
             b = MAX(b, 1);
 
-            pr[i*pitch + j] = NORM(r, b);
-            pg[i*pitch + j] = NORM(g, b);
+            pr[i*pitch + j] = (BYTE) NORM(r, b);
+            pg[i*pitch + j] = (BYTE) NORM(g, b);
         }
     }
 }
@@ -127,7 +127,7 @@ static void ConvertColorSpaces444_slice_C(const BYTE* pYUV, BYTE* pSkinColorSpac
             int v = pv0[i*pitch + j];
 
             // store Y to Yrg
-            py[i*pitch + j] = y;
+            py[i*pitch + j] = (BYTE) y;
 
             u -= 128;
             v -= 128;
@@ -153,8 +153,8 @@ static void ConvertColorSpaces444_slice_C(const BYTE* pYUV, BYTE* pSkinColorSpac
             b += r + g;
             b = MAX(b, 1);
 
-            pr[i*pitch + j] = NORM(r, b);
-            pg[i*pitch + j] = NORM(g, b);
+            pr[i*pitch + j] = (BYTE) NORM(r, b);
+            pg[i*pitch + j] = (BYTE) NORM(g, b);
         }
     }
 }
@@ -249,7 +249,7 @@ static void ConvertColorSpaces444_SSE4(const BYTE* pYUV, BYTE* pSkinColorSpace, 
             int v = pv0[i*pitch + j];
 
             // store Y to Yrg
-            py[i*pitch + j] = y;
+            py[i*pitch + j] = (BYTE) y;
 
             u -= 128;
             v -= 128;
@@ -275,8 +275,8 @@ static void ConvertColorSpaces444_SSE4(const BYTE* pYUV, BYTE* pSkinColorSpace, 
             b += r + g;
             b = MAX(b, 1);
 
-            pr[i*pitch + j] = NORM_SSE4(r, b);
-            pg[i*pitch + j] = NORM_SSE4(g, b);
+            pr[i*pitch + j] = (BYTE) NORM_SSE4(r, b);
+            pg[i*pitch + j] = (BYTE) NORM_SSE4(g, b);
         }
     }
 }
@@ -371,7 +371,7 @@ static void ConvertColorSpaces444_slice_SSE4(const BYTE* pYUV, BYTE* pSkinColorS
             int v = pv0[i*pitch + j];
 
             // store Y to Yrg
-            py[i*pitch + j] = y;
+            py[i*pitch + j] = (BYTE) y;
 
             u -= 128;
             v -= 128;
@@ -397,8 +397,8 @@ static void ConvertColorSpaces444_slice_SSE4(const BYTE* pYUV, BYTE* pSkinColorS
             b += r + g;
             b = MAX(b, 1);
 
-            pr[i*pitch + j] = NORM_SSE4(r, b);
-            pg[i*pitch + j] = NORM_SSE4(g, b);
+            pr[i*pitch + j] = (BYTE) NORM_SSE4(r, b);
+            pg[i*pitch + j] = (BYTE) NORM_SSE4(g, b);
         }
     }
 }
@@ -495,7 +495,7 @@ static void ConvertColorSpaces444_AVX2(const BYTE* pYUV, BYTE* pSkinColorSpace, 
             int v = pv0[i*pitch + j];
 
             // store Y to Yrg
-            py[i*pitch + j] = y;
+            py[i*pitch + j] = (BYTE) y;
 
             u -= 128;
             v -= 128;
@@ -521,8 +521,8 @@ static void ConvertColorSpaces444_AVX2(const BYTE* pYUV, BYTE* pSkinColorSpace, 
             b += r + g;
             b = MAX(b, 1);
 
-            pr[i*pitch + j] = NORM_SSE4(r, b);
-            pg[i*pitch + j] = NORM_SSE4(g, b);
+            pr[i*pitch + j] = (BYTE) NORM_SSE4(r, b);
+            pg[i*pitch + j] = (BYTE) NORM_SSE4(g, b);
         }
     }
 }
@@ -619,7 +619,7 @@ static void ConvertColorSpaces444_slice_AVX2(const BYTE* pYUV, BYTE* pSkinColorS
             int v = pv0[i*pitch + j];
 
             // store Y to Yrg
-            py[i*pitch + j] = y;
+            py[i*pitch + j] = (BYTE) y;
 
             u -= 128;
             v -= 128;
@@ -645,8 +645,8 @@ static void ConvertColorSpaces444_slice_AVX2(const BYTE* pYUV, BYTE* pSkinColorS
             b += r + g;
             b = MAX(b, 1);
 
-            pr[i*pitch + j] = NORM_SSE4(r, b);
-            pg[i*pitch + j] = NORM_SSE4(g, b);
+            pr[i*pitch + j] = (BYTE) NORM_SSE4(r, b);
+            pg[i*pitch + j] = (BYTE) NORM_SSE4(g, b);
         }
     }
 }

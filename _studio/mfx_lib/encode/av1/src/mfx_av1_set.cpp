@@ -1734,7 +1734,7 @@ namespace {
             prev_qindex = sb.frame->m_lcuQps[(sb.sbRow - 1)*sb.par->PicWidthInCtbs + sb.frame->m_tileParam.colEnd[sb.tileCol] - 1];
 
         if (mi->sbType >= BLOCK_64X64 && mi->skip) {
-            sb.frame->m_lcuQps[sb.sbRow*sb.par->PicWidthInCtbs + sb.sbCol] = prev_qindex;
+            sb.frame->m_lcuQps[sb.sbRow*sb.par->PicWidthInCtbs + sb.sbCol] = (uint8_t) prev_qindex;
             return;
         }
         if (sb.code_delta) {
@@ -4131,7 +4131,7 @@ int32_t AV1FrameEncoder::GetOutputData(mfxBitstream &mfxBS)
     //}
 
     for (int32_t i = 0; i <= (int32_t)m_frame->m_hiddenFrames.size(); i++) {
-        Frame *frame = (i == m_frame->m_hiddenFrames.size()) ? m_frame : m_frame->m_hiddenFrames[i];
+        Frame *frame = (i == (int32_t) m_frame->m_hiddenFrames.size()) ? m_frame : m_frame->m_hiddenFrames[i];
         int32_t showFrame = (frame == m_frame);
         AV1FrameEncoder &fenc = *frame->m_fenc;
         int32_t startFramePos = written;

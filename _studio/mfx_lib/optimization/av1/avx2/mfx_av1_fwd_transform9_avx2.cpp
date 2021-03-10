@@ -40,7 +40,7 @@ namespace details {
         const __m256i w1 = _mm256_srai_epi32(v1, shift);
         return _mm256_packs_epi32(w0, w1);
     }
-
+    /*
     static inline __m256i k_madd_epi32(__m256i a, __m256i b) {
         __m256i buf0, buf1;
         buf0 = _mm256_mul_epu32(a, b);
@@ -55,7 +55,7 @@ namespace details {
         __m256i buf1 = _mm256_shuffle_epi32(b, _MM_SHUFFLE(0, 0, 2, 0));
         return _mm256_unpacklo_epi64(buf0, buf1);
     }
-
+    */
     template <bool isFirstPassOf32x32> static inline void transpose_and_output16x16(const __m256i *in, short *out_ptr, int pitch)
     {
         // 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F

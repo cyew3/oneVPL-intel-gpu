@@ -1509,7 +1509,7 @@ namespace {
 
             if (mfx.InitialDelayInKB == 0) {
                 if (opt2.MaxFrameSize)
-                    mfx.InitialDelayInKB = opt2.MaxFrameSize / 1000 / mfx.BRCParamMultiplier;
+                    mfx.InitialDelayInKB = (mfxU16) (opt2.MaxFrameSize / 1000 / mfx.BRCParamMultiplier);
                 else
                     mfx.InitialDelayInKB = MAX(1, mfx.BufferSizeInKB * 3 / 4); // 75% fullness
             }
@@ -1818,15 +1818,15 @@ namespace {
             optHevc.SRMode = defaultOptHevc.SRMode;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (av1param.EnableCdef == 0)
-            av1param.EnableCdef = defaultOptHevc.CDEF;
+            av1param.EnableCdef = (mfxU8) defaultOptHevc.CDEF;
         if (av1param.EnableRestoration == 0)
-            av1param.EnableRestoration = defaultOptHevc.LRMode;
+            av1param.EnableRestoration = (mfxU8) defaultOptHevc.LRMode;
         if (av1param.EnableSuperres == 0)
-            av1param.EnableSuperres = defaultOptHevc.SRMode;
+            av1param.EnableSuperres = (mfxU8) defaultOptHevc.SRMode;
         if (av1param.InterpFilter == 0)
             av1param.InterpFilter = (defaultOptHevc.InterpFilter == ON) ? MFX_AV1_INTERP_SWITCHABLE : 0;
         if (av1param.DisableFrameEndUpdateCdf == 0)
-            av1param.DisableFrameEndUpdateCdf = defaultOptHevc.DisableFrameEndUpdateCdf;
+            av1param.DisableFrameEndUpdateCdf = (mfxU8) defaultOptHevc.DisableFrameEndUpdateCdf;
 #endif
         if (optHevc.CFLMode == 0)
             optHevc.CFLMode = defaultOptHevc.CFLMode;

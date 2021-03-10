@@ -47,14 +47,6 @@
       <Configuration>Release_Intel</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release_VTUNE|Win32">
-      <Configuration>Release_VTUNE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release_VTUNE|x64">
-      <Configuration>Release_VTUNE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -74,16 +66,10 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_sse2.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32 -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_sse2.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_sse2.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_sse2.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">Assembling %(Filename)%(Extension)</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">Assembling %(Filename)%(Extension)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(IntDir)intrapred_sse2.obj</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(IntDir)intrapred_sse2.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">$(IntDir)intrapred_sse2.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">$(IntDir)intrapred_sse2.obj</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_sse2.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_sse2.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -107,16 +93,10 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_ssse3.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_ssse3.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_ssse3.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_ssse3.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">Assembling %(Filename)%(Extension)</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">Assembling %(Filename)%(Extension)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(IntDir)intrapred_ssse3.obj</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(IntDir)intrapred_ssse3.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">$(IntDir)intrapred_ssse3.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">$(IntDir)intrapred_ssse3.obj</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_ssse3.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)intrapred_ssse3.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -140,16 +120,10 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_convolve_copy_sse2.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_convolve_copy_sse2.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_convolve_copy_sse2.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_convolve_copy_sse2.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">Assembling %(Filename)%(Extension)</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">Assembling %(Filename)%(Extension)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(IntDir)vpx_convolve_copy_sse2.obj</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(IntDir)vpx_convolve_copy_sse2.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">$(IntDir)vpx_convolve_copy_sse2.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">$(IntDir)vpx_convolve_copy_sse2.obj</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_convolve_copy_sse2.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_convolve_copy_sse2.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -173,16 +147,10 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_8t_ssse3.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_8t_ssse3.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_8t_ssse3.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_8t_ssse3.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">Assembling %(Filename)%(Extension)</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">Assembling %(Filename)%(Extension)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(IntDir)vpx_subpixel_8t_ssse3.obj</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(IntDir)vpx_subpixel_8t_ssse3.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">$(IntDir)vpx_subpixel_8t_ssse3.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">$(IntDir)vpx_subpixel_8t_ssse3.obj</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_8t_ssse3.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_8t_ssse3.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -206,16 +174,10 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_bilinear_ssse3.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_bilinear_ssse3.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_bilinear_ssse3.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_bilinear_ssse3.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">Assembling %(Filename)%(Extension)</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">Assembling %(Filename)%(Extension)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(IntDir)vpx_subpixel_bilinear_ssse3.obj</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(IntDir)vpx_subpixel_bilinear_ssse3.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">$(IntDir)vpx_subpixel_bilinear_ssse3.obj</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">$(IntDir)vpx_subpixel_bilinear_ssse3.obj</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win64  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_bilinear_ssse3.obj</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%MEDIASDK_ROOT%\asm\yasm.exe -Xvc -g cv8 -f win32  -I"." -I"./av1" "%(FullPath)" -o $(IntDir)vpx_subpixel_bilinear_ssse3.obj</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
@@ -264,18 +226,6 @@
     <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <InterproceduralOptimization>false</InterproceduralOptimization>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <InterproceduralOptimization>false</InterproceduralOptimization>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -459,60 +409,6 @@
       <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info /QxSSSE3 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\av1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <UseProcessorExtensions>None</UseProcessorExtensions>
-      <AssemblerOutput>AssemblyCode</AssemblerOutput>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <Optimization>MaxSpeedHighLevel</Optimization>
-      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
-    </ClCompile>
-    <Lib />
-    <Bscmake>
-      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
-    </Bscmake>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">
-    <Midl>
-      <TargetEnvironment>X64</TargetEnvironment>
-    </Midl>
-    <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info /QxSSSE3 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\av1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <UseProcessorExtensions>None</UseProcessorExtensions>
-      <AssemblerOutput>AssemblyCode</AssemblerOutput>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <Optimization>MaxSpeedHighLevel</Optimization>
-      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
-    </ClCompile>
-    <Lib />
-    <Bscmake>
-      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
-    </Bscmake>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">
-    <Midl />
-    <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info /QxSSSE3 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\av1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>

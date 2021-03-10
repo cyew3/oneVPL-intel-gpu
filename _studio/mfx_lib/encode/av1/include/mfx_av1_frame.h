@@ -232,9 +232,7 @@ namespace AV1Enc {
         int32_t pitch_chroma_bytes;
 
         FrameData() 
-            : mem()
-            , m_fei()
-            , y()
+            : y()
             , uv()
             , m_handle()
             , width()
@@ -244,6 +242,8 @@ namespace AV1Enc {
             , pitch_luma_bytes()
             , pitch_chroma_pix()
             , pitch_chroma_bytes()
+            , mem()
+            , m_fei()
             {}
         ~FrameData() { Destroy(); }
 
@@ -599,8 +599,7 @@ namespace AV1Enc {
         const AV1VideoParam *m_par;
 
         Frame()
-            : bitCount(nullptr)
-            , m_recon10Upscale(nullptr)
+            : m_recon10Upscale(nullptr)
             , m_widthLowRes4x(0)
             , m_heightLowRes4x(0)
             , m_bitDepthLuma(0)
@@ -618,6 +617,7 @@ namespace AV1Enc {
             , m_lambda()
             , m_lambdaSatd()
             , m_lambdaSatdInt(0)
+            , bitCount(nullptr)
             , hasTextContent(0)
             , hasPalettizedContent(0)
             , m_allowIntraBc(0)

@@ -37,9 +37,9 @@ static inline int clamp(int value, int low, int high) {
     return value < low ? low : (value > high ? high : value);
 }
 
-static inline int8_t signed_char_clamp(int t) {
-    return (int8_t)clamp(t, -128, 127);
-}
+//static inline int8_t signed_char_clamp(int t) {
+//    return (int8_t)clamp(t, -128, 127);
+//}
 
 //#if CONFIG_AV1_HIGHBITDEPTH
 #if 1
@@ -315,15 +315,15 @@ template <typename PixType> void filter4(int8_t mask, uint8_t thresh, PixType *o
         int i;
 
         for (i = 0; i < count; ++i) {
-            const PixType p7 = s[-8], p6 = s[-7], p5 = s[-6], p4 = s[-5], p3 = s[-4],
-                        p2 = s[-3], p1 = s[-2], p0 = s[-1];
+
+            const PixType p6 = s[-7], p5 = s[-6], p4 = s[-5], p3 = s[-4],
+                            p2 = s[-3], p1 = s[-2], p0 = s[-1];
             const PixType q0 = s[0], q1 = s[1], q2 = s[2], q3 = s[3], q4 = s[4],
-                        q5 = s[5], q6 = s[6], q7 = s[7];
+                            q5 = s[5], q6 = s[6];
+
             const int8_t mask = filter_mask(*limit, *blimit, p3, p2, p1, p0, q0, q1, q2, q3, bd);
             const int8_t flat = flat_mask4(1, p3, p2, p1, p0, q0, q1, q2, q3, bd);
 
-            //(void)p7;
-            //(void)q7;
             const int32_t flat2 = flat_mask4(1, p6, p5, p4, p0, q0, q4, q5, q6, bd);
             filter14(mask, *thresh, flat, flat2, s - 7, s - 6, s - 5, s - 4, s - 3, s - 2, s - 1, s, s + 1, s + 2, s + 3, s + 4, s + 5, s + 6, bd);
 

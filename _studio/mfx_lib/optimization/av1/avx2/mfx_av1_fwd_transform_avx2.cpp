@@ -713,7 +713,7 @@ template <int rows> static void fadst16x16_avx2_16s(const short *in, int pitch, 
 
     transpose_16x16_16s(pout, pout, 1);
 }
-
+#if EXACT_IDTX4
 static inline void load_buffer_16bit_to_16bit_w4(const int16_t *const in, const int stride, __m128i *const out, const int out_size)
 {
     for (int i = 0; i < out_size; ++i) {
@@ -737,17 +737,18 @@ static inline void round_shift_16bit(__m128i *in, int size, int bit)
         }
     }
 }
+#endif
 
 #define pair_set_epi16_sse2(a, b) \
   _mm_set1_epi32((int32_t)(((uint16_t)(a)) | (((uint32_t)(b)) << 16)))
 
+#if EXACT_IDTX4
 static inline __m128i scale_round_sse2(const __m128i a, const int scale)
 {
     const __m128i scale_rounding = pair_set_epi16_sse2(scale, 1 << (NewSqrt2Bits - 1));
     const __m128i b = _mm_madd_epi16(a, scale_rounding);
     return _mm_srai_epi32(b, NewSqrt2Bits);
 }
-
 
 static inline void fidentity4x4_new_sse2(const __m128i *const input, __m128i *const output)
 {
@@ -783,7 +784,7 @@ static inline void transpose_16bit_4x4(const __m128i *const in, __m128i *const o
     out[2] = _mm_unpackhi_epi32(a0, a1);
     out[3] = _mm_srli_si128(out[2], 8);
 }
-
+#endif
 static void  fidentity4x4_sse4(const short *input, int stride, short *coeff)
 {
 #if EXACT_IDTX4
@@ -843,7 +844,7 @@ static void ftransform_4x4_sse4(const short *input, short *coeff, int input_stri
         fadst4x4_sse4_16s(in, bit);
     }
 }
-
+#if EXACT_IDTX8
 static inline __m128i load_16bit_to_16bit(const int16_t *a)
 {
     return _mm_load_si128((const __m128i *)a);
@@ -855,7 +856,8 @@ static inline void load_buffer_16bit_to_16bit(const int16_t *in, int stride, __m
         out[i] = load_16bit_to_16bit(in + i * stride);
     }
 }
-
+#endif
+#if EXACT_IDTX8
 static inline void fidentity8x8_new_sse2(const __m128i *input, __m128i *output)
 {
     output[0] = _mm_adds_epi16(input[0], input[0]);
@@ -933,14 +935,15 @@ static inline void transpose_16bit_8x8(const __m128i *const in, __m128i *const o
     out[6] = _mm_unpacklo_epi64(b6, b7);
     out[7] = _mm_unpackhi_epi64(b6, b7);
 }
-
+#endif
+#if EXACT_IDTX4
 static inline void store_buffer_16bit_to_16bit_8x8(const __m128i *in, uint16_t *out, const int stride)
 {
     for (int i = 0; i < 8; ++i) {
         _mm_store_si128((__m128i *)(out + i * stride), in[i]);
     }
 }
-
+#endif
 
 static void fidentity8x8_avx2(const short *input, int stride, short *coeff)
 {
@@ -991,7 +994,7 @@ static void ftransform_8x8_avx2(const short *input, short *coeff, int stride, Tx
         fadst8x8_avx2_16s<1>(intermediate, 8, coeff);
     }
 }
-
+#if EXACT_IDTX16
 static inline __m256i load_16bit_to_16bit_avx2(const int16_t *a)
 {
     return _mm256_load_si256((const __m256i *)a);
@@ -1015,7 +1018,8 @@ static inline __m256i scale_round_avx2(const __m256i a, const int scale)
     const __m256i b = _mm256_madd_epi16(a, scale_rounding);
     return _mm256_srai_epi32(b, NewSqrt2Bits);
 }
-
+#endif
+#if EXACT_IDTX16
 static inline void fidentity16x16_new_avx2(const __m256i *input, __m256i *output)
 {
     const __m256i one = _mm256_set1_epi16(1);
@@ -1028,7 +1032,8 @@ static inline void fidentity16x16_new_avx2(const __m256i *input, __m256i *output
         output[i] = _mm256_packs_epi32(b_lo, b_hi);
     }
 }
-
+#endif
+#if EXACT_IDTX32
 static inline void transpose_16bit_16x16_avx2(const __m256i *const in, __m256i *const out)
 {
     // Unpack 16 bit elements. Goes from:
@@ -1082,7 +1087,8 @@ static inline void transpose_16bit_16x16_avx2(const __m256i *const in, __m256i *
     out[6 + 8] = _mm256_permute2x128_si256(c[4 + 2], c[5 + 2], 0x31);
     out[7 + 8] = _mm256_permute2x128_si256(c[12 + 2], c[13 + 2], 0x31);
 }
-
+#endif
+#if EXACT_IDTX16
 static inline void round_shift_16bit_w16_avx2(__m256i *in, int size, int bit)
 {
     if (bit < 0) {
@@ -1099,6 +1105,7 @@ static inline void round_shift_16bit_w16_avx2(__m256i *in, int size, int bit)
         }
     }
 }
+#endif
 
 static void fidentity16x16_avx2(const short *input, int stride, short *coeff)
 {
@@ -1134,12 +1141,12 @@ static void fidentity16x16_avx2(const short *input, int stride, short *coeff)
 #endif // EXACT_IDTX16
 }
 
-static inline void fidentity16x32_new_avx2(const __m256i *input, __m256i *output)
-{
-    for (int i = 0; i < 32; ++i) {
-        output[i] = _mm256_slli_epi16(input[i], 2);
-    }
-}
+//static inline void fidentity16x32_new_avx2(const __m256i *input, __m256i *output)
+//{
+//    for (int i = 0; i < 32; ++i) {
+//        output[i] = _mm256_slli_epi16(input[i], 2);
+//    }
+//}
 
 
 static void fidentity32x32_avx2(const short *input, short *coeff, int stride)

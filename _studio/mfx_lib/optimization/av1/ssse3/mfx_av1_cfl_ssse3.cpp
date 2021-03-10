@@ -535,13 +535,12 @@ namespace AV1PP {
 
 };
 
-static inline __m128i predict_unclipped(const __m128i *input, __m128i alpha_q12,  __m128i alpha_sign, __m128i dc_q0) {
+static inline __m128i predict_unclipped(const __m128i *input, __m128i alpha_q12,  __m128i alpha_sign, __m128i) {
     __m128i ac_q3 = _mm_loadu_si128(input);
     __m128i ac_sign = _mm_sign_epi16(alpha_sign, ac_q3);
     __m128i scaled_luma_q0 = _mm_mulhrs_epi16(_mm_abs_epi16(ac_q3), alpha_q12);
     scaled_luma_q0 = _mm_sign_epi16(scaled_luma_q0, ac_sign);
     return scaled_luma_q0;
-    //return _mm_add_epi16(scaled_luma_q0, dc_q0);
 }
 
 static  void cfl_predict_nv12_u8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int bd, int width, int height)
@@ -599,9 +598,8 @@ static  void cfl_predict_nv12_u8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t 
     } while ((row += CFL_BUF_LINE_I128) < row_end);
 }
 
-static  void cfl_predict_nv12_u8_4_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int bd, int width, int height)
+static  void cfl_predict_nv12_u8_4_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int, int, int height)
 {
-    bd; //ignore bd
     const __m128i alpha_sign = _mm_set1_epi16(alpha_q3);
     const __m128i alpha_q12 = _mm_slli_epi16(_mm_abs_epi16(alpha_sign), 9);
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV << 16));
@@ -619,9 +617,8 @@ static  void cfl_predict_nv12_u8_4_ssse3_impl(const int16_t *pred_buf_q3, uint8_
     } while ((row += CFL_BUF_LINE_I128) < row_end);
 }
 
-static  void cfl_predict_nv12_u8_8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int bd, int width, int height)
+static  void cfl_predict_nv12_u8_8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int, int, int height)
 {
-    bd; //ignore bd
     const __m128i alpha_sign = _mm_set1_epi16(alpha_q3);
     const __m128i alpha_q12 = _mm_slli_epi16(_mm_abs_epi16(alpha_sign), 9);
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV << 16));
@@ -639,9 +636,8 @@ static  void cfl_predict_nv12_u8_8_ssse3_impl(const int16_t *pred_buf_q3, uint8_
     } while ((row += CFL_BUF_LINE_I128) < row_end);
 }
 
-static  void cfl_predict_nv12_u8_16_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int bd, int width, int height)
+static  void cfl_predict_nv12_u8_16_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int, int, int height)
 {
-    bd; //ignore bd
     const __m128i alpha_sign = _mm_set1_epi16(alpha_q3);
     const __m128i alpha_q12 = _mm_slli_epi16(_mm_abs_epi16(alpha_sign), 9);
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV << 16));
@@ -668,8 +664,8 @@ static  void cfl_predict_nv12_u8_16_ssse3_impl(const int16_t *pred_buf_q3, uint8
     } while ((row += CFL_BUF_LINE_I128) < row_end);
 }
 
-static  void cfl_predict_nv12_u16_ssse3_impl(const int16_t *pred_buf_q3, uint16_t *dst, int dst_stride, uint16_t dcU, uint16_t dcV, int alpha_q3, int bd, int width, int height) {
-}
+//static  void cfl_predict_nv12_u16_ssse3_impl(const int16_t *pred_buf_q3, uint16_t *dst, int dst_stride, uint16_t dcU, uint16_t dcV, int alpha_q3, int bd, int width, int height) {
+//}
 
 namespace AV1PP {
     template<typename PixType, int width, int height> void cfl_predict_nv12_ssse3(const int16_t *pred_buf_q3, PixType *dst, int dst_stride, PixType dcU, PixType dcV, int alpha_q3, int bd) {

@@ -104,7 +104,6 @@ void InterpolateAv1SecondRefChroma(const PixType *refColoc, int32_t refPitch, in
 template void InterpolateAv1SecondRefChroma<uint8_t> (const uint8_t*, int32_t,int16_t*,uint8_t*, AV1MV,int32_t,int32_t,int32_t);
 
 //#if ENABLE_10BIT
-template void InterpolateAv1SingleRefLuma<uint16_t>(const uint16_t*, int32_t, uint16_t*, AV1MV, int32_t, int32_t, int32_t);
 template void InterpolateAv1SingleRefChroma<uint16_t>(const uint16_t*, int32_t, uint16_t*, AV1MV, int32_t, int32_t, int32_t);
 template void InterpolateAv1FirstRefLuma<uint16_t>(const uint16_t*, int32_t, int16_t*, AV1MV, int32_t, int32_t, int32_t);
 template void InterpolateAv1FirstRefChroma<uint16_t>(const uint16_t*, int32_t, int16_t*, AV1MV, int32_t, int32_t, int32_t);

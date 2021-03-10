@@ -296,7 +296,7 @@ static void RowDilate_5x5_SSE4(BYTE *pSrc, BYTE *pDst, int width, int height)
     __m128i r5, s5; // column max of height 5
     __m128i borderLeft = _mm_setr_epi8(0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13);
     __m128i borderRight = _mm_setr_epi8(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
-    __m128i t0;
+    __m128i t0 = _mm_set1_epi32(0);
 
     assert(width >= 16);
     assert((width & 0x1) == 0);
@@ -362,7 +362,7 @@ static void RowErode_5x5_SSE4(BYTE *pSrc, BYTE *pDst, int width, int height)
     __m128i r5, s5; // column max of height 5
     __m128i borderLeft = _mm_setr_epi8(0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13);
     __m128i borderRight = _mm_setr_epi8(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
-    __m128i t0;
+    __m128i t0 = _mm_set1_epi32(0);;
 
     assert(width >= 16);
     assert((width & 0x1) == 0);

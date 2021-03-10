@@ -372,7 +372,7 @@ static void TaskLogDump()
         const mfxExtCodingOption3 &opt3 = GetExtBuffer(mfxParam);
         const mfxExtEncoderROI &roi = GetExtBuffer(mfxParam);
         const mfxExtAvcTemporalLayers &tlayers = GetExtBuffer(mfxParam);
-        const mfxExtVP9Param &vp9param = GetExtBuffer(mfxParam);
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         const mfxExtAV1Param &av1param = GetExtBuffer(mfxParam);
 #endif
@@ -817,7 +817,7 @@ static void TaskLogDump()
             }
             if (opt2.MaxFrameSize) {
                 intParam.MaxFrameSizeInBits = opt2.MaxFrameSize * 8;  // bits
-                const uint32_t avgFrameInBits = (double)intParam.targetBitrate * fi.FrameRateExtD / fi.FrameRateExtN;
+                const uint32_t avgFrameInBits = (uint32_t)((double)intParam.targetBitrate * fi.FrameRateExtD / fi.FrameRateExtN);
                 if (intParam.PGopPicSize > 1 && intParam.MaxFrameSizeInBits < 2 * avgFrameInBits)
                     intParam.PGopPicSize = 1;
 #ifdef AMT_MAX_FRAME_SIZE
@@ -914,11 +914,8 @@ static void TaskLogDump()
 
         SetupTileParamAv1(&intParam, &intParam.tileParamKeyFrame, 1, optHevc.NumTileColumnsKeyFrame, 1);
         SetupTileParamAv1(&intParam, &intParam.tileParamInterFrame, 1, optHevc.NumTileColumnsInterFrame, 1);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        intParam.writeIVFHeaders = (av1param.WriteIVFHeaders == MFX_CODINGOPTION_OFF) ? 0 : 1;
-#else
-        intParam.writeIVFHeaders = (vp9param.WriteIVFHeaders == MFX_CODINGOPTION_OFF) ? 0 : 1;
-#endif
+
+        intParam.writeIVFHeaders = 1;
 
         LoopFilterInitThresh(intParam.lfts);
 
@@ -964,7 +961,6 @@ static void TaskLogDump()
 
     void ApplyMBDeltaQp(Frame* frame, const AV1VideoParam & par)
     {
-        int32_t numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
         int32_t qpLine = ((par.Width + 16 - 1) / 16);
         int32_t qpHigh = ((par.Height + 16 - 1) / 16);
         int32_t base_qp = frame->m_sliceQpY;
@@ -982,14 +978,13 @@ static void TaskLogDump()
                 dqp <<= DEFAULT_DELTA_Q_RES_SHIFT;
                 qp = (qp < base_qp) ? base_qp - dqp : base_qp + dqp;
                 qp = MAX(0, MIN(MAXQ, qp));
-                frame->m_lcuQps[i*par.PicWidthInCtbs + j] = qp;
+                frame->m_lcuQps[i*par.PicWidthInCtbs + j] = (uint8_t) qp;
             }
         }
     }
 
     void ApplyRoiDeltaQp(Frame* frame, const AV1VideoParam & par)
     {
-        int32_t numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
 
         for (int32_t i = par.numRoi - 1; i >= 0; i--) {
             int32_t start = par.roi[i].left / par.MaxCUSize + par.roi[i].top / par.MaxCUSize * par.PicWidthInCtbs;
@@ -1009,7 +1004,7 @@ static void TaskLogDump()
                 int32_t col = (ctb % par.PicWidthInCtbs) * par.MaxCUSize;
                 int32_t row = (ctb / par.PicWidthInCtbs) * par.MaxCUSize;
                 if (col >= par.roi[i].left && col < par.roi[i].right && row >= par.roi[i].top && row < par.roi[i].bottom) {
-                    frame->m_lcuQps[ctb] = qp;
+                    frame->m_lcuQps[ctb] = (uint8_t) qp;
                 }
             }
         }
@@ -1028,7 +1023,7 @@ static void TaskLogDump()
         int32_t pitchRsCsQ = stats->m_pitchRsCs[idxRsCs];
         int32_t nRsCs = (1 << (par->Log2MaxCUSize - 3))*(1 << (par->Log2MaxCUSize - 3));
         double avgMinblkRsCs = 0.0, avgRsCs = 0.0;
-        int32_t luminanceAvg = stats->roi_pic.luminanceAvg;
+        int32_t luminanceAvg = (int32_t) stats->roi_pic.luminanceAvg;
         if (luminanceAvg < 32) luminanceAvg = 32;
         int32_t noRb = 0, noBb = 0;
         if (par->PicHeightInCtbs*(1 << par->Log2MaxCUSize) > par->Height) noBb = 1;
@@ -1064,20 +1059,20 @@ static void TaskLogDump()
             {
                 // Border and Black Mask
                 if (!((j == par->PicWidthInCtbs - 1 && noRb) || (i == par->PicHeightInCtbs - 1 && noBb)) && ctbStats[i*par->PicWidthInCtbs + j].luminance >= 32) {
-                    float minblkRsCs = INT_MAX;
+                    float minblkRsCs = (float) INT_MAX;
                     float ctbRsCs = 0.0;
                     for (int32_t k = 0; k < 2; k++) {
                         for (int32_t l = 0; l < 2; l++) {
-                            float blkRsCs = stats->m_rs[idxRsCs][(i * 2 + k)*pitchRsCsQ + j * 2 + l] + stats->m_cs[idxRsCs][(i * 2 + k)*pitchRsCsQ + 2 * j + l];
+                            float blkRsCs = (float) stats->m_rs[idxRsCs][(i * 2 + k)*pitchRsCsQ + j * 2 + l] + stats->m_cs[idxRsCs][(i * 2 + k)*pitchRsCsQ + 2 * j + l];
                             blkRsCs /= (1 << (par->bitDepthLumaShift * 2));
                             minblkRsCs = MIN(blkRsCs, minblkRsCs);
                             ctbRsCs += blkRsCs;
                         }
                     }
-                    minblkRsCs /= (nRsCs*2.0);
-                    minblkRsCs += 1.0;
+                    minblkRsCs /= (nRsCs*2.0f);
+                    minblkRsCs += 1.0f;
                     ctbStats[i*par->PicWidthInCtbs + j].spatMinQCmplx = minblkRsCs;
-                    ctbStats[i*par->PicWidthInCtbs + j].spatCmplx = ctbRsCs / (nRsCs*4.0);
+                    ctbStats[i*par->PicWidthInCtbs + j].spatCmplx = ctbRsCs / (nRsCs*4.0f);
                     avgMinblkRsCs += minblkRsCs;
                     avgRsCs += ctbRsCs;
                     numAct++;
@@ -1129,9 +1124,9 @@ static void TaskLogDump()
                 // Border and Black Mask
                 if (!((j == par->PicWidthInCtbs - 1 && noRb) || (i == par->PicHeightInCtbs - 1 && noBb)) && ctbStats[i*par->PicWidthInCtbs + j].luminance >= 32) {
                     float minblkRsCs = ctbStats[i*par->PicWidthInCtbs + j].spatMinQCmplx;
-                    float RsCsRatio = (mult * minblkRsCs + avgMinblkRsCs) / (minblkRsCs + mult * avgMinblkRsCs);
+                    float RsCsRatio = (float)((mult * minblkRsCs + avgMinblkRsCs) / (minblkRsCs + mult * avgMinblkRsCs));
                     edge = (ctbStats[i*par->PicWidthInCtbs + j].spatCmplx / minblkRsCs > 8.0) ? 1 : 0;
-                    float dDQp = (log(RsCsRatio) / l2f) * 6.0;
+                    float dDQp = (log(RsCsRatio) / l2f) * 6.0f;
                     if ((par->screenMode & 0x6) && ctbStats[i*par->PicWidthInCtbs + j].spatCmplx>729) {
                         const int32_t pitchColorCount = stats->m_pitchColorCount16x16;
                         int32_t colorCount = 0;
@@ -1147,7 +1142,7 @@ static void TaskLogDump()
                         }
                     }
                     //dDQp = 0;Luminance only
-                    float luminance = ctbStats[i*par->PicWidthInCtbs + j].luminance;
+                    float luminance = (float) (ctbStats[i*par->PicWidthInCtbs + j].luminance);
                     float lRatio = luminance / (float)luminanceAvg;
                     float dDQl = (0.3f * log(lRatio) / l2f) * (float)qrange;
 
@@ -1304,7 +1299,7 @@ static void TaskLogDump()
                                 dqp = MAX(-1 * qrange, dqp);
                                 dqp = MIN(ctbStats[i*par->PicWidthInCtbs + j].segCount ? -1 : maxFq, dqp);
 
-                                float dqpd = dqp - dqpo;
+                                float dqpd = (float)(dqp - dqpo);
                                 ctbStats[i*par->PicWidthInCtbs + j].dqp = dqp;
                                 sumQpf += dqp;
                                 if (dqp != dqpo) num_changed++;
@@ -1338,7 +1333,7 @@ static void TaskLogDump()
                         iter = 0;
                         num_changed = 1;
 
-                        while ((dqpb_act - dqpb) > 0 && num_changed != 0 & iter < 14) {
+                        while ((dqpb_act - dqpb) > 0 && num_changed != 0 && iter < 14) {
                             sumQpb = 0.0;
                             num_changed = 0;
                             for (int32_t i = 0; i < (int)par->PicHeightInCtbs; i++) {
@@ -1369,7 +1364,7 @@ static void TaskLogDump()
                         iter = 0;
                         num_changed = 1;
                         int32_t bOff = 1;
-                        while (bnnz && (dqpb_nnz - dqpb) > 0 && num_changed != 0 & iter < 14) {
+                        while (bnnz && (dqpb_nnz - dqpb) > 0 && num_changed != 0 && iter < 14) {
                             float sumQpbLast = sumQpb;
                             sumQpb = 0.0;
                             num_changed = 0;
@@ -1379,7 +1374,7 @@ static void TaskLogDump()
                                         int32_t dqpo = ctbStats[i*par->PicWidthInCtbs + j].dqp;
                                         int32_t dqp = dqpo - bOff;
                                         dqp = MAX(minBq, dqp);
-                                        float dqpd = dqp - dqpo;
+                                        float dqpd = (float)(dqp - dqpo);
                                         ctbStats[i*par->PicWidthInCtbs + j].dqp = dqp;
                                         sumQpb += dqp;
                                         if (dqp != dqpo) num_changed++;
@@ -1468,30 +1463,30 @@ static void TaskLogDump()
     };
 
     const float LQ_M[5][8] = {
-        {4.2415, 3.9818, 3.9818, 3.9818, 4.0684, 4.0684, 4.0684, 4.0684},   // I
-        {4.5878, 4.5878, 4.5878, 4.5878, 4.5878, 4.2005, 4.2005, 4.2005},   // P
-        {4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255},   // B1
-        {4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052},   // B2
-        {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},    // B3
+        {4.2415f, 3.9818f, 3.9818f, 3.9818f, 4.0684f, 4.0684f, 4.0684f, 4.0684f},   // I
+        {4.5878f, 4.5878f, 4.5878f, 4.5878f, 4.5878f, 4.2005f, 4.2005f, 4.2005f},   // P
+        {4.3255f, 4.3255f, 4.3255f, 4.3255f, 4.3255f, 4.3255f, 4.3255f, 4.3255f},   // B1
+        {4.4052f, 4.4052f, 4.4052f, 4.4052f, 4.4052f, 4.4052f, 4.4052f, 4.4052f},   // B2
+        {4.2005f, 4.2005f, 4.2005f, 4.2005f, 4.2005f, 4.2005f, 4.2005f, 4.2005f},    // B3
     };
     const float LQ_K[5][8] = {
-        {12.8114, 13.8536, 13.8536, 13.8536, 13.8395, 13.8395, 13.8395, 13.8395},   // I
-        {12.3857, 12.3857, 12.3857, 12.3857, 12.3857, 13.7122, 13.7122, 13.7122},   // P
-        {13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286},   // B1
-        {13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463},   // B2
-        {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122}    // B3
+        {12.8114f, 13.8536f, 13.8536f, 13.8536f, 13.8395f, 13.8395f, 13.8395f, 13.8395f},   // I
+        {12.3857f, 12.3857f, 12.3857f, 12.3857f, 12.3857f, 13.7122f, 13.7122f, 13.7122f},   // P
+        {13.7286f, 13.7286f, 13.7286f, 13.7286f, 13.7286f, 13.7286f, 13.7286f, 13.7286f},   // B1
+        {13.1463f, 13.1463f, 13.1463f, 13.1463f, 13.1463f, 13.1463f, 13.1463f, 13.1463f},   // B2
+        {13.7122f, 13.7122f, 13.7122f, 13.7122f, 13.7122f, 13.7122f, 13.7122f, 13.7122f}    // B3
     };
 
-    int GetCalqDeltaQpLCU(Frame* frame, const AV1VideoParam & par, int32_t ctb_addr, float sliceLambda, float sliceQpY)
+    int32_t GetCalqDeltaQpLCU(Frame* frame, const AV1VideoParam & par, int32_t ctb_addr, float sliceLambda, float sliceQpY)
     {
         int32_t fcmplx = 2;
-        float frscs = frame->m_stats[0]->m_frameCs*frame->m_stats[0]->m_frameCs;
-        frscs += frame->m_stats[0]->m_frameRs*frame->m_stats[0]->m_frameRs;
+        float frscs = (float)(frame->m_stats[0]->m_frameCs*frame->m_stats[0]->m_frameCs);
+        frscs += (float)(frame->m_stats[0]->m_frameRs*frame->m_stats[0]->m_frameRs);
         frscs = sqrt(frscs);
         if (frscs < 2.0f) fcmplx = 0;
         else if (frscs < 27.0f) fcmplx = 1;
 
-        if (!fcmplx) return sliceQpY;
+        if (!fcmplx) return (int32_t) sliceQpY;
 
         int32_t picClass = 0;
         if (frame->m_picCodeType == MFX_FRAMETYPE_I || frame->m_isLtrFrame) {
@@ -1502,7 +1497,7 @@ static void TaskLogDump()
             if (frame->m_picCodeType == MFX_FRAMETYPE_P && frame->m_pyramidLayer && frame->m_temporalActv) picClass = 4;
         }
 
-        float qc = vp9_dc_quant(sliceQpY, 0, par.bitDepthLuma)/8.0f;
+        float qc = vp9_dc_quant((int32_t)sliceQpY, 0, par.bitDepthLuma)/8.0f;
         float hevcQpY = log2f(qc) * 6.0f + 4.0f;
         const int pQPi[5][4] = { {22,27,32,37}, {23,28,33,38}, {24,29,34,39}, {25,30,35,40}, {26,31,36,41} };
         int32_t qpClass = 0;
@@ -1527,7 +1522,7 @@ static void TaskLogDump()
             int32_t blkH4 = 1 << (par.Log2MaxCUSize - 2);
             Rs2 /= (blkW4*blkH4);
             Cs2 /= (blkW4*blkH4);
-            rscs = sqrt(Rs2 + Cs2);
+            rscs = (int32_t) sqrt(Rs2 + Cs2);
             int32_t k = 7;
             for (int32_t i = 0; i < 8; i++) {
                 if (rscs < CU_RSCS_TH[picClass][MIN(3, MAX(0, qpClass))][i] * (float)(1 << (par.bitDepthLumaShift))) {
@@ -1545,8 +1540,8 @@ static void TaskLogDump()
         qc = pow(2.0f, (QP - 4.0f) / 6.0f);
         int32_t qindex = vp9_dc_qindex((int32_t)(qc * 8.0f + 0.5f));
         if(fcmplx == 2) qindex += DEFAULT_DELTA_Q_RES;
-        if (qpClass < 0) qindex = MAX(qindex, sliceQpY);
-        if (qpClass > 3) qindex = MIN(qindex, sliceQpY);
+        if (qpClass < 0) qindex = MAX(qindex, (int32_t)sliceQpY);
+        if (qpClass > 3) qindex = MIN(qindex, (int32_t)sliceQpY);
 
         return qindex;
     }
@@ -1565,7 +1560,7 @@ static void TaskLogDump()
             }
 #ifdef LOW_COMPLX_PAQ
             if (par.DeltaQpMode&AMT_DQP_PAQ) {
-                float avgDQp = std::accumulate(frame->m_stats[0]->qp_mask.begin(), frame->m_stats[0]->qp_mask.end(), 0);
+                float avgDQp = (float) std::accumulate(frame->m_stats[0]->qp_mask.begin(), frame->m_stats[0]->qp_mask.end(), 0);
                 avgDQp /= frame->m_stats[0]->qp_mask.size();
                 frame->m_stats[0]->m_avgDPAQ = avgDQp;
             }
@@ -1580,12 +1575,12 @@ static void TaskLogDump()
             for (int32_t ctb_addr = 0; ctb_addr < numCtb; ctb_addr++) {
                 int32_t qp = GetCalqDeltaQpLCU(frame, par, ctb_addr, sliceLambda, baseQP);
                 qp = MAX(0, MIN(MAXQ, qp));
-                int32_t dqp = abs(qp - baseQP);
+                int32_t dqp = abs(qp - (int32_t)baseQP);
                 dqp >>= DEFAULT_DELTA_Q_RES_SHIFT;
                 dqp <<= DEFAULT_DELTA_Q_RES_SHIFT;
-                qp = (qp < baseQP) ? baseQP - dqp : baseQP + dqp;
+                qp = (qp < baseQP) ? (int32_t)baseQP - dqp : (int32_t)baseQP + dqp;
                 qp = MAX(0, MIN(MAXQ, qp));
-                frame->m_lcuQps[ctb_addr] = qp;
+                frame->m_lcuQps[ctb_addr] = (uint8_t) qp;
             }
         }
     }
@@ -1860,10 +1855,10 @@ AV1Encoder::AV1Encoder(MFXCoreInterface1 &core)
     , m_memBuf(NULL)
     , m_cu(nullptr)
     , data_temp(nullptr)
-    , m_pauseFeiThread(0)
-    , m_stopFeiThread(0)
     , m_brc(NULL)
     , m_fei(NULL)
+    , m_pauseFeiThread(0)
+    , m_stopFeiThread(0)
 {
     ippInit();
     Zero(m_videoParam);
@@ -2781,7 +2776,7 @@ Frame *AV1Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, m
                 for (int i = 0; i < 16 && ltctrl->LongTermRefList[i].FrameOrder != 0xffffffff; i++) {
                     if (ltctrl->LongTermRefList[i].FrameOrder == (uint32_t)m_frameOrder) {
                         inputFrame->m_isLtrFrame = 1;
-                        inputFrame->m_isExternalLTR = ltctrl->LongTermRefList[i].LongTermIdx + 1;
+                        inputFrame->m_isExternalLTR = (uint8_t)(ltctrl->LongTermRefList[i].LongTermIdx + 1);
                         //printf("\nExternal LTR Idx %d\n", ltctrl->LongTermRefList[i].LongTermIdx);
                         if (m_frameOrderOfLastExternalLTR[ltctrl->LongTermRefList[i].LongTermIdx] == MFX_FRAMEORDER_UNKNOWN)
                             m_numberOfExternalLtrFrames++;
@@ -2820,7 +2815,7 @@ Frame *AV1Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, m
                     // check
                     int32_t qpLine = ((m_videoParam.Width + 16 - 1) / 16);
                     int32_t numQP = qpLine * ((m_videoParam.Height + 16 - 1) / 16);
-                    if (mbqpctrl->NumQPAlloc >= numQP) {
+                    if ((int32_t)mbqpctrl->NumQPAlloc >= numQP) {
                         inputFrame->m_hasMbqpCtrl = 1;
                         inputFrame->mbqpctrl = *mbqpctrl;
                     }
@@ -2950,7 +2945,7 @@ void AV1Encoder::EnqueueFrameEncoder(AV1EncodeTaskInputParams *inputParam)
             frame->m_sliceQpBrc = GetRateQp(*frame, m_videoParam, m_brc);
             // Convert to Lambda
             CostType lambdaMult;
-            bool extraMult = SliceLambdaMultiplier(lambdaMult, m_videoParam, frame->m_picCodeType, frame, false, false);
+            bool extraMult = SliceLambdaMultiplier(lambdaMult, m_videoParam, (uint8_t)frame->m_picCodeType, frame, false, false);
             double lambda = h265_lambda[frame->m_sliceQpBrc + 48] * lambdaMult;
             if (extraMult) {
                 if (((AV1BRC*)m_brc)->mLayerRatio > 0.3) {
@@ -2961,10 +2956,10 @@ void AV1Encoder::EnqueueFrameEncoder(AV1EncodeTaskInputParams *inputParam)
                 }
             }
             // Convert to Lambda QP
-            float lqp = (4.2005f*log(lambda) + 13.7122f); // est
+            float lqp = (4.2005f*logf((float)lambda) + 13.7122f); // est
             // Convert to Qindex
             float qc = pow(2.0f, (lqp - 4.0f) / 6.0f);
-            frame->m_sliceQpY = vp9_dc_qindex((int32_t)(qc * 8.0f + 0.5f));
+            frame->m_sliceQpY = (uint8_t) vp9_dc_qindex((int32_t)(qc * 8.0f + 0.5f));
 
             // Update LTR triggered by BRC Qp
             if (!frame->m_isLtrFrame && frame->m_picCodeType == MFX_FRAMETYPE_P && frame->m_pyramidLayer == 0) {
@@ -2982,17 +2977,17 @@ void AV1Encoder::EnqueueFrameEncoder(AV1EncodeTaskInputParams *inputParam)
                     // Minor Boost
                     int refqp = MIN(ltrFrame->m_sliceQpBrc, frame->refFramesVp9[LAST_FRAME]->m_sliceQpBrc);
                     int32_t extra = (m_videoParam.MaxFrameSizeInBits && m_videoParam.RepackForMaxFrameSize) ? 0 : 1;
-                    frame->m_sliceQpBrc = MAX(minQp, MAX(frame->m_qpMinForMaxFrameSize-extra, MIN(frame->m_sliceQpBrc, MAX(refqp-3, frame->m_sliceQpBrc-m_videoParam.LTRConfidenceLevel))));
+                    frame->m_sliceQpBrc = (uint8_t) MAX(minQp, MAX(frame->m_qpMinForMaxFrameSize-extra, MIN(frame->m_sliceQpBrc, MAX(refqp-3, frame->m_sliceQpBrc-m_videoParam.LTRConfidenceLevel))));
                     // Convert to Lambda
-                    extraMult = SliceLambdaMultiplier(lambdaMult, m_videoParam, frame->m_picCodeType, frame, false, false);
+                    extraMult = SliceLambdaMultiplier(lambdaMult, m_videoParam, (uint8_t) frame->m_picCodeType, frame, false, false);
                     lambda = h265_lambda[frame->m_sliceQpBrc + 48] * lambdaMult;
                     if (extraMult)
                         lambda *= Saturate(2, 4, (frame->m_sliceQpBrc - 12) / 6.f);
                     // Convert to Lambda QP
-                    lqp = (4.2005f*log(lambda) + 13.7122f); // est
+                    lqp = (4.2005f*logf((float)lambda) + 13.7122f); // est
                     // Convert to Qindex
                     qc = pow(2.0f, (lqp - 4.0f) / 6.0f);
-                    frame->m_sliceQpY = vp9_dc_qindex((int32_t)(qc * 8.0f + 0.5f));
+                    frame->m_sliceQpY = (uint8_t) vp9_dc_qindex((int32_t)(qc * 8.0f + 0.5f));
                 }
             }
         }
@@ -3156,7 +3151,7 @@ void AV1Encoder::EnqueueFrameEncoder(AV1EncodeTaskInputParams *inputParam)
         }
     }
     else {
-        for (int i = 0; i < frame->m_fenc->m_tmpBufForHash.size(); i++) {
+        for (int32_t i = 0; i < (int32_t) frame->m_fenc->m_tmpBufForHash.size(); i++) {
             if (frame->m_fenc->m_tmpBufForHash[i]) {
                 AV1_Free(frame->m_fenc->m_tmpBufForHash[i]);
                 frame->m_fenc->m_tmpBufForHash[i] = nullptr;
@@ -3166,7 +3161,7 @@ void AV1Encoder::EnqueueFrameEncoder(AV1EncodeTaskInputParams *inputParam)
 #if ENABLE_HASH_MEM_REDUCTION
         AV1_SafeFree(frame->m_fenc->m_workBufForHash);
 #endif
-        for (int i = 0; i < frame->m_fenc->m_hash[0].size(); i++) {
+        for (int32_t i = 0; i < (int32_t) frame->m_fenc->m_hash[0].size(); i++) {
             HashTable &h = frame->m_fenc->m_hash[0][i];
             h.Free();
         }

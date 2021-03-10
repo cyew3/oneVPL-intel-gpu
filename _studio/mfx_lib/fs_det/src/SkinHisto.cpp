@@ -199,14 +199,14 @@ void BuildSkinMap_dyn_SSE4(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
         __m128i h0 = _mm_unpacklo_epi8(h, _mm_setzero_si128());
         __m128i h1 = _mm_unpackhi_epi8(h, _mm_setzero_si128());
 
-        s0 = _mm_subs_epu16(s0, _mm_set1_epi16(bg));    // MAX(s - bg, 0)
+        s0 = _mm_subs_epu16(s0, _mm_set1_epi16((short)bg));    // MAX(s - bg, 0)
         s0 = _mm_mullo_epi16(s0, h0);
-        s0 = _mm_mulhi_epu16(s0, _mm_set1_epi16(frac));
+        s0 = _mm_mulhi_epu16(s0, _mm_set1_epi16((short)frac));
         s0 = _mm_min_epu16(s0, h0);
 
-        s1 = _mm_subs_epu16(s1, _mm_set1_epi16(bg));
+        s1 = _mm_subs_epu16(s1, _mm_set1_epi16((short)bg));
         s1 = _mm_mullo_epi16(s1, h1);
-        s1 = _mm_mulhi_epu16(s1, _mm_set1_epi16(frac));
+        s1 = _mm_mulhi_epu16(s1, _mm_set1_epi16((short)frac));
         s1 = _mm_min_epu16(s1, h1);
 
         s0 = _mm_packus_epi16(s0, s1);
@@ -223,7 +223,7 @@ void BuildSkinMap_dyn_SSE4(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
         s = (s * frac) >> 16;
         s = MIN(s, h);
 
-        skinProb[k] = s;
+        skinProb[k] = (BYTE)s;
     }
 }
 
@@ -262,9 +262,9 @@ void BuildSkinMap_dyn_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
 
         __m256i h = gather16_AVX2(hysto, i0, i1);                       // h = hysto[i]
 
-        s = _mm256_subs_epu16(s, _mm256_set1_epi16(bg));                // MAX(s - bg, 0)
+        s = _mm256_subs_epu16(s, _mm256_set1_epi16((short)bg));                // MAX(s - bg, 0)
         s = _mm256_mullo_epi16(s, h);
-        s = _mm256_mulhi_epu16(s, _mm256_set1_epi16(frac));
+        s = _mm256_mulhi_epu16(s, _mm256_set1_epi16((short)frac));
         s = _mm256_min_epu16(s, h);
 
         s = _mm256_packus_epi16(s, s);
@@ -282,7 +282,7 @@ void BuildSkinMap_dyn_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
         s = (s * frac) >> 16;
         s = MIN(s, h);
 
-        skinProb[k] = s;
+        skinProb[k] = (BYTE)s;
     }
 }
 
@@ -329,9 +329,9 @@ void BuildSkinMap_dyn_slice_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, u
 
             __m256i h = gather16_AVX2(hysto, i0, i1);                       // h = hysto[i]
 
-            s = _mm256_subs_epu16(s, _mm256_set1_epi16(bg));                // MAX(s - bg, 0)
+            s = _mm256_subs_epu16(s, _mm256_set1_epi16((short)bg));                // MAX(s - bg, 0)
             s = _mm256_mullo_epi16(s, h);
-            s = _mm256_mulhi_epu16(s, _mm256_set1_epi16(frac));
+            s = _mm256_mulhi_epu16(s, _mm256_set1_epi16((short)frac));
             s = _mm256_min_epu16(s, h);
 
             s = _mm256_packus_epi16(s, s);
@@ -349,7 +349,7 @@ void BuildSkinMap_dyn_slice_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, u
             s = (s * frac) >> 16;
             s = MIN(s, h);
 
-            skinProb[ind+k] = s;
+            skinProb[ind+k] = (BYTE)s;
         }
     }
 }

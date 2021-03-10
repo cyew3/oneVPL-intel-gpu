@@ -121,11 +121,13 @@ namespace AV1Enc {
     }
 
     unsigned char *od_ec_enc_done(od_ec_enc *enc, uint32_t *nbytes) {
+#if ENABLE_PRECARRY_BUF
         unsigned char *out;
         uint32_t storage;
         uint16_t *buf;
         uint32_t offs;
         uint32_t end_offs;
+#endif
         od_ec_window m;
         od_ec_window e;
         od_ec_window l;

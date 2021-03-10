@@ -670,10 +670,10 @@ static void BlockSum_8x4_SSE4(BYTE *pSrc, BYTE *pDstU, BYTE *pDstV, int width2, 
             //pDstU[1] = s0.m128i_u8[4];
             //pDstV[0] = s0.m128i_u8[8];
             //pDstV[1] = s0.m128i_u8[12];
-            pDstU[0] = _mm_extract_epi8(s0, 0);
-            pDstU[1] = _mm_extract_epi8(s0, 4);
-            pDstV[0] = _mm_extract_epi8(s0, 8);
-            pDstV[1] = _mm_extract_epi8(s0, 12);
+            pDstU[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDstU[1] = (BYTE) _mm_extract_epi8(s0, 4);
+            pDstV[0] = (BYTE) _mm_extract_epi8(s0, 8);
+            pDstV[1] = (BYTE) _mm_extract_epi8(s0, 12);
             pDstU+= 2;
             pDstV+= 2;
         }
@@ -760,10 +760,10 @@ static void BlockSum_8x4_AVX2(BYTE *pSrc, BYTE *pDstU, BYTE *pDstV, int width2, 
             //pDstU[1] = s0.m128i_u8[4];
             //pDstV[0] = s0.m128i_u8[8];
             //pDstV[1] = s0.m128i_u8[12];
-            pDstU[0] = _mm_extract_epi8(s0, 0);
-            pDstU[1] = _mm_extract_epi8(s0, 4);
-            pDstV[0] = _mm_extract_epi8(s0, 8);
-            pDstV[1] = _mm_extract_epi8(s0, 12);
+            pDstU[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDstU[1] = (BYTE) _mm_extract_epi8(s0, 4);
+            pDstV[0] = (BYTE) _mm_extract_epi8(s0, 8);
+            pDstV[1] = (BYTE) _mm_extract_epi8(s0, 12);
             pDstU+= 2;
             pDstV+= 2;
         }
@@ -820,8 +820,8 @@ static void BlockSum_8x8_SSE4(BYTE *pSrc, BYTE *pDst, int width, int height, int
             s0 = _mm_add_epi32(s0, s4);
             s0 = _mm_mulhrs_epi16(s0, _mm_set1_epi16(1<<(15-6)));
 
-            pDst[0] = _mm_extract_epi8(s0, 0);
-            pDst[1] = _mm_extract_epi8(s0, 8);
+            pDst[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDst[1] = (BYTE) _mm_extract_epi8(s0, 8);
             pDst += 2;
         }
     }
@@ -859,10 +859,10 @@ static void BlockSum_8x8_AVX2(BYTE *pSrc, BYTE *pDst, int width, int height, int
             s0 = _mm256_add_epi32(s0, s4);
             s0 = _mm256_mulhrs_epi16(s0, _mm256_set1_epi16(1<<(15-6)));
 
-            pDst[0] = _mm_extract_epi8(_mm256_castsi256_si128(s0), 0);
-            pDst[1] = _mm_extract_epi8(_mm256_castsi256_si128(s0), 8);
-            pDst[2] = _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 0);
-            pDst[3] = _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 8);
+            pDst[0] = (BYTE) _mm_extract_epi8(_mm256_castsi256_si128(s0), 0);
+            pDst[1] = (BYTE) _mm_extract_epi8(_mm256_castsi256_si128(s0), 8);
+            pDst[2] = (BYTE) _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 0);
+            pDst[3] = (BYTE) _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 8);
             pDst += 4;
         }
 
@@ -892,8 +892,8 @@ static void BlockSum_8x8_AVX2(BYTE *pSrc, BYTE *pDst, int width, int height, int
             s0 = _mm_add_epi32(s0, s4);
             s0 = _mm_mulhrs_epi16(s0, _mm_set1_epi16(1<<(15-6)));
 
-            pDst[0] = _mm_extract_epi8(s0, 0);
-            pDst[1] = _mm_extract_epi8(s0, 8);
+            pDst[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDst[1] = (BYTE) _mm_extract_epi8(s0, 8);
             pDst += 2;
         }
     }
@@ -1088,10 +1088,10 @@ static void BlockSum_8x4_slice_SSE4(BYTE *pSrc, BYTE *pDstU, BYTE *pDstV, int wi
             //pDstV[0] = s0.m128i_u8[8];
             //pDstV[1] = s0.m128i_u8[12];
             
-            pDstU[0] = _mm_extract_epi8(s0, 0);
-            pDstU[1] = _mm_extract_epi8(s0, 4);
-            pDstV[0] = _mm_extract_epi8(s0, 8);
-            pDstV[1] = _mm_extract_epi8(s0, 12);
+            pDstU[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDstU[1] = (BYTE) _mm_extract_epi8(s0, 4);
+            pDstV[0] = (BYTE) _mm_extract_epi8(s0, 8);
+            pDstV[1] = (BYTE) _mm_extract_epi8(s0, 12);
             pDstU+= 2;
             pDstV+= 2;
         }
@@ -1181,10 +1181,10 @@ static void BlockSum_8x4_slice_AVX2(BYTE *pSrc, BYTE *pDstU, BYTE *pDstV, int wi
             //pDstV[0] = s0.m128i_u8[8];
             //pDstV[1] = s0.m128i_u8[12];
             
-            pDstU[0] = _mm_extract_epi8(s0, 0);
-            pDstU[1] = _mm_extract_epi8(s0, 4);
-            pDstV[0] = _mm_extract_epi8(s0, 8);
-            pDstV[1] = _mm_extract_epi8(s0, 12);
+            pDstU[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDstU[1] = (BYTE) _mm_extract_epi8(s0, 4);
+            pDstV[0] = (BYTE) _mm_extract_epi8(s0, 8);
+            pDstV[1] = (BYTE) _mm_extract_epi8(s0, 12);
             pDstU+= 2;
             pDstV+= 2;
         }
@@ -1265,8 +1265,8 @@ static void BlockSum_8x8_slice_SSE4(BYTE *pSrc, BYTE *pDst, int width, int heigh
             s0 = _mm_add_epi32(s0, s4);
             s0 = _mm_mulhrs_epi16(s0, _mm_set1_epi16(1<<(15-6)));
 
-            pDst[0] = _mm_extract_epi8(s0, 0);
-            pDst[1] = _mm_extract_epi8(s0, 8);
+            pDst[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDst[1] = (BYTE) _mm_extract_epi8(s0, 8);
             pDst += 2;
         }
     }
@@ -1305,10 +1305,10 @@ static void BlockSum_8x8_slice_AVX2(BYTE *pSrc, BYTE *pDst, int width, int heigh
             s0 = _mm256_add_epi32(s0, s4);
             s0 = _mm256_mulhrs_epi16(s0, _mm256_set1_epi16(1<<(15-6)));
 
-            pDst[0] = _mm_extract_epi8(_mm256_castsi256_si128(s0), 0);
-            pDst[1] = _mm_extract_epi8(_mm256_castsi256_si128(s0), 8);
-            pDst[2] = _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 0);
-            pDst[3] = _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 8);
+            pDst[0] = (BYTE) _mm_extract_epi8(_mm256_castsi256_si128(s0), 0);
+            pDst[1] = (BYTE) _mm_extract_epi8(_mm256_castsi256_si128(s0), 8);
+            pDst[2] = (BYTE) _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 0);
+            pDst[3] = (BYTE) _mm_extract_epi8(_mm256_extractf128_si256(s0, 1), 8);
             pDst += 4;
         }
 
@@ -1338,8 +1338,8 @@ static void BlockSum_8x8_slice_AVX2(BYTE *pSrc, BYTE *pDst, int width, int heigh
             s0 = _mm_add_epi32(s0, s4);
             s0 = _mm_mulhrs_epi16(s0, _mm_set1_epi16(1<<(15-6)));
 
-            pDst[0] = _mm_extract_epi8(s0, 0);
-            pDst[1] = _mm_extract_epi8(s0, 8);
+            pDst[0] = (BYTE) _mm_extract_epi8(s0, 0);
+            pDst[1] = (BYTE) _mm_extract_epi8(s0, 8);
             pDst += 2;
         }
     }
@@ -1362,7 +1362,7 @@ static uint SAD_8x8fast_C(BYTE *pSrc, BYTE *pRef, BYTE *pDst, int width, int hei
             }
 
             sum += s;
-            *pDst++ = MIN(s, 255);
+            *pDst++ = (BYTE) MIN(s, 255);
         }
     }
     return sum;
@@ -1383,7 +1383,7 @@ static uint SADNull_8x8fast_C(BYTE *pSrc, BYTE *pDst, int width, int height, int
             }
 
             sum += s;
-            *pDst++ = MIN(s, 255);
+            *pDst++ = (BYTE) MIN(s, 255);
         }
     }
     return sum;
@@ -1443,7 +1443,7 @@ static uint SAD_8x8fast_SSE4(BYTE *pSrc, BYTE *pRef, BYTE *pDst, int width, int 
             s0 = _mm_packs_epi32(s0, s0);    
             s0 = _mm_packus_epi16(s0, s0);  // MIN(SAD, 255)
 
-            *(short *)pDst = _mm_extract_epi16(s0, 0);  // 2 x 8-bit
+            *(short *)pDst = (short) _mm_extract_epi16(s0, 0);  // 2 x 8-bit
             pDst += 2;
         }
     }
@@ -1507,7 +1507,7 @@ static uint SADNull_8x8fast_SSE4(BYTE *pSrc, BYTE *pDst, int width, int height, 
             s0 = _mm_packs_epi32(s0, s0);    
             s0 = _mm_packus_epi16(s0, s0);  // MIN(SAD, 255)
 
-            *(short *)pDst = _mm_extract_epi16(s0, 0);  // 2 x 8-bit
+            *(short *)pDst = (short) _mm_extract_epi16(s0, 0);  // 2 x 8-bit
             pDst += 2;
         }
     }
@@ -1565,7 +1565,7 @@ static uint SAD_8x8fast_AVX2(BYTE *pSrc, BYTE *pRef, BYTE *pDst, int width, int 
             s0 = _mm_packs_epi32(s0, s0);    
             s0 = _mm_packus_epi16(s0, s0);  // MIN(SAD, 255)
 
-            *(short *)pDst = _mm_extract_epi16(s0, 0);  // 2 x 8-bit
+            *(short *)pDst = (short) _mm_extract_epi16(s0, 0);  // 2 x 8-bit
             pDst += 2;
         }
     }
@@ -1623,7 +1623,7 @@ static uint SADNull_8x8fast_AVX2(BYTE *pSrc, BYTE *pDst, int width, int height, 
             s0 = _mm_packs_epi32(s0, s0);    
             s0 = _mm_packus_epi16(s0, s0);  // MIN(SAD, 255)
 
-            *(short *)pDst = _mm_extract_epi16(s0, 0);  // 2 x 8-bit
+            *(short *)pDst = (short) _mm_extract_epi16(s0, 0);  // 2 x 8-bit
             pDst += 2;
         }
     }
@@ -1654,7 +1654,7 @@ static uint SAD_8x8fast_slice_C(BYTE *pSrc, BYTE *pRef, BYTE *pDst, int width, i
             }
 
             sum += s;
-            *pDst++ = MIN(s, 255);
+            *pDst++ = (BYTE) MIN(s, 255);
         }
     }
     return sum;
@@ -1715,7 +1715,7 @@ static uint SAD_8x8fast_slice_SSE4(BYTE *pSrc, BYTE *pRef, BYTE *pDst, int width
             s0 = _mm_packs_epi32(s0, s0);    
             s0 = _mm_packus_epi16(s0, s0);  // MIN(SAD, 255)
 
-            *(short *)pDst = _mm_extract_epi16(s0, 0);  // 2 x 8-bit
+            *(short *)pDst = (short) _mm_extract_epi16(s0, 0);  // 2 x 8-bit
             pDst += 2;
         }
     }
@@ -1774,7 +1774,7 @@ static uint SAD_8x8fast_slice_AVX2(BYTE *pSrc, BYTE *pRef, BYTE *pDst, int width
             s0 = _mm_packs_epi32(s0, s0);    
             s0 = _mm_packus_epi16(s0, s0);  // MIN(SAD, 255)
 
-            *(short *)pDst = _mm_extract_epi16(s0, 0);  // 2 x 8-bit
+            *(short *)pDst = (short) _mm_extract_epi16(s0, 0);  // 2 x 8-bit
             pDst += 2;
         }
     }
@@ -2111,8 +2111,8 @@ static void MixMotionSkinMask(BYTE* dst, BYTE* motion, BYTE* skin, BYTE* tmp1, B
     uint hist[256];
 
     uint segSz = maxSegSize < 20 ? 0 : (maxSegSize > 52 ? 32 : maxSegSize - 20);  // segSz 0..32
-    BYTE bottomTh = 17 - segSz / 2; // 1..17
-    BYTE skinPerc = 28 + segSz * 2; //28..92
+    BYTE bottomTh = (BYTE) (17 - segSz / 2); // 1..17
+    BYTE skinPerc = (BYTE) (28 + segSz * 2); //28..92
 
     averSAD = averSAD < 800 ? 1024 : (averSAD > 1200 ? 0 : (1200 - averSAD) * 1024 / 400);
 
@@ -2144,7 +2144,7 @@ static void MixMotionSkinMask(BYTE* dst, BYTE* motion, BYTE* skin, BYTE* tmp1, B
         if (skin[i] > sTh) s = skin[i];
         m = motion[i];
         dst[i] = (BYTE)(MIN(s, m));
-        tmp1[i] = (s > m && prvProb[i] > 30) ? MIN((s - m), 32) : 0;
+        tmp1[i] = (BYTE) ((s > m && prvProb[i] > 30) ? MIN((s - m), 32) : 0);
         tmp2[i] = 32 - tmp1[i]/2;
     }
 
@@ -2153,7 +2153,7 @@ static void MixMotionSkinMask(BYTE* dst, BYTE* motion, BYTE* skin, BYTE* tmp1, B
         uint c = MAX((int)sadMax[i] * tmp2[i] / 32 - tmp1[i], 0);
         c = MIN(c, 200);
         c = (sadMax[i] * (1024 - averSAD) + c * averSAD) / 1024;
-        dst[i] = (dst[i] * c + prvProb[i] * (256 - c)) / 256;
+        dst[i] = (BYTE) ((dst[i] * c + prvProb[i] * (256 - c)) / 256);
     }
 
     Close_Value_byte(dst, tmp2, dim->blHNum, dim->blVNum, Morphology_GetWindowMask(2, 1));
@@ -2181,7 +2181,7 @@ static void DetectFaces(FrameBuffElementPtr* frm, int w, int h, FDet *fd)
         }
     }
     else { 
-        for(int i=0; i<h; i++) {
+        for(i=0; i<h; i++) {
             std::copy(frm->frameY+i*frm->p, frm->frameY+i*frm->p + w, fd->mat+i * w);
         }
     }
@@ -2296,7 +2296,7 @@ static int init_New_Skin_Map_from_face_mode1_NV12(FrameBuffElementPtr *in, BYTE 
     //adjust LUT values for faster processing
     for (i=0; i<256; i++) {
         for (j=0; j<256; j++) {
-            hist[i][j] = ((square[i][j] + 1)/32 <= k) ? 0 : square[i][j];
+            hist[i][j] = (BYTE) (((square[i][j] + 1)/32 <= k) ? 0 : square[i][j]);
         }
     }
 
@@ -2390,7 +2390,7 @@ static void mark_face_regions(BYTE *tmp, int w, int h, int bs, std::vector<Rct> 
                 flood_fill4_sz_bb(j, i, 128, tmp[ind], w, h, tmp, &sz, &min_x, &max_x, &min_y, &max_y, stack, stackptr, blTotal);
 
                 //search for "2"
-                int col = 64, fn;
+                int col = 64, fn = 0;
                 for (size_t n=0; n<faces.size(); n++) {
                     int tot = 0, two = 0;
                     for	(ii=faces[n].y/bs; ii<(faces[n].y + faces[n].h)/bs; ii++) {
@@ -2408,7 +2408,7 @@ static void mark_face_regions(BYTE *tmp, int w, int h, int bs, std::vector<Rct> 
                     for (jj=min_x; jj<=max_x; jj++) {
                         ind = ii*w + jj;
                         if (tmp[ind]==128) {
-                            tmp[ind] = col;
+                            tmp[ind] = (BYTE)col;
                             if (col==192) {
                                 int skip = 0;
                                 if (ii<faces[fn].y/bs - 2) skip = 1;
@@ -2468,7 +2468,7 @@ static int track_history(FrmSegmFeat *fsg, SegmFeat *sf_probe, int last, int ski
     int min_x, min_y, max_x, max_y, Th;
     int area = 0, area_int = 0, n = 0;
     FrmSegmFeat *fseg;
-    SegmFeat *sf;
+    SegmFeat *sf = nullptr;
 
     score = 0;
     for (i=last-1; i>=0; i--) {
@@ -2945,7 +2945,7 @@ static void smooth_histogr(int square[][256], BYTE hist[][256])
 
     for (i=0; i<256; i++) {
         for (j=0; j<256; j++) {
-            hist[i][j] = MIN((255 * square[i][j]) / max_val, 255);
+            hist[i][j] = (BYTE)(MIN((255 * square[i][j]) / max_val, 255));
         }
     }
 }

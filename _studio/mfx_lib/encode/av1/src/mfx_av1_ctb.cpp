@@ -2558,8 +2558,6 @@ namespace AV1Enc {
                 }
                 else {
 
-                    TxType txTypeStart = DCT_DCT;
-                    //TxType txTypeEnd = ADST_ADST;
                     TxType txTypeList[] = { DCT_DCT,  ADST_DCT, DCT_ADST, ADST_ADST, IDTX };
 
                     for (int32_t txSize = maxTxSize; txSize >= minTxSize; txSize--) {
@@ -2578,14 +2576,6 @@ namespace AV1Enc {
                             int deltaStep = 1;
                             int numPasses = 1;
                             if (av1_is_directional_mode(mi->mode)) {
-                                /*if (txSize == maxTxSize && txType == txTypeStart) {
-                                    // Search again
-                                    deltaStart = -2;
-                                    deltaEnd = 2;
-                                    deltaStep = 2;
-                                    numPasses = 2;
-                                }
-                                else*/
                                 if (txSize == maxTxSize || (maxTxSize == TX_32X32 && txSize == maxTxSize -1)) {
                                     deltaStart = std::max(-3, bestAngleDelta - 1);
                                     deltaEnd = std::min(3, bestAngleDelta + 1);
@@ -2684,7 +2674,7 @@ namespace AV1Enc {
                 float bestRoundFAdjT[2] = { m_roundFAdjY[0], m_roundFAdjY[1] };
                 m_roundFAdjY[0] = roundFAdjYInit[0], m_roundFAdjY[1] = roundFAdjYInit[1];
 
-                RdCost rd;
+                RdCost rd = {};
                 int32_t test = 0;
                 if (!m_par->ibcModeDecision)
                     test = CheckIntraBlockCopy(i, qcoef, rd, varTxInfo, true, COST_MAX);
@@ -2721,7 +2711,7 @@ namespace AV1Enc {
                         mi->mvd[0].mvy = mi->mv[0].mvy - dv_ref.mvy;
                     }
                     else {
-                        dv_ref = { mi->mv[0].mvx - mi->mvd[0].mvx, mi->mv[0].mvy - mi->mvd[0].mvy };
+                        dv_ref = { (int16_t)(mi->mv[0].mvx - mi->mvd[0].mvx), (int16_t)(mi->mv[0].mvy - mi->mvd[0].mvy) };
                     }
                     const int32_t rate_mv = MvCost(mi->mv[0], dv_ref, 0);
                     const int32_t rate_mode = bc.intrabc_cost[1];
@@ -3729,8 +3719,10 @@ namespace AV1Enc {
 
                 int32_t deltaBits = av1_is_directional_mode(bestIntraMode) ? write_uniform_cost(2 * MAX_ANGLE_DELTA + 1, MAX_ANGLE_DELTA) : 0;
                 AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll, sbw, maxTxSize, haveLeft, haveTop, bestIntraMode, 0, 0, 0);
-                int32_t satd = AV1PP::satd(srcSb, m_predIntraAll, sbw, log2w, log2h);
-                bestIntraCost = RD(satd, intraModeBits[bestIntraMode] + deltaBits + isInterBits[0], m_rdLambdaSqrtInt);
+                {
+                    int32_t satd = AV1PP::satd(srcSb, m_predIntraAll, sbw, log2w, log2h);
+                    bestIntraCost = RD(satd, intraModeBits[bestIntraMode] + deltaBits + isInterBits[0], m_rdLambdaSqrtInt);
+                }
                 const int32_t allow_screen_content_tool_palette = m_currFrame->m_allowPalette && m_currFrame->m_isRef;
                 if (mi->sbType >= BLOCK_8X8
                     && block_size_wide[mi->sbType] <= 32
@@ -3762,9 +3754,9 @@ namespace AV1Enc {
                         if (bestIntraCost > 0.5*PaletteCost && bestIntraCost < 2.0*PaletteCost)
                         {
                             // get better estimate
-                            uint32_t map_bits = GetPaletteTokensCost(bc, srcSb, sbw, sbw, palette, palette_size, color_map);
-                            palette_bits += map_bits;
-                            PaletteCost = RD(satd, intraModeBits[DC_PRED] + isInterBits[0] + palette_bits + map_bits, m_rdLambdaSqrtInt);
+                            uint32_t map_bits_ti = GetPaletteTokensCost(bc, srcSb, sbw, sbw, palette, palette_size, color_map);
+                            palette_bits += map_bits_ti;
+                            PaletteCost = RD(satd, intraModeBits[DC_PRED] + isInterBits[0] + palette_bits + map_bits_ti, m_rdLambdaSqrtInt);
                         }
 
                         if (PaletteCost < bestIntraCost)
@@ -4620,7 +4612,7 @@ namespace AV1Enc {
                         //palette_bits += map_bits_est;
                         // best intra mode cost
                         int32_t filtType = get_filt_type(above, left, PLANE_TYPE_Y);
-                        RdCost rd = TransformIntraYSbAv1(bsz, bestIntraMode, haveTop, haveLeft, maxTxSize, bsz <= BLOCK_16X16 ? IDTX : DCT_DCT, anz, lnz, srcSb,
+                        RdCost rd = TransformIntraYSbAv1(bsz, bestIntraMode, haveTop, haveLeft, maxTxSize, (TxType)(bsz <= BLOCK_16X16 ? IDTX : DCT_DCT), anz, lnz, srcSb,
                             recSb, m_pitchRecLuma, diff, coef, qcoef, coefWork, m_lumaQp, bc, m_rdLambda, miRow,
                             miCol, miColEnd, bestDelta, filtType, *m_par, m_aqparamY, NULL, pi, NULL);
 

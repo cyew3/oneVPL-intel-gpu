@@ -367,7 +367,7 @@ template <typename PixType> void AV1CU<PixType>::MakeRecon10bitIAV1()
                     mi->mvd[0].mvy = mi->mv[0].mvy - dv_ref.mvy;
                 }
                 else {
-                    dv_ref = { mi->mv[0].mvx - mi->mvd[0].mvx, mi->mv[0].mvy - mi->mvd[0].mvy };
+                    dv_ref = { (int16_t)(mi->mv[0].mvx - mi->mvd[0].mvx), (int16_t)(mi->mv[0].mvy - mi->mvd[0].mvy) };
                 }
                 const int32_t rate_mv = MvCost(mi->mv[0], dv_ref, 0);
                 const int32_t rate_mode = bc.intrabc_cost[1];

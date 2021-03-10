@@ -460,8 +460,8 @@ namespace AV1Enc {
         mi->mvd[0].mvx = mi->mv[0].mvx - dv_ref.mvx;
         mi->mvd[0].mvy = mi->mv[0].mvy - dv_ref.mvy;
 
-        AV1MV dv_ref_ = { dv_ref.mvx >> 3, dv_ref.mvy >> 3 };
-        AV1MV dv_ = { mi->mv[0].mvx >> 3, mi->mv[0].mvy >> 3 };
+        AV1MV dv_ref_ = { (int16_t)(dv_ref.mvx >> 3), (int16_t)(dv_ref.mvy >> 3) };
+        AV1MV dv_ = { (int16_t)(mi->mv[0].mvx >> 3), (int16_t)(mi->mv[0].mvy >> 3) };
 
         const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
         const ModeInfo *left = GetLeft(mi, miCol, m_tileBorders.colStart);
