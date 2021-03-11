@@ -955,75 +955,6 @@ namespace
         mfxU16 const DEFAULT_BY_TU[] = { 0, 3, 3, 3, 2, 1, 1, 1 };
         return DEFAULT_BY_TU[targetUsage];
     }
-#if defined(MFX_ENABLE_MFE)
-    mfxU16 GetDefaultNumMfeFrames(mfxU32 targetUsage, const mfxFrameInfo& info,
-        eMFXHWType platform, mfxU32 feiFunc, int slices, bool extSurfUsed,
-        eMFXGTConfig config)
-    {
-        std::ignore = targetUsage;//no specific check for TU now, can be added later
-        if (!config) config = MFX_GT4;//WA while windows doesn't support GTT config report
-        bool IsFeiEncode =
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-            feiFunc == MFX_FEI_FUNCTION_ENCODE;
-#else
-            false;
-#endif
-        if (platform == MFX_HW_SCL && config >= MFX_GT3)
-        {
-            if ((info.CropH > 1088 && info.CropW > 1920) || slices > 1)
-            {
-                return 1;
-            }
-            else if ( extSurfUsed || IsFeiEncode)
-            {
-                return 2;
-            }
-            //other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
-            //extSurfUsed - mean we are using  running into kernel limitation for max number of surfaces used in kernel
-            else if (feiFunc)
-            {
-                return 1;
-            }
-            else
-            {
-                return 3;
-            }
-        }
-        else if (platform == MFX_HW_SCL && config == MFX_GT2)
-        {
-            if ((info.CropH > 1088 && info.CropW > 1920) || slices > 1)
-            {
-                return 1;
-            }
-            else if (extSurfUsed || IsFeiEncode)
-            {
-                return 2;
-            }
-            //other functions either already rejected(PAK, ENC/PreEnc absense of support) or can run bigger amount of frames(for PreEnc).
-            //extSurfUsed - mean we are using running into kernel limitation for max number of surfaces used in kernel
-            else if (feiFunc)
-            {
-                return 1;
-            }
-            else if (info.CropH > 720 && info.CropW > 1280)
-            {
-                return 2;
-            }
-            else
-            {
-                return 3;
-            }
-        }
-        else
-            return 1; // to be adjusted based on performance measurements on other platforms
-    }
-
-    mfxU32 calculateMfeTimeout(const mfxFrameInfo& info)
-    {
-        //Just calculate based on latency expectation from framerate in microsecond now, can be changed in future
-        return mfxU32((mfxU64)info.FrameRateExtD * 1000000 / info.FrameRateExtN);
-    }
-#endif
     mfxU16 GetMaxNumRefActivePL0(mfxU32 targetUsage,
                                         eMFXHWType platform,
                                         bool isLowPower,
@@ -1578,14 +1509,6 @@ mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, MFX_ENCODE_CAPS & hwCaps
 {
     GUID guid = MSDK_Private_Guid_Encode_AVC_Query;
 
-#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-    mfxExtMultiFrameParam* mfeParam = (mfxExtMultiFrameParam*)MfxHwH264Encode::GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
-    if (mfeParam && (mfeParam->MaxNumFrames > 1 || mfeParam->MFMode >= MFX_MF_AUTO))
-    {
-        guid = DXVA2_Intel_MFE;
-    }
-    else
-#endif
     if(IsOn(par->mfx.LowPower))
     {
         guid = MSDK_Private_Guid_Encode_AVC_LowPower_Query;
@@ -1843,9 +1766,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         || id == MFX_EXTBUFF_GPU_HANG
 #endif
-#if defined (MFX_ENABLE_MFE)
         || id == MFX_EXTBUFF_MULTI_FRAME_CONTROL
-#endif
 #if defined MFX_ENABLE_GPU_BASED_SYNC
         || id == MFX_EXTBUFF_GAME_STREAMING
 #endif
@@ -1997,11 +1918,8 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_FEI_SPS
         || id == MFX_EXTBUFF_FEI_PPS
 #endif
-
-#if defined (MFX_ENABLE_MFE)
         || id == MFX_EXTBUFF_MULTI_FRAME_PARAM
         || id == MFX_EXTBUFF_MULTI_FRAME_CONTROL
-#endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         || id == MFX_EXTBUFF_AVC_SCALING_MATRIX
 #endif
@@ -2566,9 +2484,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     Bool unsupported(false);
     Bool changed(false);
     Bool warning(false);
-#if !defined(MFX_ENABLE_MFE)
     (void)config;
-#endif
     mfxExtCodingOption *       extOpt       = GetExtBuffer(par);
     mfxExtCodingOptionDDI *    extDdi       = GetExtBuffer(par);
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -5324,60 +5240,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 #endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-#ifdef MFX_ENABLE_MFE
-    //ToDo: move to separate function
-    mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
-    if (mfeParam.MFMode > MFX_MF_MANUAL)
-    {
-        mfeParam.MFMode = MFX_MF_DEFAULT;
-        changed = true;
-    }
-    /*explicitly force default number of frames, higher number will cause performance degradation
-    multi-slice can be supported only through slice map control for MFE
-    Adding any of Mad/MBQP/NonSkipMap/ForceIntraMap causing additional surfaces for kernel, leading to surface state cache size overhead*/
-    mfxU16 numFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform,
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        feiParam->Func,
-#else
-        0,
-#endif
-        par.mfx.NumSlice,
-        (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) ||  (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
-        (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON), config);
-
-    if (mfeParam.MaxNumFrames > numFrames)
-    {
-        mfeParam.MaxNumFrames = numFrames;
-        changed = true;
-    }
-    if (extOpt2->IntRefType && (mfeParam.MaxNumFrames > 1 || (!mfeParam.MaxNumFrames && mfeParam.MFMode >= MFX_MF_AUTO)))
-    {
-        mfeParam.MaxNumFrames = 1;
-        changed = true;
-    }
-    if (mfeParam.MaxNumFrames != 1 && mfeParam.MFMode == MFX_MF_DISABLED)
-    {
-        mfeParam.MaxNumFrames = 1;
-        changed = true;
-    }
-    if (mfeParam.MaxNumFrames > 1 && par.mfx.LowPower == MFX_CODINGOPTION_ON)
-    {
-        mfeParam.MaxNumFrames = 1;
-        mfeParam.MFMode = MFX_MF_DEFAULT;
-        changed = true;
-    }
-    if (mfeParam.MaxNumFrames > 1 && mfeParam.MFMode == MFX_MF_DEFAULT)
-    {
-        mfeParam.MFMode = MFX_MF_AUTO;
-        changed = true;
-    }
-    mfxExtMultiFrameControl & mfeControl = GetExtBufferRef(par);
-    if (mfeControl.Timeout && mfeParam.MFMode != MFX_MF_AUTO)
-    {
-        mfeControl.Timeout = 0;
-        changed = true;
-    }
-#endif
 
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
     if (!CheckTriStateOption(extOpt3->EncodedUnitsInfo))  changed = true;
@@ -6088,10 +5950,6 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
 #endif
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
-#if defined(MFX_ENABLE_MFE)
-    mfxExtMultiFrameParam* mfeParam = GetExtBuffer(par);
-    mfxExtMultiFrameControl* mfeControl = GetExtBuffer(par);
-#endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     mfxExtAVCScalingMatrix*    extQM   = GetExtBuffer(par);
 #endif
@@ -6153,33 +6011,6 @@ void MfxHwH264Encode::SetDefaults(
                 par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
         }
     }
-#if defined(MFX_ENABLE_MFE)
-    if (mfeParam)
-    {
-        //can be changed
-        if (!mfeParam->MFMode && mfeParam->MaxNumFrames)
-            mfeParam->MFMode = MFX_MF_AUTO;
-        if (mfeParam->MFMode >= MFX_MF_AUTO && !mfeParam->MaxNumFrames)
-        {
-            mfeParam->MaxNumFrames = GetDefaultNumMfeFrames(par.mfx.TargetUsage, par.mfx.FrameInfo, platform,
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-                feiParam->Func,
-#else
-                0,
-#endif
-                par.mfx.NumSlice,
-                (extOpt2->EnableMAD == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBQP == MFX_CODINGOPTION_ON) ||
-                (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_ON) || (extOpt3->EnableMBForceIntra == MFX_CODINGOPTION_ON), config);
-        }
-    }
-    if (mfeControl)
-    {
-        if (!mfeControl->Timeout)
-        {
-            mfeControl->Timeout = calculateMfeTimeout(par.mfx.FrameInfo);
-        }
-    }
-#endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IsProtectionPavp(par.Protected))
@@ -7803,17 +7634,6 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 
 #endif
 
-#if defined(MFX_ENABLE_MFE)
-
-    mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(video);
-    mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(*ctrl);
-
-    if(mfeCtrl && mfeParam.MFMode == MFX_MF_MANUAL && mfeCtrl->Timeout)
-    {
-        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        mfeCtrl->Timeout = 0;
-    }
-#endif
     mfxExtPredWeightTable *extPwt = GetExtBuffer(*ctrl);
     if (extPwt && (platform >= MFX_HW_KBL))
     {
@@ -8814,10 +8634,6 @@ MfxVideoParam::MfxVideoParam()
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     , m_extQM()
 #endif
-#if defined(MFX_ENABLE_MFE)
-    , m_MfeParam()
-    , m_MfeControl()
-#endif
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
     , m_po()
 #endif
@@ -9158,10 +8974,6 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtAVCScalingMatrix,     m_extQM);
 #endif
 
-#if defined(MFX_ENABLE_MFE)
-    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameParam, m_MfeParam);
-    CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameControl, m_MfeControl);
-#endif
 #if defined(MFX_ENABLE_GPU_BASED_SYNC)
     CONSTRUCT_EXT_BUFFER(mfxExtGameStreaming, m_extGameStreaming);
 #endif

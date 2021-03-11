@@ -147,7 +147,6 @@
     <ClCompile Include="src\mfx_camera_plugin_dx11.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_dx9.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_utils.cpp" />
-    <ClCompile Include="..\shared\src\mfx_mfe_adapter_dxva.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="camera_pipe.rc" />

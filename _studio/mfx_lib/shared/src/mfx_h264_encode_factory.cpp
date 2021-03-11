@@ -25,9 +25,6 @@
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA)
 
 #include "mfx_h264_encode_interface.h"
-#ifdef MFX_ENABLE_MFE
-#include "libmfx_core_interface.h"
-#endif
 #if defined (MFX_VA_WIN)
 #include "mfxvideo++int.h"
 #include "mfx_h264_encode_d3d9.h"
@@ -104,42 +101,6 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 
 } // DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
 
-#if defined(MFX_ENABLE_MFE) && !defined(AS_H264LA_PLUGIN)
-
-#if !defined(MFX_VA_WIN)
-
-MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
-{
-    assert( core );
-
-    // needs to search, thus use special GUID
-    ComPtrCore<MFEVAAPIEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEVAAPIEncoder> >(core, MFXMFEAVCENCODER_SEARCH_GUID);
-    if (!pVideoEncoder) return NULL;
-    if (!pVideoEncoder->get())
-        *pVideoEncoder = new MFEVAAPIEncoder;
-
-    return pVideoEncoder->get();
-
-} // MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder( VideoCORE* core )
-
-#elif !defined(STRIP_EMBARGO)
-
-MFEDXVAEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
-{
-    assert(core);
-
-    // needs to search, thus use special GUID
-    ComPtrCore<MFEDXVAEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEDXVAEncoder> >(core, MFXMFEAVCENCODER_SEARCH_GUID);
-    if (!pVideoEncoder) return NULL;
-    if (!pVideoEncoder->get())
-        *pVideoEncoder = new MFEDXVAEncoder;
-
-    return pVideoEncoder->get();
-
-} // MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder( VideoCORE* core )
-
-#endif
-#endif
 
 
 #endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)

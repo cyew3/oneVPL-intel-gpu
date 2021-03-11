@@ -119,7 +119,6 @@ if(NOT OPEN_SOURCE)
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_factory.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_hw.cpp
           ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
-          ${MSDK_STUDIO_ROOT}/shared/src/mfx_mfe_adapter_dxva.cpp
           ${MSDK_LIB_ROOT}/shared/src/libmfxsw.cpp
           ${MSDK_LIB_ROOT}/shared/src/libmfxsw_async.cpp
           ${MSDK_LIB_ROOT}/shared/src/libmfxsw_plugin.cpp

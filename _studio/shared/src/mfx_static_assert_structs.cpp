@@ -434,10 +434,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9TemporalLayers      ,384  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9Param               ,256  )
 #endif
-#if defined(MFX_ENABLE_MFE)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameParam        ,128  )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameControl      ,128  )
-#endif //MFX_ENABLE_MFE
 #if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64   )
@@ -571,10 +567,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9TemporalLayers      ,384  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9Param               ,256  )
 #endif
-#if defined(MFX_ENABLE_MFE)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameParam        ,128 )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameControl      ,128 )
-#endif //MFX_ENABLE_MFE
 #if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64  )
@@ -706,10 +698,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9TemporalLayers      ,384  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVP9Param               ,256  )
 #endif
-#if defined(MFX_ENABLE_MFE)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameParam        ,128 )
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtMultiFrameControl      ,128 )
-#endif //MFX_ENABLE_MFE
 #if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncodedUnitInfo           ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtEncodedUnitsInfo       ,64  )
@@ -1887,15 +1875,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVP9Param                     ,NumTileColumns                ,34   )
 #endif
 #endif
-#if defined(MFX_ENABLE_MFE)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MFMode                        ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MaxNumFrames                  ,10   )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Timeout                       ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Flush                         ,12   )
-#endif //MFX_ENABLE_MFE
 #if (MFX_VERSION >= 1025)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Type                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Offset                        ,4    )
@@ -2795,15 +2774,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVP9Param                     ,NumTileColumns                ,34   )
 #endif
 #endif
-#if defined(MFX_ENABLE_MFE)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MFMode                        ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MaxNumFrames                  ,10   )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Timeout                       ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Flush                         ,12   )
-#endif //MFX_ENABLE_MFE
 #if (MFX_VERSION >= 1025)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Type                          ,0    )
@@ -3702,15 +3672,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVP9Param                     ,NumTileColumns                ,34   )
 #endif
 #endif
-#if defined(MFX_ENABLE_MFE)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MFMode                        ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameParam              ,MaxNumFrames                  ,10   )
-
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Timeout                       ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtMultiFrameControl            ,Flush                         ,12   )
-#endif //MFX_ENABLE_MFE
 #if (MFX_VERSION >= 1025)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncodedUnitInfo                 ,Type                          ,0    )

@@ -298,14 +298,6 @@ struct Task : DpbFrame
 
     mfxU16            m_SkipMode                      = 0;
 
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-    mfxU32             m_mfeTimeToWait                 = 0;
-    bool               m_flushMfe                      = false;
-#ifdef MFX_VA_WIN
-    ENCODE_EVENT_DESCR m_mfeGpuEvent                   = {};
-#endif
-#endif // MFX_ENABLE_MFE
-
 #if defined(MFX_ENABLE_HEVCE_SCC)
     bool              m_isSCC                         = false;
 #endif
@@ -390,10 +382,6 @@ namespace ExtBuffer
          MFX_EXTBUFF_MBQP,
          MFX_EXTBUFF_ENCODER_ROI,
          MFX_EXTBUFF_DIRTY_RECTANGLES,
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-         MFX_EXTBUFF_MULTI_FRAME_PARAM,
-         MFX_EXTBUFF_MULTI_FRAME_CONTROL,
-#endif
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI
          MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME,
          MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO,
@@ -460,10 +448,6 @@ namespace ExtBuffer
 #endif
         EXTBUF(mfxExtAVCEncodedFrameInfo, MFX_EXTBUFF_ENCODED_FRAME_INFO);
 
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-        EXTBUF(mfxExtMultiFrameParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
-        EXTBUF(mfxExtMultiFrameControl, MFX_EXTBUFF_MULTI_FRAME_CONTROL);
-#endif
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
         EXTBUF(mfxExtLplaParam, MFX_EXTBUFF_LP_LOOKAHEAD);
 #endif
@@ -812,10 +796,6 @@ public:
 #endif
 #if !defined(MFX_EXT_BRC_DISABLE)
         mfxExtBRC                   extBRC;
-#endif
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-        mfxExtMultiFrameParam       mfeParam;
-        mfxExtMultiFrameControl     mfeControl;
 #endif
         mfxExtEncoderROI            ROI;
         mfxExtDirtyRect             DirtyRect;

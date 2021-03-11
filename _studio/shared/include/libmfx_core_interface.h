@@ -89,34 +89,6 @@ static const
 MFX_GUID MFXICMEnabledCore_GUID =
 { 0x2aafdae8, 0xf7ba, 0x46ed, { 0xb2, 0x77, 0xb8, 0x7e, 0x94, 0xf2, 0xd3, 0x84 } };
 
-#ifdef MFX_ENABLE_MFE
-
-//to keep core interface unchanged we need to define 2 guids:
-// MFXMFEDDIENCODER_GUID - for returing MFE adapter by request - need for core to query other cores
-// MFXMFEDDIENCODER_SEARCH_GUID - called by encoder to search through joined sessions
-// cores by MFXMFEDDIENCODER_GUID, to verify adapter availability and return when exist.
-// {E4E4823F-90D2-4945-823E-00B5F3F3184C}
-static const
-MFX_GUID MFXMFEAVCENCODER_GUID =
-{ 0xe4e4823f, 0x90d2, 0x4945, { 0x82, 0x3e, 0x0, 0xb5, 0xf3, 0xf3, 0x18, 0x4c } };
-
-// {AAA16189-4E5A-4DA9-BB97-4CD1B0BAAC73}
-static const MFX_GUID MFXMFEAVCENCODER_SEARCH_GUID =
-{ 0xaaa16189, 0x4e5a, 0x4da9, { 0xbb, 0x97, 0x4c, 0xd1, 0xb0, 0xba, 0xac, 0x73 } };
-
-#ifndef STRIP_EMBARGO
-// {221CB6EA-72B7-47C9-87A2-1F8586BCC4E7}
-static const
-MFX_GUID MFXMFEHEVCENCODER_GUID =
-{ 0x221cb6ea, 0x72b7, 0x47c9, { 0x87, 0xa2, 0x1f, 0x85, 0x86, 0xbc, 0xc4, 0xe7 } };
-
-// {2B1FD020-C447-4712-BE22-2C450B2429AF}
-static const MFX_GUID MFXMFEHEVCENCODER_SEARCH_GUID =
-{ 0x2b1fd020, 0xc447, 0x4712, { 0xbe, 0x22, 0x2c, 0x45, 0xb, 0x24, 0x29, 0xaf } };
-#endif
-
-#endif
-
 // {D53EF10E-D4CF-41A7-B1C2-D30FAB30BB64}
 static const MFX_GUID MFXICORE_GT_CONFIG_GUID =
 { 0xd53ef10e, 0xd4cf, 0x41a7,{ 0xb1, 0xc2, 0xd3, 0xf, 0xab, 0x30, 0xbb, 0x64 } };
@@ -234,12 +206,7 @@ class ComPtrCore
 public:
     static const MFX_GUID getGuid()
     {
-
-#if defined(MFX_VA_WIN) || !defined(MFX_ENABLE_MFE)
         return MFXID3D11DECODER_GUID;
-#else
-        return MFXMFEAVCENCODER_GUID;
-#endif
     }
     ComPtrCore():m_pComPtr(nullptr)
     {

@@ -34,8 +34,7 @@ namespace Gen12XEHP
 {
     enum eFeatureId
     {
-        FEATURE_MFE = Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
+        NUM_FEATURES = Gen12::eFeatureId::NUM_FEATURES
     };
 
     class MFXVideoENCODEH265_HW

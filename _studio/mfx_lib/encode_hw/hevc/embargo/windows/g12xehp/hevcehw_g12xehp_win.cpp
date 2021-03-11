@@ -24,9 +24,6 @@
 
 #include "hevcehw_g12xehp_win.h"
 #include "hevcehw_base_blocking_sync_win.h"
-#if defined(MFX_ENABLE_MFE)
-#include "hevcehw_g12xehp_mfe_win.h"
-#endif //defined(MFX_ENABLE_MFE)
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_iddi.h"
 
@@ -49,13 +46,6 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #endif
 
     TFeatureList newFeatures;
-
-#if defined(MFX_ENABLE_MFE)
-    if (core.GetVAType() == MFX_HW_D3D11)
-    {
-        m_features.emplace_back(new MFE(FEATURE_MFE));
-    }
-#endif //defined(MFX_ENABLE_MFE)
     
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
@@ -67,17 +57,6 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 {
     auto sts = TBaseImpl::Init(par);
     MFX_CHECK_STS(sts);
-
-#if defined(MFX_ENABLE_MFE)
-    auto& st = BQ<BQ_SubmitTask>::Get(*this);
-    if (m_core.GetVAType() == MFX_HW_D3D11)
-    {
-        Reorder(
-            st
-            , { HEVCEHW::Base::FEATURE_DDI, HEVCEHW::Base::IDDI::BLK_SubmitTask }
-            , { FEATURE_MFE, MFE::BLK_UpdateDDITask });
-    }
-#endif //defined(MFX_ENABLE_MFE)
 
     return MFX_ERR_NONE;
 }

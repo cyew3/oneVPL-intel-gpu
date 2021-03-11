@@ -36,10 +36,6 @@
 #include "va/va.h"
 #include "vaapi_ext_interface.h"
 
-#if defined (MFX_ENABLE_MFE)
-#include "mfx_mfe_adapter.h"
-#endif
-
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
 #include "mfx_vpp_interface.h"
 #endif
@@ -238,12 +234,6 @@ private:
     std::unique_ptr<CMEnabledCoreAdapter>       m_pCmAdapter;
     //required to WA FEI enabling after move it from plugin to library
     bool                                        m_bHEVCFEIEnabled;
-#ifdef MFX_ENABLE_MFE
-    ComPtrCore<MFEVAAPIEncoder>                 m_mfeAvc;
-#ifndef STRIP_EMBARGO
-    ComPtrCore<MFEVAAPIEncoder>                 m_mfeHevc;
-#endif
-#endif
 };
 
 using VAAPIVideoCORE = VAAPIVideoCORE_T<CommonCORE>;

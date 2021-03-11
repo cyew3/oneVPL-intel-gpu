@@ -108,57 +108,6 @@ DEFINE_GUID(DXVA2_INTEL_PAVP,
 DEFINE_GUID(DXVA2_INTEL_LOWPOWERENCODE_AVC,
     0x1424d4dc, 0x7cf5, 0x4bb1, 0x9c, 0xd7, 0xb6, 0x37, 0x17, 0xa7, 0x2a, 0x6b);
 
-//single GUID making HEVC and AVC(and whatever we add later for multiframe) working in single MFE Context
-// {036DFF40-94A6-45B3-A0B3-71F0CDF35129}
-DEFINE_GUID(DXVA2_Intel_MFE,
-    0x36dff40, 0x94a6, 0x45b3, 0xa0, 0xb3, 0x71, 0xf0, 0xcd, 0xf3, 0x51, 0x29);
-
-#define ENCODE_MFE_START_ID      0x113 //Kick start MFE encoding
-#define ENCODE_MFE_END_STREAM_ID 0x114 //Indicate which streams to be destroyed in MFE
-typedef enum tagMFE_CODEC
-{
-    CODEC_AVC = 0,
-    CODEC_HEVC,
-    CODEC_AV1,
-    CODEC_MFE = 0xFF,
-} MFE_CODEC;
-
-// D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO type
-typedef struct tagENCODE_SINGLE_STREAM_INFO
-{
-    UINT        StreamId;
-    MFE_CODEC   CodecId;
-    UCHAR       SourceId;
-    UCHAR       reserved8b[2];
-
-    UINT        reserved32b[6];
-} ENCODE_SINGLE_STREAM_INFO;
-
-typedef struct tagMFE_CAPS
-{
-    union {
-        struct {
-            USHORT AVC : 1;
-            USHORT HEVC : 1;
-            USHORT VP9 : 1;
-            USHORT AV1 : 1;
-            USHORT VVC : 1;
-            USHORT ReservedBits : 11; // [0]
-        } bitfields;
-        USHORT value;
-    } CodecSupport;
-    USHORT MaxNumOfConcurrentFramesMinus1;
-    union {
-        struct {
-            UINT MixedCodecs : 1;
-            UINT MixedTUs : 1;
-            UINT ReservedBits : 30;
-        } bitfields;
-        UINT value;
-    } MFEFeatureSupport;
-    UINT reserved32bits[16];
-} MFE_CAPS;
-
 // D3D11_DDI_VIDEO_ENCODER_BUFFER_EVENT type
 typedef struct tagENCODE_EVENT_DESCR
 {

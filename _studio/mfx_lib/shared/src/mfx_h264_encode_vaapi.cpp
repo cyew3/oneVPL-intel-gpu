@@ -1472,9 +1472,6 @@ VAAPIEncoder::VAAPIEncoder()
     , m_vaFrameRate()
     , m_mbqp_buffer()
     , m_mb_noskip_buffer()
-#ifdef MFX_ENABLE_MFE
-    , m_mfe(0)
-#endif
 {
     m_videoParam.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH; // QueryHwCaps will use this value
 
@@ -1919,24 +1916,6 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
             &m_vaContextEncode);
     }
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-#if defined(MFX_ENABLE_MFE)
-    const mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
-
-    if (mfeParam.MaxNumFrames > 1)
-    {
-        m_mfe = CreatePlatformMFEEncoder(m_core);
-        if (0 == m_mfe)
-            return MFX_ERR_DEVICE_FAILED;
-
-        mfxStatus sts = m_mfe->Create(mfeParam, m_vaDisplay);
-        MFX_CHECK_STS(sts);
-        //progressive to be changed for particular 2 field cases
-        vm_tick timeout = (((mfxU64)par.mfx.FrameInfo.FrameRateExtD)*1000000/par.mfx.FrameInfo.FrameRateExtN)/((par.mfx.FrameInfo.PicStruct!=MFX_PICSTRUCT_PROGRESSIVE)?2:1);
-        sts = m_mfe->Join(m_vaContextEncode, timeout); //replace with proper control value to be managed in one place.
-        MFX_CHECK_STS(sts);
-    }
-#endif
 
     mfxU16 maxNumSlices = GetMaxNumSlices(par);
 
@@ -3307,14 +3286,6 @@ mfxStatus VAAPIEncoder::Execute(
         }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-#ifdef MFX_ENABLE_MFE
-    if (m_mfe){
-        mfxU32 timeout = task.m_mfeTimeToWait>>task.m_fieldPicFlag;
-        mfxStatus sts = m_mfe->Submit(m_vaContextEncode, (task.m_flushMfe? 0 : timeout), skipFlag == NORMAL_MODE);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-    }
-#endif
 
     //------------------------------------------------------------------
     // PostStage

@@ -34,8 +34,7 @@ namespace Gen12XEHP
 {
     enum eFeatureId
     {
-        FEATURE_MFE = HEVCEHW::Linux::Gen12::eFeatureId::NUM_FEATURES
-        , FEATURE_CAPS
+        FEATURE_CAPS = HEVCEHW::Linux::Gen12::eFeatureId::NUM_FEATURES
         , NUM_FEATURES
     };
 

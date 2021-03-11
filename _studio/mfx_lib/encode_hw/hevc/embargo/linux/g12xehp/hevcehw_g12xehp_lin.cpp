@@ -23,9 +23,6 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12xehp_lin.h"
-#if defined(MFX_ENABLE_MFE)
-#include "hevcehw_g12xehp_mfe_lin.h"
-#endif //defined(MFX_ENABLE_MFE)
 #include "hevcehw_g12xehp_caps.h"
 #include "hevcehw_g12_caps.h"
 #include "hevcehw_base_data.h"
@@ -48,10 +45,6 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     : TBaseImpl(core, status, mode)
 {
     TFeatureList newFeatures;
-
-#if defined(MFX_ENABLE_MFE)
-    newFeatures.emplace_back(new MFE(FEATURE_MFE));
-#endif //defined(MFX_ENABLE_MFE)
 
     newFeatures.emplace_back(new HEVCEHW::Gen12XEHP::Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new HEVCEHW::Base::ExtDDI(HEVCEHW::Base::FEATURE_EXTDDI));

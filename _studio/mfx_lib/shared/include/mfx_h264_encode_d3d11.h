@@ -38,9 +38,6 @@
 
 #include <d3d11.h>
 #include "mfx_h264_encode_d3d9.h" // suggest that the same syncop based on cache functionality is used
-#if defined (MFX_ENABLE_MFE)
-#include "mfx_mfe_adapter_dxva.h"
-#endif
 
 #include "libmfx_core_d3d9on11.h"
 
@@ -168,10 +165,6 @@ namespace MfxHwH264Encode
         ID3D11VideoDevice *                         m_pVideoDevice;
         ID3D11VideoContext *                        m_pVideoContext;
         ID3D11VideoDecoder *                        m_pDecoder;
-#if defined (MFX_ENABLE_MFE)
-        MFEDXVAEncoder *                            m_pMFEAdapter;
-        ENCODE_SINGLE_STREAM_INFO                   m_StreamInfo;
-#endif
         GUID                                        m_guid;
         GUID                                        m_requestedGuid;
 

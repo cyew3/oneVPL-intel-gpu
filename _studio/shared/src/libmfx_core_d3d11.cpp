@@ -59,10 +59,6 @@ D3D11VideoCORE_T<Base>::D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 n
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     ,   m_bIsBlockingTaskSyncEnabled(false)
 #endif
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-    ,   m_mfeAvc()
-    ,   m_mfeHevc()
-#endif
 {
 }
 
@@ -657,43 +653,6 @@ void* D3D11VideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*)&m_comptr;
     }
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-    if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
-    {
-        if (!m_mfeAvc.get())
-        {
-            UMC::AutomaticUMCMutex guard(m_guard);
-
-            m_mfeAvc = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEAVCENCODER_GUID);
-            if (m_mfeAvc.get())
-                m_mfeAvc.get()->AddRef();
-        }
-        return (void*)&m_mfeAvc;
-    }
-
-    if (MFXMFEAVCENCODER_GUID == guid)
-    {
-        return (void*)&m_mfeAvc;
-    }
-
-    if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
-    {
-        if (!m_mfeHevc.get())
-        {
-            UMC::AutomaticUMCMutex guard(m_guard);
-
-            m_mfeHevc = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEHEVCENCODER_GUID);
-            if (m_mfeHevc.get())
-                m_mfeHevc.get()->AddRef();
-        }
-        return (void*)&m_mfeHevc;
-    }
-
-    if (MFXMFEHEVCENCODER_GUID == guid)
-    {
-        return (void*)&m_mfeHevc;
-    }
-#endif
 
     if (MFXICORECM_GUID == guid)
     {

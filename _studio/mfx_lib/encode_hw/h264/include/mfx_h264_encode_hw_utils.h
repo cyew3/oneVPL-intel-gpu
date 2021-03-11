@@ -1135,13 +1135,6 @@ namespace MfxHwH264Encode
             , m_cmHistSys(0)
             , m_isENCPAK(false)
             , m_startTime(0)
-#ifdef MFX_ENABLE_MFE
-            , m_beginTime(0)
-            , m_endTime(0)
-            , m_flushMfe(0)
-            , m_mfeTimeToWait(0)
-            , m_userTimeout(false)
-#endif
             , m_hwType(MFX_HW_UNKNOWN)
             , m_TCBRCTargetFrameSize(0)
             , m_SceneChange(0)
@@ -1444,13 +1437,6 @@ namespace MfxHwH264Encode
         std::vector<SliceStructInfo> m_SliceInfo;
 
         mfxU32 m_startTime;
-#ifdef MFX_ENABLE_MFE
-        vm_tick m_beginTime;//where we start counting
-        vm_tick m_endTime;//where we get bitstream
-        mfxU16  m_flushMfe;//flush MFE frame buffer
-        mfxU32  m_mfeTimeToWait;//set by user or used equal to frame rate latency by default
-        bool m_userTimeout;
-#endif
         eMFXHWType m_hwType;  // keep HW type information
 
 #if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)

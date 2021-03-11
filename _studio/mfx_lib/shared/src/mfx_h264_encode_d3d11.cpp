@@ -54,10 +54,6 @@ D3D11Encoder::D3D11Encoder()
 , m_pVideoDevice(nullptr)
 , m_pVideoContext(nullptr)
 , m_pDecoder(nullptr)
-#if defined(MFX_ENABLE_MFE)
-, m_pMFEAdapter(nullptr)
-, m_StreamInfo()
-#endif
 , m_guid()
 , m_requestedGuid()
 , m_caps()
@@ -168,11 +164,6 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     }
 #endif
 
-#if defined(MFX_ENABLE_MFE)
-    // Functions ENCODE_ENC_CTRL_CAPS_ID and ENCODE_ENC_CTRL_GET_ID are not needed
-    // for MFE case, they are also unsupported on driver side
-    if (m_pMFEAdapter == nullptr)
-#endif
     {
         decoderExtParam.Function = ENCODE_ENC_CTRL_CAPS_ID;
         decoderExtParam.pPrivateOutputData = &m_capsQuery;
@@ -209,15 +200,6 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     FillConstPartOfSliceBuffer(par, m_slice);
 
     m_headerPacker.Init(par, m_caps);
-#if defined(MFX_ENABLE_MFE)
-    if (m_pMFEAdapter != nullptr)
-    {
-        mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(par);
-        m_StreamInfo.CodecId = CODEC_AVC;
-        unsigned long long timeout = (((mfxU64)par.mfx.FrameInfo.FrameRateExtD) * 1000000 / par.mfx.FrameInfo.FrameRateExtN) / ((par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1);
-        return m_pMFEAdapter->Join(mfeParam, m_StreamInfo, timeout);
-    }
-#endif
     return MFX_ERR_NONE;
 }
 
@@ -270,14 +252,6 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
         D3D11_VIDEO_DECODER_EXTENSION ext = {};
         ext.Function = ENCODE_FORMAT_COUNT_ID;
-#if defined(MFX_ENABLE_MFE)
-        MFE_CODEC codec = CODEC_AVC;
-        if (m_pMFEAdapter)
-        {
-            ext.pPrivateInputData = &codec;
-            ext.PrivateInputDataSize = sizeof(codec);
-        }
-#endif
         ext.pPrivateOutputData = &encodeFormatCount;
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
 
@@ -296,13 +270,6 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
         Zero(ext);
         ext.Function = ENCODE_FORMATS_ID;
-#if defined(MFX_ENABLE_MFE)
-        if (m_pMFEAdapter)
-        {
-            ext.pPrivateInputData = &codec;
-            ext.PrivateInputDataSize = sizeof(codec);
-        }
-#endif
         ext.pPrivateOutputData = &encodeFormats;
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
 
@@ -415,18 +382,6 @@ mfxStatus D3D11Encoder::QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEven
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
     mfxStatus sts = MFX_ERR_NONE;
 
-#if defined(MFX_ENABLE_MFE)
-    if (m_pMFEAdapter != nullptr)
-    {
-        // For now blocking synchronization does not work for MFE cases
-        // due to limitation on driver side
-
-        sts = MFX_WRN_DEVICE_BUSY;
-        while (sts == MFX_WRN_DEVICE_BUSY)
-            sts = QueryStatusAsync(task, fieldId);
-    }
-    else
-#endif
     {
         sts = D3DXCommonEncoder::QueryStatus(task, fieldId, useEvent);
     }
@@ -605,15 +560,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     m_encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1; // none
 #endif
 
-#if defined(MFX_ENABLE_MFE)
-    if (m_pMFEAdapter != nullptr)
-    {
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO);
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(ENCODE_SINGLE_STREAM_INFO));
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = &m_StreamInfo;
-        m_encodeExecuteParams.NumCompBuffers++;
-    }
-#endif
     m_sps.bNoAccelerationSPSInsertion = !task.m_insertSps[fieldId];
 
     m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
@@ -820,18 +766,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     if(SkipFlag != 1)
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-#if defined(MFX_ENABLE_MFE)
-        if (m_pMFEAdapter != nullptr)
-        {
-            // For now blocking synchronization does not work for MFE cases
-            // due to limitation on driver side (the same for MFE HEVC).
-            // By the way, when blocking sync will be available, it need to be done
-            // by new MFE DDI D3D11_VIDEO_ENCODER_BUFFER_EVENT which need to be sent
-            // as additional buffer by ENCODE_ENC_PAK_ID command instead of calling
-            // extention function DXVA2_SET_GPU_TASK_EVENT_HANDLE (like below)
-        }
-        else
-#endif
         {
             // allocate the event
             DdiTask & task1 = RemoveConst(task);
@@ -868,9 +802,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_decoderExtParams.PrivateOutputDataSize = 0;
         m_decoderExtParams.ResourceCount         = m_resourceCount;
         m_decoderExtParams.ppResourceList        = &(m_resourceList[0]);
-#if defined(MFX_ENABLE_MFE) && defined(DEBUG_TRACE)
-        printf("\n\nSubmit ENCODE_ENC_PAK_ID for stream %d, field %d, Feedback %d\n\n", m_StreamInfo.StreamId, fieldId, task.m_statusReportNumber[fieldId]);
-#endif
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
             hr = DecoderExtension(m_pVideoContext, m_pDecoder, m_decoderExtParams);
@@ -914,17 +845,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_sizeSkipFrames += feedback.bitstreamSize;
     }
 
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-    if (m_pMFEAdapter != nullptr)
-    {
-        mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
-        if (m_core->GetHWType() >= MFX_HW_XE_HP)
-            timeout = 360000000;//one hour for pre-si, ToDo:remove for silicon
-        mfxStatus sts = m_pMFEAdapter->Submit(m_StreamInfo.StreamId, (task.m_flushMfe ? 0 : timeout), SkipFlag == 1);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-    }
-#endif
     m_sps.bResetBRC = false;
 
     // mvc hack
@@ -962,15 +882,6 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
 
-#if defined(MFX_ENABLE_MFE)
-        if (m_pMFEAdapter != nullptr)
-        {
-#ifdef DEBUG_TRACE
-            printf("\n\nquery status for %d stream\n\n", m_StreamInfo.StreamId);
-#endif
-            feedbackDescr.StreamID = m_StreamInfo.StreamId;
-        }
-#endif
         {
             try
             {
@@ -1155,7 +1066,7 @@ mfxStatus D3D11Encoder::Init(
     // Device creation for MVC dependent view requires special processing for DX11.
     // For MVC dependent view encoding device from Core can't be used (it's already used for base view). Need to create new one.
     // Also newly created encoding device for MVC dependent view shouldn't be stored inside Core.
-    bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View) && (guid != DXVA2_Intel_MFE);
+    bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View);
 
     ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_core, MFXID3D11DECODER_GUID);
     MFX_CHECK(pVideoDecoder, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1178,30 +1089,6 @@ mfxStatus D3D11Encoder::Init(
             && video_desc.Guid == m_guid)
             m_pDecoder = pVideoDecoder->get();
     }
-#if defined(MFX_ENABLE_MFE)
-    else if (guid == DXVA2_Intel_MFE)
-    {
-        if (m_pMFEAdapter == nullptr)
-            m_pMFEAdapter = CreatePlatformMFEEncoder(m_core);
-        MFX_CHECK(m_pMFEAdapter, MFX_ERR_UNSUPPORTED);
-
-        sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext, width, height);
-        MFX_CHECK_STS(sts);
-
-        m_pDecoder = m_pMFEAdapter->GetVideoDecoder();
-        MFX_CHECK(m_pDecoder, MFX_ERR_UNSUPPORTED);
-
-        auto caps = reinterpret_cast<ENCODE_CAPS*>(m_pMFEAdapter->GetCaps(CODEC_AVC));
-        MFX_CHECK(caps, MFX_ERR_UNSUPPORTED);
-
-        m_caps.ddi_caps = *caps;
-        m_caps.CQPSupport = 1;
-        m_caps.CBRSupport = 1;
-        m_caps.VBRSupport = 1;
-        m_caps.AVBRSupport = 1;
-        m_caps.AdaptiveMaxFrameSizeSupport = 1;
-    }
-#endif
     if (!m_pDecoder)
     {
         // [1] Query supported decode profiles
@@ -1285,9 +1172,6 @@ mfxStatus D3D11Encoder::Init(
 #endif
         CHECK_HRES(hRes);
     }
-#if defined(MFX_ENABLE_MFE)
-    if (m_pMFEAdapter == nullptr)
-#endif
     {
         // [3] Query the encoding device capabilities
         D3D11_VIDEO_DECODER_EXTENSION ext = {};

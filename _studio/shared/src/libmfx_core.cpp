@@ -40,13 +40,6 @@
 
 #include "vm_sys_info.h"
 
-#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE)
-//temporarily here to get MFE device from core in HEVC encoder
-//to be removed after HEVC is merged back to library
-#define MFX_HANDLE_MFE_DEVICE 9
-#include <mfx_mfe_adapter_dxva.h>
-#endif
-
 using namespace std;
 //
 // THE OTHER CORE FUNCTIONS HAVE IMPLICIT IMPLEMENTATION

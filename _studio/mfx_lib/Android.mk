@@ -81,11 +81,9 @@ MFX_LOCAL_SRC_FILES_HW := \
     mfx_lib/encode_hw/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf.cpp \
     mfx_lib/encode_hw/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf_caps.cpp \
     mfx_lib/encode_hw/hevc/embargo/agnostic/g12/hevcehw_g12_scc.cpp \
-    mfx_lib/encode_hw/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_mfe.cpp \
     mfx_lib/encode_hw/hevc/embargo/agnostic/g12dg2/hevcehw_g12dg2_caps.cpp \
     mfx_lib/encode_hw/hevc/embargo/linux/g12/hevcehw_g12_embargo_lin.cpp \
     mfx_lib/encode_hw/hevc/embargo/linux/g12ats/hevcehw_g12ats_lin.cpp \
-    mfx_lib/encode_hw/hevc/embargo/linux/g12ats/hevcehw_g12ats_mfe_lin.cpp \
     mfx_lib/encode_hw/hevc/embargo/linux/g12dg2/hevcehw_g12dg2_lin.cpp \
     mfx_lib/encode_hw/shared/ehw_resources_pool.cpp \
     mfx_lib/encode_hw/shared/ehw_task_manager.cpp \

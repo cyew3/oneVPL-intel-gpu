@@ -132,7 +132,6 @@
         #define MFX_ENABLE_ENCTOOLS
         #define MFX_ENABLE_ENCTOOLS_LPLA
         #define MFX_ENABLE_MCTF
-        #define MFX_ENABLE_MFE
     #endif
 
     #if ((MFX_VERSION >= 1026) && defined(AS_CAMERA_PLUGIN))
@@ -283,7 +282,6 @@
         #undef MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_AV1_VIDEO_DECODE
         #undef MFX_ENABLE_VP9_VIDEO_DECODE
-        #undef MFX_ENABLE_MFE
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
         #undef MFX_ENABLE_AV1_VIDEO_ENCODE
         #if defined(__linux__)

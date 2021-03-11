@@ -87,7 +87,6 @@ set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_core_hw.h
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_core_vaapi.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_ext_ddi.h
-    ${MSDK_STUDIO_ROOT}/shared/include/mfx_mfe_adapter.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_vpp_vaapi.h
 
     ${MSDK_STUDIO_ROOT}/shared/src/auxiliary_device.cpp
@@ -105,8 +104,6 @@ set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/mfx_mfe_adapter.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/mfx_mfe_adapter_dxva.cpp
   )
 
 if(NOT MFX_DISABLE_SW_FALLBACK)

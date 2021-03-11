@@ -289,11 +289,6 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID(mfxExtAVCScalingMatrix,      MFX_EXTBUFF_AVC_SCALING_MATRIX       );
 #endif
 
-#ifdef MFX_ENABLE_MFE
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtMultiFrameControl,     MFX_EXTBUFF_MULTI_FRAME_CONTROL     );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtMultiFrameParam,       MFX_EXTBUFF_MULTI_FRAME_PARAM       );
-#endif
-
 #if defined (MFX_ENABLE_GPU_BASED_SYNC)
     BIND_EXTBUF_TYPE_TO_ID(mfxExtGameStreaming,          MFX_EXTBUFF_GAME_STREAMING          );
 #endif
@@ -759,11 +754,6 @@ namespace MfxHwH264Encode
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         std::vector<mfxExtPpsHeader>  m_extCqmPps;
-#endif
-
-#if defined (MFX_ENABLE_MFE)
-        mfxExtMultiFrameParam    m_MfeParam;
-        mfxExtMultiFrameControl  m_MfeControl;
 #endif
 
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)

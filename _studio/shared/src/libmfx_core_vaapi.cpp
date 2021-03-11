@@ -134,12 +134,6 @@ VAAPIVideoCORE_T<Base>::VAAPIVideoCORE_T(
           , m_bCmCopyAllowed(false)
 #endif
           , m_bHEVCFEIEnabled(false)
-#if defined(MFX_ENABLE_MFE)
-          , m_mfeAvc()
-#ifndef STRIP_EMBARGO
-          , m_mfeHevc()
-#endif
-#endif
 {
 } // VAAPIVideoCORE_T<Base>::VAAPIVideoCORE_T(...)
 
@@ -1101,46 +1095,6 @@ void* VAAPIVideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*) &this->m_encode_caps;
     }
-#ifdef MFX_ENABLE_MFE
-
-    if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
-    {
-        if (!m_mfeAvc.get())
-        {
-            UMC::AutomaticUMCMutex guard(this->m_guard);
-
-            m_mfeAvc = reinterpret_cast<MFEVAAPIEncoder*>(this->m_session->m_pOperatorCore->template QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEAVCENCODER_GUID));
-            if (m_mfeAvc.get())
-                m_mfeAvc.get()->AddRef();
-        }
-        return (void*)&m_mfeAvc;
-    }
-
-    if (MFXMFEAVCENCODER_GUID == guid)
-    {
-        return (void*)&m_mfeAvc;
-    }
-#ifndef STRIP_EMBARGO
-
-    if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
-    {
-        if (!m_mfeHevc.get())
-        {
-            UMC::AutomaticUMCMutex guard(this->m_guard);
-
-            m_mfeHevc = reinterpret_cast<MFEVAAPIEncoder*>(this->m_session->m_pOperatorCore->template QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEHEVCENCODER_GUID));
-            if (m_mfeHevc.get())
-                m_mfeHevc.get()->AddRef();
-        }
-        return (void*)&m_mfeHevc;
-    }
-
-    if (MFXMFEHEVCENCODER_GUID == guid)
-    {
-        return (void*)&m_mfeHevc;
-    }
-#endif
-#endif
     if (MFXICORECM_GUID == guid)
     {
         CmDevice* pCmDevice = nullptr;

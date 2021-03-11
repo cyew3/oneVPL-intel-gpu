@@ -50,7 +50,6 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
-    <ClCompile Include="..\..\shared\src\mfx_mfe_adapter_dxva.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_cnl_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_icllp_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_icl_copy_isa.cpp" />

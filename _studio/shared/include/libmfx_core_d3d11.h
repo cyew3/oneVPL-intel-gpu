@@ -31,9 +31,6 @@
 #include "libmfx_core.h"
 #include "encoding_ddi.h"
 #include "libmfx_allocator_d3d11.h"
-#if defined (MFX_ENABLE_MFE)
-#include "mfx_mfe_adapter_dxva.h"
-#endif
 #include <d3d11.h>
 
 #include <memory>
@@ -199,10 +196,6 @@ protected:
     // Ordinal number of adapter to work
     const mfxU32                            m_adapterNum;
     ComPtrCore<ID3D11VideoDecoder>          m_comptr;
-#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
-    ComPtrCore<MFEDXVAEncoder>              m_mfeAvc;
-    ComPtrCore<MFEDXVAEncoder>              m_mfeHevc;
-#endif
     bool                                    m_bCmCopy;
     bool                                    m_bCmCopySwap;
     bool                                    m_bCmCopyAllowed;

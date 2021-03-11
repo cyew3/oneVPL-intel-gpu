@@ -511,19 +511,6 @@ mfxStatus ImplementationAvc::Query(
             MFX_CHECK(MFX_HW_VAAPI != core->GetVAType(), MFX_ERR_UNSUPPORTED);
         }
 
-#ifdef MFX_ENABLE_MFE
-        if(mfxExtMultiFrameParam* ExtMultiFrameParam = GetExtBuffer(*out))
-        {
-            ExtMultiFrameParam->MaxNumFrames = 1;
-            ExtMultiFrameParam->MFMode = 1;
-        }
-
-        if(mfxExtMultiFrameControl* ExtMultiFrameControl = GetExtBuffer(*out))
-        {
-            ExtMultiFrameControl->Timeout = 1;
-            ExtMultiFrameControl->Flush = 1;
-        }
-#endif
 #ifdef MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
         if(mfxExtPartialBitstreamParam* po = GetExtBuffer(*out))
         {
@@ -632,6 +619,9 @@ mfxStatus ImplementationAvc::Query(
                     if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODER_WIDI_USAGE)
                         continue; // this buffer notify that WiDi is caller for Query. Nothing to check or correct, just move on.
 #endif
+                    if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_MULTI_FRAME_PARAM ||
+                        in->ExtParam[i]->BufferId == MFX_EXTBUFF_MULTI_FRAME_CONTROL)
+                        continue; // skip checking MFE buffers
 
                     MFX_CHECK(IsVideoParamExtBufferIdSupported(in->ExtParam[i]->BufferId),
                     MFX_ERR_UNSUPPORTED);
@@ -1038,19 +1028,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 #endif
     GUID guid;
-#if defined(MFX_ENABLE_MFE)
-    mfxExtMultiFrameParam* mfeParam = (mfxExtMultiFrameParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
-#endif
     if (IsOn(m_video.mfx.LowPower))
     {
         guid = DXVA2_INTEL_LOWPOWERENCODE_AVC;
     }
-#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-    else if (mfeParam && (mfeParam->MaxNumFrames > 1 || mfeParam->MFMode >= MFX_MF_AUTO))
-    {
-        guid = DXVA2_Intel_MFE;
-    }
-#endif
     else
     {
         guid = DXVA2_Intel_Encode_AVC;
@@ -1060,15 +1041,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         guid,
         GetFrameWidth(m_video),
         GetFrameHeight(m_video));
-#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-    if (sts != MFX_ERR_NONE && guid == DXVA2_Intel_MFE)
-    {
-        mfeParam->MaxNumFrames = 0;
-        mfeParam->MFMode = MFX_MF_DISABLED;
-        return sts;
-    }
-    else
-#endif
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -2908,9 +2880,6 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     m_stat.NumBit += numBits;
     m_stat.NumCachedFrame--;
     m_stat.NumFrame++;
-#if defined (MFX_ENABLE_MFE)
-    m_lastTask.m_endTime = vm_time_get_tick();
-#endif
     m_free.splice(m_free.end(), m_encoding, task);
 }
 
@@ -5271,26 +5240,6 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         m_free.front().m_roi.Resize(MaxNumOfROI);
 
         m_stat.NumCachedFrame++;
-#ifdef MFX_ENABLE_MFE
-        mfxExtMultiFrameControl * mfeCtrl = GetExtBuffer(*ctrl);
-        if (mfeCtrl && mfeCtrl->Timeout)// Use user timeout to wait for frames
-        {
-            m_free.front().m_userTimeout = true;
-            m_free.front().m_mfeTimeToWait = mfeCtrl->Timeout;
-        }
-        else if (mfeCtrl && mfeCtrl->Flush)// Force submission with current frame
-        {
-            m_free.front().m_flushMfe = true;
-        }
-        else //otherwise use calculated timeout or passed by user at inialization.
-        {
-            mfxExtMultiFrameControl & mfeInitCtrl = GetExtBufferRef(m_video);
-            m_free.front().m_userTimeout = false;
-            m_free.front().m_mfeTimeToWait = mfeInitCtrl.Timeout;
-        }
-
-        m_free.front().m_beginTime = vm_time_get_tick();
-#endif
         m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     }
 
