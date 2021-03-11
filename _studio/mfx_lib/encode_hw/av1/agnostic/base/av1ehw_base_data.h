@@ -32,12 +32,11 @@ namespace AV1EHW
 {
 namespace Base
 {
-#ifndef _WIN32
     static const GUID DXVA2_Intel_LowpowerEncode_AV1_420_8b =
     { 0x8090a09c, 0x6fc5, 0x48ef, {0x9f, 0x40, 0x65, 0xbf, 0x37, 0xf7, 0xac, 0xc4 } };
     static const GUID DXVA2_Intel_LowpowerEncode_AV1_420_10b =
     { 0xeea5b11, 0x88c0, 0x4a9f, {0x81, 0xac, 0xb1, 0xf, 0xd6, 0x6b, 0x22, 0xea } };
-#endif
+
     const uint16_t SB_SIZE                        = 64;
     const uint16_t AV1_DIRTY_BLOCK_SIZE           = 32;
     const uint8_t  AV1_MAX_Q_INDEX                = 255;
