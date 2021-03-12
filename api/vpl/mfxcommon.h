@@ -436,9 +436,19 @@ typedef struct {
 } mfxImplDescription;
 MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+/*! This structure represents the list of names of implemented functions. */
+typedef struct {
+    mfxU16   NumFunctions;     /*!< Number of function names in the FunctionsName array. */
+    mfxChar** FunctionsName;   /*!< Array of the null-terminated strings. Each string contains name of the implemented function. */
+} mfxImplementedFunctions;
+MFX_PACK_END()
+
+
 /* The mfxImplCapsDeliveryFormat enumerator specifies delivery format of the implementation capability. */
 typedef enum {
-    MFX_IMPLCAPS_IMPLDESCSTRUCTURE       = 1  /*!< Deliver capabilities as mfxImplDescription structure. */
+    MFX_IMPLCAPS_IMPLDESCSTRUCTURE       = 1,  /*!< Deliver capabilities as mfxImplDescription structure. */
+    MFX_IMPLCAPS_IMPLEMENTEDFUNCTIONS    = 2   /*!< Deliver capabilities as mfxImplementedFunctions structure. */
 } mfxImplCapsDeliveryFormat;
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()

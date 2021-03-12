@@ -238,7 +238,6 @@ typedef struct
 } mfxY410;
 MFX_PACK_END()
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
 MFX_PACK_BEGIN_USUAL_STRUCT()
 /*! Specifies "pixel" in Y416 color format. */
 typedef struct
@@ -249,7 +248,6 @@ typedef struct
     mfxU32 A : 16; /*!< A component. */
 } mfxY416;
 MFX_PACK_END()
-#endif
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
 /*! Specifies "pixel" in A2RGB10 color format */
@@ -316,9 +314,7 @@ typedef struct {
         mfxU16  *U16;   /*!< U16 channel. */
         mfxU8   *G;     /*!< G channel. */
         mfxY410 *Y410;  /*!< T410 channel for Y410 format (merged AVYU). */
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
         mfxY416 *Y416;  /*!< This format is a packed 16-bit representation that includes 16 bits of alpha. */
-#endif
     };
     union {
         mfxU8   *Cr;    /*!< Cr channel. */
@@ -1794,10 +1790,11 @@ enum {
     */
     MFX_EXTBUFF_VPP_AUXDATA                     = MFX_MAKEFOURCC('A','U','X','D'),
     /*!
-       The extended buffer defines control parameters for the VPP denoise filter algorithm. See the mfxExtVPPDenoise structure for details.
+       The extended buffer defines control parameters for the VPP denoise filter algorithm. See the mfxExtVPPDenoise2 structure for details.
        The application can attach this buffer to the mfxVideoParam structure for video processing initialization.
     */
-    MFX_EXTBUFF_VPP_DENOISE                     = MFX_MAKEFOURCC('D','N','I','S'),
+    MFX_EXTBUFF_VPP_DENOISE2                    = MFX_MAKEFOURCC('D','N','I','2'),
+    MFX_EXTBUFF_VPP_DENOISE                     = MFX_MAKEFOURCC('D','N','I','S'), /*!< Deprecated in 2.2 API version.*/
     MFX_EXTBUFF_VPP_SCENE_ANALYSIS              = MFX_MAKEFOURCC('S','C','L','Y'),
     MFX_EXTBUFF_VPP_SCENE_CHANGE                = MFX_EXTBUFF_VPP_SCENE_ANALYSIS, /* Deprecated */
     /*!
@@ -2109,11 +2106,43 @@ MFX_PACK_END()
 MFX_PACK_BEGIN_USUAL_STRUCT()
 /*!
    A hint structure that configures the VPP denoise filter algorithm.
+   This extension buffer is deprecated. Use mfxExtVPPDenoise2 instead.
 */
 typedef struct {
     mfxExtBuffer    Header; /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_VPP_DENOISE. */
     mfxU16  DenoiseFactor;  /*!< Indicates the level of noise to remove. Value range of 0 to 100 (inclusive).  */
 } mfxExtVPPDenoise;
+MFX_PACK_END()
+
+/*! The mfxDenoiseMode enumerator specifies the mode of denoise. */
+typedef enum {
+    MFX_DENOISE_MODE_DEFAULT    = 0,     /*!< Default denoise mode. The library selects the most appropriate denoise mode. */
+    MFX_DENOISE_MODE_VENDOR     = 1000,  /*!< The enumeration to separate common denoise mode above and vendor specific. */
+
+    MFX_DENOISE_MODE_INTEL_HVS_AUTO_BDRATE     = MFX_DENOISE_MODE_VENDOR + 1,  /*!< Indicates auto BD rate improvement in pre-processing before video encoding,
+                                                                                    ignore Strength.*/
+    MFX_DENOISE_MODE_INTEL_HVS_AUTO_SUBJECTIVE = MFX_DENOISE_MODE_VENDOR + 2,  /*!< Indicates auto subjective quality improvement in pre-processing before video encoding,
+                                                                                    ignore Strength.*/
+    MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST     = MFX_DENOISE_MODE_VENDOR + 3,  /*!< Indicates auto adjust subjective quality in post-processing (after decoding) for video playback,
+                                                                                    ignore Strength.*/
+    MFX_DENOISE_MODE_INTEL_HVS_PRE_MANUAL      = MFX_DENOISE_MODE_VENDOR + 4,  /*!< Indicates manual mode for pre-processing before video encoding,
+                                                                                    allow to adjust the denoise strength manually.*/
+    MFX_DENOISE_MODE_INTEL_HVS_POST_MANUAL     = MFX_DENOISE_MODE_VENDOR + 5,  /*!< Indicates manual mode for post-processing for video playback,
+                                                                                    allow to adjust the denoise strength manually.*/
+} mfxDenoiseMode;
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+/*!
+   A hint structure that configures the VPP denoise filter algorithm.
+*/
+typedef struct {
+    mfxExtBuffer    Header; /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_VPP_DENOISE2. */
+    mfxDenoiseMode  Mode;   /*!< Indicates the mode of denoise. mfxDenoiseMode enumerator.  */
+    mfxU16  Strength;       /*!< Denoise strength in manaul mode. Value of 0-100 (inclusive) indicates the strength of denoise.
+                                 The strength of denoise controls degree of possible changes of pixel values; the bigger the strength
+                                 the larger the change is.  */
+    mfxU16  reserved[15];
+} mfxExtVPPDenoise2;
 MFX_PACK_END()
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
