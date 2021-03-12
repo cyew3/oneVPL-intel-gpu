@@ -2512,8 +2512,8 @@ mfxStatus  VideoVPPHW::Init(
     m_workloadMode = VPP_ASYNC_WORKLOAD;
 
 #if defined(MFX_ONEVPL)
-    bool* core20_interface = reinterpret_cast<bool*>(m_pCore->QueryCoreInterface(MFXICORE_API_2_0_GUID));
-    if (core20_interface && *core20_interface && !m_pCore->IsExternalFrameAllocator())
+    bool core20_interface = Supports20FeatureSet(*m_pCore);
+    if (core20_interface && !m_pCore->IsExternalFrameAllocator())
     {
         auto pCore20 = dynamic_cast<CommonCORE20*>(m_pCore);
         MFX_CHECK(pCore20, MFX_ERR_UNSUPPORTED);

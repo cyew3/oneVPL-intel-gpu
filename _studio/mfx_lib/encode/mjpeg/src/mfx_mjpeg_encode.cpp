@@ -33,6 +33,8 @@
 #include "umc_video_processing.h"
 #include "libmfx_core_interface.h"
 
+#include "libmfx_core.h"
+
 #include "ippcore.h" // MfxIppInit in case of bundled IPP
 
 #define CHECK_VERSION(ver)
@@ -1205,9 +1207,9 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0)) // 0 is possible after Query
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
-    MFX_CHECK((core20_interface && *core20_interface) 
-        || m_core->IsExternalFrameAllocator() 
+    bool core20_interface = Supports20FeatureSet(*m_core);
+    MFX_CHECK(core20_interface
+        || m_core->IsExternalFrameAllocator()
         || !(par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)),
         MFX_ERR_INVALID_VIDEO_PARAM);
 

@@ -100,9 +100,9 @@ public:
     // to satisfy internal API
     virtual mfxStatus DecodeFrame(mfxBitstream * /*bs*/, mfxFrameSurface1 * /*surface_work*/, mfxFrameSurface1 * /*surface_out*/){ return MFX_ERR_UNSUPPORTED; };
 
-    mfxStatus RunThread(mfxFrameSurface1 *surface_work, 
-                        mfxFrameSurface1 *surface_disp, 
-                        mfxU32 threadNumber, 
+    mfxStatus RunThread(mfxFrameSurface1 *surface_work,
+                        mfxFrameSurface1 *surface_disp,
+                        mfxU32 threadNumber,
                         mfxU32 taskID);
 
 #if defined(MFX_ONEVPL)
@@ -111,7 +111,6 @@ public:
 
 
 protected:
-
 
     static mfxStatus SetAllocRequestInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus SetAllocRequestExternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);

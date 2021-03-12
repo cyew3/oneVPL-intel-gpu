@@ -592,8 +592,8 @@ mfxStatus VideoVPPBase::CheckIOPattern( mfxVideoParam* par )
 
 #if defined(MFX_ONEVPL)
   // MSDK 2.0 supports internal allocation without Ext. allocator set
-  bool* core20_interface = reinterpret_cast<bool*>(m_core->QueryCoreInterface(MFXICORE_API_2_0_GUID));
-  if (!core20_interface || !*core20_interface)
+  bool core20_interface = Supports20FeatureSet(*m_core);
+  if (!core20_interface)
 #endif
     MFX_CHECK(m_core->IsExternalFrameAllocator() || !(par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)), MFX_ERR_INVALID_VIDEO_PARAM);
 

@@ -109,7 +109,7 @@ mfxStatus DynamicFramesPool::Close( void )
 
         for (i = 0; i < m_pSurface[frame].Data.Locked; i++)
         {
-            sts = m_core->DecreaseReference( m_ptrDataTab[frame] );
+            sts = m_core->DecreaseReference(m_pSurface[frame] );
         }
     }
 
@@ -319,7 +319,7 @@ mfxStatus DynamicFramesPool::PostProcessSync( void )
 
             for (i = m_savedLocked[frame]; i < m_pSurface[frame].Data.Locked; i++)
             {
-                sts = m_core->IncreaseReference( m_ptrDataTab[frame] );
+                sts = m_core->IncreaseReference( m_pSurface[frame] );
             }
         }
         else if (m_savedLocked[frame] > m_pSurface[frame].Data.Locked)
@@ -328,7 +328,7 @@ mfxStatus DynamicFramesPool::PostProcessSync( void )
 
             for (i = m_pSurface[frame].Data.Locked; i < m_savedLocked[frame]; i++)
             {
-                sts = m_core->DecreaseReference( m_ptrDataTab[frame] );
+                sts = m_core->DecreaseReference(m_pSurface[frame] );
             }
         }
         m_savedLocked[frame] = m_pSurface[frame].Data.Locked;

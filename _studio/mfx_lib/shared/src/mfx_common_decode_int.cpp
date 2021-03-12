@@ -26,6 +26,10 @@
 #include "umc_video_data.h"
 #include "umc_video_decoder.h"
 
+#if defined (MFX_VA_WIN)
+#include "dxgiformat.h"
+#endif
+
 MFXMediaDataAdapter::MFXMediaDataAdapter(mfxBitstream *pBitstream)
 {
     Load(pBitstream);
@@ -220,7 +224,10 @@ UMC::ColorFormat ConvertFOURCCToUMCColorFormat(mfxU32 fourcc)
         case MFX_FOURCC_Y416:    return UMC::Y416;
 #endif
 
-        case MFX_FOURCC_AYUV:    return UMC::YUV444A;
+#if defined (MFX_VA_WIN)
+        case DXGI_FORMAT_AYUV:
+#endif
+        case MFX_FOURCC_AYUV:    return UMC::AYUV;
 
         case MFX_FOURCC_IMC3:    return UMC::IMC3;
         case MFX_FOURCC_YUV400:  return UMC::GRAY;
@@ -301,8 +308,8 @@ void ConvertUMCParamsToMFX(UMC::VideoStreamInfo const* si, mfxVideoParam* par)
     par->mfx.FrameInfo.CropH  = mfxU16(si->disp_clip_info.height);
     par->mfx.FrameInfo.CropW  = mfxU16(si->disp_clip_info.width);
 
-    par->mfx.FrameInfo.BitDepthLuma = 0;
-        par->mfx.FrameInfo.BitDepthChroma = 0;
+    par->mfx.FrameInfo.BitDepthLuma   = 0;
+    par->mfx.FrameInfo.BitDepthChroma = 0;
 
     par->mfx.FrameInfo.FourCC = ConvertUMCColorFormatToFOURCC(si->color_format);
 

@@ -1450,7 +1450,7 @@ mfxStatus CTranscodingPipeline::Encode()
             }
 
 #if defined(MFX_ONEVPL)
-            if (m_MemoryModel != GENERAL_ALLOC && VppExtSurface.pSurface)
+            if (m_MemoryModel != GENERAL_ALLOC && VppExtSurface.pSurface && m_pmfxVPP)
             {
                 mfxStatus sts_release = VppExtSurface.pSurface->FrameInterface->Release(VppExtSurface.pSurface);
                 MSDK_CHECK_STATUS(sts_release, "FrameInterface->Release failed");
