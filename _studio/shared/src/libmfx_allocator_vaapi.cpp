@@ -549,7 +549,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         frame_data.V = frame_data.U + sizeof(mfxU16);
         break;
 
-    case MFX_FOURCC_AYUV:
+    case VA_FOURCC_AYUV:
         frame_data.V = p_buffer + va_image.offsets[0];
         frame_data.U = frame_data.V + 1;
         frame_data.Y = frame_data.V + 2;
@@ -566,7 +566,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         frame_data.V16 = frame_data.Y16 + 3;
         break;
 
-    case MFX_FOURCC_Y410:
+    case VA_FOURCC_Y410:
         frame_data.Y = frame_data.U = frame_data.V = frame_data.A = 0;
         frame_data.Y410 = (mfxY410*)(p_buffer + va_image.offsets[0]);
         break;
@@ -581,9 +581,6 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         break;
 
 #endif
-    case MFX_FOURCC_VP8_SEGMAP:
-        frame_data.Y = p_buffer;
-        break;
 
     default:
         MFX_RETURN(MFX_ERR_LOCK_MEMORY);
