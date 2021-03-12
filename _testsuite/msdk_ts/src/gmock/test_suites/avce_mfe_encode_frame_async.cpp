@@ -234,42 +234,24 @@ void AsyncEncodeTest::SetParams(tsVideoEncoder& enc, const tc_struct& tc)
 #endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 }
 
-void AsyncEncodeTest::InitSession(tsVideoEncoder& enc)
-{
-    TRACE_FUNC3(MFXInit, enc.m_impl, enc.m_pVersion, enc.m_pSession);
-    g_tsStatus.check(::MFXInit(enc.m_impl, enc.m_pVersion, enc.m_pSession));
-    TS_TRACE(enc.m_pVersion);
-    TS_TRACE(enc.m_pSession);
-    enc.tsSession::m_initialized = (g_tsStatus.get() >= 0);
-}
-
-void AsyncEncodeTest::SetHandle(tsVideoEncoder& enc, mfxHDL &hdl,
-        mfxHandleType &hdl_type)
-{
-    enc.SetHandle(enc.m_session, hdl_type, hdl);
-    enc.m_is_handle_set = (g_tsStatus.get() >= 0);
-}
-
 void AsyncEncodeTest::Init(const tc_struct& tc)
 {
     // Init parent SDK Session
     m_enc1.MFXInit();
 
+    // Init two child SDK sessions
+    m_enc2.MFXInit();
+    m_enc3.MFXInit();
+
     mfxHDL hdl;
     mfxHandleType hdl_type;
-#if (defined(LINUX32) || defined(LINUX64))
-    m_enc1.m_pVAHandle->get_hdl(hdl_type, hdl);
-#else
+#if !(defined(LINUX32) || defined(LINUX64))
     m_enc1.m_pFrameAllocator->get_hdl(hdl_type, hdl);
+    m_enc2.SetHandle(m_enc2.m_session, hdl_type, hdl);
+    m_enc3.SetHandle(m_enc3.m_session, hdl_type, hdl);
 #endif
 
-    // Init two child SDK sessions
-    InitSession(m_enc2);
-    SetHandle(m_enc2, hdl, hdl_type);
     m_enc1.MFXJoinSession(m_enc2.m_session);
-
-    InitSession(m_enc3);
-    SetHandle(m_enc3, hdl, hdl_type);
     m_enc1.MFXJoinSession(m_enc3.m_session);
 
     // Initialize encoders

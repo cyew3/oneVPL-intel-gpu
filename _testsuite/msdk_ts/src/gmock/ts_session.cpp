@@ -9,6 +9,7 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 \* ****************************************************************************** */
 
 #include "ts_session.h"
+#include "mfxdispatcher.h"
 
 tsSession::tsSession(mfxIMPL impl, mfxVersion version)
     : m_initialized(false)
@@ -32,12 +33,109 @@ tsSession::~tsSession()
     {
         MFXClose();
     }
+
+    ReleaseLoader();
+
 #if (defined(LINUX32) || defined(LINUX64))
     if (m_pVAHandle)
     {
         delete m_pVAHandle;
     }
 #endif
+}
+
+mfxStatus tsSession::ConfigureImp(mfxIMPL impl)
+{
+    mfxConfig cfg = MFXCreateConfig(m_Loader);
+
+    mfxVariant variant;
+    variant.Type = MFX_VARIANT_TYPE_U32;
+    variant.Data.U32 = -1;
+
+    switch (m_impl)
+    {
+        case MFX_IMPL_SOFTWARE:
+            variant.Data.U32 = MFX_IMPL_TYPE_SOFTWARE;
+            break;
+        case MFX_IMPL_HARDWARE:
+        case MFX_IMPL_HARDWARE_ANY:
+        case MFX_IMPL_HARDWARE2:
+        case MFX_IMPL_HARDWARE3:
+        case MFX_IMPL_HARDWARE4:
+        case MFX_IMPL_VIA_D3D9:
+        case MFX_IMPL_VIA_D3D11:
+        case MFX_IMPL_VIA_VAAPI:
+            variant.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
+            break;
+    }
+
+    if (variant.Data.U32 != -1) {
+        g_tsStatus.expect(MFX_ERR_NONE);
+        g_tsStatus.check(MFXSetConfigFilterProperty(cfg, (mfxU8*)"mfxImplDescription.Impl", variant));
+        m_Configs.push_back(cfg);
+    }
+
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::ConfigureApiVersion(mfxVersion *ver)
+{
+    mfxConfig cfg = MFXCreateConfig(m_Loader);
+    mfxVariant variant;
+    variant.Type = MFX_VARIANT_TYPE_U32;
+    variant.Data.U32 = ver->Version;
+    g_tsStatus.expect(MFX_ERR_NONE);
+    g_tsStatus.check(MFXSetConfigFilterProperty(cfg, (mfxU8*)"mfxImplDescription.ApiVersion", variant));
+    m_Configs.push_back(cfg);
+
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::CreateSession(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
+{
+    TRACE_FUNC0( MFXLoad );
+    m_Loader = MFXLoad();
+    if (!m_Loader) {
+        g_tsStatus.check(MFX_ERR_UNKNOWN);
+    }
+
+    ConfigureImp(impl);
+
+    if ( ver )
+    {
+        ConfigureApiVersion(ver);
+    }
+
+    int implIndex = 0;
+
+// pick the first available implementation, m_desc is checked only for being non-equal to NULL
+// TODO: add loop by implementations, set implIndex corresponding better implementation and add meaningful validation for the m_idesc
+    mfxImplDescription  * idesc;
+    TRACE_FUNC4( MFXEnumImplementations, m_Loader, implIndex, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc );
+    g_tsStatus.expect(MFX_ERR_NONE);
+    g_tsStatus.check(MFXEnumImplementations(m_Loader, implIndex, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc));
+    if (!idesc) {
+        g_tsStatus.check(MFX_ERR_UNKNOWN);
+    }
+
+    m_idesc.reset(idesc);
+
+    TRACE_FUNC3( MFXCreateSession, m_Loader, implIndex, session );
+    g_tsStatus.expect(MFX_ERR_NONE);
+    g_tsStatus.check(MFXCreateSession(m_Loader, implIndex, session));
+}
+
+mfxStatus tsSession::ReleaseLoader()
+{
+    if (m_idesc.get())
+    {
+        g_tsStatus.expect(MFX_ERR_NONE);
+        g_tsStatus.check(MFXDispReleaseImplDescription(m_Loader, m_idesc.get()));
+        m_idesc.release();
+        MFXUnload(m_Loader);
+    }
+
+    return g_tsStatus.get();
 }
 
 mfxStatus tsSession::MFXInit()
@@ -47,8 +145,17 @@ mfxStatus tsSession::MFXInit()
 
 mfxStatus tsSession::MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 {
-    TRACE_FUNC3( MFXInit, impl, ver, session );
-    g_tsStatus.check(::MFXInit(impl, ver, session));
+
+    if (ver->Major < 2)
+    {
+        TRACE_FUNC3( MFXInit, impl, ver, session );
+        g_tsStatus.check(::MFXInit(impl, ver, session));
+    }
+    else
+    {
+       CreateSession(impl, ver, session);
+    }
+
     TS_TRACE(ver);
     TS_TRACE(session);
 
@@ -87,6 +194,8 @@ mfxStatus tsSession::MFXClose(mfxSession session)
     TRACE_FUNC1( MFXClose, session );
     g_tsStatus.check(::MFXClose(session));
     m_initialized = false;
+
+    ReleaseLoader();
 
     return g_tsStatus.get();
 }
@@ -173,8 +282,16 @@ mfxStatus tsSession::MFXInitEx()
 
 mfxStatus tsSession::MFXInitEx(mfxInitParam par, mfxSession* session)
 {
-    TRACE_FUNC2(mfxInitParam, par, session);
-    g_tsStatus.check( ::MFXInitEx(par, session) );
+    if (par.Version.Major < 2)
+    {
+        TRACE_FUNC2(mfxInitParam, par, session);
+        g_tsStatus.check( ::MFXInitEx(par, session) );
+    }
+    else
+    {
+       CreateSession(par.Implementation, &par.Version, session);
+    }
+
     TS_TRACE(par);
 
     m_initialized = (g_tsStatus.get() >= 0);

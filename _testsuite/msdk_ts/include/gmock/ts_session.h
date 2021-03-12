@@ -10,6 +10,7 @@
 #pragma once
 
 #include "ts_alloc.h"
+#include "mfxdispatcher.h"
 
 class tsSession
 {
@@ -27,6 +28,10 @@ public:
     frame_allocator*    m_pFrameAllocator;
     frame_allocator*    m_pVAHandle;
     tsExtBufType<mfxInitParam> m_init_par;
+
+    mfxLoader                           m_Loader;
+    std::vector<mfxConfig>              m_Configs;
+    std::unique_ptr<mfxImplDescription> m_idesc;
 
     tsSession(mfxIMPL impl = g_tsImpl, mfxVersion version = g_tsVersion);
     ~tsSession();
@@ -53,6 +58,12 @@ public:
 
     mfxStatus MFXInitEx();
     mfxStatus MFXInitEx(mfxInitParam par, mfxSession* session);
+
+    mfxStatus ConfigureImp(mfxIMPL impl);
+    mfxStatus ConfigureApiVersion(mfxVersion *ver);
+    mfxStatus CreateSession(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
+    mfxStatus ReleaseLoader();
+
 #if !defined(MFX_ONEVPL)
     mfxStatus MFXDoWork(mfxSession session);
 #endif
