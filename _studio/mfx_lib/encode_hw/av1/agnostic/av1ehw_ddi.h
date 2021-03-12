@@ -363,12 +363,13 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
             UINT use_ref_frame_mvs            : 1; // [0..1]
             UINT disable_frame_end_update_cdf : 1; // [0..1]
             UINT reduced_tx_set_used          : 1; // [0..1]
-            UINT LosslessFlag                 : 1; // [0..1]
+            UINT reserved1b                   : 1;
             UINT SegIdBlockSize               : 2; // [0..3]
-            UINT EnableFrameOBU               : 1;
-            UINT DisableFrameRecon            : 1;
-            UINT LongTermReference            : 1;
-            UINT ReservedField                : 17;
+            UINT EnableFrameOBU               : 1; // [0..1]
+            UINT DisableFrameRecon            : 1; // [0..1]
+            UINT LongTermReference            : 1; // [0..1]
+            UINT allow_intrabc                : 1; // [0..1]
+            UINT ReservedField                : 16;
         } fields;
         UINT value;
     } PicFlags;

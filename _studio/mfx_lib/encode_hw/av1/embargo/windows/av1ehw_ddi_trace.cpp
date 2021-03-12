@@ -416,11 +416,11 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1)
     TRACE_AUTO(PicFlags.fields.use_ref_frame_mvs           );
     TRACE_AUTO(PicFlags.fields.disable_frame_end_update_cdf);
     TRACE_AUTO(PicFlags.fields.reduced_tx_set_used         );
-    TRACE_AUTO(PicFlags.fields.LosslessFlag                );
     TRACE_AUTO(PicFlags.fields.SegIdBlockSize              );
     TRACE_AUTO(PicFlags.fields.EnableFrameOBU              );
     TRACE_AUTO(PicFlags.fields.DisableFrameRecon           );
     TRACE_AUTO(PicFlags.fields.LongTermReference           );
+    TRACE_AUTO(PicFlags.fields.allow_intrabc               );
 
     TRACE_ARRAY_ROW("%d", filter_level, 2                  );
     TRACE_AUTO(filter_level_u                              );
