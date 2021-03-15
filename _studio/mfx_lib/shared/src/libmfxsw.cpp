@@ -431,10 +431,7 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
 {
     auto IsVplHW = [](eMFXHWType hw) -> bool
     {
-        return
-               hw == MFX_HW_XE_HP
-            || hw == MFX_HW_DG2
-            ;
+        return hw >= MFX_HW_TGL_LP;
     };
 
     if (!num_impls || format != MFX_IMPLCAPS_IMPLDESCSTRUCTURE)
