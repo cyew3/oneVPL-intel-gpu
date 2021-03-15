@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,33 +18,37 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_executable(test_multi_adapter)
+cmake_minimum_required(VERSION 3.11)
 
-target_include_directories(test_multi_adapter
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set (_detours_TARGET_PROCESSOR X64)
+else()
+    set (_detours_TARGET_PROCESSOR X86)
+endif()
+
+set (_detours_LIB_DIR lib.${_detours_TARGET_PROCESSOR})
+set (_detours_LIB_PATH
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../detours/${_detours_LIB_DIR}/detours.lib
 )
 
-target_sources(test_multi_adapter
-  PRIVATE
-    test_multi_adapter_decode.cpp
-    test_multi_adapter_number.cpp
+add_custom_command (
+    OUTPUT ${_detours_LIB_PATH}
+    COMMAND nmake DETOURS_TARGET_PROCESSOR=${_detours_TARGET_PROCESSOR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../detours
+    VERBATIM
 )
 
-target_link_libraries(test_multi_adapter
-  PRIVATE
-    mfx_static_lib
-    mfx_shared_lib
-    detours2
-    mfx
-    gtest
-    gtest_main
-    gmock
+add_custom_target (detours-make
+    DEPENDS ${_detours_LIB_PATH}
+)
+add_library (detours2 STATIC IMPORTED GLOBAL)
+add_dependencies (detours2 detours-make)
+
+set_target_properties (detours2
+    PROPERTIES
+        IMPORTED_LOCATION ${_detours_LIB_PATH}
+        INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/../../detours/src
+        FOLDER dependencies
 )
 
-target_compile_definitions(test_multi_adapter
-  PRIVATE
-    $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:MFX_ENABLE_UNIT_TEST_MULTI_ADAPTER>
-)
-
-target_compile_options(test_multi_adapter PRIVATE /bigobj)
+add_library (detours::detours2 ALIAS detours2)

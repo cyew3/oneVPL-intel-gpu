@@ -109,6 +109,10 @@ if (BUILD_TESTS)
     set_property(TARGET gmock_main PROPERTY FOLDER "contrib")
   endif()
 
+  if(CMAKE_SYSTEM_NAME MATCHES Windows)
+    add_subdirectory(${CMAKE_HOME_DIRECTORY}/contrib/build/detours)
+  endif()
+
   enable_testing()
 endif()
 
