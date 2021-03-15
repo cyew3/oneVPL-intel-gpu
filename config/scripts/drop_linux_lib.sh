@@ -7,7 +7,7 @@ while getopts b:m:p:n: flag
 do
     case "${flag}" in
         b) build_dir=${OPTARG};;
-        m) msdk_path=${OPTARG};;
+        m) msdk_1x_archive=${OPTARG};;
         p) path_to_save=${OPTARG};;
         n) build_number=${OPTARG};;
     esac
@@ -32,12 +32,12 @@ package_dir=${tmp_dir}/${package_name}/l_MSDK
 
 mkdir -p $package_dir
 
-tar xvfz $msdk_path --directory=${tmp_dir}/${package_name}
+tar xvfz $msdk_1x_archive --directory=${tmp_dir}/${package_name}
 
 for command in "${COPY_CMDS[@]}"
   do
     eval $command
   done
 
-tar -cvzf ${path_to_save}/${package_name}.tgz -C "${package_dir%/*}" .
+tar -cvzf ${path_to_save}/${package_name}.tgz -C "${tmp_dir}/${package_name}" l_MSDK
 rm -rf $tmp_dir

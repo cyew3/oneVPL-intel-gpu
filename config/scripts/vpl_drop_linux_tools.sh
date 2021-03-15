@@ -19,7 +19,7 @@ while getopts b:m:p:n: flag
 do
     case "${flag}" in
         b) binaries_dir=${OPTARG};;
-        m) msdk_path=${OPTARG};;
+        m) msdk_1x_archive=${OPTARG};;
         p) path_to_save=${OPTARG};;
         n) build_number=${OPTARG};;
     esac
@@ -30,11 +30,12 @@ package_dir=$path_to_save/to_drop
 
 mkdir -p $package_dir
 
-tar xvfz $msdk_path --directory=$package_dir
+unzip $msdk_1x_archive -d $package_dir
 
 cd $binaries_dir
 cp -Pv ${BIN_FILES[*]} $package_dir/imports/mediasdk
 
 # Needed to publish artifacts in QuickBuild, сopying each file causes an error
-zip -r $path_to_save/$package_name $package_dir
-rm -r $package_dir
+# zip cannot pack relative paths
+cd $package_dir && zip -r $path_to_save/$package_name *
+cd $path_to_save && rm -r $package_dir

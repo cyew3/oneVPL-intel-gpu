@@ -20,10 +20,9 @@ steps:
     command: xcopy %WORKSPACE%\\..\workspace_snapshot.json %WORKSPACE% /y /q
   - name: copy mediasdk lib repo
     command: (if exist %WORKSPACE%\\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\\sources\mdp_msdk-lib) &&
-      (if exist mediasdk (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
-      else (xcopy product %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q))
+      (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
   - name: cleanup output directory
-    command: (if exist %WORKSPACE%\output\packages rmdir /s /q %WORKSPACE%\output\packages) && (mkdir %WORKSPACE%\output\packages)
+    command: (if exist %WORKSPACE%\output rmdir /s /q %WORKSPACE%\output) && (mkdir %WORKSPACE%\output\packages)
   - name: pull docker image
     command: docker pull %DOCKER_IMAGE%
   - name: check python version
@@ -37,6 +36,26 @@ steps:
   - name: build (log replay)
     command: .\sources\mdp_msdk-lib\config\scripts\windows_logs.bat
     always_execute: true
+  - name: build directory tree
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+      dir "C:\workspace\Build" /S
+  - name: create integration lib drop
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
+      -BuildDir "C:\workspace\Build" -Msdk1xPath "C:\workspace\mediasdk_1x_binaries\WindowsDrop\*.zip"
+      -PathToSave "C:\workspace\output\WindowsDrop"
+  - name: copy integration tools drop
+    command: mkdir %WORKSPACE%\output\WindowsToolsDrop &&
+      xcopy %WORKSPACE%\mediasdk_1x_binaries\WindowsToolsDrop\*.zip %WORKSPACE%\output\WindowsToolsDrop
+  - name: create vpl lib drop
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\vpl_windows_drop.ps1
+      -BuildDir "C:\workspace\Build" -PathToSave "C:\workspace\output\WindowsDrop"
+  - name: create vpl tools drop
+    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
+      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\vpl_windows_tools_drop.ps1
+      -BuildDir "C:\workspace\Build" -Msdk1xPath "C:\workspace\mediasdk_1x_binaries\WindowsToolsDrop\*.zip"
+      -PathToSave "C:\workspace\output\WindowsToolsDrop"
 types:
   release:
     env:
@@ -45,3 +64,9 @@ types:
     - source_dir: "../output/packages"
       file_patterns: "*.zip"
       destination_dir: "Windows"
+    - source_dir: "../output/WindowsDrop"
+      file_patterns: "*.zip"
+      destination_dir: "WindowsDrop"
+    - source_dir: "../output/WindowsToolsDrop"
+      file_patterns: "*.zip"
+      destination_dir: "WindowsToolsDrop"

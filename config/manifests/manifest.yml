@@ -133,25 +133,17 @@ components:
     asset_name: perl
     asset_version: 5.22.0-win64
     dest_dir: perl
-  windows_msdk_binaries:
+  mediasdk_1x_binaries:
     type: artifactory
     root_url: https://gfx-assets.inn.intel.com/artifactory
     asset_path: mediasdk-builds/ci
     asset_name: mediasdk-1x
-    asset_version: mediasdk-ci-mediasdk-1x-1.0.9
+    asset_version: mediasdk-ci-mediasdk-1x-1.0.27
     asset_patterns:
-    - WindowsDrop/*.zip
-    - WindowsToolsDrop/*.zip
-    - WindowsLucasPkg/*.zip
-    dest_dir: windows_msdk_binaries
-  linux_msdk_binaries:
-    type: artifactory
-    root_url: https://gfx-assets.inn.intel.com/artifactory
-    asset_path: mediasdk-builds/ci
-    asset_name: mediasdk-1x
-    asset_version: mediasdk-ci-mediasdk-1x-1.0.9
-    asset_patterns:
-    - Linux/Ubuntu/18.04/tools_drop*.tgz
-    - Linux/Ubuntu/18.04/lucas_linux_drop*.tgz
-    - Linux/Ubuntu/18.04/l_MSDK_p*.tgz
-    dest_dir: linux_msdk_binaries
+      - WindowsDrop/*.zip
+      - WindowsToolsDrop/*.zip
+      - WindowsLucasPkg/*.zip
+      - Linux/Ubuntu/18.04/tools_drop*.zip
+      - Linux/Ubuntu/18.04/lucas_linux_drop*.zip
+      - Linux/Ubuntu/18.04/l_MSDK_p*.tgz
+    dest_dir: mediasdk_1x_binaries

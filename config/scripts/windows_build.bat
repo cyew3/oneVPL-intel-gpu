@@ -13,20 +13,22 @@ mkdir %WORKSPACE%\Build\vpl\x32 %WORKSPACE%\Build\vpl\x64
 call C:\Buildtools\MSVS\VC\Auxiliary\Build\vcvars64.bat
 
 set BUILDTREE=%WORKSPACE%\Build\vpl\x64
-cmake -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.2 > %BUILDTREE%\build.log 2>&1
+cd %BUILDTREE%
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.2 %WORKSPACE%\sources\mdp_msdk-lib > %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x64: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
-cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --target libmfx64-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode >> %BUILDTREE%\build.log 2>&1
+cmake --build . -j %NUMBER_OF_PROCESSORS% --target libmfx64-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode >> %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x64: build failed with %ERRORLEVEL%. & exit /B 1)
 
 call C:\Buildtools\MSVS\VC\Auxiliary\Build\vcvars32.bat
 
 set BUILDTREE=%WORKSPACE%\Build\vpl\x32
-cmake -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.2 > %BUILDTREE%\build.log 2>&1
+cd %BUILDTREE%
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.2 %WORKSPACE%\sources\mdp_msdk-lib > %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x32: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
-cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --target libmfx32-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode >> %BUILDTREE%\build.log 2>&1
+cmake --build . -j %NUMBER_OF_PROCESSORS% --target libmfx32-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode >> %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x32: build failed with %ERRORLEVEL%. & exit /B 1)
 

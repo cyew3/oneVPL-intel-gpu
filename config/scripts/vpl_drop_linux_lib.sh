@@ -8,7 +8,7 @@ do
     case "${flag}" in
         b) build_dir=${OPTARG};;
         h) headers_path=${OPTARG};;
-        m) msdk_path=${OPTARG};;
+        m) msdk_1x_archive=${OPTARG};;
         p) path_to_save=${OPTARG};;
         n) build_number=${OPTARG};;
     esac
@@ -36,19 +36,19 @@ VPL_MAJOR=$(cat /opt/src/sources/mdp_msdk-lib/api/vpl/mfxdefs.h | awk -F "MFX_VE
 
 RELEASE_VERSION=$(cat /opt/src/sources/mdp_msdk-lib/_studio/product.ver)
 
-package_name="l_MSDK_p_$RELEASE_VERSION.${build_number##*.}"
+package_name="l_MSDK_p_$RELEASE_VERSION.${build_number##*.}_vpl"
 tmp_dir=${path_to_save}/tmp_drop_linux_lib_files
 package_dir=${tmp_dir}/${package_name}/l_MSDK
 msdk_binaries=${tmp_dir}/msdk_binaries/l_MSDK
 
 mkdir -p $package_dir/lib64/pkgconfig $package_dir/include $msdk_binaries
 
-tar xvfz $msdk_path --directory=${tmp_dir}/msdk_binaries
+tar xvfz $msdk_1x_archive --directory=${tmp_dir}/msdk_binaries
 
 for command in "${COPY_CMDS[@]}"
   do
     eval $command
   done
 
-tar -cvzf ${path_to_save}/${package_name}.tgz -C "${package_dir%/*}" .
+tar -cvzf ${path_to_save}/${package_name}.tgz -C "${tmp_dir}/msdk_binaries" l_MSDK
 rm -rf $tmp_dir
