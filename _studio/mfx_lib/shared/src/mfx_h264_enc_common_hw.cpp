@@ -7987,13 +7987,9 @@ mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
     mfxFrameSurface1 sysSurf = MakeSurface(info, srcSurf);
 
     mfxStatus sts = MFX_ERR_NONE;
-#ifdef MFX_ONEVPL
-    mfxFrameSurface1_scoped_lock lock(&sysSurf, reinterpret_cast<CommonCORE20*>(core));
-    sts = lock.lock();
-    MFX_CHECK_STS(sts);
-#else
+
     FrameLocker lock(core, sysSurf.Data, true);
-#endif
+
     MFX_CHECK(sysSurf.Data.Y != 0, MFX_ERR_LOCK_MEMORY);
 
     mfxFrameSurface1 vidSurf = MakeSurface(info, dstMid);
@@ -8005,11 +8001,7 @@ mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
         MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
     MFX_CHECK_STS(sts);
 
-#ifdef MFX_ONEVPL
-    sts = lock.unlock();
-#else
     sts = lock.Unlock();
-#endif
 
     return sts;
 }
