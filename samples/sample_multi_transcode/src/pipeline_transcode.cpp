@@ -794,15 +794,19 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
         }
 #endif
 
-        if (MFX_ERR_NONE < sts && !pExtSurface->Syncp) // repeat the call if warning and no output
+        if (MFX_ERR_NONE < sts)
         {
-            if (MFX_WRN_DEVICE_BUSY == sts)
-                MSDK_SLEEP(1); // wait if device is busy
-        }
-        else if (MFX_ERR_NONE < sts && pExtSurface->Syncp)
-        {
-            sts = MFX_ERR_NONE; // ignore warnings if output is available
-            break;
+            if ((m_MemoryModel != HIDDEN_INT_ALLOC && !pExtSurface->Syncp)
+                || (m_MemoryModel == HIDDEN_INT_ALLOC && !out_surface)) // repeat the call if warning and no output
+            {
+                if (MFX_WRN_DEVICE_BUSY == sts)
+                    MSDK_SLEEP(1); // wait if device is busy
+            }
+            else
+            {
+                sts = MFX_ERR_NONE; // ignore warnings if output is available
+                break;
+            }
         }
         else
         {

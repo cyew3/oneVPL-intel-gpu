@@ -337,19 +337,6 @@ private:
     mfxFrameAllocResponse&                    m_response_alien;
 };
 
-#if defined(MFX_ONEVPL)
-struct surface_refcount_scoped_lock : public std::unique_ptr<mfxFrameSurface1, void(*)(mfxFrameSurface1* surface)>
-{
-    surface_refcount_scoped_lock(mfxFrameSurface1* surface)
-        : std::unique_ptr<mfxFrameSurface1, void(*)(mfxFrameSurface1* surface)>(
-            surface, [](mfxFrameSurface1* surface)
-    {
-        std::ignore = MFX_STS_TRACE(ReleaseSurface(*surface));
-    })
-    {}
-};
-#endif
-
 #if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || (defined(MFX_ENABLE_VC1_VIDEO_DECODE) && defined(ALLOW_SW_VC1_FALLBACK))
 #include "umc_default_frame_allocator.h"
 
