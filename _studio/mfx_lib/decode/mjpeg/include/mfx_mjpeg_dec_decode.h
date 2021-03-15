@@ -40,7 +40,7 @@
 
 
 #if defined (MFX_VA)
-#include "mfx_vpp_jpeg_d3d9.h"
+#include "mfx_vpp_jpeg_d3d.h"
 #endif
 
 namespace UMC
