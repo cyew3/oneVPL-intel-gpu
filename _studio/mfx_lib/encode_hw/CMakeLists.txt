@@ -245,6 +245,7 @@ target_include_directories(encode_hw
 
 target_link_libraries(encode_hw
   PUBLIC
+    mfx_trace
     mfx_static_lib
     umc_va_hw
     asc
