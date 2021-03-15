@@ -112,7 +112,10 @@ elseif( Windows )
     # See https://gitlab.kitware.com/cmake/cmake/-/issues/19084 - we control exception-enabling flags manualy
 #    string(REPLACE "/EHsc" "" ${var} "${${var}}")
 #  endforeach()
-
+  set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
+  set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
+  set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE})
+  
   foreach(config_type ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${config_type} config_type_capital)
     set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${config_type_capital} ${CMAKE_BIN_DIR}/${config_type})
