@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2020 Intel Corporation
+// Copyright (c) 2008-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -90,6 +90,10 @@
 
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 #include "../../encode_hw/av1/av1ehw_disp.h"
+#endif
+
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
+#include "mfx_hyper_encode_hw.h"
 #endif
 
 #include "libmfx_core.h"
@@ -613,40 +617,80 @@ std::pair<bool, bool> check_fei(VideoCORE* core)
     return std::pair<bool,bool>(true, *feiEnabled);
 }
 
+#if defined(MFX_ONEVPL)
+bool isHyperEncodeRequired(mfxVideoParam* par)
+{
+    if (!par)
+        return false;
+
+    mfxExtHyperModeParam* hyperModeParam = nullptr;
+
+    for (mfxU16 i = 0; i < par->NumExtParam; i++)
+        if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_HYPER_MODE_PARAM)
+        {
+            hyperModeParam = (mfxExtHyperModeParam*)par->ExtParam[i];
+            break;
+        }
+
+    if (!hyperModeParam)
+        return false;
+
+    if (!IsHyperModeOff(hyperModeParam->Mode))
+        return true;
+
+    return false;
+}
+#endif
+
 #if !defined (MFX_RT)
 template<>
 VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 {
     VideoCORE* core = m_pCORE.get();
     mfxU32 CodecId = par.mfx.CodecId;
-
-    bool feiStatusAvailable = false, fei = false;
-    std::tie(feiStatusAvailable, fei) = check_fei(core);
-    if (!feiStatusAvailable)
-    {
-        return nullptr;
-    }
-
-    // create a codec instance
-    auto handler = codecId2Handlers.find(CodecKey(CodecId, fei));
-    if (handler == codecId2Handlers.end())
-    {
-        return nullptr;
-    }
-
-    const EHandlers::CtorType &ctor = m_bIsHWENCSupport?
-        handler->second.primary.ctor : handler->second.fallback.ctor;
-    if (!ctor)
-    {
-        return nullptr;
-    }
-
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
-    std::unique_ptr<VideoENCODE> pENCODE(ctor(core, par.mfx.CodecProfile, &mfxRes));
-    // check error(s)
-    if (MFX_ERR_NONE != mfxRes)
+    std::unique_ptr<VideoENCODE> pENCODE;
+
+#if defined(MFX_ONEVPL)
+    if (isHyperEncodeRequired(&par))
     {
-        return nullptr;
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
+        pENCODE.reset(new MFXHWVideoHyperENCODE(core, &mfxRes));
+#else
+        pENCODE.reset(nullptr);
+#endif
+        MFX_CHECK(mfxRes == MFX_ERR_NONE, nullptr);
+    }
+    else
+#endif
+    {
+        bool feiStatusAvailable = false, fei = false;
+        std::tie(feiStatusAvailable, fei) = check_fei(core);
+        if (!feiStatusAvailable)
+        {
+            return nullptr;
+        }
+
+        // create a codec instance
+        auto handler = codecId2Handlers.find(CodecKey(CodecId, fei));
+        if (handler == codecId2Handlers.end())
+        {
+            return nullptr;
+        }
+
+        const EHandlers::CtorType& ctor = m_bIsHWENCSupport ?
+            handler->second.primary.ctor : handler->second.fallback.ctor;
+        if (!ctor)
+        {
+            return nullptr;
+        }
+
+        pENCODE.reset(ctor(core, par.mfx.CodecProfile, &mfxRes));
+        // check error(s)
+        if (MFX_ERR_NONE != mfxRes)
+        {
+            return nullptr;
+        }
     }
 
     return pENCODE.release();
@@ -679,45 +723,62 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
     try
     {
-        CodecId2Handlers::const_iterator handler;
+#if defined(MFX_ONEVPL)
+        if(isHyperEncodeRequired(in))
+        {
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
+            mfxRes = MFXHWVideoHyperENCODE::Query(session->m_pCORE.get(), in, out);
+#else
+            mfxRes = MFX_ERR_UNSUPPORTED;
+#endif
+            MFX_CHECK(mfxRes >= MFX_ERR_NONE, mfxRes);
+
+            if(mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
+                bIsHWENCSupport = true;
+        }
+        else
+#endif
+        {
+            CodecId2Handlers::const_iterator handler;
 
 #if defined(MFX_ENABLE_USER_ENCODE)
-        if (session->m_plgEnc.get())
-        {
-            handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
-            assert(handler != codecId2Handlers.end());
-        }
-        // if plugin is not supported, or wrong parameters passed we should not look into library
-        else
+            if (session->m_plgEnc.get())
+            {
+                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
+                assert(handler != codecId2Handlers.end());
+            }
+            // if plugin is not supported, or wrong parameters passed we should not look into library
+            else
 #endif //!MFX_ENABLE_USER_ENCODE
-        {
-            // required to check FEI plugin registration
-            bool feiStatusAvailable = false, fei = false;
-            std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
-            MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
+            {
+                // required to check FEI plugin registration
+                bool feiStatusAvailable = false, fei = false;
+                std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
+                MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
 
-            handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId, fei));
-        }
+                handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId, fei));
+            }
 
-        mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_UNSUPPORTED
-            : (handler->second.primary.query)(session, in, out);
+            mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_UNSUPPORTED
+                : (handler->second.primary.query)(session, in, out);
 
-        if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-        {
-            assert(handler != codecId2Handlers.end());
+            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+            {
+                assert(handler != codecId2Handlers.end());
 
 #if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
-            // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
-            if (!session->m_plgEnc.get())
+                // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
+                if (!session->m_plgEnc.get())
 #endif //!MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
-            {
-                mfxRes = !handler->second.fallback.query ? MFX_ERR_UNSUPPORTED
+                {
+                    mfxRes = !handler->second.fallback.query ? MFX_ERR_UNSUPPORTED
                         : (handler->second.fallback.query)(session, in, out);
+                }
             }
-        }
-        else
-        {
-            bIsHWENCSupport = true;
+            else
+            {
+                bIsHWENCSupport = true;
+            }
         }
     }
     // handle error(s)
@@ -782,45 +843,62 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
     try
     {
-        CodecId2Handlers::const_iterator handler;
+#if defined(MFX_ONEVPL)
+        if(isHyperEncodeRequired(par))
+        {
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
+            mfxRes = MFXHWVideoHyperENCODE::QueryIOSurf(session->m_pCORE.get(), par, request);
+#else
+            mfxRes = MFX_ERR_UNSUPPORTED;
+#endif
+            MFX_CHECK(mfxRes >= MFX_ERR_NONE, mfxRes);
+
+            if (mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
+                bIsHWENCSupport = true;
+        }
+        else
+#endif
+        {
+            CodecId2Handlers::const_iterator handler;
 
 #if defined(MFX_ENABLE_USER_ENCODE)
-        if (session->m_plgEnc.get())
-        {
-            handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
-            assert(handler != codecId2Handlers.end());
-        }
-        // if plugin is not supported, or wrong parameters passed we should not look into library
-        else
+            if (session->m_plgEnc.get())
+            {
+                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
+                assert(handler != codecId2Handlers.end());
+            }
+            // if plugin is not supported, or wrong parameters passed we should not look into library
+            else
 #endif //MFX_ENABLE_USER_ENCODE
-        {
-            // required to check FEI plugin registration
-            bool feiStatusAvailable = false, fei = false;
-            std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
-            MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
+            {
+                // required to check FEI plugin registration
+                bool feiStatusAvailable = false, fei = false;
+                std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
+                MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
 
-            handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId, fei));
-        }
+                handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId, fei));
+            }
 
-        mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_INVALID_VIDEO_PARAM
-            : (handler->second.primary.queryIOSurf)(session, par, request);
+            mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_INVALID_VIDEO_PARAM
+                : (handler->second.primary.queryIOSurf)(session, par, request);
 
-        if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-        {
-            assert(handler != codecId2Handlers.end());
+            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+            {
+                assert(handler != codecId2Handlers.end());
 
 #if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
-            // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
-            if (!session->m_plgEnc.get())
+                // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
+                if (!session->m_plgEnc.get())
 #endif //MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
-            {
-                mfxRes = !handler->second.fallback.query ? MFX_ERR_INVALID_VIDEO_PARAM
-                    : (handler->second.fallback.queryIOSurf)(session, par, request);
+                {
+                    mfxRes = !handler->second.fallback.query ? MFX_ERR_INVALID_VIDEO_PARAM
+                        : (handler->second.fallback.queryIOSurf)(session, par, request);
+                }
             }
-        }
-        else
-        {
-            bIsHWENCSupport = true;
+            else
+            {
+                bIsHWENCSupport = true;
+            }
         }
     }
     // handle error(s)
@@ -1001,144 +1079,154 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 
     try
     {
-        mfxSyncPoint syncPoint = NULL;
-        mfxFrameSurface1 *reordered_surface = NULL;
-        mfxEncodeInternalParams internal_params;
-        MFX_ENTRY_POINT entryPoints[MFX_NUM_ENTRY_POINTS];
-        mfxU32 numEntryPoints = MFX_NUM_ENTRY_POINTS;
-
-        memset(&entryPoints, 0, sizeof(entryPoints));
-        mfxRes = session->m_pENCODE->EncodeFrameCheck(ctrl,
-                                                      surface,
-                                                      bs,
-                                                      &reordered_surface,
-                                                      &internal_params,
-                                                      entryPoints,
-                                                      numEntryPoints);
-        // source data is OK, go forward
-        if ((MFX_ERR_NONE == mfxRes) ||
-            (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
-            (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
-            // WHAT IS IT??? IT SHOULD BE REMOVED
-            ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ||
-            (MFX_ERR_MORE_BITSTREAM == mfxRes))
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
+        auto extVideoENCODE = dynamic_cast<ExtVideoENCODE*>(session->m_pENCODE.get());
+        if(extVideoENCODE)
         {
-            // prepare the obsolete kind of task.
-            // it is obsolete and must be removed.
-            if (NULL == entryPoints[0].pRoutine)
-            {
-                MFX_TASK task;
-
-                memset(&task, 0, sizeof(task));
-                // BEGIN OF OBSOLETE PART
-                task.bObsoleteTask = true;
-                task.obsolete_params.encode.internal_params = internal_params;
-                // fill task info
-                task.pOwner = session->m_pENCODE.get();
-                task.entryPoint.pRoutine = &MFXVideoENCODELegacyRoutine;
-                task.entryPoint.pState = session->m_pENCODE.get();
-                task.entryPoint.requiredNumThreads = 1;
-
-                // fill legacy parameters
-                task.obsolete_params.encode.ctrl = ctrl;
-                task.obsolete_params.encode.surface = reordered_surface;
-                task.obsolete_params.encode.bs = bs;
-                // END OF OBSOLETE PART
-
-                task.priority = session->m_priority;
-                task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
-                // fill dependencies
-                task.pSrc[0] = surface;
-                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0: bs;
-
-// specific plug-in case to run additional task after main task
-#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
-                task.pSrc[1] =  bs;
+            mfxRes = extVideoENCODE->EncodeFrameAsync(ctrl, surface, bs, syncp);
+        }
+        else
 #endif
-                task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
+        {
+            mfxSyncPoint syncPoint = NULL;
+            mfxFrameSurface1* reordered_surface = NULL;
+            mfxEncodeInternalParams internal_params;
+            MFX_ENTRY_POINT entryPoints[MFX_NUM_ENTRY_POINTS];
+            mfxU32 numEntryPoints = MFX_NUM_ENTRY_POINTS;
+
+            memset(&entryPoints, 0, sizeof(entryPoints));
+            mfxRes = session->m_pENCODE->EncodeFrameCheck(ctrl,
+                surface,
+                bs,
+                &reordered_surface,
+                &internal_params,
+                entryPoints,
+                numEntryPoints);
+            // source data is OK, go forward
+            if ((MFX_ERR_NONE == mfxRes) ||
+                (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
+                (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
+                // WHAT IS IT??? IT SHOULD BE REMOVED
+                ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ||
+                (MFX_ERR_MORE_BITSTREAM == mfxRes))
+            {
+                // prepare the obsolete kind of task.
+                // it is obsolete and must be removed.
+                if (NULL == entryPoints[0].pRoutine)
+                {
+                    MFX_TASK task;
+
+                    memset(&task, 0, sizeof(task));
+                    // BEGIN OF OBSOLETE PART
+                    task.bObsoleteTask = true;
+                    task.obsolete_params.encode.internal_params = internal_params;
+                    // fill task info
+                    task.pOwner = session->m_pENCODE.get();
+                    task.entryPoint.pRoutine = &MFXVideoENCODELegacyRoutine;
+                    task.entryPoint.pState = session->m_pENCODE.get();
+                    task.entryPoint.requiredNumThreads = 1;
+
+                    // fill legacy parameters
+                    task.obsolete_params.encode.ctrl = ctrl;
+                    task.obsolete_params.encode.surface = reordered_surface;
+                    task.obsolete_params.encode.bs = bs;
+                    // END OF OBSOLETE PART
+
+                    task.priority = session->m_priority;
+                    task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
+                    // fill dependencies
+                    task.pSrc[0] = surface;
+                    task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;
+                    
+                    // specific plug-in case to run additional task after main task
+#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
+                    task.pSrc[1] = bs;
+#endif
+                    task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
 
 #ifdef MFX_TRACE_ENABLE
-                task.nParentId = MFX_AUTO_TRACE_GETID();
-                task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
+                    task.nParentId = MFX_AUTO_TRACE_GETID();
+                    task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
 #endif // MFX_TRACE_ENABLE
 
-                // register input and call the task
-                MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
-            }
-            else if (1 == numEntryPoints)
-            {
-                MFX_TASK task;
+                    // register input and call the task
+                    MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+                }
+                else if (1 == numEntryPoints)
+                {
+                    MFX_TASK task;
 
-                memset(&task, 0, sizeof(task));
-                task.pOwner = session->m_pENCODE.get();
-                task.entryPoint = entryPoints[0];
-                task.priority = session->m_priority;
-                task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
-                // fill dependencies
-                task.pSrc[0] = surface;
-                // specific plug-in case to run additional task after main task
+                    memset(&task, 0, sizeof(task));
+                    task.pOwner = session->m_pENCODE.get();
+                    task.entryPoint = entryPoints[0];
+                    task.priority = session->m_priority;
+                    task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
+                    // fill dependencies
+                    task.pSrc[0] = surface;
+                    // specific plug-in case to run additional task after main task
 #if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
-                task.pSrc[1] =  bs;
+                    task.pSrc[1] = bs;
 #endif
-                task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
-                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;
+                    task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
+                    task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;
 
 
 #ifdef MFX_TRACE_ENABLE
-                task.nParentId = MFX_AUTO_TRACE_GETID();
-                task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
+                    task.nParentId = MFX_AUTO_TRACE_GETID();
+                    task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
 #endif
-                // register input and call the task
-                MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
-            }
-            else
-            {
-                MFX_TASK task;
+                    // register input and call the task
+                    MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+                }
+                else
+                {
+                    MFX_TASK task;
 
-                memset(&task, 0, sizeof(task));
-                task.pOwner = session->m_pENCODE.get();
-                task.entryPoint = entryPoints[0];
-                task.priority = session->m_priority;
-                task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
-                // fill dependencies
-                task.pSrc[0] = surface;
-                task.pSrc[1] = ctrl ? ctrl->ExtParam : 0;
-                task.pDst[0] = entryPoints[0].pParam;
+                    memset(&task, 0, sizeof(task));
+                    task.pOwner = session->m_pENCODE.get();
+                    task.entryPoint = entryPoints[0];
+                    task.priority = session->m_priority;
+                    task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
+                    // fill dependencies
+                    task.pSrc[0] = surface;
+                    task.pSrc[1] = ctrl ? ctrl->ExtParam : 0;
+                    task.pDst[0] = entryPoints[0].pParam;
 
 #ifdef MFX_TRACE_ENABLE
-                task.nParentId = MFX_AUTO_TRACE_GETID();
-                task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
+                    task.nParentId = MFX_AUTO_TRACE_GETID();
+                    task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
 #endif
-                // register input and call the task
-                MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+                    // register input and call the task
+                    MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
 
-                memset(&task, 0, sizeof(task));
-                task.pOwner = session->m_pENCODE.get();
-                task.entryPoint = entryPoints[1];
-                task.priority = session->m_priority;
-                task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
-                // fill dependencies
-                task.pSrc[0] = entryPoints[0].pParam;
-                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0: bs;
+                    memset(&task, 0, sizeof(task));
+                    task.pOwner = session->m_pENCODE.get();
+                    task.entryPoint = entryPoints[1];
+                    task.priority = session->m_priority;
+                    task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
+                    // fill dependencies
+                    task.pSrc[0] = entryPoints[0].pParam;
+                    task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;
 
 #ifdef MFX_TRACE_ENABLE
-                task.nParentId = MFX_AUTO_TRACE_GETID();
-                task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE2;
+                    task.nParentId = MFX_AUTO_TRACE_GETID();
+                    task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE2;
 #endif
-                // register input and call the task
-                MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+                    // register input and call the task
+                    MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));
+                }
+
+                // IT SHOULD BE REMOVED
+                if ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes)
+                {
+                    mfxRes = MFX_ERR_MORE_DATA;
+                    syncPoint = NULL;
+                }
             }
 
-            // IT SHOULD BE REMOVED
-            if ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes)
-            {
-                mfxRes = MFX_ERR_MORE_DATA;
-                syncPoint = NULL;
-            }
+            // return pointer to synchronization point
+            *syncp = syncPoint;
         }
-
-        // return pointer to synchronization point
-        *syncp = syncPoint;
     }
     // handle error(s)
     catch(...)

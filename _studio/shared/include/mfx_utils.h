@@ -770,4 +770,21 @@ inline bool IsAdapt(mfxU32 opt)
     return opt == MFX_CODINGOPTION_ADAPTIVE;
 }
 
+#if defined(MFX_ONEVPL)
+inline bool IsHyperModeOn(mfxHyperMode opt)
+{
+    return opt == MFX_HYPERMODE_ON;
+}
+
+inline bool IsHyperModeOff(mfxHyperMode opt)
+{
+    return opt == MFX_HYPERMODE_OFF;
+}
+
+inline bool IsHyperModeAdapt(mfxHyperMode opt)
+{
+    return opt == MFX_HYPERMODE_ADAPTIVE;
+}
+#endif
+
 #endif // __MFXUTILS_H__

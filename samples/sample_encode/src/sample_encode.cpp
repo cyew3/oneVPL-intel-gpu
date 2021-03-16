@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2020, Intel Corporation
+Copyright (c) 2005-2021, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -76,9 +76,14 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("                                              '-device /dev/dri/renderD128'\n"));
     msdk_printf(MSDK_STRING("                                 If not specified, defaults to the first Intel device found on the system\n"));
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if (defined(_WIN64) || defined(_WIN32))
+#if (MFX_VERSION >= 1031)
     msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides)\n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
+#endif	#endif
+#if defined(MFX_ONEVPL)
+    msdk_printf(MSDK_STRING("   [-dual_gfx::<on,off,adaptive>] - prefer processing on both iGfx and dGfx simultaneously\n"));
+#endif
 #endif
 #ifdef MOD_ENC
     MOD_ENC_PRINT_HELP;
@@ -440,6 +445,23 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
             return MFX_ERR_UNSUPPORTED;
         }
     }
+#if defined(MFX_ONEVPL)
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dual_gfx::on")))
+    {
+        pParams->isDualMode = true;
+        pParams->hyperMode = MFX_HYPERMODE_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dual_gfx::off")))
+    {
+        pParams->isDualMode = true;
+        pParams->hyperMode = MFX_HYPERMODE_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dual_gfx::adaptive")))
+    {
+        pParams->isDualMode = true;
+        pParams->hyperMode = MFX_HYPERMODE_ADAPTIVE;
+    }
+#endif
     else
     {
         return MFX_ERR_NOT_FOUND;

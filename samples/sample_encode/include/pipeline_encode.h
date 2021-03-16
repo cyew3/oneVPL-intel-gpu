@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2020, Intel Corporation
+Copyright (c) 2005-2021, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -35,19 +35,16 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 #include "mfxplugin.h"
+
+#if !defined(MFX_ONEVPL)
 #include "mfxplugin++.h"
-
-//#define MULTI_GPU_ENCODING
-
-#ifdef MULTI_GPU_ENCODING
-#include "multi_gpu_encoding.h"
-#include "multi_gpu_encoding++.h"
+#include "plugin_loader.h"
 #endif
+
+#include "plugin_utils.h"
 
 #include <vector>
 #include <memory>
-
-#include "plugin_loader.h"
 
 #include "preset_manager.h"
 
@@ -125,9 +122,15 @@ struct sInputParams
 #if defined(LINUX32) || defined(LINUX64)
     std::string strDevicePath;
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if (defined(_WIN64) || defined(_WIN32))
+#if defined(MFX_ONEVPL)
+    bool isDualMode;
+    mfxHyperMode hyperMode;
+#endif
+#if (MFX_VERSION >= 1031)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
+#endif
 #endif
 
     std::list<msdk_string> InputFiles;
@@ -350,8 +353,10 @@ protected:
 
     mfxU32 m_InputFourCC;
 
+#if !defined(MFX_ONEVPL)
     std::unique_ptr<MFXVideoUSER> m_pUserModule;
     std::unique_ptr<MFXPlugin> m_pPlugin;
+#endif
 
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;

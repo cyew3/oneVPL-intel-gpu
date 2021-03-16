@@ -142,3 +142,6 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 /_studio/mfx_lib/cmrt_cross_platform/** vasily.aristarkhov@intel.com oleg.nabiullin@intel.com dmitry.v.rogozhkin@intel.com dmitry.ermilov@intel.com sergey.a.osipov@intel.com dmitry.gurulev@intel.com
 /_studio/mfx_lib/scheduler/** vasily.aristarkhov@intel.com oleg.nabiullin@intel.com dmitry.v.rogozhkin@intel.com dmitry.ermilov@intel.com sergey.a.osipov@intel.com dmitry.gurulev@intel.com
 /_studio/mfx_lib/plugin/**  vasily.aristarkhov@intel.com oleg.nabiullin@intel.com dmitry.v.rogozhkin@intel.com dmitry.ermilov@intel.com sergey.a.osipov@intel.com dmitry.gurulev@intel.com
+
+# hyper_encode:
+/_studio/mfx_lib/encode_hw/hyper_encode/** dmitry.gurulev@intel.com dmitry.ermilov@intel.com andrey.orlov@intel.com natalia.domnina@intel.com

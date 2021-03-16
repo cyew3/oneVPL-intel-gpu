@@ -191,6 +191,17 @@ set( sources
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_enc_common_hw.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_encode_factory.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_encode_vaapi.cpp
+
+    hyper_encode/include/mfx_hyper_encode_hw.h
+    hyper_encode/include/mfx_hyper_encode_hw_adapter.h
+    hyper_encode/include/mfx_hyper_encode_hw_dev_mngr.h
+    hyper_encode/include/mfx_hyper_encode_hw_multi_enc.h
+    hyper_encode/include/mfx_hyper_encode_hw_single_enc.h
+
+    hyper_encode/src/mfx_hyper_encode_hw.cpp
+    hyper_encode/src/mfx_hyper_encode_hw_adapter.cpp
+    hyper_encode/src/mfx_hyper_encode_hw_dev_mngr.cpp
+    hyper_encode/src/mfx_hyper_encode_hw_multi_enc.cpp
   )
 
 add_library(encode_hw STATIC ${sources})
@@ -235,6 +246,7 @@ target_include_directories(encode_hw
     mvc/include
     svc/include
     vp9/include
+    hyper_encode/include
 
     ${MSDK_UMC_ROOT}/codec/mpeg2_enc/include
     ${MSDK_UMC_ROOT}/codec/jpeg_common/include

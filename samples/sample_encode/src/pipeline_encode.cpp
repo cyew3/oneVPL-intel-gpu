@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2020, Intel Corporation
+Copyright (c) 2005-2021, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vaapi_device.h"
 #endif
 
-#include "plugin_loader.h"
 #include "sample_utils.h"
 
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -637,7 +636,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         codingOption->VuiNalHrdParameters = pInParams->nVuiNalHrdParameters;
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(MFX_ONEVPL)
+
     if (pInParams->bEncTools)
     {
         auto et_config = m_mfxEncParams.AddExtBuffer<mfxExtEncToolsConfig>();
@@ -788,6 +788,15 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
+
+#if defined(MFX_ONEVPL)
+    if (pInParams->isDualMode)
+    {
+        m_mfxEncParams.AddExtBuffer<mfxExtHyperModeParam>();
+        auto hyperEncodeParam = m_mfxEncParams.GetExtBuffer<mfxExtHyperModeParam>();
+        hyperEncodeParam->Mode = pInParams->hyperMode;
+    }
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -1610,6 +1619,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     }
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
+#if !defined(MFX_ONEVPL)
         /* Here we actually define the following codec initialization scheme:
         *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
         *  2. If plugin path not specified:
@@ -1644,14 +1654,11 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
             }
         }
         MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
+#endif
     }
 
     // create encoder
-#ifdef MULTI_GPU_ENCODING
-    m_pmfxENC = new MFXVideoMultiGpuENCODE(m_mfxSession);
-#else
     m_pmfxENC = new MFXVideoENCODE(m_mfxSession);
-#endif
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
 
     bool bVpp = false;
@@ -1906,7 +1913,9 @@ void CEncodingPipeline::Close()
 
     DeleteFrames();
 
+#if !defined(MFX_ONEVPL)
     m_pPlugin.reset();
+#endif
 
     m_TaskPool.Close();
     m_mfxSession.Close();

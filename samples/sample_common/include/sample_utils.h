@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2020, Intel Corporation
+Copyright (c) 2005-2021, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -453,6 +453,12 @@ template<>struct mfx_ext_buffer_id<mfxExtFeiDecStreamOut> {
     enum {id = MFX_EXTBUFF_FEI_DEC_STREAM_OUT};
 };
 #endif //!MFX_ONEVPL
+
+#if defined(MFX_ONEVPL)
+template<>struct mfx_ext_buffer_id<mfxExtHyperModeParam> {
+    enum { id = MFX_EXTBUFF_HYPER_MODE_PARAM };
+};
+#endif
 
 constexpr uint16_t max_num_ext_buffers = 63 * 2; // '*2' is for max estimation if all extBuffer were 'paired'
 
