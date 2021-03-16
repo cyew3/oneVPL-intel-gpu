@@ -907,7 +907,7 @@ static inline bool HasNativeDX9Support(mfxU32 adapter_n)
 
     if (devItem == listLegalDevEnd) return false;
 
-    if (devItem->platform == MFX_HW_ADL_S || devItem->platform == MFX_HW_DG2)
+    if (devItem->platform >= MFX_HW_ADL_S)
         return false;
 
     return true;

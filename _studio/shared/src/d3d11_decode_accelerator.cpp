@@ -527,6 +527,8 @@ Status MFXD3D11Accelerator::Close()
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
 #endif
+    if(m_pDX9ON11Core)
+        m_pDX9ON11Core->FreeFrames(&m_dx9on11response);
 
     return DXAccelerator::Close();
 }

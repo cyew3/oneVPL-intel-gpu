@@ -90,6 +90,11 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::CreateVA(mfxVideoParam* param, mfxFrameAllo
 
     MFX_CHECK(!(param->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && !(param->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_NONE);
 
+    // Need to clear mapping tables to prevent incorrect decode wrap
+    // when application inits decoder second time
+    m_dx9MemIdMap.clear();
+    m_dx9MemIdUsed.clear();
+
     sts = ConvertUMCStatusToMfx(m_pAccelerator->CreateWrapBuffers(this, request, response));
     MFX_CHECK_STS(sts);
 
