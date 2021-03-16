@@ -66,8 +66,9 @@ target_link_libraries(scheduler_tests
     vm_plus
     umc_va_hw
     mfx_trace
+    gtest
+    gtest_main
     gmock
-    gmock_main
     ${ITT_LIBRARIES}
     mfx_static_lib
     mfx_shared_lib
@@ -81,4 +82,17 @@ target_link_libraries(scheduler_tests
     $<$<PLATFORM_ID:Windows>:IPP::cc>
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
+)
+
+set_target_properties(scheduler_tests PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
+
+add_test(NAME scheduler_tests
+  COMMAND ./scheduler_tests
+  WORKING_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+)
+
+set_property(TEST scheduler_tests
+  PROPERTY ENVIRONMENT
+    "LD_LIBRARY_PATH=${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}"
 )
