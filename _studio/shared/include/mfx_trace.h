@@ -30,7 +30,7 @@
 
 #ifndef MFX_TRACE_DISABLE
 // Uncomment one or several lines below to enable tracing
-#if (defined(_WIN32) || defined(_WIN64)) && !defined (MFX_TRACE_ENABLE_ITT)
+#if (defined(_WIN32) || defined(_WIN64))
 #define MFX_TRACE_ENABLE_ETW
 #endif // #if defined((_WIN32) || defined(_WIN64)) && !defined (MFX_TRACE_ENABLE_ITT)
 

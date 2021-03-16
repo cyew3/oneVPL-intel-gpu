@@ -112,7 +112,7 @@ target_link_libraries(mfx_transcoder
     vm_plus
     mfx_trace
     IPP::i IPP::s IPP::vm IPP::dc IPP::vc IPP::dc  IPP::cc IPP::cp IPP::cv IPP::j IPP::msdk IPP::core
-    ${ITT_LIBRARIES}
+    $<$<BOOL:${ITT_FOUND}>:itt>
   PRIVATE
     mfx_va_properties
 )

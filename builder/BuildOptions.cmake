@@ -59,7 +59,9 @@ if( CMAKE_SYSTEM_NAME MATCHES Linux )
   option( ENABLE_WAYLAND "Build WAYLAND versions of the targets?" ${ENABLE_ALL} )
 endif()
 
-option( ENABLE_ITT "Build targets with ITT instrumentation support (requires VTune)?" ${ENABLE_ALL} )
+if( CMAKE_SYSTEM_NAME MATCHES Windows )
+  option( ENABLE_ITT "Build targets with ITT instrumentation support?" ON )
+endif()
 
 option( ENABLE_TEXTLOG "Enable textlog tracing?" "${ENABLE_ALL}")
 option( ENABLE_STAT "Enable stat tracing?" "${ENABLE_ALL}")

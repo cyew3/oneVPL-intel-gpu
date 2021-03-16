@@ -220,7 +220,7 @@ foreach( variant ${VARIANTS} )
     mfx_trace
     mfx_shared_lib
     mfx_sdl_properties
-    ${ITT_LIBRARIES}
+    $<$<BOOL:${ITT_FOUND}>:itt>
     Threads::Threads
     ${CMAKE_DL_LIBS}
   )
