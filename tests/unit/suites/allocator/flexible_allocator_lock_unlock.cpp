@@ -136,82 +136,6 @@ namespace test
         );
     }
 
-    TEST_P(FlexibleAllocator, LockReadAfterLockRead)
-    {
-        ASSERT_EQ(
-            allocator->Alloc(req, res),
-            MFX_ERR_NONE
-        );
-        mfxFrameData data{};
-        ASSERT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_READ),
-            MFX_ERR_NONE
-        );
-
-        EXPECT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_READ),
-            MFX_ERR_NONE
-        );
-    }
-
-    TEST_P(FlexibleAllocator, LockReadAfterLockWrite)
-    {
-        ASSERT_EQ(
-            allocator->Alloc(req, res),
-            MFX_ERR_NONE
-        );
-        mfxFrameData data{};
-        ASSERT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_WRITE),
-            MFX_ERR_NONE
-        );
-
-        EXPECT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_READ | MFX_MAP_NOWAIT),
-            MFX_ERR_RESOURCE_MAPPED
-        );
-    }
-
-    TEST_P(FlexibleAllocator, LockReadAfterLockWriteTwoThreads)
-    {
-        ASSERT_EQ(
-            allocator->Alloc(req, res),
-            MFX_ERR_NONE
-        );
-
-        std::mutex mtx;
-        // Prevent second thread from execution
-        std::unique_lock<std::mutex> lock(mtx);
-
-        // Spawn second thread
-        std::thread thr([&]() {
-            mfxFrameData data{};
-
-            // Second thread waits for mutex release
-            std::lock_guard<std::mutex> guard(mtx);
-            EXPECT_EQ(
-                allocator->Lock(res.mids[0], &data, MFX_MAP_READ),
-                MFX_ERR_NONE
-            );
-        });
-
-        mfxFrameData data{};
-        EXPECT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_WRITE),
-            MFX_ERR_NONE
-        );
-
-        // Release mutex and let second thread to acquire surface's lock
-        lock.unlock();
-        std::this_thread::yield(); // give priority of execution to second thread
-
-        EXPECT_EQ(
-            allocator->Unlock(res.mids[0], &data),
-            MFX_ERR_NONE
-        );
-        thr.join();
-    }
-
     struct FlexibleAllocatorLock : public FlexibleAllocatorBase,
         testing::WithParamInterface <std::tuple <mfxU16, mfxU32>>
     {
@@ -219,6 +143,10 @@ namespace test
         {
             FlexibleAllocatorBase::SetUp();
             req.Type = std::get<0>(GetParam());
+#if (defined(_WIN32) || defined(_WIN64))
+            if(req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
+                req.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
             SetAllocator(std::get<0>(GetParam()));
         }
     };
@@ -252,6 +180,7 @@ namespace test
             MFX_ERR_NONE
         );
 
+        // check mfxFrameData for MFX_FOURCC_NV12
         EXPECT_NE(data.Y, nullptr);
         EXPECT_NE(data.U, nullptr);
         EXPECT_NE(data.V, nullptr);
@@ -266,11 +195,140 @@ namespace test
         );
     }
 
-    struct FlexibleAllocatorLockTwice : FlexibleAllocatorLock {};
+    struct FlexibleAllocatorLockRead : FlexibleAllocatorLock {};
+
+    std::vector<mfxU32> lockReadFlags{
+        MFX_MAP_READ,
+        MFX_MAP_READ | MFX_MAP_NOWAIT
+    };
+
+    INSTANTIATE_TEST_SUITE_P(
+        MemTypesFlags,
+        FlexibleAllocatorLockRead,
+        testing::Combine(
+            testing::ValuesIn(memTypes),
+            testing::ValuesIn(lockReadFlags)
+        )
+    );
+
+    TEST_P(FlexibleAllocatorLockRead, LockReadAfterLockRead)
+    {
+        ASSERT_EQ(
+            allocator->Alloc(req, res),
+            MFX_ERR_NONE
+        );
+        mfxFrameData data{};
+        ASSERT_EQ(
+            allocator->Lock(res.mids[0], &data, MFX_MAP_READ),
+            MFX_ERR_NONE
+        );
+
+        EXPECT_EQ(
+            allocator->Lock(res.mids[0], &data, std::get<1>(GetParam())),
+            MFX_ERR_NONE
+        );
+    }
+
+    struct FlexibleAllocatorLockAfterWrite : FlexibleAllocatorLock {};
+
+    std::vector<mfxU32> lockWriteFlags{
+        MFX_MAP_WRITE,
+        MFX_MAP_READ_WRITE
+    };
+
+    INSTANTIATE_TEST_SUITE_P(
+        MemTypesFlags,
+        FlexibleAllocatorLockAfterWrite,
+        testing::Combine(
+            testing::ValuesIn(memTypes),
+            testing::ValuesIn(lockWriteFlags)
+        )
+    );
+
+    TEST_P(FlexibleAllocatorLockAfterWrite, LockReadNoWaitAfterLockWrite)
+    {
+        ASSERT_EQ(
+            allocator->Alloc(req, res),
+            MFX_ERR_NONE
+        );
+        mfxFrameData data{};
+        ASSERT_EQ(
+            allocator->Lock(res.mids[0], &data, std::get<1>(GetParam())),
+            MFX_ERR_NONE
+        );
+
+        EXPECT_EQ(
+            allocator->Lock(res.mids[0], &data, MFX_MAP_READ | MFX_MAP_NOWAIT),
+            MFX_ERR_RESOURCE_MAPPED
+        );
+    }
+
+    TEST_P(FlexibleAllocatorLockAfterWrite, LockReadAfterLockWriteTwoThreads)
+    {
+        ASSERT_EQ(
+            allocator->Alloc(req, res),
+            MFX_ERR_NONE
+        );
+
+        std::mutex mtx;
+        // Prevent second thread from execution
+        std::unique_lock<std::mutex> lock(mtx);
+
+        // Spawn second thread
+        std::thread thr([&]() {
+            mfxFrameData data{};
+
+            // Second thread waits for mutex release
+            std::lock_guard<std::mutex> guard(mtx);
+            EXPECT_EQ(
+                allocator->Lock(res.mids[0], &data, MFX_MAP_READ),
+                MFX_ERR_NONE
+            );
+        });
+
+        mfxFrameData data{};
+        EXPECT_EQ(
+            allocator->Lock(res.mids[0], &data, std::get<1>(GetParam())),
+            MFX_ERR_NONE
+        );
+
+        // Release mutex and let second thread to acquire surface's lock
+        lock.unlock();
+        std::this_thread::yield(); // give priority of execution to second thread
+
+        EXPECT_EQ(
+            allocator->Unlock(res.mids[0], &data),
+            MFX_ERR_NONE
+        );
+        thr.join();
+    }
+
+    struct FlexibleAllocatorLockTwice : public FlexibleAllocatorBase,
+        testing::WithParamInterface <std::tuple <mfxU16, mfxU32, mfxU32>>
+    {
+        void SetUp() override
+        {
+            FlexibleAllocatorBase::SetUp();
+            req.Type = std::get<0>(GetParam());
+#if (defined(_WIN32) || defined(_WIN64))
+            if(req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
+                req.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
+            SetAllocator(std::get<0>(GetParam()));
+        }
+    };
 
     std::vector<mfxU32> lockTwiceFlags{
         MFX_MAP_READ,
-        MFX_MAP_WRITE
+        MFX_MAP_WRITE,
+        MFX_MAP_READ_WRITE
+    };
+
+    std::vector<mfxU32> lockTwiceWriteFlags{
+        MFX_MAP_WRITE,
+        MFX_MAP_READ_WRITE,
+        MFX_MAP_WRITE | MFX_MAP_NOWAIT,
+        MFX_MAP_READ_WRITE | MFX_MAP_NOWAIT
     };
 
     INSTANTIATE_TEST_SUITE_P(
@@ -278,11 +336,12 @@ namespace test
         FlexibleAllocatorLockTwice,
         testing::Combine(
             testing::ValuesIn(memTypes),
-            testing::ValuesIn(lockTwiceFlags)
+            testing::ValuesIn(lockTwiceFlags),
+            testing::ValuesIn(lockTwiceWriteFlags)
         )
     );
 
-    TEST_P(FlexibleAllocatorLockTwice, LockWriteAndReadWriteAfterLock)
+    TEST_P(FlexibleAllocatorLockTwice, LockWriteAfterLock)
     {
         ASSERT_EQ(
             allocator->Alloc(req, res),
@@ -295,14 +354,10 @@ namespace test
         );
 
         EXPECT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_WRITE),
+            allocator->Lock(res.mids[0], &data, std::get<2>(GetParam())),
             MFX_ERR_LOCK_MEMORY
         );
 
-        EXPECT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_READ_WRITE),
-            MFX_ERR_LOCK_MEMORY
-        );
     }
 }
 #endif // MFX_ENABLE_UNIT_TEST_ALLOCATOR

@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,53 +23,38 @@
 # avoiding non-default symbol versioning, i.e. -Wl,--default-symver which
 # is propagated by mediasdk test system should be avoided.
 
-set (SOURCES
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/src/libmfx_allocator.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/src/libmfx_allocator_vaapi.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src/libmfxsw_async.cpp
+add_executable (mfx_memory_test
+    test_memory
 )
 
-add_executable (mfx_allocator_test
-    flexible_allocator.cpp
-    flexible_allocator_lock_unlock.cpp
-    flexible_allocator_exceptions.cpp
-    flexible_allocator_realloc.cpp
-    flexible_allocator_type_flags.cpp
-    flexible_allocator_lock_fourcc.cpp
-    test_surface_array.cpp
-    $<$<PLATFORM_ID:Linux>:scoped_lock.cpp>
-    ${SOURCES}
-)
-
-target_link_libraries (mfx_allocator_test
+target_link_libraries (mfx_memory_test
     PRIVATE
         ${MFX_DISPATCHER}
-        $<$<PLATFORM_ID:Windows>:detours2>
-        mfx_common_hw
-        mfx_trace
+        ${MFX_API_TARGET}
+        $<$<PLATFORM_ID:Windows>:detours>
         gtest_main
         gmock
         mocks::mocks
         mfx_va_properties
 )
 
-target_compile_definitions (mfx_allocator_test
+target_compile_definitions (mfx_memory_test
     PRIVATE
-        MFX_ENABLE_UNIT_TEST_ALLOCATOR
+        MFX_ENABLE_UNIT_TEST_MEMORY
 )
 
-set_target_properties (mfx_allocator_test
+set_target_properties (mfx_memory_test
     PROPERTIES
         FOLDER "tests"
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
 )
 
-add_test (NAME mfx_allocator_test
-    COMMAND ./mfx_allocator_test
+add_test (NAME mfx_memory_test
+    COMMAND ./mfx_memory_test
     WORKING_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
 )
 
-set_property (TEST mfx_allocator_test
+set_property (TEST mfx_memory_test
     PROPERTY
         ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}"
 )

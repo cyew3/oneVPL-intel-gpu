@@ -39,3 +39,8 @@ add_subdirectory(suites/allocator)
 add_subdirectory(suites/dvp)
 add_subdirectory(suites/utils)
 add_subdirectory(suites/hevce)
+
+#TEMP
+if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
+  add_subdirectory(suites/memory)
+endif()

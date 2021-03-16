@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -290,6 +290,47 @@ namespace test
         EXPECT_EQ(
             counter,
             1u
+        );
+    }
+
+    TEST_P(FlexibleAllocator, CreateSurfaceRefNum)
+    {
+        mfxFrameInfo info{};
+        info.FourCC = MFX_FOURCC_NV12;
+        info.Width = req.Info.Width;
+        info.Height = req.Info.Height;
+        mfxFrameSurface1* surface{};
+        ASSERT_EQ(
+            allocator->CreateSurface(GetParam(), info, surface),
+            MFX_ERR_NONE
+        );
+
+        ASSERT_EQ(
+            surface->FrameInterface->AddRef(surface),
+            MFX_ERR_NONE
+        );
+
+        mfxU32 cnt = 0;
+        ASSERT_EQ(
+            surface->FrameInterface->GetRefCounter(surface, &cnt),
+            MFX_ERR_NONE
+        );
+        ASSERT_EQ(cnt, 2);
+
+        ASSERT_EQ(
+            surface->FrameInterface->Release(surface),
+            MFX_ERR_NONE
+        );
+
+        ASSERT_EQ(
+            surface->FrameInterface->GetRefCounter(surface, &cnt),
+            MFX_ERR_NONE
+        );
+        ASSERT_EQ(cnt, 1);
+
+        EXPECT_EQ(
+            surface->FrameInterface->Release(surface),
+            MFX_ERR_NONE
         );
     }
 
