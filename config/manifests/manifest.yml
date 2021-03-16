@@ -48,7 +48,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.tests.git
     branch: master
-    revision: 173d531e7211c737a70d6037f3f85a84687f1056
+    revision: a9e87ccc33611fce14787c92d20c6e3879e88abd
     dest_dir: test_system
   windows_pre_built_binaries:
     type: artifactory
@@ -140,10 +140,10 @@ components:
     asset_name: mediasdk-1x
     asset_version: mediasdk-ci-mediasdk-1x-1.0.27
     asset_patterns:
-      - WindowsDrop/*.zip
-      - WindowsToolsDrop/*.zip
-      - WindowsLucasPkg/*.zip
-      - Linux/Ubuntu/18.04/tools_drop*.zip
-      - Linux/Ubuntu/18.04/lucas_linux_drop*.zip
-      - Linux/Ubuntu/18.04/l_MSDK_p*.tgz
+    - WindowsDrop/*.zip
+    - WindowsToolsDrop/*.zip
+    - WindowsLucasPkg/*.zip
+    - Linux/Ubuntu/18.04/tools_drop*.zip
+    - Linux/Ubuntu/18.04/lucas_linux_drop*.zip
+    - Linux/Ubuntu/18.04/l_MSDK_p*.tgz
     dest_dir: mediasdk_1x_binaries
