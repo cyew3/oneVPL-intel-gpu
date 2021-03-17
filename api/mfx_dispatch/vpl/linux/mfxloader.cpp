@@ -61,8 +61,8 @@ enum Function2 {
     eMFXVideoDECODE_VPP_Init,
     eMFXVideoDECODE_VPP_DecodeFrameAsync,
     eMFXVideoDECODE_VPP_Reset,
-    eMFXVideoDECODE_VPP_Close,
     eMFXVideoDECODE_VPP_GetChannelParam,
+    eMFXVideoDECODE_VPP_Close,
     eMFXVideoVPP_ProcessFrameAsync,
 
     eFunctionsNum2,
@@ -110,14 +110,17 @@ static const FunctionsTable2 g_mfxFuncTable2[] = {
     { eMFXVideoDECODE_VPP_Init, "MFXVideoDECODE_VPP_Init", VERSION(2, 1) },
     { eMFXVideoDECODE_VPP_DecodeFrameAsync, "MFXVideoDECODE_VPP_DecodeFrameAsync", VERSION(2, 1) },
     { eMFXVideoDECODE_VPP_Reset, "MFXVideoDECODE_VPP_Reset", VERSION(2, 1) },
-    { eMFXVideoDECODE_VPP_Close, "MFXVideoDECODE_VPP_Close", VERSION(2, 1) },
     { eMFXVideoDECODE_VPP_GetChannelParam, "MFXVideoDECODE_VPP_GetChannelParam", VERSION(2, 1) },
+    { eMFXVideoDECODE_VPP_Close, "MFXVideoDECODE_VPP_Close", VERSION(2, 1) },
     { eMFXVideoVPP_ProcessFrameAsync, "MFXVideoVPP_ProcessFrameAsync", VERSION(2, 1) },
 };
 
 class LoaderCtx {
 public:
-    mfxStatus Init(mfxInitParam& par, mfxInitializationParam& vplParam, char* dllName);
+    mfxStatus Init(mfxInitParam& par,
+                   mfxInitializationParam& vplParam,
+                   mfxU16* pDeviceID,
+                   char* dllName);
     mfxStatus Close();
 
     inline void* getFunction(Function func) const {
@@ -156,7 +159,10 @@ std::shared_ptr<void> make_dlopen(const char* filename, int flags) {
     });
 }
 
-mfxStatus LoaderCtx::Init(mfxInitParam& par, mfxInitializationParam& vplParam, char* dllName) {
+mfxStatus LoaderCtx::Init(mfxInitParam& par,
+                          mfxInitializationParam& vplParam,
+                          mfxU16* pDeviceID,
+                          char* dllName) {
     mfxStatus mfx_res = MFX_ERR_NONE;
 
     std::vector<std::string> libs;
@@ -166,7 +172,8 @@ mfxStatus LoaderCtx::Init(mfxInitParam& par, mfxInitializationParam& vplParam, c
     // query graphics device_id
     // if it is found on list of legacy devices, load MSDK RT
     // otherwise load oneVPL RT
-    mfx_res = get_devices(devices);
+    mfxU16 deviceID = 0;
+    mfx_res         = get_devices(devices);
     if (mfx_res == MFX_ERR_NOT_FOUND) {
         // query failed
         platform = MFX_HW_UNKNOWN;
@@ -176,7 +183,11 @@ mfxStatus LoaderCtx::Init(mfxInitParam& par, mfxInitializationParam& vplParam, c
         //   may be a valid platform from listLegalDevIDs[] or MFX_HW_UNKNOWN
         //   if underlying device_id is unrecognized (i.e. new platform)
         platform = devices[0].platform;
+        deviceID = devices[0].device_id;
     }
+
+    if (pDeviceID)
+        *pDeviceID = deviceID;
 
     if (dllName) {
         // attempt to load only this DLL, fail if unsuccessful
@@ -220,11 +231,7 @@ mfxStatus LoaderCtx::Init(mfxInitParam& par, mfxInitializationParam& vplParam, c
                 for (int i = 0; i < eFunctionsNum; ++i) {
                     assert(i == g_mfxFuncTable[i].id);
                     m_table[i] = dlsym(hdl.get(), g_mfxFuncTable[i].name);
-                    if (!m_table[i] &&
-                        ((g_mfxFuncTable[i].version <= par.Version) ||
-                         (g_mfxFuncTable[i].version <= mfxVersion(VERSION(1, 14))))) {
-                        // this version of dispatcher requires MFXInitEx which appeared
-                        // in Media SDK API 1.14
+                    if (!m_table[i] && ((g_mfxFuncTable[i].version <= par.Version))) {
                         wrong_version = true;
                         break;
                     }
@@ -253,8 +260,16 @@ mfxStatus LoaderCtx::Init(mfxInitParam& par, mfxInitializationParam& vplParam, c
                         ((decltype(MFXInitialize)*)m_table2[eMFXInitialize])(vplParam, &m_session);
                 }
                 else {
-                    /* Initializing loaded library */
-                    mfx_res = ((decltype(MFXInitEx)*)m_table[eMFXInitEx])(par, &m_session);
+                    if (m_table[eMFXInitEx]) {
+                        // initialize with MFXInitEx if present (API >= 1.14)
+                        mfx_res = ((decltype(MFXInitEx)*)m_table[eMFXInitEx])(par, &m_session);
+                    }
+                    else {
+                        // initialize with MFXInit for API < 1.14
+                        mfx_res = ((decltype(MFXInit)*)m_table[eMFXInit])(par.Implementation,
+                                                                          &(par.Version),
+                                                                          &m_session);
+                    }
                 }
 
                 if (MFX_ERR_NONE != mfx_res) {
@@ -312,30 +327,39 @@ mfxStatus LoaderCtx::Close() {
 // vplParam is required for API >= 2.0 (load via MFXInitialize)
 mfxStatus MFXInitEx2(mfxVersion version,
                      mfxInitializationParam vplParam,
+                     mfxIMPL hwImpl,
                      mfxSession* session,
+                     mfxU16* deviceID,
                      char* dllName) {
     if (!session)
         return MFX_ERR_NULL_PTR;
 
+    *deviceID = 0;
+
     // fill minimal 1.x parameters for Init to choose correct initialization path
     mfxInitParam par = {};
     par.Version      = version;
+
+    // select first adapter if not specified
+    // only relevant for MSDK-via-MFXLoad path
+    if (!hwImpl)
+        hwImpl = MFX_IMPL_HARDWARE;
 
     switch (vplParam.AccelerationMode) {
         case MFX_ACCEL_MODE_NA:
             par.Implementation = MFX_IMPL_SOFTWARE;
             break;
         case MFX_ACCEL_MODE_VIA_D3D9:
-            par.Implementation = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            par.Implementation = hwImpl | MFX_IMPL_VIA_D3D9;
             break;
         case MFX_ACCEL_MODE_VIA_D3D11:
-            par.Implementation = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11;
+            par.Implementation = hwImpl | MFX_IMPL_VIA_D3D11;
             break;
         case MFX_ACCEL_MODE_VIA_VAAPI:
-            par.Implementation = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_VAAPI;
+            par.Implementation = hwImpl | MFX_IMPL_VIA_VAAPI;
             break;
         default:
-            par.Implementation = MFX_IMPL_HARDWARE;
+            par.Implementation = hwImpl;
             break;
     }
 
@@ -344,7 +368,7 @@ mfxStatus MFXInitEx2(mfxVersion version,
 
         loader.reset(new MFX::LoaderCtx{});
 
-        mfxStatus mfx_res = loader->Init(par, vplParam, dllName);
+        mfxStatus mfx_res = loader->Init(par, vplParam, deviceID, dllName);
         if (MFX_ERR_NONE == mfx_res) {
             *session = (mfxSession)loader.release();
         }
@@ -395,7 +419,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession* session) {
 
         loader.reset(new MFX::LoaderCtx{});
 
-        mfxStatus mfx_res = loader->Init(par, vplParam, nullptr);
+        mfxStatus mfx_res = loader->Init(par, vplParam, nullptr, nullptr);
         if (MFX_ERR_NONE == mfx_res) {
             *session = (mfxSession)loader.release();
         }
@@ -434,8 +458,6 @@ mfxStatus MFXClose(mfxSession session) {
 mfxStatus MFXMemory_GetSurfaceForVPP(mfxSession session, mfxFrameSurface1** surface) {
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 
@@ -451,8 +473,6 @@ mfxStatus MFXMemory_GetSurfaceForVPP(mfxSession session, mfxFrameSurface1** surf
 mfxStatus MFXMemory_GetSurfaceForVPPOut(mfxSession session, mfxFrameSurface1** surface) {
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 
@@ -468,8 +488,6 @@ mfxStatus MFXMemory_GetSurfaceForVPPOut(mfxSession session, mfxFrameSurface1** s
 mfxStatus MFXMemory_GetSurfaceForEncode(mfxSession session, mfxFrameSurface1** surface) {
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 
@@ -485,8 +503,6 @@ mfxStatus MFXMemory_GetSurfaceForEncode(mfxSession session, mfxFrameSurface1** s
 mfxStatus MFXMemory_GetSurfaceForDecode(mfxSession session, mfxFrameSurface1** surface) {
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 
@@ -505,12 +521,6 @@ mfxStatus MFXVideoDECODE_VPP_Init(mfxSession session,
                                   mfxU32 num_vpp_par) {
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-
-    if (!decode_par || !vpp_par_array)
-        return MFX_ERR_NULL_PTR;
-
-    if (num_vpp_par == 0)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 
@@ -531,9 +541,6 @@ mfxStatus MFXVideoDECODE_VPP_DecodeFrameAsync(mfxSession session,
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
 
-    if (!surf_array_out)
-        return MFX_ERR_NULL_PTR;
-
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 
     auto proc = (decltype(MFXVideoDECODE_VPP_DecodeFrameAsync)*)loader->getFunction2(
@@ -552,12 +559,6 @@ mfxStatus MFXVideoDECODE_VPP_Reset(mfxSession session,
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
 
-    if (!decode_par || !vpp_par_array)
-        return MFX_ERR_NULL_PTR;
-
-    if (num_vpp_par == 0)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 
     auto proc =
@@ -567,6 +568,23 @@ mfxStatus MFXVideoDECODE_VPP_Reset(mfxSession session,
     }
 
     return (*proc)(loader->getSession(), decode_par, vpp_par_array, num_vpp_par);
+}
+
+mfxStatus MFXVideoDECODE_VPP_GetChannelParam(mfxSession session,
+                                             mfxVideoChannelParam* par,
+                                             mfxU32 channel_id) {
+    if (!session)
+        return MFX_ERR_INVALID_HANDLE;
+
+    MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
+
+    auto proc = (decltype(MFXVideoDECODE_VPP_GetChannelParam)*)loader->getFunction2(
+        MFX::eMFXVideoDECODE_VPP_GetChannelParam);
+    if (!proc) {
+        return MFX_ERR_INVALID_HANDLE;
+    }
+
+    return (*proc)(loader->getSession(), par, channel_id);
 }
 
 mfxStatus MFXVideoDECODE_VPP_Close(mfxSession session) {
@@ -584,34 +602,11 @@ mfxStatus MFXVideoDECODE_VPP_Close(mfxSession session) {
     return (*proc)(loader->getSession());
 }
 
-mfxStatus MFXVideoDECODE_VPP_GetChannelParam(mfxSession session,
-                                             mfxVideoChannelParam* par,
-                                             mfxU32 channel_id) {
-    if (!session)
-        return MFX_ERR_INVALID_HANDLE;
-
-    if (!par)
-        return MFX_ERR_NULL_PTR;
-
-    MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
-
-    auto proc = (decltype(MFXVideoDECODE_VPP_GetChannelParam)*)loader->getFunction2(
-        MFX::eMFXVideoDECODE_VPP_GetChannelParam);
-    if (!proc) {
-        return MFX_ERR_INVALID_HANDLE;
-    }
-
-    return (*proc)(loader->getSession(), par, channel_id);
-}
-
 mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session,
                                         mfxFrameSurface1* in,
                                         mfxFrameSurface1** out) {
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-
-    if (!out)
-        return MFX_ERR_NULL_PTR;
 
     MFX::LoaderCtx* loader = (MFX::LoaderCtx*)session;
 

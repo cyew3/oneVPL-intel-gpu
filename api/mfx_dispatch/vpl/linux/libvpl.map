@@ -1,4 +1,4 @@
-LIBVPL_1.0 {
+LIBVPL_2.0 {
   global:
     MFXInit;
     MFXClose;
@@ -48,20 +48,8 @@ LIBVPL_1.0 {
     MFXVideoVPP_GetVPPStat;
     MFXVideoVPP_RunFrameVPPAsync;
 
-  local:
-    *;
-};
-
-LIBVPL_1.14 {
-  global:
     MFXInitEx;
 
-  local:
-    *;
-} LIBVPL_1.0;
-
-LIBVPL_2.0 {
-  global:
     MFXLoad;
     MFXUnload;
     MFXCreateConfig;
@@ -76,7 +64,7 @@ LIBVPL_2.0 {
 
   local:
     *;
-} LIBVPL_1.14;
+};
 
 LIBVPL_2.1 {
   global:

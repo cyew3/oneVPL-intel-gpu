@@ -72,8 +72,8 @@ enum eVideoFunc2 {
     eMFXVideoDECODE_VPP_Init,
     eMFXVideoDECODE_VPP_DecodeFrameAsync,
     eMFXVideoDECODE_VPP_Reset,
-    eMFXVideoDECODE_VPP_Close,
     eMFXVideoDECODE_VPP_GetChannelParam,
+    eMFXVideoDECODE_VPP_Close,
     eMFXVideoVPP_ProcessFrameAsync,
 
     eVideoFunc2Total

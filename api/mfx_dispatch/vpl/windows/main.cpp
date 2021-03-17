@@ -481,7 +481,9 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session) {
 // vplParam is required for API >= 2.0 (load via MFXInitialize)
 mfxStatus MFXInitEx2(mfxVersion version,
                      mfxInitializationParam vplParam,
+                     mfxIMPL hwImpl,
                      mfxSession *session,
+                     mfxU16 *deviceID,
                      wchar_t *dllName) {
     MFX::MFXAutomaticCriticalSection guard(&dispGuard);
 
@@ -491,25 +493,32 @@ mfxStatus MFXInitEx2(mfxVersion version,
 
     MFX_DISP_HANDLE *pHandle;
 
+    *deviceID = 0;
+
     // fill minimal 1.x parameters for LoadSelectedDLL to choose correct initialization path
     mfxInitParam par = {};
     par.Version      = version;
+
+    // select first adapter if not specified
+    // only relevant for MSDK-via-MFXLoad path
+    if (!hwImpl)
+        hwImpl = MFX_IMPL_HARDWARE;
 
     switch (vplParam.AccelerationMode) {
         case MFX_ACCEL_MODE_NA:
             par.Implementation = MFX_IMPL_SOFTWARE;
             break;
         case MFX_ACCEL_MODE_VIA_D3D9:
-            par.Implementation = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            par.Implementation = hwImpl | MFX_IMPL_VIA_D3D9;
             break;
         case MFX_ACCEL_MODE_VIA_D3D11:
-            par.Implementation = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11;
+            par.Implementation = hwImpl | MFX_IMPL_VIA_D3D11;
             break;
         case MFX_ACCEL_MODE_VIA_VAAPI:
-            par.Implementation = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_VAAPI;
+            par.Implementation = hwImpl | MFX_IMPL_VIA_VAAPI;
             break;
         default:
-            par.Implementation = MFX_IMPL_HARDWARE;
+            par.Implementation = hwImpl;
             break;
     }
 
@@ -560,7 +569,7 @@ mfxStatus MFXInitEx2(mfxVersion version,
     *((MFX_DISP_HANDLE **)session) = pHandle;
 
     return pHandle->loadStatus;
-} // mfxStatus MFXInitEx2(mfxIMPL Implementation, mfxVersion version, mfxInitializationParam vplParam, mfxSession *session, wchar_t *dllName)
+}
 
 mfxStatus MFXClose(mfxSession session) {
     MFX::MFXAutomaticCriticalSection guard(&dispGuard);
@@ -775,8 +784,6 @@ mfxStatus MFXMemory_GetSurfaceForVPP(mfxSession session, mfxFrameSurface1 **surf
 
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 
@@ -795,8 +802,6 @@ mfxStatus MFXMemory_GetSurfaceForVPPOut(mfxSession session, mfxFrameSurface1 **s
 
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 
@@ -815,8 +820,6 @@ mfxStatus MFXMemory_GetSurfaceForEncode(mfxSession session, mfxFrameSurface1 **s
 
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 
@@ -835,8 +838,6 @@ mfxStatus MFXMemory_GetSurfaceForDecode(mfxSession session, mfxFrameSurface1 **s
 
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-    if (!surface)
-        return MFX_ERR_NULL_PTR;
 
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 
@@ -858,12 +859,6 @@ mfxStatus MFXVideoDECODE_VPP_Init(mfxSession session,
 
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-
-    if (!decode_par || !vpp_par_array)
-        return MFX_ERR_NULL_PTR;
-
-    if (num_vpp_par == 0)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 
@@ -889,9 +884,6 @@ mfxStatus MFXVideoDECODE_VPP_DecodeFrameAsync(mfxSession session,
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
 
-    if (!surf_array_out)
-        return MFX_ERR_NULL_PTR;
-
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 
     mfxFunctionPointer pFunc;
@@ -915,12 +907,6 @@ mfxStatus MFXVideoDECODE_VPP_Reset(mfxSession session,
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
 
-    if (!decode_par || !vpp_par_array)
-        return MFX_ERR_NULL_PTR;
-
-    if (num_vpp_par == 0)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 
     mfxFunctionPointer pFunc;
@@ -930,6 +916,29 @@ mfxStatus MFXVideoDECODE_VPP_Reset(mfxSession session,
         sts =
             (*(mfxStatus(MFX_CDECL *)(mfxSession, mfxVideoParam *, mfxVideoChannelParam **, mfxU32))
                  pFunc)(session, decode_par, vpp_par_array, num_vpp_par);
+    }
+
+    return sts;
+}
+
+mfxStatus MFXVideoDECODE_VPP_GetChannelParam(mfxSession session,
+                                             mfxVideoChannelParam *par,
+                                             mfxU32 channel_id) {
+    mfxStatus sts = MFX_ERR_INVALID_HANDLE;
+
+    if (!session)
+        return MFX_ERR_INVALID_HANDLE;
+
+    struct _mfxSession *pHandle = (struct _mfxSession *)session;
+
+    mfxFunctionPointer pFunc;
+    pFunc = pHandle->callVideoTable2[eMFXVideoDECODE_VPP_GetChannelParam];
+    if (pFunc) {
+        session = pHandle->session;
+        sts     = (*(mfxStatus(MFX_CDECL *)(mfxSession, mfxVideoChannelParam *, mfxU32))pFunc)(
+            session,
+            par,
+            channel_id);
     }
 
     return sts;
@@ -947,35 +956,7 @@ mfxStatus MFXVideoDECODE_VPP_Close(mfxSession session) {
     pFunc = pHandle->callVideoTable2[eMFXVideoDECODE_VPP_Close];
     if (pFunc) {
         session = pHandle->session;
-        sts =
-            (*(mfxStatus(MFX_CDECL *)(mfxSession))
-                 pFunc)(session);
-    }
-
-    return sts;
-}
-
-mfxStatus MFXVideoDECODE_VPP_GetChannelParam(mfxSession session,
-                                             mfxVideoChannelParam *par,
-                                             mfxU32 channel_id) {
-    mfxStatus sts = MFX_ERR_INVALID_HANDLE;
-
-    if (!session)
-        return MFX_ERR_INVALID_HANDLE;
-
-    if (!par)
-        return MFX_ERR_NULL_PTR;
-
-    struct _mfxSession *pHandle = (struct _mfxSession *)session;
-
-    mfxFunctionPointer pFunc;
-    pFunc = pHandle->callVideoTable2[eMFXVideoDECODE_VPP_GetChannelParam];
-    if (pFunc) {
-        session = pHandle->session;
-        sts     = (*(mfxStatus(MFX_CDECL *)(mfxSession, mfxVideoChannelParam *, mfxU32))pFunc)(
-            session,
-            par,
-            channel_id);
+        sts     = (*(mfxStatus(MFX_CDECL *)(mfxSession))pFunc)(session);
     }
 
     return sts;
@@ -988,9 +969,6 @@ mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session,
 
     if (!session)
         return MFX_ERR_INVALID_HANDLE;
-
-    if (!out)
-        return MFX_ERR_NULL_PTR;
 
     struct _mfxSession *pHandle = (struct _mfxSession *)session;
 

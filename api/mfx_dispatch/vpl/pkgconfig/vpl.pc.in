@@ -6,8 +6,8 @@ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 # oneAPI Video Processing Library (oneVPL)
 Name: oneVPL
 Description: oneAPI Video Processing Library
-Version: @PROJECT_VERSION@
+Version: @API_VERSION_MAJOR@.@API_VERSION_MINOR@
 URL: https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onevpl.html 
  
-Libs: -L${libdir} -l@IMPORT_PREFIX@vpl
+Libs: -L${libdir} -lvpl
 Cflags: -I${includedir} -I${includedir}/vpl

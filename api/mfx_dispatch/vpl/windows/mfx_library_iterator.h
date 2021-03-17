@@ -54,6 +54,8 @@ mfxStatus SelectImplementationType(const mfxU32 adapterNum,
                                    mfxU32 *pVendorID,
                                    mfxU32 *pDeviceID);
 
+bool GetImplPath(int storageID, wchar_t *sImplPath);
+
 const mfxU32 msdk_disp_path_len = 1024;
 
 class MFXLibraryIterator {
@@ -85,7 +87,9 @@ public:
         return m_StorageID;
     }
 
-    static mfxStatus GetDriverStoreDir(std::wstring &driverStoreDir, size_t length);
+    static mfxStatus GetDriverStoreDir(std::wstring &driverStoreDir,
+                                       size_t length,
+                                       mfxU32 adapterID);
     static mfxStatus GetRegkeyDir(std::wstring &regDir, size_t length, int storageID);
 
 protected:

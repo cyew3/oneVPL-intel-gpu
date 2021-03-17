@@ -568,12 +568,14 @@ bool MFXLibraryIterator::GetSubKeyName(wchar_t *subKeyName, size_t length) const
 }
 
 // static functions - create their own MFXLibraryIterator, get paths, then release object
-mfxStatus MFXLibraryIterator::GetDriverStoreDir(std::wstring &driverStoreDir, size_t length) {
+mfxStatus MFXLibraryIterator::GetDriverStoreDir(std::wstring &driverStoreDir,
+                                                size_t length,
+                                                mfxU32 adapterID) {
     mfxStatus sts = MFX_ERR_UNSUPPORTED;
     MFX::MFXLibraryIterator libIterator;
 
     driverStoreDir.clear();
-    sts = libIterator.Init(MFX_LIB_HARDWARE, 0, 0, MFX::MFX_DRIVER_STORE_ONEVPL);
+    sts = libIterator.Init(MFX_LIB_HARDWARE, 0, adapterID, MFX::MFX_DRIVER_STORE_ONEVPL);
     if (sts)
         return MFX_ERR_UNSUPPORTED;
 

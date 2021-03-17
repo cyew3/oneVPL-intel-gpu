@@ -1,5 +1,5 @@
 /*############################################################################
-  # Copyright (C) 2020 Intel Corporation
+  # Copyright (C) Intel Corporation
   #
   # SPDX-License-Identifier: MIT
   ############################################################################*/
@@ -40,6 +40,10 @@ mfxLoader MFXLoad() {
     // query capabilities of each implementation
     // may be more than one implementation per library
     sts = loaderCtx->QueryLibraryCaps();
+    if (MFX_ERR_NONE != sts) {
+        delete loaderCtx;
+        return nullptr;
+    }
 
     return (mfxLoader)loaderCtx;
 }

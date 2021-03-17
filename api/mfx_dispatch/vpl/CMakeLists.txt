@@ -32,16 +32,17 @@ if(UNIX)
   message(STATUS "MFX_MODULES_DIR=${MFX_MODULES_DIR}")
 endif()
 
+add_definitions(-DMFX_DEPRECATED_OFF)
+
 list(APPEND SOURCES vpl/mfx_dispatcher_vpl.cpp
-     vpl/mfx_dispatcher_vpl_loader.cpp vpl/mfx_dispatcher_vpl_config.cpp)
+     vpl/mfx_dispatcher_vpl_loader.cpp vpl/mfx_dispatcher_vpl_config.cpp
+     vpl/mfx_dispatcher_vpl_msdk.cpp)
 
 add_library(${TARGET} SHARED "")
 
 if(WIN32)
-  # force correct name on Windows
-  set(IMPORT_PREFIX lib)
+  # force libxxx style name on Windows
   set_target_properties(${TARGET} PROPERTIES PREFIX "lib")
-  set_target_properties(${TARGET} PROPERTIES IMPORT_PREFIX ${IMPORT_PREFIX})
 else()
   # use version script on Linux
   set_target_properties(
@@ -52,15 +53,27 @@ else()
 endif()
 
 set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME "vpl")
-set_target_properties(${TARGET} PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(
+  ${TARGET} PROPERTIES VERSION ${API_VERSION_MAJOR}.${API_VERSION_MINOR})
 set_target_properties(${TARGET} PROPERTIES SOVERSION ${API_VERSION_MAJOR})
 
 target_sources(${TARGET} PRIVATE ${SOURCES})
 
-target_link_libraries(
-  ${TARGET}
-  PUBLIC vpl-api
-  PRIVATE ${CMAKE_DL_LIBS})
+if(UNIX)
+  # require pthreads for loading legacy MSDK runtimes
+  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+  set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+  find_package(Threads REQUIRED)
+  target_link_libraries(
+    ${TARGET}
+    PUBLIC vpl-api
+    PRIVATE ${CMAKE_DL_LIBS} Threads::Threads)
+else()
+  target_link_libraries(
+    ${TARGET}
+    PUBLIC vpl-api
+    PRIVATE ${CMAKE_DL_LIBS})
+endif()
 
 target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                              ${CMAKE_CURRENT_BINARY_DIR})
@@ -91,3 +104,5 @@ install(
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
   COMPONENT dev)
 endif()
+
+include(sources_ext.cmake OPTIONAL)
