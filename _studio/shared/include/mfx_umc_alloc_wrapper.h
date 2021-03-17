@@ -385,9 +385,9 @@ class VideoVppJpegD3D;
 
 struct JPEG_Info
 {
-    int32_t colorFormat;
-    size_t UOffset;
-    size_t VOffset;
+    int32_t colorFormat = 0;
+    size_t  UOffset     = 0;
+    size_t  VOffset     = 0;
 };
 
 class SurfaceSourceJPEG : public SurfaceSource

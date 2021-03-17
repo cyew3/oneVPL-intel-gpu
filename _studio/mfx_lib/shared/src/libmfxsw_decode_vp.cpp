@@ -385,8 +385,8 @@ mfxStatus MFXVideoDECODE_VPP_DecodeFrameAsync(mfxSession session, mfxBitstream* 
                 continue;
             }
 
-            mfxFrameSurface1* vppOut;
-            vppOut = session->m_pDVP->VppPools[id]->GetSurface();
+            mfxFrameSurface1* vppOut = session->m_pDVP->VppPools[id]->GetSurface();
+            MFX_CHECK(vppOut, MFX_ERR_MEMORY_ALLOC);
 
             //update output crops, they may change only after reset
             mfxVideoParam& VppParams = session->m_pDVP->VppParams[id];
@@ -479,7 +479,7 @@ mfxStatus MFXVideoDECODE_VPP_DecodeFrameAsync(mfxSession session, mfxBitstream* 
                     }
                 }
 
-                if (vppSyncp && vppOut && vppOut->FrameInterface)
+                if (vppSyncp && vppOut->FrameInterface)
                 {
                     MFX_CHECK_HDL(vppOut->FrameInterface->Context);
                     static_cast<mfxFrameSurfaceBaseInterface*>(vppOut->FrameInterface->Context)->SetSyncPoint(vppSyncp);
@@ -510,7 +510,7 @@ mfxStatus MFXVideoDECODE_VPP_DecodeFrameAsync(mfxSession session, mfxBitstream* 
         mfxRes = MFX_ERR_UNKNOWN;
     }
 
-    return MFX_ERR_NONE;
+    return mfxRes;
 }
 
 static inline bool CmpFrameInfoIgnoreCrops(const mfxFrameInfo& l, const mfxFrameInfo& r)
