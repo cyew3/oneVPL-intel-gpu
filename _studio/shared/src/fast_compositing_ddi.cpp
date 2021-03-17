@@ -663,7 +663,7 @@ mfxStatus FastCompositingDDI::QueryTaskStatus(SynchronizedTask* pSyncTask)
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
     if (pSyncTask->m_GpuEvent.gpuSyncEvent)
     {
-        auto timeOut = IsPreSiPlatform(m_core->GetHWType()) ? 120000 : DEFAULT_WAIT_HW_TIMEOUT_MS;
+        auto timeOut = IsPreSiPlatform(m_core->GetHWType()) ? 3600000 : DEFAULT_WAIT_HW_TIMEOUT_MS;
         HRESULT waitRes = WaitForSingleObject(pSyncTask->m_GpuEvent.gpuSyncEvent, timeOut);
         if (WAIT_OBJECT_0 != waitRes)
         {
