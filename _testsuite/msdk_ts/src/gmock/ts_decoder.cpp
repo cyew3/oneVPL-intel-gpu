@@ -18,19 +18,15 @@ enum eDecoderFunction
     , QUERYIOSURF
 };
 
-static void SkipDecision(mfxVideoParam& par, eDecoderFunction /*function*/)
+static void SkipDecision(mfxVideoParam& par, eDecoderFunction function)
 {
     if (g_tsConfig.core20)
     {
         if (par.IOPattern == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
             g_tsLog << "Opaque memory is not supported by core20\n";
-#if !defined(MFX_ENABLE_OPAQUE_MEMORY)
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-#else
-            g_tsStatus.disable();
-            throw tsSKIP;
-#endif //!MFX_ENABLE_OPAQUE_MEMORY
+            g_tsStatus.expect(function == QUERY ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM);
+            g_tsStatus.last();
         }
     }
 }
