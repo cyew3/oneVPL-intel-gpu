@@ -122,6 +122,7 @@ protected:
     mfxExtLplaParam               m_extBufLPLA;
     mfxExtHEVCParam               m_extBufHevcParam;
     mfxExtCodingOption3           m_extBufCO3;
+    mfxExtCodingOption2           m_extBufCO2;
     mfxExtLpLaStatus              m_lplaHints;
     mfxU32                        m_lookAheadScale;
     mfxU32                        m_lookAheadDepth;

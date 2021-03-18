@@ -123,7 +123,9 @@ MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct
 {
     mfxStructVersion Version;
-    mfxU16  reserved[3];
+    mfxU8   GopOptFlag;
+    mfxU8   reserved8b;
+    mfxU16  reserved[2];
 
     /* info about codec */
     struct  /* coding info*/

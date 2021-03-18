@@ -45,6 +45,7 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
         {
             auto& par = Glob::VideoParam::Get(global);
             const mfxExtLplaParam* lpla = ExtBuffer::Get(par);
+            const mfxExtCodingOption2 *pCO2 = ExtBuffer::Get(par);
 
             if (!m_lplaEnabled)
             {
@@ -60,6 +61,9 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 sps.LookaheadDepth = (UCHAR)lpla->LookAheadDepth;
                 sps.bLookAheadPhase= 1;
                 sps.GopRefDist = (UCHAR)lpla->GopRefDist;
+                sps.GopFlags.fields.ClosedGop = (par.mfx.GopOptFlag & MFX_GOP_CLOSED) != 0 ;
+                sps.GopFlags.fields.StrictGop = (par.mfx.GopOptFlag & MFX_GOP_STRICT) != 0 ;
+                sps.GopFlags.fields.AdaptiveGop = pCO2 && IsOn(pCO2->AdaptiveB);
                 sps.maxAdaptiveGopPicSize = lpla->MaxAdaptiveGopSize;
                 sps.minAdaptiveGopPicSize = (UCHAR)lpla->MinAdaptiveGopSize;
             }

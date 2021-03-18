@@ -50,6 +50,13 @@ void HevcEncTools::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(BRCBufferHints);
         MFX_COPY_FIELD(SceneChange);
     });
+	blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
+		[](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
+	{
+		const auto& buf_src = *(const mfxExtCodingOption2*)pSrc;
+		auto& buf_dst = *(mfxExtCodingOption2*)pDst;
+		MFX_COPY_FIELD(AdaptiveB);
+	});
 }
 
 void HevcEncTools::SetInherited(ParamInheritance& par)
@@ -352,6 +359,8 @@ static mfxStatus InitEncToolsCtrl(
     ctrl->BRefType = pCO2 ? pCO2->BRefType : 0;
 
     ctrl->ScenarioInfo = pCO3 ? pCO3->ScenarioInfo : 0;
+
+    ctrl->GopOptFlag = (mfxU8)par.mfx.GopOptFlag;
 
     // Rate control info
     mfxU32 mult = par.mfx.BRCParamMultiplier ? par.mfx.BRCParamMultiplier : 1;

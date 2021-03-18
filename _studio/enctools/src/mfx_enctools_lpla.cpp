@@ -127,6 +127,7 @@ mfxStatus LPLA_EncTool::InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToo
     m_encParams.mfx.QPP = ctrl.LaQp+2;
     m_encParams.mfx.QPB = ctrl.LaQp+2;
     m_encParams.mfx.NumSlice = 1;
+    m_encParams.mfx.GopOptFlag = ctrl.GopOptFlag;
 
     if (IsOn(pConfig.AdaptiveI))
         m_encParams.mfx.GopPicSize = 0xffff; // infinite GOP
@@ -173,12 +174,12 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
 
     m_lplaHints.Header.BufferId = MFX_EXTBUFF_LPLA_STATUS;
     m_lplaHints.Header.BufferSz = sizeof(m_lplaHints);
-    extParams[0] = (mfxExtBuffer *)&m_lplaHints;
+    extParams[0] = &m_lplaHints.Header;
     m_bitstream.ExtParam = (mfxExtBuffer**)&extParams[0];
     m_bitstream.NumExtParam = 1;
 
     // create ext buffer for lpla
-    mfxExtBuffer** extBuf = new mfxExtBuffer *[3];
+    mfxExtBuffer** extBuf = new mfxExtBuffer *[4];
 
     m_extBufLPLA = {};
     m_extBufLPLA.Header.BufferId = MFX_EXTBUFF_LP_LOOKAHEAD;
@@ -197,7 +198,7 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
         m_extBufLPLA.MinAdaptiveGopSize = (mfxU16)std::max(16, m_extBufLPLA.MaxAdaptiveGopSize / 4);
     }
 
-    extBuf[0] = (mfxExtBuffer *)&m_extBufLPLA;
+    extBuf[0] = &m_extBufLPLA.Header;
     m_encParams.NumExtParam = 1;
 
     m_extBufHevcParam = {};
@@ -206,14 +207,21 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     if (ctrl.CodecId  == MFX_CODEC_AVC)
         m_extBufHevcParam.SampleAdaptiveOffset = MFX_SAO_DISABLE;
 
-    extBuf[1] = (mfxExtBuffer *)&m_extBufHevcParam;
+    extBuf[1] = &m_extBufHevcParam.Header;
+    m_encParams.NumExtParam++;
+
+    m_extBufCO2 = {};
+    m_extBufCO2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+    m_extBufCO2.Header.BufferSz = sizeof(m_extBufCO2);
+    m_extBufCO2.AdaptiveB = (mfxU16)(IsOn(pConfig.AdaptiveB) ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+	extBuf[2] = &m_extBufCO2.Header;
     m_encParams.NumExtParam++;
 
     m_extBufCO3 = {};
     m_extBufCO3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
     m_extBufCO3.Header.BufferSz = sizeof(m_extBufCO3);
     m_extBufCO3.PRefType = (mfxU16)(IsOn(pConfig.AdaptivePyramidQuantP) ? MFX_P_REF_PYRAMID : MFX_P_REF_SIMPLE);
-    extBuf[2] = (mfxExtBuffer *)&m_extBufCO3;
+    extBuf[3] = &m_extBufCO3.Header;
     m_encParams.NumExtParam++;
 
     m_encParams.ExtParam = (mfxExtBuffer**)&extBuf[0];
