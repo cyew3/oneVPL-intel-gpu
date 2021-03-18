@@ -86,6 +86,7 @@ target_sources(sample_common
     include/vaapi_utils.h
     include/vaapi_utils_x11.h
     include/version.h
+    include/vpl_implementation_loader.h
     include/vpp_ex.h
 
     include/vm/atomic_defs.h
@@ -119,6 +120,7 @@ target_sources(sample_common
     src/vaapi_utils.cpp
     src/vaapi_utils_drm.cpp
     src/vaapi_utils_x11.cpp
+    src/vpl_implementation_loader.cpp
     src/vpp_ex.cpp
 
     src/vm/atomic.cpp

@@ -42,6 +42,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo++.h"
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
+#include "mfxdispatcher.h"
 #if !defined(MFX_ONEVPL)
 #include "mfxla.h"
 #endif
@@ -641,6 +642,11 @@ namespace TranscodingSample
         DISALLOW_COPY_AND_ASSIGN(FileBitstreamProcessor);
     };
 
+    class MainVideoSession : public MFXVideoSession {
+    public:
+        mfxStatus CreateSession(mfxLoader Loader);
+    };
+
     // Bitstream is external via BitstreamProcessor
     class CTranscodingPipeline
     {
@@ -653,7 +659,8 @@ namespace TranscodingSample
                                void* hdl,
                                CTranscodingPipeline *pParentPipeline,
                                SafetySurfaceBuffer  *pBuffer,
-                               FileBitstreamProcessor   *pBSProc);
+                               FileBitstreamProcessor   *pBSProc,
+                               mfxLoader mfxLoader);
 
         // frames allocation is suspended for heterogeneous pipeline
         virtual mfxStatus CompleteInit();
@@ -792,7 +799,9 @@ namespace TranscodingSample
 
         mfxVersion m_Version; // real API version with which library is initialized
 
-        std::unique_ptr<MFXVideoSession>  m_pmfxSession;
+        mfxLoader m_mfxLoader;
+
+        std::unique_ptr<MainVideoSession> m_pmfxSession;
         std::unique_ptr<MFXVideoDECODE>   m_pmfxDEC;
         std::unique_ptr<MFXVideoENCODE>   m_pmfxENC;
         std::unique_ptr<MFXVideoMultiVPP> m_pmfxVPP; // either VPP or VPPPlugin which wraps [VPP]-Plugin-[VPP] pipeline

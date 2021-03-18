@@ -28,6 +28,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "transcode_utils.h"
 #include "pipeline_transcode.h"
 #include "sample_utils.h"
+#include "vpl_implementation_loader.h"
 
 #include "d3d_allocator.h"
 #include "d3d11_allocator.h"
@@ -89,6 +90,7 @@ namespace TranscodingSample
         msdk_tick                            m_StartTime;
         // need to work with HW pipeline
         mfxHandleType                        m_eDevType;
+        mfxAccelerationMode                  m_accelerationMode;
 
         std::vector<sVppCompDstRect>         m_VppDstRects;
 

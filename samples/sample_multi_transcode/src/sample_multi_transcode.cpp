@@ -90,7 +90,8 @@ mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputPara
 
 Launcher::Launcher():
     m_StartTime(0),
-    m_eDevType(static_cast<mfxHandleType>(0))
+    m_eDevType(static_cast<mfxHandleType>(0)),
+    m_accelerationMode(MFX_ACCEL_MODE_NA)
 {
 } // Launcher::Launcher()
 
@@ -114,6 +115,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     mfxU32 BufCounter = 0;
     mfxHDL hdl = NULL;
     std::vector<mfxHDL> hdls;
+    std::unique_ptr<VPLImplementationLoader> pLoader;
     sInputParams    InputParams;
     bool bNeedToCreateDevice = true;
 
@@ -140,6 +142,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     // check correctness of input parameters
     sts = VerifyCrossSessionsOptions();
     MSDK_CHECK_STATUS(sts, "VerifyCrossSessionsOptions failed");
+
+    mfxVersion ver = { {2, 2 }};
+
+    pLoader.reset(new VPLImplementationLoader);
+    sts = pLoader->ConfigureAndInitImplementation(MFX_IMPL_BASETYPE(m_InputParamsArray[0].libType), m_accelerationMode, ver);
+    MSDK_CHECK_STATUS(sts, "pLoader->ConfigureAndInit failed");
 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
     // check available adapters
@@ -175,14 +183,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 if (m_InputParamsArray[m_InputParamsArray.size() - 1].eModeExt == VppCompOnly)
                 {
                     /* Rendering case */
-                    sts = hwdev->Init(NULL, 1,
-                        MSDKAdapter::GetNumber(0, MFX_IMPL_VIA_D3D9 | MFX_IMPL_BASETYPE(m_InputParamsArray[i].libType)));
+                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
                     m_InputParamsArray[m_InputParamsArray.size() - 1].m_hwdev = hwdev.get();
                 }
                 else /* NO RENDERING */
                 {
-                    sts = hwdev->Init(NULL, 0,
-                        MSDKAdapter::GetNumber(0, MFX_IMPL_VIA_D3D9 | MFX_IMPL_BASETYPE(m_InputParamsArray[i].libType)));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
                 }
                 MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
                 sts = hwdev->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&hdl);
@@ -222,14 +228,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 if (m_InputParamsArray[m_InputParamsArray.size() - 1].eModeExt == VppCompOnly)
                 {
                     /* Rendering case */
-                    sts = hwdev->Init(NULL, 1,
-                        MSDKAdapter::GetNumber(0, MFX_IMPL_VIA_D3D11 | MFX_IMPL_BASETYPE(m_InputParamsArray[i].libType)));
+                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
                     m_InputParamsArray[m_InputParamsArray.size() - 1].m_hwdev = hwdev.get();
                 }
                 else /* NO RENDERING */
                 {
-                    sts = hwdev->Init(NULL, 0,
-                        MSDKAdapter::GetNumber(0, MFX_IMPL_VIA_D3D11 | MFX_IMPL_BASETYPE(m_InputParamsArray[i].libType)));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
                 }
                 MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
                 sts = hwdev->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
@@ -281,7 +285,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                         msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
                         return MFX_ERR_DEVICE_FAILED;
                     }
-                    sts = hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber(0));
+                    sts = hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
 #if defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
                     if (params.libvaBackend == MFX_LIBVA_DRM_MODESET) {
                         CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(hwdev.get());
@@ -327,7 +331,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                         msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
                         return MFX_ERR_DEVICE_FAILED;
                     }
-                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
                 }
                 if (libvaBackend != MFX_LIBVA_WAYLAND) {
                     MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
@@ -512,7 +516,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                    hdls[i],
                                                    pSinkPipeline,
                                                    pBuffer,
-                                                   m_pExtBSProcArray.back().get());
+                                                   m_pExtBSProcArray.back().get(),
+                                                   pLoader->GetLoader());
         }
         else
         {
@@ -528,7 +533,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                     hdls[i],
                                                     pParentPipeline,
                                                     pBuffer,
-                                                    m_pExtBSProcArray.back().get());
+                                                    m_pExtBSProcArray.back().get(),
+                                                    pLoader->GetLoader());
         }
 
         MSDK_CHECK_STATUS(sts, "pThreadPipeline->pPipeline->Init failed");
@@ -1116,11 +1122,19 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         {
             // TODO: can we avoid ifdef and use MFX_IMPL_VIA_VAAPI?
 #if defined(_WIN32) || defined(_WIN64)
-            m_eDevType = (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(m_InputParamsArray[i].libType))?
-                MFX_HANDLE_D3D11_DEVICE :
-                MFX_HANDLE_D3D9_DEVICE_MANAGER;
+            if(MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(m_InputParamsArray[i].libType))
+            {
+                m_eDevType = MFX_HANDLE_D3D11_DEVICE;
+                m_accelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
+            }
+            else
+            {
+                m_eDevType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
+                m_accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
+            }
 #elif defined(LIBVA_SUPPORT)
             m_eDevType = MFX_HANDLE_VA_DISPLAY;
+            m_accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
 #endif
         }
     }

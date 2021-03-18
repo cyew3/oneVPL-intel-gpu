@@ -55,6 +55,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "sample_types.h"
 
+#include "vpl_implementation_loader.h"
 #include "abstract_splitter.h"
 #include "avc_bitstream.h"
 #include "avc_spl.h"
@@ -1267,7 +1268,7 @@ bool skip(const Buf_t *&buf, Length_t &length, Length_t step)
 //do not link MediaSDK dispatched if class not used
 struct MSDKAdapter {
     // returns the number of adapter associated with MSDK session, 0 for SW session
-    static mfxU32 GetNumber(mfxSession session, mfxIMPL implVia = 0) {
+    static mfxU32 GetNumber(mfxSession session, mfxLoader loader) {
         mfxU32 adapterNum = 0; // default
         mfxIMPL impl = MFX_IMPL_SOFTWARE; // default in case no HW IMPL is found
 
@@ -1281,9 +1282,7 @@ struct MSDKAdapter {
             // an auxiliary session, internal for this function
             mfxSession auxSession;
             memset(&auxSession, 0, sizeof(auxSession));
-
-            mfxVersion ver = { {1, 1 }}; // minimum API version which supports multiple devices
-            MFXInit(MFX_IMPL_HARDWARE_ANY | implVia, &ver, &auxSession);
+            MFXCreateSession(loader, 0, &auxSession);
             MFXQueryIMPL(auxSession, &impl);
             MFXClose(auxSession);
         }
