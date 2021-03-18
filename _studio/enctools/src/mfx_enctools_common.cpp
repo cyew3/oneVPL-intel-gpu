@@ -157,7 +157,9 @@ inline void CopyPreEncLATools(mfxExtEncToolsConfig const & confIn, mfxExtEncTool
     confOut->AdaptiveQuantMatrices = confIn.AdaptiveQuantMatrices;
     confOut->BRCBufferHints = confIn.BRCBufferHints;
     confOut->AdaptivePyramidQuantP = confIn.AdaptivePyramidQuantP;
+	confOut->AdaptivePyramidQuantB = confIn.AdaptivePyramidQuantB;
     confOut->AdaptiveI = confIn.AdaptiveI;
+	confOut->AdaptiveB = confIn.AdaptiveB;
 }
 
 inline void OffPreEncLATools(mfxExtEncToolsConfig* conf)
@@ -182,18 +184,17 @@ inline bool isPreEncLA(mfxExtEncToolsConfig const & conf, mfxEncToolsCtrl const 
     return (
         (ctrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING || ctrl.MaxDelayInFrames) &&
         (IsOn(conf.AdaptiveI) ||
+         IsOn(conf.AdaptiveB) ||
          IsOn(conf.AdaptiveQuantMatrices) ||
          IsOn(conf.BRCBufferHints) ||
-         IsOn(conf.AdaptivePyramidQuantP)));
+         IsOn(conf.AdaptivePyramidQuantP) ||
+         IsOn(conf.AdaptivePyramidQuantB)));
 }
 
 mfxStatus EncTools::GetSupportedConfig(mfxExtEncToolsConfig* config, mfxEncToolsCtrl const * ctrl)
 {
     MFX_CHECK_NULL_PTR2(config, ctrl);
     SetToolsStatus(config, false);
-    config->BRC = (mfxU16)((ctrl->RateControlMethod == MFX_RATECONTROL_CBR ||
-                   ctrl->RateControlMethod == MFX_RATECONTROL_VBR)?
-        MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
 
     if (ctrl->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING)
     {
@@ -212,6 +213,10 @@ mfxStatus EncTools::GetSupportedConfig(mfxExtEncToolsConfig* config, mfxEncTools
             config->AdaptivePyramidQuantB = MFX_CODINGOPTION_ON;
             if(ctrl->MaxDelayInFrames)
                 config->BRCBufferHints = MFX_CODINGOPTION_ON;
+            config->BRC = (mfxU16)((ctrl->RateControlMethod == MFX_RATECONTROL_CBR ||
+                ctrl->RateControlMethod == MFX_RATECONTROL_VBR) ?
+                MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+
         }
     }
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
@@ -651,7 +656,7 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
     }
 
     mfxEncToolsBRCEncodeResult  *pEncRes = (mfxEncToolsBRCEncodeResult *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_BRC_ENCODE_RESULT);
-    if (pEncRes) {
+    if (pEncRes && isPreEncSCD(m_config, m_ctrl)) {
         m_scd.ReportEncResult(par->DisplayOrder, *pEncRes);
     }
     if (pEncRes && IsOn(m_config.BRC))
@@ -689,7 +694,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
 
     mfxEncToolsHintPreEncodeSceneChange *pPreEncSC = (mfxEncToolsHintPreEncodeSceneChange *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_HINT_SCENE_CHANGE);
-    if (pPreEncSC)
+    if (pPreEncSC && isPreEncSCD(m_config, m_ctrl))
     {
         sts = m_scd.GetSCDecision(par->DisplayOrder, pPreEncSC);
         MFX_CHECK_STS(sts);
@@ -700,7 +705,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
         if (isPreEncSCD(m_config, m_ctrl))
             sts = m_scd.GetGOPDecision(par->DisplayOrder, pPreEncGOP);
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
-        else
+        else if (isPreEncLA(m_config, m_ctrl))
         {
             sts = m_lpLookAhead.Query(par->DisplayOrder, pPreEncGOP);
             if (sts == MFX_ERR_NOT_FOUND)
@@ -710,7 +715,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
         MFX_CHECK_STS(sts);
     }
     mfxEncToolsHintPreEncodeARefFrames *pPreEncARef = (mfxEncToolsHintPreEncodeARefFrames *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_HINT_AREF);
-    if (pPreEncARef)
+    if (pPreEncARef && isPreEncSCD(m_config, m_ctrl))
     {
         sts = m_scd.GetARefDecision(par->DisplayOrder, pPreEncARef);
         MFX_CHECK_STS(sts);
@@ -718,7 +723,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
 
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     mfxEncToolsHintQuantMatrix *pCqmHint = (mfxEncToolsHintQuantMatrix  *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX);
-    if (pCqmHint)
+    if (pCqmHint && isPreEncLA(m_config, m_ctrl) )
     {
         sts = m_lpLookAhead.Query(par->DisplayOrder, pCqmHint);
         if (sts == MFX_ERR_NOT_FOUND)
@@ -727,7 +732,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
     }
 
     mfxEncToolsBRCBufferHint *bufferHint = (mfxEncToolsBRCBufferHint  *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT);
-    if (bufferHint)
+    if (bufferHint  && isPreEncLA(m_config, m_ctrl))
     {
         sts = m_lpLookAhead.Query(par->DisplayOrder, bufferHint);
         if (sts == MFX_ERR_NOT_FOUND)
@@ -763,8 +768,8 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
 mfxStatus EncTools::Discard(mfxU32 displayOrder)
 {
     mfxStatus sts = MFX_ERR_NONE;
-
-    sts = m_scd.CompleteFrame(displayOrder);
+    if (isPreEncSCD(m_config, m_ctrl))
+        sts = m_scd.CompleteFrame(displayOrder);
     return sts;
 }
 

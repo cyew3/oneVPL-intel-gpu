@@ -83,6 +83,7 @@ public:
         m_encParams  = {};
         m_curEncodeHints = {};
         m_frameSizes = {};
+        m_config = {};
     }
 
     virtual ~LPLA_EncTool () { Close(); }

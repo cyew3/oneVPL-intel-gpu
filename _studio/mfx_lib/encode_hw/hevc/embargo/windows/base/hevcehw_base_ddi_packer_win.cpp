@@ -24,6 +24,7 @@
 #include <numeric>
 
 #include <libmfx_core_d3d9on11.h>
+#include "hevcehw_base_legacy.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
@@ -416,10 +417,7 @@ void DDIPacker::FillSpsBuffer(
     auto& CO3        = (const mfxExtCodingOption3&)ExtBuffer::Get(par);
     auto& extVsi     = (const mfxExtVideoSignalInfo&)ExtBuffer::Get(par);
     auto& fi         = par.mfx.FrameInfo;
-    bool  isSWBRC    = IsOn(CO2.ExtBRC)
-#if !defined(MFX_ONEVPL)
-        || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
-#endif
+    bool  isSWBRC =    Legacy::IsSWBRC(par);
         ;
     bool  isBPyramid = (CO2.BRefType == MFX_B_REF_PYRAMID);
 

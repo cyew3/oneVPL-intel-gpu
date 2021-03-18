@@ -73,6 +73,7 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
     MFX_CHECK_STS(sts);
 
     m_curDispOrder = -1;
+    m_config = config;
     m_bInit = true;
     return sts;
 }
