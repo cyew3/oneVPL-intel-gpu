@@ -85,7 +85,7 @@ mfxStatus tsSession::ConfigureApiVersion(mfxVersion *ver)
     variant.Type = MFX_VARIANT_TYPE_U32;
     variant.Data.U32 = ver->Version;
     g_tsStatus.expect(MFX_ERR_NONE);
-    g_tsStatus.check(MFXSetConfigFilterProperty(cfg, (mfxU8*)"mfxImplDescription.ApiVersion", variant));
+    g_tsStatus.check(MFXSetConfigFilterProperty(cfg, (mfxU8*)"mfxImplDescription.ApiVersion.Version", variant));
     m_Configs.push_back(cfg);
 
     return g_tsStatus.get();

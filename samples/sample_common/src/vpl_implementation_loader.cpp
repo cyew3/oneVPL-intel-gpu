@@ -96,7 +96,7 @@ mfxStatus VPLImplementationLoader::ConfigureVersion(mfxVersion const& version)
     mfxVariant ApiVersionVariant;
     ApiVersionVariant.Type = MFX_VARIANT_TYPE_U32;
     ApiVersionVariant.Data.U32 = version.Version;
-    mfxStatus sts = MFXSetConfigFilterProperty(cfgApiVersion, (mfxU8*)"mfxImplDescription.ApiVersion", ApiVersionVariant);
+    mfxStatus sts = MFXSetConfigFilterProperty(cfgApiVersion, (mfxU8*)"mfxImplDescription.ApiVersion.Version", ApiVersionVariant);
     MSDK_CHECK_STATUS(sts, "MFXSetConfigFilterProperty failed");
     m_Configs.push_back(cfgApiVersion);
 

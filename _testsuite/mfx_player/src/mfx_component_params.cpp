@@ -553,7 +553,7 @@ mfxStatus ComponentParams::ConfigureLoader()
         mfxVariant ApiVersionVariant;
         ApiVersionVariant.Type = MFX_VARIANT_TYPE_U32;
         ApiVersionVariant.Data.U32 = m_pLibVersion->Version;
-        MFX_CHECK_STS(MFXSetConfigFilterProperty(cfgApiVersion, (mfxU8*)"mfxImplDescription.ApiVersion", ApiVersionVariant));
+        MFX_CHECK_STS(MFXSetConfigFilterProperty(cfgApiVersion, (mfxU8*)"mfxImplDescription.ApiVersion.Version", ApiVersionVariant));
         m_Configs.push_back(cfgApiVersion);
     }
 
