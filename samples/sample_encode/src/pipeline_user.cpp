@@ -150,9 +150,7 @@ CUserPipeline::CUserPipeline() : CEncodingPipeline()
 {
     m_pPluginSurfaces = NULL;
     m_PluginModule = NULL;
-#if !defined(MFX_ONEVPL)
     m_pusrPlugin = NULL;
-#endif
     MSDK_ZERO_MEMORY(m_PluginResponse);
     MSDK_ZERO_MEMORY(m_pluginVideoParams);
     MSDK_ZERO_MEMORY(m_RotateParams);
@@ -173,7 +171,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-#if !defined(MFX_ONEVPL)
     m_PluginModule = msdk_so_load(pParams->strPluginDLLPath);
     MSDK_CHECK_POINTER(m_PluginModule, MFX_ERR_NOT_FOUND);
 
@@ -183,7 +180,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     m_pusrPlugin = (*pCreateFunc)();
     MSDK_CHECK_POINTER(m_pusrPlugin, MFX_ERR_NOT_FOUND);
-#endif
 
     // prepare input file reader
     sts = m_FileReader.Init(pParams->InputFiles,
@@ -226,8 +222,7 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
-#if !defined(MFX_ONEVPL)
-        // we check if codec is distributed as a mediasdk plugin and load it if yes
+       // we check if codec is distributed as a mediasdk plugin and load it if yes
         // else if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
 
         // in case of HW library (-hw key) we will firstly try to load HW plugin
@@ -245,7 +240,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
             m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
-#endif
     }
 
     // create encoder
@@ -264,8 +258,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     sts = ResetMFXComponents(pParams);
     MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
-
-#if !defined(MFX_ONEVPL)
     // register plugin callbacks in Media SDK
     mfxPlugin plg = make_mfx_plugin_adapter(m_pusrPlugin);
     sts = MFXVideoUSER_Register(m_mfxSession, 0, &plg);
@@ -277,20 +269,17 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     sts = m_pusrPlugin->SetAuxParams(&m_RotateParams, sizeof(m_RotateParams));
     MSDK_CHECK_STATUS(sts, "m_pusrPlugin->SetAuxParams failed");
-#endif
 
     return MFX_ERR_NONE;
 }
 
 void CUserPipeline::Close()
 {
-#if !defined(MFX_ONEVPL)
     MFXVideoUSER_Unregister(m_mfxSession, 0);
-#endif
+
     CEncodingPipeline::Close();
-#if !defined(MFX_ONEVPL)
+
     MSDK_SAFE_DELETE(m_pusrPlugin);
-#endif
     if (m_PluginModule)
     {
         msdk_so_free(m_PluginModule);
@@ -373,7 +362,6 @@ mfxStatus CUserPipeline::Run()
         nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
-#if !defined(MFX_ONEVPL)
         // rotation
         for(;;)
         {
@@ -392,7 +380,6 @@ mfxStatus CUserPipeline::Run()
             }
         }
         MSDK_BREAK_ON_ERROR(sts);
-#endif
 
         // save the id of preceding rotate task which will produce input data for the encode task
         if (RotateSyncPoint)

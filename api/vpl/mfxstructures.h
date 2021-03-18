@@ -2086,12 +2086,8 @@ enum {
     /*!
        See the mfxExtAV1FilmGrainParam structure for more details.
     */
-    MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM = MFX_MAKEFOURCC('A','1','F','G'),
+    MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM = MFX_MAKEFOURCC('A','1','F','G')
 
-    /*!
-       See the mfxExtHyperModeParam structure for more details.
-    */
-    MFX_EXTBUFF_HYPER_MODE_PARAM = MFX_MAKEFOURCC('H', 'Y', 'P', 'M')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -4704,22 +4700,6 @@ typedef struct {
     mfxRect          Crops;  /*!< Crops parameters for letterboxing operations. */
     mfxU32           reserved[4];
 }mfxExtInCrops;
-MFX_PACK_END()
-
-/*! The mfxHyperMode enumerator describes HyperMode implementation behavior. */
-typedef enum {
-    MFX_HYPERMODE_OFF = 0x0,        /*!< Don't use HyperMode implementation. */
-    MFX_HYPERMODE_ON = 0x1,         /*!< Enable HyperMode implementation and return error if some issue on initialization. */
-    MFX_HYPERMODE_ADAPTIVE = 0x2,   /*!< Enable HyperMode implementation and switch to single fallback if some issue on initialization. */
-} mfxHyperMode;
-
-MFX_PACK_BEGIN_USUAL_STRUCT()
-/*! The structure is used for HyperMode initialization. */
-typedef struct {
-    mfxExtBuffer    Header; /*!< Extension buffer header. BufferId must be equal to MFX_EXTBUFF_HYPER_MODE_PARAM. */
-    mfxHyperMode    Mode;   /*!< HyperMode implementation behavior. */
-    mfxU16          reserved[19];
-} mfxExtHyperModeParam;
 MFX_PACK_END()
 
 #ifdef __cplusplus

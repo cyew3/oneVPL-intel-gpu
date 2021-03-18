@@ -303,17 +303,6 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(NumQPAlloc);
         MFX_COPY_FIELD(QP);
     });
-#if defined(MFX_ONEVPL)
-    // MFX_EXTBUFF_MULTI_GPU_PARAM pass through from MultiGpuEncoder (or directly) with MFX_CODINGOPTION_OFF
-    // so, no additional logic needed in HEVC encoder, just have mfxExtMultiGpuParam support
-    blocks.m_ebCopySupported[MFX_EXTBUFF_HYPER_MODE_PARAM].emplace_back(
-        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
-    {
-        const auto& buf_src = *(const mfxExtHyperModeParam*)pSrc;
-        auto& buf_dst = *(mfxExtHyperModeParam*)pDst;
-        MFX_COPY_FIELD(Mode);
-    });
-#endif
 }
 
 bool Legacy::IsTCBRC(const mfxVideoParam& par, mfxU16 tcbrcSupport)

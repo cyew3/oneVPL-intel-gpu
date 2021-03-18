@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_encode", "sample_enc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\sample_common\sample_common.vcxproj", "{5FADB243-53C3-4776-A20F-8BD65C10CF41}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "multi_gpu_encoding", "..\multi_gpu_encoding\multi_gpu_encoding.vcxproj", "{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +33,14 @@ Global
 		{5FADB243-53C3-4776-A20F-8BD65C10CF41}.Release|Win32.Build.0 = Release|Win32
 		{5FADB243-53C3-4776-A20F-8BD65C10CF41}.Release|x64.ActiveCfg = Release|x64
 		{5FADB243-53C3-4776-A20F-8BD65C10CF41}.Release|x64.Build.0 = Release|x64
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Debug|Win32.ActiveCfg = Debug|Win32
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Debug|Win32.Build.0 = Debug|Win32
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Debug|x64.ActiveCfg = Debug|x64
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Debug|x64.Build.0 = Debug|x64
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Release|Win32.ActiveCfg = Release|Win32
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Release|Win32.Build.0 = Release|Win32
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Release|x64.ActiveCfg = Release|x64
+		{34E66F91-0AC9-4C48-BBE3-A0D949DA3F34}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

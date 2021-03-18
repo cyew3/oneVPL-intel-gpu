@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2021 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,6 @@
 #include <mfx_utils.h>
 #include "libmfx_core_interface.h"
 
-#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
-#include "mfx_hyper_encode_hw.h"
-#endif
-
 mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
@@ -40,17 +36,8 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, wait);
 
     try {
-#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
-        auto extVideoENCODE = dynamic_cast<ExtVideoENCODE*>(session->m_pENCODE.get());
-        if (extVideoENCODE)
-        {
-            mfxRes = extVideoENCODE->Synchronize(session, syncp, wait);
-        } else
-#endif
-        {
-            // call the function
-            mfxRes = session->m_pScheduler->Synchronize(syncp, wait);
-        }
+        // call the function
+        mfxRes = session->m_pScheduler->Synchronize(syncp, wait);
     } catch(...) {
         // set the default error value
         mfxRes = MFX_ERR_ABORTED;

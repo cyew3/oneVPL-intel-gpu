@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2021 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -311,12 +311,6 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsHintPreEncodeARefFrames, MFX_EXTBUFF_ENCTOOLS_HINT_AREF);
     BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsBRCBufferHint, MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT);
 
-#endif
-
-#if defined(MFX_ONEVPL)
-    // MFX_EXTBUFF_MULTI_GPU_PARAM pass through from MultiGpuEncoder (or directly) with MFX_CODINGOPTION_OFF
-    // so, no additional logic needed in H264 encoder, just have mfxExtMultiGpuParam support
-    BIND_EXTBUF_TYPE_TO_ID(mfxExtHyperModeParam, MFX_EXTBUFF_HYPER_MODE_PARAM);
 #endif
 
 #undef BIND_EXTBUF_TYPE_TO_ID
@@ -764,10 +758,6 @@ namespace MfxHwH264Encode
 
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
         mfxExtPartialBitstreamParam m_po;
-#endif
-
-#if defined(MFX_ONEVPL)
-        mfxExtHyperModeParam m_HyperMode;
 #endif
 
         std::vector<mfxMVCViewDependency> m_storageView;
