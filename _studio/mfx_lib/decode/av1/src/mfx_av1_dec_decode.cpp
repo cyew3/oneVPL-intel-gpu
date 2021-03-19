@@ -740,6 +740,9 @@ mfxStatus VideoDECODEAV1::QueryIOSurf(VideoCORE* core, mfxVideoParam* par, mfxFr
         request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
     }
 
+    sts = UpdateCscOutputFormat(par, request);
+    MFX_CHECK_STS(sts);
+
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;

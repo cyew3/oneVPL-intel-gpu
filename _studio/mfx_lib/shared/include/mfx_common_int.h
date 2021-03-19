@@ -37,6 +37,8 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId = MFX_CODEC_A
 mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
 mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type, bool IsCompatibleForOpaq);
 
+mfxStatus UpdateCscOutputFormat(mfxVideoParam *par, mfxFrameAllocRequest *request);
+
 #if !defined(MFX_ONEVPL)
 mfxStatus CheckAudioParamEncoders(mfxAudioParam *in);
 mfxStatus CheckAudioParamCommon(mfxAudioParam *in);
