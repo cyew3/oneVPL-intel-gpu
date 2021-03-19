@@ -1072,55 +1072,6 @@ mfxStatus MFXDecPipeline::InitBitDepthByFourCC(mfxFrameInfo &info)
     return MFX_ERR_NONE;
 }
 
-/*
-    AdjustShiftByFourCCForVDSFC adjust native Shift supported by HW
-
-    info.Shift is:
-    0 if FourCC bit depth is 8 bit
-    1 if FourCC bit depth is 10 or 12 bit.
-*/
-mfxStatus MFXDecPipeline::AdjustShiftByFourCCForVDSFC(mfxFrameInfo &info)
-{
-    if (m_components[eDEC].m_libType == MFX_IMPL_SOFTWARE || m_components[eDEC].m_libType == MFX_IMPL_UNSUPPORTED)
-        return MFX_ERR_UNSUPPORTED;
-
-    switch (info.FourCC)
-    {
-        // 8 bit
-    case MFX_FOURCC_NV12:
-    case MFX_FOURCC_NV16:
-    case MFX_FOURCC_YUY2:
-    case MFX_FOURCC_AYUV:
-    case MFX_FOURCC_YV12:
-    case MFX_FOURCC_UYVY:
-        // 10 bit
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y410:
-#endif
-        info.Shift = 0;
-        break;
-        // 10 bit
-    case MFX_FOURCC_P010:
-    case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y210:
-#endif
-        // 12 bit
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_P016:
-    case MFX_FOURCC_Y216:
-    case MFX_FOURCC_Y416:
-#endif
-        info.Shift = 1;
-        break;
-
-    default:
-        return MFX_ERR_UNSUPPORTED; // VDSFC unsupported
-    }
-
-    return MFX_ERR_NONE;
-}
-
 mfxStatus MFXDecPipeline::LightReset()
 {
     //double reset will goes to long almost infinite run
@@ -3154,13 +3105,11 @@ mfxStatus MFXDecPipeline::CreateAllocator()
 
         if (m_inParams.bVDSFCFormatSetting)
         {
-            request->Info.ChromaFormat = m_extDecVideoProcessing->Out.ChromaFormat;
-            request->Info.FourCC = m_extDecVideoProcessing->Out.FourCC;
-
-            request->Info.BitDepthLuma = 0;
-            request->Info.BitDepthChroma = 0;
-            MFX_CHECK_STS(InitBitDepthByFourCC(request->Info));
-            MFX_CHECK_STS(AdjustShiftByFourCCForVDSFC(request->Info));
+            request->Info.ChromaFormat   = _request[eDEC]->Info.ChromaFormat;
+            request->Info.FourCC         = _request[eDEC]->Info.FourCC;
+            request->Info.BitDepthLuma   = _request[eDEC]->Info.BitDepthLuma;
+            request->Info.BitDepthChroma = _request[eDEC]->Info.BitDepthChroma;
+            request->Info.Shift          = _request[eDEC]->Info.Shift;
         }
 
         if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)
@@ -3215,13 +3164,11 @@ mfxStatus MFXDecPipeline::CreateAllocator()
 
         if (m_inParams.bVDSFCFormatSetting)
         {
-            request->Info.ChromaFormat = m_extDecVideoProcessing->Out.ChromaFormat;
-            request->Info.FourCC = m_extDecVideoProcessing->Out.FourCC;
-
-            request->Info.BitDepthLuma = 0;
-            request->Info.BitDepthChroma = 0;
-            MFX_CHECK_STS(InitBitDepthByFourCC(request->Info));
-            MFX_CHECK_STS(AdjustShiftByFourCCForVDSFC(request->Info));
+            request->Info.ChromaFormat = _request[eDEC]->Info.ChromaFormat;
+            request->Info.FourCC = _request[eDEC]->Info.FourCC;
+            request->Info.BitDepthLuma = _request[eDEC]->Info.BitDepthLuma;
+            request->Info.BitDepthChroma = _request[eDEC]->Info.BitDepthChroma;
+            request->Info.Shift = _request[eDEC]->Info.Shift;
         }
 
         if (m_components[eDEC].m_params.mfx.CodecId != MFX_CODEC_JPEG)

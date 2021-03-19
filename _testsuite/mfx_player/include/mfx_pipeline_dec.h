@@ -648,7 +648,6 @@ protected:
                                       , IncompatComponent ID
                                       , bool isNull);
     mfxStatus InitBitDepthByFourCC(mfxFrameInfo &info);
-    mfxStatus AdjustShiftByFourCCForVDSFC(mfxFrameInfo &info);
     //multivieencoding support
     MFXExtBufferVector m_InputExtBuffers;
     MFXExtBufferPtr<mfxExtDecVideoProcessing>  m_extDecVideoProcessing;
