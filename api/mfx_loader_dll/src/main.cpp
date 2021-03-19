@@ -229,7 +229,7 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
             }
             else
             {
-                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForMediaSDK\" key failed with status %l, trying VPL\n", n_error));
+                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForMediaSDK\" key failed with status %ld, trying VPL\n", n_error));
             }
 
             path_size = sizeof(intel_dll_path);
@@ -243,7 +243,7 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
             }
             else
             {
-                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForVPL\" key failed with status %l or MSDK already found\n", n_error));
+                DISPATCHER_LOG_WRN(("WARNING: QueryStringValue for \"DriverStorePathForVPL\" key failed with status %ld or MSDK already found\n", n_error));
             }
 
             if (!is_msdk_key && !is_vpl_key)
@@ -255,7 +255,7 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
 
             if (n_error != ERROR_SUCCESS)
             {
-                DISPATCHER_LOG_WRN(("WARNING: RegQueryValueExA for \"MatchingDeviceId\" key failed with status %l\n", n_error));
+                DISPATCHER_LOG_WRN(("WARNING: RegQueryValueExA for \"MatchingDeviceId\" key failed with status %ld\n", n_error));
                 continue;
             }
             curr_descr.adapter_description_string = intel_dll_path;
