@@ -7104,6 +7104,8 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 #ifdef MFX_VA_WIN
     if (MFX_HW_D3D11  == core->GetVAType())
     {
+        if (req.Info.FourCC == MFX_FOURCC_YV12)
+            req.Info.FourCC = MFX_FOURCC_NV12;
         mfxFrameAllocRequest tmp = req;
         tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
 

@@ -170,6 +170,7 @@ protected:
     mfxStatus ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
     // this function should not be virtual
     mfxStatus SetCmCopyStatus(bool enable);
+    mfxStatus ConvertYV12toNV12SW(mfxFrameSurface1* pDst, mfxFrameSurface1* pSrc);
 
     D3D11_VIDEO_DECODER_CONFIG* GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid);
 

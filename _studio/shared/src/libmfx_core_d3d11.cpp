@@ -32,6 +32,7 @@
 #include "libmfx_core_interface.h"
 #include "umc_va_dxva2_protected.h"
 #include "ippi.h"
+#include "ippcc.h"
 
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common_decode_int.h"
@@ -901,6 +902,43 @@ mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU
 }
 
 template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::ConvertYV12toNV12SW(mfxFrameSurface1* pDst, mfxFrameSurface1* pSrc)
+{
+    MFX_CHECK_NULL_PTR2(pDst, pSrc);
+    MFX_CHECK(pSrc->Info.FourCC == MFX_FOURCC_YV12, MFX_ERR_NONE);
+    MFX_CHECK(!(pSrc->Info.Width > pDst->Info.Width ||
+        pSrc->Info.Height > pDst->Info.Height), MFX_ERR_MEMORY_ALLOC);
+
+    mfxU16 inW = pSrc->Info.CropX + pSrc->Info.CropW;
+    mfxU16 inH = pSrc->Info.CropY + pSrc->Info.CropH;
+
+    const Ipp8u *(pSource[3]) = { (Ipp8u*)pSrc->Data.Y,
+                          (Ipp8u*)pSrc->Data.U,
+                          (Ipp8u*)pSrc->Data.V };
+
+    int pSrcStep[3] = { pSrc->Data.Pitch,
+                       pSrc->Data.Pitch / 2,
+                       pSrc->Data.Pitch / 2 };
+
+    Ipp8u *pDstY = (Ipp8u*)pDst->Data.Y;
+    Ipp8u *pDstUV = (Ipp8u*)pDst->Data.UV;
+    Ipp32u pDstYStep = pDst->Data.Pitch;
+    Ipp32u pDstUVStep = pDst->Data.Pitch;
+
+    IppiSize roiSize = { inW, inH };
+
+    IppStatus status;
+    status = ippiYCbCr420_8u_P3P2R(pSource, pSrcStep, pDstY, pDstYStep, pDstUV, pDstUVStep, roiSize);
+    VM_ASSERT(ippStsNoErr == status);
+
+    mfxFrameData tmp = pSrc->Data;
+    pSrc->Data = pDst->Data;
+    pDst->Data = tmp;
+
+    return MFX_ERR_NONE;
+}
+
+template <class Base>
 mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1127,6 +1165,12 @@ mfxStatus D3D11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfx
 
                     if (pDst->Info.FourCC == DXGI_FORMAT_AYUV)
                         pDst->Info.FourCC = MFX_FOURCC_AYUV;
+
+                    if (pSrc->Info.FourCC == MFX_FOURCC_YV12)
+                    {
+                        sts = ConvertYV12toNV12SW(pDst, pSrc);
+                        MFX_CHECK_STS(sts);
+                    }
 
                     sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
                     MFX_CHECK_STS(sts);

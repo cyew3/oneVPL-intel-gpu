@@ -411,7 +411,9 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1* pDst, 
     mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
-    bool canUseCMCopy = m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
+    // FIXME: currently, CM copy doesn`t work here due to  here we work with DX9 surfaces
+    // But originally we created DX11 device
+    bool canUseCMCopy = false; //m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
 
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
@@ -527,6 +529,11 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1* pDst, 
 
             mfxMemId saveMemId = pDst->Data.MemId;
             pDst->Data.MemId = 0;
+            if (pSrc->Info.FourCC == MFX_FOURCC_YV12)
+            {
+                sts = ConvertYV12toNV12SW(pDst, pSrc);
+                MFX_CHECK_STS(sts);
+            }
 
             sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
             MFX_CHECK_STS(sts);

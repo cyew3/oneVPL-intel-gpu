@@ -3257,6 +3257,8 @@ mfxStatus D3D11VideoProcessor::CreateWrapBuffers(const mfxU16& numFrameMinInput,
     if (isNeedInputWrap)
     {
         request.Info = par.vpp.In;
+        if (par.vpp.In.FourCC == MFX_FOURCC_YV12)
+            request.Info.FourCC = MFX_FOURCC_NV12;
         request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SHARED_RESOURCE;
         request.NumFrameMin = request.NumFrameSuggested = numFrameMinInput;
         mfxStatus sts = m_core->AllocFrames(&request, &m_dx9on11InWrap);

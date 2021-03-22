@@ -54,6 +54,7 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
     case MFX_FOURCC_RGBP:
+    case MFX_FOURCC_YV12:
         return DXGI_FORMAT_420_OPAQUE;
 
     case MFX_FOURCC_RGB4:
