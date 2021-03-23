@@ -217,7 +217,7 @@ target_link_libraries(mfx_player
     vm
     vm_plus
     mfx_trace
-    $<$<BOOL:${ITT_FOUND}>:itt>
+    ${ITT_LIBRARIES}
     mfx_shared_lib
     media_buffers
     Threads::Threads
