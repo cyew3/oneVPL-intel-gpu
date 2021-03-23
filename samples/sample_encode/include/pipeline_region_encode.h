@@ -32,12 +32,16 @@ public:
     CMSDKResource()
     {
         pEncoder=NULL;
+#if !defined(MFX_ONEVPL)
         pPlugin=NULL;
+#endif
     }
 
     MFXVideoSession Session;
     MFXVideoENCODE* pEncoder;
+#if !defined(MFX_ONEVPL)
     MFXPlugin* pPlugin;
+#endif
     CEncTaskPool TaskPool;
 };
 

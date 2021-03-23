@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Intel Corporation
+// Copyright (c) 2016-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -578,5 +578,9 @@
 #define CMAPIUPDATE
 
 #define MFX_ENV_CFG_ENABLE
+
+#if defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
+    #define MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
+#endif
 
 #endif // _MFX_CONFIG_H_

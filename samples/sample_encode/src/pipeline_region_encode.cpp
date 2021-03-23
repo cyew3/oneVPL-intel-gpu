@@ -35,8 +35,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vaapi_device.h"
 #endif
 
-#include "plugin_loader.h"
-
 #ifndef MFX_VERSION
 #error MFX_VERSION not defined
 #endif
@@ -106,6 +104,7 @@ mfxStatus CResourcesPool::CreateEncoders()
     return MFX_ERR_NONE;
 }
 
+#if !defined(MFX_ONEVPL)
 mfxStatus CResourcesPool::CreatePlugins(mfxPluginUID pluginGUID, mfxChar* pluginPath)
 {
     for (int i = 0; i < m_size; i++)
@@ -122,6 +121,7 @@ mfxStatus CResourcesPool::CreatePlugins(mfxPluginUID pluginGUID, mfxChar* plugin
     }
     return MFX_ERR_NONE;
 }
+#endif
 
 void CResourcesPool::CloseAndDeleteEverything()
 {
@@ -129,7 +129,9 @@ void CResourcesPool::CloseAndDeleteEverything()
     {
         m_resources[i].TaskPool.Close();
         MSDK_SAFE_DELETE(m_resources[i].pEncoder);
+#if !defined(MFX_ONEVPL)
         MSDK_SAFE_DELETE(m_resources[i].pPlugin);
+#endif
         m_resources[i].Session.Close();
     }
 }
@@ -385,6 +387,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
     }
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
+#if !defined(MFX_ONEVPL)
         /* Here we actually define the following codec initialization scheme:
         *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
         *  2. If plugin path not specified:
@@ -412,6 +415,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
                 MSDK_CHECK_STATUS(sts, "m_resources.CreatePlugins failed");
             }
         }
+#endif
     }
 
     // set memory type
