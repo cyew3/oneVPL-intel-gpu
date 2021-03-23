@@ -9,16 +9,6 @@ set( sources
     h264/src/mfx_h264_encode_hw_utils.cpp
     h264/src/mfx_h264_encode_hw_utils_new.cpp
 
-    h265/include/hevce_ddi_main.h
-    h265/include/mfx_h265_encode_hw_brc.h
-    h265/include/mfx_h265_encode_hw_bs.h
-    h265/include/mfx_h265_encode_hw_set.h
-    h265/include/mfx_h265_encode_hw_utils.h
-
-    h265/src/mfx_h265_encode_hw_brc.cpp
-    h265/src/mfx_h265_encode_hw_bs.cpp
-    h265/src/mfx_h265_encode_hw_utils.cpp
-
     mjpeg/include/mfx_mjpeg_encode_d3d11.h
     mjpeg/include/mfx_mjpeg_encode_d3d9.h
     mjpeg/include/mfx_mjpeg_encode_d3d_common.h
@@ -226,9 +216,7 @@ target_include_directories(encode_hw
     >
 
     ${MSDK_STUDIO_ROOT}/shared/include
-    ${MSDK_STUDIO_ROOT}/hevce_hw/h265/include
 
-    h265/include
     h264/include
     mjpeg/include
     mpeg2/include

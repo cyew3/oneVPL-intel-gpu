@@ -23,89 +23,9 @@
 
 #include "hevcehw_base_ext_brc.h"
 #include "mfx_brc_common.h"
-#include "mfx_h265_encode_hw_brc.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
-
-#if !defined(MFX_ONEVPL)
-namespace VmeBrcWrapper
-{
-    //TODO: re-implement VMEBrc w/ proper interfaces (remove MfxVideoParam/Task dependencies)
-    using TBRC = MfxHwH265Encode::VMEBrc;
-
-    static mfxStatus Init(mfxHDL pthis, mfxVideoParam* par)
-    {
-        MFX_CHECK_NULL_PTR2(pthis, par);
-        MfxHwH265Encode::MfxVideoParam tmpPar(*par, MFX_HW_UNKNOWN);
-        return ((TBRC*)pthis)->Init(tmpPar);
-    }
-    static mfxStatus Close(mfxHDL pthis)
-    {
-        MFX_CHECK_NULL_PTR1(pthis);
-        return ((TBRC*)pthis)->Close();
-    }
-    static mfxStatus Reset(mfxHDL pthis, mfxVideoParam* par)
-    {
-        Close(pthis);
-        return Init(pthis, par);
-    }
-    static mfxStatus GetFrameCtrl(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
-    {
-        MFX_CHECK_NULL_PTR3(pthis, par, ctrl);
-
-        //only EncodedOrder is really used by VMEBrc::GetFrameCtrl
-        MfxHwH265Encode::Task task;
-        task.m_eo = par->EncodedOrder;
-
-        auto sts = ((TBRC*)pthis)->GetFrameCtrl(task);
-
-        ctrl->QpY = task.m_qpY;
-
-        return sts;
-    }
-    static mfxStatus Update(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status)
-    {
-        MFX_CHECK_NULL_PTR3(pthis, par, status);
-        MFX_CHECK_NULL_PTR1(ctrl);
-        ((TBRC*)pthis)->Report(par->FrameType, par->CodedFrameSize, 0, 0, par->EncodedOrder, 0, mfxU32(ctrl->QpY));
-
-        status->BRCStatus = MFX_BRC_OK;
-
-        return MFX_ERR_NONE;
-    }
-    static mfxStatus Create(mfxExtBRC & m_BRC)
-    {
-        MFX_CHECK(!m_BRC.pthis, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        m_BRC.pthis = new TBRC;
-
-        MFX_CHECK(m_BRC.pthis, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        m_BRC.Init          = Init;
-        m_BRC.Reset         = Reset;
-        m_BRC.Close         = Close;
-        m_BRC.GetFrameCtrl  = GetFrameCtrl;
-        m_BRC.Update        = Update;
-
-
-        return MFX_ERR_NONE;
-    }
-    static mfxStatus Destroy(mfxExtBRC & m_BRC)
-    {
-        delete (TBRC*)m_BRC.pthis;
-
-        m_BRC.pthis         = nullptr;
-        m_BRC.Init          = nullptr;
-        m_BRC.Reset         = nullptr;
-        m_BRC.Close         = nullptr;
-        m_BRC.GetFrameCtrl  = nullptr;
-        m_BRC.Update        = nullptr;
-
-        return MFX_ERR_NONE;
-    }
-}
-#endif //MFX_ONEVPL
 
 void ExtBRC::SetSupported(ParamSupport& blocks)
 {
@@ -313,74 +233,6 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         mfxExtBRC&                 brc          = ExtBuffer::Get(par);
         bool                       bInternalBRC = IsOn(CO2.ExtBRC) && !brc.pthis && !m_brc.pthis;
         bool                       bExternalBRC = IsOn(CO2.ExtBRC) && brc.pthis && !m_brc.pthis;
-
-#if !defined(MFX_ONEVPL)
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
-        {
-            auto sts = VmeBrcWrapper::Create(m_brc);
-            MFX_CHECK_STS(sts);
-
-            m_destroy = [this]()
-            {
-                VmeBrcWrapper::Destroy(m_brc);
-            };
-
-            if (par.mfx.EncodedOrder)
-            {
-                auto& cc = Glob::Defaults::Get(strg);
-
-                cc.GetFrameOrder.Push([this](
-                    Defaults::TGetFrameOrder::TExt
-                    , const Defaults::Param& par
-                    , const StorageR& s_task
-                    , mfxU32 /*prevFrameOrder*/)
-                {
-                    auto& ctrl = Task::Common::Get(s_task).ctrl;
-                    mfxExtLAFrameStatistics* pLAStat = ExtBuffer::CastExtractor(ctrl.ExtParam, ctrl.NumExtParam);
-
-                    ThrowIf(!pLAStat, MFX_ERR_NULL_PTR);
-
-                    auto sts = ((VmeBrcWrapper::TBRC*)m_brc.pthis)->SetFrameVMEData(
-                        pLAStat
-                        , par.mvp.mfx.FrameInfo.Width
-                        , par.mvp.mfx.FrameInfo.Height);
-
-                    ThrowIf(!!sts, sts);
-
-                    m_pLAStat = pLAStat;
-
-                    return pLAStat->FrameStat[0].FrameDisplayOrder;
-                });
-
-                cc.GetPreReorderInfo.Push([this](
-                    Defaults::TGetPreReorderInfo::TExt prev
-                    , const Defaults::Param& par
-                    , FrameBaseInfo& fi
-                    , const mfxFrameSurface1* pSurfIn
-                    , const mfxEncodeCtrl*    pCtrl
-                    , mfxLastKeyFrameInfo LastKeyFrameInfo
-                    , mfxU32 frameOrder
-                    , mfxGopHints GopHints)
-                {
-                    if (pCtrl)
-                    {
-                        auto&         stat = m_pLAStat->FrameStat[0];
-                        mfxEncodeCtrl ctrl = *pCtrl;
-
-                        ctrl.FrameType = mfxU16(stat.FrameType);
-
-                        auto sts = prev(par, fi, pSurfIn, &ctrl, LastKeyFrameInfo, frameOrder, GopHints);
-
-                        fi.PyramidLevel = stat.Layer;
-
-                        return sts;
-                    }
-
-                    return prev(par, fi, pSurfIn, pCtrl, LastKeyFrameInfo, frameOrder, GopHints);
-                });
-            }
-        }
-#endif //MFX_ONEVPL
 
         if (bInternalBRC)
         {
