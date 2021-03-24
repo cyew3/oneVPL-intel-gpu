@@ -1575,8 +1575,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         MFX_SAFE_CALL(hwCore_10->GetVAService(&m_vaDisplay));
 
         platform = hwCore_10->GetHWType();
-        if (MFX_HW_APL == platform || MFX_HW_CFL == platform || MFX_HW_XE_HP == platform)
-            m_caps.ddi_caps.FrameSizeToleranceSupport = 1;
     }
     else
     {
@@ -1593,7 +1591,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 #endif
     }
 
-    if (MFX_HW_APL == platform || MFX_HW_CFL == platform)
+    if (MFX_HW_APL == platform || MFX_HW_CFL == platform || MFX_HW_XE_HP == platform)
         m_caps.ddi_caps.FrameSizeToleranceSupport = 1;
 
     m_width  = width;
