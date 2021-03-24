@@ -25,6 +25,7 @@
 
 #ifdef MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
 
+#include "atlbase.h"
 #include "d3d9.h"
 #include "d3d11_4.h"
 #include "dxva2api.h"
@@ -32,11 +33,11 @@
 
 //#define SINGLE_GPU_DEBUG
 
-enum MemType {
+typedef enum {
     SYSTEM_MEMORY = 0x00,
     D3D9_MEMORY = 0x01,
     D3D11_MEMORY = 0x02,
-};
+} mfxMemType;
 
 static D3D_FEATURE_LEVEL FeatureLevels[] = {
         D3D_FEATURE_LEVEL_11_1,
@@ -69,7 +70,7 @@ protected:
     mfxStatus PrepareAdapters();
 
 protected:
-    MemType m_memType;
+    mfxMemType m_memType;
     mfxSession m_appSession;
     mfxAdaptersInfo m_intelAdapters;
     std::vector<mfxAdapterInfo> m_intelAdaptersData;
@@ -85,11 +86,11 @@ public:
     }
     virtual ~DeviceManagerSys() {}
 
-    virtual mfxStatus GetHandle(mfxU16, mfxHDL*, mfxHandleType*)
+    mfxStatus GetHandle(mfxU16, mfxHDL*, mfxHandleType*) override
     {
         return MFX_ERR_NONE;
     }
-    virtual mfxFrameAllocator* GetInternalAllocator()
+    mfxFrameAllocator* GetInternalAllocator() override
     {
         return nullptr;
     }
@@ -115,24 +116,12 @@ public:
     }
     virtual ~DeviceManagerVideo()
     {
-        if (m_pAppD3D9DeviceManager)
-            m_pAppD3D9DeviceManager->Release();
-
-        if (m_pD3D11Ctx)
-            m_pD3D11Ctx->Release();
-
-        if (m_pD3D11Device)
-            m_pD3D11Device->Release();
-
-        if (m_pDxgiAdapter)
-            m_pDxgiAdapter->Release();
-
         m_pFrameAllocator.reset();
     }
 
-    virtual mfxStatus GetHandle(mfxU16 mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType);
+    mfxStatus GetHandle(mfxU16 mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType) override;
 
-    virtual mfxFrameAllocator* GetInternalAllocator()
+    mfxFrameAllocator* GetInternalAllocator() override
     {
         return &m_pFrameAllocator.get()->frameAllocator;
     }
@@ -144,11 +133,11 @@ protected:
     mfxStatus PrepareAppDxDevice();
 
 protected:
-    IDXGIAdapter* m_pDxgiAdapter = nullptr;
-    ID3D11Device* m_pD3D11Device = nullptr;
-    ID3D11Device* m_pAppD3D11Device = nullptr;
-    ID3D11DeviceContext* m_pD3D11Ctx = nullptr;
-    IDirect3DDeviceManager9* m_pAppD3D9DeviceManager = nullptr;
+    CComPtr<IDXGIAdapter> m_pDxgiAdapter;
+    CComPtr<ID3D11Device> m_pD3D11Device;
+    CComPtr<ID3D11Device> m_pAppD3D11Device;
+    CComPtr<ID3D11DeviceContext> m_pD3D11Ctx;
+    CComPtr<IDirect3DDeviceManager9> m_pAppD3D9DeviceManager;
 
     mfxWideBufferAllocator m_bufferAllocator;
     std::unique_ptr<mfxBaseWideFrameAllocator> m_pFrameAllocator;

@@ -620,6 +620,7 @@ std::pair<bool, bool> check_fei(VideoCORE* core)
 #if defined(MFX_ONEVPL)
 bool isHyperEncodeRequired(mfxVideoParam* par)
 {
+    MFX_CHECK(par, false);
     mfxExtHyperModeParam* hyperModeParam =
         (mfxExtHyperModeParam*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HYPER_MODE_PARAM);
     MFX_CHECK(hyperModeParam, false);

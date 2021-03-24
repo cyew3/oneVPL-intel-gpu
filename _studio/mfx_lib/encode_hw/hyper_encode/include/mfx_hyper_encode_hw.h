@@ -27,8 +27,20 @@
 
 #include "mfx_hyper_encode_hw_multi_enc.h"
 
-void SetHyperMode(mfxVideoParam* par, mfxHyperMode mode = MFX_HYPERMODE_OFF);
-void GetHyperMode(mfxVideoParam* par, mfxHyperMode& HyperMode);
+static inline void SetHyperMode(mfxVideoParam* par, mfxHyperMode mode = MFX_HYPERMODE_OFF)
+{
+    mfxExtHyperModeParam* hyperMode = 
+        (mfxExtHyperModeParam*)GetExtendedBufferInternal(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HYPER_MODE_PARAM);
+    hyperMode->Mode = mode;
+}
+
+static inline void GetHyperMode(mfxVideoParam* par, mfxHyperMode& mode)
+{
+    mode = MFX_HYPERMODE_OFF;
+    mfxExtHyperModeParam* hyperMode = 
+        (mfxExtHyperModeParam*)GetExtendedBufferInternal(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HYPER_MODE_PARAM);
+    mode = hyperMode->Mode;
+}
 
 class MFXHWVideoHyperENCODE : public ExtVideoENCODE
 {
@@ -43,32 +55,30 @@ public:
             *sts = MFX_ERR_NONE;
     }
 
-    virtual mfxStatus Init(mfxVideoParam *par);
+    mfxStatus Init(mfxVideoParam *par) override;
 
-    virtual mfxStatus Close()
+    mfxStatus Close() override
     {
-        if (!m_impl.get())
-            return MFX_ERR_NOT_INITIALIZED;
+        MFX_CHECK(m_impl.get(), MFX_ERR_NOT_INITIALIZED);
 
         mfxStatus sts = m_impl->Close();
         MFX_CHECK_STS(sts);
 
         m_impl.reset();
 
-        return MFX_ERR_NONE;
+        return sts;
     }
 
-    virtual mfxTaskThreadingPolicy GetThreadingPolicy()
+    mfxTaskThreadingPolicy GetThreadingPolicy() override
     {
         return m_impl.get()
             ? m_impl->GetThreadingPolicy()
             :  MFX_TASK_THREADING_INTRA;
     }
 
-    virtual mfxStatus Reset(mfxVideoParam *par)
+    mfxStatus Reset(mfxVideoParam *par) override
     {
-        if (!m_impl.get())
-            return MFX_ERR_NOT_INITIALIZED;
+        MFX_CHECK(m_impl.get(), MFX_ERR_NOT_INITIALIZED);
 
         mfxHyperMode realHyperMode;
         GetHyperMode(par, realHyperMode);
@@ -81,10 +91,9 @@ public:
         return sts;
     }
 
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par)
+    mfxStatus GetVideoParam(mfxVideoParam *par) override
     {
-        if (!m_impl.get())
-            return MFX_ERR_NOT_INITIALIZED;
+        MFX_CHECK(m_impl.get(), MFX_ERR_NOT_INITIALIZED);
 
         mfxHyperMode realHyperMode;
         GetHyperMode(par, realHyperMode);
@@ -97,65 +106,62 @@ public:
         return sts;
     }
 
-    virtual mfxStatus GetFrameParam(mfxFrameParam *par)
+    mfxStatus GetFrameParam(mfxFrameParam *par) override
     {
         return m_impl.get()
             ? m_impl->GetFrameParam(par)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat)
+    mfxStatus GetEncodeStat(mfxEncodeStat *stat) override
     {
         return m_impl.get()
             ? m_impl->GetEncodeStat(stat)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus EncodeFrame(
+    mfxStatus EncodeFrame(
         mfxEncodeCtrl *ctrl,
         mfxEncodeInternalParams *internalParams,
         mfxFrameSurface1 *surface,
-        mfxBitstream *bs)
+        mfxBitstream *bs) override
     {
         return m_impl.get()
             ? m_impl->EncodeFrame(ctrl, internalParams, surface, bs)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus CancelFrame(
+    mfxStatus CancelFrame(
         mfxEncodeCtrl* ctrl,
         mfxEncodeInternalParams* internalParams,
         mfxFrameSurface1* surface,
-        mfxBitstream* bs)
+        mfxBitstream* bs) override
     {
         return m_impl.get()
             ? m_impl->CancelFrame(ctrl, internalParams, surface, bs)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus EncodeFrameAsync(
+    mfxStatus EncodeFrameAsync(
         mfxEncodeCtrl* ctrl,
         mfxFrameSurface1* surface,
         mfxBitstream* bs,
-        mfxSyncPoint* syncp)
+        mfxSyncPoint* syncp) override
     {
         return m_impl.get()
             ? m_impl->EncodeFrameAsync(ctrl, surface, bs, syncp)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus Synchronize(
+    mfxStatus Synchronize(
         mfxSession session,
         mfxSyncPoint syncp,
-        mfxU32 wait)
+        mfxU32 wait) override
     {
         return m_impl.get()
             ? m_impl->Synchronize(session, syncp, wait)
             : MFX_ERR_NOT_INITIALIZED;
     }
-
-public:
-    static bool s_isSingleFallback;
 
 protected:
     VideoCORE* m_core;
@@ -185,45 +191,45 @@ public:
         m_HyperEncode.reset();
     }
 
-    virtual mfxStatus Init(mfxVideoParam* par);
+    mfxStatus Init(mfxVideoParam* par) override;
 
-    virtual mfxStatus Close();
+    mfxStatus Close() override;
 
-    virtual mfxStatus Reset(mfxVideoParam* par);
+    mfxStatus Reset(mfxVideoParam* par) override;
 
-    virtual mfxStatus GetVideoParam(mfxVideoParam* par);
+    mfxStatus GetVideoParam(mfxVideoParam* par) override;
 
-    virtual mfxStatus GetFrameParam(mfxFrameParam* par);
+    mfxStatus GetFrameParam(mfxFrameParam* par) override;
 
-    virtual mfxStatus GetEncodeStat(mfxEncodeStat* stat);
+    mfxStatus GetEncodeStat(mfxEncodeStat* stat) override;
 
-    virtual mfxTaskThreadingPolicy GetThreadingPolicy()
+    mfxTaskThreadingPolicy GetThreadingPolicy() override
     {
         return mfxTaskThreadingPolicy(MFX_TASK_THREADING_INTRA);
     }
 
-    virtual mfxStatus EncodeFrame(
+    mfxStatus EncodeFrame(
         mfxEncodeCtrl* ctrl,
         mfxEncodeInternalParams* internalParams,
         mfxFrameSurface1* surface,
-        mfxBitstream* bs);
+        mfxBitstream* bs) override;
 
-    virtual mfxStatus CancelFrame(
+    mfxStatus CancelFrame(
         mfxEncodeCtrl* ctrl,
         mfxEncodeInternalParams* internalParams,
         mfxFrameSurface1* surface,
-        mfxBitstream* bs);
+        mfxBitstream* bs) override;
 
-    virtual mfxStatus EncodeFrameAsync(
+    mfxStatus EncodeFrameAsync(
         mfxEncodeCtrl* ctrl,
         mfxFrameSurface1* surface,
         mfxBitstream* bs,
-        mfxSyncPoint* syncp);
+        mfxSyncPoint* syncp) override;
 
-    virtual mfxStatus Synchronize(
+    mfxStatus Synchronize(
         mfxSession session,
         mfxSyncPoint syncp,
-        mfxU32 wait);
+        mfxU32 wait) override;
 
 protected:
     std::unique_ptr<HyperEncodeBase> m_HyperEncode;

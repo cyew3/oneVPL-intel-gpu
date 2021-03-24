@@ -59,6 +59,11 @@ static mfxStatus InitDummySession(mfxU32 adapter_n, mfxSession &dummy_session)
     return MFXInitEx(initPar, &dummy_session);
 }
 
+static inline mfxStatus CloseDummySession(mfxSession dummy_session)
+{
+    return MFXClose(dummy_session);
+}
+
 static inline bool is_iGPU(const mfxAdapterInfo& adapter_info)
 {
     return adapter_info.Platform.MediaAdapterType == MFX_MEDIA_INTEGRATED;
@@ -147,19 +152,25 @@ mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAda
         mfxU32 version = MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR;
         if (version >= 1019) {
             IVideoCore_API_1_19* pInt = (IVideoCore_API_1_19*)dummy_session->m_pCORE.get()->QueryCoreInterface(MFXICORE_API_1_19_GUID);
-            MFX_CHECK_NULL_PTR1(pInt);
+            if (pInt == nullptr) {
+                CloseDummySession(dummy_session);
+                continue;
+            }
 
             sts = pInt->QueryPlatform(&info.Platform);
-            if (sts != MFX_ERR_NONE)
+            if (sts != MFX_ERR_NONE) {
+                CloseDummySession(dummy_session);
                 continue;
+            }
         } else {
             // for API versions greater than 1.19 Device id is set inside QueryPlatform call
             info.Platform.DeviceId = static_cast<mfxU16>(DeviceID);
         }
 
         info.Number = adapter_n - 1;
-
         obtained_info.push_back(info);
+
+        CloseDummySession(dummy_session);
     }
 
     return PrepareAdaptersInfo(input_info, obtained_info, *adapters);

@@ -26,28 +26,6 @@
 #include "libmfx_core_interface.h" // for MFXIEXTERNALLOC_GUID
 #include "mfx_hyper_encode_hw_adapter.h"
 
-bool MFXHWVideoHyperENCODE::s_isSingleFallback = false;
-
-void SetHyperMode(mfxVideoParam* par, mfxHyperMode mode)
-{
-    for (mfxU16 i = 0; i < par->NumExtParam; i++)
-        if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_HYPER_MODE_PARAM) {
-            ((mfxExtHyperModeParam*)par->ExtParam[i])->Mode = mode;
-            break;
-        }
-}
-
-void GetHyperMode(mfxVideoParam* par, mfxHyperMode& mode)
-{
-    mode = MFX_HYPERMODE_OFF;
-
-    for (mfxU16 i = 0; i < par->NumExtParam; i++)
-        if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_HYPER_MODE_PARAM) {
-            mode = ((mfxExtHyperModeParam*)par->ExtParam[i])->Mode;
-            break;
-        }
-}
-
 mfxStatus MFXHWVideoHyperENCODE::Query(
     VideoCORE *     core,
     mfxVideoParam * in,
@@ -58,23 +36,25 @@ mfxStatus MFXHWVideoHyperENCODE::Query(
     mfxHyperMode realOutHyperMode;
     GetHyperMode(in, realInHyperMode);
     GetHyperMode(out, realOutHyperMode);
-
-    if (!IsHyperModeOn(realInHyperMode) && !IsHyperModeAdapt(realInHyperMode))
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(IsHyperModeOn(realInHyperMode) || IsHyperModeAdapt(realInHyperMode), MFX_ERR_UNSUPPORTED);
 
     SetHyperMode(in);
     SetHyperMode(out);
 
     mfxStatus sts = ImplementationGopBased::Query(core, in, out, state);
 
+    bool s_isSingleFallback = false;
     if (MFX_ERR_NONE > sts)
         if (IsHyperModeOn(realInHyperMode))
             return sts;
         else if (IsHyperModeAdapt(realInHyperMode))
             s_isSingleFallback = true;
 
-    if (s_isSingleFallback)
+    if (s_isSingleFallback) {
         sts = SingleGpuEncode::Query(core, in, out, state);
+        SetHyperMode(in, realInHyperMode);
+        return sts;
+    }
 
     SetHyperMode(in, realInHyperMode);
     SetHyperMode(out, realOutHyperMode);
@@ -89,22 +69,22 @@ mfxStatus MFXHWVideoHyperENCODE::QueryIOSurf(
 {
     mfxHyperMode realHyperMode;
     GetHyperMode(par, realHyperMode);
-
-    if (!IsHyperModeOn(realHyperMode) && !IsHyperModeAdapt(realHyperMode))
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(IsHyperModeOn(realHyperMode) || IsHyperModeAdapt(realHyperMode), MFX_ERR_UNSUPPORTED);
 
     SetHyperMode(par);
 
     mfxStatus sts = ImplementationGopBased::QueryIOSurf(core, par, request);
 
+    bool s_isSingleFallback = false;
     if (MFX_ERR_NONE > sts)
         if (IsHyperModeOn(realHyperMode))
             return sts;
         else if (IsHyperModeAdapt(realHyperMode))
             s_isSingleFallback = true;
 
-    if (s_isSingleFallback)
-        sts = SingleGpuEncode::QueryIOSurf(core, par, request);
+    if (s_isSingleFallback) {
+        return SingleGpuEncode::QueryIOSurf(core, par, request);
+    }
 
     SetHyperMode(par, realHyperMode);
 
@@ -117,53 +97,13 @@ mfxStatus MFXHWVideoHyperENCODE::Init(mfxVideoParam* par)
 
     mfxHyperMode realHyperMode;
     GetHyperMode(par, realHyperMode);
-
-    if (!IsHyperModeOn(realHyperMode) && !IsHyperModeAdapt(realHyperMode))
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(IsHyperModeOn(realHyperMode) || IsHyperModeAdapt(realHyperMode), MFX_ERR_UNSUPPORTED);
 
     SetHyperMode(par);
 
     mfxStatus sts = MFX_ERR_NONE;
-
-    if (s_isSingleFallback) {
-        mfxSession singleEncSesssion;
-        
-        mfxInitParam initPar = {};
-        initPar.Version.Major = 1;
-        initPar.Version.Minor = 0;
-        initPar.Implementation = m_core->GetSession()->m_implInterface;
-
-        sts = MFXInitEx(initPar, &singleEncSesssion);
-        MFX_CHECK_STS(sts);
-
-        if (par->IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY) {
-            mfxHDL hdl = nullptr;
-            std::vector<mfxHandleType> deviceHdlTypes = { MFX_HANDLE_D3D9_DEVICE_MANAGER, MFX_HANDLE_D3D11_DEVICE };
-
-            for (auto& deviceHdlType : deviceHdlTypes) {
-                sts = m_core->GetHandle(deviceHdlType, &hdl);
-                if (sts == MFX_ERR_NONE) {
-                    sts = singleEncSesssion->m_pCORE->SetHandle(deviceHdlType, hdl);
-                    MFX_CHECK_STS(sts);
-                    break;
-                }
-            }
-        }
-
-        if (m_core->IsExternalFrameAllocator()) {
-            sts = singleEncSesssion->m_pCORE->SetFrameAllocator((mfxFrameAllocator*)m_core->QueryCoreInterface(MFXIEXTERNALLOC_GUID));
-            MFX_CHECK_STS(sts);
-        }
-
-        sts = MFXJoinSession(m_core->GetSession(), singleEncSesssion);
-        MFX_CHECK_STS(sts);
-
-        m_impl.reset((ExtVideoENCODE*) new SingleGpuEncode(singleEncSesssion->m_pCORE.get()));
-    }
-    else {
-        m_impl.reset((ExtVideoENCODE*) new ImplementationGopBased(m_core, par, &sts));
-        MFX_CHECK_STS(sts);
-    }
+    m_impl.reset(new ImplementationGopBased(m_core, par, &sts));
+    MFX_CHECK_STS(sts);
 
     sts = m_impl->Init(par);
     MFX_CHECK(sts >= MFX_ERR_NONE && sts != MFX_WRN_PARTIAL_ACCELERATION, sts);
@@ -275,8 +215,7 @@ ImplementationGopBased::ImplementationGopBased(VideoCORE* core, mfxVideoParam* p
 
 mfxStatus ImplementationGopBased::Init(mfxVideoParam* par)
 {
-    if (!m_HyperEncode.get())
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_HyperEncode.get(), MFX_ERR_NOT_INITIALIZED);
 
     // allocate surface pool for 2nd adapter
     mfxStatus sts = m_HyperEncode->AllocateSurfacePool(par);

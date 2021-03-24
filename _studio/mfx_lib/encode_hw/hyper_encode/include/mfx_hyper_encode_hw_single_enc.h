@@ -78,23 +78,20 @@ public:
 
     virtual ~SingleGpuEncode() {}
 
-    virtual mfxStatus Init(mfxVideoParam* par)
+    mfxStatus Init(mfxVideoParam* par) override
     {
         return MFXVideoENCODE_Init(m_session, par);
     }
 
-    virtual mfxStatus Close()
+    mfxStatus Close() override
     {
-        mfxStatus sts = MFXVideoENCODE_Close(m_session);
-        MFX_CHECK_STS(sts);
-
-        return MFXClose(m_session);
+        return MFXVideoENCODE_Close(m_session);
     }
 
-    virtual mfxStatus Reset(mfxVideoParam* par)
+    mfxStatus Reset(mfxVideoParam* par) override
     {
-        if (!m_session->m_pENCODE.get())
-            MFX_ERR_NOT_INITIALIZED;
+        MFX_CHECK(m_session, MFX_ERR_NOT_INITIALIZED);
+        MFX_CHECK(m_session->m_pENCODE.get(), MFX_ERR_NOT_INITIALIZED);
 
         mfxStatus sts = m_session->m_pScheduler->WaitForAllTasksCompletion(m_session->m_pENCODE.get());
         MFX_CHECK_STS(sts);
@@ -102,67 +99,67 @@ public:
         return m_session->m_pENCODE->Reset(par);
     }
 
-    virtual mfxStatus GetVideoParam(mfxVideoParam* par)
+    mfxStatus GetVideoParam(mfxVideoParam* par) override
     {
         return m_session->m_pENCODE.get()
             ? m_session->m_pENCODE->GetVideoParam(par)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus GetFrameParam(mfxFrameParam* par)
+    mfxStatus GetFrameParam(mfxFrameParam* par) override
     {
         return m_session->m_pENCODE.get()
             ? m_session->m_pENCODE->GetFrameParam(par)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus GetEncodeStat(mfxEncodeStat* stat)
+    mfxStatus GetEncodeStat(mfxEncodeStat* stat) override
     {
         return m_session->m_pENCODE.get()
             ? m_session->m_pENCODE->GetEncodeStat(stat)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxTaskThreadingPolicy GetThreadingPolicy()
+    mfxTaskThreadingPolicy GetThreadingPolicy() override
     {
         return mfxTaskThreadingPolicy(MFX_TASK_THREADING_INTRA);
     }
 
-    virtual mfxStatus EncodeFrame(
+    mfxStatus EncodeFrame(
         mfxEncodeCtrl* ctrl,
         mfxEncodeInternalParams* internalParams,
         mfxFrameSurface1* surface,
-        mfxBitstream* bs)
+        mfxBitstream* bs) override
     {
         return m_session->m_pENCODE.get()
             ? m_session->m_pENCODE->EncodeFrame(ctrl, internalParams, surface, bs)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus CancelFrame(
+    mfxStatus CancelFrame(
         mfxEncodeCtrl* ctrl,
         mfxEncodeInternalParams* internalParams,
         mfxFrameSurface1* surface,
-        mfxBitstream* bs)
+        mfxBitstream* bs) override
     {
         return m_session->m_pENCODE.get()
             ? m_session->m_pENCODE->CancelFrame(ctrl, internalParams, surface, bs)
             : MFX_ERR_NOT_INITIALIZED;
     }
 
-    virtual mfxStatus EncodeFrameAsync(
+    mfxStatus EncodeFrameAsync(
         mfxEncodeCtrl* ctrl,
         mfxFrameSurface1* surface,
         mfxBitstream* bs,
-        mfxSyncPoint* syncp)
+        mfxSyncPoint* syncp) override
     {
         return MFXVideoENCODE_EncodeFrameAsync(m_session, ctrl, surface, bs, syncp);
     }
 
-    virtual mfxStatus Synchronize(
+    mfxStatus Synchronize(
         mfxSession session,
         mfxSyncPoint syncp,
-        mfxU32 wait)
+        mfxU32 wait) override
     {
         return session->m_pScheduler->Synchronize(syncp, wait);
     }

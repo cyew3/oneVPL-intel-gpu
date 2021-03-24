@@ -32,67 +32,17 @@
 #include "mfx_hyper_encode_hw_dev_mngr.h"
 #include "mfx_hyper_encode_hw_single_enc.h"
 
-#define SURFACE_IDX_NOT_FOUND 0xFFFFFFFF
-
-class mfxBitstreamWrapperWithLock : public mfxBitstream
-{
-public:
-    mfxBitstreamWrapperWithLock()
-        : mfxBitstream(),
-        Locked(false)
-    {}
-
-    mfxBitstreamWrapperWithLock(mfxU32 n_bytes)
-        : mfxBitstream()
-    {
-        Extend(n_bytes);
-    }
-
-    mfxBitstreamWrapperWithLock(const mfxBitstreamWrapperWithLock& bs_wrapper)
-        : mfxBitstream(bs_wrapper)
-        , m_data(bs_wrapper.m_data)
-        , Locked(false)
-    {
-        Data = m_data.data();
-    }
-
-    mfxBitstreamWrapperWithLock& operator=(mfxBitstreamWrapperWithLock const& bs_wrapper)
-    {
-        mfxBitstreamWrapperWithLock tmp(bs_wrapper);
-
-        *this = std::move(tmp);
-
-        return *this;
-    }
-
-    mfxBitstreamWrapperWithLock(mfxBitstreamWrapperWithLock&& bs_wrapper) = default;
-    mfxBitstreamWrapperWithLock& operator= (mfxBitstreamWrapperWithLock&& bs_wrapper) = default;
-    ~mfxBitstreamWrapperWithLock() = default;
-
-    void Extend(mfxU32 n_bytes)
-    {
-        if (MaxLength >= n_bytes)
-            return;
-
-        m_data.resize(n_bytes);
-
-        Data = m_data.data();
-        MaxLength = n_bytes;
-    }
-
-    bool Locked;
-private:
-    std::vector<mfxU8> m_data;
-};
-
 class HyperEncodeBase
 {
 public:
     HyperEncodeBase(mfxSession session, mfxVideoParam* par, mfxStatus* sts)
         :m_appSession(session)
     {
-        m_gopSize = par->mfx.GopPicSize;
         *sts = MFX_ERR_NONE;
+        m_gopSize = par->mfx.GopPicSize;
+
+        if (!m_gopSize)
+            *sts = MFX_ERR_NOT_INITIALIZED;
     }
     virtual ~HyperEncodeBase()
     {
@@ -104,18 +54,34 @@ public:
     virtual mfxStatus Init(mfxVideoParam* par) = 0;
 
     mfxStatus GetVideoParam(mfxVideoParam* par);
-    mfxStatus GetFrameParam(mfxFrameParam* par);
-    mfxStatus GetEncodeStat(mfxEncodeStat* stat);
+    mfxStatus GetFrameParam(mfxFrameParam* /*par*/)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    mfxStatus GetEncodeStat(mfxEncodeStat* /*stat*/)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     mfxStatus EncodeFrame(
-        mfxEncodeCtrl* ctrl,
-        mfxEncodeInternalParams* internalParams,
-        mfxFrameSurface1* surface,
-        mfxBitstream* bs);
+        mfxEncodeCtrl* /*ctrl*/,
+        mfxEncodeInternalParams* /*internalParams*/,
+        mfxFrameSurface1* /*surface*/,
+        mfxBitstream* /*bs*/)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     mfxStatus CancelFrame(
-        mfxEncodeCtrl* ctrl,
-        mfxEncodeInternalParams* internalParams,
-        mfxFrameSurface1* surface,
-        mfxBitstream* bs);
+        mfxEncodeCtrl* /*ctrl*/,
+        mfxEncodeInternalParams* /*internalParams*/,
+        mfxFrameSurface1* /*surface*/,
+        mfxBitstream* /*bs*/)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     mfxStatus Reset(mfxVideoParam* par);
 
     virtual mfxStatus EncodeFrameAsync(
@@ -137,7 +103,6 @@ protected:
         mfxHandleType type, mfxHDL hdl, mfxIMPL impl, mfxU16 mediaAdapterType);
     
     mfxStatus CreateEncoders();
-    mfxU32 GetFreeSurfaceIndex(mfxFrameSurface1** pSurfacesPool, mfxU32 nPoolSize);
     mfxU16 GetAdapterTypeByFrame(mfxU32 frameNum, mfxU16 gopSize);
 
     virtual mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) = 0;
@@ -171,20 +136,21 @@ public:
     HyperEncodeSys(mfxSession session, mfxVideoParam* par, mfxStatus* sts)
         :HyperEncodeBase(session, par, sts)
     {
-        m_devMngr.reset(new DeviceManagerSys(session, sts));
+        if (*sts == MFX_ERR_NONE)
+            m_devMngr.reset(new DeviceManagerSys(session, sts));
         if (*sts == MFX_ERR_NONE)
             *sts = CreateEncoders();
     }
     virtual ~HyperEncodeSys() {}
 
-    virtual mfxStatus AllocateSurfacePool(mfxVideoParam*)
+    mfxStatus AllocateSurfacePool(mfxVideoParam*) override
     {
         return MFX_ERR_NONE;
     }
-    virtual mfxStatus Init(mfxVideoParam* par);
+    mfxStatus Init(mfxVideoParam* par) override;
 
 protected:
-    virtual mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode);
+    mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) override;
 };
 
 class HyperEncodeVideo : public HyperEncodeBase
@@ -193,7 +159,8 @@ public:
     HyperEncodeVideo(mfxSession session, mfxVideoParam* par, mfxStatus* sts)
         :HyperEncodeBase(session, par, sts)
     {
-        m_devMngr.reset(new DeviceManagerVideo(session, sts));
+        if (*sts == MFX_ERR_NONE)
+            m_devMngr.reset(new DeviceManagerVideo(session, sts));
         if (*sts == MFX_ERR_NONE) {
             m_pFrameAllocator = m_devMngr->GetInternalAllocator();
             *sts = CreateEncoders();
@@ -205,43 +172,36 @@ public:
     }
     virtual ~HyperEncodeVideo()
     {
-        if (m_vppDoNotUse.AlgList)
-            delete[] m_vppDoNotUse.AlgList;
-
         m_vppExtParams.clear();
-
-        for (int i = 0; i < m_numFrameActual; i++)
-            delete m_pMfxSurfaces[i];
-
-        delete m_pMfxSurfaces;
+        m_pMfxSurfaces.clear();
     }
 
-    virtual mfxStatus AllocateSurfacePool(mfxVideoParam* par);
-    virtual mfxStatus Init(mfxVideoParam* par);
+    mfxStatus AllocateSurfacePool(mfxVideoParam* par) override;
+    mfxStatus Init(mfxVideoParam* par) override;
 
-    virtual mfxStatus Close();
+    mfxStatus Close() override;
 
 protected:
     mfxStatus CreateVPP(mfxVideoParam* par);
     mfxStatus InitVPPparams(mfxVideoParam* par);
 
-    virtual mfxStatus InitSession(
+    mfxStatus InitSession(
         mfxSession* appSession, mfxSession* internalSession,
-        mfxHandleType type, mfxHDL hdl, mfxIMPL impl, mfxU16 mediaAdapterType);
+        mfxHandleType type, mfxHDL hdl, mfxIMPL impl, mfxU16 mediaAdapterType) override;
 
-    virtual mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode);
+    mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) override;
 
 protected:
-    //vpp
     mfxSession m_mfxSessionVPP = nullptr;
+    
     mfxVideoParam m_mfxVppParams = {};
-    mfxExtVPPDoNotUse m_vppDoNotUse = {};
     std::vector<mfxExtBuffer*> m_vppExtParams;
-    //allocator
+    std::unique_ptr<mfxU32> m_algList;
+    mfxExtVPPDoNotUse m_vppDoNotUse = {};
+
     mfxFrameAllocator* m_pFrameAllocator = nullptr;
     mfxFrameAllocResponse m_singleEncResponse = {};
-    mfxFrameSurface1** m_pMfxSurfaces = nullptr;
-    mfxU16 m_numFrameActual = 0;
+    std::vector<std::unique_ptr<mfxFrameSurface1>> m_pMfxSurfaces;
 };
 
 #endif // MFX_ENABLE_VIDEO_HYPER_ENCODE_HW

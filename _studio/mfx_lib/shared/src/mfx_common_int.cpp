@@ -1426,3 +1426,46 @@ mfxU16 ChromaFormatFromFourcc(mfxU32 fourcc)
         return 0;
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  mfxBitstreamWrapperWithLock implementation
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+mfxBitstreamWrapperWithLock::mfxBitstreamWrapperWithLock()
+    : mfxBitstream(),
+    Locked(false)
+{}
+
+mfxBitstreamWrapperWithLock::mfxBitstreamWrapperWithLock(mfxU32 n_bytes)
+    : mfxBitstream()
+{
+    Extend(n_bytes);
+}
+
+mfxBitstreamWrapperWithLock::mfxBitstreamWrapperWithLock(const mfxBitstreamWrapperWithLock& bs_wrapper)
+    : mfxBitstream(bs_wrapper)
+    , Locked(false)
+    , m_data(bs_wrapper.m_data)
+{
+    Data = m_data.data();
+}
+
+mfxBitstreamWrapperWithLock& mfxBitstreamWrapperWithLock::operator=(mfxBitstreamWrapperWithLock const& bs_wrapper)
+{
+    mfxBitstreamWrapperWithLock tmp(bs_wrapper);
+
+    *this = std::move(tmp);
+
+    return *this;
+}
+
+void mfxBitstreamWrapperWithLock::Extend(mfxU32 n_bytes)
+{
+    if (MaxLength >= n_bytes)
+        return;
+
+    m_data.resize(n_bytes);
+
+    Data = m_data.data();
+    MaxLength = n_bytes;
+}

@@ -58,38 +58,6 @@ mfxStatus DeviceManagerBase::GetIMPL(mfxU16 mediaAdapterType, mfxIMPL* impl)
         }
     }
 
-#ifdef SINGLE_GPU_DEBUG
-    for (auto idx = m_intelAdapters.Adapters; idx != m_intelAdapters.Adapters + m_intelAdapters.NumActual; ++idx) {
-        if (m_appSessionPlatform.MediaAdapterType == idx->Platform.MediaAdapterType) {
-            switch (idx->Number) {
-            case 0:
-                *impl = MFX_IMPL_HARDWARE;
-                break;
-            case 1:
-                *impl = MFX_IMPL_HARDWARE2;
-                break;
-            case 2:
-                *impl = MFX_IMPL_HARDWARE3;
-                break;
-            case 3:
-                *impl = MFX_IMPL_HARDWARE4;
-                break;
-            default:
-                return MFX_ERR_UNSUPPORTED;
-            }
-
-            if (m_memType == SYSTEM_MEMORY)
-                *impl |= MFX_IMPL_VIA_D3D11;
-            else if (m_appSessionPlatform.MediaAdapterType == m_appSessionPlatform.MediaAdapterType)
-                *impl |= (m_memType == D3D11_MEMORY) ? MFX_IMPL_VIA_D3D11 : MFX_IMPL_VIA_D3D9;
-            else
-                *impl |= MFX_IMPL_VIA_D3D11;
-
-            return MFX_ERR_NONE;
-        }
-    }
-#endif
-
     return MFX_ERR_UNSUPPORTED;
 }
 
@@ -156,7 +124,7 @@ mfxStatus DeviceManagerVideo::PrepareDevices()
 
 mfxStatus DeviceManagerVideo::CreateDxgiAdapter()
 {
-    IDXGIFactory2* pDXGIFactory = nullptr;
+    CComPtr<IDXGIFactory2> pDXGIFactory;
 
     HRESULT hres = CreateDXGIFactory(__uuidof(IDXGIFactory2), (void**)(&pDXGIFactory));
     MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
@@ -178,9 +146,6 @@ mfxStatus DeviceManagerVideo::CreateDxgiAdapter()
     DXGI_ADAPTER_DESC adapterDesc = {};
     hres = m_pDxgiAdapter->GetDesc(&adapterDesc);
     MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
-
-    if (pDXGIFactory)
-        pDXGIFactory->Release();
 
     return MFX_ERR_NONE;
 }
