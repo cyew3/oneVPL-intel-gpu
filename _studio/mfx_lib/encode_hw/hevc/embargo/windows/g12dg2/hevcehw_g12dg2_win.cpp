@@ -67,6 +67,11 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
 
+        Reorder(
+            qnc
+            , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetGUID }
+            , { FEATURE_CAPS, Caps::BLK_SetGUID });
+
         auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
         Reorder(
             qwc

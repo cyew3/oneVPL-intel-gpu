@@ -38,6 +38,7 @@ public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(SetDefaultsCallChain)\
     DECL_BLOCK(SetLowPower)\
+    DECL_BLOCK(SetGUID)\
     DECL_BLOCK(HardcodeCaps)\
     DECL_BLOCK(FixParam)
 #define DECL_FEATURE_NAME "G12DG2_Caps"
