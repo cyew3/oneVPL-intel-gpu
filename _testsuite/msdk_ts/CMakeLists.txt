@@ -485,6 +485,16 @@ if (MFX_ENABLE_VP8_VIDEO_DECODE)
   source_group("vp8" FILES ${VP8_VIDEO_DECODE_SRC})
 endif()
 
+if (MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
+  set(HYPER_ENCODE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/le_avce_pts_dts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/le_avce_query.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/le_hevce_pts_dts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/le_hevce_query.cpp
+  )
+  source_group("hyper_encode" FILES ${HYPER_ENCODE_SRC})
+endif()
+
 target_sources(msdk_gmock
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sample_allocator.cpp
@@ -532,6 +542,7 @@ target_sources(msdk_gmock
     ${CAMERA_SRC}
     ${SCREEN_CAPTURE_SRC}
     ${H264_VIDEO_FEI_ENCODE_SRC}
+    ${HYPER_ENCODE_SRC}
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/encoders_extbrc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/feature_unsupported.cpp

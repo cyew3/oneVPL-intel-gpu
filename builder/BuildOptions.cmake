@@ -170,6 +170,10 @@ cmake_dependent_option(
   MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT "Enable H.264 (AVC) Decode Streamout?" ON
   "NOT ${API_USE_VPL}" OFF)
 
+cmake_dependent_option(
+  MFX_ENABLE_VIDEO_HYPER_ENCODE_HW "Enabled Hyper Encode?" ON
+  "${API_USE_VPL}; ${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF)
+
 cmake_dependent_option( MFX_ENABLE_SPECTRE_MITIGATIONS "Enable Spectre mitigations?" ON
   "${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF )
 
