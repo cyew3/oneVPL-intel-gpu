@@ -37,7 +37,7 @@ public:
 #endif
     }
 
-    MFXVideoSession Session;
+    MainVideoSession Session;
     MFXVideoENCODE* pEncoder;
 #if !defined(MFX_ONEVPL)
     MFXPlugin* pPlugin;
@@ -59,7 +59,7 @@ public:
 
     int GetSize(){return m_size;}
 
-    mfxStatus Init(int size, mfxIMPL impl, mfxVersion *pVer
+    mfxStatus Init(int size, mfxLoader Loader
 #if defined(PRE_SI_GEN)
                    , mfxU32 nSyncOpTimeout
 #endif
@@ -92,7 +92,7 @@ public:
     CRegionEncodingPipeline();
     virtual ~CRegionEncodingPipeline();
 
-    virtual mfxStatus Init(sInputParams *pParams);
+    virtual mfxStatus Init(sInputParams *pParams, mfxLoader Loader);
     virtual mfxStatus Run();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(sInputParams* pParams);

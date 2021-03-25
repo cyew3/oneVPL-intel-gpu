@@ -36,6 +36,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo++.h"
 #include "mfxplugin.h"
 
+#include "mfxdispatcher.h"
 #if !defined(MFX_ONEVPL)
 #include "mfxplugin++.h"
 #include "plugin_loader.h"
@@ -116,6 +117,8 @@ struct sInputParams
 
     msdk_string strQPFilePath;
 
+    mfxAccelerationMode accelerationMode;
+    mfxIMPL libType;
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library
 
@@ -306,6 +309,11 @@ protected:
     virtual mfxU32 GetFreeTaskIndex();
 };
 
+class MainVideoSession : public MFXVideoSession {
+public:
+    mfxStatus CreateSession(mfxLoader Loader);
+};
+
 /* This class implements a pipeline with 2 mfx components: vpp (video preprocessing) and encode */
 class CEncodingPipeline
 {
@@ -313,7 +321,7 @@ public:
     CEncodingPipeline();
     virtual ~CEncodingPipeline();
 
-    virtual mfxStatus Init(sInputParams *pParams);
+    virtual mfxStatus Init(sInputParams *pParams, mfxLoader Loader);
     virtual mfxStatus Run();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(sInputParams* pParams);
@@ -342,7 +350,8 @@ protected:
     CEncTaskPool   m_TaskPool;
     QPFile::Reader m_QPFileReader;
 
-    MFXVideoSession m_mfxSession;
+    mfxLoader m_mfxLoader;
+    MainVideoSession m_mfxSession;
     MFXVideoENCODE* m_pmfxENC;
     MFXVideoVPP* m_pmfxVPP;
 

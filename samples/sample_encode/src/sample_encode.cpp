@@ -18,6 +18,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "mfx_samples_config.h"
+#include "vpl_implementation_loader.h"
 
 #include <memory>
 #include "pipeline_encode.h"
@@ -588,10 +589,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
             pParams->bUseHWLib = false;
+            pParams->libType = MFX_IMPL_SOFTWARE;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
         {
             pParams->bUseHWLib = true;
+            pParams->libType = MFX_IMPL_HARDWARE;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
         {
@@ -818,16 +821,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
         {
             pParams->memType = D3D9_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d11")))
         {
             pParams->memType = D3D11_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
         }
 #endif
 #ifdef LIBVA_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")))
         {
             pParams->memType = D3D9_MEMORY;
+            pParams->m_accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")))
@@ -1816,6 +1822,7 @@ int main(int argc, char *argv[])
 {
     sInputParams Params = {};   // input parameters from command line
     std::unique_ptr<CEncodingPipeline>  pPipeline;
+    std::unique_ptr<VPLImplementationLoader> pLoader;
 
     mfxStatus sts = MFX_ERR_NONE; // return value check
 
@@ -1835,7 +1842,12 @@ int main(int argc, char *argv[])
         pPipeline->SetNumView(Params.numViews);
     }
 
-    sts = pPipeline->Init(&Params);
+    mfxVersion ver = {{2, 2}};
+    pLoader.reset(new VPLImplementationLoader);
+    sts = pLoader->ConfigureAndInitImplementation(Params.libType, Params.accelerationMode, ver);
+    MSDK_CHECK_STATUS(sts, "pPipeline->ConfigureAndInitImplementation failed");
+
+    sts = pPipeline->Init(&Params, pLoader->GetLoader());
     MSDK_CHECK_STATUS(sts, "pPipeline->Init failed");
 
     pPipeline->PrintInfo();

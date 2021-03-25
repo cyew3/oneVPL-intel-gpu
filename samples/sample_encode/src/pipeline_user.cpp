@@ -167,7 +167,7 @@ CUserPipeline::~CUserPipeline()
     Close();
 }
 
-mfxStatus CUserPipeline::Init(sInputParams *pParams)
+mfxStatus CUserPipeline::Init(sInputParams *pParams, mfxLoader Loader)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
@@ -211,16 +211,12 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     if (D3D11_MEMORY == pParams->memType)
         impl |= MFX_IMPL_VIA_D3D11;
 
-    mfxVersion min_version;
     mfxVersion version;     // real API version with which library is initialized
 
-    // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    min_version.Major = 1;
-    min_version.Minor = 0;
-
+    m_mfxLoader = Loader;
     // create a session for the second vpp and encode
-    sts = m_mfxSession.Init(impl, &min_version);
-    MSDK_CHECK_STATUS(sts, "m_mfxSession.Init failed");
+    sts = m_mfxSession.CreateSession(m_mfxLoader);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
     sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
     MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");

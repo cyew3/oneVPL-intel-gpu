@@ -22,11 +22,11 @@
 
 add_subdirectory(sample_common)
 add_subdirectory(sample_multi_transcode)
+add_subdirectory(sample_encode)
 
 if (NOT ${API_USE_VPL})
 #Temporary disabled for VPL
 add_subdirectory(sample_decode)
-add_subdirectory(sample_encode)
 add_subdirectory(sample_vpp)
 
 #Not supported in VPL

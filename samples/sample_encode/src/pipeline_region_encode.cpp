@@ -63,7 +63,7 @@ mfxStatus CResourcesPool::GetFreeTask(int resourceNum,sTask **ppTask)
     return sts;
 }
 
-mfxStatus CResourcesPool::Init(int sz, mfxIMPL impl, mfxVersion *pVer
+mfxStatus CResourcesPool::Init(int sz, mfxLoader Loader
 #if defined(PRE_SI_GEN)
                                , mfxU32 nSyncOpTimeout
 #endif
@@ -77,8 +77,8 @@ mfxStatus CResourcesPool::Init(int sz, mfxIMPL impl, mfxVersion *pVer
 #endif
     for (int i = 0; i < sz; i++)
     {
-        mfxStatus sts = m_resources[i].Session.Init(impl, pVer);
-        MSDK_CHECK_STATUS(sts, "m_resources[i].Session.Init failed");
+        mfxStatus sts = m_resources[i].Session.CreateSession(Loader);
+        MSDK_CHECK_STATUS(sts, "m_resources[i].Session.CreateSession failed");
     }
     return MFX_ERR_NONE;
 }
@@ -314,7 +314,7 @@ CRegionEncodingPipeline::~CRegionEncodingPipeline()
     Close();
 }
 
-mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
+mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
@@ -344,6 +344,8 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
     min_version.Major = 1;
     min_version.Minor = 0;
 
+    m_mfxLoader = Loader;
+
     // Init session
     if (pParams->bUseHWLib)
     {
@@ -351,7 +353,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
         return MFX_ERR_UNSUPPORTED;
     }
     else {
-        sts = m_resources.Init(pParams->nNumSlice, MFX_IMPL_SOFTWARE, &min_version
+        sts = m_resources.Init(pParams->nNumSlice, m_mfxLoader
 #if defined(PRE_SI_GEN)
                                , pParams->nSyncOpTimeout
 #endif

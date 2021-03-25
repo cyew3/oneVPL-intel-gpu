@@ -357,6 +357,11 @@ mfxStatus sTask::Reset()
     return MFX_ERR_NONE;
 }
 
+mfxStatus MainVideoSession::CreateSession(mfxLoader Loader)
+{
+    return MFXCreateSession(Loader, 0, &m_session);
+}
+
 void CEncodingPipeline::InitExtMVCBuffers(mfxExtMVCSeqDesc *mvcBuffer) const
 {
     // a simple example of mfxExtMVCSeqDesc structure filling
@@ -893,7 +898,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     sts = m_hwdev->Init(
         NULL,
         0,
-        MSDKAdapter::GetNumber(GetFirstSession()));
+        MSDKAdapter::GetNumber(GetFirstSession(), m_mfxLoader));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 
 #elif LIBVA_SUPPORT
@@ -904,7 +909,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(GetFirstSession()));
+    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(GetFirstSession(), m_mfxLoader));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 #endif
     return MFX_ERR_NONE;
@@ -1554,7 +1559,7 @@ mfxStatus CEncodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
+mfxStatus CEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
@@ -1588,8 +1593,10 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     mfxStatus sts = GetImpl(*pParams, initPar.Implementation);
     MSDK_CHECK_STATUS(sts, "GetImpl failed");
 
-    sts = m_mfxSession.InitEx(initPar);
-    MSDK_CHECK_STATUS(sts, "m_mfxSession.InitEx failed");
+    m_mfxLoader = Loader;
+
+    sts = m_mfxSession.CreateSession(m_mfxLoader);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
     mfxVersion version;
     sts = MFXQueryVersion(m_mfxSession, &version); // get real API version of the loaded library
