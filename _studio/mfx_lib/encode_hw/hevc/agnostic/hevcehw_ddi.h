@@ -357,6 +357,57 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
     UINT    SliceSAOFlagBitOffset;
 } ENCODE_SET_SLICE_HEADER_HEVC;
 
+typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT : ENCODE_SET_SEQUENCE_PARAMETERS_HEVC
+{
+    union
+    {
+        struct
+        {
+            UINT    transform_skip_rotation_enabled_flag : 1;
+            UINT    transform_skip_context_enabled_flag : 1;
+            UINT    implicit_rdpcm_enabled_flag : 1;
+            UINT    explicit_rdpcm_enabled_flag : 1;
+            UINT    extended_precision_processing_flag : 1;
+            UINT    intra_smoothing_disabled_flag : 1;
+            UINT    high_precision_offsets_enabled_flag : 1;
+            UINT    persistent_rice_adaptation_enabled_flag : 1;
+            UINT    cabac_bypass_alignment_enabled_flag : 2; // 2 ???
+            UINT    ReservedBits : 22;
+        }/* fields*/;
+        UINT RextEncodeTools;
+    } /*RextEncodeTools*/;
+} ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT;
+
+typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT : ENCODE_SET_PICTURE_PARAMETERS_HEVC
+{
+    union
+    {
+        struct
+        {
+            UINT  cross_component_prediction_enabled_flag : 1;
+            UINT  chroma_qp_offset_list_enabled_flag : 1;
+            UINT  diff_cu_chroma_qp_offset_depth : 3;
+            UINT  chroma_qp_offset_list_len_minus1 : 3; // [0..5]
+            UINT  log2_sao_offset_scale_luma : 3; // [0..6]
+            UINT  log2_sao_offset_scale_chroma : 3; // [0..6]
+            UINT  ReservedBits5 : 18;
+        } /*fields*/;
+        UINT RangeExtensionPicFlags;
+    } /*RangeExtensionPicFlags*/;
+
+    UCHAR   log2_max_transform_skip_block_size_minus2;
+    CHAR    cb_qp_offset_list[6]; // [-12..12]
+    CHAR    cr_qp_offset_list[6]; // [-12..12]
+} ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT;
+
+typedef struct tagENCODE_SET_SLICE_HEADER_HEVC_REXT : ENCODE_SET_SLICE_HEADER_HEVC
+{
+    SHORT   luma_offset_l0[15];
+    SHORT   ChromaOffsetL0[15][2];
+    SHORT   luma_offset_l1[15];
+    SHORT   ChromaOffsetL1[15][2];
+} ENCODE_SET_SLICE_HEADER_HEVC_REXT;
+
 typedef struct tagENCODE_SET_QMATRIX_HEVC
 {
     UCHAR ucScalingLists0[6][16];
