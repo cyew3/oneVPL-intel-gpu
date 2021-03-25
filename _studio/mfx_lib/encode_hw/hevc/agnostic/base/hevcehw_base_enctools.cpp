@@ -553,7 +553,12 @@ inline void InitEncToolsCtrlExtAllocator(mfxEncToolsCtrlExtAllocator & extAlloca
 
 inline mfxHandleType GetHandleType(eMFXVAType vaType)
 {
-    return vaType ? MFX_HANDLE_D3D11_DEVICE : (MFX_HW_D3D9 == vaType ? MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 : MFX_HANDLE_VA_DISPLAY);
+    switch (vaType)
+    {
+    case MFX_HW_D3D9:  return MFX_HANDLE_D3D9_DEVICE_MANAGER;
+    case MFX_HW_VAAPI: return MFX_HANDLE_VA_DISPLAY;
+    }
+    return MFX_HANDLE_D3D11_DEVICE;
 }
 
 void HevcEncTools::QueryIOSurf(const FeatureBlocks&, TPushQIS Push)
