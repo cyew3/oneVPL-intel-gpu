@@ -1432,12 +1432,13 @@ mfxU16 ChromaFormatFromFourcc(mfxU32 fourcc)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 mfxBitstreamWrapperWithLock::mfxBitstreamWrapperWithLock()
-    : mfxBitstream(),
-    Locked(false)
+    : mfxBitstream()
+    , Locked(false)
 {}
 
 mfxBitstreamWrapperWithLock::mfxBitstreamWrapperWithLock(mfxU32 n_bytes)
     : mfxBitstream()
+    , Locked(false)
 {
     Extend(n_bytes);
 }
