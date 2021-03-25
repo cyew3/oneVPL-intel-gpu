@@ -1362,24 +1362,12 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (   (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-            || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-#endif
+        if (   in->IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY
+            || in->IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY
             )
-        {
-            uint32_t mask = in->IOPattern & 0xf0;
-            if (   mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY
-                || mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                || mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY
-#endif
-                )
-                out->IOPattern = in->IOPattern;
-            else
-                sts = MFX_ERR_UNSUPPORTED;
-        }
+            out->IOPattern = in->IOPattern;
+        else
+            sts = MFX_STS_TRACE(MFX_ERR_UNSUPPORTED);
 
         if (in->mfx.FrameInfo.FourCC)
         {
