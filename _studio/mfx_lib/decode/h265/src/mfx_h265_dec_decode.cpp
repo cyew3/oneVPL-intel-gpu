@@ -1409,7 +1409,7 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     const UMC::FrameData * fd = pFrame->GetFrameData();
 
     *surf_out = m_surface_source->GetSurface(fd->GetFrameMID(), surface_work, &m_vPar);
-    if(m_isOpaq)
+    if(m_isOpaq && *surf_out != nullptr)
        *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId);
     VM_ASSERT(*surf_out);
 

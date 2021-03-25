@@ -778,10 +778,12 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
         *surface_out = decoder->m_surface_source->GetSurface(dst->GetFrameMID(),
                                                     GetOriginalSurface(surface_work),
                                                     &m_vPar);
+
+        MFX_CHECK(*surface_out != nullptr, MFX_ERR_INVALID_HANDLE);
+
         *surface_out = (m_isOpaq) ? m_core->GetOpaqSurface((*surface_out)->Data.MemId) : (*surface_out);
 
-        if (!(*surface_out))
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_CHECK(*surface_out != nullptr, MFX_ERR_INVALID_HANDLE);
 
         SetFrameType(**surface_out);
 

@@ -1417,6 +1417,8 @@ mfxStatus VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1** surf_out, mfxFram
 
     mfxVideoParam vp;
     *surf_out = m_surface_source->GetSurface(fd->GetFrameMID(), surface_work, &vp);
+    MFX_CHECK(*surf_out != nullptr, MFX_ERR_INVALID_HANDLE);
+
     if (m_opaque)
        *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId);
 
