@@ -129,7 +129,7 @@ struct sCommandlineParams
   bool           bDisableSurfaceAlign;
   bool           isRawSurfaceLinear;
   bool           bVDSFCFormatSetting;
-  vm_char        extractedAudioFile[MAX_FILE_PATH];
+  vm_char        extractedAudioFile[MAX_FILE_PATH] = {};
   mfxU16         nAdvanceFRCAlgorithm;//if non zero then directly specifies advanced FRC algorithm
   mfxU16         nImageStab;//image stabilization mode
   mfxU16         nSVCDownSampling;//downsampling method
@@ -148,18 +148,18 @@ struct sCommandlineParams
   mfxU16         InputPicstruct;
   mfxU16         OutputPicstruct;
 
-  vm_char        strSrcFile[MAX_FILE_PATH];
-  vm_char        crcFile[MAX_FILE_PATH];
-  vm_char        strDstFile[MAX_FILE_PATH];
-  vm_char        strParFile[MAX_FILE_PATH];
-  vm_char        perfFile[MAX_FILE_PATH];
-  vm_char        refFile[MAX_FILE_PATH];
-  vm_char        dxva2DllName[MAX_FILE_PATH];
+  vm_char        strSrcFile[MAX_FILE_PATH] = {};
+  vm_char        crcFile[MAX_FILE_PATH] = {};
+  vm_char        strDstFile[MAX_FILE_PATH] = {};
+  vm_char        strParFile[MAX_FILE_PATH] = {};
+  vm_char        perfFile[MAX_FILE_PATH] = {};
+  vm_char        refFile[MAX_FILE_PATH] = {};
+  vm_char        dxva2DllName[MAX_FILE_PATH] = {};
 
-  vm_char        BackBufferFormat[MAX_FILE_PATH];
+  vm_char        BackBufferFormat[MAX_FILE_PATH] = {};
   //outline
-  vm_char        strOutlineFile[MAX_FILE_PATH];     //output used by outline render
-  vm_char        strOutlineInputFile[MAX_FILE_PATH];//input used by outline reader
+  vm_char        strOutlineFile[MAX_FILE_PATH] = {};     //output used by outline render
+  vm_char        strOutlineInputFile[MAX_FILE_PATH] = {};//input used by outline reader
 
   mfxU32         nHRDBufSizeInKB;
   mfxU32         nHRDInitDelayInKB;
@@ -167,7 +167,7 @@ struct sCommandlineParams
   mfxU32         nDecBufSize;
 
   // Overlay text options
-  vm_char        OverlayText[MAX_FILE_PATH];
+  vm_char        OverlayText[MAX_FILE_PATH] = {};
   int            OverlayTextSize;
 
   bool           bFadeBackground;
@@ -240,9 +240,9 @@ struct sCommandlineParams
   bool isForceDecodeDump;
 
   bool           useEncOrderParFile;
-  vm_char        encOrderParFile[MAX_FILE_PATH];
+  vm_char        encOrderParFile[MAX_FILE_PATH] = {};
 
-  vm_char        encOrderRefListsParFile[MAX_FILE_PATH];
+  vm_char        encOrderRefListsParFile[MAX_FILE_PATH] = {};
 
   // true means using InitEx, false - Init
   bool          bInitEx;
@@ -255,7 +255,7 @@ struct sCommandlineParams
 #ifdef PAVP_BUILD
   // protected
   mfxU16 Protected; //Protected in mfxVideoParam
-  vm_char strPAVPLibPath[MAX_FILE_PATH];
+  vm_char strPAVPLibPath[MAX_FILE_PATH] = {};
 
   CPImpl cpImpl;
 
@@ -276,7 +276,7 @@ struct sCommandlineParams
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
   mfxU32           AV1LargeScaleTileMode; // MFX_LST_ANCHOR_FRAMES_*
   mfxU32           AV1AnchorFramesNum;
-  vm_char          strAV1AnchorFilePath[MAX_FILE_PATH];
+  vm_char          strAV1AnchorFilePath[MAX_FILE_PATH] = {};
 #endif
 
   sCommandlineParams()
