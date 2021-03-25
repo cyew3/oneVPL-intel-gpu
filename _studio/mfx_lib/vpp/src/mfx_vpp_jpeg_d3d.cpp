@@ -103,6 +103,9 @@ VideoVppJpegD3D::VideoVppJpegD3D(VideoCORE *core, bool isD3DToSys, bool isOpaq)
     , m_ddi()
 {
     m_pCore = core;
+#ifdef MFX_VA_WIN
+    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(core);
+#endif
     m_isD3DToSys = isD3DToSys;
 
     m_isOpaq = isOpaq;
@@ -162,6 +165,18 @@ mfxStatus VideoVppJpegD3D::Init(const mfxVideoParam *par)
     {
         return MFX_ERR_UNSUPPORTED;
     }
+
+#ifdef MFX_VA_WIN
+    if (!m_isD3DToSys && m_pDX9ON11Core)
+    {
+        mfxU16 numFrameMin = par->AsyncDepth ? par->AsyncDepth : m_pCore->GetAutoAsyncDepth();
+        mfxVideoParam tmp = *par;
+        // To create only output wrap surfaces
+        tmp.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+        tmp.vpp.Out = par->mfx.FrameInfo;
+        MFX_SAFE_CALL(m_ddi->CreateWrapBuffers(numFrameMin, numFrameMin, tmp));
+    }
+#endif
 
     mfxVppCaps caps;
     caps = m_ddi.GetCaps();
@@ -302,6 +317,7 @@ mfxStatus VideoVppJpegD3D::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurface
     
     m_executeParams.targetTimeStamp = m_taskId * CURRENT_TIME_STAMP;
 
+    m_executeParams.targetSurface.memId = pOutputSurface->Data.MemId;
     m_executeParams.targetSurface.hdl = static_cast<mfxHDLPair>(out);
     m_executeParams.targetSurface.frameInfo = pOutputSurface->Info;
 
@@ -475,7 +491,15 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, 
                                          );
         MFX_CHECK_STS(sts);
     }
-    
+#ifdef MFX_VA_WIN
+    else if (m_pDX9ON11Core)
+    {
+        // We wrap only output surface in jpeg+built-in vpp case
+        sts = m_ddi->UnwrapBuffers(nullptr, pOutputSurface->Data.MemId);
+        MFX_CHECK_STS(sts);
+    }
+#endif
+
     // unregister output surface
     sts = (m_ddi)->Register(&out, 1, FALSE);
     MFX_CHECK_STS(sts);
@@ -544,6 +568,14 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTo
                                          );
         MFX_CHECK_STS(sts);
     }
+#ifdef MFX_VA_WIN
+    else if (m_pDX9ON11Core)
+    {
+        // We wrap only output surface in jpeg+built-in vpp case
+        sts = m_ddi->UnwrapBuffers(nullptr, pOutputSurface->Data.MemId);
+        MFX_CHECK_STS(sts);
+    }
+#endif
 
     // unregister output surface
     sts = (m_ddi)->Register(&out, 1, FALSE);

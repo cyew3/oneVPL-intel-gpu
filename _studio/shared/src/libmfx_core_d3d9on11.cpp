@@ -90,6 +90,11 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::CreateVA(mfxVideoParam* param, mfxFrameAllo
 
     MFX_CHECK(!(param->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && !(param->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_NONE);
 
+#ifdef MFX_ENABLE_MJPEG_VIDEO_DECODE
+    // Wrap surfaces for this case will be allocated in VPP path
+    MFX_CHECK(!dynamic_cast<mfx_UMC_FrameAllocator_D3D_Converter*>(allocator), MFX_ERR_NONE);
+#endif
+
     // Need to clear mapping tables to prevent incorrect decode wrap
     // when application inits decoder second time
     m_dx9MemIdMap.clear();

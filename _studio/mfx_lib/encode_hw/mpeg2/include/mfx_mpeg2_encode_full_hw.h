@@ -263,7 +263,7 @@ public:
 #endif
               MFX_CHECK_STS(sts);
 
-              sts = m_pDdiEncoder->UnwrapBuffer(m_pExecuteBuffers->m_CurrFrameMemID);
+              sts = m_pDdiEncoder->UnwrapBuffer(pIntTask->m_Frames.m_pInputFrame->Data.MemId);
               MFX_CHECK_STS(sts);
 
               return sts;

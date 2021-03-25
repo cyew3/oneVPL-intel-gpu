@@ -30,6 +30,7 @@
 #include "umc_va_base.h"
 #include "mfx_vpp_interface.h"
 #include "umc_mutex.h"
+#include "libmfx_core_d3d9on11.h"
 
 #include <map>
 
@@ -52,6 +53,9 @@ public:
 protected:
 
     VideoCORE *m_pCore;
+#ifdef MFX_VA_WIN
+    D3D9ON11VideoCORE* m_pDX9ON11Core;
+#endif
 
     bool   m_isD3DToSys;
     bool   m_isOpaq;
