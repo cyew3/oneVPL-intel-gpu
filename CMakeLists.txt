@@ -120,18 +120,14 @@ endif()
 if (BUILD_DISPATCHER)
   if (${API_USE_VPL})
     set(API_VERSION_MAJOR ${MFX_VERSION_MAJOR})
+    set(API_VERSION_MINOR ${MFX_VERSION_MINOR})
+
     get_filename_component(ONEVPL_API_HEADER_DIRECTORY ${MFX_API_HOME} DIRECTORY)
     add_library(vpl-api INTERFACE)
     target_include_directories(vpl-api
       INTERFACE ${ONEVPL_API_HEADER_DIRECTORY}
     )
     add_subdirectory(api/mfx_dispatch/vpl)
-
-    #override VPL's VERSION/SOVERSION to comply 'OneVPL packaging and delivery'
-    set_target_properties(VPL PROPERTIES
-      VERSION 1.${MFX_VERSION_MAJOR}.${MFX_VERSION_MINOR}
-      SOVERSION 1.${MFX_VERSION_MAJOR}
-    )
 
     set(MFX_DISPATCHER VPL)
   else()
