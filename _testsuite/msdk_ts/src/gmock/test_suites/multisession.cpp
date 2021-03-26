@@ -114,8 +114,8 @@ namespace multisession
 
     void TestSuite::init(tsSession* s)
     {
-        TRACE_FUNC3(MFXInit, s->m_impl, s->m_pVersion, s->m_pSession);
-        g_tsStatus.check(::MFXInit(s->m_impl, s->m_pVersion, s->m_pSession));
+        g_tsStatus.expect(MFX_ERR_NONE);
+        g_tsStatus.check(s->CreateSession(s->m_impl, s->m_pVersion, s->m_pSession));
         TS_TRACE(s->m_pVersion);
         TS_TRACE(s->m_pSession);
         s->m_initialized = (g_tsStatus.get() >= 0);
@@ -123,7 +123,7 @@ namespace multisession
 
     mfxFrameAllocator* TestSuite::setHandle(tsSession* s, frame_allocator &al, mfxHDL &hdl, mfxHandleType &hdl_type)
     {
-#if defined (LIN32) || (LIN64)
+#if defined (LIN32) || (LIN64) || (LINUX32) || (LINUX64)
         s->m_pVAHandle = &al;
         s->m_pVAHandle->get_hdl(hdl_type, hdl);
         SetHandle(s->m_session, hdl_type, hdl);
@@ -175,7 +175,8 @@ namespace multisession
             MFXJoinSession(t_ses_1.m_session);
         } else if(tc.mode == CLONE) {
             TRACE_FUNC2(MFXCloneSession,m_session, t_ses_1.m_pSession);
-            MFXCloneSession(m_session, t_ses_1.m_pSession);
+            g_tsStatus.expect(MFX_ERR_NONE);
+            g_tsStatus.check(MFXCloneSession(m_session, t_ses_1.m_pSession));
         } else {
             g_tsLog << "Unexpected test case mode\n";
             return 1;

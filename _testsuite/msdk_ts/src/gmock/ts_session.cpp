@@ -123,6 +123,8 @@ mfxStatus tsSession::CreateSession(mfxIMPL impl, mfxVersion *ver, mfxSession *se
     TRACE_FUNC3( MFXCreateSession, m_Loader, implIndex, session );
     g_tsStatus.expect(MFX_ERR_NONE);
     g_tsStatus.check(MFXCreateSession(m_Loader, implIndex, session));
+
+    return g_tsStatus.get();
 }
 
 mfxStatus tsSession::ReleaseLoader()
