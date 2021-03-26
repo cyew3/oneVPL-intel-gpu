@@ -558,6 +558,7 @@ mfxStatus MFXInitEx2(mfxVersion version,
         // unload the failed DLL
         if ((MFX_ERR_NONE != mfxRes) && (MFX_WRN_PARTIAL_ACCELERATION != mfxRes)) {
             pHandle->Close();
+            delete pHandle;
             return MFX_ERR_UNSUPPORTED;
         }
         else {

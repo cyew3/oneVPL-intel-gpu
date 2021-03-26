@@ -205,8 +205,10 @@ mfxStatus LoaderCtxVPL::SearchDirForLibs(STRING_TYPE searchDir,
                     std::find_if(libInfoList.begin(), libInfoList.end(), [&](LibInfo* li) {
                         return (li->libNameFull == fullPath);
                     });
-                if (libFound != libInfoList.end())
+                if (libFound != libInfoList.end()) {
+                    free(fullPath);
                     continue;
+                }
 
                 LibInfo* libInfo = new LibInfo;
                 if (!libInfo)
@@ -434,12 +436,14 @@ mfxStatus LoaderCtxVPL::LoadSingleLibrary(LibInfo* libInfo) {
 
 // unload single runtime
 mfxStatus LoaderCtxVPL::UnloadSingleLibrary(LibInfo* libInfo) {
-    if (libInfo && libInfo->hModuleVPL) {
+    if (libInfo) {
+        if (libInfo->hModuleVPL) {
 #if defined(_WIN32) || defined(_WIN64)
-        MFX::mfx_dll_free(libInfo->hModuleVPL);
+            MFX::mfx_dll_free(libInfo->hModuleVPL);
 #else
-        dlclose(libInfo->hModuleVPL);
+            dlclose(libInfo->hModuleVPL);
 #endif
+        }
         delete libInfo;
         return MFX_ERR_NONE;
     }
