@@ -646,7 +646,10 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 #else
         pENCODE.reset(nullptr);
 #endif
-        MFX_CHECK(mfxRes == MFX_ERR_NONE, nullptr);
+        if (MFX_STS_TRACE(mfxRes) != MFX_ERR_NONE)
+        {
+            return nullptr;
+        }
     }
     else
 #endif
@@ -674,7 +677,7 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 
         pENCODE.reset(ctor(core, par.mfx.CodecProfile, &mfxRes));
         // check error(s)
-        if (MFX_ERR_NONE != mfxRes)
+        if (MFX_ERR_NONE != MFX_STS_TRACE(mfxRes))
         {
             return nullptr;
         }
