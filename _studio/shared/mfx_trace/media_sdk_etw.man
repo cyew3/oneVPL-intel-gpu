@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <instrumentationManifest xsi:schemaLocation="http://schemas.microsoft.com/win/2004/08/events eventman.xsd" xmlns="http://schemas.microsoft.com/win/2004/08/events" xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:trace="http://schemas.microsoft.com/win/2004/08/events/trace">
 	<instrumentation>
 		<events>
@@ -108,6 +108,14 @@
 					</event>
 					<event symbol="CmCopyExit" value="106" version="0" task="CmCopy" opcode="win:Stop" template="CmCopy_Exit">
 					</event>
+					<event symbol="CopyDX11toDX9Entry" value="109" version="0" task="CopyDX11toDX9" opcode="win:Start">
+					</event>
+					<event symbol="CopyDX11toDX9Exit" value="110" version="0" task="CopyDX11toDX9" opcode="win:Stop">
+					</event>
+					<event symbol="CopyDX9toDX11Entry" value="113" version="0" task="CopyDX9toDX11" opcode="win:Start">
+					</event>
+					<event symbol="CopyDX9toDX11Exit" value="114" version="0" task="CopyDX9toDX11" opcode="win:Stop" template="Entry">
+					</event>
 				</events>
 				<tasks>
 					<task name="DecodeQuery" symbol="MFX_TRACE_API_DECODE_QUERY_TASK_ETW" value="1" eventGUID="{00000000-0000-0000-0000-000000000000}">
@@ -161,6 +169,10 @@
 					<task name="DDIQueryD3DX" symbol="MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK_ETW" value="25" eventGUID="{00000000-0000-0000-0000-000000000000}">
 					</task>
 					<task name="CmCopy" symbol="MFX_TRACE_HOTSPOT_CM_COPY_ETW" value="26" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="CopyDX11toDX9" symbol="MFX_TRACE_HOTSPOT_COPY_DX11_TO_DX9" value="27" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="CopyDX9toDX11" symbol="MFX_TRACE_HOTSPOT_COPY_DX9_TO_DX11" value="28" eventGUID="{00000000-0000-0000-0000-000000000000}">
 					</task>
 				</tasks>
 				<opcodes>

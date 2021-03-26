@@ -341,7 +341,8 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyWrapper(mfxFrameSurface1* pDst, m
 
     if((srcMemType & MFX_MEMTYPE_FROM_VPPIN) && (dstMemType & MFX_MEMTYPE_FROM_VPPOUT))
         fcSts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
-    else fcSts = Base::DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
+    else
+        fcSts = Base::DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
 
     if (true == isSrcLocked)
     {
@@ -416,89 +417,57 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1* pDst, 
     mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
-    // FIXME: currently, CM copy doesn`t work here due to  here we work with DX9 surfaces
-    // But originally we created DX11 device
-    bool canUseCMCopy = false; //m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
-
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
-        if (canUseCMCopy)
+        IDirect3DDevice9* direct3DDevice;
+        hRes = m_pDirect3DDeviceManager->LockDevice(m_hDirectXHandle, &direct3DDevice, true);
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+        const tagRECT rect = { 0, 0, roi.width, roi.height };
+
+        HRESULT stretchRectResult = S_OK;
+        mfxU32 counter = 0;
+        do
         {
-            sts = MFX_ERR_NONE;
-            mfxU32 counter = 0;
-            do
-            {
-                sts = m_pCmCopy->CopyVideoToVideo(pDst, pSrc);
+            stretchRectResult = direct3DDevice->StretchRect((IDirect3DSurface9*)((mfxHDLPair*)pSrc->Data.MemId)->first, &rect,
+                (IDirect3DSurface9*)((mfxHDLPair*)pDst->Data.MemId)->first, &rect,
+                D3DTEXF_LINEAR);
+            if (FAILED(stretchRectResult))
+                Sleep(20);
+        } while (FAILED(stretchRectResult) && ++counter < 4); // waiting 80 ms, source surface may be locked by application
 
-                if (sts != MFX_ERR_NONE)
-                    Sleep(20);
-            } while (sts != MFX_ERR_NONE && ++counter < 4); // waiting 80 ms, source surface may be locked by application
+        hRes = m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, false);
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
-            MFX_CHECK_STS(sts);
-        }
-        else
-        {
-            IDirect3DDevice9* direct3DDevice;
-            hRes = m_pDirect3DDeviceManager->LockDevice(m_hDirectXHandle, &direct3DDevice, true);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+        direct3DDevice->Release();
 
-            const tagRECT rect = { 0, 0, roi.width, roi.height };
-
-            HRESULT stretchRectResult = S_OK;
-            mfxU32 counter = 0;
-            do
-            {
-                stretchRectResult = direct3DDevice->StretchRect((IDirect3DSurface9*)((mfxHDLPair*)pSrc->Data.MemId)->first, &rect,
-                    (IDirect3DSurface9*)((mfxHDLPair*)pDst->Data.MemId)->first, &rect,
-                    D3DTEXF_LINEAR);
-                if (FAILED(stretchRectResult))
-                    Sleep(20);
-            } while (FAILED(stretchRectResult) && ++counter < 4); // waiting 80 ms, source surface may be locked by application
-
-            hRes = m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, false);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
-            direct3DDevice->Release();
-
-            MFX_CHECK(SUCCEEDED(stretchRectResult), MFX_ERR_DEVICE_FAILED);
-        }
+        MFX_CHECK(SUCCEEDED(stretchRectResult), MFX_ERR_DEVICE_FAILED);
     }
     else if (NULL != pSrc->Data.MemId && NULL != dstPtr)
     {
-        mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
-        verticalPitch = (verticalPitch % pDst->Data.Pitch) ? 0 : verticalPitch / pDst->Data.Pitch;
+        IDirect3DSurface9* pSurface = (IDirect3DSurface9*)((mfxHDLPair*)pSrc->Data.MemId)->first;
 
-        if (canUseCMCopy)
-        {
-            sts = m_pCmCopy->CopyVideoToSys(pDst, pSrc);
-            MFX_CHECK_STS(sts);
-        }
-        else
-        {
-            IDirect3DSurface9* pSurface = (IDirect3DSurface9*)((mfxHDLPair*)pSrc->Data.MemId)->first;
+        hRes = pSurface->GetDesc(&sSurfDesc);
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
-            hRes = pSurface->GetDesc(&sSurfDesc);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopySSE");
+        hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
+        srcPitch = sLockRect.Pitch;
+        sts = mfxDefaultAllocatorD3D9::SetFrameData(sSurfDesc, sLockRect, &pSrc->Data);
+        MFX_CHECK_STS(sts);
 
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopySSE");
-            hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
-            srcPitch = sLockRect.Pitch;
-            sts = mfxDefaultAllocatorD3D9::SetFrameData(sSurfDesc, sLockRect, &pSrc->Data);
-            MFX_CHECK_STS(sts);
+        mfxMemId saveMemId = pSrc->Data.MemId;
+        pSrc->Data.MemId = 0;
 
-            mfxMemId saveMemId = pSrc->Data.MemId;
-            pSrc->Data.MemId = 0;
+        sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_VIDEO_TO_SYS); // sw copy
+        MFX_CHECK_STS(sts);
 
-            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_VIDEO_TO_SYS); // sw copy
-            MFX_CHECK_STS(sts);
+        pSrc->Data.MemId = saveMemId;
+        MFX_CHECK_STS(sts);
 
-            pSrc->Data.MemId = saveMemId;
-            MFX_CHECK_STS(sts);
-
-            hRes = pSurface->UnlockRect();
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-        }
+        hRes = pSurface->UnlockRect();
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
     }
     else if (NULL != srcPtr && NULL != dstPtr)
     {
@@ -512,43 +481,34 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyExtended(mfxFrameSurface1* pDst, 
     {
         // source are placed in system memory, destination is in video memory
         // use common way to copy frames from system to video, most faster
+        IDirect3DSurface9* pSurface = (IDirect3DSurface9*)((mfxHDLPair*)pDst->Data.MemId)->first;
 
-        if (canUseCMCopy)
+        hRes = pSurface->GetDesc(&sSurfDesc);
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+        hRes |= pSurface->LockRect(&sLockRect, NULL, NULL);
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
+
+        dstPitch = sLockRect.Pitch;
+        sts = mfxDefaultAllocatorD3D9::SetFrameData(sSurfDesc, sLockRect, &pDst->Data);
+        MFX_CHECK_STS(sts);
+
+        mfxMemId saveMemId = pDst->Data.MemId;
+        pDst->Data.MemId = 0;
+        if (pSrc->Info.FourCC == MFX_FOURCC_YV12)
         {
-            sts = m_pCmCopy->CopySysToVideo(pDst, pSrc);
+            sts = ConvertYV12toNV12SW(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
-        else
-        {
-            IDirect3DSurface9* pSurface = (IDirect3DSurface9*)((mfxHDLPair*)pDst->Data.MemId)->first;
 
-            hRes = pSurface->GetDesc(&sSurfDesc);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+        sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
+        MFX_CHECK_STS(sts);
 
-            hRes |= pSurface->LockRect(&sLockRect, NULL, NULL);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
+        pDst->Data.MemId = saveMemId;
+        MFX_CHECK_STS(sts);
 
-            dstPitch = sLockRect.Pitch;
-            sts = mfxDefaultAllocatorD3D9::SetFrameData(sSurfDesc, sLockRect, &pDst->Data);
-            MFX_CHECK_STS(sts);
-
-            mfxMemId saveMemId = pDst->Data.MemId;
-            pDst->Data.MemId = 0;
-            if (pSrc->Info.FourCC == MFX_FOURCC_YV12)
-            {
-                sts = ConvertYV12toNV12SW(pDst, pSrc);
-                MFX_CHECK_STS(sts);
-            }
-
-            sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_VIDEO); // sw copy
-            MFX_CHECK_STS(sts);
-
-            pDst->Data.MemId = saveMemId;
-            MFX_CHECK_STS(sts);
-
-            hRes = pSurface->UnlockRect();
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-        }
+        hRes = pSurface->UnlockRect();
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
     }
     else
     {
@@ -693,112 +653,107 @@ static mfxU32 DXGItoMFX(DXGI_FORMAT format)
 template <class Base>
 mfxStatus D3D9ON11VideoCORE_T<Base>::CopyDX11toDX9(const mfxMemId dx11MemId, const mfxMemId dx9MemId)
 {
-    mfxHDL dstHandle = 0;
-    mfxFrameData srcData = {};
-    mfxFrameData dstData = {};
-    HRESULT hr = S_OK;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CopyDX11toDX9");
+    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_COPY_DX11_TO_DX9, 0, make_event_data(), [&]() { return make_event_data();});
 
     // We need to get right allocator to lock DX11 surfaces
     mfxMemId internalDX11Mid = dx11MemId;
     mfxFrameAllocator* pAlloc = GetAllocatorAndMid(internalDX11Mid);
     MFX_CHECK(pAlloc, MFX_ERR_INVALID_HANDLE);
 
-
+    mfxHDL dstHandle = 0;
     mfxStatus sts = m_dx9FrameAllocator.GetHDL(m_dx9FrameAllocator.pthis, dx9MemId, &dstHandle);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
-
     CComPtr<IDirect3DSurface9> dstFrame = reinterpret_cast<IDirect3DSurface9*>(dstHandle);
 
     D3DSURFACE_DESC dstDesc = {};
+    HRESULT hr = dstFrame->GetDesc(&dstDesc);
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    hr = dstFrame->GetDesc(&dstDesc);
-    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_UNDEFINED_BEHAVIOR);
+    D3DLOCKED_RECT lockRect;
+    hr = dstFrame->LockRect(&lockRect, NULL, NULL);
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_LOCK_MEMORY);
 
-    sts = m_dx9FrameAllocator.Lock(m_dx9FrameAllocator.pthis, dx9MemId, &dstData);
+    mfxFrameData dstData = {};
+    sts = mfxDefaultAllocatorD3D9::SetFrameData(dstDesc, lockRect, &dstData);
+    MFX_CHECK_STS(sts);
+
+    mfxHDLPair srcHandle = {};
+    sts = pAlloc->GetHDL(pAlloc->pthis, internalDX11Mid, &srcHandle.first);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
 
-    if (!MFX_SUCCEEDED(pAlloc->Lock(pAlloc->pthis, internalDX11Mid, &srcData)))
-    {
-        m_dx9FrameAllocator.Unlock(m_dx9FrameAllocator.pthis, dx9MemId, &dstData);
-        MFX_RETURN(MFX_ERR_LOCK_MEMORY);
-    }
+    mfxFrameSurface1 srcTmpSurf = {};
+    srcTmpSurf.Data.MemId = &srcHandle;
 
-    mfxFrameSurface1 dstTmpSurf = {}, srcTmpSurf = {};
+    mfxFrameSurface1 dstTmpSurf = {};
     dstTmpSurf.Data = dstData;
-    srcTmpSurf.Data = srcData;
-
     dstTmpSurf.Info.Width  = srcTmpSurf.Info.Width  = static_cast<mfxU16>(dstDesc.Width);
     dstTmpSurf.Info.Height = srcTmpSurf.Info.Height = static_cast<mfxU16>(dstDesc.Height);
     dstTmpSurf.Info.FourCC = srcTmpSurf.Info.FourCC = dstDesc.Format;
 
-    sts = CoreDoSWFastCopy(dstTmpSurf, srcTmpSurf, COPY_SYS_TO_SYS);
+    sts = Base::DoFastCopyExtended(&dstTmpSurf, &srcTmpSurf);
     MFX_CHECK_STS(sts);
 
-    sts = m_dx9FrameAllocator.Unlock(m_dx9FrameAllocator.pthis, dx9MemId, &dstData);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
+    hr = dstFrame->UnlockRect();
+    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    pAlloc->Unlock(pAlloc->pthis, internalDX11Mid, &srcData);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    MFX_RETURN(MFX_ERR_NONE);
+    return MFX_ERR_NONE;
 }
 
 template <class Base>
 mfxStatus D3D9ON11VideoCORE_T<Base>::CopyDX9toDX11(const mfxMemId dx9MemId, const mfxMemId dx11MemId)
 {
-    mfxHDLPair dstHandle = {};
-    mfxFrameData srcData = {};
-    mfxFrameData dstData = {};
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CopyDX9toDX11");
+    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_COPY_DX9_TO_DX11, 0, make_event_data(), [&]() { return make_event_data();});
 
     // We need to get right allocator to lock DX11 surfaces
     mfxMemId internalDX11Mid = dx11MemId;
     mfxFrameAllocator* pAlloc = GetAllocatorAndMid(internalDX11Mid);
     MFX_CHECK(pAlloc, MFX_ERR_INVALID_HANDLE);
 
+    mfxHDLPair dstHandle = {};
     mfxStatus sts = pAlloc->GetHDL(pAlloc->pthis, internalDX11Mid, &dstHandle.first);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
-
     CComPtr<ID3D11Texture2D> dstFrame = reinterpret_cast<ID3D11Texture2D*>(dstHandle.first);
 
     D3D11_TEXTURE2D_DESC dstDesc = {};
-
     dstFrame->GetDesc(&dstDesc);
-
-    sts = pAlloc->Lock(pAlloc->pthis, internalDX11Mid, &dstData);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
 
     {
         std::lock_guard<std::mutex> guard(m_copyMutex);
+        mfxHDL srcHandle = {};
+        sts = m_dx9FrameAllocator.GetHDL(m_dx9FrameAllocator.pthis, dx9MemId, &srcHandle);
+        MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
+        CComPtr<IDirect3DSurface9> srcFrame = reinterpret_cast<IDirect3DSurface9*>(srcHandle);
 
-        sts = m_dx9FrameAllocator.Lock(m_dx9FrameAllocator.pthis, dx9MemId, &srcData);
+        D3DSURFACE_DESC srcDesc = {};
+        HRESULT hr = srcFrame->GetDesc(&srcDesc);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-        if (MFX_ERR_NONE != sts)
-        {
-            pAlloc->Unlock(pAlloc->pthis, internalDX11Mid, &dstData);
-            MFX_RETURN(MFX_ERR_LOCK_MEMORY);
-        }
+        D3DLOCKED_RECT  lockRect;
+        hr = srcFrame->LockRect(&lockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_LOCK_MEMORY);
+        mfxFrameData srcData = {};
+        sts = mfxDefaultAllocatorD3D9::SetFrameData(srcDesc, lockRect, &srcData);
+        MFX_CHECK_STS(sts);
 
-        //To read access we need only info, so we can unlock resourse.
-        sts = m_dx9FrameAllocator.Unlock(m_dx9FrameAllocator.pthis, dx9MemId, nullptr);
-        MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
+        mfxFrameSurface1 srcTmpSurf = {};
+        srcTmpSurf.Data = srcData;
+
+        mfxFrameSurface1 dstTmpSurf = {};
+        dstTmpSurf.Data.MemId = &dstHandle;
+        dstTmpSurf.Info.Width = srcTmpSurf.Info.Width = static_cast<mfxU16>(dstDesc.Width);
+        dstTmpSurf.Info.Height = srcTmpSurf.Info.Height = static_cast<mfxU16>(dstDesc.Height);
+        dstTmpSurf.Info.FourCC = srcTmpSurf.Info.FourCC = DXGItoMFX(dstDesc.Format);
+
+        sts = Base::DoFastCopyExtended(&dstTmpSurf, &srcTmpSurf);
+        MFX_CHECK_STS(sts);
+
+        hr = srcFrame->UnlockRect();
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
-
-    mfxFrameSurface1 dstTmpSurf = {}, srcTmpSurf = {};
-    dstTmpSurf.Data = dstData;
-    srcTmpSurf.Data = srcData;
-
-    dstTmpSurf.Info.Width  = srcTmpSurf.Info.Width  = static_cast<mfxU16>(dstDesc.Width);
-    dstTmpSurf.Info.Height = srcTmpSurf.Info.Height = static_cast<mfxU16>(dstDesc.Height);
-    dstTmpSurf.Info.FourCC = srcTmpSurf.Info.FourCC = DXGItoMFX(dstDesc.Format);
-
-    sts = CoreDoSWFastCopy(dstTmpSurf, srcTmpSurf, COPY_SYS_TO_SYS);
-    MFX_CHECK_STS(sts);
-
-    sts = pAlloc->Unlock(pAlloc->pthis, internalDX11Mid, &dstData);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    MFX_RETURN(MFX_ERR_NONE);
+    return MFX_ERR_NONE;
 }
 
 #endif //MFX_DX9ON11
