@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,11 +58,35 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             Base::Defaults::TChain<std::tuple<mfxU16, mfxU16, mfxU16>>::TExt
             , const Base::Defaults::Param& dpar)
         {
+            // DG2 HEVC VDENC Maximum supported number
+            const mfxU16 nRef[3] = { 3, 2, 1 };
+
+            /* Same way like on previous platforms... */
+            mfxU16 numRefFrame = dpar.mvp.mfx.NumRefFrame + !dpar.mvp.mfx.NumRefFrame * 16;
+
+            return std::make_tuple(
+                std::min<mfxU16>(nRef[0], std::min<mfxU16>(dpar.caps.MaxNum_Reference0, numRefFrame))
+                , std::min<mfxU16>(nRef[1], std::min<mfxU16>(dpar.caps.MaxNum_Reference0, numRefFrame))
+                , std::min<mfxU16>(nRef[2], std::min<mfxU16>(dpar.caps.MaxNum_Reference1, numRefFrame)));
+        });
+
+        defaults.GetNumRefActive.Push([](
+            Base::Defaults::TGetNumRefActive::TExt
+            , const Base::Defaults::Param& dpar
+            , mfxU16(*pP)[8]
+            , mfxU16(*pBL0)[8]
+            , mfxU16(*pBL1)[8])
+        {
+            bool bExternal = false;
+            mfxU16 defaultP = 0, defaultBL0 = 0, defaultBL1 = 0;
+
             const mfxU16 nRef[3][7] =
-            {   // DG2 VDENC
+            {
+                // DG2 HEVC VDENC default reference number with TU
                 { 3, 3, 2, 2, 2, 1, 1 },
                 { 2, 2, 1, 1, 1, 1, 1 },
                 { 1, 1, 1, 1, 1, 1, 1 }
+
             };
             mfxU16 tu = dpar.mvp.mfx.TargetUsage;
 
@@ -72,10 +96,49 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             /* Same way like on previous platforms... */
             mfxU16 numRefFrame = dpar.mvp.mfx.NumRefFrame + !dpar.mvp.mfx.NumRefFrame * 16;
 
-            return std::make_tuple(
+            // Get default active frame number
+            std::tie(defaultP, defaultBL0, defaultBL1) = std::make_tuple(
                 std::min<mfxU16>(nRef[0][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference0, numRefFrame))
                 , std::min<mfxU16>(nRef[1][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference0, numRefFrame))
                 , std::min<mfxU16>(nRef[2][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference1, numRefFrame)));
+
+            auto SetDefaultNRef =
+                [](const mfxU16(*extRef)[8], mfxU16 defaultRef, mfxU16(*NumRefActive)[8])
+            {
+                bool bExternal = false;
+                bool bDone = false;
+
+                bDone |= !NumRefActive;
+                bDone |= !bDone && !extRef && std::fill_n(*NumRefActive, 8, defaultRef);
+                bDone |= !bDone && std::transform(
+                    *extRef
+                    , std::end(*extRef)
+                    , *NumRefActive
+                    , [&](mfxU16 ext)
+                    {
+                        bExternal |= SetIf(defaultRef, !!ext, ext);
+                        return defaultRef;
+                    });
+
+                return bExternal;
+            };
+
+            const mfxU16(*extRefP)[8]   = nullptr;
+            const mfxU16(*extRefBL0)[8] = nullptr;
+            const mfxU16(*extRefBL1)[8] = nullptr;
+
+            if (const mfxExtCodingOption3* pCO3 = ExtBuffer::Get(dpar.mvp))
+            {
+                extRefP   = &pCO3->NumRefActiveP;
+                extRefBL0 = &pCO3->NumRefActiveBL0;
+                extRefBL1 = &pCO3->NumRefActiveBL1;
+            }
+
+            bExternal |= SetDefaultNRef(extRefP, defaultP, pP);
+            bExternal |= SetDefaultNRef(extRefBL0, defaultBL0, pBL0);
+            bExternal |= SetDefaultNRef(extRefBL1, defaultBL1, pBL1);
+
+            return bExternal;
         });
 
         bSet = true;
