@@ -3803,6 +3803,7 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
 
     }
 
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     if (m_encTools.IsLookAheadBRC())
     {
         mfxEncToolsBRCBufferHint bufHint = {};
@@ -3812,6 +3813,7 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
         task.m_lplastatus.CurEncodedBits = bufHint.CurEncodedSizeInBits;
         task.m_lplastatus.DistToNextI = bufHint.DistToNextI;
     }
+#endif
 
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     if (m_encTools.IsLookAhead())
