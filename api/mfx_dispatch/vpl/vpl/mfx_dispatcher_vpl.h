@@ -342,6 +342,11 @@ struct LibInfo {
         if (msdkCtx)
             delete msdkCtx;
     }
+
+private:
+    // make this class non-copyable
+    LibInfo(const LibInfo&);
+    void operator=(const LibInfo&);
 };
 
 struct ImplInfo {
