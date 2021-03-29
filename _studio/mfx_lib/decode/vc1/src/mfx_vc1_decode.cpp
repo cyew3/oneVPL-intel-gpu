@@ -78,6 +78,10 @@ void MFXVideoDECODEVC1::SetFrameOrder(SurfaceSource* pFrameAlloc, mfxVideoParam*
     UMC::FrameMemID idx = m_pVC1VideoDecoder->GetFrameOrder(isLast, isSamePolar, frameOrder);
 
     pSurface = pFrameAlloc->GetSurface(idx, &surface, par);
+
+    if(pSurface == nullptr)
+        return;
+
     if (frameOrder == 0xFFFFFFFF)
     {
         pSurface->Data.FrameOrder = 0xFFFFFFFF;
