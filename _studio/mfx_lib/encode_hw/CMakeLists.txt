@@ -241,6 +241,9 @@ target_include_directories(encode_hw
     ${MSDK_UMC_ROOT}/codec/brc/include
     ${MSDK_UMC_ROOT}/codec/color_space_converter/include
     ${MSDK_UMC_ROOT}/codec/h264_enc/include
+    $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:
+      ${MSDK_LIB_ROOT}/lpla
+    >
 )
 
 target_link_libraries(encode_hw

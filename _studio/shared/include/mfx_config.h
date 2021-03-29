@@ -50,10 +50,6 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#ifdef MFX_ENABLE_ENCTOOLS
-#define MFX_ENABLE_ENCTOOLS_LPLA
-#endif
-
 #if defined(DEBUG) || defined(_DEBUG)
 #undef  MFX_DEBUG_TOOLS // to avoid redefinition
 #define MFX_DEBUG_TOOLS
@@ -581,6 +577,14 @@
 
 #if defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
     #define MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
+#endif
+
+#ifdef MFX_ENABLE_USER_ENCTOOLS
+    #define MFX_ENABLE_ENCTOOLS
+    #if defined(_WIN32) || defined(_WIN64) 
+        #define MFX_ENABLE_ENCTOOLS_LPLA
+        #define MFX_ENABLE_LP_LOOKAHEAD
+    #endif
 #endif
 
 #endif // _MFX_CONFIG_H_

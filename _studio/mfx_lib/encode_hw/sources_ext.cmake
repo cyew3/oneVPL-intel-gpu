@@ -247,7 +247,7 @@ target_sources(encode_hw
 
 target_link_libraries(encode_hw
   PUBLIC
-    $<$<BOOL:${MFX_ENABLE_LP_LOOKAHEAD}>:lpla>
+    $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:lpla>
 )
 
 target_compile_definitions(encode_hw PRIVATE $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>)

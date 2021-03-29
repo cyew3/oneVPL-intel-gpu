@@ -249,6 +249,7 @@ foreach( variant ${VARIANTS} )
       $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_preenc>
       $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_enc>
       $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_pak>
+      $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>
     )
 
   set(libversion   ${mfx_version_major}.${mfx_version_minor})

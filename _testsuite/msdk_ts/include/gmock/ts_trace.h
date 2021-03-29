@@ -29,8 +29,8 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 #include "mfxfeihevc.h"
 #include "mfxla.h"
 #include "mfxsc.h"
-#include "mfxenctools.h"
 #endif //MFX_ONEVPL
+#include "mfxenctools.h"
 #include "mfxplugin.h"
 #include "mfxbrc.h"
 
