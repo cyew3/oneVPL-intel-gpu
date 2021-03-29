@@ -328,15 +328,22 @@ MFX_PACK_END()
 
 #define MFX_ENCTOOLS_HINTPREENCODE_AREFFRAMES_VERSION MFX_STRUCT_VERSION(1, 0)
 
+enum
+{
+    MFX_BUFFERHINT_OUTPUT_ENCORDER = 0,
+    MFX_BUFFERHINT_OUTPUT_DISPORDER
+};
+
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer      Header;
     mfxStructVersion  Version;
     mfxU16            reserved[3];
     mfxU32            OptimalFrameSizeInBytes;
-    mfxU32            LaAvgEncodedSize;         /* Average size of encoded Lookahead frames in bits */
-    mfxU32            LaCurEncodedSize;         /* Size of encoded Lookahead frame at current frame location in bits */
-    mfxU32            LaIDist;                  /* First I Frame in Lookahead frames (0 if not found) */
+    mfxU32            AvgEncodedSizeInBits;         /* Average size of encoded Lookahead frames in bits */
+    mfxU32            CurEncodedSizeInBits;         /* Size of encoded Lookahead frame at current frame location in bits */
+    mfxU16            DistToNextI;                  /* Distance to next I Frame in Lookahead frames (0 if not found) */
+    mfxU16            OutputMode;                   /* enum */
     mfxU32            reserved2[4];
 } mfxEncToolsBRCBufferHint;
 MFX_PACK_END()

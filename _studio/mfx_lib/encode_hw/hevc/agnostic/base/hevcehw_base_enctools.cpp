@@ -405,7 +405,7 @@ static mfxStatus InitEncToolsCtrl(
 
         mfxU32 maxFrameSize = pCO2 ? pCO2->MaxFrameSize : 0;
         ctrl->WinBRCMaxAvgKbps = pCO3 ? pCO3->WinBRCMaxAvgKbps*mult : 0;
-        ctrl->WinBRCSize = pCO3 ? pCO3->WinBRCSize:0;
+        ctrl->WinBRCSize = pCO3 ? pCO3->WinBRCSize : 0;
         ctrl->MaxFrameSizeInBytes[0] = (pCO3 && pCO3->MaxFrameSizeI) ? pCO3->MaxFrameSizeI : maxFrameSize;     // MaxFrameSize limitation
         ctrl->MaxFrameSizeInBytes[1] = (pCO3 && pCO3->MaxFrameSizeP) ? pCO3->MaxFrameSizeP : maxFrameSize;
         ctrl->MaxFrameSizeInBytes[2] = maxFrameSize;
@@ -420,6 +420,16 @@ static mfxStatus InitEncToolsCtrl(
 
         ctrl->PanicMode = pCO3 ? pCO3->BRCPanicMode : 0;
     }
+
+    // LaScale here
+    ctrl->LaScale = 0;
+    ctrl->LaQp = 30;
+    mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+    if (crW >= 720) {
+        ctrl->LaScale = 2;
+        if (ctrl->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) ctrl->LaQp = 26;
+    }
+
     return MFX_ERR_NONE;
 }
 

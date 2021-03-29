@@ -222,13 +222,8 @@ namespace aenc {
             throw Error("wrong GOP size at Init");
         }
 
-        if ((param.MinGopSize > param.MaxGopSize - param.MaxMiniGopSize) || (param.AGOP && param.StrictIFrame)) {
+        if (param.MinGopSize > param.MaxGopSize - param.MaxMiniGopSize) {
             throw Error("wrong adaptive GOP parameters at Init");
-        }
-
-        if (param.ALTR && param.StrictIFrame) {
-            //in current implementation only I frame can be marked as LTR, and LTR can be set only on SCD
-            throw Error("wrong adaptive LTR parameters at Init");
         }
 
         if (param.ColorFormat != MFX_FOURCC_NV12 && param.ColorFormat != MFX_FOURCC_RGB4) {
@@ -831,7 +826,7 @@ namespace aenc {
         {
             f.DeltaQP = 1 + f.PyramidLayer; // Default
         }
-        else // if (GOPSize == 2) 
+        else // if (GOPSize == 2)
         {
             f.DeltaQP = 3;              // Default
         }

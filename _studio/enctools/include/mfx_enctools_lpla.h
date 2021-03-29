@@ -39,9 +39,9 @@ struct MfxLookAheadReport
     mfxU8  MiniGopSize;
     mfxU8  PyramidQpHint;
     mfxU32 TargetFrameSize;
-    mfxU32 LaAvgEncodedSize;
-    mfxU32 LaCurEncodedSize;
-    mfxU32 LaIDist;
+    mfxU32 AvgEncodedBits;
+    mfxU32 CurEncodedBits;
+    mfxU16 DistToNextI;
 };
 
 struct MfxFrameSize

@@ -1877,18 +1877,18 @@ mfxStatus BRC_EncTool::ReportBufferHints(mfxU32 dispOrder, mfxEncToolsBRCBufferH
         BRC_FrameStruct frStruct;
         frStruct.dispOrder = dispOrder;
         frStruct.OptimalFrameSizeInBytes = pBufHints.OptimalFrameSizeInBytes;
-        frStruct.LaAvgEncodedSize        = pBufHints.LaAvgEncodedSize;
-        frStruct.LaCurEncodedSize        = pBufHints.LaCurEncodedSize;
-        frStruct.LaIDist                 = pBufHints.LaIDist;
+        frStruct.LaAvgEncodedSize        = pBufHints.AvgEncodedSizeInBits;
+        frStruct.LaCurEncodedSize        = pBufHints.CurEncodedSizeInBits;
+        frStruct.LaIDist                 = pBufHints.DistToNextI;
         m_FrameStruct.push_back(frStruct);
         frameStruct = m_FrameStruct.end() - 1;
     }
     else
     {
         (*frameStruct).OptimalFrameSizeInBytes = pBufHints.OptimalFrameSizeInBytes;
-        (*frameStruct).LaAvgEncodedSize        = pBufHints.LaAvgEncodedSize;
-        (*frameStruct).LaCurEncodedSize        = pBufHints.LaCurEncodedSize;
-        (*frameStruct).LaIDist                 = pBufHints.LaIDist;
+        (*frameStruct).LaAvgEncodedSize        = pBufHints.AvgEncodedSizeInBits;
+        (*frameStruct).LaCurEncodedSize        = pBufHints.CurEncodedSizeInBits;
+        (*frameStruct).LaIDist                 = pBufHints.DistToNextI;
     }
     return MFX_ERR_NONE;
 }

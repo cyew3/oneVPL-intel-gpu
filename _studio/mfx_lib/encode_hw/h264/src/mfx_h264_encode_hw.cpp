@@ -1044,7 +1044,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
-
     sts = m_ddi->QueryEncodeCaps(m_caps);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1736,13 +1735,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_videoInit = m_video;
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    mfxU16 isEnctoolsBRC = 0;
-#if defined(MFX_ENABLE_ENCTOOLS)
-    mfxExtEncToolsConfig & extConfig = GetExtBufferRef(m_video);
-    isEnctoolsBRC = extConfig.BRC;
-#endif
     // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
-    if(IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, m_video.mfx.RateControlMethod, isEnctoolsBRC)
+    if (IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, m_video.mfx.RateControlMethod)
 #if defined(MFX_ENABLE_ENCTOOLS)
         && !(m_enabledEncTools)
 #endif
@@ -3764,7 +3758,7 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
             //printf("%d type %d, m_QPdelta %d m_QPmodulation %d, currGopRefDist %d, ALQOffset %d\n", task.m_frameOrder, st.FrameType, st.QPDelta, st.QPModulation, task.m_currGopRefDist, task.m_ALQOffset);
         }
 
-        if (m_encTools.IsAdaptiveGOP()) {
+        if (m_encTools.IsAdaptiveI() || m_encTools.IsAdaptiveLTR()) {
             mfxEncToolsHintPreEncodeSceneChange schg = {};
             sts = m_encTools.QueryPreEncSChg(task.m_frameOrder, schg);
             MFX_CHECK_STS(sts);
@@ -3809,6 +3803,16 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
 
     }
 
+    if (m_encTools.IsLookAheadBRC())
+    {
+        mfxEncToolsBRCBufferHint bufHint = {};
+        sts = m_encTools.QueryLookAheadStatus(task.m_frameOrder, &bufHint, nullptr, nullptr);
+        MFX_CHECK_STS(sts);
+        task.m_lplastatus.AvgEncodedBits = bufHint.AvgEncodedSizeInBits;
+        task.m_lplastatus.CurEncodedBits = bufHint.CurEncodedSizeInBits;
+        task.m_lplastatus.DistToNextI = bufHint.DistToNextI;
+    }
+
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     if (m_encTools.IsLookAhead())
     {
@@ -3842,9 +3846,6 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
         task.m_lplastatus.TargetFrameSize      = bufHint.OptimalFrameSizeInBytes;
         task.m_lplastatus.MiniGopSize          = (mfxU8)gopHint.MiniGopSize;
         task.m_lplastatus.QpModulation         = (mfxU8)gopHint.QPModulation;
-        task.m_lplastatus.LaAvgEncodedSize     = bufHint.LaAvgEncodedSize;
-        task.m_lplastatus.LaCurEncodedSize     = bufHint.LaCurEncodedSize;
-        task.m_lplastatus.LaIDist              = bufHint.LaIDist;
     }
 #endif
 
@@ -4069,7 +4070,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_START_SCD");
         DdiTask & task = m_ScDetectionStarted.back();
 #if defined(MFX_ENABLE_ENCTOOLS)
-        if (m_enabledEncTools && (m_encTools.IsPreEncNeeded() || m_encTools.IsLookAhead()))
+        if (m_enabledEncTools && (m_encTools.IsPreEncNeeded() || m_encTools.IsLookAheadBRC() || m_encTools.IsLookAhead()))
         {
             mfxFrameSurface1  tmpSurface = *task.m_yuv;
             mfxStatus sts = m_encTools.SubmitForPreEnc(task.m_frameOrder, &tmpSurface);

@@ -31,9 +31,9 @@ struct mfxLplastatus
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxU8 MiniGopSize = 0;
     mfxU8 QpModulation = 0;
-    mfxU32 LaAvgEncodedSize = 0;
-    mfxU32 LaCurEncodedSize = 0;
-    mfxU32 LaIDist = 0;
+    mfxU32 AvgEncodedBits = 0;
+    mfxU32 CurEncodedBits = 0;
+    mfxU16 DistToNextI = 0;
 #endif
 };
 

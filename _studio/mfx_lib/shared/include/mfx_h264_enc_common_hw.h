@@ -144,7 +144,7 @@ namespace MfxHwH264Encode
     static const mfxU16 MFX_FRAMETYPE_xIREF   = MFX_FRAMETYPE_xI | MFX_FRAMETYPE_xREF;
     static const mfxU16 MFX_FRAMETYPE_KEYPIC  = 0x0020;
 
-    static const mfxU16 MFX_IOPATTERN_IN_MASK_SYS_OR_D3D = 
+    static const mfxU16 MFX_IOPATTERN_IN_MASK_SYS_OR_D3D =
         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
     static const mfxU16 MFX_IOPATTERN_IN_MASK = MFX_IOPATTERN_IN_MASK_SYS_OR_D3D
@@ -1056,8 +1056,7 @@ namespace MfxHwH264Encode
     bool IsLpLookaheadSupported(
         mfxU16 scenario,
         mfxU16 lookaheadDepth,
-        mfxU16 rateContrlMethod,
-        mfxU16 isEnctoolsBRC);
+        mfxU16 rateContrlMethod);
 #endif
 
     struct mfxExtBufferProxy;

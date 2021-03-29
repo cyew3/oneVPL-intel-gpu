@@ -68,14 +68,12 @@ mfxStatus InitCtrl(mfxVideoParam const & par, mfxEncToolsCtrl *ctrl)
 
     ctrl->RateControlMethod = par.mfx.RateControlMethod;  //CBR, VBR, CRF,CQP
 
-
     if (!BRC)
     {
         ctrl->QPLevel[0] = par.mfx.QPI;
         ctrl->QPLevel[1] = par.mfx.QPP;
         ctrl->QPLevel[2] = par.mfx.QPB;
     }
-
     else
     {
         ctrl->TargetKbps = par.mfx.TargetKbps*mult;
@@ -113,10 +111,23 @@ mfxStatus InitCtrl(mfxVideoParam const & par, mfxEncToolsCtrl *ctrl)
         ctrl->MaxQPLevel[2] = CO2->MaxQPB;
 
         ctrl->PanicMode = CO3->BRCPanicMode;
-
     }
-    return MFX_ERR_NONE;
 
+    if (ctrl->NumExtParam > 1)
+    {
+        ctrl->ExtParam[0] = Et_GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_ENCTOOLS_DEVICE);
+        ctrl->ExtParam[1] = Et_GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_ENCTOOLS_ALLOCATOR);
+    }
+
+    ctrl->LaScale = 0;
+    ctrl->LaQp = 30;
+    mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+    if (crW >= 720) {
+        ctrl->LaScale = 2;
+        if (ctrl->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) ctrl->LaQp = 26;
+    }
+
+    return MFX_ERR_NONE;
 }
 
 inline void SetToolsStatus(mfxExtEncToolsConfig* conf, bool bOn)
@@ -157,9 +168,7 @@ inline void CopyPreEncLATools(mfxExtEncToolsConfig const & confIn, mfxExtEncTool
     confOut->AdaptiveQuantMatrices = confIn.AdaptiveQuantMatrices;
     confOut->BRCBufferHints = confIn.BRCBufferHints;
     confOut->AdaptivePyramidQuantP = confIn.AdaptivePyramidQuantP;
-	confOut->AdaptivePyramidQuantB = confIn.AdaptivePyramidQuantB;
     confOut->AdaptiveI = confIn.AdaptiveI;
-	confOut->AdaptiveB = confIn.AdaptiveB;
 }
 
 inline void OffPreEncLATools(mfxExtEncToolsConfig* conf)
@@ -181,14 +190,14 @@ inline bool isPreEncSCD(mfxExtEncToolsConfig const & conf, mfxEncToolsCtrl const
 }
 inline bool isPreEncLA(mfxExtEncToolsConfig const & conf, mfxEncToolsCtrl const & ctrl)
 {
-    return (
-        (ctrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING || ctrl.MaxDelayInFrames) &&
+    return ((IsOn(conf.BRCBufferHints) && IsOn(conf.BRC)) ||
+        (ctrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING  &&
         (IsOn(conf.AdaptiveI) ||
          IsOn(conf.AdaptiveB) ||
          IsOn(conf.AdaptiveQuantMatrices) ||
          IsOn(conf.BRCBufferHints) ||
          IsOn(conf.AdaptivePyramidQuantP) ||
-         IsOn(conf.AdaptivePyramidQuantB)));
+         IsOn(conf.AdaptivePyramidQuantB))));
 }
 
 mfxStatus EncTools::GetSupportedConfig(mfxExtEncToolsConfig* config, mfxEncToolsCtrl const * ctrl)
@@ -198,6 +207,10 @@ mfxStatus EncTools::GetSupportedConfig(mfxExtEncToolsConfig* config, mfxEncTools
 
     if (ctrl->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING)
     {
+        config->BRC = (mfxU16)((ctrl->RateControlMethod == MFX_RATECONTROL_CBR ||
+            ctrl->RateControlMethod == MFX_RATECONTROL_VBR) ?
+            MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+
         if (ctrl->MaxGopRefDist == 8 ||
             ctrl->MaxGopRefDist == 4 ||
             ctrl->MaxGopRefDist == 2 ||
@@ -211,12 +224,8 @@ mfxStatus EncTools::GetSupportedConfig(mfxExtEncToolsConfig* config, mfxEncTools
             config->AdaptiveLTR = MFX_CODINGOPTION_ON;
             config->AdaptivePyramidQuantP = MFX_CODINGOPTION_ON;
             config->AdaptivePyramidQuantB = MFX_CODINGOPTION_ON;
-            if(ctrl->MaxDelayInFrames)
+            if (ctrl->MaxDelayInFrames > ctrl->MaxGopRefDist && IsOn(config->BRC))
                 config->BRCBufferHints = MFX_CODINGOPTION_ON;
-            config->BRC = (mfxU16)((ctrl->RateControlMethod == MFX_RATECONTROL_CBR ||
-                ctrl->RateControlMethod == MFX_RATECONTROL_VBR) ?
-                MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
-
         }
     }
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
@@ -347,7 +356,6 @@ mfxStatus EncTools::InitMfxVppParams(mfxEncToolsCtrl const & ctrl)
         mfxU32 downscale = 0;
         m_lpLookAhead.GetDownScaleParams(m_mfxVppParams.vpp.Out, downscale);
 
-
         mfxPlatform platform;
         m_mfxSession.QueryPlatform(&platform);
 
@@ -408,9 +416,7 @@ mfxStatus EncTools::Init(mfxExtEncToolsConfig const * pConfig, mfxEncToolsCtrl c
 
     m_ctrl = *ctrl;
 
-    mfxU16 crW = ctrl->FrameInfo.CropW ? ctrl->FrameInfo.CropW : ctrl->FrameInfo.Width;
-
-    bool needVPP = (ctrl->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) && (isPreEncSCD(*pConfig, *ctrl) || (isPreEncLA(*pConfig, *ctrl) && crW >= 720));
+    bool needVPP = (ctrl->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) && (isPreEncSCD(*pConfig, *ctrl) || (isPreEncLA(*pConfig, *ctrl) && ctrl->LaScale));
     needVPP = needVPP || ((ctrl->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && isPreEncLA(*pConfig, *ctrl));
 
     if (needVPP)
@@ -723,7 +729,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
 
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     mfxEncToolsHintQuantMatrix *pCqmHint = (mfxEncToolsHintQuantMatrix  *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX);
-    if (pCqmHint && isPreEncLA(m_config, m_ctrl) )
+    if (pCqmHint && isPreEncLA(m_config, m_ctrl))
     {
         sts = m_lpLookAhead.Query(par->DisplayOrder, pCqmHint);
         if (sts == MFX_ERR_NOT_FOUND)
@@ -732,7 +738,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
     }
 
     mfxEncToolsBRCBufferHint *bufferHint = (mfxEncToolsBRCBufferHint  *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT);
-    if (bufferHint  && isPreEncLA(m_config, m_ctrl))
+    if (bufferHint && isPreEncLA(m_config, m_ctrl))
     {
         sts = m_lpLookAhead.Query(par->DisplayOrder, bufferHint);
         if (sts == MFX_ERR_NOT_FOUND)
@@ -740,7 +746,6 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
         MFX_CHECK_STS(sts);
     }
 #endif
-
 
     mfxEncToolsBRCStatus  *pFrameSts = (mfxEncToolsBRCStatus *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_BRC_STATUS);
     if (pFrameSts && IsOn(m_config.BRC))
