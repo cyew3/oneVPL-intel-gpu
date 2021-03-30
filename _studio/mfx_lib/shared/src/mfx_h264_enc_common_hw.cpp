@@ -8634,6 +8634,8 @@ MfxVideoParam::MfxVideoParam()
 #if defined(MFX_ENABLE_ENCTOOLS)
     , m_encTools()
     , m_encToolsConfig()
+    , m_extDevice()
+    , m_extAllocator()
 #endif
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
