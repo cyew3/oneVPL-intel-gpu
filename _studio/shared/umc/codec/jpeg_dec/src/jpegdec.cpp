@@ -619,7 +619,7 @@ JERRCODE CJPEGDecoder::ParseSOF2(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    if(curr_comp->m_hsampling <= 0 || curr_comp->m_vsampling <= 0)
+    if(curr_comp->m_hsampling <= 0 || curr_comp->m_vsampling <= 0 || curr_comp->m_q_selector >= MAX_QUANT_TABLES)
     {
       return JPEG_ERR_SOF_DATA;
     }
@@ -748,7 +748,7 @@ JERRCODE CJPEGDecoder::ParseSOF3(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    if(curr_comp->m_hsampling <= 0 || curr_comp->m_vsampling <= 0)
+    if(curr_comp->m_hsampling <= 0 || curr_comp->m_vsampling <= 0 || curr_comp->m_q_selector >= MAX_QUANT_TABLES)
     {
       return JPEG_ERR_SOF_DATA;
     }
