@@ -56,6 +56,7 @@ void HevcEncTools::SetSupported(ParamSupport& blocks)
         const auto& buf_src = *(const mfxExtCodingOption2*)pSrc;
         auto& buf_dst = *(mfxExtCodingOption2*)pDst;
         MFX_COPY_FIELD(AdaptiveB);
+        MFX_COPY_FIELD(LookAheadDepth);
     });
 }
 
