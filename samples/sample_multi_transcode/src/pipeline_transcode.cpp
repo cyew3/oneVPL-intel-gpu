@@ -2778,6 +2778,19 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     if (pInParams->bIsMVC)
         m_mfxEncParams.AddExtBuffer<mfxExtMVCSeqDesc>();
 
+#if (MFX_VERSION >= 1027)
+    if (pInParams->TargetBitDepthLuma)
+    {
+        auto co3 = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption3>();
+        co3->TargetBitDepthLuma = pInParams->TargetBitDepthLuma;
+    }
+    if (pInParams->TargetBitDepthChroma)
+    {
+        auto co3 = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption3>();
+        co3->TargetBitDepthChroma = pInParams->TargetBitDepthChroma;
+    }
+#endif
+
 #if !defined(MFX_ONEVPL)
     if (m_pParentPipeline)
     {
@@ -3112,7 +3125,6 @@ mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
         m_mfxVppParams.vpp.Out.Height = MSDK_ALIGN16(m_mfxVppParams.vpp.Out.CropH);
         m_mfxVppParams.vpp.Out.Width  = MSDK_ALIGN16(m_mfxVppParams.vpp.Out.CropW);
     }
-
 
     // configure and attach external parameters
     mfxStatus sts = AllocAndInitVppDoNotUse(pInParams);

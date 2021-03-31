@@ -701,6 +701,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         || pInParams->nPRefType || pInParams->IntRefCycleDist || pInParams->nAdaptiveMaxFrameSize
         || pInParams->nNumRefActiveP || pInParams->nNumRefActiveBL0 || pInParams->nNumRefActiveBL1
         || pInParams->ExtBrcAdaptiveLTR || pInParams->QVBRQuality || pInParams->WinBRCSize
+#if (MFX_VERSION >= 1027)
+        || pInParams->TargetBitDepthLuma || pInParams->TargetBitDepthChroma
+#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         || pInParams->DeblockingAlphaTcOffset || pInParams->DeblockingBetaOffset
 #endif
@@ -726,6 +729,11 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         codingOption3->QVBRQuality    = pInParams->QVBRQuality;
 #if (MFX_VERSION >= 1026)
         codingOption3->ExtBrcAdaptiveLTR = pInParams->ExtBrcAdaptiveLTR;
+#endif
+
+#if (MFX_VERSION >= 1027)
+        codingOption3->TargetBitDepthLuma = pInParams->TargetBitDepthLuma;
+        codingOption3->TargetBitDepthChroma = pInParams->TargetBitDepthChroma;
 #endif
         codingOption3->WinBRCSize = pInParams->WinBRCSize;
         codingOption3->WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
@@ -1679,8 +1687,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
     // or if different FourCC is set
     if (pParams->nWidth != pParams->nDstWidth ||
         pParams->nHeight != pParams->nDstHeight ||
-        FileFourCC2EncFourCC(pParams->FileInputFourCC) != pParams->EncodeFourCC )
-
+        FileFourCC2EncFourCC(pParams->FileInputFourCC) != pParams->EncodeFourCC)
     {
         bVpp = true;
         if (m_bIsFieldSplitting)

@@ -371,6 +371,10 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO(GPB);
             SERIALIZE_INFO(MaxFrameSizeI);
             SERIALIZE_INFO(MaxFrameSizeP);
+#if (MFX_VERSION >= 1027)
+            SERIALIZE_INFO(TargetBitDepthLuma);
+            SERIALIZE_INFO(TargetBitDepthChroma);
+#endif
 #if defined(MFX_VERSION_NEXT) && (MFX_VERSION >= MFX_VERSION_NEXT)
             SERIALIZE_INFO(Log2MaxMvLengthHorizontal);
             SERIALIZE_INFO(Log2MaxMvLengthVertical);
