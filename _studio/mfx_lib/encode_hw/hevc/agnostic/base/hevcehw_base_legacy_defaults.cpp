@@ -1090,7 +1090,7 @@ public:
                 || (idrPicDist && (fo + 1) % idrPicDist == 0));
         bool bB = !(bPRef || bIdr || bPRef || bIRef);
 
-        mfxU16 ft =
+        mfxU16 ft = GopHints.FrameType ? GopHints.FrameType :
             bIdr * (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR)
             + bIRef * (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF)
             + bPRef * (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF)

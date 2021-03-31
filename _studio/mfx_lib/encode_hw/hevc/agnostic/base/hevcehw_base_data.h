@@ -766,6 +766,7 @@ namespace Base
 
     struct mfxGopHints {
         mfxU32              MiniGopSize = 0;
+        mfxU16              FrameType = 0;
     };
 
     struct TaskCommonPar

@@ -50,13 +50,13 @@ void HevcEncTools::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(BRCBufferHints);
         MFX_COPY_FIELD(SceneChange);
     });
-	blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
-		[](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
-	{
-		const auto& buf_src = *(const mfxExtCodingOption2*)pSrc;
-		auto& buf_dst = *(mfxExtCodingOption2*)pDst;
-		MFX_COPY_FIELD(AdaptiveB);
-	});
+    blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
+        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
+    {
+        const auto& buf_src = *(const mfxExtCodingOption2*)pSrc;
+        auto& buf_dst = *(mfxExtCodingOption2*)pDst;
+        MFX_COPY_FIELD(AdaptiveB);
+    });
 }
 
 void HevcEncTools::SetInherited(ParamInheritance& par)
@@ -161,14 +161,14 @@ inline mfxU32 GetNumTempLayers(mfxVideoParam &video)
 inline bool CheckEncToolsCondition(mfxVideoParam &video)
 {
     return ((video.mfx.FrameInfo.PicStruct == 0
-        || video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) 
+        || video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
         && GetNumTempLayers(video) <= 1);
 }
 
 inline bool  CheckSWEncCondition(mfxVideoParam &video)
 {
     return (
-        CheckEncToolsCondition(video) 
+        CheckEncToolsCondition(video)
         && (video.mfx.GopRefDist == 0
             || video.mfx.GopRefDist == 1
             || video.mfx.GopRefDist == 2
@@ -259,7 +259,7 @@ inline mfxU32 CheckFlag(mfxU16 flag, bool bCond)
         , mfxU16(MFX_CODINGOPTION_ON * (bCond)));
 }
 
-static mfxU32 CorrectVideoParams(mfxVideoParam &video, mfxExtEncToolsConfig& supportedConfig)
+static mfxU32 CorrectVideoParams(mfxVideoParam & video, mfxExtEncToolsConfig & supportedConfig)
 {
     mfxExtCodingOption2   *pExtOpt2 = ExtBuffer::Get(video);
     mfxExtCodingOption3   *pExtOpt3 = ExtBuffer::Get(video);
@@ -630,7 +630,7 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
     std::vector<mfxExtBuffer*> extParams;
     mfxEncToolsBRCFrameParams  extFrameData = {};
     task_par.DisplayOrder = task.DisplayOrder;
-        
+
     {
         // input params
         extFrameData.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_FRAME_PARAM;
@@ -639,13 +639,12 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
         extFrameData.FrameType = task.FrameType;
         // TO DO: extFrameData.PyramidLayer = ?
         //
-        
+
         extParams.push_back((mfxExtBuffer *)&extFrameData);
         task_par.ExtParam = extParams.data();
         task_par.NumExtParam = (mfxU16)extParams.size();
-        
+
         auto sts = m_pEncTools->Submit(m_pEncTools->Context, &task_par);
-        //printf("ET Submit: do %d, ft %d, eo %d, sts %d\n", task_par.DisplayOrder, extFrameData.FrameType, task.EncodedOrder, sts);
         MFX_CHECK_STS(sts);
     }
     {
@@ -656,10 +655,10 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
         extQuantCtrl.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_QUANT_CONTROL;
         extQuantCtrl.Header.BufferSz = sizeof(extQuantCtrl);
         extParams.push_back((mfxExtBuffer *)&extQuantCtrl);
-        
+
         extHRDPos = {};
         extHRDPos.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_HRD_POS;
-        extHRDPos.Header.BufferSz = sizeof(extHRDPos); 
+        extHRDPos.Header.BufferSz = sizeof(extHRDPos);
         extParams.push_back((mfxExtBuffer *)&extHRDPos);
 
         task_par.NumExtParam = (mfxU16)extParams.size();
@@ -679,9 +678,9 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     mfxEncToolsTaskParam task_par = {};
     std::vector<mfxExtBuffer*> extParams;
 
-	mfxEncToolsHintPreEncodeGOP preEncodeGOP = {};
-	mfxEncToolsBRCBufferHint bufHint = {};
-	mfxEncToolsHintQuantMatrix cqmHint = {};
+    mfxEncToolsHintPreEncodeGOP preEncodeGOP = {};
+    mfxEncToolsBRCBufferHint bufHint = {};
+    mfxEncToolsHintQuantMatrix cqmHint = {};
 
     MFX_CHECK(task.DisplayOrder!= (mfxU32)(-1), MFX_ERR_NONE);
 
@@ -689,25 +688,25 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     task_par.NumExtParam = 0;
 
     if (IsOn(m_EncToolConfig.AdaptiveI) ||
-		IsOn(m_EncToolConfig.AdaptiveB) ||
-		IsOn(m_EncToolConfig.AdaptivePyramidQuantP) ||
-		IsOn(m_EncToolConfig.AdaptivePyramidQuantB))
-	{
-		preEncodeGOP.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
-		preEncodeGOP.Header.BufferSz = sizeof(preEncodeGOP);
-		extParams.push_back((mfxExtBuffer *)&preEncodeGOP);
-	}
+        IsOn(m_EncToolConfig.AdaptiveB) ||
+        IsOn(m_EncToolConfig.AdaptivePyramidQuantP) ||
+        IsOn(m_EncToolConfig.AdaptivePyramidQuantB))
+    {
+        preEncodeGOP.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
+        preEncodeGOP.Header.BufferSz = sizeof(preEncodeGOP);
+        extParams.push_back((mfxExtBuffer *)&preEncodeGOP);
+    }
 
 #if defined MFX_ENABLE_ENCTOOLS_LPLA
     if (IsOn(m_EncToolConfig.AdaptiveQuantMatrices))
     {
-		cqmHint.MatrixType = CQM_HINT_USE_FLAT_MATRIX;
+        cqmHint.MatrixType = CQM_HINT_USE_FLAT_MATRIX;
         cqmHint.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX;
         cqmHint.Header.BufferSz = sizeof(cqmHint);
         extParams.push_back((mfxExtBuffer *)&cqmHint);
     }
 
-    
+
     if (IsOn(m_EncToolConfig.BRCBufferHints))
     {
         bufHint.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
@@ -718,10 +717,12 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     task_par.ExtParam = extParams.data();
     task_par.NumExtParam = (mfxU16)extParams.size();
 
-	MFX_CHECK(task_par.NumExtParam, MFX_ERR_NONE);
+    MFX_CHECK(task_par.NumExtParam, MFX_ERR_NONE);
 
     auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
     task.GopHints.MiniGopSize = preEncodeGOP.MiniGopSize;
+    task.GopHints.FrameType = (m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING ? 0 : preEncodeGOP.FrameType);
+
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxLplastatus laStatus = {};
     laStatus.QpModulation = (mfxU8)preEncodeGOP.QPModulation;
@@ -765,7 +766,7 @@ mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCS
 
     MFX_CHECK(task.DisplayOrder != (mfxU32)(-1), MFX_ERR_NONE);
     task_par.DisplayOrder = task.DisplayOrder;
-    
+
     {
         mfxEncToolsBRCEncodeResult extEncRes;
         extEncRes.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_ENCODE_RESULT;
@@ -778,7 +779,6 @@ mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCS
         task_par.NumExtParam = (mfxU16)extParams.size();
         task_par.ExtParam = extParams.data();
         auto sts = m_pEncTools->Submit(m_pEncTools->Context, &task_par);
-        //printf("Update: coded frame size %d, QP %d, sts %d\n", extEncRes.CodedFrameSize, extEncRes.QpY, sts);
         MFX_CHECK_STS(sts);
     }
     {
@@ -791,10 +791,9 @@ mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCS
         task_par.NumExtParam = (mfxU16)extParams.size();
         task_par.ExtParam = extParams.data();
         auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
-        //printf("Update: brc sts %d, sts %d\n", brcStatus.FrameStatus.BRCStatus,sts);
         MFX_CHECK_STS(sts)
 
-    }  
+    }
 
     return MFX_ERR_NONE;
 }
@@ -889,7 +888,7 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     });
 
 
-    // Add S_ET_SUBMIT and S_ET_QUERY stages for LPLA
+    // Add S_ET_SUBMIT and S_ET_QUERY stages for EncTools
     Push(BLK_AddTask
         , [this](StorageRW& global, StorageRW&) -> mfxStatus
     {
@@ -903,7 +902,6 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , StorageW& /*s_task*/) -> mfxStatus
         {
             std::unique_lock<std::mutex> closeGuard(tm.m_closeMtx);
-            // If In LookAhead Pass, it should be moved to the next stage
 
             if (StorageW* pTask = tm.GetTask(tm.Stage(S_ET_SUBMIT)))
             {
@@ -963,8 +961,6 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
                 if (LpLaStatus.size() > 0)
                 {
                     dst_task.LplaStatus = *(LpLaStatus.begin());
-                   // printf("copy dst task: %d,  Target %d\n", dst_task.DisplayOrder, dst_task.LplaStatus.TargetFrameSize);
-
                     LpLaStatus.pop_front();
                 }
                 //dst_task.LplaStatus = src_task.LplaStatus;
@@ -973,12 +969,8 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         };
         taskMgrIface.UpdateTask.Push(UpdateTask);
 
-		return MFX_ERR_NONE;
-	});
-    
-  
-
-
+        return MFX_ERR_NONE;
+    });
 }
 void HevcEncTools::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
@@ -1013,7 +1005,6 @@ void HevcEncTools::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         task.initial_cpb_removal_offset = HRDPos.InitialCpbRemovalDelayOffset;
 
         task.QpY = mfxI8(mfx::clamp((mfxI32)quantCtrl.QpY + (-6 * sps.bit_depth_luma_minus8) * bNegativeQpAllowed, minQP, maxQP));
-        //printf("%d) Get QP %d\n", task.DisplayOrder, task.QpY);
         sh.slice_qp_delta = mfxI8(task.QpY - (pps.init_qp_minus26 + 26));
 
         sh.temporal_mvp_enabled_flag &= !(par.AsyncDepth > 1 && task.NumRecode); // WA
