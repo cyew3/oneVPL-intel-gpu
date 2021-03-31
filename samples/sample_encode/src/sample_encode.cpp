@@ -485,6 +485,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     // default implementation
     pParams->bUseHWLib = true;
+    pParams->libType = MFX_IMPL_HARDWARE_ANY;
     pParams->isV4L2InputEnabled = false;
     pParams->nNumFrames = 0;
     pParams->FileInputFourCC = MFX_FOURCC_I420;
