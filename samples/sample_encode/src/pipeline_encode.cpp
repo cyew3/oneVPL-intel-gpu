@@ -802,7 +802,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
     m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
 
-#if defined(MFX_ONEVPL)
+#if (defined(_WIN64) || defined(_WIN32)) && defined(MFX_ONEVPL)
     if (pInParams->isDualMode)
     {
         m_mfxEncParams.AddExtBuffer<mfxExtHyperModeParam>();

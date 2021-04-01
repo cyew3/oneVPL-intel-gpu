@@ -16,6 +16,7 @@ $FILES=@(
     'vpl\x64\__bin\Release\mfx_player.exe',
     'vpl\x64\__bin\Release\mfx_transcoder.exe',
     'vpl\x64\__bin\Release\msdk_gmock.exe',
+    'vpl\x64\__bin\Release\sample_encode.exe',
     'vpl\x64\__bin\Release\sample_multi_transcode.exe'
 )
 

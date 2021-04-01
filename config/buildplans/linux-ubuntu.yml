@@ -42,7 +42,7 @@ steps:
       -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_ALL=ON
       -DBUILD_VAL_TOOLS=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.2 $MFX_HOME'
   - name: build vpl
-    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build && make -j$(nproc) mfx-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode"
+    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build && make -j$(nproc) mfx-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode sample_encode"
   - name: create integration lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build

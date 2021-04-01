@@ -471,7 +471,8 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
             return MFX_ERR_UNSUPPORTED;
         }
     }
-#if defined(MFX_ONEVPL)
+#endif
+#if (defined(_WIN64) || defined(_WIN32)) && defined(MFX_ONEVPL)
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dual_gfx::on")))
     {
         pParams->isDualMode = true;

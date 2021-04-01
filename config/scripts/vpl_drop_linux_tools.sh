@@ -10,6 +10,7 @@ BIN_FILES=(
     "mfx_player"
     "mfx_transcoder"
     "msdk_gmock"
+    "sample_encode"
     "sample_multi_transcode"
 	)
 

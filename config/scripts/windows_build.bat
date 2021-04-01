@@ -17,7 +17,7 @@ cd %BUILDTREE%
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.2 %WORKSPACE%\sources\mdp_msdk-lib > %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x64: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
-cmake --build . -j %NUMBER_OF_PROCESSORS% --target libmfx64-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode >> %BUILDTREE%\build.log 2>&1
+cmake --build . -j %NUMBER_OF_PROCESSORS% --target libmfx64-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode sample_encode >> %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x64: build failed with %ERRORLEVEL%. & exit /B 1)
 
