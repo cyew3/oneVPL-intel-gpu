@@ -61,6 +61,7 @@ target_compile_options(mfx_trans_pipeline
 target_compile_definitions(mfx_trans_pipeline
   PRIVATE
     MFX_VERSION_USE_LATEST
+    MFX_DEPRECATED_OFF
     $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 

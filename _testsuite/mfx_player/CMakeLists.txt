@@ -109,6 +109,7 @@ target_include_directories(mfx_pipeline
 target_compile_definitions(mfx_pipeline
   PRIVATE
     MFX_VERSION_USE_LATEST
+    MFX_DEPRECATED_OFF
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
     $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )

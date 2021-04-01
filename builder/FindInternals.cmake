@@ -77,6 +77,7 @@ target_include_directories(mfx_static_lib
 target_compile_definitions(mfx_static_lib
   INTERFACE
     ${API_FLAGS}
+    MFX_DEPRECATED_OFF
     ${WARNING_FLAGS}
   )
 

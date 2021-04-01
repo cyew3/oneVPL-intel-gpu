@@ -611,6 +611,7 @@ target_compile_definitions(msdk_gmock
     _VARIADIC_MAX=10
     ENABLE_PS=1
     MFX_VERSION_USE_LATEST
+    MFX_DEPRECATED_OFF
     MFX_HAVE_EXTERNAL_CONFIG
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
 )
@@ -676,6 +677,7 @@ target_compile_definitions(msdk_ts
   PUBLIC
     USE_SAMPLE_ALLOCATOR=1
     MFX_VERSION_USE_LATEST
+    MFX_DEPRECATED_OFF
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
 )
 
@@ -760,6 +762,7 @@ if(CMAKE_SYSTEM_NAME MATCHES Windows)
   PUBLIC
     USE_SAMPLE_ALLOCATOR=1
     MFX_VERSION_USE_LATEST
+    MFX_DEPRECATED_OFF
     MSDK_TS_DLL_EXPORTS
   )
 
