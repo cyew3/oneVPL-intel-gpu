@@ -121,6 +121,9 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 /_studio/enctools/** timofei.a.kulakov@intel.com olga.golikova@intel.com
 /_studio/enctools/aenc/** sergey.plotnikov@intel.com
 
+# lowpower lookahead:
+/_studio/mfx_lib/lpla/** timofei.a.kulakov@intel.com olga.golikova@intel.com sergey.plotnikov@intel.com
+
 # audio:
 /_studio/mfx_lib/audio_decode/** oleg.nabiullin@intel.com dmitry.ermilov@intel.com
 /_studio/mfx_lib/audio_encode/** oleg.nabiullin@intel.com dmitry.ermilov@intel.com
