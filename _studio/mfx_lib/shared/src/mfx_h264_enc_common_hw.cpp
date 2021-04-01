@@ -7996,23 +7996,14 @@ mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
     mfxFrameInfo const&       info)
 {
     mfxFrameSurface1 sysSurf = MakeSurface(info, srcSurf);
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    FrameLocker lock(core, sysSurf.Data, true);
-
-    MFX_CHECK(sysSurf.Data.Y != 0, MFX_ERR_LOCK_MEMORY);
-
     mfxFrameSurface1 vidSurf = MakeSurface(info, dstMid);
 
-    sts = core->DoFastCopyWrapper(
+    mfxStatus sts = core->DoFastCopyWrapper(
         &vidSurf,
         MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE,
         &sysSurf,
         MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
     MFX_CHECK_STS(sts);
-
-    sts = lock.Unlock();
 
     return sts;
 }
