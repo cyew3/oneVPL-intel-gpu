@@ -38,6 +38,7 @@ set( MSDK_UMC_ROOT     ${MSDK_STUDIO_ROOT}/shared/umc )
 set( MSDK_SAMPLES_ROOT ${MSDK_BUILD_ROOT_MINUS_ONE}/samples )
 set( MSDK_TOOLS_ROOT   ${MSDK_BUILD_ROOT_MINUS_ONE}/tools )
 set( MSDK_BUILDER_ROOT ${BUILDER_ROOT} )
+set( MSDK_CMAKE_BINARY_ROOT ${CMAKE_CURRENT_BINARY_DIR} )
 
 function( mfx_include_dirs )
   include_directories (

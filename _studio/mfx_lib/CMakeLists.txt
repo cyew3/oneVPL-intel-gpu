@@ -36,7 +36,7 @@ set(sources_common
     shared/include/feature_blocks/mfx_feature_blocks_init_macros.h
     shared/include/feature_blocks/mfx_feature_blocks_utils.h
     shared/include/mfx_utils_extbuf.h
-    ${CMAKE_BINARY_DIR}/mfxconfig.h  # Cmake-generated configuration derived from BuildOptions
+    ${MSDK_CMAKE_BINARY_ROOT}/mfxconfig.h  # Cmake-generated configuration derived from BuildOptions
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_config.h
 
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_common.h
