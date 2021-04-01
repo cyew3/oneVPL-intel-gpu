@@ -1259,16 +1259,15 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
 #endif
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")) || 0 == msdk_strcmp(argv[i], MSDK_STRING("-MemType::video")))
     {
-        InputParams.bUseOpaqueMemory = false;
+        InputParams.bForceSysMem = false;
     }
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sys")) || 0 == msdk_strcmp(argv[i], MSDK_STRING("-MemType::system")))
     {
-        InputParams.bUseOpaqueMemory = false;
         InputParams.bForceSysMem = true;
     }
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-opaq")) || 0 == msdk_strcmp(argv[i], MSDK_STRING("-MemType::opaque")))
     {
-        InputParams.bUseOpaqueMemory = true;
+        msdk_printf(MSDK_STRING("WARNING: -opaq option is ignored, opaque memory support is disabled in opeVPL.\n"));
     }
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-memory")))
     {
@@ -1562,7 +1561,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     }
     // default implementation
     InputParams.libType = MFX_IMPL_HARDWARE_ANY;
-    InputParams.bUseOpaqueMemory = false;
     InputParams.eModeExt = Native;
 
     for (mfxU32 i = 0; i < argc; i++)
@@ -2073,7 +2071,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 #ifdef LIBVA_SUPPORT
             InputParams.libvaBackend = MFX_LIBVA_DRM;
 #endif
-            InputParams.bUseOpaqueMemory = false;
 
             VAL_CHECK(i + 1 == argc, i, argv[i]);
             i++;
@@ -2086,21 +2083,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             /* This is can init early */
             if (InputParams.eModeExt == Native)
                 InputParams.eModeExt = VppCompOnly;
-
-            bool bOpaqueFlagChanged = false;
-            for (mfxU32 j = 0; j < m_SessionArray.size(); j++)
-            {
-                if (m_SessionArray[j].bUseOpaqueMemory)
-                {
-                    m_SessionArray[j].bUseOpaqueMemory = false;
-                    bOpaqueFlagChanged = true;
-                }
-            }
-
-            if (bOpaqueFlagChanged)
-            {
-                msdk_printf(MSDK_STRING("WARNING: internal allocators were disabled because of composition+rendering requirement \n\n"));
-            }
         }
         else if (0 == msdk_strncmp(MSDK_STRING("-vpp_comp_dump"), argv[i], msdk_strlen(MSDK_STRING("-vpp_comp_dump"))))
         {

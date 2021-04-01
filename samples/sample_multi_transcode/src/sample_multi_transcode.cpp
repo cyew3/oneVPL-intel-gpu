@@ -929,7 +929,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     bool IsSourcePresence = false;
     bool IsHeterSessionJoin = false;
     bool IsFirstInTopology = true;
-    bool areAllInterSessionsOpaque = true;
 
     mfxU16 minAsyncDepth = 0;
     bool bUseExternalAllocator = false;
@@ -996,12 +995,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
-        if (!m_InputParamsArray[i].bUseOpaqueMemory &&
-            ((m_InputParamsArray[i].eMode == Source) || (m_InputParamsArray[i].eMode == Sink)))
-        {
-            areAllInterSessionsOpaque = false;
-        }
-
         // Any plugin or static frame alpha blending
         // CPU rotate plugin works with opaq frames in native mode
         if ((m_InputParamsArray[i].nRotationAngle && m_InputParamsArray[i].eMode != Native) ||
@@ -1139,33 +1132,13 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         }
     }
 
-    if (bUseExternalAllocator)
-    {
-        for(mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
-        {
-            m_InputParamsArray[i].bUseOpaqueMemory = false;
-        }
-        msdk_printf(MSDK_STRING("External allocator will be used as some cmd line paremeters request it.\n"));
-    }
-
     // Async depth between inter-sessions should be equal to the minimum async depth of all these sessions.
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
         if ((m_InputParamsArray[i].eMode == Source) || (m_InputParamsArray[i].eMode == Sink))
         {
             m_InputParamsArray[i].nAsyncDepth = minAsyncDepth;
-
-            //--- If at least one of inter-session is not using opaque memory, all of them should not use it
-            if(!areAllInterSessionsOpaque)
-            {
-                m_InputParamsArray[i].bUseOpaqueMemory=false;
-            }
         }
-    }
-
-    if(!areAllInterSessionsOpaque)
-    {
-        msdk_printf(MSDK_STRING("Some inter-sessions do not use opaque memory (possibly because of -o::raw).\nOpaque memory in all inter-sessions is disabled.\n"));
     }
 
     if (IsSinkPresence && !IsSourcePresence)

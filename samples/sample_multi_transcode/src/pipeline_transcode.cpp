@@ -154,7 +154,6 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bDecodeEnable(true),
     m_bEncodeEnable(true),
     m_nVPPCompEnable(0),
-    m_bUseOpaqueMemory(false),
     m_MemoryModel(UNKNOWN_ALLOC),
     m_LastDecSyncPoint(0),
     m_pBuffer(NULL),
@@ -2331,10 +2330,6 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
 
     m_mfxDecParams.AsyncDepth = m_AsyncDepth;
 
-    // configure and attach external parameters
-    if (m_bUseOpaqueMemory)
-        m_mfxDecParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-
     if (pInParams->bIsMVC)
         m_mfxDecParams.AddExtBuffer<mfxExtMVCSeqDesc>();
 
@@ -2421,9 +2416,7 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     }
 
     // set memory pattern
-    if (m_bUseOpaqueMemory)
-        m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
-    else if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType)
+    if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType)
          || (pInParams->DecOutPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
         m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     else
@@ -2610,10 +2603,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     // set memory pattern
-    if (m_bUseOpaqueMemory)
-        m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
-    else
-        m_mfxEncParams.IOPattern = InPatternFromParent;
+    m_mfxEncParams.IOPattern = InPatternFromParent;
 
     if (pInParams->nEncTileRows && pInParams->nEncTileCols)
     {
@@ -2771,9 +2761,6 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         auto co3 = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption3>();
         co3->EnableQPOffset = MFX_CODINGOPTION_OFF;
     }
-
-    if (m_bUseOpaqueMemory)
-        m_mfxEncParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
 
     if (pInParams->bIsMVC)
         m_mfxEncParams.AddExtBuffer<mfxExtMVCSeqDesc>();
@@ -2958,14 +2945,7 @@ mfxStatus CTranscodingPipeline::InitPreEncMfxParams(sInputParams *pInParams)
                                                         MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     // set memory pattern
-    if (m_bUseOpaqueMemory)
-        param.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
-    else
-        param.IOPattern = InPatternFromParent;
-
-    // configure and attach external parameters
-    if (m_bUseOpaqueMemory)
-        m_mfxPreEncParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
+    param.IOPattern = InPatternFromParent;
 
     auto laCtrl = m_mfxPreEncParams.AddExtBuffer<mfxExtLAControl>();
     laCtrl->LookAheadDepth = pInParams->nLADepth? pInParams->nLADepth : 40;
@@ -3030,10 +3010,6 @@ mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
     if (pInParams->VppOutPattern)
     {
         m_mfxVppParams.IOPattern = (mfxU16)(InPatternFromParent | pInParams->VppOutPattern);
-    }
-    else if (m_bUseOpaqueMemory)
-    {
-        m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
     }
     else if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType))
     {
@@ -3220,9 +3196,6 @@ mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
         }
     }
 
-    if (m_bUseOpaqueMemory)
-        m_mfxVppParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-
     if (pInParams->bIsMVC)
         m_mfxVppParams.AddExtBuffer<mfxExtMVCSeqDesc>();
 
@@ -3322,9 +3295,7 @@ mfxStatus CTranscodingPipeline::InitPluginMfxParams(sInputParams *pInParams)
         MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     // set memory pattern
-    if (m_bUseOpaqueMemory)
-        m_mfxPluginParams.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
-    else if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType))
+    if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType))
         m_mfxPluginParams.IOPattern = (mfxU16)(InPatternFromParent|MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
     else
         m_mfxPluginParams.IOPattern = (mfxU16)(InPatternFromParent|MFX_IOPATTERN_OUT_VIDEO_MEMORY);
@@ -3345,10 +3316,6 @@ mfxStatus CTranscodingPipeline::InitPluginMfxParams(sInputParams *pInParams)
     // in case of rotation plugin sample output frameinfo is same as input
     MSDK_MEMCPY_VAR(m_mfxPluginParams.vpp.Out, &m_mfxPluginParams.vpp.In, sizeof(mfxFrameInfo));
 
-    // configure and attach external parameters
-    if (m_bUseOpaqueMemory)
-        m_mfxPluginParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-
     return MFX_ERR_NONE;
 
 } //mfxStatus CTranscodingPipeline::InitMfxVppParams(sInputParams *pInParams)
@@ -3365,12 +3332,8 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
 
     mfxFrameAllocResponse *pResponse = isDecAlloc ? &m_mfxDecResponse : &m_mfxEncResponse;
 
-    // no actual memory is allocated if opaque memory type is used
-    if (!m_bUseOpaqueMemory)
-    {
-        sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, pRequest, pResponse);
-        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
-    }
+    sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, pRequest, pResponse);
+    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
 
     for (i = 0; i < nSurfNum; i++)
     {
@@ -3382,8 +3345,7 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
             sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, pResponse->mids[i], &(surface->Data));
             MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
         }
-        // no actual memory is allocated if opaque memory type is used (surface pointers and MemId field remain 0)
-        else if (!m_bUseOpaqueMemory)
+        else
         {
             surface->Data.MemId = pResponse->mids[i];
         }
@@ -3544,12 +3506,6 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             MSDK_CHECK_STATUS(sts, "AllocPreEncAuxPool failed");
 #endif //!MFX_ONEVPL
         }
-        else if((m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly || m_nVPPCompEnable==VppCompOnlyEncode) && m_bUseOpaqueMemory)
-        {
-            //--- N->1 case, allocating empty pool for opaque only
-            sts = AllocFrames(&DecOut, true);
-            MSDK_CHECK_STATUS(sts, "AllocFrames failed");
-        }
         else
         {
             if ((m_pParentPipeline) &&
@@ -3699,71 +3655,6 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest *
     }
 }
 
-mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
-{
-    auto decOpaq = m_mfxDecParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-    auto vppOpaq = m_mfxVppParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-    auto encOpaq = m_mfxEncParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-    auto plgOpaq = m_mfxPluginParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-    auto preencOpaq = m_mfxPreEncParams.AddExtBuffer<mfxExtOpaqueSurfaceAlloc>();
-
-    if (m_pmfxDEC.get() ||
-        ((m_nVPPCompEnable == VppComp || m_nVPPCompEnable == VppCompOnly || m_nVPPCompEnable == VppCompOnlyEncode) && m_pSurfaceDecPool.size()))
-    {
-        decOpaq->Out.Surfaces = m_pSurfaceDecPool.data();
-        decOpaq->Out.NumSurface = (mfxU16)m_pSurfaceDecPool.size();
-
-        if (m_DecSurfaceType & MFX_MEMTYPE_FROM_VPPOUT)
-            decOpaq->Out.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_DecSurfaceType) | MFX_MEMTYPE_FROM_VPPOUT);
-        else
-            decOpaq->Out.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_DecSurfaceType) | MFX_MEMTYPE_FROM_DECODE);
-    }
-    else
-    {
-        // if no decoder in the pipeline we need to query OpaqueAlloc structure from parent sink pipeline
-        *decOpaq = m_pParentPipeline->GetDecOpaqueAlloc();
-    }
-
-    if (m_pmfxVPP.get())
-    {
-        encOpaq->In.Surfaces = m_pSurfaceEncPool.data();
-        encOpaq->In.NumSurface = (mfxU16)m_pSurfaceEncPool.size();
-        encOpaq->In.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_EncSurfaceType) | MFX_MEMTYPE_FROM_ENCODE);
-
-        // decode will be connected with either VPP or Plugin
-        if (m_bIsVpp)
-        {
-            vppOpaq->In = decOpaq->Out;
-        }
-        else if (m_bIsPlugin)
-        {
-            plgOpaq->In = decOpaq->Out;
-        }
-        else
-            return MFX_ERR_UNSUPPORTED;
-
-        // encode will be connected with either Plugin or VPP
-        if (m_bIsPlugin)
-            plgOpaq->Out = encOpaq->In;
-        else if (m_bIsVpp)
-            vppOpaq->Out = encOpaq->In;
-        else
-            return MFX_ERR_UNSUPPORTED;
-    }
-#if !defined(MFX_ONEVPL)
-    else if (m_pmfxENC.get() || m_pmfxPreENC.get())
-    {
-        encOpaq->In = decOpaq->Out;
-    }
-    if (m_pmfxPreENC.get())
-    {
-        preencOpaq->In = encOpaq->In;
-    }
-#endif //!MFX_ONEVPL
-
-    return MFX_ERR_NONE;
-}
-
 void CTranscodingPipeline::FreeFrames()
 {
     std::for_each(m_pSurfaceDecPool.begin(), m_pSurfaceDecPool.end(), [](mfxFrameSurface1* s)
@@ -3774,7 +3665,7 @@ void CTranscodingPipeline::FreeFrames()
     { auto surface = static_cast<mfxFrameSurfaceWrap*>(s); delete surface; });
     m_pSurfaceEncPool.clear();
 
-    if (m_pMFXAllocator && !m_bUseOpaqueMemory)
+    if (m_pMFXAllocator)
     {
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_mfxEncResponse);
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_mfxDecResponse);
@@ -3975,18 +3866,6 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     if (version >= 1001)
         sts = m_pmfxSession->SetPriority(pParams->priority);
 
-    // opaque memory feature is available starting with API 1.3 and
-    // can be used within 1 intra session or joined inter sessions only
-    if (version >= 1003 &&
-        (pParams->eMode == Native || pParams->bIsJoin) && !pParams->rawInput)
-    {
-        m_bUseOpaqueMemory = true;
-    }
-
-    // Don't use opaque in case of yuv output or if it was specified explicitly or if use new memory models
-    if (!pParams->bUseOpaqueMemory || pParams->EncodeId == MFX_CODEC_DUMP || m_MemoryModel != GENERAL_ALLOC)
-        m_bUseOpaqueMemory = false;
-
     m_bIsInterOrJoined = pParams->eMode == Sink || pParams->eMode == Source || pParams->bIsJoin;
 
     sts = SetAllocatorAndHandleIfRequired();
@@ -4086,13 +3965,6 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // if sink - suspended allocation
     if (Native !=  pParams->eMode)
         return sts;
-
-    // after surfaces arrays are allocated configure mfxOpaqueAlloc buffers to be passed to components' Inits
-    if (m_bUseOpaqueMemory)
-    {
-        sts = InitOpaqueAllocBuffers();
-        MSDK_CHECK_STATUS(sts, "InitOpaqueAllocBuffers failed");
-    }
 
     // Init decode
     if (m_pmfxDEC.get())
@@ -4199,14 +4071,7 @@ mfxStatus CTranscodingPipeline::CompleteInit()
         }
     }
 
-    // after surfaces arrays are allocated configure mfxOpaqueAlloc buffers to be passed to components' Inits
-    if (m_bUseOpaqueMemory)
-    {
-        sts = InitOpaqueAllocBuffers();
-        MSDK_CHECK_STATUS(sts, "InitOpaqueAllocBuffers failed");
-    }
-
-        // Init decode
+    // Init decode
     if (m_pmfxDEC.get())
     {
         sts = m_pmfxDEC->Init(&m_mfxDecParams);
@@ -4401,14 +4266,13 @@ mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
     }
 #endif
 
-    bool ext_allocator_exists = !m_bUseOpaqueMemory && m_MemoryModel == GENERAL_ALLOC;
+    bool ext_allocator_exists = m_MemoryModel == GENERAL_ALLOC;
     if (m_hdl && (bIsMustSetExternalHandle || (m_bIsInterOrJoined || ext_allocator_exists)))
     {
         sts = m_pmfxSession->SetHandle(handleType, m_hdl);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetHandle failed");
     }
 
-    // Media SDK session doesn't require external allocator if the application uses opaque memory
     if (ext_allocator_exists)
     {
         sts = m_pmfxSession->SetFrameAllocator(m_pMFXAllocator);
@@ -4433,11 +4297,8 @@ mfxStatus CTranscodingPipeline::LoadGenericPlugin()
     sts = pVPPPlugin->SetAuxParam(&m_RotateParam, sizeof(m_RotateParam));
     MSDK_CHECK_STATUS(sts, "pVPPPlugin->SetAuxParam failed");
 
-    if (!m_bUseOpaqueMemory)
-    {
-        sts = pVPPPlugin->SetFrameAllocator(m_pMFXAllocator);
-        MSDK_CHECK_STATUS(sts, "pVPPPlugin->SetFrameAllocator failed");
-    }
+    sts = pVPPPlugin->SetFrameAllocator(m_pMFXAllocator);
+    MSDK_CHECK_STATUS(sts, "pVPPPlugin->SetFrameAllocator failed");
 
     m_pmfxVPP.reset(pVPPPlugin.release());
     return MFX_ERR_NONE;

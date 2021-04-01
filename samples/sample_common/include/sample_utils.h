@@ -367,9 +367,6 @@ template<>struct mfx_ext_buffer_id<mfxExtVPPDeinterlacing> {
 template<>struct mfx_ext_buffer_id<mfxExtCodingOptionSPSPPS> {
     enum {id = MFX_EXTBUFF_CODING_OPTION_SPSPPS};
 };
-template<>struct mfx_ext_buffer_id<mfxExtOpaqueSurfaceAlloc> {
-    enum {id = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
-};
 template<>struct mfx_ext_buffer_id<mfxExtVppMctf> {
     enum {id = MFX_EXTBUFF_VPP_MCTF};
 };
@@ -713,7 +710,6 @@ private:
             MFX_EXTBUFF_HEVC_PARAM,
             MFX_EXTBUFF_VP9_PARAM,
 #if !defined(MFX_ONEVPL)
-            MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
             MFX_EXTBUFF_FEI_PARAM,
             MFX_EXTBUFF_FEI_PPS,
             MFX_EXTBUFF_FEI_SPS,

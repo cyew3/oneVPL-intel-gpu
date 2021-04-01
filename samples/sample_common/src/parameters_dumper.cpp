@@ -468,18 +468,6 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO(AlgList);
         }
         break;
-    case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
-        {
-            mfxExtOpaqueSurfaceAlloc& info = *(mfxExtOpaqueSurfaceAlloc*)pExtBuffer;
-            SERIALIZE_INFO_ARRAY(reserved1);
-            SERIALIZE_INFO_ARRAY(In.reserved2);
-            SERIALIZE_INFO(In.Type);
-            SERIALIZE_INFO(In.NumSurface);
-            SERIALIZE_INFO_ARRAY(Out.reserved2);
-            SERIALIZE_INFO(Out.Type);
-            SERIALIZE_INFO(Out.NumSurface);
-        }
-        break;
     case MFX_EXTBUFF_AVC_REFLIST_CTRL:
         {
             mfxExtAVCRefListCtrl& info = *(mfxExtAVCRefListCtrl*)pExtBuffer;

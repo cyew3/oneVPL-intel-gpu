@@ -334,7 +334,6 @@ namespace TranscodingSample
 
         sVppCompDstRect* pVppCompDstRects;
 
-        bool bUseOpaqueMemory;
         bool bForceSysMem;
         mfxU16 DecOutPattern;
         mfxU16 VppOutPattern;
@@ -722,12 +721,6 @@ namespace TranscodingSample
 #endif
         mfxVideoParam GetDecodeParam();
 
-        mfxExtOpaqueSurfaceAlloc GetDecOpaqueAlloc()
-        {
-            mfxExtOpaqueSurfaceAlloc* opaq = m_pmfxVPP ? m_mfxVppParams : m_mfxDecParams;
-            return opaq ? *opaq : mfxExtOpaqueSurfaceAlloc();
-        };
-
         mfxExtMVCSeqDesc GetDecMVCSeqDesc()
         {
             mfxExtMVCSeqDesc* mvc = m_mfxDecParams;
@@ -771,7 +764,6 @@ namespace TranscodingSample
 
         mfxStatus AllocAndInitVppDoNotUse(sInputParams *pInParams);
         mfxStatus AllocMVCSeqDesc();
-        mfxStatus InitOpaqueAllocBuffers();
 
         void FreeVppDoNotUse();
         void FreeMVCSeqDesc();
@@ -892,7 +884,6 @@ namespace TranscodingSample
         mfxU32         m_nVPPCompEnable;
         mfxI32         m_libvaBackend;
 
-        bool           m_bUseOpaqueMemory; // indicates if opaque memory is used in the pipeline
         mfxU16         m_MemoryModel;
 
         mfxSyncPoint   m_LastDecSyncPoint;
