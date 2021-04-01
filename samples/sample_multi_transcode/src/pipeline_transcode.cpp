@@ -784,13 +784,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 #if defined(MFX_ONEVPL)
         else
         {
-            sts = m_pmfxVPP->ProcessFrameAsync(pSurfaceIn->pSurface, &out_surface);
-
-            if (out_surface)
-            {
-                out_surface->Info.PicStruct = m_mfxVppParams.vpp.Out.PicStruct ? m_mfxVppParams.vpp.Out.PicStruct : (m_bEncodeEnable ? m_mfxEncParams : m_mfxDecParams).mfx.FrameInfo.PicStruct;
-                pExtSurface->pSurface = out_surface;
-            }
+            sts = m_pmfxVPP->ProcessFrameAsync(pSurfaceIn->pSurface, &pExtSurface->pSurface);
         }
 #endif
 
