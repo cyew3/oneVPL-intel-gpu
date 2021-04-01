@@ -380,6 +380,7 @@ int TestSuite::RunTest(unsigned int id)
                 DEC_PADDING();
                 DEC_PADDING();
             }
+            break;
         case 3: // Common description check
             {
                 auto TransToHex = [&](mfxU32 value) -> std::string
