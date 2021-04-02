@@ -366,7 +366,7 @@ mfxStatus EncTools::InitMfxVppParams(mfxEncToolsCtrl const & ctrl)
         }
     }
 #endif
-    if (isPreEncSCD(m_config, ctrl))
+    if (isPreEncSCD(m_config, ctrl) && (ctrl.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
     {
         mfxFrameInfo frameInfo;
         mfxStatus sts = m_scd.GetInputFrameInfo(frameInfo);
@@ -378,6 +378,11 @@ mfxStatus EncTools::InitMfxVppParams(mfxEncToolsCtrl const & ctrl)
 
         if (!isPreEncLA(m_config, ctrl))
             m_mfxVppParams = m_mfxVppParams_AEnc;
+        else
+        {
+            m_mfxVppParams.vpp.Out.Width  = std::max(m_mfxVppParams.vpp.Out.Width, m_mfxVppParams_AEnc.vpp.Out.Width);
+            m_mfxVppParams.vpp.Out.Height = std::max(m_mfxVppParams.vpp.Out.Height, m_mfxVppParams_AEnc.vpp.Out.Height);
+        }
     }
     return MFX_ERR_NONE;
 }
@@ -596,7 +601,7 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
         {
             m_pIntSurfaces[0].Data.FrameOrder = pFrameData->Surface->Data.FrameOrder;
 
-            if (isPreEncSCD(m_config, m_ctrl))
+            if (isPreEncSCD(m_config, m_ctrl) && (m_ctrl.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
             {
                 if (isPreEncLA(m_config, m_ctrl))
                 {
@@ -605,6 +610,7 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                 }
 
                 sts = VPPDownScaleSurface(pFrameData->Surface, m_pIntSurfaces.data());
+                MFX_CHECK_STS(sts);
                 m_pAllocator->Lock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);
                 sts = m_scd.SubmitFrame(m_pIntSurfaces.data());
                 m_pAllocator->Unlock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);
@@ -615,6 +621,9 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                     m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams.vpp.Out.CropH;
                 }
             }
+            else
+                sts = m_scd.SubmitFrame(pFrameData->Surface);
+
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
             if (isPreEncLA(m_config, m_ctrl))
             {
@@ -627,15 +636,18 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                         m_scd.GetIntraDecision(par->DisplayOrder, &FrameType);
                     }
                 }
-                if (m_ctrl.LaScale) {
-                    sts = VPPDownScaleSurface(pFrameData->Surface, m_pIntSurfaces.data());
-                    MFX_CHECK_STS(sts);
-                    sts = m_lpLookAhead.Submit(m_pIntSurfaces.data(), FrameType);
-                    MFX_CHECK_STS(sts);
+                mfxStatus stsla = MFX_ERR_NONE;
+                if (m_ctrl.LaScale) 
+                {
+                    stsla = VPPDownScaleSurface(pFrameData->Surface, m_pIntSurfaces.data());
+                    MFX_CHECK_STS(stsla);
+                    stsla = m_lpLookAhead.Submit(m_pIntSurfaces.data(), FrameType);
+                    MFX_CHECK_STS(stsla);
                 }
-                else {
-                    sts = m_lpLookAhead.Submit(pFrameData->Surface, FrameType);
-                    MFX_CHECK_STS(sts);
+                else 
+                {
+                    stsla = m_lpLookAhead.Submit(pFrameData->Surface, FrameType);
+                    MFX_CHECK_STS(stsla);
                 }
             }
 #endif
@@ -648,13 +660,14 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
             if (isPreEncLA(m_config, m_ctrl))
             {
                 mfxU16 FrameType = 0;
-                if (isPreEncSCD(m_config, m_ctrl)) {
+                if (isPreEncSCD(m_config, m_ctrl)) 
+                {
                     if (m_config.AdaptiveI) {
                         m_scd.GetIntraDecision(par->DisplayOrder, &FrameType);
                     }
                 }
-                sts = m_lpLookAhead.Submit(pFrameData->Surface, FrameType);
-                MFX_CHECK_STS(sts);
+                mfxStatus stsla = m_lpLookAhead.Submit(pFrameData->Surface, FrameType);
+                MFX_CHECK_STS(stsla);
             }
 #endif
         }
