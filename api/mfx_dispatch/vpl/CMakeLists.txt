@@ -97,12 +97,13 @@ install(
         "${CMAKE_CURRENT_BINARY_DIR}/cmake/VPLConfigVersion.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/vpl"
   COMPONENT dev)
+endif()
 
 configure_file("pkgconfig/vpl.pc.in" "pkgconfig/vpl.pc" @ONLY)
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/vpl.pc"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
   COMPONENT dev)
-endif()
+
 
 include(sources_ext.cmake OPTIONAL)
