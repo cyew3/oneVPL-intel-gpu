@@ -906,7 +906,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     sts = m_hwdev->Init(
         NULL,
         0,
-        MSDKAdapter::GetNumber(GetFirstSession(), m_pLoader->GetLoader()));
+        MSDKAdapter::GetNumber(GetFirstSession(), m_pLoader.get()));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 
 #elif LIBVA_SUPPORT
@@ -917,7 +917,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(GetFirstSession(), m_pLoader->GetLoader()));
+    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(GetFirstSession(), m_pLoader.get()));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 #endif
     return MFX_ERR_NONE;

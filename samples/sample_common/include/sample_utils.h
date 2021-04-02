@@ -1264,7 +1264,7 @@ bool skip(const Buf_t *&buf, Length_t &length, Length_t step)
 //do not link MediaSDK dispatched if class not used
 struct MSDKAdapter {
     // returns the number of adapter associated with MSDK session, 0 for SW session
-    static mfxU32 GetNumber(mfxSession session, mfxLoader loader) {
+    static mfxU32 GetNumber(mfxSession session, VPLImplementationLoader *loader) {
         mfxU32 adapterNum = 0; // default
         mfxIMPL impl = MFX_IMPL_SOFTWARE; // default in case no HW IMPL is found
 
@@ -1273,12 +1273,12 @@ struct MSDKAdapter {
         {
             MFXQueryIMPL(session, &impl);
         }
-        else
+        else if (loader->GetLoader())
         {
             // an auxiliary session, internal for this function
             mfxSession auxSession;
             memset(&auxSession, 0, sizeof(auxSession));
-            MFXCreateSession(loader, 0, &auxSession);
+            MFXCreateSession(loader->GetLoader(), loader->GetImplIndex(), &auxSession);
             MFXQueryIMPL(auxSession, &impl);
             MFXClose(auxSession);
         }

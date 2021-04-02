@@ -185,12 +185,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 if (m_InputParamsArray[m_InputParamsArray.size() - 1].eModeExt == VppCompOnly)
                 {
                     /* Rendering case */
-                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, m_pLoader.get()));
                     m_InputParamsArray[m_InputParamsArray.size() - 1].m_hwdev = hwdev.get();
                 }
                 else /* NO RENDERING */
                 {
-                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader.get()));
                 }
                 MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
                 sts = hwdev->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&hdl);
@@ -230,12 +230,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 if (m_InputParamsArray[m_InputParamsArray.size() - 1].eModeExt == VppCompOnly)
                 {
                     /* Rendering case */
-                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, m_pLoader.get()));
                     m_InputParamsArray[m_InputParamsArray.size() - 1].m_hwdev = hwdev.get();
                 }
                 else /* NO RENDERING */
                 {
-                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader.get()));
                 }
                 MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
                 sts = hwdev->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
@@ -287,7 +287,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                         msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
                         return MFX_ERR_DEVICE_FAILED;
                     }
-                    sts = hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
+                    sts = hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber(0, m_pLoader.get()));
 #if defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
                     if (params.libvaBackend == MFX_LIBVA_DRM_MODESET) {
                         CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(hwdev.get());
@@ -333,7 +333,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                         msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
                         return MFX_ERR_DEVICE_FAILED;
                     }
-                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader.get()));
                 }
                 if (libvaBackend != MFX_LIBVA_WAYLAND) {
                     MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
