@@ -2832,7 +2832,7 @@ void General::SetDefaults(
         SetDefault(pAV1Par->InsertTemporalDelimiter, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->DisableCdfUpdate, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->DisableFrameEndUpdateCdf, MFX_CODINGOPTION_OFF);
-        SetDefault(pAV1Par->EnableCdef, MFX_CODINGOPTION_OFF);
+        SetDefault(pAV1Par->EnableCdef, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->EnableLoopFilter, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->EnableRestoration, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->EnableSuperres, MFX_CODINGOPTION_OFF);
