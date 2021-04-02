@@ -59,7 +59,7 @@ public:
 
     int GetSize(){return m_size;}
 
-    mfxStatus Init(int size, mfxLoader Loader
+    mfxStatus Init(int size, VPLImplementationLoader *Loader
 #if defined(PRE_SI_GEN)
                    , mfxU32 nSyncOpTimeout
 #endif
@@ -92,7 +92,7 @@ public:
     CRegionEncodingPipeline();
     virtual ~CRegionEncodingPipeline();
 
-    virtual mfxStatus Init(sInputParams *pParams, mfxLoader Loader);
+    virtual mfxStatus Init(sInputParams *pParams);
     virtual mfxStatus Run();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(sInputParams* pParams);

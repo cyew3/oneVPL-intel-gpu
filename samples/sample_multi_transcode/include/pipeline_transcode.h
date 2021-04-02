@@ -648,7 +648,7 @@ namespace TranscodingSample
 
     class MainVideoSession : public MFXVideoSession {
     public:
-        mfxStatus CreateSession(mfxLoader Loader);
+        mfxStatus CreateSession(VPLImplementationLoader *mfxLoader);
     };
 
     // Bitstream is external via BitstreamProcessor
@@ -664,12 +664,12 @@ namespace TranscodingSample
                                CTranscodingPipeline *pParentPipeline,
                                SafetySurfaceBuffer  *pBuffer,
                                FileBitstreamProcessor   *pBSProc,
-                               mfxLoader mfxLoader);
+                               VPLImplementationLoader *mfxLoader);
 
         // frames allocation is suspended for heterogeneous pipeline
         virtual mfxStatus CompleteInit();
         virtual void      Close();
-        virtual mfxStatus Reset();
+        virtual mfxStatus Reset(VPLImplementationLoader *mfxLoader);
         virtual mfxStatus Join(MFXVideoSession *pChildSession);
         virtual mfxStatus Run();
         virtual mfxStatus FlushLastFrames(){return MFX_ERR_NONE;}

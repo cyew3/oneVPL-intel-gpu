@@ -40,7 +40,7 @@ public:
     CUserPipeline();
     virtual ~CUserPipeline();
 
-    virtual mfxStatus Init(sInputParams *pParams, mfxLoader Loader);
+    virtual mfxStatus Init(sInputParams *pParams);
     virtual mfxStatus Run();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(sInputParams* pParams);

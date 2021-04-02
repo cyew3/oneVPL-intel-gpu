@@ -167,9 +167,11 @@ CUserPipeline::~CUserPipeline()
     Close();
 }
 
-mfxStatus CUserPipeline::Init(sInputParams *pParams, mfxLoader Loader)
+mfxStatus CUserPipeline::Init(sInputParams *pParams)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
+
+     m_pLoader.reset(new VPLImplementationLoader);
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -213,13 +215,19 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams, mfxLoader Loader)
 
     mfxVersion version;     // real API version with which library is initialized
 
-    m_mfxLoader = Loader;
+    sts = m_pLoader->ConfigureImplementation(impl);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
+    sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, impl);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureAccelerationMode failed");
+    sts = m_pLoader->EnumImplementations();
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
+
     // create a session for the second vpp and encode
-    sts = m_mfxSession.CreateSession(m_mfxLoader);
+    sts = m_mfxSession.CreateSession(m_pLoader.get());
     MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
-    sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
-    MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");
+    sts = m_pLoader->GetVersion(&version); // get real API version of the loaded library
+    MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
 #if !defined(MFX_ONEVPL)

@@ -115,7 +115,6 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     mfxU32 BufCounter = 0;
     mfxHDL hdl = NULL;
     std::vector<mfxHDL> hdls;
-    std::unique_ptr<VPLImplementationLoader> pLoader;
     sInputParams    InputParams;
     bool bNeedToCreateDevice = true;
 
@@ -143,11 +142,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     sts = VerifyCrossSessionsOptions();
     MSDK_CHECK_STATUS(sts, "VerifyCrossSessionsOptions failed");
 
-    mfxVersion ver = { {2, 2 }};
+    mfxVersion ver = {{ MFX_VERSION_MAJOR, MFX_VERSION_MINOR }};
 
-    pLoader.reset(new VPLImplementationLoader);
-    sts = pLoader->ConfigureAndInitImplementation(MFX_IMPL_BASETYPE(m_InputParamsArray[0].libType), m_accelerationMode, ver);
-    MSDK_CHECK_STATUS(sts, "pLoader->ConfigureAndInit failed");
+    m_pLoader.reset(new VPLImplementationLoader);
+    sts = m_pLoader->ConfigureAndEnumImplementations(m_InputParamsArray[0].libType, m_accelerationMode, ver);
+    MSDK_CHECK_STATUS(sts, "pLoader->ConfigureAndEnumImplementations failed");
 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
     // check available adapters
@@ -170,6 +169,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
 #if defined(_WIN32) || defined(_WIN64)
         ForceImplForSession(i);
+        sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
+        MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
+
         if (m_eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
         {
             if (bNeedToCreateDevice)
@@ -183,12 +185,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 if (m_InputParamsArray[m_InputParamsArray.size() - 1].eModeExt == VppCompOnly)
                 {
                     /* Rendering case */
-                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
                     m_InputParamsArray[m_InputParamsArray.size() - 1].m_hwdev = hwdev.get();
                 }
                 else /* NO RENDERING */
                 {
-                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
                 }
                 MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
                 sts = hwdev->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&hdl);
@@ -228,12 +230,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 if (m_InputParamsArray[m_InputParamsArray.size() - 1].eModeExt == VppCompOnly)
                 {
                     /* Rendering case */
-                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 1, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
                     m_InputParamsArray[m_InputParamsArray.size() - 1].m_hwdev = hwdev.get();
                 }
                 else /* NO RENDERING */
                 {
-                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
                 }
                 MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
                 sts = hwdev->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
@@ -285,7 +287,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                         msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
                         return MFX_ERR_DEVICE_FAILED;
                     }
-                    sts = hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
+                    sts = hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
 #if defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
                     if (params.libvaBackend == MFX_LIBVA_DRM_MODESET) {
                         CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(hwdev.get());
@@ -331,7 +333,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                         msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
                         return MFX_ERR_DEVICE_FAILED;
                     }
-                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, pLoader->GetLoader()));
+                    sts = hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(0, m_pLoader->GetLoader()));
                 }
                 if (libvaBackend != MFX_LIBVA_WAYLAND) {
                     MSDK_CHECK_STATUS(sts, "hwdev->Init failed");
@@ -509,7 +511,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
             if(m_InputParamsArray[i].libType != MFX_IMPL_SOFTWARE)
+            {
                 ForceImplForSession(i);
+                sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
+                MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
+            }
 #endif
             sts = pThreadPipeline->pPipeline->Init(&m_InputParamsArray[i],
                                                    m_pAllocArray[i].get(),
@@ -517,7 +523,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                    pSinkPipeline,
                                                    pBuffer,
                                                    m_pExtBSProcArray.back().get(),
-                                                   pLoader->GetLoader());
+                                                   m_pLoader.get());
         }
         else
         {
@@ -526,7 +532,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
             if (m_InputParamsArray[i].libType != MFX_IMPL_SOFTWARE)
+            {
                 ForceImplForSession(i);
+                sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
+                MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
+            }
 #endif
             sts =  pThreadPipeline->pPipeline->Init(&m_InputParamsArray[i],
                                                     m_pAllocArray[i].get(),
@@ -534,7 +544,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                     pParentPipeline,
                                                     pBuffer,
                                                     m_pExtBSProcArray.back().get(),
-                                                    pLoader->GetLoader());
+                                                    m_pLoader.get());
         }
 
         MSDK_CHECK_STATUS(sts, "pThreadPipeline->pPipeline->Init failed");
@@ -714,7 +724,7 @@ void Launcher::DoRobustTranscoding()
         {
             for (size_t i = 0; i < m_pThreadContextArray.size(); i++)
             {
-                sts = m_pThreadContextArray[i]->pPipeline->Reset();
+                sts = m_pThreadContextArray[i]->pPipeline->Reset(m_pLoader.get());
                 if (sts)
                 {
                     msdk_printf(MSDK_STRING("\n[WARNING] GPU Hang recovery wasn't succeed. Exiting...\n"));
@@ -855,6 +865,8 @@ void Launcher::ForceImplForSession(mfxU32 idxSession)
     }
 
     m_InputParamsArray[idxSession].libType = impl;
+    m_adapterNum = m_Adapters.Adapters[idx].Number;
+    m_deviceID = m_Adapters.Adapters[idx].Platform.DeviceId;
 }
 
 mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscodingPipeline * pParentPipeline)

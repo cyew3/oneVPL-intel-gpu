@@ -1849,7 +1849,6 @@ int main(int argc, char *argv[])
 {
     sInputParams Params = {};   // input parameters from command line
     std::unique_ptr<CEncodingPipeline>  pPipeline;
-    std::unique_ptr<VPLImplementationLoader> pLoader;
 
     mfxStatus sts = MFX_ERR_NONE; // return value check
 
@@ -1869,12 +1868,7 @@ int main(int argc, char *argv[])
         pPipeline->SetNumView(Params.numViews);
     }
 
-    mfxVersion ver = {{2, 2}};
-    pLoader.reset(new VPLImplementationLoader);
-    sts = pLoader->ConfigureAndInitImplementation(Params.libType, Params.accelerationMode, ver);
-    MSDK_CHECK_STATUS(sts, "pPipeline->ConfigureAndInitImplementation failed");
-
-    sts = pPipeline->Init(&Params, pLoader->GetLoader());
+    sts = pPipeline->Init(&Params);
     MSDK_CHECK_STATUS(sts, "pPipeline->Init failed");
 
     pPipeline->PrintInfo();

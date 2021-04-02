@@ -63,7 +63,7 @@ mfxStatus CResourcesPool::GetFreeTask(int resourceNum,sTask **ppTask)
     return sts;
 }
 
-mfxStatus CResourcesPool::Init(int sz, mfxLoader Loader
+mfxStatus CResourcesPool::Init(int sz, VPLImplementationLoader *Loader
 #if defined(PRE_SI_GEN)
                                , mfxU32 nSyncOpTimeout
 #endif
@@ -314,9 +314,11 @@ CRegionEncodingPipeline::~CRegionEncodingPipeline()
     Close();
 }
 
-mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
+mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
+
+    m_pLoader.reset(new VPLImplementationLoader);
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -341,10 +343,8 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
     mfxVersion version;     // real API version with which library is initialized
 
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    min_version.Major = 1;
-    min_version.Minor = 0;
-
-    m_mfxLoader = Loader;
+    min_version.Major = MFX_VERSION_MAJOR;
+    min_version.Minor = MFX_VERSION_MINOR;
 
     // Init session
     if (pParams->bUseHWLib)
@@ -352,8 +352,18 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
         msdk_printf(MSDK_STRING("Hardware library is unsupported in Region Encoding mode\n"));
         return MFX_ERR_UNSUPPORTED;
     }
-    else {
-        sts = m_resources.Init(pParams->nNumSlice, m_mfxLoader
+    else
+    {
+        sts = m_pLoader->ConfigureVersion(min_version);
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureVersion failed");
+        sts = m_pLoader->ConfigureImplementation(MFX_IMPL_SOFTWARE);
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
+        sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, pParams->bUseHWLib);
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureAccelerationMode failed");
+        sts = m_pLoader->EnumImplementations();
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
+
+        sts = m_resources.Init(pParams->nNumSlice, m_pLoader.get()
 #if defined(PRE_SI_GEN)
                                , pParams->nSyncOpTimeout
 #endif
@@ -361,9 +371,8 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
         MSDK_CHECK_STATUS(sts, "m_resources.Init failed");
     }
 
-
-    sts = MFXQueryVersion(m_resources[0].Session, &version); // get real API version of the loaded library
-    MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");
+    sts = m_pLoader->GetVersion(&version); // get real API version of the loaded library
+    MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
 
     if ((pParams->MVC_flags & MVC_ENABLED) != 0 && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
         msdk_printf(MSDK_STRING("error: MVC is not supported in the %d.%d API version\n"),

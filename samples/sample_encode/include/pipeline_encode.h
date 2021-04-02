@@ -118,6 +118,9 @@ struct sInputParams
     msdk_string strQPFilePath;
 
     mfxAccelerationMode accelerationMode;
+    mfxU32  adapterNum;
+    mfxU16  deviceID;
+
     mfxIMPL libType;
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library
@@ -316,7 +319,7 @@ protected:
 
 class MainVideoSession : public MFXVideoSession {
 public:
-    mfxStatus CreateSession(mfxLoader Loader);
+    mfxStatus CreateSession(VPLImplementationLoader *Loader);
 };
 
 /* This class implements a pipeline with 2 mfx components: vpp (video preprocessing) and encode */
@@ -326,7 +329,7 @@ public:
     CEncodingPipeline();
     virtual ~CEncodingPipeline();
 
-    virtual mfxStatus Init(sInputParams *pParams, mfxLoader Loader);
+    virtual mfxStatus Init(sInputParams *pParams);
     virtual mfxStatus Run();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(sInputParams* pParams);
@@ -355,7 +358,7 @@ protected:
     CEncTaskPool   m_TaskPool;
     QPFile::Reader m_QPFileReader;
 
-    mfxLoader m_mfxLoader;
+    std::unique_ptr<VPLImplementationLoader> m_pLoader;
     MainVideoSession m_mfxSession;
     MFXVideoENCODE* m_pmfxENC;
     MFXVideoVPP* m_pmfxVPP;
@@ -426,9 +429,10 @@ protected:
     FPSLimiter m_fpsLimiter;
 
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
-    mfxU32    GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params);
+    mfxU32    GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params) const;
 #endif
     mfxStatus GetImpl(const sInputParams & params, mfxIMPL & impl);
+    mfxStatus GetAdapterNum(const sInputParams & params, mfxU32 & adapterNum, mfxU16 & deviceID) const;
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 

@@ -91,6 +91,9 @@ namespace TranscodingSample
         // need to work with HW pipeline
         mfxHandleType                        m_eDevType;
         mfxAccelerationMode                  m_accelerationMode;
+        mfxU32                               m_adapterNum;
+        mfxU16                               m_deviceID;
+        std::unique_ptr<VPLImplementationLoader> m_pLoader;
 
         std::vector<sVppCompDstRect>         m_VppDstRects;
 

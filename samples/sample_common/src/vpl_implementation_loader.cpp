@@ -23,9 +23,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 VPLImplementationLoader::VPLImplementationLoader()
 { 
-    m_Loader = MFXLoad(); 
-    m_isHW = false;
+    m_Loader = MFXLoad();
     m_idesc = nullptr;
+    m_ImplIndex = 0;
 }
 
 VPLImplementationLoader::~VPLImplementationLoader()
@@ -37,6 +37,32 @@ VPLImplementationLoader::~VPLImplementationLoader()
     MFXUnload(m_Loader);
 }
 
+mfxStatus VPLImplementationLoader::CreateConfig(mfxU16 data, const char* propertyName)
+{
+    mfxConfig cfg = MFXCreateConfig(m_Loader);
+    mfxVariant variant;
+    variant.Type = MFX_VARIANT_TYPE_U16;
+    variant.Data.U32 = data;
+    mfxStatus sts = MFXSetConfigFilterProperty(cfg, (mfxU8*)propertyName, variant);
+    MSDK_CHECK_STATUS(sts, "MFXSetConfigFilterProperty failed");
+    m_Configs.push_back(cfg);
+
+    return sts;
+}
+
+mfxStatus VPLImplementationLoader::CreateConfig(mfxU32 data, const char* propertyName)
+{
+    mfxConfig cfg = MFXCreateConfig(m_Loader);
+    mfxVariant variant;
+    variant.Type = MFX_VARIANT_TYPE_U32;
+    variant.Data.U32 = data;
+    mfxStatus sts = MFXSetConfigFilterProperty(cfg, (mfxU8*)propertyName, variant);
+    MSDK_CHECK_STATUS(sts, "MFXSetConfigFilterProperty failed");
+    m_Configs.push_back(cfg);
+
+    return sts;
+}
+
 mfxStatus VPLImplementationLoader::ConfigureImplementation(mfxIMPL impl)
 {
     mfxConfig cfgImpl = MFXCreateConfig(m_Loader);
@@ -44,25 +70,29 @@ mfxStatus VPLImplementationLoader::ConfigureImplementation(mfxIMPL impl)
     mfxVariant ImplVariant;
     ImplVariant.Type = MFX_VARIANT_TYPE_U32;
 
-    switch (impl)
+    std::vector<mfxU32> hwImpls = { MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE_ANY,
+                                    MFX_IMPL_HARDWARE2, MFX_IMPL_HARDWARE3,
+                                    MFX_IMPL_HARDWARE4, MFX_IMPL_VIA_D3D9,
+                                    MFX_IMPL_VIA_D3D11 };
+
+    std::vector<mfxU32>::iterator hwImplsIt = std::find_if(hwImpls.begin(),
+                                                        hwImpls.end(),
+                                                        [impl](const mfxU32 & val)
+                                                        {
+                                                            return (val == MFX_IMPL_VIA_MASK(impl) || val == MFX_IMPL_BASETYPE(impl));
+                                                        });
+
+    if (MFX_IMPL_BASETYPE(impl) == MFX_IMPL_SOFTWARE)
     {
-        case MFX_IMPL_SOFTWARE:
-            ImplVariant.Data.U32 = MFX_IMPL_TYPE_SOFTWARE;
-            break;
-        case MFX_IMPL_HARDWARE:
-        case MFX_IMPL_HARDWARE_ANY:
-        case MFX_IMPL_HARDWARE2:
-        case MFX_IMPL_HARDWARE3:
-        case MFX_IMPL_HARDWARE4:
-        case MFX_IMPL_VIA_D3D9:
-        case MFX_IMPL_VIA_D3D11:
-        case MFX_IMPL_VIA_VAAPI:
-            ImplVariant.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
-            m_isHW = true;
-            break;
-        default:
-            return MFX_ERR_UNSUPPORTED;
-            break;
+        ImplVariant.Data.U32 = MFX_IMPL_TYPE_SOFTWARE;
+    }
+    else if (hwImplsIt != hwImpls.end())
+    {
+        ImplVariant.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
+    }
+    else
+    {
+        return MFX_ERR_UNSUPPORTED;
     }
 
     mfxStatus sts = MFXSetConfigFilterProperty(cfgImpl, (mfxU8*)"mfxImplDescription.Impl", ImplVariant);
@@ -71,20 +101,15 @@ mfxStatus VPLImplementationLoader::ConfigureImplementation(mfxIMPL impl)
     return sts;
 }
 
-mfxStatus VPLImplementationLoader::ConfigureAccelerationMode(mfxAccelerationMode accelerationMode)
+mfxStatus VPLImplementationLoader::ConfigureAccelerationMode(mfxAccelerationMode accelerationMode, mfxIMPL impl)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    bool isHW = impl == MFX_IMPL_SOFTWARE ? false : true;
 
     // configure accelerationMode, except when required implementation is MFX_IMPL_TYPE_HARDWARE, but m_accelerationMode not set
-    if (accelerationMode != MFX_ACCEL_MODE_NA || !m_isHW)
+    if (accelerationMode != MFX_ACCEL_MODE_NA || !isHW)
     {
-        mfxConfig cfgAccelerationMode = MFXCreateConfig(m_Loader);
-        mfxVariant AccelerationModeVariant;
-        AccelerationModeVariant.Type = MFX_VARIANT_TYPE_U32;
-        AccelerationModeVariant.Data.U32 = accelerationMode;
-        sts = MFXSetConfigFilterProperty(cfgAccelerationMode, (mfxU8*)"mfxImplDescription.AccelerationMode", AccelerationModeVariant);
-        MSDK_CHECK_STATUS(sts, "MFXSetConfigFilterProperty failed")
-        m_Configs.push_back(cfgAccelerationMode);
+        sts = CreateConfig((mfxU32)accelerationMode, "mfxImplDescription.AccelerationMode");
     }
 
     return sts;
@@ -92,30 +117,59 @@ mfxStatus VPLImplementationLoader::ConfigureAccelerationMode(mfxAccelerationMode
 
 mfxStatus VPLImplementationLoader::ConfigureVersion(mfxVersion const& version)
 {
-    mfxConfig cfgApiVersion = MFXCreateConfig(m_Loader);
-    mfxVariant ApiVersionVariant;
-    ApiVersionVariant.Type = MFX_VARIANT_TYPE_U32;
-    ApiVersionVariant.Data.U32 = version.Version;
-    mfxStatus sts = MFXSetConfigFilterProperty(cfgApiVersion, (mfxU8*)"mfxImplDescription.ApiVersion.Version", ApiVersionVariant);
-    MSDK_CHECK_STATUS(sts, "MFXSetConfigFilterProperty failed");
-    m_Configs.push_back(cfgApiVersion);
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = CreateConfig(version.Version, "mfxImplDescription.ApiVersion.Version");
+    sts = CreateConfig(version.Major, "mfxImplDescription.ApiVersion.Major");
+    sts = CreateConfig(version.Minor, "mfxImplDescription.ApiVersion.Minor");
 
     return sts;
 }
 
-mfxStatus VPLImplementationLoader::InitImplementation()
+mfxStatus VPLImplementationLoader::EnumImplementations()
 {
-    // pick the first available implementation
+// pick the first available implementation, m_desc is checked only for being non-equal to NULL
+// potentially may be needed loop by implementations, set implIndex corresponding better implementation and add meaningful validation for the m_idesc
     mfxImplDescription * idesc;
     mfxStatus sts = MFXEnumImplementations(m_Loader, 0, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc);
     MSDK_CHECK_STATUS(sts, "MFXEnumImplementations failed");
     MSDK_CHECK_POINTER(idesc, MFX_ERR_NULL_PTR);
     m_idesc = idesc;
 
+    m_ImplIndex = 0;
+
     return sts;
 }
 
-mfxStatus VPLImplementationLoader::ConfigureAndInitImplementation(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxVersion const& version)
+mfxStatus VPLImplementationLoader::EnumImplementations(mfxU16 deviceID, mfxU32 adapterNum)
+{
+    mfxImplDescription * idesc;
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxChar devIDAndAdapter[MFX_STRFIELD_LEN] = {};
+    snprintf(devIDAndAdapter, sizeof(devIDAndAdapter), "%x/%d", deviceID, adapterNum);
+
+    int impl = 0;
+    while (sts == MFX_ERR_NONE)
+    {
+        sts = MFXEnumImplementations(m_Loader, impl, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc);
+        if (!idesc)
+        {
+            sts = MFX_ERR_NULL_PTR;
+            break;
+        }
+        else if (strncmp(idesc->Dev.DeviceID, devIDAndAdapter, sizeof(devIDAndAdapter)) == 0)
+        {
+            m_idesc = idesc;
+            m_ImplIndex = impl;
+            break;
+        }
+        impl++;
+    }
+
+    return sts;
+}
+
+mfxStatus VPLImplementationLoader::ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxVersion const& version)
 {
     mfxStatus sts;
 
@@ -123,12 +177,33 @@ mfxStatus VPLImplementationLoader::ConfigureAndInitImplementation(mfxIMPL impl, 
     MSDK_CHECK_STATUS(sts, "ConfigureImplementation failed");
     sts = ConfigureVersion(version);
     MSDK_CHECK_STATUS(sts, "ConfigureVersion failed");
-    sts = ConfigureAccelerationMode(accelerationMode);
+    sts = ConfigureAccelerationMode(accelerationMode, impl);
     MSDK_CHECK_STATUS(sts, "ConfigureAccelerationMode failed");
-    sts = InitImplementation();
-    MSDK_CHECK_STATUS(sts, "InitImplementation failed");
+
+    sts = EnumImplementations();
+    MSDK_CHECK_STATUS(sts, "EnumImplementations failed");
 
     return sts;
 }
 
 mfxLoader VPLImplementationLoader::GetLoader() { return m_Loader; }
+
+mfxU32 VPLImplementationLoader::GetImplIndex() { return m_ImplIndex; };
+
+mfxStatus VPLImplementationLoader::GetVersion(mfxVersion *version)
+{
+    if (!m_idesc)
+    {
+        EnumImplementations();
+    }
+
+    if (m_idesc)
+    {
+        version->Major = m_idesc->ApiVersion.Major;
+        version->Minor = m_idesc->ApiVersion.Minor;
+        version->Version = m_idesc->ApiVersion.Version;
+        return MFX_ERR_NONE;
+    }
+
+    return MFX_ERR_UNKNOWN;
+}

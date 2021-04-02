@@ -357,9 +357,9 @@ mfxStatus sTask::Reset()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MainVideoSession::CreateSession(mfxLoader Loader)
+mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader *Loader)
 {
-    return MFXCreateSession(Loader, 0, &m_session);
+    return MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
 }
 
 void CEncodingPipeline::InitExtMVCBuffers(mfxExtMVCSeqDesc *mvcBuffer) const
@@ -906,7 +906,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     sts = m_hwdev->Init(
         NULL,
         0,
-        MSDKAdapter::GetNumber(GetFirstSession(), m_mfxLoader));
+        MSDKAdapter::GetNumber(GetFirstSession(), m_pLoader->GetLoader()));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 
 #elif LIBVA_SUPPORT
@@ -917,7 +917,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(GetFirstSession(), m_mfxLoader));
+    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(GetFirstSession(), m_pLoader->GetLoader()));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 #endif
     return MFX_ERR_NONE;
@@ -1410,7 +1410,7 @@ mfxU16 FourCcBitDepth(mfxU32 fourCC)
 #endif
 
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
-mfxU32 CEncodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params)
+mfxU32 CEncodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params) const
 {
     if (adapters.NumActual == 0 || !adapters.Adapters)
         return 0;
@@ -1467,6 +1467,19 @@ mfxStatus CEncodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
         impl = MFX_IMPL_SOFTWARE;
         return MFX_ERR_NONE;
     }
+
+    impl = MFX_IMPL_HARDWARE_ANY;
+
+    // If d3d11 surfaces are used ask the library to run acceleration through D3D11
+    // feature may be unsupported due to OS or MSDK API version
+    if (D3D11_MEMORY == params.memType)
+        impl |= MFX_IMPL_VIA_D3D11;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CEncodingPipeline::GetAdapterNum(const sInputParams & params, mfxU32 & adapterNum, mfxU16 & deviceID) const
+{
 
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     mfxU32 num_adapters_available;
@@ -1534,42 +1547,17 @@ mfxStatus CEncodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
     MSDK_CHECK_STATUS(sts, "MFXQueryAdapters failed");
 
     mfxU32 idx = GetPreferredAdapterNum(adapters, params);
-    switch (adapters.Adapters[idx].Number)
-    {
-    case 0:
-        impl = MFX_IMPL_HARDWARE;
-        break;
-    case 1:
-        impl = MFX_IMPL_HARDWARE2;
-        break;
-    case 2:
-        impl = MFX_IMPL_HARDWARE3;
-        break;
-    case 3:
-        impl = MFX_IMPL_HARDWARE4;
-        break;
-
-    default:
-        // try searching on all display adapters
-        impl = MFX_IMPL_HARDWARE_ANY;
-        break;
-    }
-#else
-    // Library should pick first available compatible adapter during InitEx call with MFX_IMPL_HARDWARE_ANY
-    impl = MFX_IMPL_HARDWARE_ANY;
+    adapterNum = adapters.Adapters[idx].Number;
+    deviceID = adapters.Adapters[idx].Platform.DeviceId;
 #endif // (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
-
-    // If d3d11 surfaces are used ask the library to run acceleration through D3D11
-    // feature may be unsupported due to OS or MSDK API version
-    if (D3D11_MEMORY == params.memType)
-        impl |= MFX_IMPL_VIA_D3D11;
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
+mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
+    m_pLoader.reset(new VPLImplementationLoader);
 
 #if defined ENABLE_V4L2_SUPPORT
     isV4L2InputEnabled = pParams->isV4L2InputEnabled;
@@ -1592,8 +1580,8 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
     mfxInitParamlWrap initPar;
 
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    initPar.Version.Major = 1;
-    initPar.Version.Minor = 0;
+    initPar.Version.Major = MFX_VERSION_MAJOR;
+    initPar.Version.Minor = MFX_VERSION_MINOR;
 
     initPar.GPUCopy = pParams->gpuCopy;
     m_bSingleTexture = pParams->bSingleTexture;
@@ -1601,14 +1589,29 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams, mfxLoader Loader)
     mfxStatus sts = GetImpl(*pParams, initPar.Implementation);
     MSDK_CHECK_STATUS(sts, "GetImpl failed");
 
-    m_mfxLoader = Loader;
+    sts = GetAdapterNum(*pParams, pParams->adapterNum, pParams->deviceID);
+    MSDK_CHECK_STATUS(sts, "GetAdapterNum failed");
 
-    sts = m_mfxSession.CreateSession(m_mfxLoader);
+    sts = m_pLoader->ConfigureVersion(initPar.Version);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureVersion failed");
+    sts = m_pLoader->ConfigureImplementation(initPar.Implementation);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
+    sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, pParams->bUseHWLib);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureAccelerationMode failed");
+#if (defined(_WIN64) || defined(_WIN32))
+    sts = m_pLoader->EnumImplementations(pParams->deviceID, pParams->adapterNum);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
+#else
+    sts = m_pLoader->EnumImplementations();
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
+#endif
+
+    sts = m_mfxSession.CreateSession(m_pLoader.get());
     MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
     mfxVersion version;
-    sts = MFXQueryVersion(m_mfxSession, &version); // get real API version of the loaded library
-    MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");
+    sts = m_pLoader->GetVersion(&version); // get real API version of the loaded library
+    MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
 
     if ((pParams->MVC_flags & MVC_ENABLED) != 0 && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
         msdk_printf(MSDK_STRING("error: MVC is not supported in the %d.%d API version\n"),

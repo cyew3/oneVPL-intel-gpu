@@ -3672,7 +3672,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
                                      CTranscodingPipeline *pParentPipeline,
                                      SafetySurfaceBuffer  *pBuffer,
                                      FileBitstreamProcessor   *pBSProc,
-                                     mfxLoader mfxLoader)
+                                     VPLImplementationLoader *mfxLoader)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pMFXAllocator, MFX_ERR_NULL_PTR);
@@ -3841,11 +3841,10 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     //--- GPU Copy settings
     m_initPar.GPUCopy = pParams->nGpuCopyMode;
 
-    m_mfxLoader = mfxLoader;
     // init session
     m_pmfxSession.reset(new MainVideoSession);
 
-    sts = m_pmfxSession->CreateSession(m_mfxLoader);
+    sts = m_pmfxSession->CreateSession(mfxLoader);
     MSDK_CHECK_STATUS(sts, "m_pmfxSession->CreateSession failed");
 
     // check the API version of actually loaded library
@@ -4228,9 +4227,9 @@ void CTranscodingPipeline::HandlePossibleGpuHang(mfxStatus & sts)
     }
 }
 
-mfxStatus MainVideoSession::CreateSession(mfxLoader Loader)
+mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader *Loader)
 {
-    return MFXCreateSession(Loader, 0, &m_session);
+    return MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
 }
 
 mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
@@ -4306,18 +4305,29 @@ size_t CTranscodingPipeline::GetRobustFlag()
 
 void CTranscodingPipeline::Close()
 {
-    if (m_pmfxSession) {
-        m_pmfxSession->Close();
+    if (m_pmfxDEC.get())
+    {
+        m_pmfxDEC->Close();
+        m_pmfxDEC.release();
     }
 
-    if (m_pmfxDEC.get())
-        m_pmfxDEC->Close();
-
     if (m_pmfxENC.get())
+    {
         m_pmfxENC->Close();
+        m_pmfxENC.release();
+    }
 
     if (m_pmfxVPP.get())
+    {
         m_pmfxVPP->Close();
+        m_pmfxVPP.release();
+    }
+
+    if (m_pmfxSession)
+    {
+        m_pmfxSession->Close();
+        m_pmfxSession.release();
+    }
 
 #if !defined(MFX_ONEVPL)
     if (m_pUserDecoderPlugin.get())
@@ -4362,7 +4372,7 @@ void CTranscodingPipeline::Close()
 
 } // void CTranscodingPipeline::Close()
 
-mfxStatus CTranscodingPipeline::Reset()
+mfxStatus CTranscodingPipeline::Reset(VPLImplementationLoader *mfxLoader)
 {
     mfxStatus sts = MFX_ERR_NONE;
     bool isDec = m_pmfxDEC.get() ? true : false
@@ -4420,7 +4430,7 @@ mfxStatus CTranscodingPipeline::Reset()
 
     m_pmfxSession.reset(new MainVideoSession());
 
-    sts = m_pmfxSession->CreateSession(m_mfxLoader);
+    sts = m_pmfxSession->CreateSession(mfxLoader);
     MSDK_CHECK_STATUS(sts, "CreateSession failed");
 
     // Release dec and enc surface pools

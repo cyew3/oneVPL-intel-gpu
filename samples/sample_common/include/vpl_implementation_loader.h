@@ -27,18 +27,23 @@ class VPLImplementationLoader {
     mfxLoader m_Loader;
     std::vector<mfxConfig> m_Configs;
     mfxImplDescription* m_idesc;
-    bool m_isHW;
+    mfxU32 m_ImplIndex;
 
 public:
     VPLImplementationLoader();
     ~VPLImplementationLoader();
 
+    mfxStatus CreateConfig(mfxU16 data, const char* propertyName);
+    mfxStatus CreateConfig(mfxU32 data, const char* propertyName);
     mfxStatus ConfigureImplementation(mfxIMPL impl);
-    mfxStatus ConfigureAccelerationMode(mfxAccelerationMode accelerationMode);
+    mfxStatus ConfigureAccelerationMode(mfxAccelerationMode accelerationMode, mfxIMPL impl);
     mfxStatus ConfigureVersion(mfxVersion const& version);
-    mfxStatus InitImplementation();
-    mfxStatus ConfigureAndInitImplementation(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxVersion const& version);
+    mfxStatus EnumImplementations();
+    mfxStatus EnumImplementations(mfxU16 deviceID, mfxU32 adapterNum);
+    mfxStatus ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxVersion const& version);
     mfxLoader GetLoader();
+    mfxU32 GetImplIndex();
+    mfxStatus GetVersion(mfxVersion *version);
 };
 
 #endif //__VPL_IMPLEMENTATION_LOADER_H__
