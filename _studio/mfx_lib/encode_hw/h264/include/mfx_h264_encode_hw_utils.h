@@ -51,7 +51,7 @@
   #endif
 #endif
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA) || defined(MFX_ENABLE_ENCTOOLS) 
 #include "mfx_lp_lookahead.h"
 #endif
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
@@ -1420,7 +1420,7 @@ namespace MfxHwH264Encode
         bool     m_isMBControl;
         mfxMemId m_midMBControl;
         mfxU32   m_idxMBControl;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA) || defined(MFX_ENABLE_ENCTOOLS) 
         mfxLplastatus m_lplastatus;
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)

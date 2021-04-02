@@ -31,10 +31,10 @@ struct mfxLplastatus
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxU8 MiniGopSize = 0;
     mfxU8 QpModulation = 0;
+#endif
     mfxU32 AvgEncodedBits = 0;
     mfxU32 CurEncodedBits = 0;
     mfxU16 DistToNextI = 0;
-#endif
 };
 
 #if defined (MFX_ENABLE_LP_LOOKAHEAD)
