@@ -148,3 +148,4 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 
 # hyper_encode:
 /_studio/mfx_lib/encode_hw/hyper_encode/** dmitry.gurulev@intel.com dmitry.ermilov@intel.com andrey.orlov@intel.com natalia.domnina@intel.com
+/_testsuite/msdk_ts/src/gmock/test_suites/le_* dmitry.gurulev@intel.com dmitry.ermilov@intel.com andrey.orlov@intel.com natalia.domnina@intel.com
