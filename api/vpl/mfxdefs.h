@@ -36,7 +36,7 @@
 /*! The corresponding version of the Intel(r) Media SDK legacy API that is used as a basis
    for the current API. */
 
-#define MFX_LEGACY_VERSION 1034
+#define MFX_LEGACY_VERSION 1035
 
 
 #ifdef __cplusplus
