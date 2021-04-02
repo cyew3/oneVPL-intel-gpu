@@ -184,7 +184,7 @@ typedef struct {
 } mfxExtThreadsParam;
 MFX_PACK_END()
 
-/*! The PlatformCodeName enumerator itemizes microarchitecture code names for the Legacy mode. 
+/*! The PlatformCodeName enumerator itemizes product code names for platforms. 
     For details about Intel code names, see ark.intel.com. */
 enum {
     MFX_PLATFORM_UNKNOWN        = 0,  /*!< Unknown platform. */
@@ -206,11 +206,12 @@ enum {
     MFX_PLATFORM_TIGERLAKE      = 40, /*!< Code name Tiger Lake. */
     MFX_PLATFORM_ROCKETLAKE     = 42, /*!< Code name Rocket Lake. */
     MFX_PLATFORM_ALDERLAKE_S    = 43, /*!< Code name Alder Lake S. */
+    MFX_PLATFORM_ALDERLAKE_P    = 44, /*!< Code name Alder Lake P. */
+    MFX_PLATFORM_ARCTICSOUND_P  = 45,
+    MFX_PLATFORM_XEHP           = 45, /*!< Code name Xe HP. */
 #ifndef STRIP_EMBARGO
-    MFX_PLATFORM_ALDERLAKE_P    = 44,
-    MFX_PLATFORM_PONTE_VECCHIO  = 45,
     MFX_PLATFORM_DG2            = 46,
-    MFX_PLATFORM_XEHP           = 47,
+    MFX_PLATFORM_PONTE_VECCHIO  = 47,
     MFX_PLATFORM_METEORLAKE     = 51,
     MFX_PLATFORM_ELASTICG       = 52,
 #endif
