@@ -1088,7 +1088,7 @@ public:
             && (   ((displayOrder - LastKeyFrameInfo.lastIPOrder) % gopRefDist == 0)
                 || ((fo + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED))
                 || (idrPicDist && (fo + 1) % idrPicDist == 0));
-        bool bB = !(bPRef || bIdr || bPRef || bIRef);
+        bool bB = !(bPRef || bIdr || bIRef);
 
         mfxU16 ft = GopHints.FrameType ? GopHints.FrameType :
             bIdr * (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR)
