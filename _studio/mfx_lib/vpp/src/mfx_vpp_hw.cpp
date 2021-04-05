@@ -2476,9 +2476,6 @@ mfxStatus  VideoVPPHW::Init(
 
         request.Info        = par->vpp.Out;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
-#ifdef MFX_VA_WIN
-        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_OUT] ;
 
         sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, par->vpp.Out.FourCC != MFX_FOURCC_YV12);
@@ -2495,9 +2492,6 @@ mfxStatus  VideoVPPHW::Init(
 
         request.Info        = par->vpp.In;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
-#ifdef MFX_VA_WIN
-        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_IN] ;
 
         sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, par->vpp.In.FourCC != MFX_FOURCC_YV12);
@@ -2696,15 +2690,7 @@ mfxStatus VideoVPPHW::InitMCTF(const mfxFrameInfo& info, const IntMctfParams& Mc
 
         request.Type = MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
         request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-/*
-// MCTF buffers are not shared; so its not needed to set SHARED_RESOURCE status
-        if (m_ioMode == IOMode::D3D_TO_SYS || m_ioMode == IOMode::SYS_TO_SYS)
-        {
-#ifdef MFX_VA_WIN
-            request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
-        }
-*/
+
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             request.Type |= MFX_MEMTYPE_OPAQUE_FRAME;
@@ -3105,9 +3091,6 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
         request.Info        = par->vpp.Out;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
-#ifdef MFX_VA_WIN
-        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_OUT] ;
 
         if (m_config.m_surfCount[VPP_OUT] != m_internalVidSurf[VPP_OUT].NumFrameActual || m_executeParams.bComposite)
@@ -3127,9 +3110,6 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
         request.Info        = par->vpp.In;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
-#ifdef MFX_VA_WIN
-        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_IN] ;
 
         if (m_config.m_surfCount[VPP_IN] != m_internalVidSurf[VPP_IN].NumFrameActual || m_executeParams.bComposite)

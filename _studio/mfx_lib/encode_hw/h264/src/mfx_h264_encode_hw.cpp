@@ -1208,9 +1208,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.Type = MFX_MEMTYPE_D3D_INT;
-#ifdef MFX_VA_WIN
-        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
         request.NumFrameMin = mfxU16(CalcNumSurfRaw(m_video));
 
         {
@@ -1234,9 +1231,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         if (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
             request.Type = MFX_MEMTYPE_D3D_INT;
-#ifdef MFX_VA_WIN
-            request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
             request.NumFrameMin = extOpaq.In.NumSurface;
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
@@ -1294,12 +1288,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (!bIntRateControlLA(par->mfx.RateControlMethod))
     {
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
-    }
-    else
-    {
-#ifdef MFX_VA_WIN
-        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
     }
     sts = m_rec.Alloc(m_core, request, bPanicModeSupport);
     MFX_CHECK_STS(sts);

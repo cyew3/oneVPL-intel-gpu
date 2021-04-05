@@ -186,11 +186,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     request_internal = request;
 
     if (useInternal)
-        request.Type |= MFX_MEMTYPE_INTERNAL_FRAME
-#ifdef MFX_VA_WIN
-        | MFX_MEMTYPE_SHARED_RESOURCE
-#endif
-        ;
+        request.Type |= MFX_MEMTYPE_INTERNAL_FRAME        ;
     else
         request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
 

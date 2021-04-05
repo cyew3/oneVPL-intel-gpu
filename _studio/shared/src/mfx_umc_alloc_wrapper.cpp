@@ -1224,10 +1224,6 @@ SurfaceSource::SurfaceSource(VideoCORE* core, const mfxVideoParam& video_param, 
 
         if ((request.Type & MFX_MEMTYPE_INTERNAL_FRAME) || needVppJPEG)
         {
-#ifdef MFX_VA_WIN
-            if (!needVppJPEG)
-                request_internal.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
             request = request_internal;
         }
 
@@ -1359,10 +1355,6 @@ SurfaceSource::SurfaceSource(VideoCORE* core, const mfxVideoParam& video_param, 
         {
             m_response_alien = m_response;
             m_umc_allocator_adapter->SetExternalFramesResponse(&m_response_alien);
-#ifdef MFX_VA_WIN
-            if (!needVppJPEG)
-                request_internal.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
             request = request_internal;
             bool useSystem = needVppJPEG ? video_param.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY : true;
             mfxSts = m_core->AllocFrames(&request_internal, &m_response, useSystem);
