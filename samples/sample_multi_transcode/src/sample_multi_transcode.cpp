@@ -142,7 +142,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     sts = VerifyCrossSessionsOptions();
     MSDK_CHECK_STATUS(sts, "VerifyCrossSessionsOptions failed");
 
-    mfxVersion ver = {{ MFX_VERSION_MAJOR, MFX_VERSION_MINOR }};
+    mfxVersion ver = {{ MFX_VERSION_MINOR, MFX_VERSION_MAJOR }};
 
     m_pLoader.reset(new VPLImplementationLoader);
     sts = m_pLoader->ConfigureAndEnumImplementations(m_InputParamsArray[0].libType, m_accelerationMode, ver);
