@@ -809,7 +809,7 @@ mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCS
         mfxEncToolsBRCEncodeResult extEncRes;
         extEncRes.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_ENCODE_RESULT;
         extEncRes.Header.BufferSz = sizeof(extEncRes);
-        extEncRes.CodedFrameSize = task.BsDataLength;
+        extEncRes.CodedFrameSize = task.MinFrameSize > task.BsDataLength ? task.MinFrameSize : task.BsDataLength;
         extEncRes.QpY = (mfxU16)task.QpY;
         extEncRes.NumRecodesDone = task.NumRecode;
 
@@ -1074,7 +1074,6 @@ void HevcEncTools::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         case MFX_BRC_PANIC_SMALL_FRAME:
             task.MinFrameSize = brcSts.FrameStatus.MinFrameSize;
             task.NumRecode++;
-            task.BsDataLength = task.MinFrameSize;
 
             sts = BRCUpdate(global, s_task, brcSts);
             MFX_CHECK_STS(sts);
