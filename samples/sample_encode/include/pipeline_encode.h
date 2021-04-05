@@ -261,10 +261,6 @@ struct sInputParams
     mfxI16 DeblockingAlphaTcOffset;
     mfxI16 DeblockingBetaOffset;
 #endif
-
-#ifdef LIBVA_SUPPORT
-    mfxAccelerationMode m_accelerationMode;
-#endif
 };
 
 struct sTask

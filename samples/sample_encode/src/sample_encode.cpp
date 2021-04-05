@@ -860,7 +860,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")))
         {
             pParams->memType = D3D9_MEMORY;
-            pParams->m_accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")))
