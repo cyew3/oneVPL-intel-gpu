@@ -23,8 +23,6 @@
 #include <math.h>
 #include "mfx_enctools_lpla.h"
 
-#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
-
 mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & config)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -89,7 +87,7 @@ mfxStatus LPLA_EncTool::InitSession()
     initPar.Version.Major = 1;
     initPar.Version.Minor = 0;
     initPar.Implementation = MFX_IMPL_HARDWARE;
-    initPar.Implementation |= (m_deviceType == MFX_HANDLE_D3D11_DEVICE ? MFX_IMPL_VIA_D3D11 : MFX_IMPL_VIA_D3D9);
+    initPar.Implementation |= (m_deviceType == MFX_HANDLE_D3D11_DEVICE ? MFX_IMPL_VIA_D3D11 : (m_deviceType == MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 ? MFX_IMPL_VIA_D3D9 : MFX_IMPL_VIA_VAAPI));
     initPar.GPUCopy = MFX_GPUCOPY_DEFAULT;
 
     sts = m_mfxSession.InitEx(initPar);
@@ -171,7 +169,7 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     // create ext buffer for lpla
     mfxExtBuffer** extBuf;
     m_encParams.NumExtParam = 0;
-
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     if (ctrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) // regular LPLA - not LPLA-assisted ET BRC; to be removed if BRC starts using the hints 
     {
         // Attach buffer to bitstream for get la hints from enoder
@@ -214,6 +212,7 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
         m_encParams.NumExtParam++;
     } 
     else
+#endif
         extBuf = new mfxExtBuffer *[2];
 
     m_extBufHevcParam = {};
@@ -254,6 +253,7 @@ mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface, mfxU16 FrameType)
 
     m_frameSizes.push_back({surface->Data.FrameOrder, m_bitstream.DataLength, FrameType});
 
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtLpLaStatus* lplaHints = (mfxExtLpLaStatus*)Et_GetExtBuffer(m_bitstream.ExtParam, m_bitstream.NumExtParam, MFX_EXTBUFF_LPLA_STATUS);
     if(lplaHints)
     {
@@ -266,15 +266,15 @@ mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface, mfxU16 FrameType)
                 lplaHints->IntraHint,
                 lplaHints->MiniGopSize,
                 lplaHints->QpModulationStrength,
-                lplaHints->TargetFrameSize,
-                lplaHints->TargetBufferFullnessInBit,
+                lplaHints->TargetFrameSize
             });
         }
     }
-
+#endif
     return sts;
 }
 
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
 mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPreEncGOP)
 {
     MFX_CHECK_NULL_PTR1(pPreEncGOP);
@@ -348,7 +348,9 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPr
 
     return sts;
 }
+#endif
 
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
 mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqmHint)
 {
     MFX_CHECK_NULL_PTR1(pCqmHint);
@@ -388,7 +390,7 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqm
 
     return MFX_ERR_NONE;
 }
-
+#endif
 mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsBRCBufferHint *pBufHint)
 {
     MFX_CHECK_NULL_PTR1(pBufHint)
@@ -422,6 +424,7 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsBRCBufferHint *pBufHi
         return MFX_ERR_NONE;
     }
 
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
 
     if ((mfxI32)dispOrder < m_curDispOrder)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -435,6 +438,8 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsBRCBufferHint *pBufHi
     }
 
     pBufHint->OptimalFrameSizeInBytes = m_curEncodeHints.TargetFrameSize;
+#endif
+
     return MFX_ERR_NONE;
 }
 
@@ -469,5 +474,3 @@ mfxStatus LPLA_EncTool::Close()
 
     return sts;
 }
-
-#endif

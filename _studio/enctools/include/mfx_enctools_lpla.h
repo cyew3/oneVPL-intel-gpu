@@ -29,6 +29,14 @@
 #include "aenc.h"
 #include "mfx_enctools_utils.h"
 
+struct MfxFrameSize
+{
+    mfxU32 dispOrder;
+    mfxU32 encodedFrameSize;
+    mfxU32 frameType;
+};
+
+
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
 
 struct MfxLookAheadReport
@@ -39,18 +47,7 @@ struct MfxLookAheadReport
     mfxU8  MiniGopSize;
     mfxU8  PyramidQpHint;
     mfxU32 TargetFrameSize;
-    mfxU32 AvgEncodedBits;
-    mfxU32 CurEncodedBits;
-    mfxU16 DistToNextI;
 };
-
-struct MfxFrameSize
-{
-    mfxU32 dispOrder;
-    mfxU32 encodedFrameSize;
-    mfxU32 frameType;
-};
-
 
 enum
 {
@@ -62,6 +59,8 @@ enum
     CQM_HINT_NUM_CUST_MATRIX  = 4,
     CQM_HINT_INVALID          = 0xFF  //invalid hint
 };
+
+#endif
 
 class LPLA_EncTool
 {
@@ -81,7 +80,9 @@ public:
     {
         m_bitstream  = {};
         m_encParams  = {};
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
         m_curEncodeHints = {};
+#endif
         m_frameSizes = {};
         m_config = {};
     }
@@ -92,8 +93,10 @@ public:
     virtual mfxStatus Close();
     virtual mfxStatus Submit(mfxFrameSurface1 * surface, mfxU16 FrameType);
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsBRCBufferHint *pBufHint);
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsHintQuantMatrix *pCqmHint);
     virtual mfxStatus Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPreEncGOP);
+#endif
     virtual mfxStatus InitSession();
     virtual mfxStatus InitEncParams(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
     virtual mfxStatus ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
@@ -116,15 +119,21 @@ protected:
     MFXVideoSession               m_mfxSession;
     MFXVideoENCODE*               m_pmfxENC;
     mfxBitstream                  m_bitstream;
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     std::list<MfxLookAheadReport> m_encodeHints;
     MfxLookAheadReport            m_curEncodeHints;
+#endif
     mfxI32                        m_curDispOrder;
     mfxVideoParam                 m_encParams;
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtLplaParam               m_extBufLPLA;
+#endif
     mfxExtHEVCParam               m_extBufHevcParam;
     mfxExtCodingOption3           m_extBufCO3;
     mfxExtCodingOption2           m_extBufCO2;
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtLpLaStatus              m_lplaHints;
+#endif
     mfxU32                        m_lookAheadScale;
     mfxU32                        m_lookAheadDepth;
     mfxU32                        m_lastIFrameNumber;
@@ -135,6 +144,3 @@ protected:
     mfxExtEncToolsConfig          m_config;
 };
 #endif
-#endif
-
-

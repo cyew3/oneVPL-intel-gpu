@@ -94,6 +94,7 @@ namespace Base
     };
 
     bool IsEncToolsOptOn(const mfxExtEncToolsConfig &config, bool bGameStreaming);
+    bool IsLPLAEncToolsOn(const mfxExtEncToolsConfig &config, bool bGameStreaming);
 
 } //Base
 } //namespace HEVCEHW

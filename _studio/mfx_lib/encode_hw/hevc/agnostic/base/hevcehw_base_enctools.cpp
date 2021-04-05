@@ -270,6 +270,9 @@ static void SetDefaultConfig(mfxVideoParam &video, mfxExtEncToolsConfig &config)
         }
         SetDefaultOpt(config.BRC, (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
             video.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
+
+        bool lplaAssistedBRC = (config.BRC == MFX_CODINGOPTION_ON) && pExtOpt2 && (pExtOpt2->LookAheadDepth > video.mfx.GopRefDist);
+        SetDefaultOpt(config.BRCBufferHints, lplaAssistedBRC);
     }
 #ifdef MFX_ENABLE_ENCTOOLS_LPLA
     else
@@ -647,7 +650,7 @@ mfxStatus HevcEncTools::SubmitPreEncTask(StorageW&  /*global*/, StorageW& s_task
         extFrameData.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_FRAME_TO_ANALYZE;
         extFrameData.Header.BufferSz = sizeof(extFrameData);
         extFrameData.Surface = task.pSurfIn;
-        extParams.push_back((mfxExtBuffer *)&extFrameData);
+        extParams.push_back(&extFrameData.Header);
         task_par.ExtParam = extParams.data();
     }
     task_par.DisplayOrder = task.DisplayOrder;
@@ -668,6 +671,7 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
     auto&      task = Task::Common::Get(s_task);
     std::vector<mfxExtBuffer*> extParams;
     mfxEncToolsBRCFrameParams  extFrameData = {};
+    mfxEncToolsBRCBufferHint extBRCHints = {};
     task_par.DisplayOrder = task.DisplayOrder;
 
     {
@@ -679,7 +683,28 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
         // TO DO: extFrameData.PyramidLayer = ?
         //
 
-        extParams.push_back((mfxExtBuffer *)&extFrameData);
+        extParams.push_back(&extFrameData.Header);
+
+        if (task.BrcHints.LaAvgEncodedBits)
+        {
+            extBRCHints.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
+            extBRCHints.Header.BufferSz = sizeof(extBRCHints);
+            extBRCHints.AvgEncodedSizeInBits = task.BrcHints.LaAvgEncodedBits;
+            extBRCHints.CurEncodedSizeInBits = task.BrcHints.LaCurEncodedBits;
+            extBRCHints.DistToNextI = task.BrcHints.LaDistToNextI;
+            extParams.push_back(&extBRCHints.Header);
+        }
+
+        if (task.GopHints.QPModulaton)
+        {
+            mfxEncToolsHintPreEncodeGOP  extPreGop = {};
+            extPreGop.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
+            extPreGop.Header.BufferSz = sizeof(extPreGop);
+            extPreGop.QPModulation = (mfxU16)task.GopHints.QPModulaton;
+            extPreGop.MiniGopSize = (mfxU16)task.GopHints.MiniGopSize;
+            extParams.push_back(&extPreGop.Header);
+        }
+
         task_par.ExtParam = extParams.data();
         task_par.NumExtParam = (mfxU16)extParams.size();
 
@@ -693,12 +718,12 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
         extQuantCtrl = {};
         extQuantCtrl.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_QUANT_CONTROL;
         extQuantCtrl.Header.BufferSz = sizeof(extQuantCtrl);
-        extParams.push_back((mfxExtBuffer *)&extQuantCtrl);
+        extParams.push_back(&extQuantCtrl.Header);
 
         extHRDPos = {};
         extHRDPos.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_HRD_POS;
         extHRDPos.Header.BufferSz = sizeof(extHRDPos);
-        extParams.push_back((mfxExtBuffer *)&extHRDPos);
+        extParams.push_back(&extHRDPos.Header);
 
         task_par.NumExtParam = (mfxU16)extParams.size();
         task_par.ExtParam = extParams.data();
@@ -721,6 +746,10 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     mfxEncToolsBRCBufferHint bufHint = {};
     mfxEncToolsHintQuantMatrix cqmHint = {};
 
+    bool isLABRC = (m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_UNKNOWN &&
+                     IsOn(m_EncToolConfig.BRCBufferHints) &&
+                     IsOn(m_EncToolConfig.BRC));
+
     MFX_CHECK(task.DisplayOrder!= (mfxU32)(-1), MFX_ERR_NONE);
 
     task_par.DisplayOrder = task.DisplayOrder;
@@ -733,7 +762,7 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     {
         preEncodeGOP.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_GOP;
         preEncodeGOP.Header.BufferSz = sizeof(preEncodeGOP);
-        extParams.push_back((mfxExtBuffer *)&preEncodeGOP);
+        extParams.push_back(&preEncodeGOP.Header);
     }
 
 #if defined MFX_ENABLE_ENCTOOLS_LPLA
@@ -742,16 +771,18 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
         cqmHint.MatrixType = CQM_HINT_USE_FLAT_MATRIX;
         cqmHint.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_MATRIX;
         cqmHint.Header.BufferSz = sizeof(cqmHint);
-        extParams.push_back((mfxExtBuffer *)&cqmHint);
+        extParams.push_back(&cqmHint.Header);
     }
+#endif
 
     if (IsOn(m_EncToolConfig.BRCBufferHints))
     {
         bufHint.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT;
         bufHint.Header.BufferSz = sizeof(bufHint);
-        extParams.push_back((mfxExtBuffer *)&bufHint);
+        bufHint.OutputMode = mfxU16(isLABRC ? MFX_BUFFERHINT_OUTPUT_DISPORDER : MFX_BUFFERHINT_OUTPUT_ENCORDER);
+        extParams.push_back(&bufHint.Header);
     }
-#endif
+
     task_par.ExtParam = extParams.data();
     task_par.NumExtParam = (mfxU16)extParams.size();
 
@@ -762,33 +793,49 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     task.GopHints.FrameType = (m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING ? 0 : preEncodeGOP.FrameType);
 
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
-    mfxLplastatus laStatus = {};
-    laStatus.QpModulation = (mfxU8)preEncodeGOP.QPModulation;
-    laStatus.MiniGopSize = (mfxU8)preEncodeGOP.MiniGopSize;
-
-    switch (cqmHint.MatrixType)
+    if (IsOn(m_EncToolConfig.BRCBufferHints) && !isLABRC)
     {
-    case MFX_QUANT_MATRIX_WEAK:
-        laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX1;
-        break;
-    case MFX_QUANT_MATRIX_MEDIUM:
-        laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX2;
-        break;
-    case MFX_QUANT_MATRIX_STRONG:
-        laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX3;
-        break;
-    case MFX_QUANT_MATRIX_EXTREME:
-        laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX4;
-        break;
-    case MFX_QUANT_MATRIX_FLAT:
-    default:
-        laStatus.CqmHint = CQM_HINT_USE_FLAT_MATRIX;
+        //Low power look ahead with HW BRC
+        mfxLplastatus laStatus = {};
+        laStatus.QpModulation = (mfxU8)preEncodeGOP.QPModulation;
+        laStatus.MiniGopSize = (mfxU8)preEncodeGOP.MiniGopSize;
+
+        switch (cqmHint.MatrixType)
+        {
+        case MFX_QUANT_MATRIX_WEAK:
+            laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX1;
+            break;
+        case MFX_QUANT_MATRIX_MEDIUM:
+            laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX2;
+            break;
+        case MFX_QUANT_MATRIX_STRONG:
+            laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX3;
+            break;
+        case MFX_QUANT_MATRIX_EXTREME:
+            laStatus.CqmHint = CQM_HINT_USE_CUST_MATRIX4;
+            break;
+        case MFX_QUANT_MATRIX_FLAT:
+        default:
+            laStatus.CqmHint = CQM_HINT_USE_FLAT_MATRIX;
+        }
+
+        laStatus.TargetFrameSize = bufHint.OptimalFrameSizeInBytes;
+        LpLaStatus.push_back(laStatus); //lpLaStatus is got in encoded order
     }
-
-    laStatus.TargetFrameSize = bufHint.OptimalFrameSizeInBytes;
-
-    LpLaStatus.push_back(laStatus); //lpLaStatus is got in encoded order
+    else
 #endif
+    {
+        if (IsOn(m_EncToolConfig.AdaptivePyramidQuantB) || IsOn(m_EncToolConfig.AdaptivePyramidQuantP))
+            task.GopHints.QPModulaton = (mfxU8)preEncodeGOP.QPModulation;
+
+        if (isLABRC)
+        {
+            task.BrcHints.LaAvgEncodedBits = bufHint.AvgEncodedSizeInBits;
+            task.BrcHints.LaCurEncodedBits = bufHint.CurEncodedSizeInBits;
+            task.BrcHints.LaDistToNextI = bufHint.DistToNextI;
+        }
+     }
+
     if (sts == MFX_ERR_MORE_DATA) sts = MFX_ERR_NONE;
     MFX_CHECK_STS(sts);
 
@@ -813,7 +860,7 @@ mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCS
         extEncRes.QpY = (mfxU16)task.QpY;
         extEncRes.NumRecodesDone = task.NumRecode;
 
-        extParams.push_back((mfxExtBuffer *)&extEncRes);
+        extParams.push_back(&extEncRes.Header);
         task_par.NumExtParam = (mfxU16)extParams.size();
         task_par.ExtParam = extParams.data();
         auto sts = m_pEncTools->Submit(m_pEncTools->Context, &task_par);
@@ -825,7 +872,7 @@ mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCS
         brcStatus.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_BRC_STATUS;
         brcStatus.Header.BufferSz = sizeof(brcStatus);
 
-        extParams.push_back((mfxExtBuffer *)&brcStatus);
+        extParams.push_back(&brcStatus.Header);
         task_par.NumExtParam = (mfxU16)extParams.size();
         task_par.ExtParam = extParams.data();
         auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
@@ -871,8 +918,8 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             InitEncToolsCtrlExtDevice(extBufDevice, h_type, device_handle);
             InitEncToolsCtrlExtAllocator(extBufAlloc, *pFrameAlloc);
 
-            ExtParam[0] = (mfxExtBuffer*)&extBufDevice;
-            ExtParam[1] = (mfxExtBuffer*)&extBufAlloc;
+            ExtParam[0] = &extBufDevice.Header;
+            ExtParam[1] = &extBufAlloc.Header;
             m_EncToolCtrl.ExtParam = ExtParam;
             m_EncToolCtrl.NumExtParam = 2;
         }

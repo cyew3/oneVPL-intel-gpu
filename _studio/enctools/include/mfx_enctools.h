@@ -49,9 +49,7 @@ private:
 
     BRC_EncTool  m_brc;
     AEnc_EncTool m_scd;
-#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     LPLA_EncTool m_lpLookAhead;
-#endif
     mfxExtEncToolsConfig m_config;
     mfxEncToolsCtrl  m_ctrl;
     mfxHDL m_device;
