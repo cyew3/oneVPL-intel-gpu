@@ -891,13 +891,12 @@ mfxU32 _mfxVersionedSessionImpl::GetNumRef(void) const
 } // mfxU32 _mfxVersionedSessionImpl::GetNumRef(void) const
 
 #ifdef MFX_VA_WIN
-static inline bool HasNativeDX9Support(mfxU32 adapter_n)
+static inline mfxStatus HasNativeDX9Support(mfxU32 adapter_n, bool& hasSupport)
 {
     MFX::DXVA2Device dxvaDevice;
+    hasSupport = true;
 
-    if (!dxvaDevice.InitDXGI1(adapter_n))
-        return false;
-
+    MFX_CHECK(dxvaDevice.InitDXGI1(adapter_n), MFX_ERR_DEVICE_FAILED);
     mfxU32 DeviceID = dxvaDevice.GetDeviceID();
 
     auto const* listLegalDevEnd = listLegalDevIDs + (sizeof(listLegalDevIDs) / sizeof(mfx_device_item));
@@ -905,12 +904,12 @@ static inline bool HasNativeDX9Support(mfxU32 adapter_n)
         return static_cast<mfxU32>(devItem.device_id) == DeviceID;
     });
 
-    if (devItem == listLegalDevEnd) return false;
+    MFX_CHECK(devItem != listLegalDevEnd, MFX_ERR_DEVICE_FAILED);
 
     if (devItem->platform >= MFX_HW_ADL_S)
-        return false;
+        hasSupport = false;
 
-    return true;
+    return MFX_ERR_NONE;
 }
 #endif
 
@@ -1005,7 +1004,11 @@ mfxStatus _mfxVersionedSessionImpl::InitEx(mfxInitParam& par)
             if (d3d9hlp.isD3D9Available() == false)
                 return  MFX_ERR_UNSUPPORTED;
 
-            m_pCORE.reset(FactoryCORE::CreateCORE(HasNativeDX9Support(m_adapterNum) ? MFX_HW_D3D9 : MFX_HW_D3D9ON11, m_adapterNum, maxNumThreads, this));
+            bool hasNativeSupport = true;
+            mfxRes = HasNativeDX9Support(m_adapterNum, hasNativeSupport);
+            MFX_CHECK_STS(mfxRes);
+
+            m_pCORE.reset(FactoryCORE::CreateCORE(hasNativeSupport ? MFX_HW_D3D9 : MFX_HW_D3D9ON11, m_adapterNum, maxNumThreads, this));
         }
 
     }

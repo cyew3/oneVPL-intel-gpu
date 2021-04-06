@@ -459,6 +459,10 @@ typedef struct {
     { 0x9A69, MFX_HW_TGL_LP, MFX_GT2 },//iTGLLPDEVMOB7
     { 0x9A79, MFX_HW_TGL_LP, MFX_GT2 }, //iTGLLPDEVMOB8
 
+    /* LKF */
+    { 0x9840, MFX_HW_LKF, MFX_GT2 },
+    { 0x9841, MFX_HW_LKF, MFX_GT2 },
+
     /* RYF */
     { 0x9940, MFX_HW_RYF, MFX_GT2 },
     /* XE HP */
