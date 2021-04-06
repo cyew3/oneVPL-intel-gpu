@@ -394,8 +394,8 @@ void DDIPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
             Glob::RTErr::Get(global) = sts;
         }
 
-        auto& cc = CC::Get(global);
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        auto& cc = CC::Get(global);
         cc.UpdateCqmHint(task, ((ENCODE_QUERY_STATUS_PARAMS_HEVC *)pFeedback)->lookaheadInfo);
 #endif
 

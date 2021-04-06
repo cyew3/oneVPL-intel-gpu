@@ -1052,12 +1052,10 @@ namespace MfxHwH264Encode
         mfxU32          id,
         mfxU32          offset = 0);
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     bool IsLpLookaheadSupported(
         mfxU16 scenario,
         mfxU16 lookaheadDepth,
         mfxU16 rateContrlMethod);
-#endif
 
     struct mfxExtBufferProxy;
     struct mfxExtBufferRefProxy;

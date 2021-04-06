@@ -2841,16 +2841,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                     unsupported = true;
             }
             else
+#endif
 #if defined(MFX_ENABLE_ENCTOOLS)
             if(!(H264EncTools::isEncToolNeeded(par)) && !IsOn(extOpt2->ExtBRC))
 #endif
             {
-#endif
                 changed = true;
                 extOpt2->LookAheadDepth = 0;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
             }
-#endif
         }
         else if (par.mfx.GopRefDist > 0 && extOpt2->LookAheadDepth < 2 * par.mfx.GopRefDist)
         {
@@ -8101,16 +8099,18 @@ mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExt
     return 0;
 }
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 bool MfxHwH264Encode::IsLpLookaheadSupported(mfxU16 scenario, mfxU16 lookaheadDepth, mfxU16 rateContrlMethod)
 {
     if (scenario == MFX_SCENARIO_GAME_STREAMING && lookaheadDepth > 0 &&
         (rateContrlMethod == MFX_RATECONTROL_CBR || rateContrlMethod == MFX_RATECONTROL_VBR))
+    {
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         return true;
-    else
-        return false;
-}
 #endif
+    }
+    return false;
+}
+
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxEncryptedData* MfxHwH264Encode::GetEncryptedData(mfxBitstream& bs, mfxU32 fieldId)

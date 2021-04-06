@@ -1247,10 +1247,10 @@ namespace MfxHwH264Encode
             m_brcFrameParams.picStruct = GetPicStructForEncode();
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
             m_brcFrameParams.OptimalFrameSizeInBytes = m_lplastatus.TargetFrameSize;
+#endif
             m_brcFrameParams.LaAvgEncodedSize        = m_lplastatus.AvgEncodedBits;
             m_brcFrameParams.LaCurEncodedSize        = m_lplastatus.CurEncodedBits;
             m_brcFrameParams.LaIDist                 = m_lplastatus.DistToNextI;
-#endif
         }
         inline bool isSEIHRDParam(mfxExtCodingOption const & extOpt, mfxExtCodingOption2 const & extOpt2)
         {
