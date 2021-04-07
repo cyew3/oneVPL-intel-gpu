@@ -949,7 +949,7 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
         if (!m_pVAHandle)
         {
             m_pVAHandle = new frame_allocator(
-                    (g_tsImpl & MFX_IMPL_VIA_D3D11) ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE,
+                    (g_tsImpl & MFX_IMPL_VIA_D3D11 || g_tsImpl == MFX_IMPL_HARDWARE) ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE,
                     frame_allocator::ALLOC_MAX,
                     frame_allocator::ENABLE_ALL,
                     frame_allocator::ALLOC_EMPTY);
@@ -958,7 +958,7 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
         SetHandle(m_session, hdl_type, hdl);
         m_is_handle_set = (g_tsStatus.get() >= 0);
     }
-    if (g_tsImpl & MFX_IMPL_VIA_D3D11) {
+    if (g_tsImpl & MFX_IMPL_VIA_D3D11 || g_tsImpl == MFX_IMPL_HARDWARE) {
         ID3D11Device* device;
         D3D11_VIDEO_DECODER_DESC    desc = {};
         D3D11_VIDEO_DECODER_CONFIG  config = {};
