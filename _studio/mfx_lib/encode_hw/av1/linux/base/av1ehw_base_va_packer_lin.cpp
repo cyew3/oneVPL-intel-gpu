@@ -63,8 +63,8 @@ void InitSPS(
     sps.intra_period = par.mfx.GopPicSize;
     sps.ip_period    = par.mfx.GopRefDist;
 
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
     {
         sps.bits_per_second = TargetKbps(par.mfx) * 1000;
     }
@@ -412,6 +412,7 @@ void UpdatePPS(
 
     //offsets
     auto& offsets = task.Offsets;
+    pps.size_in_bits_frame_hdr_obu     = static_cast<mfxU8>(offsets.FrameHdrOBUSizeInBits);
     pps.byte_offset_frame_hdr_obu_size = offsets.FrameHdrOBUSizeByteOffset;
     pps.bit_offset_loopfilter_params   = offsets.LoopFilterParamsBitOffset;
     pps.bit_offset_qindex              = offsets.QIndexBitOffset;
@@ -427,8 +428,8 @@ inline void AddVaMiscHRD(
     auto& hrd = AddVaMisc<VAEncMiscParameterHRD>(VAEncMiscParameterTypeHRD, buf);
 
     uint32_t bNeedBufParam =
-        par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ;
+        par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR;
 
     hrd.initial_buffer_fullness = bNeedBufParam * InitialDelayInKB(par.mfx) * 8000;
     hrd.buffer_size             = bNeedBufParam * BufferSizeInKB(par.mfx) * 8000;
@@ -461,8 +462,8 @@ inline void AddVaMiscRC(
     auto& rc = AddVaMisc<VAEncMiscParameterRateControl>(VAEncMiscParameterTypeRateControl, buf);
 
     mfxU32 bNeedRateParam =
-            par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ;
+        par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR;
 
     rc.bits_per_second = bNeedRateParam * MaxKbps(par.mfx) * 1000;
 

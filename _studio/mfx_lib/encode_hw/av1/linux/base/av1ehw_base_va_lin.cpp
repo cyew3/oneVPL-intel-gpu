@@ -380,8 +380,8 @@ uint32_t DDI_VA::ConvertRateControlMFX2VAAPI(mfxU16 rateControl)
     static const std::map<mfxU16, uint32_t> RCMFX2VAAPI =
     {
         { mfxU16(MFX_RATECONTROL_CQP)   , uint32_t(VA_RC_CQP) },
-        { mfxU16(MFX_RATECONTROL_CBR)   , uint32_t(VA_RC_CBR | VA_RC_MB) },
-        { mfxU16(MFX_RATECONTROL_VBR)   , uint32_t(VA_RC_VBR | VA_RC_MB) },
+        { mfxU16(MFX_RATECONTROL_CBR)   , uint32_t(VA_RC_CBR) },
+        { mfxU16(MFX_RATECONTROL_VBR)   , uint32_t(VA_RC_VBR) },
     };
 
     auto itRC = RCMFX2VAAPI.find(rateControl);
