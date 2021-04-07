@@ -12,6 +12,39 @@
 #include "app_defs.h"
 #include "memory_allocator.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+
+#include <DXGI.h>
+#include <psapi.h>
+#include <windows.h>
+#include <tchar.h>
+#include <memory>
+
+// include 32/64/debug lib
+#define LIBMFXSW_MASK "libmfxsw"
+#define LIBMFXHW_MASK "libmfxhw"
+#define ONEVPLSW_MASK "libvplswref"
+#define ONEVPL32 "libmfx32-gen.dll"
+#define ONEVPL64 "libmfx64-gen.dll"
+
+#else
+
+#include <iostream>
+#include <string>
+#include <link.h>
+
+#if defined(__x86_64__)
+    #define LIBMFXSW "libmfxsw64.so.1"
+    #define LIBMFXHW "libmfxhw64.so.1"
+
+    #define ONEVPLSW "libvplswref64.so.1"
+    #define ONEVPLHW "libmfx-gen.so.1.2"
+#else
+    #error Unsupported architecture
+#endif
+
+#endif // #if defined(_WIN32) || defined(_WIN64)
+
 void PrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
 {
     if(strErrorMessage)
@@ -1311,3 +1344,73 @@ mfxStatus SetDataInSurface(mfxFrameSurface* pSurface, mfxFrameData** pData, mfxU
 
     return MFX_ERR_NONE;
 }
+
+#if defined(_WIN32) || defined(_WIN64)
+
+mfxStatus PrintLoadedModules()
+{
+    DWORD currProcessID = GetCurrentProcessId();
+
+    std::unique_ptr<void, void(*)(HANDLE)> hProcess(OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, currProcessID),
+                                                    [](HANDLE pHandle){ CloseHandle(pHandle); });
+
+    if (NULL == hProcess.get())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    // get buffee size for array of loaded libs
+    DWORD needed;
+    if (!EnumProcessModules(hProcess.get(), nullptr, 0, &needed))
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    // get a list of all the loaded modules in this process.
+    std::vector<HMODULE>  modules(needed / sizeof(HMODULE));
+    if (!EnumProcessModulesEx(hProcess.get(), modules.data(), needed, &needed, LIST_MODULES_ALL))
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    const DWORD MAX_FILE_PATH = 1024;
+    for (auto module : modules)
+    {
+        TCHAR moduleName[MAX_PATH];
+        if (GetModuleBaseName(hProcess.get(), module, moduleName, MAX_PATH))
+        {
+            if (_tcsstr(moduleName, _T(LIBMFXHW_MASK)) != NULL || _tcsstr(moduleName, _T(LIBMFXSW_MASK)) != NULL ||
+                _tcsstr(moduleName, _T(ONEVPL32)) != NULL || _tcsstr(moduleName, _T(ONEVPL64)) != NULL ||
+                _tcsstr(moduleName, _T(ONEVPLSW_MASK)) != NULL)
+            {
+                TCHAR modulePath[MAX_FILE_PATH];
+                DWORD charsReturned = GetModuleFileName(module, modulePath, MAX_FILE_PATH);
+                // path can be bigger than MAX_FILE_PATH, in this case it will be truncated
+                // so, print whole or truncated part of path and, if we get truncated path, print module name too
+                if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+                {
+                    vm_string_printf(VM_STRING("Loaded module name: %s ; "), moduleName);
+                }
+                vm_string_printf(VM_STRING("Loaded module path: %s \n"), modulePath);
+            }
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+#else // #if defined(_WIN32) || defined(_WIN64)
+
+int PrintLibMFXPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    std::string libPath = info->dlpi_name;
+    if (libPath.find(LIBMFXSW) != std::string::npos || libPath.find(LIBMFXHW) != std::string::npos ||
+        libPath.find(ONEVPLSW) != std::string::npos || libPath.find(ONEVPLHW) != std::string::npos)
+    {
+        if (data) {
+            int *numLoad = (int*) data;
+            vm_string_printf(VM_STRING("   Impl number: %d ; Module: %s \n"), *numLoad, info->dlpi_name);
+            *numLoad = *numLoad + 1;
+            data = (void*)numLoad;
+        } else {
+            vm_string_printf(VM_STRING("Loaded module: %s \n"), info->dlpi_name);
+        }
+    }
+    return 0;
+}
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

@@ -310,4 +310,11 @@ void WipeMemory(mfxBitstream *pBitstream, sFrameEncoder* pEncoder, mfxU8** pBuf,
 mfxStatus SetDataInSurface(mfxFrameSurface* pSurface, mfxFrameData** pData, mfxU8 NumFrameData);
 mfxStatus InitMfxDataPlanes(sMFXPlanes ** pPlanes, mfxFrameData** pData, mfxFrameInfo* pParams,mfxVideoParam* pVideoParams, mfxU32 nData);
 
+#if defined(_WIN32) || defined(_WIN64)
+mfxStatus PrintLoadedModules();
+#else
+int PrintLibMFXPath(struct dl_phdr_info *info, size_t size, void *data);
+#endif
+
+
 #endif /*__SHARED_UTILS_H */

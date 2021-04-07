@@ -91,11 +91,6 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 #include "mfxstructures-int.h"
 
-#if !(defined(LINUX32) || defined(LINUX64)) && !defined(MFX_ONEVPL)
-#define MFX_DISPATCHER_LOG
-#include "mfx_dispatcher_log.h"
-#endif // #if !(defined(LINUX32) || defined(LINUX64))
-
 #ifdef LUCAS_DLL
 #include "lucas.h"
 #endif
@@ -1181,10 +1176,6 @@ mfxStatus MFXDecPipeline::CreateCore()
             std::unique_lock<std::mutex> lock(*m_externalsync);
             d3dAcess.swap(lock);
         }
-#ifdef MFX_DISPATCHER_LOG
-        if (m_inParams.bSkipUselessOutput)
-            DispatchLog::get().DetachAllSinks();
-#endif // MFX_DISPATCHER_LOG
 
 #if defined(_WIN32) || defined(_WIN64)
         MFX::DXVA2Device dxva2device;

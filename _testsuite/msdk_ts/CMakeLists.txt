@@ -614,10 +614,12 @@ target_compile_definitions(msdk_gmock
     MFX_DEPRECATED_OFF
     MFX_HAVE_EXTERNAL_CONFIG
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
+    $<$<PLATFORM_ID:Windows>:MFX_DISPATCHER_LOG>
 )
 
 target_link_libraries(msdk_gmock
   PRIVATE
+    shared_utils
     sample_common
     bs_parser_static
     gmock_160

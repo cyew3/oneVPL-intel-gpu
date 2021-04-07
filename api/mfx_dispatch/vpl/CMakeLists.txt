@@ -20,6 +20,7 @@ if(WIN32)
       windows/mfx_load_dll.cpp
       windows/mfx_win_reg_key.cpp
       windows/libmfx.def)
+
 endif()
 
 if(UNIX)

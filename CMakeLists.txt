@@ -127,6 +127,14 @@ if (BUILD_DISPATCHER)
     target_include_directories(vpl-api
       INTERFACE ${ONEVPL_API_HEADER_DIRECTORY}
     )
+
+    if(CMAKE_SYSTEM_NAME MATCHES Windows AND (ENABLE_ITT OR ENABLE_TEXTLOG OR ENABLE_STAT))
+        target_compile_definitions(vpl-api
+          INTERFACE
+            MFX_DISPATCHER_LOG
+        )
+    endif()
+
     add_subdirectory(api/mfx_dispatch/vpl)
 
     set(MFX_DISPATCHER VPL)

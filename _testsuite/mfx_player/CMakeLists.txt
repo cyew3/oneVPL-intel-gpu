@@ -108,10 +108,10 @@ target_include_directories(mfx_pipeline
 
 target_compile_definitions(mfx_pipeline
   PRIVATE
+    $<$<AND:$<PLATFORM_ID:Windows>,$<OR:$<BOOL:${ENABLE_ITT}>,$<BOOL:${ENABLE_TEXTLOG}>,$<BOOL:${ENABLE_STAT}>>>:MFX_DISPATCHER_LOG>
     MFX_VERSION_USE_LATEST
     MFX_DEPRECATED_OFF
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
-    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 target_link_libraries(mfx_pipeline
@@ -185,6 +185,7 @@ target_link_libraries(mfx_pipeline_lucas
 
 target_compile_definitions(mfx_pipeline_lucas
   PRIVATE
+    $<$<AND:$<PLATFORM_ID:Windows>,$<OR:$<BOOL:${ENABLE_ITT}>,$<BOOL:${ENABLE_TEXTLOG}>,$<BOOL:${ENABLE_STAT}>>>:MFX_DISPATCHER_LOG>
     MFX_VERSION_USE_LATEST
     LUCAS_DLL
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
@@ -205,9 +206,7 @@ target_sources(mfx_player
 
 target_compile_definitions(mfx_player
   PRIVATE
-    MFX_VERSION_USE_LATEST
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
-    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 target_link_libraries(mfx_player
@@ -237,7 +236,6 @@ target_sources(mfx_player_lucas
 
 target_compile_definitions(mfx_player_lucas
   PRIVATE
-    MFX_VERSION_USE_LATEST
     LUCAS_DLL
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
 )

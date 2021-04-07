@@ -20,17 +20,8 @@ File Name: .h
 #include <limits>
 #include <assert.h>
 
-#if defined(_WIN32) || defined(_WIN64)
-    #include <DXGI.h>
-    #include <psapi.h>
-#endif
+#if defined(LINUX32) || defined(LINUX64)
 
-#if !(defined(LINUX32) || defined(LINUX64))
-
-// TODO: decouple dispatcher logic from player
-#include "mfx_dispatcher.h"
-
-#else
 #include <mfxvideo.h>
 #include "mfxdispatcher.h"
 
@@ -42,47 +33,28 @@ File Name: .h
 #endif // _GNU_SOURCE
 #include <link.h>
 
-#if defined(__i386__)
-#ifdef ANDROID
-#define LIBMFXSW "libmfxsw32.so"
-#define LIBMFXHW "libmfxhw32.so"
 #else
-#define LIBMFXSW "libmfxsw32.so.1"
-#define LIBMFXHW "libmfxhw32.so.1"
-#define ONEVPLRT "libmfx-gen.so.1.2"
-#endif
-#elif defined(__x86_64__)
-#ifdef ANDROID
-#define LIBMFXSW "libmfxsw64.so"
-#define LIBMFXHW "libmfxhw64.so"
-#else
-#define LIBMFXSW "libmfxsw64.so.1"
-#define LIBMFXHW "libmfxhw64.so.1"
-#define ONEVPLRT "libmfx-gen.so.1.2"
-#endif
-#else
-#error Unsupported architecture
-#endif
-#endif // #if !(defined(LINUX32) || defined(LINUX64))
 
-static int PrintLibMFXPath(struct dl_phdr_info *info, size_t size, void *data)
-{
-#if (defined(LINUX32) || defined(LINUX64))
-    std::string libPath = info->dlpi_name;
-    if (libPath.find(LIBMFXSW) != std::string::npos || libPath.find(LIBMFXHW) != std::string::npos || libPath.find(ONEVPLRT) != std::string::npos)
-    {
-        vm_string_printf(VM_STRING("loaded module %s \n"), info->dlpi_name);
-    }
-#endif
-    return 0;
-}
+#include <DXGI.h>
+#include <psapi.h>
+
+#endif // #if !(defined(LINUX32) || defined(LINUX64))
 
 mfxStatus myMFXCreateSession(mfxLoader loader, mfxU32 implIndex, mfxSession *session)
 {
     mfxStatus res = MFXCreateSession(loader, implIndex, session);
 #if (defined(LINUX32) || defined(LINUX64))
-    dl_iterate_phdr(PrintLibMFXPath, NULL);
-#endif
+    vm_string_printf(VM_STRING("Used implementation number: %d \n"), implIndex);
+    vm_string_printf(VM_STRING("Loaded modules:\n"));
+    int numLoad = 0;
+    dl_iterate_phdr(PrintLibMFXPath, &numLoad);
+#else
+
+#if !defined(MFX_DISPATCHER_LOG)
+    PrintLoadedModules();
+#endif // !defined(MFX_DISPATCHER_LOG)
+
+#endif //(defined(LINUX32) || defined(LINUX64))
     return res;
 }
 
