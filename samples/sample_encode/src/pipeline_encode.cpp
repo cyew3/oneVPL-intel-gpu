@@ -1596,7 +1596,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureVersion failed");
     sts = m_pLoader->ConfigureImplementation(initPar.Implementation);
     MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
-    sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, pParams->bUseHWLib);
+    sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, initPar.Implementation);
     MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureAccelerationMode failed");
 #if (defined(_WIN64) || defined(_WIN32))
     sts = m_pLoader->EnumImplementations(pParams->deviceID, pParams->adapterNum);
