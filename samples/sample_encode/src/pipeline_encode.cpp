@@ -805,9 +805,12 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 #if (defined(_WIN64) || defined(_WIN32)) && defined(MFX_ONEVPL)
     if (pInParams->isDualMode)
     {
-        m_mfxEncParams.AddExtBuffer<mfxExtHyperModeParam>();
-        auto hyperEncodeParam = m_mfxEncParams.GetExtBuffer<mfxExtHyperModeParam>();
+        auto hyperEncodeParam = m_mfxEncParams.AddExtBuffer<mfxExtHyperModeParam>();
         hyperEncodeParam->Mode = pInParams->hyperMode;
+
+        auto codingOption = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption>();
+        codingOption->NalHrdConformance = MFX_CODINGOPTION_OFF;
+        codingOption->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
     }
 #endif
 
