@@ -1835,6 +1835,12 @@ inline void SetTaskQp(
     TaskCommonPar& task
     , const mfxVideoParam& par)
 {
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        task.QpY = 128;
+        return;
+    }
+
     if (IsB(task.FrameType))
         task.QpY = static_cast<mfxU8>(par.mfx.QPB);
     else if (IsP(task.FrameType))
