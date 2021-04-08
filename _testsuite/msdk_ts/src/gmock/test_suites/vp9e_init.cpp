@@ -381,6 +381,8 @@ namespace vp9e_init
             m_pPar = NULL;
         }
 
+        m_bCheckLowPowerAtInit = false;
+
         if ((tc.type == _2_CALL) || (tc.type == _2_CALL_CLOSE))
         {
             Init(m_session, m_pPar);

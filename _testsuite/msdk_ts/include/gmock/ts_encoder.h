@@ -89,6 +89,7 @@ public:
     bool                        m_single_field_processing;
     mfxU16                      m_field_processed;
     bool                        m_bUseDefaultFrameType;
+    bool                        m_bCheckLowPowerAtInit = true;
     std::list<tsSharedCtrl>     m_ctrl_list;
     std::list<tsSharedCtrl>     m_ctrl_reorder_buffer;
     tsSharedCtrl                m_ctrl_next;

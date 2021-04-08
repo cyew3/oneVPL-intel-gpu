@@ -376,7 +376,7 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
 
     if (par)
     {
-        if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
+        if (m_bCheckLowPowerAtInit && g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
         {
             EXPECT_EQ(g_tsConfig.lowpower, par->mfx.LowPower)
                 << "ERROR: external configuration of LowPower doesn't equal to real value\n";
