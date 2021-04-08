@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 Intel Corporation
+// Copyright (c) 2011-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1591,7 +1591,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 #endif
     }
 
-    if (MFX_HW_APL == platform || MFX_HW_CFL == platform || MFX_HW_XE_HP == platform)
+    if (MFX_HW_APL == platform || MFX_HW_CFL == platform || MFX_HW_XE_HP_SDV == platform)
         m_caps.ddi_caps.FrameSizeToleranceSupport = 1;
 
     m_width  = width;

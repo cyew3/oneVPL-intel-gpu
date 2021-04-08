@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 Intel Corporation
+// Copyright (c) 2007-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -243,7 +243,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
 
 #if !defined STRIP_EMBARGO && defined(MFX_ONEVPL)
             // TODO: restore switchers
-            this->m_enabled20Interface = dynamic_cast<VAAPIVideoCORE20*>(this) && (m_HWType == MFX_HW_XE_HP /* || m_HWType == MFX_HW_DG2 */ );
+            this->m_enabled20Interface = dynamic_cast<VAAPIVideoCORE20*>(this) && (m_HWType == MFX_HW_XE_HP_SDV /* || m_HWType == MFX_HW_DG2 */ );
 #else
             this->m_enabled20Interface = false;
 #endif

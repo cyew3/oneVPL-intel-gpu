@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2021 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -49,9 +49,9 @@ enum HWType
     MFX_HW_DG1       = MFX_HW_TGL + 3,
     MFX_HW_ADL_S     = MFX_HW_TGL + 4,
     MFX_HW_ADL_P     = MFX_HW_TGL + 5,
-    MFX_HW_XE_HP     = MFX_HW_TGL + 6,
-    MFX_HW_DG2       = MFX_HW_XE_HP + 1,
-    MFX_HW_PVC       = MFX_HW_XE_HP + 2,
+    MFX_HW_XE_HP_SDV     = MFX_HW_TGL + 6,
+    MFX_HW_DG2       = MFX_HW_XE_HP_SDV + 1,
+    MFX_HW_PVC       = MFX_HW_XE_HP_SDV + 2,
 
     MFX_HW_MTL       = 0xf00000,
     MFX_HW_ELG       = MFX_HW_MTL + 1

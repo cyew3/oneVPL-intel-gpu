@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 Intel Corporation
+// Copyright (c) 2007-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -883,11 +883,11 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
     case MFX_HW_ADL_S  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_S;   break;
 #endif
 #ifndef STRIP_EMBARGO
-    case MFX_HW_XE_HP :
+    case MFX_HW_XE_HP_SDV :
 #if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
 #endif
-                         platform.CodeName = MFX_PLATFORM_XEHP;          break;
+                         platform.CodeName = MFX_PLATFORM_XEHP_SDV;      break;
     case MFX_HW_PVC    :
 #if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;

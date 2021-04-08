@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2020 Intel Corporation
+// Copyright (c) 2008-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -172,7 +172,7 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
     case IGFX_DG1:
         return MFX_HW_DG1;
     case IGFX_XE_HP:
-        return MFX_HW_XE_HP;
+        return MFX_HW_XE_HP_SDV;
     case IGFX_DG2:
         return MFX_HW_DG2;
     case IGFX_ALDERLAKE_S:

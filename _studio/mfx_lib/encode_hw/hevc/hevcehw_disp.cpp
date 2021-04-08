@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -115,7 +115,7 @@ static ImplBase* CreateSpecific(
 #ifndef STRIP_EMBARGO
     if (HW >= MFX_HW_DG2)
         return new HEVCEHWDisp::DG2::MFXVideoENCODEH265_HW(core, status, mode);
-    if (HW >= MFX_HW_XE_HP)
+    if (HW >= MFX_HW_XE_HP_SDV)
         return new HEVCEHWDisp::ATS::MFXVideoENCODEH265_HW(core, status, mode);
 #endif
     if (HW == MFX_HW_DG1)

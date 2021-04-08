@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2020 Intel Corporation
+// Copyright (c) 2008-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1498,7 +1498,7 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     /* We call driver instead of kernel on ATS+ for field weaving and splitting */
     if ((IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_WEAVING)
       || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_SPLITTING))
-      && (m_core->GetHWType() >= MFX_HW_XE_HP))
+      && (m_core->GetHWType() >= MFX_HW_XE_HP_SDV))
         isSWFieldProcessing = false;
 #endif
 

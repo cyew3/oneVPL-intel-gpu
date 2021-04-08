@@ -48,7 +48,7 @@ private:
     {
         switch (g_tsHWtype)
         {
-        case MFX_HW_XE_HP:
+        case MFX_HW_XE_HP_SDV:
             return isEncode ? ref_ATS_enc.GetReference() : ref_ATS_dec.GetReference();
         case MFX_HW_DG2:
             return isEncode ? ref_DG2_enc.GetReference() : ref_DG2_dec.GetReference();
@@ -100,7 +100,7 @@ private:
     {
         switch (g_tsHWtype)
         {
-        case MFX_HW_XE_HP:
+        case MFX_HW_XE_HP_SDV:
             return ref_ATS_vpp.GetReference();
         case MFX_HW_DG2:
             return ref_DG2_vpp.GetReference();
@@ -144,7 +144,7 @@ private:
     {
         switch (g_tsHWtype)
         {
-        case MFX_HW_XE_HP:
+        case MFX_HW_XE_HP_SDV:
             return ref_ATS_common.GetReference();
         case MFX_HW_DG2:
             return ref_DG2_common.GetReference();

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 Intel Corporation
+// Copyright (c) 2007-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,9 +93,9 @@ enum eMFXHWType
 #ifndef STRIP_EMBARGO
     MFX_HW_RYF       = MFX_HW_TGL_LP + 1,
     MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
-    MFX_HW_XE_HP     = MFX_HW_TGL_LP + 6,
-    MFX_HW_DG2       = MFX_HW_XE_HP + 1,
-    MFX_HW_PVC       = MFX_HW_XE_HP + 2,
+    MFX_HW_XE_HP_SDV = MFX_HW_TGL_LP + 6,
+    MFX_HW_DG2       = MFX_HW_XE_HP_SDV + 1,
+    MFX_HW_PVC       = MFX_HW_XE_HP_SDV + 2,
 
     MFX_HW_MTL       = 0x1700000,
     MFX_HW_ELG       = MFX_HW_MTL + 1
@@ -466,22 +466,22 @@ typedef struct {
     /* RYF */
     { 0x9940, MFX_HW_RYF, MFX_GT2 },
     /* XE HP */
-    { 0x0201, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0202, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0203, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0204, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0205, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0206, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0207, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0208, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0209, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x020A, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x020B, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x020C, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x020D, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x020E, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x020F, MFX_HW_XE_HP, MFX_GT4 },
-    { 0x0210, MFX_HW_XE_HP, MFX_GT4 },
+    { 0x0201, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0202, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0203, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0204, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0205, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0206, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0207, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0208, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0209, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x020A, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x020B, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x020C, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x020D, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x020E, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x020F, MFX_HW_XE_HP_SDV, MFX_GT4 },
+    { 0x0210, MFX_HW_XE_HP_SDV, MFX_GT4 },
 
     /* DG2 */
     { 0x4F80, MFX_HW_DG2, MFX_GT4 }, // DG2-512 / IDG2_8x4x16_SKU_DEVICE_F0_ID

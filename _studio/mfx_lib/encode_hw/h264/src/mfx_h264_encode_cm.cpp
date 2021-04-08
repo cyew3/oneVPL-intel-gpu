@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2020 Intel Corporation
+// Copyright (c) 2009-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -864,7 +864,7 @@ void CmContext::Setup(
     m_device = cmDevice;
 
 #ifndef STRIP_EMBARGO
-    if (core->GetHWType() == MFX_HW_XE_HP)
+    if (core->GetHWType() == MFX_HW_XE_HP_SDV)
     {
         if (m_device->CreateQueueEx(m_queue, CM_COMPUTE_QUEUE_CREATE_OPTION) != CM_SUCCESS)
             throw CmRuntimeError();

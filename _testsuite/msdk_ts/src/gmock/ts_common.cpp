@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2021 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -330,7 +330,7 @@ void MFXVideoTest::SetUp()
             else if (platform.find("dg1") != std::string::npos)
                 g_tsHWtype = MFX_HW_DG1;
             else if (platform.find("ats") != std::string::npos)
-                g_tsHWtype = MFX_HW_XE_HP;
+                g_tsHWtype = MFX_HW_XE_HP_SDV;
             else if (platform.find("dg2") != std::string::npos)
                 g_tsHWtype = MFX_HW_DG2;
             else if (platform.find("adl-s") != std::string::npos)
@@ -358,7 +358,7 @@ void MFXVideoTest::SetUp()
 
     g_tsPlugin.Init(plugins, platform);
 
-    g_tsConfig.core20 = (ENV("TS_CORE20", (g_tsHWtype == MFX_HW_XE_HP || g_tsHWtype == MFX_HW_DG2) ? "1" : "0") != "0");
+    g_tsConfig.core20 = (ENV("TS_CORE20", (g_tsHWtype == MFX_HW_XE_HP_SDV || g_tsHWtype == MFX_HW_DG2) ? "1" : "0") != "0");
 
 #if defined(_WIN32) || defined(_WIN64)
     HMODULE hm = nullptr;

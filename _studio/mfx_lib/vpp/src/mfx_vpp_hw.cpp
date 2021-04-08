@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2020 Intel Corporation
+// Copyright (c) 2008-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2565,7 +2565,7 @@ mfxStatus  VideoVPPHW::Init(
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12lp,sizeof(genx_fcopy_gen12lp),m_pCmProgram,"nojitter");
                 break;
         #ifndef STRIP_EMBARGO
-            case MFX_HW_XE_HP:
+            case MFX_HW_XE_HP_SDV:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12, sizeof(genx_fcopy_gen12), m_pCmProgram, "nojitter");
                 break;
             case MFX_HW_ADL_P:
@@ -2590,7 +2590,7 @@ mfxStatus  VideoVPPHW::Init(
         if (NULL == m_pCmQueue)
         {
 #ifndef STRIP_EMBARGO
-            if (m_pCore->GetHWType() == MFX_HW_XE_HP)
+            if (m_pCore->GetHWType() == MFX_HW_XE_HP_SDV)
                 res = m_pCmDevice->CreateQueueEx(m_pCmQueue, CM_COMPUTE_QUEUE_CREATE_OPTION);
             else
 #endif
@@ -2878,7 +2878,7 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
     caps.uMCTF = 0;
     if (hwType >= MFX_HW_BDW
 #ifndef STRIP_EMBARGO
-        && hwType <= MFX_HW_XE_HP
+        && hwType <= MFX_HW_XE_HP_SDV
 #endif
         )
         caps.uMCTF = 1;
@@ -4594,11 +4594,11 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
 #if !defined(STRIP_EMBARGO)
-    if ((imfxFPMode - 1 == FIELD2TFF || imfxFPMode - 1 == FIELD2BFF) && m_pCore->GetHWType() >= MFX_HW_XE_HP)
+    if ((imfxFPMode - 1 == FIELD2TFF || imfxFPMode - 1 == FIELD2BFF) && m_pCore->GetHWType() >= MFX_HW_XE_HP_SDV)
     {
         m_executeParams.bFieldWeavingExt = true;
     }
-    if ((imfxFPMode - 1 == TFF2FIELD || imfxFPMode - 1 == BFF2FIELD) && m_pCore->GetHWType() >= MFX_HW_XE_HP)
+    if ((imfxFPMode - 1 == TFF2FIELD || imfxFPMode - 1 == BFF2FIELD) && m_pCore->GetHWType() >= MFX_HW_XE_HP_SDV)
     {
         m_executeParams.bFieldSplittingExt = true;
     }

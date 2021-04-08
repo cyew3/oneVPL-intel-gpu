@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020 Intel Corporation
+// Copyright (c) 2017-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -188,7 +188,7 @@ mfxStatus LoaderCtx::Init(mfxInitParam& par)
 
   std::vector<std::string> libs;
 
-  if (platform >= MFX_HW_XE_HP) {
+  if (platform >= MFX_HW_XE_HP_SDV) {
     libs.emplace_back(ONEVPLRT);
     libs.emplace_back(MFX_MODULES_DIR "/" ONEVPLRT);
   } else if (MFX_IMPL_BASETYPE(par.Implementation) == MFX_IMPL_AUTO ||

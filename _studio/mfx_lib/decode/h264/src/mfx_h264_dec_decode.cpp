@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2020 Intel Corporation
+// Copyright (c) 2004-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -329,7 +329,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 
          //PicStruct support differs, need to check per-platform
 #ifndef STRIP_EMBARGO
-        if (m_core->GetHWType() != MFX_HW_XE_HP
+        if (m_core->GetHWType() != MFX_HW_XE_HP_SDV
             && m_core->GetHWType() != MFX_HW_DG2
             && m_core->GetHWType() != MFX_HW_PVC
             && m_core->GetHWType() != MFX_HW_MTL

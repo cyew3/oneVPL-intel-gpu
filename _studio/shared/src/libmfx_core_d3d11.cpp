@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 Intel Corporation
+// Copyright (c) 2007-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1291,7 +1291,7 @@ D3D11VideoCORE20::D3D11VideoCORE20(const mfxU32 adapterNum, const mfxU32 numThre
 
     // TODO: restore switchers
     m_enabled20Interface = false;
-        /*itDev != std::end(listLegalDevIDs) && (itDev->platform == MFX_HW_XE_HP || itDev->platform == MFX_HW_DG2); */
+        /*itDev != std::end(listLegalDevIDs) && (itDev->platform == MFX_HW_XE_HP_SDV || itDev->platform == MFX_HW_DG2); */
 #else
     m_enabled20Interface = false;
 #endif

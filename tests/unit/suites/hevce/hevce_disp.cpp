@@ -185,7 +185,7 @@ TEST(Disp, Gen12XEHP)
     Core vcore;
     mfxStatus sts = MFX_ERR_NONE;
     eMFXHWType hwSet[] = {
-        MFX_HW_XE_HP
+        MFX_HW_XE_HP_SDV
     };
 
     for (auto hw : hwSet)

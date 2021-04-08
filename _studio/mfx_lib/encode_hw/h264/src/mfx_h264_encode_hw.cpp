@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2020 Intel Corporation
+// Copyright (c) 2009-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -273,7 +273,7 @@ mfxStatus MFXHWVideoENCODEH264::QueryImplsDescription(
     caps.BiDirectionalPrediction =
         !IsOn(tmp.mfx.LowPower)
 #if !defined(STRIP_EMBARGO) && defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
-        ||  (platform >= MFX_HW_XE_HP)
+        ||  (platform >= MFX_HW_XE_HP_SDV)
 #endif
         ;
 

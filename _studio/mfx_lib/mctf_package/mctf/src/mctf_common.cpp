@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2020 Intel Corporation
+// Copyright (c) 2008-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -803,7 +803,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     res = device->GetCaps(CAP_GPU_PLATFORM, hwSize, &hwType);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 #ifndef STRIP_EMBARGO
-    if (core->GetHWType() == MFX_HW_XE_HP)
+    if (core->GetHWType() == MFX_HW_XE_HP_SDV)
         res = device->CreateQueueEx(queue, CM_COMPUTE_QUEUE_CREATE_OPTION);
     else
 #endif

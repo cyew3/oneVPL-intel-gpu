@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2020 Intel Corporation
+// Copyright (c) 2014-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ static mfxU16 GetRefDist(VideoCORE *core, mfxVideoParam *par)
         refDist = (
             IsOn(par->mfx.LowPower)
 #ifndef STRIP_EMBARGO
-            && core->GetHWType() < MFX_HW_XE_HP
+            && core->GetHWType() < MFX_HW_XE_HP_SDV
 #else
             && core->GetHWType() < MFX_HW_TGL_LP
 #endif

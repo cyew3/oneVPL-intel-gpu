@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2019-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019-2021 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -211,7 +211,7 @@ namespace hevce_explicit_weight_pred
         }
 
         // driver's limitation: kernel in VME HEVC for non-ATS platforms has hard-coded luma denom=6, so others are not allowed, VDEnc - ?
-        if (g_tsHWtype == MFX_HW_XE_HP)
+        if (g_tsHWtype == MFX_HW_XE_HP_SDV)
             pwt.LumaLog2WeightDenom = GetRandomNumber(1, 7);
         else
             pwt.LumaLog2WeightDenom = 6;
