@@ -148,6 +148,11 @@ bool HEVCEHW::Base::IsEncToolsOptOn(const mfxExtEncToolsConfig &config, bool bGa
             || IsLookAhead(config,bGameStreaming));
 }
 
+bool HEVCEHW::Base::IsLPLAEncToolsOn(const mfxExtEncToolsConfig &config, bool bGameStreaming)
+{
+    return IsLookAhead(config, bGameStreaming);
+}
+
 inline mfxU32 GetNumTempLayers(mfxVideoParam &video)
 {
     mfxExtAvcTemporalLayers* tempLayers = ExtBuffer::Get(video);
@@ -207,6 +212,12 @@ inline mfxEncTools *GetEncTools(mfxVideoParam &video)
     return (mfxEncTools *)GetExtBuffer(video.ExtParam, video.NumExtParam, MFX_EXTBUFF_ENCTOOLS);
 }
 
+inline bool IsEncToolsImplicit(const mfxVideoParam &video)
+{
+    const mfxExtCodingOption2  *pExtOpt2 = ExtBuffer::Get(video);
+    return ((video.mfx.GopRefDist == 2 || video.mfx.GopRefDist == 8) && pExtOpt2 && IsOn(pExtOpt2->ExtBRC) && pExtOpt2->LookAheadDepth > 0);
+}
+
 static void SetDefaultConfig(mfxVideoParam &video, mfxExtEncToolsConfig &config)
 {
     mfxExtCodingOption2  *pExtOpt2 = ExtBuffer::Get(video);
@@ -216,7 +227,7 @@ static void SetDefaultConfig(mfxVideoParam &video, mfxExtEncToolsConfig &config)
 
     if (!pExtConfig || !IsEncToolsOptOn(*pExtConfig, bGameStreaming))
     {
-        if ((video.mfx.GopRefDist == 2 || video.mfx.GopRefDist == 8) && pExtOpt2 && pExtOpt2->ExtBRC == MFX_CODINGOPTION_ON && pExtOpt2->LookAheadDepth > 0
+        if (IsEncToolsImplicit(video)
 #if !defined(MFX_ONEVPL)
             && video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT
 #endif
@@ -271,7 +282,7 @@ static void SetDefaultConfig(mfxVideoParam &video, mfxExtEncToolsConfig &config)
         SetDefaultOpt(config.BRC, (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
             video.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
 
-        bool lplaAssistedBRC = (config.BRC == MFX_CODINGOPTION_ON) && pExtOpt2 && (pExtOpt2->LookAheadDepth > video.mfx.GopRefDist);
+        bool lplaAssistedBRC = IsOn(config.BRC) && pExtOpt2 && (pExtOpt2->LookAheadDepth > video.mfx.GopRefDist);
         SetDefaultOpt(config.BRCBufferHints, lplaAssistedBRC);
     }
 #ifdef MFX_ENABLE_ENCTOOLS_LPLA
@@ -626,9 +637,11 @@ void HevcEncTools::QueryIOSurf(const FeatureBlocks&, TPushQIS Push)
         if (pConfig)
             bEncToolsPreEnc = IsEncToolsOptOn(*pConfig, bGameStreaming);
 
-        if (bEncToolsPreEnc)
+        if (bEncToolsPreEnc || IsEncToolsImplicit(par))
         {
-            mfxU16 nExtraRaw = (pCO2 && pCO2->LookAheadDepth) ? 0 : 8; //LA is used in base_legacy
+            mfxU16 nExtraRaw = 8;
+            if (pCO2)
+                nExtraRaw = (mfxU16)std::max(0, 8 - pCO2->LookAheadDepth); //LA is used in base_legacy
             req.NumFrameMin += nExtraRaw;
             req.NumFrameSuggested += nExtraRaw;
         }
@@ -913,10 +926,10 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             auto sts = Glob::VideoCore::Get(strg).GetHandle(h_type, &device_handle);
             MFX_CHECK_STS(sts);
             pFrameAlloc = (mfxFrameAllocator*)Glob::VideoCore::Get(strg).QueryCoreInterface(MFXIEXTERNALLOC_GUID);//(&frameAlloc);
-            MFX_CHECK_NULL_PTR1(pFrameAlloc);
 
             InitEncToolsCtrlExtDevice(extBufDevice, h_type, device_handle);
-            InitEncToolsCtrlExtAllocator(extBufAlloc, *pFrameAlloc);
+            if (pFrameAlloc)
+                InitEncToolsCtrlExtAllocator(extBufAlloc, *pFrameAlloc);
 
             ExtParam[0] = &extBufDevice.Header;
             ExtParam[1] = &extBufAlloc.Header;
@@ -1026,7 +1039,7 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         // Extend Num of tasks and size of buffer.
         taskMgrIface.ResourceExtra += (mfxU16)m_maxDelay;
-//-
+
         return MFX_ERR_NONE;
     });
     Push(BLK_UpdateTask

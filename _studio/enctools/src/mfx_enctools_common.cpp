@@ -601,29 +601,31 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
         {
             m_pIntSurfaces[0].Data.FrameOrder = pFrameData->Surface->Data.FrameOrder;
 
-            if (isPreEncSCD(m_config, m_ctrl) && (m_ctrl.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
+            if (isPreEncSCD(m_config, m_ctrl))
             {
-                if (isPreEncLA(m_config, m_ctrl))
+                if (m_ctrl.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
                 {
-                    m_pIntSurfaces.data()->Info.CropW = m_mfxVppParams_AEnc.vpp.Out.CropW;
-                    m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams_AEnc.vpp.Out.CropH;
-                }
+                    if (isPreEncLA(m_config, m_ctrl))
+                    {
+                        m_pIntSurfaces.data()->Info.CropW = m_mfxVppParams_AEnc.vpp.Out.CropW;
+                            m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams_AEnc.vpp.Out.CropH;
+                    }
 
-                sts = VPPDownScaleSurface(pFrameData->Surface, m_pIntSurfaces.data());
-                MFX_CHECK_STS(sts);
-                m_pAllocator->Lock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);
-                sts = m_scd.SubmitFrame(m_pIntSurfaces.data());
-                m_pAllocator->Unlock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);
+                    sts = VPPDownScaleSurface(pFrameData->Surface, m_pIntSurfaces.data());
+                        MFX_CHECK_STS(sts);
+                    m_pAllocator->Lock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);
+                    sts = m_scd.SubmitFrame(m_pIntSurfaces.data());
+                    m_pAllocator->Unlock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);
 
-                if (isPreEncLA(m_config, m_ctrl))
-                {
-                    m_pIntSurfaces.data()->Info.CropW = m_mfxVppParams.vpp.Out.CropW;
-                    m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams.vpp.Out.CropH;
+                    if (isPreEncLA(m_config, m_ctrl))
+                    {
+                        m_pIntSurfaces.data()->Info.CropW = m_mfxVppParams.vpp.Out.CropW;
+                        m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams.vpp.Out.CropH;
+                    }
                 }
+                else
+                    sts = m_scd.SubmitFrame(pFrameData->Surface);
             }
-            else
-                sts = m_scd.SubmitFrame(pFrameData->Surface);
-
             if (isPreEncLA(m_config, m_ctrl))
             {
                 mfxU16 FrameType = 0;

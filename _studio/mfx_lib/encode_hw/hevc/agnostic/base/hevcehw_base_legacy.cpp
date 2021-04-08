@@ -4056,7 +4056,7 @@ bool Legacy::IsSWBRC(const ExtBuffer::Param<mfxVideoParam>& par)
     const mfxExtEncToolsConfig *pCfg = ExtBuffer::Get(par);
 #endif
     return
-        (      ((pCO2 && IsOn(pCO2->ExtBRC) && pCO2->LookAheadDepth == 0)
+        (      ((pCO2 && IsOn(pCO2->ExtBRC))
 #ifdef MFX_ENABLE_ENCTOOLS
             || (pCfg && IsOn(pCfg->BRC))
 #endif

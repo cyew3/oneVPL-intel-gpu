@@ -6434,7 +6434,7 @@ void MfxHwH264Encode::SetDefaults(
             extDdi->NumActiveRefP != 1 &&
             (par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) &&
             ((IsExtBrcSceneChangeSupported(par, platform) && !extBRC.pthis)
- #if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
              || IsLpLookaheadSupported(extOpt3->ScenarioInfo, extOpt2->LookAheadDepth, par.mfx.RateControlMethod)
 #endif
             ))

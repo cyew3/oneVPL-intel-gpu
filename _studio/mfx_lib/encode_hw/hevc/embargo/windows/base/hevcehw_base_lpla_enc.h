@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (defined(MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA))
 
 #include "hevcehw_base.h"
 #include "hevcehw_base_data.h"
@@ -64,11 +64,13 @@ private:
     bool                             bIsLpLookAheadSupported = false;
     bool                             bAnalysis               = false; // Hint for LookAhead Pass
     bool                             bIsLpLookaheadEnabled   = false; // Whether LPLA is enabled
-    bool                             bIsEncToolsEnabled      = false; // Whether EncTools are enabled
+    bool                             bIsLPLAEncToolsEnabled  = false; // Whether LPLA (GS) EncTools are enabled
     mfxU16                           LADepth                 = 0;
     mfxU16                           S_LA_SUBMIT             = 0;
     mfxU16                           S_LA_QUERY              = 0;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
     std::unique_ptr<MfxLpLookAhead>  pLpLookAhead;
+#endif
     std::list<mfxLplastatus>         LpLaStatus;
 };
 } //Base

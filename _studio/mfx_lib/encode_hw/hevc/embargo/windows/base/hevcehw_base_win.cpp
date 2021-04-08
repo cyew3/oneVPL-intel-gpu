@@ -142,7 +142,7 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA)
     m_features.emplace_back(new LpLookAheadAnalysis(FEATURE_LPLA_ANALYSIS));
 #endif
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)|| defined (MFX_ENABLE_ENCTOOLS_LPLA)
     m_features.emplace_back(new LpLookAheadEnc(FEATURE_LPLA_ENCODE));
 #endif
 #if defined (MFX_ONEVPL)

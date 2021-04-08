@@ -87,7 +87,8 @@ mfxStatus LPLA_EncTool::InitSession()
     initPar.Version.Major = 1;
     initPar.Version.Minor = 0;
     initPar.Implementation = MFX_IMPL_HARDWARE;
-    initPar.Implementation |= (m_deviceType == MFX_HANDLE_D3D11_DEVICE ? MFX_IMPL_VIA_D3D11 : (m_deviceType == MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 ? MFX_IMPL_VIA_D3D9 : MFX_IMPL_VIA_VAAPI));
+    initPar.Implementation |= (m_deviceType == MFX_HANDLE_D3D11_DEVICE ? MFX_IMPL_VIA_D3D11 :
+        (m_deviceType == MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 ? MFX_IMPL_VIA_D3D9 : MFX_IMPL_VIA_VAAPI));
     initPar.GPUCopy = MFX_GPUCOPY_DEFAULT;
 
     sts = m_mfxSession.InitEx(initPar);

@@ -60,7 +60,7 @@ enum
     CQM_HINT_INVALID          = 0xFF  //invalid hint
 };
 
-#endif
+#endif // MFX_ENABLE_ENCTOOLS_LPLA
 
 class LPLA_EncTool
 {

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (defined(MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA))
 
 #include "hevcehw_base_lpla_enc.h"
 #include "hevcehw_base_task.h"
@@ -69,19 +69,24 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         auto& par = Glob::VideoParam::Get(global);
         mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
         MFX_CHECK(pCO3, MFX_ERR_NONE);
+        bool bEncToolsEnabled = false; // Whether EncTools are enabled
 
 #ifdef MFX_ENABLE_ENCTOOLS
         mfxExtEncToolsConfig *pEncToolsConfig = ExtBuffer::Get(par);
-        bIsEncToolsEnabled = pEncToolsConfig && IsEncToolsOptOn(*pEncToolsConfig, pCO3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING);
+        if (pEncToolsConfig)
+        {
+            bEncToolsEnabled = IsEncToolsOptOn(*pEncToolsConfig, pCO3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING);
+            bIsLPLAEncToolsEnabled = IsLPLAEncToolsOn(*pEncToolsConfig, pCO3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING);
+        }
 #endif // !MFX_ENABLE_ENCTOOLS
 
         mfxExtLplaParam& extLplaParam = ExtBuffer::Get(par);
         bAnalysis = extLplaParam.LookAheadDepth > 0;
-
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         auto& taskMgrIface = TaskManager::TMInterface::Get(global);
         auto& tm = taskMgrIface.Manager;
 
-        MFX_CHECK(!bAnalysis && !bInitialized && bIsLpLookAheadSupported && !bIsEncToolsEnabled, MFX_ERR_NONE);
+        MFX_CHECK(!bAnalysis && !bInitialized && bIsLpLookAheadSupported && !bEncToolsEnabled, MFX_ERR_NONE);
 
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
         MFX_CHECK(pCO2, MFX_ERR_NONE);
@@ -117,6 +122,9 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             S_LA_QUERY = tm.AddStage(S_LA_SUBMIT);
         }
         return sts;
+#else
+        return MFX_ERR_NONE;
+#endif
     });
 
     Push(BLK_SetCallChains
@@ -134,7 +142,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , const StorageR& global
             , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps)
         {
-            MFX_CHECK(!bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled), MFX_ERR_NONE);
+            MFX_CHECK(!bAnalysis && (bIsLpLookaheadEnabled || bIsLPLAEncToolsEnabled), MFX_ERR_NONE);
 
             auto& par = Glob::VideoParam::Get(global);
             const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
@@ -150,7 +158,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , const StorageR& s_task
             , ENCODE_SET_PICTURE_PARAMETERS_HEVC& pps)
         {
-            MFX_CHECK(!bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled), MFX_ERR_NONE);
+            MFX_CHECK(!bAnalysis && (bIsLpLookaheadEnabled || bIsLPLAEncToolsEnabled), MFX_ERR_NONE);
             const auto& task = Task::Common::Get(s_task);
             if (task.LplaStatus.TargetFrameSize > 0)
             {
@@ -176,7 +184,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , const StorageR& s_task)
         {
             auto& task = Task::Common::Get(s_task);
-            return !bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled) && (task.InsertHeaders & INSERT_PPS);
+            return !bAnalysis && (bIsLpLookaheadEnabled || bIsLPLAEncToolsEnabled) && (task.InsertHeaders & INSERT_PPS);
         });
 
         // Check whether to pack cqm PPS header.
@@ -184,7 +192,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             TPackerCC::TPackCqmHeader::TExt
             , StorageW* /*global*/)
         {
-            bool bPack = !bAnalysis && (bIsLpLookaheadEnabled || bIsEncToolsEnabled);
+            bool bPack = !bAnalysis && (bIsLpLookaheadEnabled || bIsLPLAEncToolsEnabled);
             return bPack;
         });
 
@@ -203,6 +211,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     });
 
     // Add S_LA_SUBMIT and S_LA_QUERY stages for LPLA
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
     Push(BLK_AddTask
         , [this](StorageRW& global, StorageRW&) -> mfxStatus
     {
@@ -312,6 +321,7 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         return MFX_ERR_NONE;
     });
+#endif
 }
 
 void LpLookAheadEnc::Close(const FeatureBlocks& /*blocks*/, TPushCLS Push)
@@ -320,12 +330,12 @@ void LpLookAheadEnc::Close(const FeatureBlocks& /*blocks*/, TPushCLS Push)
         , [this](StorageW& /*global*/) -> mfxStatus
     {
         mfxStatus sts = MFX_ERR_NONE;
-
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
         if (pLpLookAhead && !bAnalysis)
         {
             sts = pLpLookAhead->Close();
         }
-
+#endif
         return sts;
     });
 }
