@@ -11,6 +11,14 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 # Quick Build buildplans and scripts
 /config/** oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@intel.com alla.ukhina@intel.com
 
+# core & plugin:
+/_studio/mfx_lib/shared/**              dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
+/_studio/shared/**                      dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
+/_studio/shared/umc/core/**             dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
+/_studio/shared/umc/io/**               dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
+/_studio/mfx_lib/cmrt_cross_platform/** dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
+/_studio/mfx_lib/scheduler/**           dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
+
 # mfx_player & mfx_transcoder
 /_testsuite/mfx_player/**               anton.grishin@intel.com sofya.balandina@intel.com
 /_testsuite/mfx_transcoder/**           anton.grishin@intel.com sofya.balandina@intel.com
@@ -111,14 +119,6 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 # samples:
 /samples/**   sofya.balandina@intel.com anton.grishin@intel.com
 /tutorials/** sofya.balandina@intel.com anton.grishin@intel.com
-
-# core & plugin:
-/_studio/mfx_lib/shared/**              dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
-/_studio/shared/**                      dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
-/_studio/shared/umc/core/**             dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
-/_studio/shared/umc/io/**               dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
-/_studio/mfx_lib/cmrt_cross_platform/** dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
-/_studio/mfx_lib/scheduler/**           dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
 
 # hyper_encode:
 /_studio/mfx_lib/encode_hw/hyper_encode/**     andrey.orlov@intel.com natalia.domnina@intel.com dmitry.gurulev@intel.com dmitry.ermilov@intel.com 
