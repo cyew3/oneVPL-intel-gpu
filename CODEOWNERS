@@ -55,8 +55,9 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 /_studio/mfx_lib/enc/**                             sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
 /_studio/mfx_lib/pak/**                             sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
 /_studio/mfx_lib/enc_hw/**                          sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
-/_studio/mfx_lib/encode_hw/h264/**                  sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com 
-/_studio/mfx_lib/shared/src/mfx_h264*               sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
+/_studio/mfx_lib/encode_hw/h264/**                  sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com timofei.a.kulakov@intel.com Olga.Golikova@intel.com
+/_studio/mfx_lib/shared/src/mfx_h264*               sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com timofei.a.kulakov@intel.com Olga.Golikova@intel.com
+/_studio/mfx_lib/shared/include/mfx_h264*           sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com timofei.a.kulakov@intel.com Olga.Golikova@intel.com
 /_studio/mfx_lib/shared/src/mfx_mpeg2*              sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
 /_studio/shared/umc/codec/h264_enc/**               sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
 /_studio/shared/umc/codec/me/**                     sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
@@ -68,7 +69,7 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 /_testsuite/msdk_ts/src/gmock/test_suites/vp8e*     sergey.a.osipov@intel.com leonid.a.kulakov@intel.com denis.volkov@intel.com
 
 # hevce:
-/_studio/mfx_lib/encode_hw/hevc/**                  thomas.li@intel.com jeremy.shang@intel.com vitaliy.ilichev@intel.com leonid.a.kulakov@intel.com yuri.skuridin@intel.com
+/_studio/mfx_lib/encode_hw/hevc/**                  thomas.li@intel.com jeremy.shang@intel.com vitaliy.ilichev@intel.com leonid.a.kulakov@intel.com yuri.skuridin@intel.com timofei.a.kulakov@intel.com Olga.Golikova@intel.com
 /_studio/encode_hw/**                               thomas.li@intel.com jeremy.shang@intel.com vitaliy.ilichev@intel.com leonid.a.kulakov@intel.com yuri.skuridin@intel.com
 /_testsuite/msdk_ts/src/gmock/test_suites/hevce*    thomas.li@intel.com jeremy.shang@intel.com vitaliy.ilichev@intel.com leonid.a.kulakov@intel.com yuri.skuridin@intel.com
 
@@ -102,8 +103,7 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 /_studio/mfx_lib/encode_hw/mvc/** 
 
 # enctools:
-/_studio/enctools/**      timofei.a.kulakov@intel.com Olga.Golikova@intel.com
-/_studio/enctools/aenc/** sergey.plotnikov@intel.com
+/_studio/enctools/**      timofei.a.kulakov@intel.com Olga.Golikova@intel.com sergey.plotnikov@intel.com
 
 # lowpower lookahead:
 /_studio/mfx_lib/lpla/**  timofei.a.kulakov@intel.com Olga.Golikova@intel.com sergey.plotnikov@intel.com
