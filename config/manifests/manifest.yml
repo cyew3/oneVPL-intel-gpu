@@ -18,13 +18,13 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.contrib.git
     branch: master
-    revision: c93b0ecaca8224683f97d7851775169d53f1e240
+    revision: 896b387757ccd7456df4b88e1ea1cc6acbaaf81e
     dest_dir: sources/mdp_msdk-contrib
   val-tools:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.val-tools.git
     branch: master
-    revision: 402c28a2b8861cf5501dd0cb8aa8a83cab8fe7bd
+    revision: fec4418ccef65676b827ee1caea620050b7cf0de
     dest_dir: sources/mdp_msdk-val-tools
   hevc-stream-generator:
     type: git
@@ -36,7 +36,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.mfts.git
     branch: master
-    revision: 798171e24a19a0f7da58dfd2808e671cb34f7ef1
+    revision: d2d1f5de965c65981ea18d81f5a7e5a8d4d09bda
     dest_dir: sources/mdp_msdk-mfts
   sys-analyzer:
     type: git
@@ -138,12 +138,10 @@ components:
     root_url: https://gfx-assets.inn.intel.com/artifactory
     asset_path: mediasdk-builds/ci
     asset_name: mediasdk-1x
-    asset_version: mediasdk-ci-mediasdk-1x-1.0.27
+    asset_version: mediasdk-ci-mediasdk-1x-1.0.79
     asset_patterns:
-    - WindowsDrop/*.zip
-    - WindowsToolsDrop/*.zip
-    - WindowsLucasPkg/*.zip
-    - Linux/Ubuntu/18.04/tools_drop*.zip
-    - Linux/Ubuntu/18.04/lucas_linux_drop*.zip
-    - Linux/Ubuntu/18.04/l_MSDK_p*.tgz
+    - Windows/msdk/runtime/*.zip
+    - Windows/msdk/tools/*.zip
+    - Ubuntu/msdk/runtime/l_MSDK_p*.tgz
+    - Ubuntu/msdk/tools/tools_drop*.zip
     dest_dir: mediasdk_1x_binaries

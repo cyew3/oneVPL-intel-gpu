@@ -32,4 +32,4 @@ cmake --build . -j %NUMBER_OF_PROCESSORS% --target libmfx32-gen mfx_player mfx_t
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x32: build failed with %ERRORLEVEL%. & exit /B 1)
 
-powershell $global:ProgressPreference = 'SilentlyContinue'; Compress-Archive -Path %WORKSPACE%\Build\vpl\* -DestinationPath %WORKSPACE%\output\packages\vpl.zip
+powershell $global:ProgressPreference = 'SilentlyContinue'; Compress-Archive -Path %WORKSPACE%\Build\vpl\* -DestinationPath %WORKSPACE%\output\packages\windows\vpl.zip

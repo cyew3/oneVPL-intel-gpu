@@ -18,13 +18,8 @@ qb_variable_map:
 steps:
   - name: clean mediasdk lib repo
     command: rm -rf $WORKSPACE/sources/mdp_msdk-lib
-  - name: show content
-    command: ls $WORKSPACE
-  - name: show content v2
-    command: ls -R $WORKSPACE/mediasdk_1x_binaries
   - name: copy lib repo (mediasdk or product)
-    command: if [ -d $WORKSPACE/mediasdk ]; then cp -R $WORKSPACE/mediasdk $WORKSPACE/sources/mdp_msdk-lib;
-      elif [ -d $WORKSPACE/product ]; then cp -R $WORKSPACE/product $WORKSPACE/sources/mdp_msdk-lib; else exit 1; fi
+    command: cp -R $WORKSPACE/mediasdk $WORKSPACE/sources/mdp_msdk-lib
   - name: create container
     command: docker run --name $BUILD_ID --rm -d -w /opt/src $DOCKER_ENV_VARS -e BUILD_NUMBER=$BUILD_NUMBER --init -v $WORKSPACE:/opt/src
       -v /ccache:/opt/ccache -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` $DOCKER_IMAGE
@@ -34,7 +29,7 @@ steps:
   - name: build_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
   - name: config vpl
-    command: docker exec $BUILD_ID /bin/bash -c 'mkdir -p sources/mdp_msdk-lib/build/output &&
+    command: docker exec $BUILD_ID /bin/bash -c 'mkdir -p sources/mdp_msdk-lib/build &&
       cd sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/cmake
       -DCMAKE_INSTALL_PREFIX=/opt/intel/mediasdk
       -DCMAKE_C_FLAGS_RELEASE="-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
@@ -43,32 +38,30 @@ steps:
       -DBUILD_VAL_TOOLS=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.3 $MFX_HOME'
   - name: build vpl
     command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build && make -j$(nproc) mfx-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode sample_encode"
+  - name: pack vpl binaries
+    command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Packages && cd sources/mdp_msdk-lib/output/Packages
+      && tar cvfz ubuntu_vpl_linux.tgz -C /opt/src/sources/mdp_msdk-lib/build ."
   - name: create integration lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
-      -m /opt/src/mediasdk_1x_binaries/Linux/Ubuntu/18.04/l_MSDK_p*.tgz
-      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -m /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/runtime/l_MSDK_p*.tgz
+      -p /opt/src/sources/mdp_msdk-lib/output/Ubuntu/integration/runtime
       -n $BUILD_NUMBER"
   - name: copy integration tools drop
-    command: docker exec $BUILD_ID /bin/bash -c 'cp /opt/src/mediasdk_1x_binaries/Linux/Ubuntu/18.04/tools_drop*.zip /opt/src/sources/mdp_msdk-lib/build/output'
+    command: docker exec $BUILD_ID /bin/bash -c 'mkdir /opt/src/sources/mdp_msdk-lib/output/Ubuntu/integration/tools &&
+      cp /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/tools/tools_drop*.zip /opt/src/sources/mdp_msdk-lib/output/Ubuntu/integration/tools'
   - name: create vpl lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/vpl_drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
       -h /opt/src/sources/mdp_msdk-lib/api
-      -m /opt/src/mediasdk_1x_binaries/Linux/Ubuntu/18.04/l_MSDK_p*.tgz
-      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -m /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/runtime/l_MSDK_p*.tgz
+      -p /opt/src/sources/mdp_msdk-lib/output/Ubuntu/vpl/runtime
       -n $BUILD_NUMBER"
   - name: create vpl tools drop package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/vpl_drop_linux_tools.sh
       -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
-      -m /opt/src/mediasdk_1x_binaries/Linux/Ubuntu/18.04/tools_drop*.zip
-      -p /opt/src/sources/mdp_msdk-lib/build/output
-      -n $BUILD_NUMBER"
-  - name: create lucas drop package
-    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lucas.sh
-      -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
-      -m /opt/src/mediasdk_1x_binaries/Linux/Ubuntu/18.04/lucas_linux_drop*.zip
-      -p /opt/src/sources/mdp_msdk-lib/build/output
+      -m /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/tools/tools_drop*.zip
+      -p /opt/src/sources/mdp_msdk-lib/output/Ubuntu/vpl/tools
       -n $BUILD_NUMBER"
   - name: remove container
     command: docker kill $BUILD_ID
@@ -79,6 +72,18 @@ types:
     env:
       BUILD_TYPE: Release
     output:
-    - file_patterns: "*.deb,*.tgz,*.zip"
-      source_dir: "../sources/mdp_msdk-lib/build/output"
-      destination_dir: Linux/Ubuntu/18.04
+    - file_patterns: "*.tgz"
+      source_dir: "../sources/mdp_msdk-lib/output/Packages"
+      destination_dir: Packages/ubuntu
+    - file_patterns: "*.tgz"
+      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/integration/runtime"
+      destination_dir: Ubuntu/integration/runtime
+    - file_patterns: "*.zip"
+      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/integration/tools"
+      destination_dir: Ubuntu/integration/tools
+    - file_patterns: "*.tgz"
+      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/vpl/runtime"
+      destination_dir: Ubuntu/vpl/runtime
+    - file_patterns: "*.zip"
+      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/vpl/tools"
+      destination_dir: Ubuntu/vpl/tools
