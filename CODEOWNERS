@@ -20,19 +20,19 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 /_studio/mfx_lib/scheduler/**           dmitry.gurulev@intel.com miroslav.goncharenko@intel.com evgeniy.starov@intel.com dmitry.ermilov@intel.com
 
 # mfx_player & mfx_transcoder
-/_testsuite/mfx_player/**               anton.grishin@intel.com sofya.balandina@intel.com
+/_testsuite/mfx_player/**               anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
 /_testsuite/mfx_transcoder/**           anton.grishin@intel.com sofya.balandina@intel.com
 /_testsuite/test_vpp/**                 anton.grishin@intel.com sofya.balandina@intel.com
 /_testsuite/test_thread_safety/**       anton.grishin@intel.com sofya.balandina@intel.com
 /_testsuite/test_usage_models/**        anton.grishin@intel.com sofya.balandina@intel.com
 /_testsuite/test_vpp_multisession/**    anton.grishin@intel.com sofya.balandina@intel.com
-/_studio/shared/umc/codec/h264_spl/**   anton.grishin@intel.com sofya.balandina@intel.com
-/_studio/shared/umc/codec/vc1_spl/**    anton.grishin@intel.com sofya.balandina@intel.com
-/_studio/shared/umc/codec/asf_spl/**    anton.grishin@intel.com sofya.balandina@intel.com
-/_studio/shared/umc/codec/avi_spl/**    anton.grishin@intel.com sofya.balandina@intel.com
-/_studio/shared/umc/codec/demuxer/**    anton.grishin@intel.com sofya.balandina@intel.com
-/_studio/shared/umc/codec/mpeg4_spl/**  anton.grishin@intel.com sofya.balandina@intel.com
-/_studio/shared/umc/codec/spl_common/** anton.grishin@intel.com sofya.balandina@intel.com
+/_studio/shared/umc/codec/h264_spl/**   anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
+/_studio/shared/umc/codec/vc1_spl/**    anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
+/_studio/shared/umc/codec/asf_spl/**    anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
+/_studio/shared/umc/codec/avi_spl/**    anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
+/_studio/shared/umc/codec/demuxer/**    anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
+/_studio/shared/umc/codec/mpeg4_spl/**  anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
+/_studio/shared/umc/codec/spl_common/** anton.grishin@intel.com sofya.balandina@intel.com wade.yuan@intel.com shanshan1.wang@intel.com
 
 # decode scrum
 /_studio/mfx_lib/dec/**                             will.guo@intel.com yan.wang@intel.com
