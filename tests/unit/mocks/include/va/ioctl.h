@@ -56,7 +56,7 @@ extern "C"
         switch (request) {
             case DRM_IOCTL_I915_GETPARAM:
                 // *gp.value = 0x9A40;  // use HW_TGL_LP
-                *gp.value = 0x4F80;  // use MFX_HW_DG2
+                *gp.value = 0x0201;  // use MFX_HW_XE_HP
                 return 0;
             default:
                 return libc_ioctl(fd, request, argp);

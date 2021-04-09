@@ -176,7 +176,7 @@ namespace test
         res2.NumFrameActual = 5;
         EXPECT_EQ(
             allocator->Free(res2),
-            MFX_ERR_INVALID_HANDLE
+            MFX_ERR_NOT_FOUND
         );
         EXPECT_EQ(
             allocator->Free(res),

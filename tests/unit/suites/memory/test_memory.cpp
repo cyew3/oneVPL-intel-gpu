@@ -178,7 +178,7 @@ namespace test
                     , VAConfigAttrib({VAConfigAttribEncryption})
                 });
             }
-            else if(entrypoint == VAEntrypointEncSliceLP)
+            else if(entrypoint == VAEntrypointEncSlice)
             {
                 attributes.insert(attributes.end(), {
                     VAConfigAttrib({VAConfigAttribRTFormat, VA_RT_FORMAT_YUV420})
@@ -264,7 +264,7 @@ namespace test
             ASSERT_EQ(
                 entrypoint == VAEntrypointVLD ?
                 MFXVideoDECODE_Init(session, &vp) :
-                entrypoint == VAEntrypointEncSliceLP ?
+                entrypoint == VAEntrypointEncSlice ?
                 MFXVideoENCODE_Init(session, &vp) :
                 MFXVideoVPP_Init(session, &vp),
                 MFX_ERR_NONE
@@ -283,7 +283,7 @@ namespace test
             return
                 entrypoint == VAEntrypointVLD ?
                 MFXMemory_GetSurfaceForDecode(session, surface) :
-                entrypoint == VAEntrypointEncSliceLP ?
+                entrypoint == VAEntrypointEncSlice ?
                 MFXMemory_GetSurfaceForEncode(session, surface) :
                 MFXMemory_GetSurfaceForVPP(session, surface);
         }
@@ -304,8 +304,8 @@ namespace test
         Encode,
         Memory,
         testing::Values(
-            std::make_pair(std::make_pair(VAProfileHEVCMain, VAEntrypointEncSliceLP), mfxU16(MFX_IOPATTERN_IN_SYSTEM_MEMORY)),
-            std::make_pair(std::make_pair(VAProfileHEVCMain, VAEntrypointEncSliceLP), mfxU16(MFX_IOPATTERN_IN_VIDEO_MEMORY))
+            std::make_pair(std::make_pair(VAProfileHEVCMain, VAEntrypointEncSlice), mfxU16(MFX_IOPATTERN_IN_SYSTEM_MEMORY)),
+            std::make_pair(std::make_pair(VAProfileHEVCMain, VAEntrypointEncSlice), mfxU16(MFX_IOPATTERN_IN_VIDEO_MEMORY))
         )
     );
 
@@ -330,7 +330,7 @@ namespace test
         ASSERT_EQ(
             entrypoint == VAEntrypointVLD ?
             MFXVideoDECODE_Close(session) :
-            entrypoint == VAEntrypointEncSliceLP ?
+            entrypoint == VAEntrypointEncSlice ?
             MFXVideoENCODE_Close(session) :
             MFXVideoVPP_Close(session),
             MFX_ERR_NONE
