@@ -18,6 +18,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-if(CMAKE_SYSTEM_NAME MATCHES Linux)
-    add_subdirectory(va)
-endif()
+cmake_minimum_required (VERSION 3.7)
+
+file (GLOB
+    MOCKS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/display/*.cpp"
+    MOCKS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/configuration/*.cpp"
+    MOCKS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/context/*.cpp"
+    MOCKS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/resource/*.cpp"
+)
+
+add_executable(mocks_test
+    $<$<PLATFORM_ID:Linux>:${MOCKS_SRC}>
+)
+
+target_link_libraries (mocks_test
+    PRIVATE
+        gmock
+        gtest_main
+        mocks::mocks
+        mfx_va_properties
+)
+
+set_target_properties (mocks_test
+    PROPERTIES
+        FOLDER "tests"
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+)
+
+add_test (NAME mocks_test
+    COMMAND mocks_test
+    WORKING_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+)
