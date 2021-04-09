@@ -878,8 +878,8 @@ void General::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         auto& par = Glob::VideoParam::Get(strg);
         mfxFrameAllocRequest rec = {}, raw = {};
 
-        const mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
-        if (GetRecInfo(par, pCO3, Glob::VideoCore::Get(strg).GetHWType(), rec.Info))
+        const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
+        if (GetRecInfo(par, CO3, Glob::VideoCore::Get(strg).GetHWType(), rec.Info))
         {
             auto& recInfo = Tmp::RecInfo::GetOrConstruct(local, rec);
             SetDefault(recInfo.NumFrameMin, GetMaxRec(par));
@@ -1858,12 +1858,12 @@ inline void SetTaskBRCParams(
     TaskCommonPar& task
     , const mfxVideoParam& par)
 {
-    const mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
-    if (!pAuxPar || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    if(par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         return;
 
-    task.MinBaseQIndex = pAuxPar->QP.MinBaseQIndex;
-    task.MaxBaseQIndex = pAuxPar->QP.MaxBaseQIndex;
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
+    task.MinBaseQIndex             = auxPar.QP.MinBaseQIndex;
+    task.MaxBaseQIndex             = auxPar.QP.MaxBaseQIndex;
 }
 
 inline void SetTaskEncodeOrders(
@@ -2268,14 +2268,8 @@ inline void SetTaskRepeatedFrames(
 
 inline void SetTaskIVFHeaderInsert(
     TaskCommonPar& task
-    , const ExtBuffer::Param<mfxVideoParam>& par
     , bool& insertIVFSeq)
 {
-    const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    //WriteIVFHeaders should be enabled if pAV1Par is nullptr
-    if (pAV1Par && !IsOn(pAV1Par->WriteIVFHeaders))
-        return;
-
     if (insertIVFSeq)
     {
         task.InsertHeaders |= INSERT_IVF_SEQ;
@@ -2290,7 +2284,9 @@ inline void SetTaskInsertHeaders(
     , const mfxVideoParam& par
     , bool& insertIVFSeq)
 {
-    SetTaskIVFHeaderInsert(task, par, insertIVFSeq);
+    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
+    if (IsOn(av1Par.WriteIVFHeaders))
+        SetTaskIVFHeaderInsert(task, insertIVFSeq);
 
     if (IsI(task.FrameType))
         task.InsertHeaders |= INSERT_SPS;
@@ -2300,8 +2296,7 @@ inline void SetTaskInsertHeaders(
     if (!task.FramesToShow.empty())
         task.InsertHeaders |= INSERT_REPEATED;
 
-    const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    if (pAV1Par && IsOn(pAV1Par->PackOBUFrame))
+    if (IsOn(av1Par.PackOBUFrame))
         task.InsertHeaders |= INSERT_FRM_OBU;
 }
 
@@ -2484,7 +2479,7 @@ mfxU32 General::GetMinBsSize(
 
 bool General::GetRecInfo(
     const mfxVideoParam& par
-    , const mfxExtCodingOption3* pCO3
+    , const mfxExtCodingOption3& CO3
     , eMFXHWType hw
     , mfxFrameInfo& rec)
 {
@@ -2513,13 +2508,10 @@ bool General::GetRecInfo(
     };
     rec = par.mfx.FrameInfo;
 
-    if (!pCO3)
-        return true;
-
-    auto& rModRec  = ModRec[pCO3->TargetBitDepthLuma == 10];
-    auto  itModRec = rModRec.find(pCO3->TargetChromaFormatPlus1);
+    auto& rModRec  = ModRec[CO3.TargetBitDepthLuma == 10];
+    auto  itModRec = rModRec.find(CO3.TargetChromaFormatPlus1);
     bool bUndef =
-        (pCO3->TargetBitDepthLuma != 8 && pCO3->TargetBitDepthLuma != 10)
+        (CO3.TargetBitDepthLuma != 8 && CO3.TargetBitDepthLuma != 10)
         || (itModRec == rModRec.end());
 
     if (bUndef)
@@ -2530,9 +2522,9 @@ bool General::GetRecInfo(
 
     itModRec->second(rec, hw);
 
-    rec.ChromaFormat   = pCO3->TargetChromaFormatPlus1 - 1;
-    rec.BitDepthLuma   = pCO3->TargetBitDepthLuma;
-    rec.BitDepthChroma = pCO3->TargetBitDepthChroma;
+    rec.ChromaFormat   = CO3.TargetChromaFormatPlus1 - 1;
+    rec.BitDepthLuma   = CO3.TargetBitDepthLuma;
+    rec.BitDepthChroma = CO3.TargetBitDepthChroma;
 
     return true;
 }
@@ -2559,25 +2551,22 @@ void General::SetSH(
     , SH& sh)
 {
 
-    const mfxExtAV1Param* pAV1Par   = ExtBuffer::Get(par);
-    const mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
-
-    assert(pAV1Par); // all ext buffers must be fpresent at this stage
-    assert(pAuxPar); // all ext buffers must be fpresent at this stage
+    const mfxExtAV1Param& av1Par   = ExtBuffer::Get(par);
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
 
     sh = {};
 
-    sh.seq_profile =   MapMfxProfileToSpec(par.mfx.CodecProfile);
-    sh.still_picture = IsOn(pAV1Par->StillPictureMode);
+    sh.seq_profile   = MapMfxProfileToSpec(par.mfx.CodecProfile);
+    sh.still_picture = IsOn(av1Par.StillPictureMode);
 
     const int maxFrameResolutionBits = 15;
     sh.frame_width_bits       = maxFrameResolutionBits;
     sh.frame_height_bits      = maxFrameResolutionBits;
     sh.sbSize                 = SB_SIZE;
-    sh.enable_order_hint      = CO2Flag(pAuxPar->EnableOrderHint);
-    sh.order_hint_bits_minus1 = pAuxPar->OrderHintBits - 1;
-    sh.enable_cdef            = CO2Flag(pAV1Par->EnableCdef);
-    sh.enable_restoration     = CO2Flag(pAV1Par->EnableRestoration);
+    sh.enable_order_hint      = CO2Flag(auxPar.EnableOrderHint);
+    sh.order_hint_bits_minus1 = auxPar.OrderHintBits - 1;
+    sh.enable_cdef            = CO2Flag(av1Par.EnableCdef);
+    sh.enable_restoration     = CO2Flag(av1Par.EnableRestoration);
 
     // Below fields will directly use setting from caps.
     sh.enable_dual_filter         = caps.AV1ToolSupportFlags.fields.enable_dual_filter;
@@ -2587,10 +2576,8 @@ void General::SetSH(
     sh.enable_jnt_comp            = caps.AV1ToolSupportFlags.fields.enable_jnt_comp;
     sh.enable_masked_compound     = caps.AV1ToolSupportFlags.fields.enable_masked_compound;
 
-    const mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
-    assert(pCO3); // all ext buffers must be fpresent at this stage
-
-    sh.color_config.BitDepth            = pCO3->TargetBitDepthLuma;
+    const mfxExtCodingOption3& CO3      = ExtBuffer::Get(par);
+    sh.color_config.BitDepth            = CO3.TargetBitDepthLuma;
     sh.color_config.color_range         = 1; // full swing representation
     sh.color_config.separate_uv_delta_q = 1; // NB: currently driver not work if it's '0'
     sh.color_config.subsampling_x       = 1; // YUV 4:2:0
@@ -2641,40 +2628,36 @@ void General::SetFH(
     , FH& fh)
 {
     // this functions sets "static" parameters which can be changed via Reset
-
     fh = {};
 
-    const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    const mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
+    const mfxExtAV1Param& av1Par     = ExtBuffer::Get(par);
+    const mfxExtAV1AuxData& auxPar   = ExtBuffer::Get(par);
+                                     
+    fh.FrameWidth                    = GetActualEncodeWidth(av1Par);
+    fh.FrameHeight                   = av1Par.FrameHeight;
+    fh.error_resilient_mode          = CO2Flag(auxPar.ErrorResilientMode);
+    fh.disable_cdf_update            = CO2Flag(av1Par.DisableCdfUpdate);
+    fh.interpolation_filter          = MapMfxInterpFilter(av1Par.InterpFilter);
+    fh.RenderWidth                   = av1Par.FrameWidth;
+    fh.RenderHeight                  = av1Par.FrameHeight;
+    fh.disable_frame_end_update_cdf  = CO2Flag(av1Par.DisableFrameEndUpdateCdf);
+    fh.allow_high_precision_mv       = 1;
 
-    assert(pAV1Par); // all ext buffers must be present at this stage
-    assert(pAuxPar); // all ext buffers must be present at this stage
-
-    fh.FrameWidth                   = GetActualEncodeWidth(*pAV1Par);
-    fh.FrameHeight                  = pAV1Par->FrameHeight;
-    fh.error_resilient_mode         = CO2Flag(pAuxPar->ErrorResilientMode);
-    fh.disable_cdf_update           = CO2Flag(pAV1Par->DisableCdfUpdate);
-    fh.interpolation_filter         = MapMfxInterpFilter(pAV1Par->InterpFilter);
-    fh.RenderWidth                  = pAV1Par->FrameWidth;
-    fh.RenderHeight                 = pAV1Par->FrameHeight;
-    fh.disable_frame_end_update_cdf = CO2Flag(pAV1Par->DisableFrameEndUpdateCdf);
-    fh.allow_high_precision_mv      = 1;
-
-    fh.quantization_params.DeltaQYDc = pAuxPar->QP.YDcDeltaQ;
-    fh.quantization_params.DeltaQUDc = pAuxPar->QP.UDcDeltaQ;
-    fh.quantization_params.DeltaQUAc = pAuxPar->QP.UAcDeltaQ;
-    fh.quantization_params.DeltaQVDc = pAuxPar->QP.VDcDeltaQ;
-    fh.quantization_params.DeltaQVAc = pAuxPar->QP.VAcDeltaQ;
+    fh.quantization_params.DeltaQYDc = auxPar.QP.YDcDeltaQ;
+    fh.quantization_params.DeltaQUDc = auxPar.QP.UDcDeltaQ;
+    fh.quantization_params.DeltaQUAc = auxPar.QP.UAcDeltaQ;
+    fh.quantization_params.DeltaQVDc = auxPar.QP.VDcDeltaQ;
+    fh.quantization_params.DeltaQVAc = auxPar.QP.VAcDeltaQ;
 
     // Loop Filter params
-    if (IsOn(pAV1Par->EnableLoopFilter))
+    if (IsOn(av1Par.EnableLoopFilter))
     {
-        fh.loop_filter_params.loop_filter_sharpness     = pAV1Par->LoopFilterSharpness;
-        fh.loop_filter_params.loop_filter_delta_enabled = pAuxPar->LoopFilter.ModeRefDeltaEnabled;
-        fh.loop_filter_params.loop_filter_delta_update  = pAuxPar->LoopFilter.ModeRefDeltaUpdate;
+        fh.loop_filter_params.loop_filter_sharpness     = av1Par.LoopFilterSharpness;
+        fh.loop_filter_params.loop_filter_delta_enabled = auxPar.LoopFilter.ModeRefDeltaEnabled;
+        fh.loop_filter_params.loop_filter_delta_update  = auxPar.LoopFilter.ModeRefDeltaUpdate;
 
-        std::copy_n(pAuxPar->LoopFilter.RefDeltas, TOTAL_REFS_PER_FRAME, fh.loop_filter_params.loop_filter_ref_deltas);
-        std::copy_n(pAuxPar->LoopFilter.ModeDeltas, MAX_MODE_LF_DELTAS, fh.loop_filter_params.loop_filter_mode_deltas);
+        std::copy_n(auxPar.LoopFilter.RefDeltas, TOTAL_REFS_PER_FRAME, fh.loop_filter_params.loop_filter_ref_deltas);
+        std::copy_n(auxPar.LoopFilter.ModeDeltas, MAX_MODE_LF_DELTAS, fh.loop_filter_params.loop_filter_mode_deltas);
     }
 
     if (sh.enable_restoration)
