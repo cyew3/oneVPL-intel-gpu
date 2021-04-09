@@ -135,7 +135,7 @@ private:
         memset(CO3, 0, sizeof(mfxExtCodingOption3));
         CO3->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
         CO3->Header.BufferSz = sizeof(mfxExtCodingOption3);
-#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
         CO3->DeblockingAlphaTcOffset = alpha;
         CO3->DeblockingBetaOffset = beta;
 #endif
@@ -192,28 +192,20 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     /*15*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_OFF|RUNTIME_ONLY, {}},
 #if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
     /*16*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
-#if !defined(MFX_ONEVPL)
                                                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
                                                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}
-#endif //!MFX_ONEVPL
                                                }},
     /*17*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 1 },
-#if !defined(MFX_ONEVPL)
                                                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
                                                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}
-#endif //!MFX_ONEVPL
                                                }},
     /*18*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
-#if !defined(MFX_ONEVPL)
                                                                                         { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
                                                                                         { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 13}
-#endif //!MFX_ONEVPL
                                                                                        }},
     /*19*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
-#if !defined(MFX_ONEVPL)
                                                                                         { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 13},
                                                                                         { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}
-#endif //!MFX_ONEVPL
                                                                                        }},
     /*20*/{MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, INVALID_PARAMS | RUNTIME_ONLY, {}},
 #endif
@@ -338,7 +330,7 @@ int TestSuite::RunTest(unsigned int id)
         cod2.DisableDeblockingIdc = 1;
         SETPARS(&cod2, EXT_COD2);
 
-#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
         cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
         cod3.DeblockingBetaOffset = MAX_BETA;
         SETPARS(&cod3, EXT_COD3);
@@ -402,7 +394,7 @@ int TestSuite::RunTest(unsigned int id)
 
                     cod2.DisableDeblockingIdc = 1;
                     SETPARS(&cod2, EXT_COD2);
-#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
                     cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
                     cod3.DeblockingBetaOffset = MAX_BETA;
                     SETPARS(&cod3, EXT_COD3);
@@ -427,7 +419,7 @@ int TestSuite::RunTest(unsigned int id)
                     mfxExtCodingOption3& cod3 = m_par;
 
                     cod2.DisableDeblockingIdc = 0;
-#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
                     cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
                     cod3.DeblockingBetaOffset = MAX_BETA;
 
