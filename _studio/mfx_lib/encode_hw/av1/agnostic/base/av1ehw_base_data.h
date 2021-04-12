@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -108,7 +108,6 @@ namespace Base
     enum
     {
         GOP_INFINITE            = 0xFFFF,
-        MAX_DPB_SIZE            = 15,
 
         HW_SURF_ALIGN_W         = 16,
         HW_SURF_ALIGN_H         = 16,
@@ -641,6 +640,8 @@ namespace Base
         mfxU16 FrameType                = 0;
         bool   isLDB                    = false; // is "low-delay B"
         mfxU8  TemporalID               = 0;
+        mfxU32 BPyramidOrder            = mfxU32(MFX_FRAMEORDER_UNKNOWN);
+        mfxU32 PyramidLevel             = 0;
     };
 
     typedef struct _DpbFrame
@@ -655,7 +656,7 @@ namespace Base
         Resource Raw;
         Resource Rec;
         mfxFrameSurface1* pSurfIn = nullptr; //input surface, may be opaque
-    } DpbFrame, DpbArray[MAX_DPB_SIZE];
+    } DpbFrame;
 
     enum eSkipMode
     {
@@ -743,7 +744,6 @@ namespace Base
         par = TaskCommonPar();
     }
     inline bool isValid(DpbFrame const & frame) { return IDX_INVALID != frame.Rec.Idx; }
-    inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_SIZE || !isValid(dpb[idx]); }
 
     inline mfxU16 GetActualEncodeWidth(mfxU16 upscaledWidth, bool use_superres, mfxU16 SuperresDenom)
     {
@@ -1026,10 +1026,13 @@ namespace Base
         TChain<mfxU16> GetCodedPicWidth;
         TChain<mfxU16> GetCodedPicHeight;
         TChain<mfxU16> GetCodedPicAlignment;
-        TChain<mfxU16> GetNumTemporalLayers;
         TChain<mfxU16> GetGopPicSize;
         TChain<mfxU16> GetGopRefDist;
+        TChain<mfxU16> GetNumBPyramidLayers;
         TChain<mfxU16> GetNumRefFrames;
+        TChain<mfxU16> GetNumRefBPyramid;
+        TChain<mfxU16> GetNumRefNoPyramid;
+        TChain<mfxU16> GetMinRefForBPyramid;
         TChain<mfxU16> GetMinRefForBNoPyramid;
         TChain<mfxU16> GetBRefType;
         TChain<mfxU16> GetPRefType;
@@ -1041,13 +1044,14 @@ namespace Base
         TChain<mfxU16> GetMBBRC;
         TChain<mfxU16> GetAsyncDepth;
         TChain<mfxU32> GetBufferSizeInKB;
-        TChain<std::tuple<mfxU16, mfxU16>> GetMaxNumRef;
-        TChain<std::tuple<mfxU32, mfxU32>> GetFrameRate;
+        TChain<mfxU8>  GetMinQPMFX;
+        TChain<mfxU8>  GetMaxQPMFX;
+        TChain<mfxU16> GetNumTemporalLayers;
+        TChain<mfxU8>  GetNumReorderFrames;
+        TChain<bool>   GetNonStdReordering;
+        TChain<std::tuple<mfxU16, mfxU16, mfxU16>> GetMaxNumRef;
+        TChain<std::tuple<mfxU32, mfxU32>>         GetFrameRate;
         TChain<std::tuple<mfxU16, mfxU16, mfxU16>> GetQPMFX; //I,P,B
-        TChain<mfxU8> GetMinQPMFX;
-        TChain<mfxU8> GetMaxQPMFX;
-        TChain<mfxU8> GetNumReorderFrames;
-        TChain<bool>  GetNonStdReordering;
 
         using TGetNumRefActive = CallChain<
             bool //bExternal
@@ -1056,6 +1060,12 @@ namespace Base
             , mfxU16(*)[8] //BL0
             , mfxU16(*)[8]>; //BL1
         TGetNumRefActive GetNumRefActive;
+
+        using TGetQPOffset = CallChain<
+            mfxU16 //EnableQPOffset
+            , const Defaults::Param&
+            , mfxI16(*)[8]>;//QPOffset
+        TGetQPOffset GetQPOffset;
 
         using TGetGUID = CallChain<
             bool //bSupported
@@ -1112,6 +1122,7 @@ namespace Base
         TCheckAndFix CheckTargetChromaFormat;
         TCheckAndFix CheckTargetBitDepth;
         TCheckAndFix CheckFourCCByTargetFormat;
+        TCheckAndFix CheckNumRefActive;
     };
 
     enum eFeatureId

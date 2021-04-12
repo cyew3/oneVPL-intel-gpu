@@ -187,6 +187,56 @@ public:
         return 1;
     }
 
+    static mfxU16 NumBPyramidLayers(
+        Defaults::TChain<mfxU16>::TExt
+        , const Defaults::Param& par)
+    {
+        mfxU16 refB = (par.base.GetGopRefDist(par) - 1) / 2;
+        mfxU16 x    = refB;
+
+        while (x > 2)
+        {
+            x = (x - 1) / 2;
+            refB -= x;
+        }
+
+        return refB + 1;
+    }
+
+    static mfxU16 NumRefBPyramid(
+        Defaults::TChain<mfxU16>::TExt
+        , const Defaults::Param& par)
+    {
+        mfxU16 NumRefActiveP[8], NumRefActiveBL0[8], NumRefActiveBL1[8];
+        mfxU16 NumLayers = par.base.GetNumBPyramidLayers(par);
+        mfxU16 NumRefFrame = par.base.GetMinRefForBPyramid(par);
+        bool bExternalNRef = par.base.GetNumRefActive(par, &NumRefActiveP, &NumRefActiveBL0, &NumRefActiveBL1);
+
+        SetIf(NumRefFrame, bExternalNRef, [&]() -> mfxU16
+        {
+            auto maxBL0idx = std::max_element(NumRefActiveBL0, NumRefActiveBL0 + NumLayers) - NumRefActiveBL0;
+            auto maxBL1idx = std::max_element(NumRefActiveBL1, NumRefActiveBL1 + NumLayers) - NumRefActiveBL1;
+            mfxU16 maxBL0 = mfxU16((NumRefActiveBL0[maxBL0idx] + maxBL0idx + 1) * (maxBL0idx < NumLayers));
+            mfxU16 maxBL1 = mfxU16((NumRefActiveBL1[maxBL1idx] + maxBL1idx + 1) * (maxBL1idx < NumLayers));
+            return std::max<mfxU16>({ NumRefFrame, NumRefActiveP[0], maxBL0, maxBL1 });
+        });
+
+        // Need to have one more DPB buffer slot to enable two L0 for non-ref B frames in AV1
+        if (*std::max_element(NumRefActiveBL0, NumRefActiveBL0 + NumLayers) == 2)
+        {
+            NumRefFrame++;
+        }
+
+        return NumRefFrame;
+    }
+
+    static mfxU16 NumRefNoPyramid(
+        Defaults::TChain<mfxU16>::TExt
+        , const Defaults::Param& par)
+    {
+        return par.base.GetGopRefDist(par) > 1 ? 2 : 1;
+    }
+
     static mfxU16 NumRefFrames(
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
@@ -196,12 +246,27 @@ public:
             return par.mvp.mfx.NumRefFrame;
         }
 
-        // TODO: add NumRefFrame calculation for B-pyramid
+        mfxU16 numRef = 0;
+        if ((par.base.GetBRefType(par) == MFX_B_REF_PYRAMID))
+        {
+            numRef = par.base.GetNumRefBPyramid(par);
+        }
+        else
+        {
+            numRef = par.base.GetNumRefNoPyramid(par);
+        }
 
-        mfxU16 NumTL   = par.base.GetNumTemporalLayers(par);
-        mfxU16 numRefs = par.base.GetGopRefDist(par) > 1 ? 2 : 1;
+        mfxU16 numTL = par.base.GetNumTemporalLayers(par);
+        numRef       = std::min<mfxU16>(std::max<mfxU16>(numRef, numTL - 1), NUM_REF_FRAMES);
 
-        return std::max<mfxU16>(numRefs, NumTL - 1);
+        return numRef;
+    }
+
+    static mfxU16 MinRefForBPyramid(
+        Defaults::TChain<mfxU16>::TExt
+        , const Defaults::Param& par)
+    {
+        return par.base.GetNumBPyramidLayers(par) + 1;
     }
 
     static mfxU16 MinRefForBNoPyramid(
@@ -219,9 +284,8 @@ public:
         , mfxU16(*pBL1)[8])
     {
         bool bExternal = false;
-        const mfxU16 defaultFwdP = par.caps.MaxNum_ReferenceL0_P;
-        const mfxU16 defaultFwdB = par.caps.MaxNum_ReferenceL0_B;
-        const mfxU16 defaultBwd = par.caps.MaxNum_ReferenceL1_B;
+        mfxU16 maxP = 0, maxBL0 = 0, maxBL1 = 0;
+        std::tie(maxP, maxBL0, maxBL1) = par.base.GetMaxNumRef(par);
 
         auto SetDefaultNRef =
             [](const mfxU16(*extRef)[8], mfxU16 defaultRef, mfxU16(*NumRefActive)[8])
@@ -257,12 +321,32 @@ public:
             extRefBL1 = &pCO3->NumRefActiveBL1;
         }
 
-        bExternal |= SetDefaultNRef(extRefP, defaultFwdP, pP);
-        bExternal |= SetDefaultNRef(extRefBL0, defaultFwdB, pBL0);
-        bExternal |= SetDefaultNRef(extRefBL1, defaultBwd, pBL1);
+        bExternal |= SetDefaultNRef(extRefP,   maxP,   pP);
+        bExternal |= SetDefaultNRef(extRefBL0, maxBL0, pBL0);
+        bExternal |= SetDefaultNRef(extRefBL1, maxBL1, pBL1);
 
         return bExternal;
     }
+
+    static mfxU16 BRefType(
+        Defaults::TChain<mfxU16>::TExt
+        , const Defaults::Param& par)
+    {
+        const mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par.mvp);
+        if (pCO2 && pCO2->BRefType)
+            return pCO2->BRefType;
+
+        //Todo: Will enable B-Pyramid by default after the function and quality evaluation done. 
+        //const mfxU16 BPyrCand[2] = { mfxU16(MFX_B_REF_OFF), mfxU16(MFX_B_REF_PYRAMID) };
+        const mfxU16 BPyrCand[2] = { mfxU16(MFX_B_REF_OFF), mfxU16(MFX_B_REF_OFF) };
+        bool bValid =
+            par.base.GetGopRefDist(par) > 3
+            && (par.mvp.mfx.NumRefFrame == 0
+                || par.base.GetMinRefForBPyramid(par) <= par.mvp.mfx.NumRefFrame);
+
+        return BPyrCand[bValid];
+    }
+
 
     static mfxU16 PRefType(
         Defaults::TChain<mfxU16>::TExt
@@ -339,27 +423,14 @@ public:
             return (width * height * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
     }
 
-    static std::tuple<mfxU16, mfxU16> MaxNumRef(
-        Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt
+    static std::tuple<mfxU16, mfxU16, mfxU16> MaxNumRef(
+        Defaults::TChain<std::tuple<mfxU16, mfxU16, mfxU16>>::TExt
         , const Defaults::Param& par)
     {
-        mfxU16 tu = par.mvp.mfx.TargetUsage;
-        CheckRangeOrSetDefault<mfxU16>(tu, 1, 7, 4);
-        --tu;
-
-        static const mfxU16 nRefs[1][2][7] =
-        {
-            {// VDENC
-                  { 3, 3, 2, 2, 2, 1, 1 }
-                , { 3, 3, 2, 2, 2, 1, 1 }
-            }
-        };
-       //TODO: need to be re-implemented for AV1
-
-        mfxU16 nRefL0 = mfxU16(nRefs[0][0][tu]);
-        mfxU16 nRefL1 = mfxU16(nRefs[0][1][tu]);
-
-        return std::make_tuple(nRefL0, nRefL1);
+        return std::make_tuple(
+            par.caps.MaxNum_ReferenceL0_P
+            , par.caps.MaxNum_ReferenceL0_B
+            , par.caps.MaxNum_ReferenceL1_B);
     }
 
     static mfxU16 RateControlMethod(
@@ -761,14 +832,19 @@ public:
     {
 #define PUSH_DEFAULT(X) df.Get##X.Push(X);
 
-        PUSH_DEFAULT(CodedPicAlignment);
         PUSH_DEFAULT(CodedPicWidth);
         PUSH_DEFAULT(CodedPicHeight);
+        PUSH_DEFAULT(CodedPicAlignment);
         PUSH_DEFAULT(GopPicSize);
         PUSH_DEFAULT(GopRefDist);
+        PUSH_DEFAULT(NumBPyramidLayers);
         PUSH_DEFAULT(NumRefFrames);
+        PUSH_DEFAULT(NumRefBPyramid);
+        PUSH_DEFAULT(NumRefNoPyramid);
+        PUSH_DEFAULT(MinRefForBPyramid);
         PUSH_DEFAULT(MinRefForBNoPyramid);
         PUSH_DEFAULT(NumRefActive);
+        PUSH_DEFAULT(BRefType);
         PUSH_DEFAULT(PRefType);
         PUSH_DEFAULT(FrameRate);
         PUSH_DEFAULT(MaxBitDepth);
@@ -991,6 +1067,37 @@ public:
         return MFX_ERR_NONE;
     }
 
+    static mfxStatus NumRefActive(
+        Defaults::TCheckAndFix::TExt
+        , const Defaults::Param& defPar
+        , mfxVideoParam& par)
+    {
+        mfxU32 changed = 0;
+        mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
+
+        MFX_CHECK(pCO3, MFX_ERR_NONE);
+
+        mfxU16 maxDPB = par.mfx.NumRefFrame + 1;
+        SetIf(maxDPB, !par.mfx.NumRefFrame, NUM_REF_FRAMES + 1);
+
+        mfxU16 maxRef[3] = {0, 0, 0};
+        std::tie(maxRef[0], maxRef[1], maxRef[2]) = defPar.base.GetMaxNumRef(defPar);
+        for (mfxU16 i = 0; i < 3; i++)
+        {
+            maxRef[i] = std::min<mfxU16>(maxRef[i], maxDPB - 1);
+        }
+
+        for (mfxU16 i = 0; i < 8; i++)
+        {
+            changed += CheckMaxOrClip(pCO3->NumRefActiveP  [i], maxRef[0]);
+            changed += CheckMaxOrClip(pCO3->NumRefActiveBL0[i], maxRef[1]);
+            changed += CheckMaxOrClip(pCO3->NumRefActiveBL1[i], maxRef[2]);
+        }
+
+        MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        return MFX_ERR_NONE;
+    }
+
     static void Push(Defaults& df)
     {
 #define PUSH_DEFAULT(X) df.Check##X.Push(X);
@@ -1003,6 +1110,7 @@ public:
         PUSH_DEFAULT(TargetChromaFormat);
         PUSH_DEFAULT(TargetBitDepth);
         PUSH_DEFAULT(FourCCByTargetFormat);
+        PUSH_DEFAULT(NumRefActive);
 #undef PUSH_DEFAULT
     }
 

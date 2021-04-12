@@ -165,14 +165,13 @@ void General::SetSupported(ParamSupport& blocks)
         const auto& buf_src = *(const mfxExtCodingOption3*)pSrc;
         auto& buf_dst = *(mfxExtCodingOption3*)pDst;
 
+        MFX_COPY_FIELD(EnableQPOffset);
         MFX_COPY_FIELD(GPB);
 
-        for (mfxU32 i = 0; i < 8; i++)
-        {
-            MFX_COPY_FIELD(NumRefActiveP[i]);
-            MFX_COPY_FIELD(NumRefActiveBL0[i]);
-            MFX_COPY_FIELD(NumRefActiveBL1[i]);
-        }
+        MFX_COPY_ARRAY_FIELD(QPOffset);
+        MFX_COPY_ARRAY_FIELD(NumRefActiveP);
+        MFX_COPY_ARRAY_FIELD(NumRefActiveBL0);
+        MFX_COPY_ARRAY_FIELD(NumRefActiveBL1);
 
         MFX_COPY_FIELD(TargetChromaFormatPlus1);
         MFX_COPY_FIELD(TargetBitDepthLuma);
@@ -212,9 +211,12 @@ void General::SetSupported(ParamSupport& blocks)
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
-        [](const mfxExtBuffer* /* pSrc */, mfxExtBuffer* /* pDst */) -> void
+        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
-        // Teams query this buffer supportness, keeps empty since those fields ignored by AV1
+        const auto& buf_src = *(const mfxExtCodingOption2*)pSrc;
+        auto& buf_dst = *(mfxExtCodingOption2*)pDst;
+
+        MFX_COPY_FIELD(BRefType);
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_ENCODER_RESET_OPTION].emplace_back(
@@ -417,6 +419,17 @@ void General::SetInherited(ParamInheritance& par)
         INHERIT_OPT(ErrorResilientMode);
         INHERIT_OPT(DisplayFormatSwizzle);
     });
+
+    par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
+        [](const mfxVideoParam& /*parInit*/
+            , const mfxExtBuffer* pSrc
+            , const mfxVideoParam& /*parReset*/
+            , mfxExtBuffer* pDst)
+    {
+        INIT_EB(mfxExtCodingOption2);
+        INHERIT_OPT(BRefType);
+    });
+
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION3].emplace_back(
         [this](const mfxVideoParam& /*parInit*/
@@ -1514,16 +1527,25 @@ void General::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     });
 
     Push(BLK_UpdateBsInfo
-        , [this](StorageW& /*global*/, StorageW& s_task) -> mfxStatus
+        , [this](StorageW& global, StorageW& s_task) -> mfxStatus
     {
-        auto& task = Task::Common::Get(s_task);
-        auto& bs = *task.pBsOut;
+        auto& task         = Task::Common::Get(s_task);
+        auto& bs           = *task.pBsOut;
+        bs.TimeStamp       = task.pSurfIn->Data.TimeStamp;
+        bs.DecodeTimeStamp = MFX_TIMESTAMP_UNKNOWN;
 
-        bs.TimeStamp = task.pSurfIn->Data.TimeStamp;
-        bs.DecodeTimeStamp = bs.TimeStamp; // no support of reordering so far
+        if (bs.TimeStamp != mfxU64(MFX_TIMESTAMP_UNKNOWN))
+        {
+            const auto&  par             = Glob::VideoParam::Get(global);
+            const mfxI32 dpbOutputDelay  = task.DisplayOrder - task.EncodedOrder;
+            const mfxF64 tcDuration90KHz = (mfxF64)par.mfx.FrameInfo.FrameRateExtD / par.mfx.FrameInfo.FrameRateExtN * 90000;
+            bs.DecodeTimeStamp = mfxI64(bs.TimeStamp - tcDuration90KHz * dpbOutputDelay);
+        }
 
         bs.PicStruct = task.pSurfIn->Info.PicStruct;
         bs.FrameType = task.FrameType;
+        bs.FrameType &= ~(task.isLDB * MFX_FRAMETYPE_B);
+        bs.FrameType |= task.isLDB * MFX_FRAMETYPE_P;
 
         *task.pBsDataLength += task.BsDataLength;
 
@@ -1842,7 +1864,19 @@ inline void SetTaskQp(
     }
 
     if (IsB(task.FrameType))
+    {
         task.QpY = static_cast<mfxU8>(par.mfx.QPB);
+
+        const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
+        const bool bUseQPOffset = CO2.BRefType == MFX_B_REF_PYRAMID;
+        if (bUseQPOffset)
+        {
+            const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
+            task.QpY = static_cast<mfxU8>(mfx::clamp<mfxI32>(
+                CO3.QPOffset[mfx::clamp<mfxI32>(task.PyramidLevel - 1, 0, 7)] + task.QpY
+                , AV1_MIN_Q_INDEX, AV1_MAX_Q_INDEX));
+        }
+    }
     else if (IsP(task.FrameType))
         task.QpY = static_cast<mfxU8>(par.mfx.QPP);
     else
@@ -2378,9 +2412,63 @@ static T GetFirstFrameToDisplay(
     return *firstToDisplay;
 }
 
+static mfxU32 GetEncodingOrder(
+    mfxU32 displayOrder
+    , mfxU32 begin
+    , mfxU32 end
+    , mfxU32 &level
+    , mfxU32 before
+    , bool & ref)
+{
+    assert(displayOrder >= begin);
+    assert(displayOrder <  end);
+
+    ref = (end - begin > 1);
+
+    mfxU32 pivot = (begin + end) / 2;
+    if (displayOrder == pivot)
+        return level + before;
+
+    level++;
+    if (displayOrder < pivot)
+        return GetEncodingOrder(displayOrder, begin, pivot, level, before, ref);
+    else
+        return GetEncodingOrder(displayOrder, pivot + 1, end, level, before + pivot - begin, ref);
+}
+
+static mfxU32 GetBiFrameLocation(mfxU32 i, mfxU32 num, bool &ref, mfxU32 &level)
+{
+    ref = false;
+    level = 1;
+    return GetEncodingOrder(i, 0, num, level, 0, ref);
+}
+
+template<class T>
+static T BPyrReorder(T begin, T end)
+{
+    typedef typename std::iterator_traits<T>::reference TRef;
+
+    mfxU32 num = mfxU32(std::distance(begin, end));
+    bool bSetOrder = num && (*begin)->BPyramidOrder == mfxU32(MFX_FRAMEORDER_UNKNOWN);
+
+    if (bSetOrder)
+    {
+        mfxU32 i = 0;
+        std::for_each(begin, end, [&](TRef bref)
+        {
+            bool bRef = false;
+            bref->BPyramidOrder = GetBiFrameLocation(i++, num, bRef, bref->PyramidLevel);
+            bref->FrameType |= mfxU16(MFX_FRAMETYPE_REF * bRef);
+        });
+    }
+
+    return std::min_element(begin, end
+        , [](TRef a, TRef b) { return a->BPyramidOrder < b->BPyramidOrder; });
+}
+
 template<class T>
 static T Reorder(
-    ExtBuffer::Param<mfxVideoParam> const & /*par*/
+    ExtBuffer::Param<mfxVideoParam> const & par
     , DpbType const & dpb
     , T begin
     , T end
@@ -2388,10 +2476,13 @@ static T Reorder(
 {
     typedef typename std::iterator_traits<T>::reference TRef;
 
-    T top = begin;
+    const mfxExtCodingOption2& CO2        = ExtBuffer::Get(par);
+    const bool                 isBPyramid = (CO2.BRefType == MFX_B_REF_PYRAMID);
+
+    T top        = begin;
     T reorderOut = top;
     std::list<T> brefs;
-    auto IsB = [](TRef f) { return AV1EHW::IsB(f.FrameType); };
+    auto IsB  = [](TRef f) { return AV1EHW::IsB(f.FrameType); };
     auto NoL1 = [&](T& f) { return !HaveL1(dpb, f->DisplayOrderInGOP); };
 
     std::generate_n(
@@ -2403,19 +2494,36 @@ static T Reorder(
 
     if (!brefs.empty())
     {
-        // TODO: implement proper behavior for reference B-frames
-        reorderOut = brefs.front();
+        if (!isBPyramid)
+        {
+            const auto B0POC = brefs.front()->DisplayOrderInGOP;
+            auto       it    = brefs.begin();
+            while (it != brefs.end())
+            {
+                if (IsRef((*it)->FrameType) && ((*it)->DisplayOrderInGOP - B0POC < 2))
+                    break;
+                ++it;
+            }
+
+            if (it == brefs.end())
+                it = brefs.begin();
+
+            reorderOut = *it;
+        }
+        else
+        {
+            reorderOut = *BPyrReorder(brefs.begin(), brefs.end());
+        }
     }
     else
     {
         // optimize end of GOP or end of sequence
-        bool bForcePRef = flush && top == end && begin != end;
+        const bool bForcePRef = flush && top == end && begin != end;
         if (bForcePRef)
         {
             --top;
             top->FrameType = mfxU16(MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
         }
-
         reorderOut = top;
     }
 
@@ -2707,20 +2815,22 @@ void SetDefaultFormat(
 void SetDefaultGOP(
     mfxVideoParam& par
     , const Defaults::Param& defPar
+    , mfxExtCodingOption2* pCO2
     , mfxExtCodingOption3* pCO3)
 {
     par.mfx.GopPicSize = defPar.base.GetGopPicSize(defPar);
     par.mfx.GopRefDist = defPar.base.GetGopRefDist(defPar);
 
+    SetDefault(par.mfx.NumRefFrame, defPar.base.GetNumRefFrames(defPar));
+
+    if (pCO2 != nullptr)
+    {
+        SetIf(pCO2->BRefType, !pCO2->BRefType, [&]() { return defPar.base.GetBRefType(defPar); });
+    }
+
     if (pCO3 != nullptr)
     {
         SetIf(pCO3->PRefType, !pCO3->PRefType, [&]() { return defPar.base.GetPRefType(defPar); });
-    }
-
-    SetDefault(par.mfx.NumRefFrame, defPar.base.GetNumRefFrames(defPar));
-
-    if (pCO3 != nullptr)
-    {
         SetDefault<mfxU16>(pCO3->GPB, MFX_CODINGOPTION_OFF);
 
         defPar.base.GetNumRefActive(
@@ -2779,12 +2889,13 @@ void General::SetDefaults(
     SetDefault(par.AsyncDepth, defPar.base.GetAsyncDepth(defPar));
     SetDefault(par.IOPattern, IOPByAlctr[!!bExternalFrameAllocator]);
 
+    mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
     mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
 
     SetDefault(par.mfx.CodecProfile, defPar.base.GetProfile(defPar));
     SetDefault(par.mfx.CodecLevel, 0);
     SetDefault(par.mfx.TargetUsage, DEFAULT_TARGET_USAGE);
-    SetDefaultGOP(par, defPar, pCO3);
+    SetDefaultGOP(par, defPar, pCO2, pCO3);
     SetDefault(par.mfx.LowPower, MFX_CODINGOPTION_ON);
     SetDefault(par.mfx.NumThread, 1);
 
@@ -2852,9 +2963,18 @@ mfxStatus General::CheckNumRefFrame(
     mfxVideoParam & par
     , const Defaults::Param& defPar)
 {
+    MFX_CHECK(par.mfx.NumRefFrame, MFX_ERR_NONE);
+
     mfxU32 changed = 0;
 
     changed += CheckMaxOrClip(par.mfx.NumRefFrame, NUM_REF_FRAMES);
+
+    if (defPar.base.GetBRefType(defPar) == MFX_B_REF_PYRAMID)
+    {
+        mfxU32 minNumRefFrame = defPar.base.GetNumRefBPyramid(defPar);
+        changed += CheckMinOrClip(par.mfx.NumRefFrame, minNumRefFrame);
+    }
+
     changed += SetIf(
         par.mfx.NumRefFrame
         , (par.mfx.GopRefDist > 1
