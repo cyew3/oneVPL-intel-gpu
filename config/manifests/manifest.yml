@@ -18,7 +18,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.contrib.git
     branch: master
-    revision: 896b387757ccd7456df4b88e1ea1cc6acbaaf81e
+    revision: 9b1650011e353061355787b23c53cb8143b7f267
     dest_dir: sources/mdp_msdk-contrib
   val-tools:
     type: git
@@ -96,7 +96,7 @@ components:
     type: git
     repository: https://github.com/intel/libva
     branch: master
-    revision: 2.9.0.pre1
+    revision: fae0a978c304961b670027f644fb9305c009a9bd
     dest_dir: libva
   cmrt_linux:
     type: artifactory
@@ -138,7 +138,7 @@ components:
     root_url: https://gfx-assets.inn.intel.com/artifactory
     asset_path: mediasdk-builds/ci
     asset_name: mediasdk-1x
-    asset_version: mediasdk-ci-mediasdk-1x-1.0.79
+    asset_version: mediasdk-ci-mediasdk-1x-1.0.82
     asset_patterns:
     - Windows/msdk/runtime/*.zip
     - Windows/msdk/tools/*.zip
