@@ -44,7 +44,7 @@ add_executable (mfx_allocator_test
 target_link_libraries (mfx_allocator_test
     PRIVATE
         ${MFX_DISPATCHER}
-        $<$<PLATFORM_ID:Windows>:detours2>
+        $<$<PLATFORM_ID:Windows>:detours>
         mfx_common_hw
         mfx_trace
         gtest_main

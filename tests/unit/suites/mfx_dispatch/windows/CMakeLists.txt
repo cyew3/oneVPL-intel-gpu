@@ -35,7 +35,7 @@ target_link_libraries(test_multi_adapter
   PRIVATE
     mfx_static_lib
     mfx_shared_lib
-    detours2
+    detours
     mfx
     gtest
     gtest_main

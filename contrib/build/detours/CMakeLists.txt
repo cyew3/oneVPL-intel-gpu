@@ -41,14 +41,14 @@ add_custom_command (
 add_custom_target (detours-make
     DEPENDS ${_detours_LIB_PATH}
 )
-add_library (detours2 STATIC IMPORTED GLOBAL)
-add_dependencies (detours2 detours-make)
+add_library (detours STATIC IMPORTED GLOBAL)
+add_dependencies (detours detours-make)
 
-set_target_properties (detours2
+set_target_properties (detours
     PROPERTIES
         IMPORTED_LOCATION ${_detours_LIB_PATH}
         INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/../../detours/src
         FOLDER dependencies
 )
 
-add_library (detours::detours2 ALIAS detours2)
+add_library (detours::detours ALIAS detours)
