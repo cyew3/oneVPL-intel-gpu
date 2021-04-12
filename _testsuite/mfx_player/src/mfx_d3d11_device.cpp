@@ -131,7 +131,7 @@ mfxStatus MFXD3D11Device::Reset(WindowHandle hDeviceWindow, RECT, bool bIsWindow
     scd.BufferDesc.Format = m_format;
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.BufferCount = 4;
-    scd.SwapEffect = DXGI_FORMAT_R10G10B10A2_UNORM == m_format ? DXGI_SWAP_EFFECT_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    scd.SwapEffect = DXGI_FORMAT_R10G10B10A2_UNORM == m_format ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
     MFX_CHECK_WITH_ERR(!FAILED(m_pDXGIFactory->CreateSwapChain(m_pD3D11Device, &scd, &m_pSwapChain)), MFX_ERR_DEVICE_FAILED);
 
