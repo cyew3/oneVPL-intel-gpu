@@ -105,17 +105,31 @@ namespace query_impls_description
 #define FIELD_PROCESSING_OUT_FORMAT_LIST \
 {MFX_FOURCC_NV12}
 
+#if defined(_WIN32) || defined(_WIN64)
 #define DEFAULT_FILTER(filterId, MaxDelayInFrames, inFormat, outFormat)                                                               \
 START_FILTER(filterId, MaxDelayInFrames)                                                                                              \
-    START_MEMDESC_VP(MFX_RESOURCE_SYSTEM_SURFACE, 16, 16384, 1, 16, 16384, 1)                                                       \
+    START_MEMDESC_VP(MFX_RESOURCE_SYSTEM_SURFACE, 16, 16384, 1, 16, 16384, 1)                                                         \
         inFormat,                                                                                                                     \
         outFormat                                                                                                                     \
     END_MEMDESC_VP                                                                                                                    \
-    START_MEMDESC_VP(MFX_RESOURCE_DX11_TEXTURE, 16, 16384, 1, 16, 16384, 1)                                                         \
+    START_MEMDESC_VP(MFX_RESOURCE_DX11_TEXTURE, 16, 16384, 1, 16, 16384, 1)                                                           \
         inFormat,                                                                                                                     \
         outFormat                                                                                                                     \
     END_MEMDESC_VP                                                                                                                    \
 END_FILTER
+#else
+#define DEFAULT_FILTER(filterId, MaxDelayInFrames, inFormat, outFormat)                                                               \
+START_FILTER(filterId, MaxDelayInFrames)                                                                                              \
+    START_MEMDESC_VP(MFX_RESOURCE_SYSTEM_SURFACE, 16, 16384, 1, 16, 16384, 1)                                                         \
+        inFormat,                                                                                                                     \
+        outFormat                                                                                                                     \
+    END_MEMDESC_VP                                                                                                                    \
+    START_MEMDESC_VP(MFX_RESOURCE_VA_SURFACE, 16, 16384, 1, 16, 16384, 1)                                                             \
+        inFormat,                                                                                                                     \
+        outFormat                                                                                                                     \
+    END_MEMDESC_VP                                                                                                                    \
+END_FILTER
+#endif
 
     class ReferenceVpp
     {
