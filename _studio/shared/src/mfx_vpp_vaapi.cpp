@@ -1163,6 +1163,23 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
 #endif
 
+    /*
+     * Execute mirroring for MIRROR_WO_EXEC only because MSDK will do
+     * copy-with-mirror for others.
+     */
+    printf("2: pParams->mirroring: %d\n", pParams->mirroring);
+    if (pParams->mirroringPosition == MIRROR_WO_EXEC) {
+        switch (pParams->mirroring) {
+        case MFX_MIRRORING_HORIZONTAL:
+            m_pipelineParam[0].mirror_state = VA_MIRROR_HORIZONTAL;
+            break;
+
+        case MFX_MIRRORING_VERTICAL:
+            m_pipelineParam[0].mirror_state = VA_MIRROR_VERTICAL;
+            break;
+        }
+    }
+
     // source cropping
     mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
     input_region.y   = inInfo->CropY;
