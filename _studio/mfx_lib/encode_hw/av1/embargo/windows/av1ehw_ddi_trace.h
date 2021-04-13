@@ -60,20 +60,12 @@ public:
     void Trace(ENCODE_COMPBUFFERDESC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_AV1 const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_AV1 const & b, mfxU32 idx);
-    void Trace(ENCODE_SET_SLICE_HEADER_AV1 const & b, mfxU32 idx);
     void Trace(ENCODE_PACKEDHEADER_DATA const & b, mfxU32 idx);
     void Trace(ENCODE_EXECUTE_PARAMS const & b, mfxU32 idx);
     void Trace(ENCODE_QUERY_STATUS_PARAMS const & b, mfxU32 idx);
     void Trace(ENCODE_QUERY_STATUS_SLICE_PARAMS const & b, mfxU32 idx);
 
     void Trace(D3D11_VIDEO_DECODER_EXTENSION const & b, mfxU32 idx);
-
-    void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_AV1_REXT const & b, mfxU32 idx);
-    void Trace(ENCODE_SET_PICTURE_PARAMETERS_AV1_REXT const & b, mfxU32 idx);
-    void Trace(ENCODE_SET_SLICE_HEADER_AV1_REXT const & b, mfxU32 idx);
-
-    void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_AV1_SCC const & b, mfxU32 idx);
-    void Trace(ENCODE_SET_PICTURE_PARAMETERS_AV1_SCC const & b, mfxU32 idx);
 #endif
 
     inline void Trace(GUID const & guid, mfxU32) { TraceGUID(guid, m_log); };

@@ -131,13 +131,6 @@ public:
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
     {
-        const mfxExtHEVCParam* pHEVC = ExtBuffer::Get(par.mvp);
-
-        if (pHEVC && pHEVC->PicWidthInLumaSamples)
-        {
-            return pHEVC->PicWidthInLumaSamples;
-        }
-
         auto&   fi          = par.mvp.mfx.FrameInfo;
         bool    bCropsValid = fi.CropW > 0;
         mfxU16  W           = mfxU16(bCropsValid * (fi.CropW + fi.CropX) + !bCropsValid * fi.Width);
@@ -149,13 +142,6 @@ public:
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
     {
-        const mfxExtHEVCParam* pHEVC = ExtBuffer::Get(par.mvp);
-
-        if (pHEVC && pHEVC->PicHeightInLumaSamples)
-        {
-            return pHEVC->PicHeightInLumaSamples;
-        }
-
         auto&   fi          = par.mvp.mfx.FrameInfo;
         bool    bCropsValid = fi.CropH > 0;
         mfxU16  H           = mfxU16(bCropsValid * (fi.CropH + fi.CropY) + !bCropsValid * fi.Height);

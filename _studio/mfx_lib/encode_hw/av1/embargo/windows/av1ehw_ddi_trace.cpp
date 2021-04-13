@@ -282,38 +282,16 @@ DECL_START(ENCODE_COMPBUFFERDESC)
     {
     case D3DDDIFMT_INTELENCODE_SPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:
-        if (m_type == ENCODER_SCC)
-            TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_AV1_SCC*)pBuf,
-            (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_AV1_SCC)));
-        else
-        if (m_type == ENCODER_REXT)
-            TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_AV1_REXT*)pBuf,
-                (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_AV1_REXT)));
-        else
-            TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_AV1*)pBuf,
-                (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_AV1)));
+        TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_AV1*)pBuf,
+            (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_AV1)));
         break;
     case D3DDDIFMT_INTELENCODE_PPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:
-        if (m_type == ENCODER_SCC)
-            TraceArray((ENCODE_SET_PICTURE_PARAMETERS_AV1_SCC*)pBuf,
-            (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_AV1_SCC)));
-        else
-        if (m_type == ENCODER_REXT)
-            TraceArray((ENCODE_SET_PICTURE_PARAMETERS_AV1_REXT*)pBuf,
-                (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_AV1_REXT)));
-        else
-            TraceArray((ENCODE_SET_PICTURE_PARAMETERS_AV1*)pBuf,
-                (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_AV1)));
+        TraceArray((ENCODE_SET_PICTURE_PARAMETERS_AV1*)pBuf,
+            (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_AV1)));
         break;
     case D3DDDIFMT_INTELENCODE_SLICEDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA:
-        if (m_type == ENCODER_REXT)
-            TraceArray((ENCODE_SET_SLICE_HEADER_AV1_REXT*)pBuf,
-                (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_AV1_REXT)));
-        else
-            TraceArray((ENCODE_SET_SLICE_HEADER_AV1*)pBuf,
-                (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_AV1)));
         break;
     case D3DDDIFMT_INTELENCODE_BITSTREAMDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA:
@@ -556,112 +534,6 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1)
 DECL_END
 #undef FIELD_FORMAT
 
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_SLICE_HEADER_AV1)
-    TRACE("%d", slice_segment_address);
-    TRACE("%d", NumLCUsInSlice);
-#pragma warning(disable:4477)
-    TRACE_ARRAY_ROW("%d", RefPicList[0], 15);
-    TRACE_ARRAY_ROW("%d", RefPicList[1], 15);
-#pragma warning(default:4477)
-    TRACE("%d", num_ref_idx_l0_active_minus1);
-    TRACE("%d", num_ref_idx_l1_active_minus1);
-    TRACE("%d", bLastSliceOfPic                     );
-    TRACE("%d", dependent_slice_segment_flag        );
-    TRACE("%d", slice_temporal_mvp_enable_flag      );
-    TRACE("%d", slice_type                          );
-    TRACE("%d", slice_sao_luma_flag                 );
-    TRACE("%d", slice_sao_chroma_flag               );
-    TRACE("%d", mvd_l1_zero_flag                    );
-    TRACE("%d", cabac_init_flag                     );
-    TRACE("%d", slice_deblocking_filter_disable_flag);
-    TRACE("%d", collocated_from_l0_flag             );
-    TRACE("%d", slice_qp_delta);
-    TRACE("%d", slice_cb_qp_offset);
-    TRACE("%d", slice_cr_qp_offset);
-    TRACE("%d", beta_offset_div2);
-    TRACE("%d", tc_offset_div2);
-    TRACE("%d", luma_log2_weight_denom);
-    TRACE("%d", delta_chroma_log2_weight_denom);
-
-    TRACE_ARRAY_ROW("%d", luma_offset[0], 15);
-    TRACE_ARRAY_ROW("%d", luma_offset[1], 15);
-    TRACE_ARRAY_ROW("%d", delta_luma_weight[0], 15);
-    TRACE_ARRAY_ROW("%d", delta_luma_weight[1], 15);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][0], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][1], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][2], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][3], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][4], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][5], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][6], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][7], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][8], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][9], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][10], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][11], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][12], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][13], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[0][14], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][0], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][1], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][2], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][3], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][4], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][5], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][6], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][7], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][8], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][9], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][10], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][11], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][12], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][13], 2);
-    TRACE_ARRAY_ROW("%d", chroma_offset[1][14], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][0], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][1], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][2], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][3], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][4], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][5], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][6], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][7], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][8], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][9], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][10], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][11], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][12], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][13], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[0][14], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][0], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][1], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][2], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][3], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][4], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][5], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][6], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][7], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][8], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][9], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][10], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][11], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][12], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][13], 2);
-    TRACE_ARRAY_ROW("%d", delta_chroma_weight[1][14], 2);
-
-    TRACE("%d", MaxNumMergeCand);
-    TRACE("%d", slice_id);
-    //TRACE("%d", MaxSlizeSizeInBytes);
-    TRACE("%d", SliceQpDeltaBitOffset);
-
-    TRACE("%d", SliceSAOFlagBitOffset);
-    TRACE("%d", BitLengthSliceHeaderStartingPortion);
-    TRACE("%d", SliceHeaderByteOffset);
-    TRACE("%d", PredWeightTableBitOffset);
-    TRACE("%d", PredWeightTableBitLength);
-DECL_END
-#undef FIELD_FORMAT
-
 #define FIELD_FORMAT "%-24s"
 DECL_START(ENCODE_PACKEDHEADER_DATA)
     TRACE_HEX_ROW(pData, b.BufferSize);
@@ -719,97 +591,6 @@ DECL_START(ENCODE_QUERY_STATUS_SLICE_PARAMS)
 DECL_END
 #undef FIELD_FORMAT
 
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_AV1_REXT)
-    Trace((ENCODE_SET_SEQUENCE_PARAMETERS_AV1 const &) b, idx);
-    TRACE("%d", transform_skip_rotation_enabled_flag   );
-    TRACE("%d", transform_skip_context_enabled_flag    );
-    TRACE("%d", implicit_rdpcm_enabled_flag            );
-    TRACE("%d", explicit_rdpcm_enabled_flag            );
-    TRACE("%d", extended_precision_processing_flag     );
-    TRACE("%d", intra_smoothing_disabled_flag          );
-    TRACE("%d", high_precision_offsets_enabled_flag    );
-    TRACE("%d", persistent_rice_adaptation_enabled_flag);
-    TRACE("%d", cabac_bypass_alignment_enabled_flag    );
-DECL_END
-#undef FIELD_FORMAT
-
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1_REXT)
-    Trace((ENCODE_SET_PICTURE_PARAMETERS_AV1 const &)b, idx);
-    TRACE("%d", cross_component_prediction_enabled_flag  );
-    TRACE("%d", chroma_qp_offset_list_enabled_flag       );
-    TRACE("%d", diff_cu_chroma_qp_offset_depth           );
-    TRACE("%d", chroma_qp_offset_list_len_minus1         );
-    TRACE("%d", log2_sao_offset_scale_luma               );
-    TRACE("%d", log2_sao_offset_scale_chroma             );
-    TRACE("%d", log2_max_transform_skip_block_size_minus2);
-    TRACE_ARRAY_ROW("%d", cb_qp_offset_list, 6);
-    TRACE_ARRAY_ROW("%d", cr_qp_offset_list, 6);
-DECL_END
-#undef FIELD_FORMAT
-
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_SLICE_HEADER_AV1_REXT)
-    Trace((ENCODE_SET_SLICE_HEADER_AV1 const &)b, idx);
-    TRACE_ARRAY_ROW("%d", luma_offset_l0, 15);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[0], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[1], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[2], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[3], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[4], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[5], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[6], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[7], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[8], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[9], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[0], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[11], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[12], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[13], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL0[14], 2);
-    TRACE_ARRAY_ROW("%d", luma_offset_l1, 15);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[0], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[1], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[2], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[3], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[4], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[5], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[6], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[7], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[8], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[9], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[0], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[11], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[12], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[13], 2);
-    TRACE_ARRAY_ROW("%d", ChromaOffsetL1[14], 2);
-DECL_END
-#undef FIELD_FORMAT
-
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_AV1_SCC)
-   Trace((ENCODE_SET_SEQUENCE_PARAMETERS_AV1 const &)b, idx);
-   TRACE("%d", palette_mode_enabled_flag);
-   TRACE("%d", motion_vector_resolution_control_idc);
-   TRACE("%d", intra_boundary_filtering_disabled_flag);
-   TRACE("%d", palette_max_size);
-   TRACE("%d", delta_palette_max_predictor_size);
-DECL_END
-#undef FIELD_FORMAT
-
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1_SCC)
-   Trace((ENCODE_SET_PICTURE_PARAMETERS_AV1 const &)b, idx);
-   TRACE("%d", pps_curr_pic_ref_enabled_flag);
-   TRACE("%d", residual_adaptive_colour_transform_enabled_flag);
-   TRACE("%d", pps_slice_act_qp_offsets_present_flag);
-   TRACE("%d", PredictorPaletteSize);
-   TRACE("%d", pps_act_y_qp_offset_plus5);
-   TRACE("%d", pps_act_cb_qp_offset_plus5);
-   TRACE("%d", pps_act_cr_qp_offset_plus3);
-DECL_END
-#undef FIELD_FORMAT
 #endif //!defined(MFX_VA_LINUX)
 
 #endif //#ifdef DDI_TRACE
