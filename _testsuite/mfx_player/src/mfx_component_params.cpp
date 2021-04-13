@@ -23,32 +23,9 @@ File Name: .h
     #define D3DADAPTER_DEFAULT 0
 #endif
 
-#include "mfxdispatcher.h"
-
 mfxU32 ComponentParams::GetAdapter()
 {
-    mfxU32 nAdapter = D3DADAPTER_DEFAULT;
-
-    struct{
-        mfxIMPL impl;
-        mfxU32  nAdapter;
-    } adapters []= 
-    {
-        {MFX_IMPL_HARDWARE2, 1},
-        {MFX_IMPL_HARDWARE3, 2},
-        {MFX_IMPL_HARDWARE4, 3},
-    };
-
-    for (unsigned int i =0; i < MFX_ARRAY_SIZE(adapters); i++)
-    {
-        if (MFX_IMPL_BASETYPE(m_RealImpl) == adapters[i].impl)
-        {
-            nAdapter = adapters[i].nAdapter;
-            break;
-        }
-    }
-
-    return nAdapter;
+    return m_adapterNum != -1 ? m_adapterNum : D3DADAPTER_DEFAULT;
 }
 
 mfxU16 ComponentParams::GetIoPatternIn()
@@ -144,7 +121,6 @@ mfxStatus ComponentParams::PrintInfo()
     PipelineTrace((SerializeWithKey(VM_STRING("  Surface type"), m_bufType).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  External allocator"), m_bExternalAlloc).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  MFX API version"),version).c_str()));
-    PipelineTrace((SerializeWithKey(VM_STRING("  MFXImpl"), m_RealImpl).c_str()));
 
     return MFX_ERR_NONE;
 }
@@ -519,76 +495,31 @@ ComponentParams::SurfacesContainer::iterator  ComponentParams::GetSurfaceAlloc(m
 
 mfxStatus ComponentParams::ConfigureLoader()
 {
-    m_Loader = MFXLoad();
-    MFX_CHECK_POINTER(m_Loader);
+    m_pLoader.reset(new VPLImplementationLoader);
+    MFX_CHECK_POINTER(m_pLoader->GetLoader());
 
-    mfxConfig cfgImpl = MFXCreateConfig(m_Loader);
-
-    mfxVariant ImplVariant;
-    ImplVariant.Type = MFX_VARIANT_TYPE_U32;
-
-    switch (m_libType)
-    {
-        case MFX_IMPL_SOFTWARE:
-            ImplVariant.Data.U32 = MFX_IMPL_TYPE_SOFTWARE;
-            break;
-        case MFX_IMPL_HARDWARE:
-        case MFX_IMPL_HARDWARE_ANY:
-        case MFX_IMPL_HARDWARE2:
-        case MFX_IMPL_HARDWARE3:
-        case MFX_IMPL_HARDWARE4:
-        case MFX_IMPL_VIA_D3D9:
-        case MFX_IMPL_VIA_D3D11:
-        case MFX_IMPL_VIA_VAAPI:
-            ImplVariant.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
-            break;
-    }
-
-    MFX_CHECK_STS(MFXSetConfigFilterProperty(cfgImpl, (mfxU8*)"mfxImplDescription.Impl", ImplVariant));
-    m_Configs.push_back(cfgImpl);
+    MFX_CHECK_STS(m_pLoader->ConfigureImplementation(m_libType));
 
     if ( m_pLibVersion )
     {
-        mfxConfig cfgApiVersion = MFXCreateConfig(m_Loader);
-        mfxVariant ApiVersionVariant;
-        ApiVersionVariant.Type = MFX_VARIANT_TYPE_U32;
-        ApiVersionVariant.Data.U32 = m_pLibVersion->Version;
-        MFX_CHECK_STS(MFXSetConfigFilterProperty(cfgApiVersion, (mfxU8*)"mfxImplDescription.ApiVersion.Version", ApiVersionVariant));
-        m_Configs.push_back(cfgApiVersion);
+        MFX_CHECK_STS(m_pLoader->ConfigureVersion(*m_pLibVersion));
     }
 
-// configure m_accelerationMode, except when required implementation is MFX_IMPL_TYPE_HARDWARE, but m_accelerationMode not set
-    if (m_accelerationMode != MFX_ACCEL_MODE_NA || ImplVariant.Data.U32 != MFX_IMPL_TYPE_HARDWARE)
+    MFX_CHECK_STS(m_pLoader->ConfigureAccelerationMode(m_accelerationMode, m_libType));
+
+    if (m_adapterNum == -1 || m_deviceID == -1)
     {
-        mfxConfig cfgAccelerationMode = MFXCreateConfig(m_Loader);
-        mfxVariant AccelerationModeVariant;
-        AccelerationModeVariant.Type = MFX_VARIANT_TYPE_U32;
-        AccelerationModeVariant.Data.U32 = m_accelerationMode;
-        MFX_CHECK_STS(MFXSetConfigFilterProperty(cfgAccelerationMode, (mfxU8*)"mfxImplDescription.AccelerationMode", AccelerationModeVariant));
-        m_Configs.push_back(cfgAccelerationMode);
+        MFX_CHECK_STS(m_pLoader->EnumImplementations());
     }
-
-// pick the first available implementation, m_desc is checked only for being non-equal to NULL
-// TODO: add loop by implementations, set implIndex corresponding better implementation and add meaningful validation for the m_idesc
-    mfxImplDescription  * idesc;
-    MFX_CHECK_STS(MFXEnumImplementations(m_Loader, 0, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc));
-    MFX_CHECK_POINTER(idesc);
-    m_idesc = idesc;
-
-    m_implIndex = 0;
+    else
+    {
+        MFX_CHECK_STS(m_pLoader->EnumImplementations(m_deviceID, m_adapterNum));
+    }
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus ComponentParams::ReleaseLoader()
+void ComponentParams::ReleaseLoader()
 {
-    mfxStatus sts = MFX_ERR_NONE;
-    if (m_idesc)
-    {
-        sts = MFXDispReleaseImplDescription(m_Loader, m_idesc);
-        m_idesc = nullptr;
-        MFXUnload(m_Loader);
-    }
-
-    return sts;
+    m_pLoader.reset();
 }

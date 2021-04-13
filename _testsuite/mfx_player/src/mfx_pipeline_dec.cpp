@@ -317,11 +317,8 @@ mfxU32 MFXDecPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, 
     return 0;
 }
 
-mfxStatus MFXDecPipeline::ForceImpl(const sCommandlineParams & params, mfxIMPL & impl)
+mfxStatus MFXDecPipeline::ForceAdapterAndDeviceID(const sCommandlineParams & params, mfxI32 & adapterNum, mfxI32 & deviceID)
 {
-    //change only 8 bit of the implementation. Don't touch type of frames
-    impl = impl & mfxI32(~0xFF);
-
     mfxU32 num_adapters_available;
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -336,27 +333,8 @@ mfxStatus MFXDecPipeline::ForceImpl(const sCommandlineParams & params, mfxIMPL &
     MFX_CHECK_STS(sts);
 
     mfxU32 idx = GetPreferredAdapterNum(adapters, params);
-    switch (adapters.Adapters[idx].Number)
-    {
-    case 0:
-        impl |= MFX_IMPL_HARDWARE;
-        break;
-    case 1:
-        impl |= MFX_IMPL_HARDWARE2;
-        break;
-    case 2:
-        impl |= MFX_IMPL_HARDWARE3;
-        break;
-    case 3:
-        impl |= MFX_IMPL_HARDWARE4;
-        break;
-
-    default:
-        // try searching on all display adapters
-        impl |= MFX_IMPL_HARDWARE_ANY;
-        break;
-    }
-
+    adapterNum = adapters.Adapters[idx].Number;
+    deviceID = adapters.Adapters[idx].Platform.DeviceId;
     return MFX_ERR_NONE;
 }
 #endif
@@ -1158,12 +1136,13 @@ mfxStatus MFXDecPipeline::CreateCore()
             m_inParams.bPrefferdGfx = false;
         }
 
-        mfxIMPL tmpImpl = m_components.front().m_libType;
-        mfxStatus sts = ForceImpl(m_inParams, tmpImpl);
+        mfxIMPL tmpDeviceID = m_components.front().m_deviceID;
+        mfxIMPL tmpAdapterNum = m_components.front().m_adapterNum;
+        mfxStatus sts = ForceAdapterAndDeviceID(m_inParams, tmpAdapterNum, tmpDeviceID);
         MFX_CHECK_STS(sts);
 
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, tmpImpl));
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_RealImpl, tmpImpl));
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_deviceID, tmpDeviceID));
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_adapterNum, tmpAdapterNum));
     }
 #endif
 
@@ -1199,7 +1178,7 @@ mfxStatus MFXDecPipeline::CreateCore()
 #endif
 
         MFX_CHECK_STS(m_components[eDEC].ConfigureLoader());
-        MFX_CHECK_STS(m_components[eDEC].m_pSession->CreateSession(m_components[eDEC].m_Loader, m_components[eDEC].m_implIndex));
+        MFX_CHECK_STS(m_components[eDEC].m_pSession->CreateSession(m_components[eDEC].m_pLoader->GetLoader(), m_components[eDEC].m_pLoader->GetImplIndex()));
     }
 
     //preparation for loading second session
@@ -1230,20 +1209,10 @@ mfxStatus MFXDecPipeline::CreateCore()
         m_components[eREN].m_pSession = pSecondParams->m_pSession;
     }
 
-    if (m_components[eVPP].m_libType == m_components[eDEC].m_libType)
-    {
-        m_components[eVPP].m_RealImpl   = m_components[eDEC].m_RealImpl;
-    }
-
-    if (m_components[eREN].m_libType == m_components[eDEC].m_libType)
-    {
-        m_components[eREN].m_RealImpl   = m_components[eDEC].m_RealImpl;
-    }
-
     if (NULL != pSecondParams)
     {
         MFX_CHECK_STS(pSecondParams->ConfigureLoader());
-        MFX_CHECK_STS(pSecondParams->m_pSession->CreateSession(pSecondParams->m_Loader, pSecondParams->m_implIndex));
+        MFX_CHECK_STS(pSecondParams->m_pSession->CreateSession(pSecondParams->m_pLoader->GetLoader(), pSecondParams->m_pLoader->GetImplIndex()));
 
         //join second session if necessary
 #if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
@@ -4124,19 +4093,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 }
             );
         }
-        else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-hw( |:1|:2|:3|:4|:default)")
-            , VM_STRING("use hardware-accelerated MediaSDK library (libmfxhw*.dll), also particular device id might be specified"))))
+        else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-hw)")
+            , VM_STRING("use hardware-accelerated MediaSDK library (libmfxhw*.dll)"))))
         {
-            mfxIMPL impl = MFX_IMPL_UNSUPPORTED;
-            switch(nPattern)
-            {
-            case 1 : impl = MFX_IMPL_HARDWARE_ANY;  break;
-            case 2 : impl = MFX_IMPL_HARDWARE; break;
-            case 3 : impl = MFX_IMPL_HARDWARE2; break;
-            case 4 : impl = MFX_IMPL_HARDWARE3; break;
-            case 5 : impl = MFX_IMPL_HARDWARE4; break;
-            case 6 : impl = MFX_IMPL_HARDWARE; break;
-            }
+            mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, impl));
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-hw_strict"), VM_STRING("same as -hw but ensure HW-accelerated codecs (fail otherwise)")))

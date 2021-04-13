@@ -24,7 +24,7 @@ File Name: .h
 #include "mfx_ifactory.h"
 #include "mfx_shared_ptr.h"
 #include "mfx_factory_default.h"
-#include "mfxdispatcher.h"
+#include "vpl_implementation_loader.h"
 
 #define NOT_ASSIGNED_VALUE 0xFFF
 
@@ -42,7 +42,6 @@ public:
         , m_accelerationMode(MFX_ACCEL_MODE_NA)
         , m_bD39Feat(false)
         , m_pLibVersion()
-        , m_RealImpl(m_libType)
         , m_bHWStrict(false)
         , m_bPrintTimeStamps()
         , m_bufType(MFX_BUF_UNSPECIFIED)
@@ -52,7 +51,8 @@ public:
         , m_nMaxAsync(1)
         , m_fFrameRate()
         , m_bFrameRateUnknown(false)
-        , m_implIndex(-1)
+        , m_adapterNum(-1)
+        , m_deviceID(-1)
         , m_uiMaxAsyncReached()
         , m_fAverageAsync()
         , m_zoomx()
@@ -85,7 +85,6 @@ public:
               m_params.mfx.FrameInfo.Shift = (mfxU16) -1;    // not set
           m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
           m_bAdaptivePlayback = false;
-          m_idesc = nullptr;
       }
       virtual ~ComponentParams(){}
 
@@ -122,7 +121,7 @@ public:
       virtual SurfacesAllocated & RegisterAlloc(const mfxFrameAllocRequest &request);
 
       virtual mfxStatus ConfigureLoader();
-      virtual mfxStatus ReleaseLoader();
+      virtual void ReleaseLoader();
 
 public:
 
@@ -137,7 +136,6 @@ public:
     bool                           m_bD39Feat; // to support D3D9 feature levels when work with D3D11. Applicable with external allocator only (ignore for D3D9 and external sys memory)
     mfxVersion                     m_libVersion;
     mfxVersion                   * m_pLibVersion;
-    mfxIMPL                        m_RealImpl;//real implementation is used to create intel device
     bool                           m_bHWStrict;
     bool                           m_bPrintTimeStamps;
     bool                           m_bAdaptivePlayback;
@@ -148,6 +146,8 @@ public:
     mfxU16                         m_nMaxAsync;
     mfxF64                         m_fFrameRate;
     bool                           m_bFrameRateUnknown;
+    mfxI32                         m_adapterNum;
+    mfxI16                         m_deviceID;
     //real allocated CORE
     //copy ctor required when we put parameters into vector, shared_pointer remove necessity of copy ctor
     //ComponentParams
@@ -155,10 +155,7 @@ public:
     IVideoSession                * m_pSession;
 
     // params for vpl dispatcher
-    mfxLoader                           m_Loader;
-    std::vector<mfxConfig>              m_Configs;
-    mfxImplDescription                * m_idesc;
-    mfxU32                              m_implIndex;
+    std::shared_ptr<VPLImplementationLoader> m_pLoader;
 
     //stat params
     mfxU32                         m_uiMaxAsyncReached;

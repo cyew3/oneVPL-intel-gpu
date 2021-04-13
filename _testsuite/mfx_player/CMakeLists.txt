@@ -116,6 +116,7 @@ target_compile_definitions(mfx_pipeline
 
 target_link_libraries(mfx_pipeline
   PUBLIC
+    sample_common
     mfx_static_lib
     spl_common
     media_buffers
@@ -161,6 +162,7 @@ target_compile_options(mfx_pipeline_lucas
 
 target_link_libraries(mfx_pipeline_lucas
   PUBLIC
+    sample_common
     vm
     mfx_static_lib
     media_buffers

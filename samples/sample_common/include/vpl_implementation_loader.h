@@ -42,7 +42,7 @@ public:
     mfxStatus EnumImplementations(mfxU16 deviceID, mfxU32 adapterNum);
     mfxStatus ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxVersion const& version);
     mfxLoader GetLoader();
-    mfxU32 GetImplIndex();
+    mfxU32 GetImplIndex() const;
     mfxStatus GetVersion(mfxVersion *version);
 };
 

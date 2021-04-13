@@ -598,7 +598,7 @@ protected:
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
     //force implementation type for special user cases
     mfxU32                   GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sCommandlineParams & params);
-    mfxStatus                ForceImpl(const sCommandlineParams & params, mfxIMPL & impl);
+    mfxStatus                ForceAdapterAndDeviceID(const sCommandlineParams & params, mfxI32 & adapterNum, mfxI32 & deviceID);
 #endif
 
     //////////////////////////////////////////////////////////////////////////

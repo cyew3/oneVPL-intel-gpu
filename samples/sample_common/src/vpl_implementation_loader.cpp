@@ -188,7 +188,10 @@ mfxStatus VPLImplementationLoader::ConfigureAndEnumImplementations(mfxIMPL impl,
 
 mfxLoader VPLImplementationLoader::GetLoader() { return m_Loader; }
 
-mfxU32 VPLImplementationLoader::GetImplIndex() { return m_ImplIndex; };
+mfxU32 VPLImplementationLoader::GetImplIndex() const
+{
+    return m_ImplIndex;
+};
 
 mfxStatus VPLImplementationLoader::GetVersion(mfxVersion *version)
 {
