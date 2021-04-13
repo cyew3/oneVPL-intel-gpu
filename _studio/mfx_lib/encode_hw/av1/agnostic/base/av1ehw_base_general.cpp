@@ -1868,10 +1868,10 @@ inline void SetTaskQp(
         task.QpY = static_cast<mfxU8>(par.mfx.QPB);
 
         const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
-        const bool bUseQPOffset = CO2.BRefType == MFX_B_REF_PYRAMID;
+        const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
+        const bool bUseQPOffset        = IsOn(CO3.EnableQPOffset) && CO2.BRefType == MFX_B_REF_PYRAMID;
         if (bUseQPOffset)
         {
-            const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
             task.QpY = static_cast<mfxU8>(mfx::clamp<mfxI32>(
                 CO3.QPOffset[mfx::clamp<mfxI32>(task.PyramidLevel - 1, 0, 7)] + task.QpY
                 , AV1_MIN_Q_INDEX, AV1_MAX_Q_INDEX));
@@ -2845,7 +2845,7 @@ void SetDefaultBRC(
     mfxVideoParam& par
     , const Defaults::Param& defPar
     , mfxExtCodingOption2* /*pCO2*/
-    , mfxExtCodingOption3* /*pCO3*/)
+    , mfxExtCodingOption3* pCO3)
 {
     par.mfx.RateControlMethod = defPar.base.GetRateControlMethod(defPar);
     BufferSizeInKB(par.mfx) = defPar.base.GetBufferSizeInKB(defPar);
@@ -2865,6 +2865,11 @@ void SetDefaultBRC(
     {
         SetDefault(pAuxPar->QP.MinBaseQIndex, AV1_MIN_Q_INDEX);
         SetDefault(pAuxPar->QP.MaxBaseQIndex, AV1_MAX_Q_INDEX);
+    }
+
+    if (pCO3)
+    {
+        defPar.base.GetQPOffset(defPar, pCO3->EnableQPOffset, pCO3->QPOffset);
     }
 }
 
@@ -2889,18 +2894,17 @@ void General::SetDefaults(
     SetDefault(par.AsyncDepth, defPar.base.GetAsyncDepth(defPar));
     SetDefault(par.IOPattern, IOPByAlctr[!!bExternalFrameAllocator]);
 
-    mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
-    mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
-
     SetDefault(par.mfx.CodecProfile, defPar.base.GetProfile(defPar));
     SetDefault(par.mfx.CodecLevel, 0);
     SetDefault(par.mfx.TargetUsage, DEFAULT_TARGET_USAGE);
-    SetDefaultGOP(par, defPar, pCO2, pCO3);
     SetDefault(par.mfx.LowPower, MFX_CODINGOPTION_ON);
     SetDefault(par.mfx.NumThread, 1);
 
-    mfxFrameInfo &fi = par.mfx.FrameInfo;
+    mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
+    mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
+    SetDefaultGOP(par, defPar, pCO2, pCO3);
 
+    mfxFrameInfo &fi = par.mfx.FrameInfo;
     // fi.Width, fi.Height MUST be set when entering General::SetDefaults
     // TODO: implement respective checks
     SetDefault(fi.CropW, fi.Width);
@@ -2912,13 +2916,12 @@ void General::SetDefaults(
         SetDefaultFrameInfo(pAV1Par->FrameWidth, pAV1Par->FrameHeight, fi);
     }
 
-
     SetDefault(fi.AspectRatioW, mfxU16(1));
     SetDefault(fi.AspectRatioH, mfxU16(1));
 
     std::tie(fi.FrameRateExtN, fi.FrameRateExtD) = defPar.base.GetFrameRate(defPar);
 
-    SetDefaultBRC(par, defPar, nullptr, nullptr);
+    SetDefaultBRC(par, defPar, nullptr, pCO3);
 
     SetDefault(fi.PicStruct, MFX_PICSTRUCT_PROGRESSIVE);
 
@@ -3162,8 +3165,31 @@ mfxStatus General::CheckBRC(
 
     if (pCO3)
     {
-        MFX_CHECK(par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR
-            || !CheckMaxOrZero(pCO3->QVBRQuality, 51), MFX_ERR_UNSUPPORTED);
+        const bool   bCQP           = defPar.base.GetRateControlMethod(defPar) == MFX_RATECONTROL_CQP;
+        const mfxU16 GopRefDist     = defPar.base.GetGopRefDist(defPar);
+        const bool   bBPyr          = GopRefDist > 1 && defPar.base.GetBRefType(defPar) == MFX_B_REF_PYRAMID;
+        const bool   bQpOffsetValid = bCQP && bBPyr;
+
+        changed += CheckOrZero<mfxU16>(pCO3->EnableQPOffset
+            , mfxU16(MFX_CODINGOPTION_UNKNOWN)
+            , mfxU16(MFX_CODINGOPTION_OFF)
+            , mfxU16(MFX_CODINGOPTION_ON * !!bQpOffsetValid));
+
+        mfxI16 minQPOffset = 0;
+        mfxI16 maxQPOffset = 0;
+        if (IsOn(pCO3->EnableQPOffset))
+        {
+            const mfxI16 QPX = std::get<2>(defPar.base.GetQPMFX(defPar));
+            minQPOffset      = mfxI16(AV1_MIN_Q_INDEX - QPX);
+            maxQPOffset      = mfxI16(AV1_MAX_Q_INDEX - QPX);
+        }
+
+        auto CheckQPOffset = [&](mfxI16& QPO)
+        {
+            return CheckMinOrClip(QPO, minQPOffset) + CheckMaxOrClip(QPO, maxQPOffset);
+        };
+
+        changed += std::count_if(std::begin(pCO3->QPOffset), std::end(pCO3->QPOffset), CheckQPOffset);
     }
 
     if (pCO2)

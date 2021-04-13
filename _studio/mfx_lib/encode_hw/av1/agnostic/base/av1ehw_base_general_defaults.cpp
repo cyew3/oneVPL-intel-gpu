@@ -333,7 +333,6 @@ public:
         return BPyrCand[bValid];
     }
 
-
     static mfxU16 PRefType(
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param&)
@@ -470,6 +469,32 @@ public:
             SetDefault(QPB, std::min<mfxU16>(QPP + 5, maxQP));
 
             return std::make_tuple(QPI, QPP, QPB);
+        }
+    }
+
+    static void QPOffset(
+        Defaults::TGetQPOffset::TExt
+        , const Defaults::Param& par
+        , mfxU16& EnableQPOffset
+        , mfxI16(&QPOffset)[8])
+    {
+        if (EnableQPOffset == MFX_CODINGOPTION_UNKNOWN)
+        {
+            const bool   bCQP       = par.base.GetRateControlMethod(par) == MFX_RATECONTROL_CQP;
+            const mfxU16 GopRefDist = par.base.GetGopRefDist(par);
+            const bool   bBPyr      = GopRefDist > 1 && par.base.GetBRefType(par) == MFX_B_REF_PYRAMID;
+
+            EnableQPOffset = Bool2CO(bCQP && bBPyr);
+            if (IsOn(EnableQPOffset))
+            {
+                const mfxI16 QPX = std::get<2>(par.base.GetQPMFX(par));
+                const mfxI16 minQPOffset = mfxI16(AV1_MIN_Q_INDEX - QPX);
+                const mfxI16 maxQPOffset = mfxI16(AV1_MAX_Q_INDEX - QPX);
+
+                mfxI16 i = 0;
+                std::generate_n(QPOffset, 8
+                    , [&]() { return mfx::clamp<mfxI16>(DEFAULT_BPYR_QP_OFFSETS[i++], minQPOffset, maxQPOffset); });
+            }
         }
     }
 
@@ -842,6 +867,7 @@ public:
         PUSH_DEFAULT(MinQPMFX);
         PUSH_DEFAULT(MaxQPMFX);
         PUSH_DEFAULT(QPMFX);
+        PUSH_DEFAULT(QPOffset);
         PUSH_DEFAULT(Profile);
         PUSH_DEFAULT(GUID);
         PUSH_DEFAULT(AsyncDepth);

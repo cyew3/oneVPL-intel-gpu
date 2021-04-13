@@ -84,8 +84,9 @@ namespace Base
     const uint32_t MAX_AV1_NUM_TILE_COLS = 1024;
 
     const uint16_t DEFAULT_TARGET_USAGE  = MFX_TARGETUSAGE_BALANCED;
+    const mfxU8    IDX_INVALID           = 0xff;
 
-    constexpr mfxU8 IDX_INVALID = 0xff;
+    const int16_t  DEFAULT_BPYR_QP_OFFSETS[8] = {32, 40, 48, 48, 48, 48, 48, 48};
 
     inline bool IsCModelMode(const mfxVideoParam& par)
     {
@@ -1062,9 +1063,10 @@ namespace Base
         TGetNumRefActive GetNumRefActive;
 
         using TGetQPOffset = CallChain<
-            mfxU16 //EnableQPOffset
+            void
             , const Defaults::Param&
-            , mfxI16(*)[8]>;//QPOffset
+            , mfxU16& //EnableQPOffset
+            , mfxI16(&)[8]>;//QPOffset
         TGetQPOffset GetQPOffset;
 
         using TGetGUID = CallChain<
