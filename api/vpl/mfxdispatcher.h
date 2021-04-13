@@ -27,7 +27,7 @@ typedef struct _mfxConfig *mfxConfig;
 
    @since This function is available since API version 2.0.
 */
-mfxLoader MFX_CDECL MFXLoad();
+mfxLoader MFX_CDECL MFXLoad(void);
 
 /*!
    @brief Destroys the dispatcher.
