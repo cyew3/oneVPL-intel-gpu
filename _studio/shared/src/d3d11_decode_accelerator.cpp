@@ -59,7 +59,7 @@ MFXD3D11Accelerator::MFXD3D11Accelerator()
     , m_numberSurfaces(128)
     , m_dx9on11response()
     , m_pDX9ON11Core(nullptr)
-    , m_umcAllocatorD3D(nullptr)
+    , m_surface_source(nullptr)
 {
 }
 
@@ -71,6 +71,8 @@ UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* params)
 
     UMC_CHECK(params->m_allocator, UMC_ERR_ALLOC);
     m_allocator = params->m_allocator;
+    m_surface_source = dynamic_cast<SurfaceSource*>(m_allocator);
+
     m_numberSurfaces = params->m_iNumberSurfaces;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -161,8 +163,6 @@ UMC::Status MFXD3D11Accelerator::CreateWrapBuffers(VideoCORE* core, mfxFrameAllo
 
     m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(core);
     UMC_CHECK(m_pDX9ON11Core, UMC_OK);
-
-    m_umcAllocatorD3D = dynamic_cast<mfx_UMC_FrameAllocator_D3D*>(m_allocator);
 
     mfxFrameAllocRequest request = {};
     request = *req;
@@ -330,9 +330,9 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
             return UMC_ERR_DEVICE_FAILED;
     }
 
-    if (m_dx9on11response.mids && m_pDX9ON11Core && m_umcAllocatorD3D)
+    if (m_dx9on11response.mids && m_pDX9ON11Core && m_surface_source)
     {
-        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(m_umcAllocatorD3D->GetSurfaceByIndex(index)->Data.MemId, m_dx9on11response);
+        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(m_surface_source->GetSurfaceByIndex(index)->Data.MemId, m_dx9on11response);
         UMC_CHECK(dx11MemId, UMC_ERR_FAILED);
 
         if (UMC_OK != m_pDX9ON11Core->GetFrameHDL(dx11MemId, &Pair.first))

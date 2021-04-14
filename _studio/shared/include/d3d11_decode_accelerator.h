@@ -60,6 +60,7 @@ struct MFXD3D11AcceleratorParams
 #endif
 };
 
+class SurfaceSource;
 class MFXD3D11Accelerator : public UMC::DXAccelerator
 {
 
@@ -123,7 +124,7 @@ private:
 
     mfxFrameAllocResponse            m_dx9on11response;
     D3D9ON11VideoCORE*               m_pDX9ON11Core;
-    mfx_UMC_FrameAllocator_D3D*      m_umcAllocatorD3D;
+    SurfaceSource*                   m_surface_source;
 };
 
 
