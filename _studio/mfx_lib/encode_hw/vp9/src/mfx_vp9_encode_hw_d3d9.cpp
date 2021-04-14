@@ -943,6 +943,7 @@ void PrintDdiToLog(ENCODE_CAPS_VP9 const &caps)
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxPicHeight=", "%d", caps.MaxPicHeight);
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxNumOfDirtyRect=", "%d", caps.MaxNumOfDirtyRect);
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxNumOfMoveRect=", "%d", caps.MaxNumOfMoveRect);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxNum_Reference0=", "%d", caps.MaxNum_Reference0);
 }
 
 std::once_flag PrintDdiToLog_flag;

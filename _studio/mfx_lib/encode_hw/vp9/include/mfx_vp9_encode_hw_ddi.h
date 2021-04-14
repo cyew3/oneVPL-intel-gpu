@@ -100,6 +100,7 @@ typedef struct tagENCODE_CAPS_VP9
     UINT            MaxPicHeight;
     USHORT          MaxNumOfDirtyRect;
     USHORT          MaxNumOfMoveRect;
+    UINT            MaxNum_Reference0;
 
 
 } ENCODE_CAPS_VP9;
