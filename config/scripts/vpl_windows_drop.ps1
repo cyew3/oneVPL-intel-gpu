@@ -54,7 +54,9 @@ foreach ($pkg_name in $PACKAGE_NAMES)
 
     Set-Location -Path $BuildDir; Copy-Item $VPL_FILES -Destination $archive_dir;
       Copy-Item $VPL_PDB_FILES -Destination $archive_dir\pdb
+
+    Compress-Archive -Path $archive_dir\* -DestinationPath "${archive_dir}.zip"
 }
 
-Compress-Archive -Path $package_dir -DestinationPath "$PathToSave\${package_name}"
+Compress-Archive -Path $package_dir\*.zip -DestinationPath "$PathToSave\${package_name}"
 Remove-Item $package_dir -Recurse

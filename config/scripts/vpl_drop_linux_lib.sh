@@ -50,5 +50,5 @@ for command in "${COPY_CMDS[@]}"
     eval $command
   done
 
-tar -cvzf ${path_to_save}/${package_name}.tgz -C "${tmp_dir}/msdk_binaries" l_MSDK
+tar -cvzf ${path_to_save}/${package_name}.tgz -C ${tmp_dir}/${package_name} l_MSDK
 rm -rf $tmp_dir

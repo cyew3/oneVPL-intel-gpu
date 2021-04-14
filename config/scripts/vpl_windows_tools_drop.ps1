@@ -17,7 +17,8 @@ $FILES=@(
     'vpl\x64\__bin\Release\mfx_transcoder.exe',
     'vpl\x64\__bin\Release\msdk_gmock.exe',
     'vpl\x64\__bin\Release\sample_encode.exe',
-    'vpl\x64\__bin\Release\sample_multi_transcode.exe'
+    'vpl\x64\__bin\Release\sample_multi_transcode.exe',
+    'vpl\x64\__bin\Release\libvpl.dll'
 )
 
 $FILES_WIN32=@(
@@ -41,5 +42,5 @@ Set-Location -Path $BuildDir; Copy-Item $FILES -Destination $package_dir\imports
 Set-Location -Path $BuildDir; Copy-Item $FILES_WIN32 -Destination $package_dir\imports\mediasdk\Win32
 Set-Location -Path $BuildDir; Copy-Item $FILES_WIN64 -Destination $package_dir\imports\mediasdk\Win64
 
-Compress-Archive -Path $package_dir* -DestinationPath $PathToSave\$package_name
+Compress-Archive -Path $package_dir\* -DestinationPath $PathToSave\$package_name
 Remove-Item $package_dir -Recurse

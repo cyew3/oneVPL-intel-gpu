@@ -17,6 +17,9 @@ declare -a COPY_CMDS=(
 'cp -P $build_dir/__bin/release/libmfx-gen.so $package_dir/lib64/libmfx-gen.so'
 'cp -P $build_dir/__bin/release/libmfx-gen.so.1.${VPL_MAJOR} $package_dir/lib64/libmfx-gen.so.1.${VPL_MAJOR}'
 'cp -P $build_dir/__bin/release/libmfx-gen.so.1.${VPL_MAJOR}.${VPL_MINOR} $package_dir/lib64/libmfx-gen.so.1.${VPL_MAJOR}.${VPL_MINOR}'
+'cp -P $build_dir/__bin/release/libvpl.so $package_dir/lib64/libvpl.so'
+'cp -P $build_dir/__bin/release/libvpl.so.${VPL_MAJOR} $package_dir/lib64/libvpl.so.${VPL_MAJOR}'
+'cp -P $build_dir/__bin/release/libvpl.so.${VPL_MAJOR}.${VPL_MINOR} $package_dir/lib64/libvpl.so.${VPL_MAJOR}.${VPL_MINOR}'
 )
 
 # Create arg in cmd for API header location
