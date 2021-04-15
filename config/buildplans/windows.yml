@@ -32,7 +32,7 @@ steps:
       --revision %COMPONENT_REVISION% --build-number %BUILD_NUMBER%
   - name: scroll down (no log here)
     command: docker run --rm --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      call %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\windows_build.bat
+      call %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\build\windows_build.bat
   - name: build (log replay)
     command: .\sources\mdp_msdk-lib\config\scripts\windows_logs.bat
     always_execute: true

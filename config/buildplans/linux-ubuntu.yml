@@ -28,16 +28,8 @@ steps:
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu"
   - name: build_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
-  - name: config vpl
-    command: docker exec $BUILD_ID /bin/bash -c 'mkdir -p sources/mdp_msdk-lib/build &&
-      cd sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/cmake
-      -DCMAKE_INSTALL_PREFIX=/opt/intel/mediasdk
-      -DCMAKE_C_FLAGS_RELEASE="-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
-      -DCMAKE_CXX_FLAGS_RELEASE="-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -DNDEBUG"
-      -DENABLE_X11_DRI3=ON -DENABLE_WAYLAND=ON -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_ALL=ON
-      -DBUILD_VAL_TOOLS=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -DAPI=2.3 $MFX_HOME'
-  - name: build vpl
-    command: docker exec $BUILD_ID /bin/bash -c "cd sources/mdp_msdk-lib/build && make -j$(nproc) mfx-gen mfx_player mfx_transcoder msdk_gmock sample_multi_transcode sample_encode"
+  - name: config and build vpl
+    command: docker exec $BUILD_ID /bin/bash -c './sources/mdp_msdk-lib/config/scripts/build/build-linux-ubuntu.sh'
   - name: pack vpl binaries
     command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Packages && cd sources/mdp_msdk-lib/output/Packages
       && tar cvfz ubuntu_vpl_linux.tgz -C /opt/src/sources/mdp_msdk-lib/build ."
