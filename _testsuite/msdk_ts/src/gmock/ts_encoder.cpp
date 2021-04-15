@@ -29,15 +29,6 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
             g_tsStatus.expect(function == QUERY ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM);
             g_tsStatus.last();
         }
-
-        if (   par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-            || par.mfx.RateControlMethod == MFX_RATECONTROL_VME
-            )
-        {
-            g_tsLog << "Rate control mode " << par.mfx.RateControlMethod << " removed in OneVPL\n";
-            g_tsStatus.expect(function == QUERY ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM);
-            g_tsStatus.last();
-        }
     }
 
     if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)

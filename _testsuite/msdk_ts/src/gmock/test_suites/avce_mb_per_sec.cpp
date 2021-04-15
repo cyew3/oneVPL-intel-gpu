@@ -101,8 +101,6 @@ namespace avce_mb_per_sec{
         {/*08*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ }}},
         {/*09*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT }}},
-        {/*10*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD }}}
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);

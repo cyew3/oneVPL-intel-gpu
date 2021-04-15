@@ -207,6 +207,27 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*28 / 49*/ ENCODE, MFX_CODEC_AVC,     NONE, NONE, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
     {/*30 / 50*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
+
+    {/*31 / 51*/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_EXT, true}, set_brc_params},
+    {/*32 / 52*/ ENCODE, MFX_CODEC_HEVC,    E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_EXT, true}, set_brc_params },
+    {/*33 / 53*/ ENCODE, MFX_CODEC_VP9,     E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_EXT, true}, set_brc_params },
+
+    /* MFX_RATECONTROL_VME */
+
+    {/*34 / 54*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {RateCtrlMthd,  MFX_RATECONTROL_VME, true}, set_brc_params},
+    {/*35 / 55*/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {RateCtrlMthd,  MFX_RATECONTROL_VME, true}, set_brc_params},
+    {/*36 / 56*/ ENCODE, MFX_CODEC_HEVC,    E_UNSPRT, E_INVLID, {RateCtrlMthd,  MFX_RATECONTROL_VME, true}, set_brc_params },
+    {/*37 / 57*/ ENCODE, MFX_CODEC_VP9,     E_UNSPRT, E_INVLID, {RateCtrlMthd,  MFX_RATECONTROL_VME, true}, set_brc_params },
+
+    /* unknown bitrate control */
+
+    {/*34 / 54*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {RateCtrlMthd,  16, true}, set_brc_params},
+    {/*35 / 55*/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {RateCtrlMthd,  16, true}, set_brc_params},
+    {/*36 / 56*/ ENCODE, MFX_CODEC_HEVC,    E_UNSPRT, E_INVLID, {RateCtrlMthd,  16, true}, set_brc_params },
+    {/*37 / 57*/ ENCODE, MFX_CODEC_VP9,     E_UNSPRT, E_INVLID, {RateCtrlMthd,  16, true}, set_brc_params },
+
+
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);

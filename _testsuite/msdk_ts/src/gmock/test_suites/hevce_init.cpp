@@ -385,24 +385,23 @@ namespace hevce_init
         {/*47*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
         {/*48*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
         {/*49*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*50*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*51*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
-        {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
-        {/*53*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
-        {/*54*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
-        {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
-        {/*57*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
+        {/*50*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
+        {/*51*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
+        {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED3 } },
+        {/*53*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED4 } },
+        {/*54*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
+        {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
         //encoded order
-        {/*58*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
+        {/*57*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
         //native
-        {/*59*/ MFX_ERR_NONE, NOT_LOAD_PLUGIN, NONE, {} },
+        {/*58*/ MFX_ERR_NONE, NOT_LOAD_PLUGIN, NONE, {} },
         //call query
-        {/*60*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
+        {/*59*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
         //API mfxExtHEVCParam, for HW plugin only
         //in current version PicWidthInLumaSamples/PicHeightInLumaSamples should be aligned on 16 due to hw limitation
         //after this limitation removed, expected status for case #60/#61 would be updated
-        {/*61*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*60*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -412,7 +411,7 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1080 },
             }
         },
-        {/*62*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*61*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -422,13 +421,13 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1088 },
             }
         },
-        {/*63*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*62*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 0 },
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 0 },
             }
         },
-        {/*64*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*63*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -436,32 +435,32 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1088 + 10 },
             }
         },
-        {/*65*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*64*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 32 },
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 32 },
             }
         },
-        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*65*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 8 },
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 8 },
             }
         },
         //GeneralConstraintFlags is not supported for HEVCE hw plugin upto Gen11
-        {/*67*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.GeneralConstraintFlags, MFX_HEVC_CONSTR_REXT_MAX_12BIT }
             }
         },
-        {/*68*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*67*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*69*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*68*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2}, //multi slices
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1},
@@ -469,28 +468,28 @@ namespace hevce_init
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*70*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*69*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, 1}, //unsupported type
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*71*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*70*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1}, //>= slice_num
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             }
         },
-        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*71*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, 2} //invalid parameter
             }
         },
-        {/*73*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*72*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1}, //>= slice_num
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, 1}, //unsupported type
@@ -499,45 +498,41 @@ namespace hevce_init
         },
 
          // BRC modes with different BufferSizeInKB and InitialDelayInKB values
-        {/*74*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*75*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*76*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*77*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP }},
-        {/*78*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
-        {/*79*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*80*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*81*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
-        {/*82*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
+        {/*73*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*74*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*75*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP }},
+        {/*76*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*77*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*78*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*79*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*80*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
 
-        {/*83*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*84*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*85*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*86*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
-        {/*87*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
-        {/*88*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*89*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*90*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
-        {/*91*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
+        {/*81*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*82*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*83*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*84*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*85*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*86*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*87*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*88*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
 
-        {/*92*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*93*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*94*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*95*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
-        {/*96*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
-        {/*97*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*98*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*99*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
-        {/*100*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
+        {/*89*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*90*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*91*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*92*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*93*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*94*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*95*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*95*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
 
-        {/*101*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*102*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*103*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*104*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
-        {/*105*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
-        {/*106*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
-        {/*107*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
-        {/*108*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
-        {/*109*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } }
+        {/*97*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*98*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*99*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*100*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*101*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*102*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*103*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*104*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } }
 
     };
 

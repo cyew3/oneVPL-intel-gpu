@@ -108,14 +108,6 @@ namespace hevce_maxframesize
             { EXT_COD2, &tsStruct::mfxExtCodingOption2.MaxFrameSize, 5001 },
             { EXT_COD2_EXPECTED, &tsStruct::mfxExtCodingOption2.MaxFrameSize, 0 }, //MaxFrameSize is not supported in CQP
         } },
-        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY | INIT | CHECK_EXPECTED, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 1200 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, (30) },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, (1) },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.MaxFrameSize, 5001 },
-            { EXT_COD2_EXPECTED, &tsStruct::mfxExtCodingOption2.MaxFrameSize, 0 }, //MaxFrameSize is not supported in LA_EXT
-        } },
 
     };
 

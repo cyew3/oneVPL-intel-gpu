@@ -88,9 +88,7 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
         || p->mfx.RateControlMethod == MFX_RATECONTROL_VCM
         || p->mfx.RateControlMethod == MFX_RATECONTROL_LA
         || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if !defined(MFX_ONEVPL)
-        || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
+
         )
     {
         p->mfx.TargetKbps = p->mfx.MaxKbps = p->mfx.InitialDelayInKB = 0;
@@ -109,9 +107,7 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
 
         if (p->mfx.RateControlMethod == MFX_RATECONTROL_LA
             || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if !defined(MFX_ONEVPL)
-            || p->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
+
             )
         {
             p->mfx.InitialDelayInKB = 0;

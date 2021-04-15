@@ -1495,7 +1495,8 @@ STRUCT(mfxExtMultiFrameControl,
     FIELD_T(mfxU32      , Timeout)
     FIELD_T(mfxU16      , Flush)
 )
-#endif //MFX_ENABLE_MFE
+#endif
+
 
 STRUCT(mfxEncodedUnitInfo,
     FIELD_T(mfxU16, Type)

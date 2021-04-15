@@ -299,30 +299,22 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*02/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
     {/*03/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
     {/*04/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
-    {/*05/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
-    {/*06/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
-    {/*07/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
-    {/*08/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
-    {/*09/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
-#if !defined(MFX_ONEVPL)
-    {/*10/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
-#endif
+    {/*05/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
+    {/*06/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
+    {/*07/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
+    {/*08/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
 #endif
     // not CQP: Query
-    {/*11/02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
-    {/*12/03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
+    {/*10/11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
+    {/*12/13*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
 #ifndef LINUX32
-    {/*13/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
-    {/*14/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
-    {/*15/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
-    {/*16/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
+    {/*14/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
+    {/*15/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
+    {/*16/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
     {/*17/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
     {/*18/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
     {/*19/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
     {/*20/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
-#if !defined(MFX_ONEVPL)
-    {/*21/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
-#endif
 #endif
     // progressive
     {/*22/04*/ MFX_ERR_NONE, 0},

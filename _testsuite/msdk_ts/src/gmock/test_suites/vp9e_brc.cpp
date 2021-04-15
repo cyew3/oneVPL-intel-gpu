@@ -184,34 +184,31 @@ namespace vp9e_brc
         {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
         {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM } },
         {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
-        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
-        {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
-        {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME } },
-        {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16 } },
+        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
 
-        {/*26 unspecified both brc-type and kbps)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*23 unspecified both brc-type and kbps)*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },
             }
         },
 
-        {/*27 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_NONE, NONE,
+        {/*24 unspecified brc type, but correct kbps => map to CBR)*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        {/*28*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
+        {/*25*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
 
-        {/*29*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
+        {/*26*/ MFX_ERR_NONE, CHECK_BITRATE_DYNAMIC_CHANGE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },

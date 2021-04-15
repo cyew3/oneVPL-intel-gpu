@@ -70,7 +70,7 @@ namespace hevce_encode_frame_async
                 m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
                 || m_par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
                 || m_par.mfx.RateControlMethod == MFX_RATECONTROL_VCM
-                || m_par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT;
+                ;
 
             if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || bUseMaxKbps)
             {
