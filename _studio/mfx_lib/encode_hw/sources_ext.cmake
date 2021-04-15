@@ -209,6 +209,7 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base/av1ehw_base_ddi_packer_win.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base/av1ehw_base_dirty_rect_win.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base/av1ehw_base_dirty_rect_win.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base/av1ehw_base_encoded_frame_info_win.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base/av1ehw_base_win.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base/av1ehw_base_win.h
 
@@ -243,6 +244,8 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_task.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_tile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_tile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_encoded_frame_info.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_encoded_frame_info.h
     )
 
 target_link_libraries(encode_hw
