@@ -2542,9 +2542,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.Height > hwCaps.ddi_caps.MaxPicHeight)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
-    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.ddi_caps.NoInterlacedField){
-        if(par.mfx.LowPower == MFX_CODINGOPTION_ON)
-        {
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1) != MFX_PICSTRUCT_PROGRESSIVE
+        && hwCaps.ddi_caps.NoInterlacedField)
+    {
+#ifndef STRIP_EMBARGO
+        if (platform >= MFX_HW_DG2)
+            return Error(MFX_ERR_UNSUPPORTED);
+#endif
+        if(IsOn(par.mfx.LowPower))
+        {   // historical behavior
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             changed = true;
         }
@@ -2571,13 +2577,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             par.mfx.GopRefDist = 1;
         }
-
-        if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
-        {
-            changed = true;
-            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        }
-
 
         if (par.mfx.RateControlMethod != 0 &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
