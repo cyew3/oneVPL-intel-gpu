@@ -348,8 +348,8 @@ tsExtBufType<mfxVideoParam> TestSuite::initParams() {
           { INIT_EXP, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3 },
           { RESET_EXP, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10 },
           TEST_CASE_PARAMETERS(CDO2_PAR,  1, 2, 0),
-          TEST_CASE_PARAMETERS(QUERY_EXP, 1, 2, 0),
-          TEST_CASE_PARAMETERS(INIT_EXP,  1, 2, 0),
+          TEST_CASE_PARAMETERS(QUERY_EXP, 0, 2, 0),
+          TEST_CASE_PARAMETERS(INIT_EXP,  0, 2, 0),
           TEST_CASE_PARAMETERS(RESET_EXP, 1, 2, 0) } },
         // VALID zero IntRefQPDelta
         {/*11*/ MFX_ERR_NONE, MFX_ERR_NONE, (mfxStatus)0,
