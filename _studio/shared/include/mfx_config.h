@@ -120,7 +120,9 @@
         #define MFX_ENABLE_H264_VIDEO_ENCODE
         #define MFX_ENABLE_JPEG_SW_FALLBACK
 
+#if !defined(MFX_ONEVPL)
         #define MFX_ENABLE_OPAQUE_MEMORY
+#endif
         #define MFX_ENABLE_SVC_VIDEO_ENCODE
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
 
