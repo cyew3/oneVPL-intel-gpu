@@ -1371,11 +1371,11 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
         if (in->AsyncDepth < MFX_MAX_ASYNC_DEPTH_VALUE) // Actually AsyncDepth > 5-7 is for debugging only.
             out->AsyncDepth = in->AsyncDepth;
 
-        if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-        {
-            if ( !((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) )
+        if (in->IOPattern)
+            if ((in->IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY))
                 out->IOPattern = in->IOPattern;
-        }
+            else
+                sts = MFX_STS_TRACE(MFX_ERR_UNSUPPORTED);
 
         mfxU32 fourCC = in->mfx.FrameInfo.FourCC;
         mfxU16 chromaFormat = in->mfx.FrameInfo.ChromaFormat;
