@@ -191,9 +191,9 @@ protected:
 
     mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) override;
 
+    mfxSession GetAppPlatformInternalSession();
+
 protected:
-    mfxSession m_mfxSessionVPP = nullptr;
-    
     mfxVideoParam m_mfxVppParams = {};
     std::vector<mfxExtBuffer*> m_vppExtParams;
     std::unique_ptr<mfxU32> m_algList;
