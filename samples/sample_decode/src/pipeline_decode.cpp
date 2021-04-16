@@ -240,7 +240,9 @@ mfxStatus CDecodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
     m_FileReader->Reset();
 
     mfxU32 idx = GetPreferredAdapterNum(adapters, params);
-    switch (adapters.Adapters[idx].Number)
+    m_adapterNum = adapters.Adapters[idx].Number;
+    m_deviceID = adapters.Adapters[idx].Platform.DeviceId;
+    switch (m_adapterNum)
     {
     case 0:
         impl = MFX_IMPL_HARDWARE;
@@ -383,8 +385,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_POINTER(threadsPar, MFX_ERR_MEMORY_ALLOC);
 
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    initPar.Version.Major = 1;
-    initPar.Version.Minor = 0;
+    initPar.Version.Major = MFX_VERSION_MAJOR;
+    initPar.Version.Minor = MFX_VERSION_MINOR;
 
     initPar.GPUCopy = pParams->gpuCopy;
 
@@ -428,8 +430,24 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = GetImpl(*pParams, initPar.Implementation);
     MSDK_CHECK_STATUS(sts, "GetImpl failed");
 
-    sts = m_mfxSession.InitEx(initPar);
-    MSDK_CHECK_STATUS(sts, "m_mfxSession.InitEx failed");
+    m_pLoader.reset(new VPLImplementationLoader);
+
+    sts = m_pLoader->ConfigureVersion(initPar.Version);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureVersion failed");
+    sts = m_pLoader->ConfigureImplementation(initPar.Implementation);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
+    sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, pParams->bUseHWLib);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureAccelerationMode failed");
+#if (defined(_WIN64) || defined(_WIN32))
+    sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
+#else
+    sts = m_pLoader->EnumImplementations();
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
+#endif
+
+    sts = m_mfxSession.CreateSession(m_pLoader.get());
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
     mfxVersion version;
     sts = m_mfxSession.QueryVersion(&version); // get real API version of the loaded library
@@ -515,48 +533,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     // set video type in parameters
     m_mfxVideoParams.mfx.CodecId = pParams->videoType;
-
-    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
-        /* Here we actually define the following codec initialization scheme:
-        *  1. If plugin path or guid is specified: we load user-defined plugin (example: VP8 sample decoder plugin)
-        *  2. If plugin path not specified:
-        *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-        *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-        */
-        // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
-        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath)))
-        {
-            m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-            if (pParams->videoType == MFX_CODEC_HEVC || pParams->videoType == MFX_CODEC_VP8 ||
-                pParams->videoType == MFX_CODEC_VP9)
-            {
-                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath))));
-            }
-            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
-        else
-        {
-            bool isDefaultPlugin = false;
-            if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-            {
-                mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
-                pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VDECODE, pParams->videoType);
-                isDefaultPlugin = true;
-            }
-            if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-            {
-                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
-                if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-            }
-            if(sts==MFX_ERR_UNSUPPORTED)
-            {
-                msdk_printf(MSDK_STRING("%s"), isDefaultPlugin ?
-                    MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n")
-                    : MSDK_STRING("Explicitly specified plugin cannot be loaded.\n"));
-            }
-        }
-        MSDK_CHECK_STATUS(sts, "Plugin load failed");
-    }
 
 #if (MFX_VERSION >= 1034)
     m_mfxVideoParams.mfx.IgnoreLevelConstrain = pParams->bIgnoreLevelConstrain;
@@ -675,7 +651,6 @@ void CDecodingPipeline::Close()
 
     DeallocateExtMVCBuffers();
 
-    m_pPlugin.reset();
     m_mfxSession.Close();
     m_FileWriter.Close();
     if (m_FileReader.get())
@@ -782,20 +757,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
             m_bVppIsUsed = IsVppRequired(pParams);
         }
 
-        if (!sts &&
-            !(m_impl & MFX_IMPL_SOFTWARE) &&                        // hw lib
-            (m_mfxVideoParams.mfx.FrameInfo.BitDepthLuma == 10) &&  // hevc 10 bit
-            (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_HEVC) &&
-            AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCD_SW) && // sw hevc decoder
-            m_bVppIsUsed )
-        {
-            sts = MFX_ERR_UNSUPPORTED;
-            msdk_printf(MSDK_STRING("Error: Combination of (SW HEVC plugin in 10bit mode + HW lib VPP) isn't supported. Use -sw option.\n"));
-        }
-        if (m_pPlugin.get() && pParams->videoType == CODEC_VP8 && !sts) {
-            // force set format to nv12 as the vp8 plugin uses yv12
-            m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-        }
+
         if (MFX_ERR_MORE_DATA == sts)
         {
             if (m_mfxBS.MaxLength == m_mfxBS.DataLength)
@@ -1120,7 +1082,7 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
     sts = m_hwdev->Init(
         window,
         render ? (m_bIsMVC ? 2 : 1) : 0,
-        MSDKAdapter::GetNumber(m_mfxSession));
+        MSDKAdapter::GetNumber(m_mfxSession, m_pLoader.get()));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 
     if (render)
@@ -1134,7 +1096,7 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    sts = m_hwdev->Init(&m_monitorType, (m_eWorkMode == MODE_RENDERING) ? 1 : 0, MSDKAdapter::GetNumber(m_mfxSession));
+    sts = m_hwdev->Init(&m_monitorType, (m_eWorkMode == MODE_RENDERING) ? 1 : 0, MSDKAdapter::GetNumber(m_mfxSession, m_pLoader.get()));
     MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 
 #if defined(LIBVA_WAYLAND_SUPPORT)

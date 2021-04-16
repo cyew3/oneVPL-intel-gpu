@@ -21,6 +21,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define __VPL_IMPLEMENTATION_LOADER_H__
 
 #include "mfxdispatcher.h"
+#include "mfxvideo++.h"
 #include <vector>
 
 class VPLImplementationLoader {
@@ -44,6 +45,11 @@ public:
     mfxLoader GetLoader();
     mfxU32 GetImplIndex() const;
     mfxStatus GetVersion(mfxVersion *version);
+};
+
+class MainVideoSession : public MFXVideoSession {
+public:
+    mfxStatus CreateSession(VPLImplementationLoader* Loader);
 };
 
 #endif //__VPL_IMPLEMENTATION_LOADER_H__

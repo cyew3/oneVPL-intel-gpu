@@ -357,11 +357,6 @@ mfxStatus sTask::Reset()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader *Loader)
-{
-    return MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
-}
-
 void CEncodingPipeline::InitExtMVCBuffers(mfxExtMVCSeqDesc *mvcBuffer) const
 {
     // a simple example of mfxExtMVCSeqDesc structure filling

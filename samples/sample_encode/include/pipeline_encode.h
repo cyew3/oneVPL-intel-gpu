@@ -313,11 +313,6 @@ protected:
     virtual mfxU32 GetFreeTaskIndex();
 };
 
-class MainVideoSession : public MFXVideoSession {
-public:
-    mfxStatus CreateSession(VPLImplementationLoader *Loader);
-};
-
 /* This class implements a pipeline with 2 mfx components: vpp (video preprocessing) and encode */
 class CEncodingPipeline
 {

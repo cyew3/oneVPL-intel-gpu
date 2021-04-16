@@ -210,3 +210,8 @@ mfxStatus VPLImplementationLoader::GetVersion(mfxVersion *version)
 
     return MFX_ERR_UNKNOWN;
 }
+
+mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader* Loader)
+{
+    return MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
+}

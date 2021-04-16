@@ -53,8 +53,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-?]                      - print help\n"));
     msdk_printf(MSDK_STRING("   [-hw]                     - use platform specific SDK implementation (default)\n"));
     msdk_printf(MSDK_STRING("   [-sw]                     - use software implementation, if not specified platform specific SDK implementation is used\n"));
-    msdk_printf(MSDK_STRING("   [-p plugin]               - decoder plugin. Supported values: hevcd_sw, hevcd_hw, vp8d_hw, vp9d_hw, camera_hw, capture_hw\n"));
-    msdk_printf(MSDK_STRING("   [-path path]              - path to plugin (valid only in pair with -p option)\n"));
     msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
     msdk_printf(MSDK_STRING("   [-fps]                    - limits overall fps of pipeline\n"));
     msdk_printf(MSDK_STRING("   [-w]                      - output width\n"));
@@ -211,17 +209,22 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
         {
             pParams->memType = D3D9_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d11")))
         {
             pParams->memType = D3D11_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-r")))
         {
             pParams->mode = MODE_RENDERING;
             // use d3d9 rendering by default
             if (SYSTEM_MEMORY == pParams->memType)
+            {
                 pParams->memType = D3D9_MEMORY;
+                pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-wall")))
         {
@@ -232,7 +235,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
             // use d3d9 rendering by default
             if (SYSTEM_MEMORY == pParams->memType)
+            {
                 pParams->memType = D3D9_MEMORY;
+                pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
+            }
 
             pParams->mode = MODE_RENDERING;
 
@@ -253,16 +259,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")))
         {
             pParams->memType = D3D9_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-r")))
         {
             pParams->memType = D3D9_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
             pParams->mode = MODE_RENDERING;
             pParams->libvaBackend = MFX_LIBVA_X11;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rwld")))
         {
             pParams->memType = D3D9_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
             pParams->mode = MODE_RENDERING;
             pParams->libvaBackend = MFX_LIBVA_WAYLAND;
         }
@@ -273,6 +282,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-rdrm"), 5))
         {
             pParams->memType = D3D9_MEMORY;
+            pParams->accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
             pParams->mode = MODE_RENDERING;
             pParams->libvaBackend = MFX_LIBVA_DRM_MODESET;
             if (strInput[i][5]) {
@@ -659,11 +669,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->fourcc = MFX_FOURCC_Y416;
         }
 #endif
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
-        {
-            i++;
-            pParams->pluginParams = ParsePluginPath(strInput[i]);
-        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i:null")))
         {
             ;
@@ -682,16 +687,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             switch (strInput[i][1])
             {
-            case MSDK_CHAR('p'):
-                if (++i < nArgNum) {
-                    pParams->pluginParams = ParsePluginGuid(strInput[i]);
-                    if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-                    {
-                        msdk_printf(MSDK_STRING("error: invalid decoder plugin\n"));
-                        return MFX_ERR_UNSUPPORTED;
-                    }
-                 }
-                break;
             case MSDK_CHAR('i'):
                 if (++i < nArgNum) {
                     msdk_opt_read(strInput[i], pParams->strSrcFile);

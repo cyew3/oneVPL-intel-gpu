@@ -647,11 +647,6 @@ namespace TranscodingSample
         DISALLOW_COPY_AND_ASSIGN(FileBitstreamProcessor);
     };
 
-    class MainVideoSession : public MFXVideoSession {
-    public:
-        mfxStatus CreateSession(VPLImplementationLoader *mfxLoader);
-    };
-
     // Bitstream is external via BitstreamProcessor
     class CTranscodingPipeline
     {

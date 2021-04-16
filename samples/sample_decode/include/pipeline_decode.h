@@ -36,16 +36,16 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "sample_utils.h"
 #include "base_allocator.h"
+#include "vpl_implementation_loader.h"
 
+#include "mfxdispatcher.h"
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
 #include "mfxplugin.h"
-#include "mfxplugin++.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 #include "mfxvp8.h"
 
-#include "plugin_loader.h"
 #include "general_allocator.h"
 
 #if defined(_WIN64) || defined(_WIN32)
@@ -80,6 +80,7 @@ struct sInputParams
     mfxU32 videoType;
     eWorkMode mode;
     MemType memType;
+    mfxAccelerationMode accelerationMode;
     bool    bUseHWLib; // true if application wants to use HW mfx library
     bool    bIsMVC; // true if Multi-View Codec is in use
     bool    bLowLat; // low latency mode
@@ -141,7 +142,6 @@ struct sInputParams
 
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
-    sPluginParams pluginParams;
 
     bool bDisableFilmGrain;
 };
@@ -256,15 +256,16 @@ protected: // variables
     std::unique_ptr<CSmplBitstreamReader>  m_FileReader;
     mfxBitstreamWrapper                    m_mfxBS; // contains encoded data
     mfxU64 totalBytesProcessed;
+    mfxU32 m_adapterNum;
+    mfxU16 m_deviceID;
 
-    MFXVideoSession         m_mfxSession;
+    std::unique_ptr<VPLImplementationLoader> m_pLoader;
+    MainVideoSession        m_mfxSession;
     mfxIMPL                 m_impl;
     MFXVideoDECODE*         m_pmfxDEC;
     MFXVideoVPP*            m_pmfxVPP;
     MfxVideoParamsWrapper   m_mfxVideoParams;
     MfxVideoParamsWrapper   m_mfxVppVideoParams;
-    std::unique_ptr<MFXVideoUSER>  m_pUserModule;
-    std::unique_ptr<MFXPlugin> m_pPlugin;
 
     GeneralAllocator*       m_pGeneralAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;

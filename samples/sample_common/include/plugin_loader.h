@@ -237,21 +237,4 @@ public:
     }
 };
 
-inline MFXPlugin * LoadPluginByType(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version, const mfxChar *pluginName, mfxU32 len) {
-    std::unique_ptr<PluginLoader> plg(new PluginLoader (type, session, uid, version, pluginName, len));
-    return plg->IsOk() ? plg.release() : NULL;
-}
-
-inline MFXPlugin * LoadPluginByGUID(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version) {
-    std::unique_ptr<PluginLoader> plg(new PluginLoader (type, session, uid, version));
-    return plg->IsOk() ? plg.release() : NULL;
-}
-
-inline MFXPlugin * LoadPlugin(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version, const mfxChar *pluginName, mfxU32 len) {
-    return LoadPluginByType(type, session, uid, version, pluginName, len);
-}
-
-inline MFXPlugin * LoadPlugin(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version) {
-    return LoadPluginByGUID(type, session, uid, version);
-}
 #endif // PLUGIN_LOADER

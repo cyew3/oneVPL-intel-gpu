@@ -4244,11 +4244,6 @@ void CTranscodingPipeline::HandlePossibleGpuHang(mfxStatus & sts)
     }
 }
 
-mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader *Loader)
-{
-    return MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
-}
-
 mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
 {
     mfxStatus sts = MFX_ERR_NONE;
