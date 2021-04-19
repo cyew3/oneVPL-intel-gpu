@@ -2749,7 +2749,7 @@ void General::SetFH(
     fh.RenderWidth                   = av1Par.FrameWidth;
     fh.RenderHeight                  = av1Par.FrameHeight;
     fh.disable_frame_end_update_cdf  = CO2Flag(av1Par.DisableFrameEndUpdateCdf);
-    fh.allow_high_precision_mv       = 1;
+    fh.allow_high_precision_mv       = 0; // Set default value to 0 as recommondation.
 
     fh.quantization_params.DeltaQYDc = auxPar.QP.YDcDeltaQ;
     fh.quantization_params.DeltaQUDc = auxPar.QP.UDcDeltaQ;
