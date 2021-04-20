@@ -138,6 +138,7 @@ namespace hevce_lcu
         RESET = 4,
         ENC = 8,
         NEED_TWO_LCU_SUPPORTED = 16,
+        VDENC_COMPATIBILITY = 32,
     };
 
     struct tc_struct {
@@ -257,6 +258,20 @@ namespace hevce_lcu
             { RESET_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetDefault },
             { RESET_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0xFFFF },
         } },
+
+        // Supported value with LowPower ON
+        {/*09*/ QUERY | INIT | VDENC_COMPATIBILITY, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 64 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+        } },
+
+        // Unsupported value with LowPower ON
+        {/*10*/ QUERY | INIT | VDENC_COMPATIBILITY, MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 32 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+        } },
     };
 
     class SProc : public tsSurfaceProcessor
@@ -366,6 +381,12 @@ namespace hevce_lcu
         if (g_tsHWtype < MFX_HW_CNL)
         {
             caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
+        }
+
+        if ((tc.type & VDENC_COMPATIBILITY) && (g_tsConfig.lowpower != MFX_CODINGOPTION_ON || caps.LCUSizeSupported != 0b100 || g_tsHWtype < MFX_HW_DG2))
+        {
+            g_tsLog << "[ SKIPPED ] VDEnc Compatibility tests are targeted only for VDEnc!\n\n\n";
+            throw tsSKIP;
         }
 
         //m_par = initParams();

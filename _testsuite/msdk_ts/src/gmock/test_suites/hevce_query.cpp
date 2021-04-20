@@ -44,7 +44,17 @@ namespace hevce_query
         W_GT_MAX,
         H_GT_MAX,
         NONE,
-        ALIGNMENT_HW
+        ALIGNMENT_HW,
+        Compatibility,
+        BitDepth,
+        ChromaFormat,
+        PBRC,
+        ICQ,
+        QPRange,
+        NumReference,
+        EXT_CO2,
+        EXT_CO3,
+        MFX_FRAMEINFO
     };
 
     struct tc_struct
@@ -462,6 +472,40 @@ namespace hevce_query
         {/*73*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
         {/*74*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
         {/*75*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
+        // Parallel BRC with LowPower ON
+        {/*76*/ MFX_ERR_NONE, Compatibility, PBRC, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4 },
+                                           { EXT_CO2, &tsStruct::mfxExtCodingOption2.BRefType, MFX_B_REF_PYRAMID }}},
+        {/*77*/ MFX_ERR_NONE, Compatibility, PBRC, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
+                                           { EXT_CO2, &tsStruct::mfxExtCodingOption2.BRefType, MFX_B_REF_PYRAMID }}},
+        // ICQ Mode with LowPower ON
+        {/*78*/ MFX_ERR_NONE, Compatibility, ICQ, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.ICQQuality, 22 },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4 }}},
+        // QP range with LowPower ON
+        {/*79*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, Compatibility, QPRange, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 6 },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2 }}},
+        {/*80*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, Compatibility, QPRange, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPB, 6 },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3 }}},
+        // NumActiveRef with LowPower ON
+        {/*81*/ MFX_ERR_NONE, Compatibility, NumReference, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, MFX_TARGETUSAGE_BEST_QUALITY },
+                                           { EXT_CO3, &tsStruct::mfxExtCodingOption3.NumRefActiveP[0], 4 },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 20 }}},
+        {/*82*/ MFX_ERR_NONE, Compatibility, NumReference, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, MFX_TARGETUSAGE_BEST_QUALITY },
+                                           { EXT_CO3, &tsStruct::mfxExtCodingOption3.NumRefActiveBL0[0], 4 },
+                                           { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 20 }}},
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);
@@ -742,6 +786,12 @@ namespace hevce_query
         if (tc.type == OUT_PAR_NULL)
         {
             m_pParOut = NULL;
+        }
+
+        if (tc.type == Compatibility && (g_tsConfig.lowpower != MFX_CODINGOPTION_ON || g_tsHWtype < MFX_HW_DG2))
+        {
+            g_tsLog << "[ SKIPPED ] VDEnc Compatibility tests are targeted only for VDEnc!\n\n\n";
+            throw tsSKIP;
         }
 
         if (!IsChromaFormatSupported(m_par.mfx.FrameInfo.ChromaFormat, m_par.mfx.FrameInfo.BitDepthLuma)
