@@ -24,14 +24,6 @@
 #if !defined(MFX_ONEVPL)
 #include "mfxplugin.h"
 #endif
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-#include "mfxenc.h"
-#include "mfxpak.h"
-#include "mfxfei.h"
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-#include "mfxfeihevc.h"
-#endif
 #include "mfxjpeg.h"
 #if !defined(MFX_ONEVPL)
 #include "mfxla.h"
@@ -42,9 +34,6 @@
 #include "mfxvideo.h"
 #include "mfxbrc.h"
 #include "mfxpcp.h"
-#if defined(MFX_ENABLE_SCREEN_CAPTURE)
-#include "mfxsc.h"
-#endif
 #if !defined(MFX_ONEVPL)
 #include "mfxscd.h"
 #include "mfxcamera.h"

@@ -32,20 +32,8 @@
 #include "mfxvp9.h"
 #include "mfxmvc.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE) || defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "mfxfei.h"
-#endif
-
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-#include "mfxfeihevc.h"
-#endif
-
 #if defined(MFX_ENABLE_USER_ENCTOOLS)
 #include "mfxenctools.h"
-#endif
-
-#if defined(MFX_ENABLE_SCREEN_CAPTURE)
-#include "mfxsc.h"
 #endif
 
 #if !defined(MFX_ONEVPL)

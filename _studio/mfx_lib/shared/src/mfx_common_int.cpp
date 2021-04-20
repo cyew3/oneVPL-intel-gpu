@@ -26,10 +26,6 @@
 #include "mfxpavp.h"
 #endif
 
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "mfxfei.h"
-#endif
-
 #include "mfx_utils.h"
 
 #include <stdexcept>
@@ -748,9 +744,6 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
                                                                MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
 #endif
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-                                                               MFX_EXTBUFF_FEI_PARAM
-#endif
                                                               };
 
     static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {
@@ -1096,9 +1089,6 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_JPEG_QT:
         case MFX_EXTBUFF_JPEG_HUFFMAN:
         case MFX_EXTBUFF_HEVC_PARAM:
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-        case MFX_EXTBUFF_FEI_PARAM:
-#endif
             {
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
                 m_buffers.AddBuffer(par.ExtParam[i]);

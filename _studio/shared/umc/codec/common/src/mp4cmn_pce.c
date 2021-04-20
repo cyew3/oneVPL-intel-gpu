@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_AAC_AUDIO_DECODER) || defined (UMC_ENABLE_MP4_SPLITTER)
+#if defined (UMC_ENABLE_MP4_SPLITTER)
 
 #include "mp4cmn_pce.h"
 #include "bstream.h"

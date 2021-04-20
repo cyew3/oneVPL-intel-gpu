@@ -48,13 +48,6 @@
 
     #define UMC_ENABLE_UMC_SCENE_ANALYZER
 
-    // audio decoders
-    #define UMC_ENABLE_AAC_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_AUDIO_DECODER
-
-    // audio encoders
-    #define UMC_ENABLE_AAC_AUDIO_ENCODER
-    #define UMC_ENABLE_MP3_AUDIO_ENCODER
 
 #endif // Winx64 on EM64T
 
@@ -74,15 +67,6 @@
     #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
 
     #define UMC_ENABLE_UMC_SCENE_ANALYZER
-
-    // audio decoders
-    #define UMC_ENABLE_AAC_AUDIO_DECODER
-    #define UMC_ENABLE_MP3_AUDIO_DECODER
-
-    // audio encoders
-    #define UMC_ENABLE_AAC_AUDIO_ENCODER
-    //#define UMC_ENABLE_AC3_AUDIO_ENCODER
-    //#define UMC_ENABLE_MP3_AUDIO_ENCODER
 
 #endif // Linux on IA32
 
@@ -108,22 +92,12 @@ namespace UMC
 
 #endif //__cplusplus
 
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-
-    // readers/writers
-    #define UMC_ENABLE_FILE_READER
-    #define UMC_ENABLE_FIO_READER
-    #define UMC_ENABLE_FILE_WRITER
-
-    // splitters
-    #define UMC_ENABLE_AVI_SPLITTER
-    #define UMC_ENABLE_MPEG2_SPLITTER
-    #define UMC_ENABLE_MP4_SPLITTER
-    #define UMC_ENABLE_VC1_SPLITTER
-    #define UMC_ENABLE_H264_SPLITTER
-
-#endif
-
+// splitters
+#define UMC_ENABLE_AVI_SPLITTER
+#define UMC_ENABLE_MPEG2_SPLITTER
+#define UMC_ENABLE_MP4_SPLITTER
+#define UMC_ENABLE_VC1_SPLITTER
+#define UMC_ENABLE_H264_SPLITTER
 #include <ipps.h>
 
 #include <stdint.h>
@@ -152,14 +126,7 @@ namespace UMC
   #define MFX_MAX_64S  ( 9223372036854775807LL )
 #endif
 
-//#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MSDK_USE_EXTERNAL_IPP)
 typedef IppiSize mfxSize;
-//#else
-//typedef struct {
-//    int width;
-//    int height;
-//} mfxSize;
-//#endif
 
 #if defined( _WIN32 ) || defined ( _WIN64 )
   #define __STDCALL  __stdcall

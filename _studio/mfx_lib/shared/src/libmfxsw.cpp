@@ -692,28 +692,13 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     // touch unreferenced parameters
     g_hModule = hModule;
     lpReserved = lpReserved;
-
-    // initialize the IPP library
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-        ippInit();
-#endif
-        break;
-
-    default:
-        break;
-    }
+    (void)ul_reason_for_call;
 
     return TRUE;
-
 } // BOOL APIENTRY DllMain(HMODULE hModule,
 #else // #if defined(_WIN32) || defined(_WIN64)
 void __attribute__ ((constructor)) dll_init(void)
 {
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-    ippInit();
-#endif
+
 }
 #endif // #if defined(_WIN32) || defined(_WIN64)

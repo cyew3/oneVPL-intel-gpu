@@ -119,14 +119,6 @@ if (MFX_ENABLE_H264_VIDEO_ENCODE)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mbcontrol.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mbext_brc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mbqp.cpp
-    $<$<BOOL:${MFX_ENABLE_MFE}>:
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_close.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_encode_frame_async.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_get_video_param.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_query.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_query_io_surf.cpp
-    >
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_move_rect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_nalu_size.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_nummbperslice.cpp
@@ -149,16 +141,6 @@ if (MFX_ENABLE_H264_VIDEO_ENCODE)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_vui_flag.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_weight_prediction.cpp
   )
-  if (MFX_ENABLE_MFE AND (NOT API_USE_VPL))
-    list (APPEND H264_VIDEO_ENCODE_SRC
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_close.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_encode_frame_async.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_get_video_param.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_init.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_query.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_mfe_fei_query_io_surf.cpp
-    )
-  endif()
   source_group("avc" FILES ${H264_VIDEO_ENCODE_SRC})
 endif()
 
@@ -405,19 +387,6 @@ if (MFX_ENABLE_VPP)
     >
   )
   source_group("vpp" FILES ${VPP_SRC})
-endif()
-
-if (MFX_ENABLE_SCREEN_CAPTURE)
-  set(SCREEN_CAPTURE_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_close.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_decode_frame_async.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_decode_header.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_dirty_rect.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_query.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/screen_capture_query_io_surf.cpp
-  )
-  source_group("screen_capture" FILES ${SCREEN_CAPTURE_SRC})
 endif()
 
 if (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)

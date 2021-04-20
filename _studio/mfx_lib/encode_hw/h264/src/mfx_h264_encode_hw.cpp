@@ -556,13 +556,6 @@ mfxStatus ImplementationAvc::Query(
         else if (checkSts == MFX_ERR_NONE && lpSts != MFX_ERR_NONE) // transfer MFX_WRN_INCOMPATIBLE_VIDEO_PARAM to upper level
             checkSts = lpSts;
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        /* FEI ENCODE additional check for input parameters */
-        mfxExtFeiParam* feiParam = GetExtBuffer(*in);
-        if ((NULL != feiParam) && (MFX_FEI_FUNCTION_ENCODE != feiParam->Func))
-            checkSts = MFX_ERR_UNSUPPORTED;
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-
 #ifdef MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
         if(mfxExtPartialBitstreamParam* po = GetExtBuffer(*out))
         {
@@ -996,14 +989,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::Init");
     mfxStatus sts = CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    /* feiParam buffer attached by application */
-    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-    m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
-    if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     m_video = *par;
     eMFXHWType platform = m_core->GetHWType();
@@ -1768,20 +1753,6 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxVideoParam const * newParIn)
 {
     mfxStatus sts = MFX_ERR_NONE;
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    /* feiParam buffer attached by application */
-    mfxExtFeiParam* feiParam = NULL;
-    if (newParIn)
-    {
-        feiParam = (mfxExtFeiParam*)GetExtBuffer(newParIn->ExtParam,
-                                                 newParIn->NumExtParam,
-                                                 MFX_EXTBUFF_FEI_PARAM);
-    }
-    m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
-    if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption * extPavpNew = GetExtBuffer(newPar);
@@ -3921,21 +3892,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         m_stagesToGo = m_emulatorForAsyncPart.Go(!m_incoming.empty());
     }
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    mfxExtFeiParam const * extFeiParams = GetExtBuffer(m_video, 0);
-    mfxU32 stagesToGo = 0;
-
-    if (IsOn(extFeiParams->SingleFieldProcessing) && (1 == m_fieldCounter))
-    {
-        stagesToGo = m_stagesToGo;
-        /* Coding last field in FEI Field processing mode
-        * task is ready, just need to call m_ddi->Execute() and
-        * m_ddi->QueryStatus()... And free encoding task
-        */
-        m_stagesToGo = AsyncRoutineEmulator::STG_BIT_RESTART*2;
-    }
-#endif
-
 #if USE_AGOP
 #if 0
     fprintf(stderr,"num_calls: %d ", numCall);
@@ -4609,13 +4565,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
 
             // In case of progressive frames in PAFF mode need to switch the flag off to prevent m_fieldCounter changes
-            task->m_singleFieldMode =
-#if !defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-                false
-#else
-                (task->m_fieldPicFlag != 0) && IsOn(extFeiParams->SingleFieldProcessing)
-#endif
-                ;
+            task->m_singleFieldMode = false;
 
 #ifdef ENABLE_H264_MBFORCE_INTRA
             {
@@ -4969,35 +4919,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     }
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    /* FEI Field processing mode: second (last) field processing */
-    if ( ((AsyncRoutineEmulator::STG_BIT_RESTART*2) == m_stagesToGo ) &&
-         IsOn(extFeiParams->SingleFieldProcessing) && (1 == m_fieldCounter) )
-    {
-        DdiTaskIter task = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
-        mfxU32 f = 1; // coding second field
-        PrepareSeiMessageBuffer(m_video, *task, task->m_fid[f], m_sei);
-
-        mfxStatus sts = m_ddi->Execute(task->m_handleRaw, *task, task->m_fid[f], m_sei);
-        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
-
-        task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
-
-        sts = QueryStatus(*task, task->m_fid[f]);
-        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
-
-        if ((NULL == task->m_bs) && (bs != NULL))
-            task->m_bs = bs;
-
-        sts = UpdateBitstream(*task, task->m_fid[f]);
-        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
-
-        m_fieldCounter = 0;
-        m_stagesToGo = stagesToGo;
-        OnEncodingQueried(task);
-    } // if (( (AsyncRoutineEmulator::STG_BIT_RESTART*2) == m_stagesToGo ) &&
-#endif
-
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_RESTART)
     {
         m_stagesToGo = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
@@ -5161,33 +5082,6 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
     mfxStatus status = checkSts;
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    mfxExtFeiParam const * extFeiParams = GetExtBuffer(m_video, 0);
-    /* If (1): encoder in state "FEI field processing mode"
-     * and (2): first field is coded already
-     * scheduler can start execution immediately as task stored and ready
-     * */
-    if (extFeiParams && IsOn(extFeiParams->SingleFieldProcessing) && (1 == m_fieldCounter))
-    {
-        entryPoints[0].pState               = this;
-        entryPoints[0].pParam               = bs;
-        entryPoints[0].pCompleteProc        = 0;
-        entryPoints[0].pOutputPostProc      =
-#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
-                m_isPOut ? UpdateBitstreamData :
-#endif
-                nullptr;
-        entryPoints[0].requiredNumThreads   = 1;
-        entryPoints[0].pRoutineName         = "AsyncRoutine";
-        entryPoints[0].pRoutine             = AsyncRoutineHelper;
-        numEntryPoints = 1;
-
-        // Copy ctrl with all settings and Extension buffers
-        m_encoding.front().m_ctrl = *ctrl;
-
-        return status;
-    }
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
     {
         UMC::AutomaticUMCMutex guard(m_listMutex);
         if (m_free.empty())

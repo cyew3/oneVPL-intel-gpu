@@ -90,10 +90,6 @@ namespace UMC
           uint32_t IsDeblocking(uint32_t _task_settings) {return _task_settings&VC1Deblock;}
           void setSliceParams(VC1Context* pContext);
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-          VC1TaskTypes switch_task();
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
-
           SliceParams* m_pSlice;                                        //
 
           int32_t m_iThreadNumber;                                     // (int32_t) owning thread number

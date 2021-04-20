@@ -106,19 +106,9 @@ set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
   )
 
-if(NOT MFX_DISABLE_SW_FALLBACK)
-  list(APPEND sources_hw
-    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_multithreading.cpp
-  )
-endif()
-
 get_mfx_version(mfx_version_major mfx_version_minor)
 
-if(MFX_DISABLE_SW_FALLBACK OR ${API_USE_VPL})
-  set(VARIANTS hw)
-else()
-  set(VARIANTS sw hw)
-endif()
+set(VARIANTS hw)
 
 set(IPP_LIBS "")
 if (MFX_BUNDLED_IPP)
@@ -144,136 +134,93 @@ if (CMAKE_SYSTEM_NAME MATCHES Windows)
   )
 endif()
 
-foreach( variant ${VARIANTS} )
+if( DEFINED MFX_LIBNAME )
+  set( mfxlibname "${MFX_LIBNAME}")
+else()
+  make_runtime_name( ${VARIANTS} mfxlibname )
+endif()
 
-  if( DEFINED MFX_LIBNAME )
-    set( mfxlibname "${MFX_LIBNAME}")
-  else()
-    make_runtime_name( ${variant} mfxlibname )
-  endif()
+message( DEBUG "Runtime name: ${mfxlibname}")
 
-  message( DEBUG "Runtime name: ${mfxlibname}")
+add_library(${mfxlibname} SHARED)
 
-  add_library(${mfxlibname} SHARED)
+target_sources(${mfxlibname} PRIVATE ${sources_common})
 
-  target_sources(${mfxlibname} PRIVATE ${sources_common})
- 
 
-  if (CMAKE_SYSTEM_NAME MATCHES Windows)
-    add_dependencies(${mfxlibname} windows_etw_generator)
-    target_sources(${mfxlibname}
-      PRIVATE
-        ${CMAKE_BINARY_DIR}/media_sdk_etw.h
-        ${CMAKE_BINARY_DIR}/media_sdk_etw.rc
-    )
-  endif()
+if (CMAKE_SYSTEM_NAME MATCHES Windows)
+  add_dependencies(${mfxlibname} windows_etw_generator)
+  target_sources(${mfxlibname}
+    PRIVATE
+      ${CMAKE_BINARY_DIR}/media_sdk_etw.h
+      ${CMAKE_BINARY_DIR}/media_sdk_etw.rc
+  )
+endif()
 
-  if (variant MATCHES hw)
-    target_sources(${mfxlibname} PRIVATE ${sources_hw})
-  endif()
+target_sources(${mfxlibname} PRIVATE ${sources_hw})
 
-  set (JPEG_SW_LIBS "")
-  if (MFX_ENABLE_JPEG_SW_FALLBACK)
-    set(JPEG_SW_LIBS encode encode_sw)
-  endif ()
- 
-  set (SW_FALBACK_LIBS "")
-  if (NOT MFX_DISABLE_SW_FALLBACK)
-    set(SW_FALBACK_LIBS encode)
+set(HW_ONLY_LIBS "")
+set(HW_ONLY_LIBS umc_va_hw cmrt_cross_platform_hw $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw> asc genx)
 
-    if (NOT ${API_USE_VPL})
-      list(APPEND SW_FALBACK_LIBS
-        scene_analyzer
-        color_space_converter
-        media_buffers
-        encode
-        vc1_enc
-        me
-        mpeg2_enc
-        h264_enc_sw
-        h264_dispatcher
-        h264_px
-        h264_sse3
-        enc_hw
-        enc
-        pak
-        umc
-        umc_io
-      )
-    endif()
-  endif ()
+set(LIBS
+  bitrate_control
+  ${HW_ONLY_LIBS}
+  decode_${VARIANTS}
+  encode_${VARIANTS}
+  mfx_common_${VARIANTS}
+  vpp_${VARIANTS}
+  mfx_trace
+  mfx_shared_lib
+  mfx_sdl_properties
+  ${ITT_LIBRARIES}
+  Threads::Threads
+  ${CMAKE_DL_LIBS}
+)
 
-  set(HW_ONLY_LIBS "")
-  if (variant MATCHES hw)
-    set(HW_ONLY_LIBS umc_va_hw cmrt_cross_platform_hw $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw> asc genx)
-  endif()
+target_compile_definitions(${mfxlibname}
+  PRIVATE
+    MFX_VA
+)
 
-  set(LIBS
-    bitrate_control
-    ${JPEG_SW_LIBS}
-    ${SW_FALBACK_LIBS}
-    ${HW_ONLY_LIBS}
-    decode_${variant}
-    encode_${variant}
-    mfx_common_${variant}
-    vpp_${variant}
-    mfx_trace
-    mfx_shared_lib
-    mfx_sdl_properties
-    ${ITT_LIBRARIES}
-    Threads::Threads
-    ${CMAKE_DL_LIBS}
+target_include_directories(${mfxlibname}
+  PRIVATE
+    scheduler/include
+    scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
+    fei/include
   )
 
-  if (variant MATCHES hw)
-    target_compile_definitions(${mfxlibname}
-      PRIVATE
-        MFX_VA
-    )
-  endif()
-
-  target_include_directories(${mfxlibname}
-    PRIVATE
-      scheduler/include
-      scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
-      fei/include
-    )
-
-  target_link_options(${mfxlibname}
-    PRIVATE
-      $<$<PLATFORM_ID:Linux>:LINKER:--version-script=${MSDK_LIB_ROOT}/libmfxhw.map>
-    )
-  target_link_libraries(${mfxlibname}
-    PRIVATE
-      ${LIBS}
-      $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_preenc>
-      $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_enc>
-      $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_pak>
-      $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>
-    )
-
-  set(libversion   ${mfx_version_major}.${mfx_version_minor})
-  set(libsoversion ${mfx_version_major})
-  if(${API_USE_VPL})
-    set(libversion   1.${libversion})
-    set(libsoversion 1.${libsoversion})
-  endif()
-
-  set_target_properties(${mfxlibname} PROPERTIES
-     VERSION ${libversion}
-     SOVERSION ${libsoversion}
-     PDB_NAME ${mfxlibname}_full 
-     PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
+target_link_options(${mfxlibname}
+  PRIVATE
+    $<$<PLATFORM_ID:Linux>:LINKER:--version-script=${MSDK_LIB_ROOT}/libmfxhw.map>
+  )
+target_link_libraries(${mfxlibname}
+  PRIVATE
+    ${LIBS}
+    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_preenc>
+    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_enc>
+    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_pak>
+    $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>
   )
 
-  install(TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR})
+set(libversion   ${mfx_version_major}.${mfx_version_minor})
+set(libsoversion ${mfx_version_major})
+if(${API_USE_VPL})
+  set(libversion   1.${libversion})
+  set(libsoversion 1.${libsoversion})
+endif()
 
-  if (CMAKE_SYSTEM_NAME MATCHES Linux)
-    set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/lib${mfxlibname}.pc")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
-    install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
-  endif()
+set_target_properties(${mfxlibname} PROPERTIES
+   VERSION ${libversion}
+   SOVERSION ${libsoversion}
+   PDB_NAME ${mfxlibname}_full 
+   PDB_OUTPUT_DIR ${CMAKE_BINARY_DIR}
+)
 
-endforeach()
+install(TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR})
+
+if (CMAKE_SYSTEM_NAME MATCHES Linux)
+  set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/lib${mfxlibname}.pc")
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
+  install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+endif()
 
 include(sources_ext.cmake OPTIONAL)

@@ -2545,16 +2545,6 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU32 fieldMaxCount = video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(task.m_ctrl, field);
-
-        if (NULL == extFeiSlice)
-        {
-            // take default buffer (from Init) if not provided in runtime
-            extFeiSlice = GetExtBuffer(video, field);
-        }
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-
         // Fill deblocking parameters
         mfxU8 disableDeblockingIdc   = (mfxU8)extOpt2Cur->DisableDeblockingIdc;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -2568,16 +2558,6 @@ void MfxHwH264Encode::ConfigureTask(
 
         for (mfxU32 i = 0; i < task.m_numSlice[task.m_fid[field]]; i++)
         {
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-            if (extFeiSlice && NULL != extFeiSlice->Slice && i < extFeiSlice->NumSlice)
-            {
-                // If only one buffer was passed on init, that value will be propagated for entire frame
-                disableDeblockingIdc   = (mfxU8)extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
-                sliceAlphaC0OffsetDiv2 = (mfxI8)extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
-                sliceBetaOffsetDiv2    = (mfxI8)extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
-            }
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-
             // Store per-slice values in task
             task.m_disableDeblockingIdc[task.m_fid[field]].push_back(disableDeblockingIdc);
             task.m_sliceAlphaC0OffsetDiv2[task.m_fid[field]].push_back(sliceAlphaC0OffsetDiv2);

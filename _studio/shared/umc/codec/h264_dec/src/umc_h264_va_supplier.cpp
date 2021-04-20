@@ -39,10 +39,6 @@
 #include "mfx_ext_buffers.h"
 #include "umc_h264_notify.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "mfxfei.h"
-#endif
-
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
 #endif

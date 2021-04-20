@@ -23,16 +23,11 @@ message( STATUS "Global Configuration of Targets" )
 include(CMakeDependentOption)
 
 option( MFX_ENABLE_KERNELS "Build with advanced media kernels support?" ON )
-option( MFX_ENABLE_JPEG_SW_FALLBACK "Enabled software fallback for JPEG ?" ON )
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   set(OPEN_SOURCE OFF)
   set(STRIP_EMBARGO OFF)
 endif()
-
-cmake_dependent_option(
-  MFX_DISABLE_SW_FALLBACK "Build only HW-accelerated code path?" OFF
-  "NOT OPEN_SOURCE;NOT ${API_USE_VPL}" ON)
 
 
 option( MFX_BUNDLED_IPP "Use bundled contrib/ipp sources" OFF )
@@ -133,19 +128,9 @@ option( MFX_ENABLE_MPEG2_VIDEO_ENCODE "Enabled MPEG2 encoder?" ON)
 option( MFX_ENABLE_MJPEG_VIDEO_DECODE "Enabled MJPEG decoder?" ON)
 option( MFX_ENABLE_MJPEG_VIDEO_ENCODE "Enabled MJPEG encoder?" ON)
 option( MFX_ENABLE_VC1_VIDEO_DECODE "Enabled VC1 decoder?" ON)
-
 option( MFX_ENABLE_H264_VIDEO_ENCODE "Enable H.264 (AVC) encoder?" ON)
-cmake_dependent_option(
-  MFX_ENABLE_H264_VIDEO_FEI_ENCODE "Enable H.264 (AVC) FEI?" ON
-  "${MFX_ENABLE_H264_VIDEO_ENCODE};NOT ${API_USE_VPL}" OFF)
-
 option( MFX_ENABLE_H265_VIDEO_ENCODE "Enable H.265 (HEVC) encoder?" ON)
-cmake_dependent_option(
-  MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE "Enable H.265 (HEVC) FEI?" ON
-  "${API_VERSION} VERSION_GREATER_EQUAL 1.27;${MFX_ENABLE_H265_VIDEO_ENCODE};NOT ${API_USE_VPL}" OFF)
-
 option( MFX_ENABLE_VP9_VIDEO_ENCODE "Enable VP9 encoder?" ON)
-
 option( MFX_ENABLE_ASC "Enable ASC support?"  ON )
 option( MFX_ENABLE_VPP "Enabled Video Processing?" ON)
 
@@ -156,18 +141,12 @@ cmake_dependent_option(
   MFX_ENABLE_ENCODE_MCTF "Build encoders with MCTF support?" ON
   "${API_VERSION} VERSION_GREATER_EQUAL 1.26;${MFX_ENABLE_ASC};${MFX_ENABLE_KERNELS}" OFF)
 
-option( MFX_ENABLE_SCREEN_CAPTURE "Enabled Screen capture?" ON)
-
 cmake_dependent_option( MFX_ENABLE_MVC_VIDEO_ENCODE "Enable MVC encoder?" ON
   "${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF)
 
 cmake_dependent_option( MFX_ENABLE_MFE               "Enable MFE?"            ON "${API_VERSION} VERSION_GREATER_EQUAL 1.25" OFF )
 cmake_dependent_option( MFX_ENABLE_OPAQUE_MEMORY     "Enable opaque memory?"  ON "NOT ${API_USE_VPL}" OFF )
 cmake_dependent_option( MFX_ENABLE_USER_ENCTOOLS     "Enable encoding tools?" ON "${MFX_NEXT_OPTIONS_ALLOWED}" OFF )
-
-cmake_dependent_option(
-  MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT "Enable H.264 (AVC) Decode Streamout?" ON
-  "NOT ${API_USE_VPL}" OFF)
 
 cmake_dependent_option(
   MFX_ENABLE_VIDEO_HYPER_ENCODE_HW "Enabled Hyper Encode?" ON

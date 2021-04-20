@@ -28,13 +28,11 @@ set( sources
     mpeg2/include/mfx_mpeg2_encode_debug_hw.h
     mpeg2/include/mfx_mpeg2_encode_full_hw.h
     mpeg2/include/mfx_mpeg2_encode_hw.h
-    mpeg2/include/mfx_mpeg2_encode_hybrid_hw.h
     mpeg2/include/mfx_mpeg2_encode_utils_hw.h
 
     mpeg2/src/mfx_mpeg2_encode_debug_hw.cpp
     mpeg2/src/mfx_mpeg2_encode_full_hw.cpp
     mpeg2/src/mfx_mpeg2_encode_hw.cpp
-    mpeg2/src/mfx_mpeg2_encode_hybrid_hw.cpp
     mpeg2/src/mfx_mpeg2_encode_utils_hw.cpp
 
     mvc/src/mfx_mvc_encode_hw.cpp

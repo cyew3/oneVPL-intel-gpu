@@ -39,28 +39,13 @@
 #include "mfx_h264_encode_hw.h"
 #endif
 
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-#include "mfx_h264_enc_common.h"
-#include "mfx_h264_encode.h"
-#if defined (MFX_ENABLE_MVC_VIDEO_ENCODE)
-#include "mfx_mvc_encode.h"
-#endif
-#endif //!MFX_DISABLE_SW_FALLBACK
-
 #if defined(MFX_ENABLE_H264_FEI_ENCPAK)
 #include "mfxfei.h"
 #endif
 #endif //MFX_ENABLE_H264_VIDEO_ENCODE
 
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
-#if defined(MFX_VA)
 #include "mfx_mpeg2_encode_hw.h"
-#ifndef MFX_DISABLE_SW_FALLBACK
-#include "mfx_mpeg2_encode.h"
-#endif
-#else
-#include "mfx_mpeg2_encode.h"
-#endif
 #endif
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
@@ -218,43 +203,6 @@ static const CodecId2Handlers codecId2Handlers =
             },
             // .fallback =
             {
-  #ifndef MFX_DISABLE_SW_FALLBACK
-                // .ctor =
-                [](VideoCORE* core, mfxU16 codecProfile, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    (void)codecProfile;
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-                    if(codecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || codecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                        return new MFXVideoENCODEMVC(core, mfxRes);
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-                    return new MFXVideoENCODEH264(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
-                {
-                    mfxStatus mfxRes;
-    #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-                    if(in && (in->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || in->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH))
-                        mfxRes = MFXVideoENCODEMVC::Query(in, out);
-                    else
-    #endif
-                        mfxRes = MFXVideoENCODEH264::Query(in, out);
-                    return mfxRes;
-                },
-                // .queryIOSurf =
-                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                {
-                    mfxStatus mfxRes;
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-                    if (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                        mfxRes = MFXVideoENCODEMVC::QueryIOSurf(par, request);
-                    else
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-                        mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
-                    return mfxRes;
-                }
-  #endif // MFX_DISABLE_SW_FALLBACK
             }
 #else // MFX_VA
             // .primary =
@@ -337,24 +285,6 @@ static const CodecId2Handlers codecId2Handlers =
             },
             // .fallback =
             {
-  #ifndef MFX_DISABLE_SW_FALLBACK
-                // .ctor =
-                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    return new MFXVideoENCODEMPEG2(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
-                {
-                    return MFXVideoENCODEMPEG2::Query(in, out);
-                },
-                // .queryIOSurf =
-                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                {
-                    return MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
-                }
-  #endif // MFX_DISABLE_SW_FALLBACK
             }
 #else // MFX_VA
             // .primary =
@@ -463,34 +393,6 @@ static const CodecId2Handlers codecId2Handlers =
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && (defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN))
-  #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-    {
-        {
-            MFX_CODEC_HEVC,
-            // .fei =
-            true
-        },
-        {
-            // .primary =
-            {
-                // .ctor =
-                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    if (core && mfxRes)
-                        return HEVCEHW::Create(*core, *mfxRes, true);
-                    return nullptr;
-                },
-                // .query =
-                [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
-                { return HEVCEHW::Query(session->m_pCORE.get(), in, out, true); },
-                // .queryIOSurf =
-                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                { return HEVCEHW::QueryIOSurf(session->m_pCORE.get(), par, request, true); }
-            }
-        }
-    },
-  #endif
     {
         {
             MFX_CODEC_HEVC,
@@ -781,11 +683,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
-#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-        mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-#else
         mfxRes = MFX_ERR_UNSUPPORTED;
-#endif
     }
 
 #if (MFX_VERSION >= 1025)
@@ -901,11 +799,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
-#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-        mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-#else
         mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-#endif
     }
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, request);
@@ -943,15 +837,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             session->m_bIsHWENCSupport = false;
-#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-#if !defined (MFX_RT)
-            session->m_pENCODE.reset(session->Create<VideoENCODE>(*par));
-            MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
-            mfxRes = session->m_pENCODE->Init(par);
-#endif
-#else
             mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-#endif
         }
         else if (mfxRes >= MFX_ERR_NONE)
             session->m_bIsHWENCSupport = true;
@@ -960,11 +846,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             !session->m_bIsHWENCSupport &&
             MFX_ERR_NONE <= mfxRes)
         {
-#if !defined(MFX_DISABLE_SW_FALLBACK) || defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-            mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-#else
             mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-#endif
         }
     }
     // handle error(s)

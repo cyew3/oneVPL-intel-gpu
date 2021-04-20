@@ -58,27 +58,7 @@ Status BaseCodec::Init(BaseCodecParams *init)
 {
   if (init == 0)
     return UMC_ERR_NULL_PTR;
-#ifndef MFX_DISABLE_SW_FALLBACK
-  // care about reentering as well
-  if (init->lpMemoryAllocator) {
-    if (m_bOwnAllocator && m_pMemoryAllocator != init->lpMemoryAllocator) {
-      vm_debug_trace(VM_DEBUG_ERROR, VM_STRING("can't replace external allocator\n"));
-      return UMC_ERR_INIT;
-    }
-    m_pMemoryAllocator = init->lpMemoryAllocator;
-    m_bOwnAllocator = false;
-  } else {
-    if (m_pMemoryAllocator != 0 && !m_bOwnAllocator) {
-      vm_debug_trace(VM_DEBUG_ERROR, VM_STRING("can't replace external allocator\n"));
-      return UMC_ERR_INIT;
-    }
-    if (m_pMemoryAllocator == 0)
-      m_pMemoryAllocator = new DefaultMemoryAllocator;
-    m_bOwnAllocator = true;
-  }
-#else
   m_pMemoryAllocator = init->lpMemoryAllocator;
-#endif // MFX_DISABLE_SW_FALLBACK
   return UMC_OK;
 }
 

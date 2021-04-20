@@ -46,31 +46,6 @@ bool SetPlaneROI(T value, T* pDst, int dstStep, IppiSize roiSize)
     return true;
 }
 
-#ifndef MFX_DISABLE_SW_FALLBACK
-template<>
-bool SetPlaneROI<Ipp32u>(Ipp32u value, Ipp32u* pDst, int dstStep, IppiSize roiSize)
-{
-    const Ipp8u backgroundValues[4] = { (Ipp8u)((value &0x000000ff) >> 0),
-                                        (Ipp8u)((value &0x0000ff00) >> 8),
-                                        (Ipp8u)((value &0x00ff0000) >>16),
-                                        (Ipp8u)((value &0xff000000) >>24)};
-
-    return ippiSet_8u_C4R(backgroundValues, (Ipp8u*)pDst, dstStep, roiSize) == ippStsNoErr;
-}
-
-template<>
-bool SetPlaneROI<Ipp8u>(Ipp8u value, Ipp8u* pDst, int dstStep, IppiSize roiSize)
-{
-    return ippiSet_8u_C1R(value, (Ipp8u*)pDst, dstStep, roiSize) == ippStsNoErr;
-}
-
-template<>
-bool SetPlaneROI<Ipp16s>(Ipp16s value, Ipp16s* pDst, int dstStep, IppiSize roiSize)
-{
-    return ippiSet_16s_C1R(value, (Ipp16s*)pDst, dstStep, roiSize) == ippStsNoErr;
-}
-#endif
-
 enum QueryStatus
 {
     VPREP_GPU_READY         =   0,

@@ -183,19 +183,6 @@ list(APPEND sources
     ${MSDK_UMC_ROOT}/core/umc/src/umc_default_frame_allocator.cpp
     )
 
-if(NOT MFX_DISABLE_SW_FALLBACK)
-  add_library(decode_sw STATIC ${sources})
-  set_property(TARGET decode_sw PROPERTY FOLDER "sw_fallback")
-  target_link_libraries(decode_sw
-    PUBLIC
-      mfx_static_lib
-      umc
-    PRIVATE
-      mfx_sdl_properties
-    )
-  target_include_directories(decode_sw PUBLIC ${include_dirs})
-endif()
-
 add_library(decode_hw STATIC ${sources} ${sources_hw})
 target_compile_definitions(decode_hw
   PRIVATE

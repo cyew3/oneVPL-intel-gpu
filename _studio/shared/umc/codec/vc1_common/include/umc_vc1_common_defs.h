@@ -122,7 +122,6 @@ enum
     VC1_BLK_INTRA      = 0x30
 };
 
-#ifdef ALLOW_SW_VC1_FALLBACK
 #define VC1_IS_BLKINTRA(value) (value & 0x30)
 enum
 {
@@ -142,7 +141,6 @@ enum
 #define VC1_GET_PREDICT(value) (value&56)
 
 #define VC1MBQUANT 2
-#endif // ALLOW_SW_VC1_FALLBACK
 
 #define VC1SLICEINPARAL 512
 #define VC1FRAMEPARALLELPAIR 2
@@ -212,7 +210,6 @@ enum //quantizer deadzone definitions
     VC1_QUANTIZER_NONUNIFORM = 1
 };
 
-#ifdef ALLOW_SW_VC1_FALLBACK
 enum //prediction directions definitions
 {
     VC1_ESCAPEMODE3_Conservative    = 0,
@@ -307,7 +304,6 @@ enum
 
 
 #define VC1_IS_INTER_MB(value)  ((value == 0x00)||(value == 0x01)||(value == 0x02)||(value == 0x04)||(value == 0x08))
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 //for extended differantial MV range flag(inerlace P picture)
 enum
@@ -352,20 +348,6 @@ typedef struct
 
 #define VC1_NEXT_BITS(num_bits, value) VC1NextNBits(pContext->m_bitstream.pBitstream, pContext->m_bitstream.bitOffset, num_bits, value);
 #define VC1_GET_BITS(num_bits, value)  VC1GetNBits(pContext->m_bitstream.pBitstream, pContext->m_bitstream.bitOffset, num_bits, value);
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-typedef struct
-{
-   uint32_t HRD_NUM_LEAKY_BUCKETS; //5
-   uint32_t BIT_RATE_EXPONENT;     //4
-   uint32_t BUFFER_SIZE_EXPONENT;  //4
-
-   // 32 - max size see Standard, p32
-   uint32_t HRD_RATE[32];      //16
-   uint32_t HRD_BUFFER[32];    //16
-   uint32_t HRD_FULLNESS[32];  //16
-}VC1_HRD_PARAMS;
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 typedef struct
 {
@@ -451,7 +433,6 @@ typedef struct
 
 }VC1SequenceLayerHeader;
 
-#ifdef ALLOW_SW_VC1_FALLBACK
 typedef struct
 {
     uint8_t  k_x;
@@ -481,7 +462,6 @@ typedef struct
     uint16_t   zone1offset_x;
     uint16_t   zone1offset_y;
 }VC1PredictScaleValuesBPic;
-#endif
 
 typedef struct
 {
@@ -548,26 +528,6 @@ typedef struct
 // B only. Interlace field
     VC1Bitplane      FORWARDMB;         //variable size B Field forward mode
                                         //MB bit syntax element
-// tables
-#ifdef ALLOW_SW_VC1_FALLBACK
-    const IppiACDecodeSet_VC1* m_pCurrIntraACDecSet;
-    const IppiACDecodeSet_VC1* m_pCurrInterACDecSet;
-    int32_t*             m_pCurrCBPCYtbl;
-    int32_t*             m_pCurrMVDifftbl;
-    const VC1MVRange*  m_pCurrMVRangetbl;
-    int32_t*             m_pCurrLumaDCDiff;
-    int32_t*             m_pCurrChromaDCDiff;
-    int32_t*             m_pCurrTTMBtbl;
-    int32_t*             m_pCurrTTBLKtbl;
-    int32_t*             m_pCurrSBPtbl;
-    int32_t*             m_pMBMode;
-    int32_t*             m_pMV2BP;
-    int32_t*             m_pMV4BP;
-
-    const VC1PredictScaleValuesPPic*      m_pCurrPredScaleValuePPictbl;
-    const VC1PredictScaleValuesBPic*      m_pCurrPredScaleValueB_BPictbl;
-    const VC1PredictScaleValuesPPic*      m_pCurrPredScaleValueP_BPictbl[2];//0 - forward, 1 - back
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
     uint32_t RNDCTRL;     // 1 rounding control bit
 
     uint32_t TRANSDCTAB;
@@ -604,202 +564,7 @@ typedef struct
     int32_t *BFRACTION;
     int32_t *REFDIST_TABLE;
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    int32_t *m_pLowMotionLumaDCDiff;
-    int32_t *m_pHighMotionLumaDCDiff;
-    int32_t *m_pLowMotionChromaDCDiff;
-    int32_t *m_pHighMotionChromaDCDiff;
-    int32_t *m_pCBPCY_Ipic;
-    int32_t *MVDIFF_PB_TABLES[4];
-    int32_t *CBPCY_PB_TABLES[4];
-    int32_t *TTMB_PB_TABLES[3];
-    int32_t *TTBLK_PB_TABLES[3];
-    int32_t *SBP_PB_TABLES[3];
-    int32_t *MBMODE_INTERLACE_FRAME_TABLES[8];
-    int32_t *MV_INTERLACE_TABLES[12];
-    int32_t *CBPCY_PB_INTERLACE_TABLES[8];
-    int32_t *MV2BP_TABLES[4];
-    int32_t *MV4BP_TABLES[4];
-    int32_t *MBMODE_INTERLACE_FIELD_TABLES[8];
-    int32_t *MBMODE_INTERLACE_FIELD_MIXED_TABLES[8];
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////Intra Decoding Sets/////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    IppiACDecodeSet_VC1 LowMotionIntraACDecodeSet;
-    IppiACDecodeSet_VC1 HighMotionIntraACDecodeSet;
-    IppiACDecodeSet_VC1 MidRateIntraACDecodeSet;
-    IppiACDecodeSet_VC1 HighRateIntraACDecodeSet;
-    IppiACDecodeSet_VC1* IntraACDecodeSetPQINDEXle7[3];
-    IppiACDecodeSet_VC1* IntraACDecodeSetPQINDEXgt7[3];
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////Inter Decoding Sets/////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    IppiACDecodeSet_VC1 LowMotionInterACDecodeSet;
-    IppiACDecodeSet_VC1 HighMotionInterACDecodeSet;
-    IppiACDecodeSet_VC1 MidRateInterACDecodeSet;
-    IppiACDecodeSet_VC1 HighRateInterACDecodeSet;
-    IppiACDecodeSet_VC1* InterACDecodeSetPQINDEXle7[3];
-    IppiACDecodeSet_VC1* InterACDecodeSetPQINDEXgt7[3];
-#endif
-
 } VC1VLCTables;
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-typedef struct
-{
-    int16_t          DC;
-    int16_t          ACTOP[8];
-    int16_t          ACLEFT[8];
-}VC1DCBlkParam;
-
-typedef struct
-{
-    VC1DCBlkParam   DCBlkPred[6];
-    uint32_t          DCStepSize;
-    uint32_t          DoubleQuant;
-}VC1DCMBParam;
-
-//  luma
-//  |--|--|--|
-//  | 3| 6| 7|
-//  |--|--|--|
-//  | 8| 0| 1|
-//  |--|--|--|
-//  | 9| 2|  |
-//  |--|--|--|
-
-
-//  chroma
-//  |--|--|   |--|--|
-//  | 4|10|   | 5|12|
-//  |--|--|   |--|--|
-//  |11|  |   |13|  |
-//  |--|--|   |--|--|
-
-typedef struct
-{
-    uint32_t          DoubleQuant[3];
-    int16_t          DC[14];
-    int16_t*         ACTOP[14];
-    int16_t*         ACLEFT[14];
-
-    uint8_t           BlkPattern[6];
-}VC1DCPredictors;
-
-typedef struct
-{
-    mfxSize        DstSizeNZ;
-    uint32_t          SBlkPattern;
-    int16_t          mv[2][2];                   // [forw/back][x/y] top field
-    int16_t          mv_bottom[2][2];            // [forw/back][x/y] bottom field
-    uint8_t           mv_s_polarity[2];
-    uint8_t           blkType;
-    uint8_t           fieldFlag[2];   //0 - top field, 1 - bottom field
-}VC1Block;
-
-typedef struct
-{
-    uint8_t   Coded;
-    uint8_t numCoef; //subblocks in inter;
-}VC1SingletonBlock;
-
-typedef struct
-{
-    uint32_t      bEscapeMode3Tbl;
-    int32_t      levelSize;
-    int32_t      runSize;
-} IppiEscInfo_VC1;
-
-typedef struct
-{
-    int32_t      m_currMBYpos;
-    int32_t      m_currMBXpos;
-    uint8_t*      currYPlane;
-    uint8_t*      currUPlane;
-    uint8_t*      currVPlane;
-
-    uint32_t      currYPitch;
-    uint32_t      currUPitch;
-    uint32_t      currVPitch;
-
-    int32_t      slice_currMBYpos;
-
-    uint32_t      ACPRED;
-    uint32_t      INTERPMVP;
-    int32_t      MBMODEIndex;
-    uint8_t       m_ubNumFirstCodedBlk;
-
-    VC1SingletonBlock   m_pSingleBlock[6];
-    //for interpolation
-    int16_t      xLuMV[VC1_NUM_OF_LUMA];
-    int16_t      yLuMV[VC1_NUM_OF_LUMA];
-    uint32_t      MVcount;
-
-    int16_t      xLuMVT[VC1_NUM_OF_LUMA];
-    int16_t      yLuMVT[VC1_NUM_OF_LUMA];
-
-    int16_t      xLuMVB[VC1_NUM_OF_LUMA];
-    int16_t      yLuMVB[VC1_NUM_OF_LUMA];
-
-    int16_t*     x_LuMV;
-    int16_t*     y_LuMV;
-
-    IppiEscInfo_VC1  EscInfo;
-    const uint8_t** ZigzagTable;
-    int32_t      widthMB;
-    int32_t      heightMB;
-    int32_t      MaxWidthMB;
-    int32_t      MaxHeightMB;
-}VC1SingletonMB;
-
-typedef struct
-{
-    int32_t      m_cbpBits;
-
-    VC1Block    m_pBlocks[6];
-    uint8_t       Overlap;
-    uint8_t       mbType;
-
-    //interlace
-    uint32_t      FIELDTX;
-    uint8_t       IntraFlag;
-
-    uint8_t*      currYPlane;
-    uint8_t*      currUPlane;
-    uint8_t*      currVPlane;
-
-    uint32_t      currYPitch;
-    uint32_t      currUPitch;
-    uint32_t      currVPitch;
-
-    int32_t      MVBP;
-    int32_t      LeftTopRightPositionFlag;
-    int32_t      MVSW;          // for interlace frame mode in B frames
-
-    int16_t      bias;
-    uint32_t      SkipAndDirectFlag; //skip or not + direct or not
-    int16_t      dmv_x[2][4]; //for split decode and prediction calculation in B frames
-    int16_t      dmv_y[2][4]; //for split decode and prediction calculation in B frames
-    uint8_t       predictor_flag[4]; // for B interlace fields
-    uint8_t       fieldFlag[2];
-    const uint8_t* pInterpolLumaSrc[2];    //forward/backward or top/bottom
-    int32_t       InterpolsrcLumaStep[2]; //forward/backward or top/bottom
-    const uint8_t* pInterpolChromaUSrc[2];    //forward/backward or top/bottom
-    int32_t       InterpolsrcChromaUStep[2]; //forward/backward or top/bottom
-    const uint8_t* pInterpolChromaVSrc[2];    //forward/backward or top/bottom
-    int32_t       InterpolsrcChromaVStep[2]; //forward/backward or top/bottom
-}VC1MB;
-
-typedef struct
-{
-    VC1Block* AMVPred[4];
-    VC1Block* BMVPred[4];
-    VC1Block* CMVPred[4];
-    uint8_t     FieldMB[4][3]; //4 blocks, A, B, C
-}VC1MVPredictors;
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 typedef struct
 {
@@ -819,21 +584,6 @@ struct Frame
             FCM(0),
             ICFieldMask(0),
             corrupted(0)
-#ifdef ALLOW_SW_VC1_FALLBACK
-            ,m_pAllocatedMemory(NULL),
-            m_pY(NULL),
-            m_pU(NULL),
-            m_pV(NULL),
-            RANGE_MAPY(-1),
-            RANGE_MAPUV(-1),
-            pRANGE_MAPY(NULL),
-            m_iYPitch(0),
-            m_iUPitch(0),
-            m_iVPitch(0),
-            m_AllocatedMemorySize(0),
-            TFF(0),
-            isIC(0)
-#endif
     {
     }
 
@@ -847,34 +597,6 @@ struct Frame
     uint32_t      ICFieldMask;
 
     uint16_t      corrupted;
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-    uint8_t*      m_pAllocatedMemory;
-    uint8_t*      m_pY;
-    uint8_t*      m_pU;
-    uint8_t*      m_pV;
-    int32_t      RANGE_MAPY;
-    int32_t      RANGE_MAPUV;//[2]; //rangeMapCoef[0] = RANGE_MAPY;  - luma
-                         //rangeMapCoef[1] = RANGE_MAPUV; - chroma
-    int32_t*     pRANGE_MAPY;
-
-    uint32_t      m_iYPitch;
-    uint32_t      m_iUPitch;
-    uint32_t      m_iVPitch;
-    int32_t      m_AllocatedMemorySize = 0;
-
-    uint8_t      LumaTable[4][256]   = {}; //0,1 - top/bottom fields of first field. 2,3 of second field
-    uint8_t      ChromaTable[4][256] = {};
-
-    uint8_t*     LumaTablePrev[4]    = {};
-    uint8_t*     ChromaTablePrev[4]  = {};
-
-    uint8_t*     LumaTableCurr[2]    = {};
-    uint8_t*     ChromaTableCurr[2]  = {};
-    uint32_t      TFF;
-
-    uint32_t      isIC;
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 };
 
 #define VC1MAXFRAMENUM 9*VC1FRAMEPARALLELPAIR + 9 // for <= 8 threads. Change if numThreads > 8
@@ -963,23 +685,6 @@ struct VC1Context
     uint32_t*                m_Offsets;
     uint32_t*                m_values;
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    VC1MB*                 m_pCurrMB;
-    VC1MB*                 m_MBs;         //MBwidth*MBheight
-    VC1DCMBParam*          CurrDC;
-
-    int16_t*                savedMV;       //MBwidth*MBheight*4*2*2
-                                          //(4 luma blocks, 2 coordinates,Top/Bottom),
-                                          //MVs which are used for Direct mode
-    uint8_t*                 savedMVSamePolarity;
-                                          // in B frame
-    int16_t*                savedMV_Curr;     //pointer to current array of MVs. Need for inter-frame threading
-    uint8_t*                 savedMVSamePolarity_Curr; //pointer to current array of MVPolars. Need for inter-frame threading
-
-    IppVCInterpolateBlockIC_8u interp_params_luma;
-    IppVCInterpolateBlockIC_8u interp_params_chroma;
-#endif
-
     VC1Bitplane            m_pBitplane;
     VC1DeblockInfo         DeblockInfo;
     uint32_t                 RefDist;
@@ -987,20 +692,6 @@ struct VC1Context
 
     // Intensity compensation: lookup tables only for P-frames
     uint8_t          m_bIntensityCompensation;
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-    VC1SingletonMB*                m_pSingleMB;
-
-    int32_t                         iNumber; /*thread number*/
-
-    int16_t*                        m_pBlock; //memory for diffrences
-    int32_t                         iPrevDblkStartPos;
-    VC1DCMBParam*                  DCACParams;
-    VC1DCPredictors                DCPred;
-    VC1MVPredictors                MVPred;
-    uint8_t*                        LumaTable[4]; //0,1 - top/bottom fields of first field. 2,3 of second field
-    uint8_t*                        ChromaTable[4];
-#endif
 
     uint32_t                        PrevFCM;
     uint32_t                        NextFCM;

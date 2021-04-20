@@ -84,21 +84,10 @@ namespace UMC
         virtual void Release();
         void         Reset();
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-        void         processFrame        (uint32_t*  pOffsets,
-                                          uint32_t*  pValues);
-
-        virtual Status       preProcData         (VC1Context*            pContext,
-                                                  uint32_t                 bufferSize,
-                                                  unsigned long long                 frameCount,
-                                                  bool& skip);
-#else
         virtual Status       preProcData(VC1Context*            pContext,
             uint32_t                 bufferSize,
             unsigned long long                 frameCount,
             bool& skip) = 0;
-#endif
-
 
         bool isDescriptorValid()
         {

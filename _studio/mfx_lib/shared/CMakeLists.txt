@@ -68,11 +68,6 @@ target_sources(mfx_common_hw
     src/mfx_mpeg2_enc_common_hw.cpp
     src/mfx_vpx_dec_common.cpp
     src/mfx_win_event_cache.cpp
-
-    $<$<NOT:$<BOOL:${MFX_DISABLE_SW_FALLBACK}>>:
-      include/mfx_h264_enc_common.h
-      src/mfx_h264_enc_common.cpp
-    >
   )
 
 target_compile_definitions(mfx_common_hw PRIVATE MFX_VA)

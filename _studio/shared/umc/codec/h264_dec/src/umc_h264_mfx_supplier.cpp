@@ -24,10 +24,6 @@
 
 #include <algorithm>
 
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "mfxfei.h"
-#endif
-
 #include "umc_h264_mfx_supplier.h"
 
 #include "umc_h264_frame_list.h"
@@ -1427,11 +1423,6 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         if (stsExt < MFX_ERR_NONE)
             sts = MFX_ERR_UNSUPPORTED;
 
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-        if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_FEI_PARAM))
-                sts = MFX_ERR_UNSUPPORTED;
-#endif
-
         if (in->Protected)
         {
             out->Protected = in->Protected;
@@ -1954,11 +1945,6 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     default:
         return false;
     }
-
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-    if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_FEI_PARAM))
-        return false;
-#endif
 
 #ifdef MFX_ENABLE_SVC_VIDEO_DECODE
     mfxExtSvcTargetLayer * svcTarget = (mfxExtSvcTargetLayer*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_SVC_TARGET_LAYER);

@@ -1223,15 +1223,6 @@ STRUCT(mfxExtVPPMirroring,
     FIELD_T(mfxU16      , Type)
 )
 
-#if defined(MFX_ENABLE_SCREEN_CAPTURE)
-STRUCT(mfxExtScreenCaptureParam,
-    FIELD_S(mfxExtBuffer, Header             )
-    FIELD_T(mfxU32      , DisplayIndex       )
-    FIELD_T(mfxU16      , EnableDirtyRect    )
-    FIELD_T(mfxU16      , EnableCursorCapture)
-)
-#endif //MFX_ENABLE_SCREEN_CAPTURE
-
 STRUCT(mfxExtDirtyRect_Entry,
     FIELD_T(mfxU32, Left    )
     FIELD_T(mfxU32, Top     )

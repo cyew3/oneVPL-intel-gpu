@@ -545,9 +545,6 @@ mfxStatus SetQualityParams(
     VAEncMiscParameterEncQuality *quality_param;
     mfxExtCodingOption2 const * extOpt2  = GetExtBuffer(par);
     mfxExtCodingOption3 const * extOpt3  = GetExtBuffer(par);
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    mfxExtFeiCodingOption const * extOptFEI = GetExtBuffer(par);
-#endif
 
     mfxStatus mfxSts = CheckAndDestroyVAbuffer(vaDisplay, qualityParams_id);
     MFX_CHECK_STS(mfxSts);
@@ -605,15 +602,6 @@ mfxStatus SetQualityParams(
 #endif // MFX_ENABLE_H264_REPARTITION_CHECK
 
     }
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    if (extOptFEI)
-    {
-        quality_param->HMEDisable      = !!extOptFEI->DisableHME;
-        quality_param->SuperHMEDisable = !!extOptFEI->DisableSuperHME;
-        quality_param->UltraHMEDisable = !!extOptFEI->DisableUltraHME;
-    }
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     if (pTask)
     {
@@ -1187,9 +1175,6 @@ void FillPWT(
 
         mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
         mfxExtCodingOption2   & extOpt2     = GetExtBufferRef(par);
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        mfxExtFeiSliceHeader  const & extFeiSlice = GetExtBufferRef(par, idxToPickBuffer);
-#endif
         assert(extDdi      != 0);
 
         mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
@@ -1262,15 +1247,6 @@ void FillPWT(
             slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
             slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-            if (extFeiSlice.Slice)
-            {
-                slice[i].disable_deblocking_filter_idc = extFeiSlice.Slice[i].DisableDeblockingFilterIdc;
-                slice[i].slice_alpha_c0_offset_div2    = extFeiSlice.Slice[i].SliceAlphaC0OffsetDiv2;
-                slice[i].slice_beta_offset_div2        = extFeiSlice.Slice[i].SliceBetaOffsetDiv2;
-            }
-            else
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
             {
                 slice[i].disable_deblocking_filter_idc = extOpt2.DisableDeblockingIdc;
                 slice[i].slice_alpha_c0_offset_div2    = 0;
@@ -1300,9 +1276,6 @@ void UpdateSliceSizeLimited(
 
     mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
     mfxExtCodingOption2   & extOpt2     = GetExtBufferRef(par);
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    mfxExtFeiSliceHeader  const & extFeiSlice = GetExtBufferRef(par, task.m_fid[fieldId]);
-#endif
     assert(extDdi      != 0);
 
     mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
@@ -1380,15 +1353,6 @@ void UpdateSliceSizeLimited(
         slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        if (extFeiSlice.Slice)
-        {
-            slice[i].disable_deblocking_filter_idc = extFeiSlice.Slice[i].DisableDeblockingFilterIdc;
-            slice[i].slice_alpha_c0_offset_div2    = extFeiSlice.Slice[i].SliceAlphaC0OffsetDiv2;
-            slice[i].slice_beta_offset_div2        = extFeiSlice.Slice[i].SliceBetaOffsetDiv2;
-        }
-        else
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         {
             slice[i].disable_deblocking_filter_idc = extOpt2.DisableDeblockingIdc;
             slice[i].slice_alpha_c0_offset_div2    = 0;

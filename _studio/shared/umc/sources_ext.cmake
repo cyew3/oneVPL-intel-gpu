@@ -123,85 +123,12 @@ set_property(TARGET common PROPERTY FOLDER "umc")
 
 target_sources(common
   PRIVATE
-    codec/aac_common/include/aaccmn_adif.h
-    codec/aac_common/include/aaccmn_adts.h
-    codec/aac_common/include/aaccmn_chmap.h
-    codec/aac_common/include/aaccmn_huff.h
-    codec/aac_common/include/aac_dec_own.h
-    codec/aac_common/include/aac_enc_huff_tables.h
-    codec/aac_common/include/aac_enc_own.h
-    codec/aac_common/include/aac_enc_search.h
-    codec/aac_common/include/aac_filterbank_fp.h
-    codec/aac_common/include/aac_sfb_tables.h
-    codec/aac_common/include/aac_status.h
-    codec/aac_common/include/aac_wnd_tables_fp.h
-    codec/aac_common/include/ps_dec_parser.h
-    codec/aac_common/include/ps_dec_settings.h
-    codec/aac_common/include/ps_dec_struct.h
-    codec/aac_common/include/sbr_dec_parser.h
-    codec/aac_common/include/sbr_dec_settings.h
-    codec/aac_common/include/sbr_dec_struct.h
-    codec/aac_common/include/sbr_freq_tabs.h
-    codec/aac_common/include/sbr_huff_tabs.h
-    codec/aac_common/include/sbr_settings.h
-    codec/aac_common/include/sbr_struct.h
-    codec/mp3_common/include/mp3dec.h
-    codec/mp3_common/include/mp3dec_huftabs.h
-    codec/mp3_common/include/mp3dec_own.h
-    codec/mp3_common/include/mp3enc.h
-    codec/mp3_common/include/mp3enc_hufftables.h
-    codec/mp3_common/include/mp3enc_own.h
-    codec/mp3_common/include/mp3enc_psychoacoustic.h
-    codec/mp3_common/include/mp3enc_tables.h
-    codec/mp3_common/include/mp3_alloc_tab.h
-    codec/mp3_common/include/mp3_own.h
-    codec/mp3_common/include/mp3_status.h
     codec/common/include/align.h
-    codec/common/include/audio_codec_params.h
     codec/common/include/bstream.h
     codec/common/include/mp4cmn_config.h
     codec/common/include/mp4cmn_const.h
     codec/common/include/mp4cmn_pce.h
-    codec/common/include/umc_aac_decoder_params.h
-    codec/common/include/umc_aac_encoder_params.h
-    codec/common/include/umc_mp3_decoder_params.h
-    codec/common/include/umc_mp3_encoder_params.h
 
-    codec/aac_common/src/aaccmn_adif.c
-    codec/aac_common/src/aaccmn_adts.c
-    codec/aac_common/src/aaccmn_chmap.c
-    codec/aac_common/src/aaccmn_huff.c
-    codec/aac_common/src/aac_dec_api.c
-    codec/aac_common/src/aac_dec_stream_elements.c
-    codec/aac_common/src/aac_enc_elements.c
-    codec/aac_common/src/aac_enc_huff_tables.c
-    codec/aac_common/src/aac_enc_search.c
-    codec/aac_common/src/aac_filterbank_fp.c
-    codec/aac_common/src/aac_sfb_tables.c
-    codec/aac_common/src/aac_win_tables_fp.c
-    codec/aac_common/src/ps_dec_parser.c
-    codec/aac_common/src/ps_huff_tabs.c
-    codec/aac_common/src/sbr_dec_env_decoding.c
-    codec/aac_common/src/sbr_dec_parser.c
-    codec/aac_common/src/sbr_dec_reset.c
-    codec/aac_common/src/sbr_freq_tabs.c
-    codec/aac_common/src/sbr_huff_tabs.c
-    codec/aac_common/src/sbr_pow_vec.c
-    codec/mp3_common/src/mp3dec_api.c
-    codec/mp3_common/src/mp3dec_common.c
-    codec/mp3_common/src/mp3dec_layer1.c
-    codec/mp3_common/src/mp3dec_layer2.c
-    codec/mp3_common/src/mp3dec_layer3.c
-    codec/mp3_common/src/mp3enc_bitstream.c
-    codec/mp3_common/src/mp3enc_common.c
-    codec/mp3_common/src/mp3enc_huff.c
-    codec/mp3_common/src/mp3enc_hufftables.c
-    codec/mp3_common/src/mp3enc_quantization.c
-    codec/mp3_common/src/mp3enc_tables.c
-    codec/mp3_common/src/mp3_alloc_tab.c
-    codec/mp3_common/src/mp3_common.c
-    codec/common/src/aaccmn_cce.c
-    codec/common/src/aac_win_tables_int.c
     codec/common/src/bstream.c
     codec/common/src/mp4cmn_config.c
     codec/common/src/mp4cmn_const.c
@@ -212,9 +139,6 @@ target_include_directories(common
   PUBLIC
     include
     codec/common/include
-  PRIVATE
-    codec/aac_common/include
-    codec/mp3_common/include
   )
 
 target_link_libraries(common PUBLIC vm_plus)
@@ -307,16 +231,6 @@ target_compile_options(mpeg4_spl
 
 target_link_libraries(mpeg4_spl PUBLIC vm_plus PRIVATE spl_common common media_buffers)
 
-### UMC codec bitrate_control
-
-target_sources(bitrate_control
-  PRIVATE
-    codec/brc/include/umc_svc_brc.h
-    codec/brc/src/umc_svc_brc.cpp
-  )
-
-### UMC codec bitrate_control
-
 ### UMC codec mpeg4_spl
 
 add_library(scene_analyzer STATIC)
@@ -366,12 +280,6 @@ add_subdirectory(codec/mpeg2_dec/hw)
 add_subdirectory(codec/mpeg2_dec/sw)
 
 add_subdirectory(codec/me)
-
-add_subdirectory(codec/mp3_common)
-add_subdirectory(codec/mp3_dec)
-add_subdirectory(codec/aac_common)
-add_subdirectory(codec/aac_dec)
-add_subdirectory(codec/aac_enc)
 
 ### UMC io
 add_subdirectory(io/umc_io)

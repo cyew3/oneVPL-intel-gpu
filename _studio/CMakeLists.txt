@@ -39,11 +39,4 @@ if (MFX_ENABLE_USER_ENCTOOLS)
   add_subdirectory(enctools)
 endif()
 
-if(MFX_ENABLE_USER_ENCODE)
-  add_subdirectory(hevce_hw)
-  add_subdirectory(hevc_fei)
-  add_subdirectory(vp9e_hw)
-endif()
-add_subdirectory(mfx_lib/plugin)
-
 include(sources_ext.cmake OPTIONAL)

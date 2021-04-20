@@ -27,7 +27,6 @@
 #include <cstdlib>
 using namespace UMC;
 
-#ifdef MFX_DISABLE_SW_FALLBACK
 #define VLC_FORBIDDEN 0xf0f1
 
 static uint32_t bit_mask[33] =
@@ -319,46 +318,5 @@ void HuffmanTableFree(int32_t *pDecodeTable)
 {
     free((void*)pDecodeTable);
 }
-
-#else // #ifdef MFX_DISABLE_SW_FALLBACK
-
-#include "ippvc.h"
-#if defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-// turn off the "The compiler encountered a deprecated declaration" warning
-#ifdef _MSVC_LANG
-#pragma warning(disable:4996)
-#endif
-
-int DecodeHuffmanOne(uint32_t**  pBitStream, int* pOffset,
-    int32_t*  pDst, const int32_t* pDecodeTable)
-{
-    return (ippStsNoErr != ippiDecodeHuffmanOne_1u32s(pBitStream, pOffset, pDst, pDecodeTable)) ? -1 : 0;
-}
-
-int DecodeHuffmanPair(uint32_t **pBitStream, int32_t *pBitOffset,
-    const int32_t *pTable, int8_t *pFirst, int16_t *pSecond)
-{
-    return (ippStsNoErr != ippiDecodeHuffmanPair_1u16s(pBitStream, pBitOffset, pTable, pFirst, pSecond)) ? -1 : 0;
-}
-
-int HuffmanTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec)
-{
-    return (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(pSrcTable, ppDstSpec)) ? -1 : 0;
-}
-
-int HuffmanRunLevelTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec)
-{
-    return (ippStsNoErr != ippiHuffmanRunLevelTableInitAlloc_32s(pSrcTable, ppDstSpec)) ? -1 : 0;
-}
-
-void HuffmanTableFree(int32_t *pDecodeTable)
-{
-    ippiHuffmanTableFree_32s(pDecodeTable);
-}
-
-#endif
 
 #endif // #if defined (MFX_ENABLE_VC1_VIDEO_DECODE)

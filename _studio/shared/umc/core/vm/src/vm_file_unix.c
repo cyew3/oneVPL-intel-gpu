@@ -46,12 +46,6 @@
 #include "vm_file.h"
 #include <ipps.h>
 
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-int vm_string_strncpy_s(vm_char *dest, size_t destsz,
-   const vm_char *src, size_t count);
-size_t vm_string_strnlen_s(const vm_char *str, size_t strsz);
-#endif
-
 /* obtain file info. return 0 if file is not accessible,
    file_size or file_attr can be NULL if either is not interested */
 int32_t vm_file_getinfo(const vm_char *filename, unsigned long long *file_size, uint32_t *file_attr) {
@@ -118,24 +112,6 @@ int32_t vm_dir_open(vm_dir **dd, vm_char *path) {
   return (dd[0] != NULL) ? 1 : 0;
 }
 
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-/*
- * directory traverse */
-int32_t vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
-  (void)nchars;
-
-  int32_t rtv = 0;
-  if (dd != NULL) {
-   struct dirent *ent=readdir(dd);
-   if (ent) {
-       vm_string_strncpy_s(filename, nchars, ent->d_name, vm_string_strnlen_s(ent->d_name, NAME_MAX));
-     rtv = 1;
-     }
-   }
-   return rtv;
-}
-#endif
-
 void vm_dir_close(vm_dir *dd) {
   if (dd != NULL) {
     if (d_name != NULL) {
@@ -149,33 +125,6 @@ void vm_dir_close(vm_dir *dd) {
     closedir(dd);
     }
 }
-
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-/*
- * findfirst, findnext, findclose direct emulation
- * for old ala Windows applications
- */
-int32_t vm_string_findnext(vm_findptr handle, vm_finddata_t *fileinfo) {
-  int32_t rtv = 1;
-  unsigned long long sz;
-  uint32_t atr;
-  if (vm_dir_read(handle, fileinfo[0].name, MAX_PATH))
-    if (vm_file_getinfo(fileinfo[0].name, &sz, &atr)) {
-      fileinfo[0].size = sz;
-      fileinfo[0].attrib = atr;
-      rtv = 0;
-    }
-  return rtv;
-  }
-
-vm_findptr vm_string_findfirst(vm_char *filespec, vm_finddata_t *fileinfo) {
-  vm_findptr dd;
-  vm_dir_open(&dd, filespec);
-  if (dd != NULL)
-    vm_string_findnext(dd, fileinfo);
-  return dd;
-  }
-#endif
 
 int32_t vm_string_findclose(vm_findptr handle) {
   return closedir(handle);

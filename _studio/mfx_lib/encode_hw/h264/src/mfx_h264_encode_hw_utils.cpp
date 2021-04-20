@@ -5390,15 +5390,6 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             checkSts = CheckRunTimeExtBuffers(video, ctrl, surface, bs, caps, hwType);
             if (checkSts < MFX_ERR_NONE) { return checkSts; }
         }
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        else
-        {
-            // FEI frame control buffer is mandatory for encoding
-            mfxExtFeiParam const & feiParam = GetExtBufferRef(video);
-            // FEI encoding without any extension buffers provided is impossible
-            MFX_CHECK(feiParam.Func != MFX_FEI_FUNCTION_ENCODE, MFX_ERR_UNDEFINED_BEHAVIOR);
-        }
-#endif
 
 #if !defined (MFX_ENABLE_OPAQUE_MEMORY)
         bool opaq = false;

@@ -36,9 +36,6 @@ list( APPEND common_sources
   avi_spl/src/umc_avi_spl_chunk.cpp
   avi_spl/src/umc_avi_splitter.cpp
 
-  common/src/aaccmn_cce.c
-  common/src/aac_enc_search.c
-  common/src/aac_win_tables_int.c
   common/src/bstream.c
   common/src/functions_cc.c
   common/src/mp4cmn_config.c

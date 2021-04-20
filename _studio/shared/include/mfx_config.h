@@ -23,33 +23,10 @@
 
 #include "mfxdefs.h"
 
-#ifndef MFX_DISABLE_SW_FALLBACK
-// disable additional features
-//#define MFX_FADE_DETECTION_FEATURE_DISABLE
-//#define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
-//#define MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-//#define MFX_EXT_BRC_DISABLE
-//#define STRIP_EMBARGO
-//#define MFX_ADAPTIVE_PLAYBACK_DISABLE
-//#define MFX_EXT_DPB_HEVC_DISABLE
-//#define MFX_CAMERA_FEATURE_DISABLE
-//#define MFX_FUTURE_FEATURE_DISABLE
-//#define MFX_AVC_ENCODING_UNIT_DISABLEVPP
-
 #define MFX_EXTBUFF_GPU_HANG_ENABLE
-#define MFX_UNDOCUMENTED_QUANT_MATRIX
-#define MFX_UNDOCUMENTED_DUMP_FILES
-#define MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
-//#define MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
-
-//#define MFX_ENABLE_SVC_VIDEO_DECODE
-#define MFX_ENABLE_VPP_SVC
-#endif // #ifndef MFX_DISABLE_SW_FALLBACK
-
 #define MFX_UNDOCUMENTED_CO_DDI
 
 #if defined(_WIN32) || defined(_WIN64)
-
 #if defined(DEBUG) || defined(_DEBUG)
 #undef  MFX_DEBUG_TOOLS // to avoid redefinition
 #define MFX_DEBUG_TOOLS
@@ -93,48 +70,10 @@
     #endif
 #endif
 
-#if defined(_WIN32) || defined(_WIN64) || (!defined(ANDROID) && !defined(MFX_DISABLE_SW_FALLBACK))
+#if defined(_WIN32) || defined(_WIN64)
     // mfxconfig.h is auto-generated file containing mediasdk per-component
     // enable defines
-    #ifdef MFX_HAVE_EXTERNAL_CONFIG
-        #include "mfxconfig.h"
-    #else //Compatibility for vcxproj-based build
-        #define MFX_ENABLE_KERNELS
-        #define MFX_ENABLE_VPP
-        #define MFX_ENABLE_DENOISE_VIDEO_VPP
-        #define MFX_ENABLE_IMAGE_STABILIZATION_VPP
-        #define MFX_ENABLE_VPP
-        #define MFX_ENABLE_USER_DECODE
-        #define MFX_ENABLE_USER_ENCODE
-        #define MFX_ENABLE_USER_ENC
-        #define MFX_ENABLE_USER_VPP
-        #define MFX_ENABLE_AV1_VIDEO_DECODE
-        #define MFX_ENABLE_MPEG2_VIDEO_DECODE
-        #define MFX_ENABLE_MJPEG_VIDEO_DECODE
-        #define MFX_ENABLE_H264_VIDEO_DECODE
-        #define MFX_ENABLE_H265_VIDEO_DECODE
-        #define MFX_ENABLE_VP8_VIDEO_DECODE
-        #define MFX_ENABLE_VP9_VIDEO_DECODE
-        #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
-        #define MFX_ENABLE_MJPEG_VIDEO_ENCODE
-        #define MFX_ENABLE_H264_VIDEO_ENCODE
-        #define MFX_ENABLE_JPEG_SW_FALLBACK
-
-#if !defined(MFX_ONEVPL)
-        #define MFX_ENABLE_OPAQUE_MEMORY
-#endif
-        #define MFX_ENABLE_SVC_VIDEO_ENCODE
-        #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-
-        #define MFX_ENABLE_LP_LOOKAHEAD
-        #define MFX_ENABLE_ENCTOOLS
-        #define MFX_ENABLE_ENCTOOLS_LPLA
-        #define MFX_ENABLE_MCTF
-    #endif
-
-    #if ((MFX_VERSION >= 1026) && defined(AS_CAMERA_PLUGIN))
-        #undef MFX_ENABLE_MCTF
-    #endif
+    #include "mfxconfig.h"
 
     #if defined(MFX_VA)
         #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
@@ -147,7 +86,6 @@
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
         #undef MFX_ENABLE_VP9_VIDEO_DECODE
         #undef MFX_ENABLE_H265_VIDEO_DECODE
-        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_VP9_VIDEO_ENCODE
     #endif
     #define MFX_ENABLE_VC1_VIDEO_DECODE
@@ -157,7 +95,6 @@
     #endif
     #if defined(AS_H264LA_PLUGIN)
        #define MFX_ENABLE_LA_H264_VIDEO_HW
-       #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
     #endif
 #elif defined(ANDROID)
     #include "mfx_android_defs.h"
@@ -168,12 +105,9 @@
     // enable defines
     #include "mfxconfig.h"
 
-    #ifdef MFX_DISABLE_SW_FALLBACK
-        #if defined(AS_H264LA_PLUGIN)
-            #define MFX_ENABLE_LA_H264_VIDEO_HW
-            #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-        #endif
-    #endif // #ifdef MFX_DISABLE_SW_FALLBACK
+    #if defined(AS_H264LA_PLUGIN)
+        #define MFX_ENABLE_LA_H264_VIDEO_HW
+    #endif
 #endif
 
 #define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
@@ -202,15 +136,8 @@
         #define MFX_ENABLE_AV1_VIDEO_ENCODE
     #endif
 
-    #if !defined(MFX_DISABLE_SW_FALLBACK)
-        #define MFX_ENABLE_MPEG2_VIDEO_PAK
-        #define MFX_ENABLE_MPEG2_VIDEO_ENC
-    #endif
     #if defined(MFX_ENABLE_VPP)
         #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
-        #if !defined(MFX_DISABLE_SW_FALLBACK)
-            #define MFX_ENABLE_IMAGE_STABILIZATION_VPP
-        #endif
     #endif //MFX_ENABLE_VPP
 
     //#define MFX_ENABLE_H264_VIDEO_ENC_HW
@@ -223,13 +150,6 @@
     #if defined(AS_H265FEI_PLUGIN)
         #define MFX_ENABLE_H265FEI_HW
     #endif
-
-    // aac
-    #define MFX_ENABLE_AAC_AUDIO_DECODE
-    #define MFX_ENABLE_AAC_AUDIO_ENCODE
-
-    //mp3
-    #define MFX_ENABLE_MP3_AUDIO_DECODE
 
     #if defined(MFX_ENABLE_SVC_VIDEO_ENCODE)
         #define MFX_ENABLE_SVC_VIDEO_ENCODE_HW
@@ -252,7 +172,7 @@
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
     #endif
 
-    #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT) || defined(AS_H264LA_PLUGIN)
+    #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined (MFX_RT) || defined(AS_H264LA_PLUGIN)
         #undef MFX_ENABLE_H265_VIDEO_DECODE
         #undef MFX_ENABLE_H265_VIDEO_ENCODE
         #undef MFX_ENABLE_H264_VIDEO_DECODE
@@ -273,11 +193,6 @@
         #undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
         #undef MFX_ENABLE_USER_DECODE
         #undef MFX_ENABLE_USER_ENCODE
-        #undef MFX_ENABLE_AAC_AUDIO_DECODE
-        #undef MFX_ENABLE_AAC_AUDIO_ENCODE
-        #undef MFX_ENABLE_MP3_AUDIO_DECODE
-        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-        #undef MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_AV1_VIDEO_DECODE
         #undef MFX_ENABLE_VP9_VIDEO_DECODE
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
@@ -299,10 +214,6 @@
         #endif
     #endif
 
-    #if defined(AS_CAMERA_PLUGIN)
-        #define MFX_ENABLE_VPP
-        #define MFX_ENABLE_HW_ONLY_VPP
-    #endif
     #if defined(AS_HEVCD_PLUGIN)
         #define MFX_ENABLE_H265_VIDEO_DECODE
     #endif
@@ -410,15 +321,11 @@
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
 #if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
-    #if defined(MFX_DISABLE_SW_FALLBACK)
-      #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-    #endif
+#define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
 #endif //MFX_ENABLE_MPEG2_VIDEO_DECODE
 
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
-    #if defined(MFX_DISABLE_SW_FALLBACK)
-      #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
-    #endif
+    #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #if MFX_VERSION >= 1023
         #define MFX_ENABLE_H264_REPARTITION_CHECK
         #if defined(MFX_VA_WIN)
@@ -427,12 +334,6 @@
     #endif
     #if MFX_VERSION >= 1027
         #define MFX_ENABLE_H264_ROUNDING_OFFSET
-    #endif
-    #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
-        #define MFX_ENABLE_H264_VIDEO_FEI_PREENC
-        #define MFX_ENABLE_H264_VIDEO_FEI_ENC
-        #define MFX_ENABLE_H264_VIDEO_FEI_PAK
     #endif
     #ifndef OPEN_SOURCE
         #define MFX_ENABLE_AVCE_DIRTY_RECTANGLE
@@ -474,8 +375,6 @@
     #endif
 #endif
 
-#ifdef MFX_DISABLE_SW_FALLBACK
-
 #if !defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
     #define MFX_PROTECTED_FEATURE_DISABLE
 #endif
@@ -486,7 +385,7 @@
 
     #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
         #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-#endif //  MFX_DISABLE_SW_FALLBACK
+    #endif
 
     #if defined(MFX_VA_WIN)
         #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
@@ -514,8 +413,6 @@
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
     #endif
 
-#endif // #if defined(OPEN_SOURCE)
-
 #if defined(MFX_VA) && defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
     #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 #endif
@@ -529,9 +426,7 @@
     #define MFX_ENABLE_VPP_ROTATION
     #define MFX_ENABLE_VPP_VIDEO_SIGNAL
 
-    #if defined(MFX_DISABLE_SW_FALLBACK)
-        #define MFX_ENABLE_HW_ONLY_VPP
-    #endif
+    #define MFX_ENABLE_HW_ONLY_VPP
 
     #if defined(OPEN_SOURCE)
         #define MFX_ENABLE_DENOISE_VIDEO_VPP
@@ -574,6 +469,9 @@
 #endif
 
 #define CMAPIUPDATE
+
+#define UMC_ENABLE_FIO_READER
+#define UMC_ENABLE_VC1_SPLITTER
 
 #define MFX_ENV_CFG_ENABLE
 

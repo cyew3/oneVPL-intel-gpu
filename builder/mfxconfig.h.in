@@ -26,7 +26,6 @@
 #cmakedefine MFX_ENABLE_CPLIB
 
 #cmakedefine MFX_ENABLE_VPP
-#cmakedefine MFX_ENABLE_SCREEN_CAPTURE
 #cmakedefine MFX_ENABLE_MFE
 #cmakedefine MFX_ENABLE_OPAQUE_MEMORY
 #cmakedefine MFX_ENABLE_USER_ENCTOOLS

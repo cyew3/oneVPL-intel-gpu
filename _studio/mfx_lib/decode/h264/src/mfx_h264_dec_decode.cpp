@@ -24,10 +24,6 @@
 
 #if defined (MFX_ENABLE_H264_VIDEO_DECODE)
 
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "mfxfei.h"
-#endif
-
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
 

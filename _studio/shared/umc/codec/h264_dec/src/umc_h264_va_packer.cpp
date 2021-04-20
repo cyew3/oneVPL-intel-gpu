@@ -1573,7 +1573,6 @@ void PackerDXVA2::PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * sca
 PackerVA::PackerVA(VideoAccelerator * va, TaskSupplier * supplier)
     : Packer(va, supplier)
 {
-    m_enableStreamOut = !!DynamicCast<FEIVideoAccelerator>(va);
 }
 
 Status PackerVA::GetStatusReport(void * pStatusReport, size_t size)
@@ -2243,34 +2242,6 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, int32_t field)
         }
     }
 #endif // defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
-
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-    if (!m_enableStreamOut)
-        return;
-
-    aux = fd->GetAuxInfo(MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-    if (aux)
-    {
-        VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-
-        mfxExtFeiDecStreamOut* so =
-            reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
-        if (!so)
-            throw h264_exception(UMC_ERR_FAILED);
-
-        uint32_t size = so->NumMBAlloc * sizeof(mfxFeiDecStreamOutMBCtrl);
-        if (pFrame->GetAU(field)->IsField())
-            size /= 2;
-
-        VAStreamOutBuffer* buffer = NULL;
-        m_va->GetCompBuffer(VADecodeStreamoutBufferType, reinterpret_cast<UMCVACompBuffer**>(&buffer), size, pFrame->m_index);
-        if (buffer)
-        {
-            buffer->BindToField(field);
-            buffer->RemapRefs(so->RemapRefIdx == MFX_CODINGOPTION_ON);
-        }
-    }
-#endif
 }
 
 void PackerVA::EndFrame()
@@ -2341,72 +2312,6 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
 Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "PackerVA::QueryStreamOut");
-    if (!m_enableStreamOut)
-        return UMC_OK;
-
-    VM_ASSERT(dynamic_cast<FEIVideoAccelerator*>(m_va) &&
-              "VA should be [FEIVideoAccelerator] if [streamout] is enabled");
-
-    if (!pFrame)
-        return UMC_ERR_FAILED;
-
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-    FrameData const* fd = pFrame->GetFrameData();
-    VM_ASSERT(fd);
-
-    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo(MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-    if (!aux)
-        return UMC_ERR_FAILED;
-
-    VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-
-    mfxExtFeiDecStreamOut* so = reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
-
-    if (!so || !so->MB)
-        return UMC_ERR_FAILED;
-
-    VM_ASSERT(pFrame->GetTotalMBs() >= 0);
-    uint32_t const count = pFrame->GetTotalMBs();
-
-    if (so->NumMBAlloc < count)
-        return UMC_ERR_FAILED;
-
-    FEIVideoAccelerator* fei_va =
-        static_cast<FEIVideoAccelerator*>(m_va);
-
-    //top field
-    int32_t const top = pFrame->GetNumberByParity(0);
-    VAStreamOutBuffer* buffer = fei_va->QueryStreamOutBuffer(pFrame->m_index, top);
-    if (!buffer || !buffer->GetPtr())
-        return UMC_ERR_FAILED;
-
-    mfxFeiDecStreamOutMBCtrl* src = reinterpret_cast<mfxFeiDecStreamOutMBCtrl *>(buffer->GetPtr());
-
-    int32_t const offset1 =  count * top;
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "std::copy");
-        std::copy(src, src + count, so->MB + offset1);
-    }
-
-    fei_va->ReleaseBuffer(buffer);
-
-    if (!pFrame->GetAU(top)->IsField())
-        return UMC_OK;
-
-    int32_t const bottom = pFrame->GetNumberByParity(1);
-    buffer = fei_va->QueryStreamOutBuffer(pFrame->m_index, bottom);
-    if (!buffer || !buffer->GetPtr())
-        return UMC_ERR_FAILED;
-
-    src = reinterpret_cast<mfxFeiDecStreamOutMBCtrl *>(buffer->GetPtr());
-
-    int32_t const offset2 =  count * bottom;
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "std::copy");
-        std::copy(src, src + count, so->MB + offset2);
-    }
-    fei_va->ReleaseBuffer(buffer);
-#endif //MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
 
     return UMC_OK;
 }

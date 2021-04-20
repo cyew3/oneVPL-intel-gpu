@@ -33,17 +33,9 @@
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE) || defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "mfxfei.h"
-#endif
-
 #include "libmfx_core_hw.h"
 
 #include "umc_va_linux_protected.h"
-
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "umc_va_fei.h"
-#endif
 
 #include "cm_mem_copy.h"
 
@@ -583,19 +575,6 @@ mfxStatus VAAPIVideoCORE_T<Base>::CreateVideoAccelerator(
         params.m_needVideoProcessingVA = true;
     }
 #endif
-
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-    //check 'StreamOut' feature is requested
-    {
-        mfxExtBuffer* ext = GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-        if (ext && reinterpret_cast<mfxExtFeiParam*>(ext)->Func == MFX_FEI_FUNCTION_DEC)
-            params.m_CreateFlags |= VA_DECODE_STREAM_OUT_ENABLE;
-    }
-
-    if (params.m_CreateFlags & VA_DECODE_STREAM_OUT_ENABLE)
-        m_pVA.reset(new FEIVideoAccelerator());
-    else
-#endif //MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
         m_pVA.reset(new LinuxVideoAccelerator());
 
     m_pVA->m_Platform   = UMC::VA_LINUX;

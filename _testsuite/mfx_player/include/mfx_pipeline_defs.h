@@ -347,6 +347,8 @@ if (0 == (expr))\
 #define MFX_CHECK(expr) \
     MFX_CHECK_SET_ERR(expr, LAST_ERR_OR_UNK(), MFX_ERR_UNKNOWN);\
 
+#define MFX_CHECK_NULL_PTR2(p1, p2)     { MFX_CHECK(p1, MFX_ERR_NULL_PTR); MFX_CHECK(p2, MFX_ERR_NULL_PTR); }
+
 #define MFX_CHECK_AND_THROW(expr)\
 if (0 == (expr))\
 {\

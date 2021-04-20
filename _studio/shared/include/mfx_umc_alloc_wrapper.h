@@ -337,42 +337,6 @@ private:
     mfxFrameAllocResponse&                    m_response_alien;
 };
 
-#if (defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER)) || (defined(MFX_ENABLE_VC1_VIDEO_DECODE) && defined(ALLOW_SW_VC1_FALLBACK))
-#include "umc_default_frame_allocator.h"
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// mfx_UMC_FrameAllocator_NV12
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class mfx_UMC_FrameAllocator_NV12 : public mfx_UMC_FrameAllocator
-{
-public:
-
-    virtual UMC::Status InitMfx(UMC::FrameAllocatorParams *pParams, 
-                                VideoCORE* mfxCore, 
-                                const mfxVideoParam *params, 
-                                const mfxFrameAllocRequest *request, 
-                                mfxFrameAllocResponse *response, 
-                                bool isUseExternalFrames,
-                                bool isSWplatform);
-
-    virtual const UMC::FrameData* Lock(UMC::FrameMemID mid);
-
-    virtual mfxFrameSurface1 * GetSurface(UMC::FrameMemID index, mfxFrameSurface1 *surface_work, const mfxVideoParam * videoPar);
-    virtual mfxStatus PrepareToOutput(mfxFrameSurface1 *surface_work, UMC::FrameMemID index, const mfxVideoParam * videoPar, bool isOpaq);
-    virtual UMC::Status Reset();
-
-    virtual UMC::Status Close();
-
-protected:
-    mfxStatus ConvertToNV12(const UMC::FrameData * fd, mfxFrameData *data, const mfxVideoParam * videoPar);
-    virtual mfxI32 AddSurface(mfxFrameSurface1 *surface);
-
-    std::vector<UMC::FrameData>   m_yv12Frames;
-    UMC::DefaultFrameAllocator    m_defaultUMCAllocator;
-    UMC::VideoDataInfo  m_info_yuv420;
-};
-#endif
-
 #if defined (MFX_VA)
 class mfx_UMC_FrameAllocator_D3D : public mfx_UMC_FrameAllocator
 {

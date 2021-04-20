@@ -16,7 +16,6 @@
 #include <algorithm>
 #include "mfx_ibitstream_converter.h"
 #include "shared_utils.h"
-#include "fast_copy.h"
 #include "ippcc.h"
 
 #define DECL_CONVERTER(inFourCC, outFourCC) BSConvert_##inFourCC##_to_##outFourCC
@@ -163,14 +162,14 @@ public:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
         ptr = data.UV;
 
         roi.height >>= 1;
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
@@ -211,13 +210,13 @@ public:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
         ptr = data.UV;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
         return MFX_ERR_NONE;
@@ -289,14 +288,14 @@ public:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
         ptr = data.UV;
 
         roi.height >>= 1;
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
         return MFX_ERR_NONE;
@@ -337,13 +336,13 @@ public:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
         ptr = data.UV;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
         return MFX_ERR_NONE;
@@ -386,7 +385,7 @@ public:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
@@ -395,12 +394,12 @@ public:
 
         pitch >>= 1;
         ptr = data.V;
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
         ptr = data.U;
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
@@ -959,14 +958,14 @@ public:
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
         ptr = data.UV;
 
         roi.height >>= 1;
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
+        FastCopy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
         return MFX_ERR_NONE;

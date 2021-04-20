@@ -78,20 +78,6 @@ inline int mfxCopyRect(const T* pSrc, int srcStep, T* pDst, int dstStep, IppiSiz
     return 0;
 }
 
-#ifndef MFX_DISABLE_SW_FALLBACK
-template<>
-inline int mfxCopyRect<mfxU8>(const mfxU8* pSrc, int srcStep, mfxU8* pDst, int dstStep, IppiSize roiSize, int flags)
-{
-    /* copy enum <=> IPP flag correspondence
-
-    COPY_SYS_TO_SYS   = 0, // IPP_TEMPORAL_COPY
-    COPY_SYS_TO_VIDEO = 1, // IPP_NONTEMPORAL_STORE
-    COPY_VIDEO_TO_SYS = 2, // IPP_NONTEMPORAL_LOAD
-    */
-    return ippiCopyManaged_8u_C1R(pSrc, srcStep, pDst, dstStep, roiSize, flags);
-}
-#endif
-
 class FastCopy
 {
 public:

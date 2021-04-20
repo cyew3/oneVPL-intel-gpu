@@ -159,11 +159,6 @@ EXTBUF(mfxExtCamPipeControl              , MFX_EXTBUF_CAM_PIPECONTROL           
 EXTBUF(mfxExtThreadsParam                , MFX_EXTBUFF_THREADS_PARAM)
 #endif //defined(__MFXCOMMON_H__)
 
-#if defined(MFX_ENABLE_SCREEN_CAPTURE) && defined(__MFXSC_H__)
-//Screen capture
-EXTBUF(mfxExtScreenCaptureParam          , MFX_EXTBUFF_SCREEN_CAPTURE_PARAM      )
-#endif //MFX_ENABLE_SCREEN_CAPTURE && __MFXSC_H__
-
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) && defined(__MFXVP9_H__)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtVP9DecodedFrameInfo         , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO    )

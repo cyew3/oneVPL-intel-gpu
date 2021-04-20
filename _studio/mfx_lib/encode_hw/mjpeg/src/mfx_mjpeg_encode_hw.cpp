@@ -88,25 +88,6 @@ bool swapChannels(const T* pSrc, int srcStep,
     return true;
 }
 
-#if !defined(MFX_DISABLE_SW_FALLBACK)
-#include "ipps.h"
-#include "ippi.h"
-
-template<>
-bool setPlaneROI<uint8_t>(uint8_t value, uint8_t* pDst, int dstStep, mfxSize roiSize)
-{
-    return ippiSet_8u_C1R(value, (uint8_t*)pDst, dstStep, roiSize) == ippStsNoErr;
-}
-
-template<>
-bool swapChannels<mfxU8>(const mfxU8* pSrc, int srcStep,
-    mfxU8* pDst, int dstStep, mfxSize roiSize, const int dstOrder[3])
-{
-    return ippiSwapChannels_8u_AC4R(pSrc, srcStep, pDst, dstStep, roiSize, dstOrder) == ippStsNoErr;
-}
-#endif // #if !defined (MFX_DISABLE_SW_FALLBACK)
-
-
 MfxFrameAllocResponse::MfxFrameAllocResponse()
     :mfxFrameAllocResponse() , m_core(0)
 {

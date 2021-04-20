@@ -24,15 +24,7 @@
 #undef UMC_BSTREAM
 #endif
 
-#if defined (UMC_ENABLE_AAC_AUDIO_DECODER)
-  #define UMC_BSTREAM
-#elif defined UMC_ENABLE_MP3_AUDIO_DECODER
-  #define UMC_BSTREAM
-#elif defined UMC_ENABLE_AAC_AUDIO_ENCODER
-  #define UMC_BSTREAM
-#elif defined UMC_ENABLE_MP3_AUDIO_ENCODER
-  #define UMC_BSTREAM
-#elif defined UMC_ENABLE_MP4_SPLITTER
+#if defined UMC_ENABLE_MP4_SPLITTER
   #define UMC_BSTREAM
 #endif
 

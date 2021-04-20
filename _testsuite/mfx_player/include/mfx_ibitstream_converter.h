@@ -13,6 +13,7 @@
 #pragma once
 
 #include "mfx_iclonebale.h"
+#include "fast_copy.h"
 
 //used by source reader to provide different chroma formats to encoder
 class IBitstreamConverter
@@ -33,6 +34,26 @@ public:
         return MFX_ERR_NONE;
     }
 protected:
+    mfxStatus FastCopy(mfxU8* pDst, mfxU32 dstPitch, mfxU8* pSrc, mfxU32 srcPitch, IppiSize roi, int flag)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "BitstreamConverterCopy");
+
+        if (NULL == pDst || NULL == pSrc)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+
+        /* The purpose of mutex here is to make the Copy() atomic.
+         * Without it CPU utilization grows dramatically due to cache trashing.
+         */
+        static UMC::Mutex mutex; // This is thread-safe since C++11
+        UMC::AutomaticUMCMutex guard(mutex);
+
+        IppStatus sts = ippiCopyManaged_8u_C1R(pSrc, srcPitch, pDst, dstPitch, roi, flag);
+
+        return sts == ippStsNoErr ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+    }
+
     const mfxU32 m_inFourCC;
     const mfxU32 m_outFourCC;
     mfxU16 m_inWidth;

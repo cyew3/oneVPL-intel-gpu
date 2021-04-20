@@ -99,7 +99,6 @@ target_sources(bitrate_control
     codec/brc/src/umc_h264_brc.cpp
     codec/brc/src/umc_mpeg2_brc.cpp
     codec/brc/src/umc_video_brc.cpp
-    $<$<NOT:$<BOOL:${MFX_DISABLE_SW_FALLBACK}>>:codec/brc/src/umc_svc_brc.cpp>
   )
 
 target_include_directories(bitrate_control

@@ -35,10 +35,6 @@
 
 #include "mfx_ext_buffers.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-#include "mfxfei.h"
-#endif
-
 #ifdef MFX_ENABLE_ENCTOOLS
 #include "mfxenctools-int.h"
 #else
@@ -257,28 +253,6 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPredWeightTable,      MFX_EXTBUFF_PRED_WEIGHT_TABLE        );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtDirtyRect,            MFX_EXTBUFF_DIRTY_RECTANGLES         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMoveRect,             MFX_EXTBUFF_MOVING_RECTANGLES        );
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiParam,             MFX_EXTBUFF_FEI_PARAM                );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiCodingOption,      MFX_EXTBUFF_FEI_CODING_OPTION        );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMV,             MFX_EXTBUFF_FEI_ENC_MV               );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMBStat,         MFX_EXTBUFF_FEI_ENC_MB_STAT          );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPakMBCtrl,         MFX_EXTBUFF_FEI_PAK_CTRL             );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncFrameCtrl,      MFX_EXTBUFF_FEI_ENC_CTRL             );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMVPredictors,   MFX_EXTBUFF_FEI_ENC_MV_PRED          );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMBCtrl,         MFX_EXTBUFF_FEI_ENC_MB               );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncQP,             MFX_EXTBUFF_FEI_ENC_QP               );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiSPS,               MFX_EXTBUFF_FEI_SPS                  );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPPS,               MFX_EXTBUFF_FEI_PPS                  );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiSliceHeader,       MFX_EXTBUFF_FEI_SLICE                );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncMV,          MFX_EXTBUFF_FEI_PREENC_MV            );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncMBStat,      MFX_EXTBUFF_FEI_PREENC_MB            );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncCtrl,        MFX_EXTBUFF_FEI_PREENC_CTRL          );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncMVPredictors,MFX_EXTBUFF_FEI_PREENC_MV_PRED       );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiRepackCtrl,        MFX_EXTBUFF_FEI_REPACK_CTRL          );
-#if (MFX_VERSION >= 1025)
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiRepackStat,        MFX_EXTBUFF_FEI_REPACK_STAT          );
-#endif
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtIntGPUHang,           MFX_EXTBUFF_GPU_HANG                 );
 #endif
@@ -731,14 +705,6 @@ namespace MfxHwH264Encode
         mfxExtSpsHeader             m_extSps;
         mfxExtPpsHeader             m_extPps;
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-        mfxExtFeiParam              m_extFeiParam;
-        mfxExtFeiCodingOption       m_extFeiOpt;
-        mfxExtFeiSliceHeader        m_extFeiSlice[2];
-        mfxExtFeiSPS                m_extFeiSPS;
-        mfxExtFeiPPS                m_extFeiPPS;
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-
 #if defined(__MFXBRC_H__)
         mfxExtBRC                   m_extBRC;
 #endif
@@ -965,11 +931,6 @@ namespace MfxHwH264Encode
         eMFXVAType              vaType = MFX_HW_NO,
         eMFXGTConfig            config = MFX_GT_UNKNOWN,
         bool                    bInit = false);
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    mfxStatus CheckVideoParamFEI(
-        MfxVideoParam &     par);
-#endif
 
     mfxStatus CheckVideoParamQueryLike(
         MfxVideoParam &         par,
