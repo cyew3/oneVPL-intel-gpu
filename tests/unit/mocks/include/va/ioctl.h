@@ -42,6 +42,7 @@ extern "C"
 {
     extern void* _dl_sym(void*, const char*, ...);
 
+    FORCE_USE_SYMBOL
     int ioctl(int fd, unsigned long request, ...) {    // initialize on first call
         static int (*libc_ioctl)(int fd, unsigned long request, ...);
         if (libc_ioctl == NULL) {

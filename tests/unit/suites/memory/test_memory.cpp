@@ -37,24 +37,6 @@
 #include "mocks/include/va/display/context.h"
 #include "mocks/include/va/ioctl.h"
 
-
-#define FORCE_UNDEFINED_SYMBOL(x) static void* __ ## x ## _fp =(void*)&x;
-FORCE_UNDEFINED_SYMBOL(vaInitialize)
-FORCE_UNDEFINED_SYMBOL(vaTerminate)
-FORCE_UNDEFINED_SYMBOL(vaCreateSurfaces)
-FORCE_UNDEFINED_SYMBOL(vaCreateBuffer)
-FORCE_UNDEFINED_SYMBOL(vaDeriveImage)
-FORCE_UNDEFINED_SYMBOL(vaMapBuffer)
-FORCE_UNDEFINED_SYMBOL(vaUnmapBuffer)
-FORCE_UNDEFINED_SYMBOL(vaDestroyImage)
-FORCE_UNDEFINED_SYMBOL(vaMaxNumEntrypoints)
-FORCE_UNDEFINED_SYMBOL(vaMaxNumProfiles)
-FORCE_UNDEFINED_SYMBOL(vaQueryConfigProfiles)
-FORCE_UNDEFINED_SYMBOL(vaQueryConfigEntrypoints)
-FORCE_UNDEFINED_SYMBOL(vaGetConfigAttributes)
-FORCE_UNDEFINED_SYMBOL(vaCreateConfig)
-FORCE_UNDEFINED_SYMBOL(vaCreateContext)
-
 namespace test
 {
     inline

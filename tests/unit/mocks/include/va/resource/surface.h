@@ -145,7 +145,7 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline
+    inline FORCE_USE_SYMBOL
     VAStatus vaDeriveImage(VADisplay d, VASurfaceID id, VAImage* image)
     {
         return

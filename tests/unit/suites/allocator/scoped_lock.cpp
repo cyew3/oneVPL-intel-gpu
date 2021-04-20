@@ -34,14 +34,6 @@
 #include "mocks/include/va/display/display.h"
 #include "mocks/include/va/display/surface.h"
 
-#define FORCE_UNDEFINED_SYMBOL(x) static void* __ ## x ## _fp =(void*)&x;
-FORCE_UNDEFINED_SYMBOL(vaCreateSurfaces)
-FORCE_UNDEFINED_SYMBOL(vaCreateBuffer)
-FORCE_UNDEFINED_SYMBOL(vaDeriveImage)
-FORCE_UNDEFINED_SYMBOL(vaMapBuffer)
-FORCE_UNDEFINED_SYMBOL(vaUnmapBuffer)
-FORCE_UNDEFINED_SYMBOL(vaDestroyImage)
-
 namespace test
 {
     struct ScopedLock

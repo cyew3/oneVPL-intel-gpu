@@ -66,7 +66,8 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline VAStatus vaDestroyImage(VADisplay d, VAImageID id)
+    inline FORCE_USE_SYMBOL
+    VAStatus vaDestroyImage(VADisplay d, VAImageID id)
     {
         return
             static_cast<mocks::va::display*>(d)->DestroyImage(id);

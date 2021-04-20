@@ -123,14 +123,14 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline
+    inline FORCE_USE_SYMBOL
     VAStatus vaGetConfigAttributes(VADisplay d, VAProfile profile, VAEntrypoint entrypoint, VAConfigAttrib* attributes, int count)
     {
         return
             static_cast<mocks::va::display*>(d)->GetConfigAttributes(profile, entrypoint, attributes, count);
     }
 
-    inline
+    inline FORCE_USE_SYMBOL
     VAStatus vaQuerySurfaceAttributes(VADisplay d, VAConfigID config, VASurfaceAttrib* attributes, unsigned int* count)
     {
         return

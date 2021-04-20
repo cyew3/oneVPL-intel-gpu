@@ -30,7 +30,7 @@
 
 #include "libmfx_allocator.h"
 
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
 
 #include "mfx_session.h"
 #include "encoding_ddi.h"
@@ -50,25 +50,16 @@
 #include "mocks/include/mfx/dx11/decoder.h"
 #include "mocks/include/mfx/dx11/encoder.h"
 
-#elif defined(__linux__)
-
+#elif defined(MFX_VA_LINUX)
 #include "libmfx_allocator_vaapi.h"
 
 #include "mocks/include/va/display/display.h"
 #include "mocks/include/va/display/surface.h"
-
-#define FORCE_UNDEFINED_SYMBOL(x) static void* __ ## x ## _fp =(void*)&x;
-FORCE_UNDEFINED_SYMBOL(vaCreateSurfaces)
-FORCE_UNDEFINED_SYMBOL(vaCreateBuffer)
-FORCE_UNDEFINED_SYMBOL(vaDeriveImage)
-FORCE_UNDEFINED_SYMBOL(vaMapBuffer)
-FORCE_UNDEFINED_SYMBOL(vaUnmapBuffer)
-FORCE_UNDEFINED_SYMBOL(vaDestroyImage)
 #endif
 
 namespace test
 {
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
     int constexpr INTEL_VENDOR_ID = 0x8086;
 
     int constexpr DEVICE_ID = 42; //The value which is returned both as 'DeviceID' by adapter and by mocked registry.
@@ -143,7 +134,7 @@ namespace test
             }
         }
     };
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
     struct FlexibleAllocatorBase
         : public testing::Test
     {

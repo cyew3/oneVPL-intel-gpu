@@ -296,3 +296,9 @@ namespace mocks
     void invoke_if(F&&, P&&, pack<>, Args&&...)
     {}
 }
+
+#if defined(__GNUC__)
+    #define FORCE_USE_SYMBOL __attribute__((used))
+#else
+    #define FORCE_USE_SYMBOL
+#endif
