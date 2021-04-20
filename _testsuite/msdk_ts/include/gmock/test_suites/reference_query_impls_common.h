@@ -24,13 +24,16 @@ namespace query_impls_description
         mfxChar                Keywords[MFX_STRFIELD_LEN];
         mfxU32                 VendorID;
         mfxU32                 VendorImplID;
-
-        mfxChar                DeviceID[MFX_STRFIELD_LEN];
+        std::vector<mfxU32>    DeviceList;
     };
 
     class ReferenceCommon
     {
     public:
+        ReferenceCommon()
+        {
+            snprintf(m_reference.ImplName, sizeof(m_reference.ImplName), "mfx-gen");
+        }
         ReferenceCommonImplsDescription& GetReference()
         {
             return m_reference;
@@ -54,7 +57,10 @@ namespace query_impls_description
     public:
         ReferenceCommonATS()
         {
-            snprintf(m_reference.DeviceID, sizeof(m_reference.DeviceID), "20a");
+            m_reference.DeviceList = {
+                0x0201, 0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x0209, 0x020A,
+                0x020B, 0x020C, 0x020D, 0x020E, 0x020F, 0x0210
+            };
         }
     };
     static ReferenceCommonATS ref_ATS_common;
@@ -64,7 +70,12 @@ namespace query_impls_description
     public:
         ReferenceCommonDG2()
         {
-            snprintf(m_reference.DeviceID, sizeof(m_reference.DeviceID), "4f84");
+            m_reference.DeviceList = {
+                0x4F80, 0x4F81, 0x4F82, 0x4F83, 0x4F84, 0x4F85, 0x4F86, 0x4F87, 0x4F88, 0x5690,
+                0x5691, 0x5692, 0x5693, 0x5694, 0x5695, 0x5696, 0x5697, 0x5698, 0x56A0, 0x56A1,
+                0x56A2, 0x56A3, 0x56A4, 0x56A5, 0x56A6, 0x56A7, 0x56A8, 0x56A9, 0x56B0, 0x56B1,
+                0x56C0
+            };
         }
     };
     static ReferenceCommonDG2 ref_DG2_common;

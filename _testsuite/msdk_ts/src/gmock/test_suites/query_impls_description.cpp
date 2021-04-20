@@ -418,7 +418,10 @@ int TestSuite::RunTest(unsigned int id)
                 EXPECT_EQ(std::string(ref.Keywords), std::string(impl.Keywords));
                 EXPECT_EQ(ref.VendorID, impl.VendorID);
                 EXPECT_EQ(ref.VendorImplID, impl.VendorImplID);
-                EXPECT_EQ(std::string(ref.DeviceID), std::string(impl.Dev.DeviceID));
+
+                mfxU32 DeviceID = 0;
+                EXPECT_EQ(1, sscanf(impl.Dev.DeviceID, "%x", &DeviceID));
+                EXPECT_TRUE(std::find(ref.DeviceList.begin(), ref.DeviceList.end(), DeviceID) != ref.DeviceList.end());
             }
         break;
         default:
