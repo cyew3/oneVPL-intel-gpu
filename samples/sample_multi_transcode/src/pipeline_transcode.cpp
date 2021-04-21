@@ -4317,29 +4317,13 @@ size_t CTranscodingPipeline::GetRobustFlag()
 
 void CTranscodingPipeline::Close()
 {
-    if (m_pmfxDEC.get())
-    {
-        m_pmfxDEC->Close();
-        m_pmfxDEC.release();
-    }
+    m_pmfxDEC.reset();
 
-    if (m_pmfxENC.get())
-    {
-        m_pmfxENC->Close();
-        m_pmfxENC.release();
-    }
+    m_pmfxENC.reset();
 
-    if (m_pmfxVPP.get())
-    {
-        m_pmfxVPP->Close();
-        m_pmfxVPP.release();
-    }
+    m_pmfxVPP.reset();
 
-    if (m_pmfxSession)
-    {
-        m_pmfxSession->Close();
-        m_pmfxSession.release();
-    }
+    m_pmfxSession.reset();
 
 #if !defined(MFX_ONEVPL)
     if (m_pUserDecoderPlugin.get())
