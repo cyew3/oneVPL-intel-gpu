@@ -3551,8 +3551,7 @@ mfxStatus General::CheckBuffers(const ParamSupport& sprt, const mfxVideoParam& i
 
         for (mfxU32 i = 0; i < pPar->NumExtParam; i++)
         {
-            if (!pPar->ExtParam[i])
-                continue;
+            MFX_CHECK_NULL_PTR1(pPar->ExtParam[i]);
 
             auto id = pPar->ExtParam[i]->BufferId;
 
