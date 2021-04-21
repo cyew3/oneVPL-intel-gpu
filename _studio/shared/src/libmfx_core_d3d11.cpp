@@ -1290,8 +1290,7 @@ D3D11VideoCORE20::D3D11VideoCORE20(const mfxU32 adapterNum, const mfxU32 numThre
         , [deviceId](mfx_device_item dev) { return dev.device_id == deviceId; });
 
     // TODO: restore switchers
-    m_enabled20Interface = false;
-        /*itDev != std::end(listLegalDevIDs) && (itDev->platform == MFX_HW_XE_HP_SDV || itDev->platform == MFX_HW_DG2); */
+    m_enabled20Interface = itDev != std::end(listLegalDevIDs) && (/*itDev->platform == MFX_HW_XE_HP_SDV ||*/ itDev->platform == MFX_HW_DG2);
 #else
     m_enabled20Interface = false;
 #endif
