@@ -606,7 +606,7 @@ namespace le_hevce_query
                     sts = MFX_ERR_NONE;
                 else if (tc.sub_type == NONE)
                     sts = MFX_ERR_NULL_PTR;
-                else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && (g_tsImpl & MFX_IMPL_VIA_D3D11))
+                else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && (g_tsImpl & MFX_IMPL_VIA_D3D11 || g_tsImpl == MFX_IMPL_HARDWARE))
                     sts = MFX_ERR_NONE;
 
             }
