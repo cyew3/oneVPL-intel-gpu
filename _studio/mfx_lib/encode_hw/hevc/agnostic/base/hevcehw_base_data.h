@@ -768,6 +768,8 @@ namespace Base
         mfxU32              MiniGopSize = 0;
         mfxU16              FrameType = 0;
         mfxU32              QPModulaton = 0;
+        /* Scene Change parameter */
+        mfxU16              SceneChange = 0;
     };
 
     struct mfxBRCHints {

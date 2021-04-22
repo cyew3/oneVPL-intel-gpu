@@ -410,6 +410,10 @@ static mfxStatus InitEncToolsCtrl(
     ctrl->MaxGopSize = par.mfx.GopPicSize;
     ctrl->MaxGopRefDist = par.mfx.GopRefDist;
     ctrl->MaxIDRDist = par.mfx.GopPicSize * (par.mfx.IdrInterval + 1);
+    // HEVC Defaults to CRA for IdrInterval == 0
+    if (par.mfx.IdrInterval == 0 && ctrl->CodecId == MFX_CODEC_HEVC && par.mfx.GopPicSize != 0) {
+        ctrl->MaxIDRDist = par.mfx.GopPicSize * (0xffff / par.mfx.GopPicSize);
+    }
     ctrl->BRefType = pCO2 ? pCO2->BRefType : 0;
 
     ctrl->ScenarioInfo = pCO3 ? pCO3->ScenarioInfo : 0;
@@ -693,8 +697,8 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
         extFrameData.Header.BufferSz = sizeof(extFrameData);
         extFrameData.EncodeOrder = task.EncodedOrder;
         extFrameData.FrameType = task.FrameType;
-        // TO DO: extFrameData.PyramidLayer = ?
-        //
+        extFrameData.PyramidLayer = (mfxU16) task.PyramidLevel;
+        extFrameData.SceneChange = task.GopHints.SceneChange;
 
         extParams.push_back(&extFrameData.Header);
 
@@ -754,7 +758,7 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
 
     mfxEncToolsTaskParam task_par = {};
     std::vector<mfxExtBuffer*> extParams;
-
+    mfxEncToolsHintPreEncodeSceneChange preEncodeSChg = {};
     mfxEncToolsHintPreEncodeGOP preEncodeGOP = {};
     mfxEncToolsBRCBufferHint bufHint = {};
     mfxEncToolsHintQuantMatrix cqmHint = {};
@@ -767,6 +771,13 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
 
     task_par.DisplayOrder = task.DisplayOrder;
     task_par.NumExtParam = 0;
+
+    if(IsOn(m_EncToolConfig.BRC))
+    {
+        preEncodeSChg.Header.BufferId = MFX_EXTBUFF_ENCTOOLS_HINT_SCENE_CHANGE;
+        preEncodeSChg.Header.BufferSz = sizeof(preEncodeSChg);
+        extParams.push_back(&preEncodeSChg.Header);
+    }
 
     if (IsOn(m_EncToolConfig.AdaptiveI) ||
         IsOn(m_EncToolConfig.AdaptiveB) ||
@@ -804,6 +815,7 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
     task.GopHints.MiniGopSize = preEncodeGOP.MiniGopSize;
     task.GopHints.FrameType = (m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING ? 0 : preEncodeGOP.FrameType);
+    task.GopHints.SceneChange = preEncodeSChg.SceneChangeFlag;
 
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     if (IsOn(m_EncToolConfig.BRCBufferHints) && !isLABRC)

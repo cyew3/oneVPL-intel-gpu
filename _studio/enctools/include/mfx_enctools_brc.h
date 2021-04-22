@@ -150,8 +150,8 @@ public:
     mfxU16   mLaDepth;
     mfxU16   mLaQp;
     mfxU16   mLaScale;
-
-    mfxU32  codecId;
+    mfxU16   mHasALTR; // When mHasALTR, LTR marking decision (on/off) based on content.
+    mfxU32   codecId;
 
 public:
     cBRCParams() :
@@ -198,6 +198,10 @@ public:
         mMinQstepRateEP(0),
         mMinQstepCmplxKPUpdt(0),
         mMinQstepCmplxKPUpdtErr(0),
+        mLaDepth(0),
+        mLaQp(0),
+        mLaScale(0),
+        mHasALTR(0),
         codecId(0)
     {}
 

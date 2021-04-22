@@ -386,8 +386,8 @@ namespace aenc {
             return;
         }
 
-        // Scene change IDR (Min IDR distance at 2*MiniGOP for compression efficiency)
-        if (f.SceneChanged && CurrentIdrInterval > InitParam.MinGopSize*2) {
+        // For AVC use IDR, for HEVC use CRA
+        if (f.SceneChanged && InitParam.CodecId == MFX_CODEC_AVC) {
             MarkFrameAsIDR(f);
             return;
         }

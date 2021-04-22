@@ -43,7 +43,7 @@ extern "C" {
         mfxU32 MaxGopSize; //for adaptive I, next condition should be satisfyed (MinGopSize < MaxGopSize - MaxMiniGopSize)
         mfxU32 MaxIDRDist; //IDR distance in frames
         mfxU32 MaxMiniGopSize;
-
+        mfxU32 CodecId;
         //toolset
         mfxU32 AGOP;
         mfxU32 ALTR;

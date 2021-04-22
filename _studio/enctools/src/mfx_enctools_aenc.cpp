@@ -67,10 +67,11 @@ mfxStatus AEnc_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
         }
     }
 
+    m_aencPar.CodecId = ctrl.CodecId;
     m_aencPar.ColorFormat = MFX_FOURCC_NV12;
     m_aencPar.MaxMiniGopSize = ctrl.MaxGopRefDist;
     m_aencPar.MaxGopSize = m_aencPar.GopPicSize = (ctrl.MaxGopSize!= 0) ? ctrl.MaxGopSize : 65000;
-    m_aencPar.MinGopSize = std::max(4u, m_aencPar.MaxGopSize/16); //to prevent close I frames
+    m_aencPar.MinGopSize = std::max(m_aencPar.MaxMiniGopSize*2, m_aencPar.MaxGopSize/16); // to prevent close I frames
     m_aencPar.StrictIFrame = IsOff(pConfig.AdaptiveI);
     m_aencPar.MaxIDRDist = ctrl.MaxIDRDist;
     m_aencPar.AGOP = !IsOff(pConfig.AdaptiveB);
