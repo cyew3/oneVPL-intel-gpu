@@ -141,6 +141,29 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             return bExternal;
         });
 
+        defaults.CheckSlices.Push([](
+            Base::Defaults::TCheckAndFix::TExt prev
+            , const Defaults::Param& dpar
+            , mfxVideoParam& par)
+        {
+            auto sts = prev(dpar, par);
+            MFX_CHECK_STS(sts);
+
+            mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
+            bool bCheckNMB = pCO2 && pCO2->NumMbPerSlice;
+
+            if (bCheckNMB)
+            {
+                // It is not supported when LCU number in slice is not row aligned for DG2+.
+                mfxU16 W = dpar.base.GetCodedPicWidth(dpar);
+                mfxU16 LCUSize = dpar.base.GetLCUSize(dpar);
+                mfxU32 nLCUsInWidth = CeilDiv(W, LCUSize);
+                MFX_CHECK(!(pCO2->NumMbPerSlice % nLCUsInWidth), MFX_ERR_UNSUPPORTED);
+            }
+
+            return MFX_ERR_NONE;
+        });
+
         bSet = true;
 
         return MFX_ERR_NONE;
