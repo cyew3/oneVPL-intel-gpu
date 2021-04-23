@@ -35,8 +35,14 @@ private:
     {
         CASE_COMMON,
         CASE_DECODE,
-        CASE_ENCODE,
+        CASE_ENCODE_COMMON,
         CASE_VPP,
+        CASE_ENCODE_AVC,
+        CASE_ENCODE_JPEG,
+        CASE_ENCODE_MPEG2,
+        CASE_ENCODE_HEVC,
+        CASE_ENCODE_VP9,
+        CASE_ENCODE_AV1,
     };
 
     struct tc_struct
@@ -55,8 +61,29 @@ private:
         default:
             break;
         }
-        EXPECT_TRUE(false) << "ERROR: Not platform detected, pls set env var TS_PLATFORM\n";
+        EXPECT_TRUE(false) << "ERROR: Not platform detected, pls set env var TS_PLATFORM or prepare reference for current platform\n";
         return isEncode ? ref_default_enc.GetReference() : ref_default_dec.GetReference();
+    }
+
+    static mfxU32 TestID2CodecID(unsigned int id)
+    {
+        switch (id)
+        {
+        case 4:
+            return MFX_CODEC_AVC;
+        case 5:
+            return MFX_CODEC_JPEG;
+        case 6:
+            return MFX_CODEC_MPEG2;
+        case 7:
+            return MFX_CODEC_HEVC;
+        case 8:
+            return MFX_CODEC_VP9;
+        case 9:
+            return MFX_CODEC_AV1;
+        default:
+            return 0;
+        };
     }
 
     mfxStatus CheckCodec(mfxU16 MaxcodecLevel, mfxU16 profileNum, const CodecDesc& ref)
@@ -107,7 +134,7 @@ private:
         default:
             break;
         }
-        EXPECT_TRUE(false) << "ERROR: Not platform detected, pls set env var TS_PLATFORM\n";
+        EXPECT_TRUE(false) << "ERROR: Not platform detected, pls set env var TS_PLATFORM or prepare reference for current platform\n";
         return ref_default_vpp.GetReference();
     }
     mfxStatus CheckFilter(mfxU16 MaxDelayInFrames, mfxU16 NumMemTypes, const FilterDesc& ref)
@@ -152,7 +179,7 @@ private:
             break;
         }
 
-        EXPECT_TRUE(false) << "ERROR: Not platform detected, pls set env var TS_PLATFORM\n";
+        EXPECT_TRUE(false) << "ERROR: Not platform detected, pls set env var TS_PLATFORM or prepare reference for current platform\n";
         return ref_default_common.GetReference();
     }
 
@@ -162,9 +189,15 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ CASE_DECODE},
-    {/* 1*/ CASE_ENCODE},
+    {/* 1*/ CASE_ENCODE_COMMON},
     {/* 2*/ CASE_VPP},
     {/* 3*/ CASE_COMMON},
+    {/* 4*/ CASE_ENCODE_AVC},
+    {/* 5*/ CASE_ENCODE_JPEG},
+    {/* 6*/ CASE_ENCODE_MPEG2},
+    {/* 7*/ CASE_ENCODE_HEVC},
+    {/* 8*/ CASE_ENCODE_VP9},
+    {/* 9*/ CASE_ENCODE_AV1},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -252,18 +285,43 @@ int TestSuite::RunTest(unsigned int id)
                 DEC_PADDING();
             }
             break;
-        case 1: // Encode description check
+        // Encode description check
+        case 4: // AVC
+        case 5: // JPEG
+        case 6: // MPEG2
+        case 7: // HEVC
+        case 8: // VP9
+        case 9: // AV1
             {
                 INC_PADDING();
-                TS_TRACE(impl.Dec.NumCodecs);
-                auto ref = GetCodecReference(true);
-                EXPECT_EQ(ref.Codecs.size(), impl.Enc.NumCodecs) << "ERROR: Incorrect Codecs number \n";
 
+                auto ref = GetCodecReference(true);
+
+                TS_TRACE(impl.Dec.NumCodecs);
                 INC_PADDING();
+
+                mfxU32 CodecIDtest = TestID2CodecID(id);
+                std::string CodecIDtoCheck = std::string((char*)&CodecIDtest, 4);
+                TS_TRACE(CodecIDtoCheck);
+
+                auto IsTargetCodecImpl = [id](const mfxEncoderDescription::encoder& codec) { return codec.CodecID == TestID2CodecID(id); };
+                auto IsTargetCodecRef = [id](const std::pair<mfxU32, CodecDesc>& codec) { return codec.first == TestID2CodecID(id); };
+
+                bool codecReported = std::find_if(impl.Enc.Codecs, impl.Enc.Codecs + impl.Enc.NumCodecs, IsTargetCodecImpl) != (impl.Enc.Codecs + impl.Enc.NumCodecs);
+                bool codecInRef = std::find_if(ref.Codecs.begin(), ref.Codecs.end(), IsTargetCodecRef) != ref.Codecs.end();
+
+                EXPECT_EQ(codecReported, codecInRef)
+                    << (codecReported ? "ERROR: CodecID is reported by mfxImplDescription but not in ref\n" :
+                                        "ERROR: CodecID is in ref but not reported by mfxImplDescription\n");
+
                 for (auto pCodec = impl.Enc.Codecs; pCodec < impl.Enc.Codecs + impl.Enc.NumCodecs; ++pCodec)
                 {
-                    std::string CodecID = std::string((char*)&pCodec->CodecID, 4);
-                    TS_TRACE(CodecID);
+                    std::string CodecIDreported = std::string((char*)&pCodec->CodecID, 4);
+
+                    if (CodecIDtest != pCodec->CodecID)
+                        continue;
+
+                    TS_TRACE(CodecIDreported);
                     TS_TRACE(pCodec->BiDirectionalPrediction);
                     TS_TRACE(pCodec->MaxcodecLevel);
                     TS_TRACE(pCodec->NumProfiles);
@@ -272,6 +330,7 @@ int TestSuite::RunTest(unsigned int id)
                         EXPECT_TRUE(false) << "ERROR: CodecsID cannot be found in ref\n";
                         continue;
                     }
+
                     auto codecRef = ref.Codecs[pCodec->CodecID];
                 
                     CheckCodec(pCodec->MaxcodecLevel, pCodec->NumProfiles, codecRef);
@@ -314,6 +373,7 @@ int TestSuite::RunTest(unsigned int id)
                     }
                     DEC_PADDING();
                 }
+
                 DEC_PADDING();
                 DEC_PADDING();
             }
