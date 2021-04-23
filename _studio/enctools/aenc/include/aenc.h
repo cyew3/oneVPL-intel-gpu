@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 
 #if !defined(OPEN_SOURCE) || defined(MFX_ENABLE_AENC)
 #define ENABLE_ADAPTIVE_ENCODE
+#define MFX_ENABLE_ET_SSE4_OPT
 #endif
 
 #ifdef __cplusplus

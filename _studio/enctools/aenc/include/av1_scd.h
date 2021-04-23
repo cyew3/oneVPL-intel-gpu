@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,13 @@
 #include <map>
 #include <functional>
 #include <set>
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <intrin.h>
+#include <smmintrin.h>
+#else
+#include <immintrin.h>
+#endif
 
 #define ASC_SMALL_WIDTH         128
 #define ASC_SMALL_HEIGHT        64

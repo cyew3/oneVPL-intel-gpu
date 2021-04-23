@@ -9,6 +9,7 @@ set(sources
     aenc/src/av1_asc.cpp
     aenc/include/aenc.h
     aenc/include/aenc++.h
+    aenc/include/asc_cpu_detect.h
     aenc/include/av1_scd.h
 )
 
@@ -21,6 +22,7 @@ target_include_directories(aenc
 
 target_link_libraries(aenc
   PRIVATE
+    mfx_require_sse4_properties
     mfx_static_lib
     mfx_sdl_properties
   )

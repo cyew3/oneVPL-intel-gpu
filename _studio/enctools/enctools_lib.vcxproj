@@ -21,6 +21,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
+    <ClInclude Include="aenc\include\asc_cpu_detect.h" />
     <ClInclude Include="aenc\include\av1_scd.h" />
     <ClInclude Include="include\mfx_enctools.h" />
     <ClInclude Include="include\mfx_enctools_allocator.h" />
