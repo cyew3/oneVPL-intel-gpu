@@ -28,35 +28,15 @@
 #include "mfx_session.h"
 #include "libmfx_core_interface.h"
 
-static mfxStatus InitDummySession(mfxU32 adapter_n, mfxSession &dummy_session)
+static mfxStatus InitDummySession(mfxU32 adapter_n, mfxSession *dummy_session)
 {
-    mfxInitParam initPar{};
-    initPar.Version.Major = 1;
-    initPar.Version.Minor = 0;
+    mfxInitializationParam param;
+    param.AccelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
+    param.VendorImplID = adapter_n;
+    param.NumExtParam = 0;
+    param.ExtParam = nullptr;
 
-    switch (adapter_n) {
-    case 0:
-        initPar.Implementation = MFX_IMPL_HARDWARE;
-        break;
-    case 1:
-        initPar.Implementation = MFX_IMPL_HARDWARE2;
-        break;
-    case 2:
-        initPar.Implementation = MFX_IMPL_HARDWARE3;
-        break;
-    case 3:
-        initPar.Implementation = MFX_IMPL_HARDWARE4;
-        break;
-
-    default:
-        // try searching on all display adapters
-        initPar.Implementation = MFX_IMPL_HARDWARE_ANY;
-        break;
-    }
-
-    initPar.Implementation |= MFX_IMPL_VIA_D3D11;
-
-    return MFXInitEx(initPar, &dummy_session);
+    return MFXInitialize(param, dummy_session);
 }
 
 static inline mfxStatus CloseDummySession(mfxSession dummy_session)
@@ -143,7 +123,8 @@ mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAda
         // Check if requested capabilities are supported
         mfxSession dummy_session;
 
-        mfxStatus sts = InitDummySession(adapter_n - 1, dummy_session);
+        mfxStatus sts = InitDummySession(adapter_n - 1, &dummy_session);
+
         if (sts != MFX_ERR_NONE)
             continue;
 

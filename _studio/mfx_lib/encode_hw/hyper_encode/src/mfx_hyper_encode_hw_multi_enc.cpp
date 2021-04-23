@@ -217,14 +217,15 @@ mfxStatus HyperEncodeBase::Close()
     return MFX_ERR_NONE;
 }
 
-mfxStatus HyperEncodeBase::InitSession(mfxSession* appSession, mfxSession* internalSession, mfxHandleType, mfxHDL, mfxIMPL impl, mfxU16)
+mfxStatus HyperEncodeBase::InitSession(mfxSession* appSession, mfxSession* internalSession, mfxHandleType, mfxHDL, mfxAccelerationMode accelMode, mfxU16, mfxU32 adapterNum)
 {
-    mfxInitParam initPar = {};
-    initPar.Version.Major = 1;
-    initPar.Version.Minor = 0;
-    initPar.Implementation = impl;
+    mfxInitializationParam param;
+    param.AccelerationMode = accelMode;
+    param.VendorImplID = adapterNum;
+    param.NumExtParam = 0;
+    param.ExtParam = nullptr;
 
-    mfxStatus sts = MFXInitEx(initPar, internalSession);
+    mfxStatus sts = MFXInitialize(param, internalSession);
     MFX_CHECK_STS(sts);
 
     return MFXJoinSession(*appSession, *internalSession);
@@ -234,7 +235,8 @@ mfxStatus HyperEncodeBase::CreateEncoders()
 {
     mfxHDL integratedDeviceHdl = nullptr, discreteDeviceHdl = nullptr;
     mfxHandleType integratedDeviceHdlType, discreteDeviceHdlType;
-    mfxIMPL integratedDeviceSessionImpl, discreteDeviceSessionImpl;
+    mfxAccelerationMode integratedDeviceSessionAccelMode, discreteDeviceSessionAccelMode;
+    mfxU32 integratedDeviceAdapterNum, discreteDeviceAdapterNum;
 
     mfxStatus sts = m_devMngr->GetHandle(MFX_MEDIA_INTEGRATED, &integratedDeviceHdl, &integratedDeviceHdlType);
     MFX_CHECK_STS(sts);
@@ -248,7 +250,8 @@ mfxStatus HyperEncodeBase::CreateEncoders()
 #else
         MFX_MEDIA_INTEGRATED
 #endif        
-        , &integratedDeviceSessionImpl);
+        , &integratedDeviceSessionAccelMode
+        , &integratedDeviceAdapterNum);
     MFX_CHECK_STS(sts);
 
     sts = m_devMngr->GetIMPL(
@@ -257,12 +260,13 @@ mfxStatus HyperEncodeBase::CreateEncoders()
 #else
         MFX_MEDIA_DISCRETE
 #endif
-        , &discreteDeviceSessionImpl);
+        , &discreteDeviceSessionAccelMode
+        , &discreteDeviceAdapterNum);
     MFX_CHECK_STS(sts);
 
     // initialize session & encoder on iGfx
     mfxSession integratedSession;
-    sts = InitSession(&m_appSession, &integratedSession, integratedDeviceHdlType, integratedDeviceHdl, integratedDeviceSessionImpl, MFX_MEDIA_INTEGRATED);
+    sts = InitSession(&m_appSession, &integratedSession, integratedDeviceHdlType, integratedDeviceHdl, integratedDeviceSessionAccelMode, MFX_MEDIA_INTEGRATED, integratedDeviceAdapterNum);
     MFX_CHECK_STS(sts);
 
     std::unique_ptr<SingleGpuEncode> integratedEncoder{ new SingleGpuEncode(integratedSession->m_pCORE.get(), MFX_MEDIA_INTEGRATED) };
@@ -270,7 +274,7 @@ mfxStatus HyperEncodeBase::CreateEncoders()
 
     // initialize session & encoder on dGfx
     mfxSession discreteSession;
-    sts = InitSession(&m_appSession, &discreteSession, discreteDeviceHdlType, discreteDeviceHdl, discreteDeviceSessionImpl, MFX_MEDIA_DISCRETE);
+    sts = InitSession(&m_appSession, &discreteSession, discreteDeviceHdlType, discreteDeviceHdl, discreteDeviceSessionAccelMode, MFX_MEDIA_DISCRETE, discreteDeviceAdapterNum);
     MFX_CHECK_STS(sts);
 
     std::unique_ptr<SingleGpuEncode> discreteEncoder{ new SingleGpuEncode(discreteSession->m_pCORE.get(), MFX_MEDIA_DISCRETE) };
@@ -442,10 +446,10 @@ mfxStatus HyperEncodeVideo::InitVPPparams(mfxVideoParam* par)
 
 mfxStatus HyperEncodeVideo::InitSession(
     mfxSession* appSession, mfxSession* internalSession,
-    mfxHandleType type, mfxHDL hdl, mfxIMPL impl, mfxU16 mediaAdapterType)
+    mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxU16 mediaAdapterType, mfxU32 adapterNum)
 {
     // prepare encode session
-    mfxStatus sts = HyperEncodeBase::InitSession(appSession, internalSession, type, hdl, impl, mediaAdapterType);
+    mfxStatus sts = HyperEncodeBase::InitSession(appSession, internalSession, type, hdl, accelMode, mediaAdapterType, adapterNum);
     MFX_CHECK_STS(sts);
 
     sts = (*internalSession)->m_pCORE->SetHandle(type, hdl);

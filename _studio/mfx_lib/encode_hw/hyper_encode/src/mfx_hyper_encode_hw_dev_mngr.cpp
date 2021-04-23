@@ -26,37 +26,14 @@
 #include "libmfx_core_interface.h"
 #include "mfx_hyper_encode_hw_adapter.h"
 
-mfxStatus DeviceManagerBase::GetIMPL(mfxU16 mediaAdapterType, mfxIMPL* impl)
+mfxStatus DeviceManagerBase::GetIMPL(mfxU16 mediaAdapterType, mfxAccelerationMode* accelMode, mfxU32* adapterNum)
 {
-    for (auto idx = m_intelAdapters.Adapters; idx != m_intelAdapters.Adapters + m_intelAdapters.NumActual; ++idx) {
+    for (auto idx = m_intelAdapters.Adapters; idx != m_intelAdapters.Adapters + m_intelAdapters.NumActual; ++idx)
         if (mediaAdapterType == idx->Platform.MediaAdapterType) {
-            switch (idx->Number) {
-            case 0:
-                *impl = MFX_IMPL_HARDWARE;
-                break;
-            case 1:
-                *impl = MFX_IMPL_HARDWARE2;
-                break;
-            case 2:
-                *impl = MFX_IMPL_HARDWARE3;
-                break;
-            case 3:
-                *impl = MFX_IMPL_HARDWARE4;
-                break;
-            default:
-                return MFX_ERR_UNSUPPORTED;
-            }
-
-            if (m_memType == SYSTEM_MEMORY)
-                *impl |= MFX_IMPL_VIA_D3D11;
-            else if (mediaAdapterType == m_appSessionPlatform.MediaAdapterType)
-                *impl |= (m_memType == D3D11_MEMORY) ? MFX_IMPL_VIA_D3D11 : MFX_IMPL_VIA_D3D9;
-            else
-                *impl |= MFX_IMPL_VIA_D3D11;
-
+            *adapterNum = idx->Number;
+            *accelMode = MFX_ACCEL_MODE_VIA_D3D11;
             return MFX_ERR_NONE;
         }
-    }
 
     return MFX_ERR_UNSUPPORTED;
 }

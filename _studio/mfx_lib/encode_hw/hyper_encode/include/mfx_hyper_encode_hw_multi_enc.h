@@ -100,7 +100,7 @@ public:
 protected:
     virtual mfxStatus InitSession(
         mfxSession* appSession, mfxSession* internalSession,
-        mfxHandleType type, mfxHDL hdl, mfxIMPL impl, mfxU16 mediaAdapterType);
+        mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxU16 mediaAdapterType, mfxU32 adapterNum);
     
     mfxStatus CreateEncoders();
     mfxU16 GetAdapterTypeByFrame(mfxU32 frameNum, mfxU16 gopSize);
@@ -187,7 +187,7 @@ protected:
 
     mfxStatus InitSession(
         mfxSession* appSession, mfxSession* internalSession,
-        mfxHandleType type, mfxHDL hdl, mfxIMPL impl, mfxU16 mediaAdapterType) override;
+        mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxU16 mediaAdapterType, mfxU32 adapterNum) override;
 
     mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) override;
 

@@ -59,7 +59,7 @@ public:
         m_intelAdaptersData.clear();
     }
 
-    virtual mfxStatus GetIMPL(mfxU16 mediaAdapterType, mfxIMPL* impl);
+    virtual mfxStatus GetIMPL(mfxU16 mediaAdapterType, mfxAccelerationMode* accelMode, mfxU32* adapterNum);
     virtual mfxStatus GetHandle(mfxU16 mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType) = 0;
     virtual mfxFrameAllocator* GetInternalAllocator() = 0;
 
