@@ -2836,18 +2836,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             SetOutputColorSpace(&outColorSpace);
         }
 
-        if (m_dx9on11InWrap.mids && m_pDX9ON11Core)
-        {
-            //Wrap input surface
-            mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(pParams->pRefSurfaces[startIdx + refIdx].memId, m_dx9on11InWrap);
-            MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
-
-            mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(pParams->pRefSurfaces[startIdx + refIdx].memId, dx11MemId);
-            MFX_CHECK_STS(mfxRes);
-
-            mfxRes = m_core->GetFrameHDL(dx11MemId, &pParams->pRefSurfaces[startIdx + refIdx].hdl.first);
-            MFX_CHECK_STS(mfxRes);
-        }
+        sts = WrapInputSurface(pParams->pRefSurfaces[startIdx + refIdx].memId, &pParams->pRefSurfaces[startIdx + refIdx].hdl.first);
+        MFX_CHECK_STS(sts);
 
         D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
         inputDesc.ViewDimension        = D3D11_VPIV_DIMENSION_TEXTURE2D;
@@ -2981,15 +2971,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     UINT StreamCount;
 
-    if (m_dx9on11OutWrap.mids && m_pDX9ON11Core)
-    {
-        //Wrap output surface
-        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(pParams->targetSurface.memId, m_dx9on11OutWrap, true);
-        MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
-
-        mfxStatus mfxRes = m_core->GetFrameHDL(dx11MemId, &pParams->targetSurface.hdl.first);
-        MFX_CHECK_STS(mfxRes);
-    }
+    sts = WrapOutputSurface(pParams->targetSurface.memId, &pParams->targetSurface.hdl.first);
+    MFX_CHECK_STS(sts);
 
     if (pParams->bComposite)
     {
@@ -3277,12 +3260,41 @@ mfxStatus D3D11VideoProcessor::CreateWrapBuffers(const mfxU16& numFrameMinInput,
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoProcessor::WrapInputSurface(mfxMemId inputMemId, mfxHDL* inputHDL)
+{
+    MFX_CHECK(m_dx9on11InWrap.mids && m_pDX9ON11Core, MFX_ERR_NONE);
+
+    mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(inputMemId, m_dx9on11InWrap);
+    MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+    mfxStatus mfxRes = m_pDX9ON11Core->CopyDX9toDX11(inputMemId, dx11MemId);
+    MFX_CHECK_STS(mfxRes);
+
+    mfxRes = m_core->GetFrameHDL(dx11MemId, inputHDL);
+    MFX_CHECK_STS(mfxRes);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::WrapOutputSurface(mfxMemId outputMemId, mfxHDL* outputHDL)
+{
+    MFX_CHECK(m_dx9on11OutWrap.mids && m_pDX9ON11Core, MFX_ERR_NONE);
+
+    mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(outputMemId, m_dx9on11OutWrap, true);
+    MFX_CHECK(dx11MemId, MFX_ERR_NOT_FOUND);
+
+    mfxStatus mfxRes = m_core->GetFrameHDL(dx11MemId, outputHDL);
+    MFX_CHECK_STS(mfxRes);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3D11VideoProcessor::UnwrapBuffers(mfxMemId input, mfxMemId output)
 {
-    if (m_pDX9ON11Core && m_dx9on11InWrap.mids)
+    if (m_pDX9ON11Core && m_dx9on11InWrap.mids && input)
         MFX_CHECK(m_pDX9ON11Core->UnWrapSurface(input), MFX_ERR_INVALID_HANDLE);
 
-    if (m_pDX9ON11Core && m_dx9on11OutWrap.mids)
+    if (m_pDX9ON11Core && m_dx9on11OutWrap.mids && output)
     {
         mfxMemId dx11MemId = m_pDX9ON11Core->UnWrapSurface(output, true);
         MFX_CHECK(dx11MemId, MFX_ERR_INVALID_HANDLE);

@@ -784,6 +784,10 @@ namespace MfxHwVideoProcessing
         mfxStatus QueryCapabilities(mfxVppCaps& caps);
 
         mfxStatus CreateWrapBuffers(const mfxU16& numFrameMinInput, const mfxU16& numFrameMinOut, const mfxVideoParam& IOPattern);
+
+        mfxStatus WrapInputSurface(mfxMemId inputMemId, mfxHDL* inputHDL);
+        mfxStatus WrapOutputSurface(mfxMemId outputMemId, mfxHDL* outputHDL);
+
         mfxStatus UnwrapBuffers(mfxMemId input, mfxMemId output);
         //BOOL IsRunning() {return true; };
 

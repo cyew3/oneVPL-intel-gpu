@@ -4270,6 +4270,13 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
                 imfxFPMode = (imfxFPMode == TFF2FIELD) ? BFF2FIELD : TFF2FIELD;
             }
         }
+
+        sts = (*m_ddi)->WrapInputSurface(m_executeSurf[0].memId, &m_executeSurf[0].hdl.first);
+        MFX_CHECK_STS(sts);
+
+        sts = (*m_ddi)->WrapOutputSurface(m_executeParams.targetSurface.memId, &m_executeParams.targetSurface.hdl.first);
+        MFX_CHECK_STS(sts);
+
         sts = ProcessFieldCopy((mfxHDL)&m_executeSurf[0].hdl, (mfxHDL)&m_executeParams.targetSurface.hdl, imfxFPMode);
         MFX_CHECK_STS(sts);
 
@@ -4280,11 +4287,20 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
 
+            sts = (*m_ddi)->WrapInputSurface(m_executeSurf[1].memId, &m_executeSurf[1].hdl.first);
+            MFX_CHECK_STS(sts);
+
             // copy the second field to frame
             imfxFPMode = (imfxFPMode == FIELD2TFF) ? FIELD2BFF : FIELD2TFF;
             sts = ProcessFieldCopy((mfxHDL)&m_executeSurf[1].hdl, (mfxHDL)&m_executeParams.targetSurface.hdl, imfxFPMode);
             MFX_CHECK_STS(sts);
+
+            sts = (*m_ddi)->UnwrapBuffers(m_executeSurf[1].memId, nullptr);
+            MFX_CHECK_STS(sts);
         }
+
+        sts = (*m_ddi)->UnwrapBuffers(m_executeSurf[0].memId, m_executeParams.targetSurface.memId);
+        MFX_CHECK_STS(sts);
 
         m_executeParams.pRefSurfaces = &m_executeSurf[0];
 #ifdef MFX_ENABLE_MCTF
@@ -4330,9 +4346,18 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         sts = PreWorkInputSurface(surfQueue);
         MFX_CHECK_STS(sts);
 
+        sts = (*m_ddi)->WrapInputSurface(m_executeSurf[0].memId, &m_executeSurf[0].hdl.first);
+        MFX_CHECK_STS(sts);
+
+        sts = (*m_ddi)->WrapOutputSurface(m_executeParams.targetSurface.memId, &m_executeParams.targetSurface.hdl.first);
+        MFX_CHECK_STS(sts);
+
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (d3d->d3d)");
         mfxSize roi = {pTask->output.pSurf->Info.Width, pTask->output.pSurf->Info.Height};
         sts = m_pCmCopy->CopyMirrorVideoToVideoMemory(m_executeParams.targetSurface.hdl, m_executeSurf[0].hdl, roi, MFX_FOURCC_NV12);
+        MFX_CHECK_STS(sts);
+
+        sts = (*m_ddi)->UnwrapBuffers(m_executeSurf[0].memId, m_executeParams.targetSurface.memId);
         MFX_CHECK_STS(sts);
 #ifdef MFX_ENABLE_MCTF
         // this is correct that outputForApp is used:
