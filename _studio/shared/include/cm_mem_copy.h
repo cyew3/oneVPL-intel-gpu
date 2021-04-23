@@ -147,7 +147,7 @@ public:
 #endif
 
     // initialize available functionality
-    mfxStatus Initialize(eMFXHWType hwtype = MFX_HW_UNKNOWN);
+    mfxStatus Initialize(eMFXHWType hwtype = MFX_HW_UNKNOWN, bool bUseCacheTables = true);
     mfxStatus InitializeSwapKernels(eMFXHWType hwtype = MFX_HW_UNKNOWN);
 
     // release object
@@ -314,6 +314,7 @@ public:
 protected:
 
     eMFXHWType m_HWType;
+    bool       m_bUseCacheTables;
     CmDevice  *m_pCmDevice;
     CmProgram *m_pCmProgram;
     INT m_timeout;
@@ -353,10 +354,9 @@ protected:
                                     std::map<mfxHDLPair, CmSurface2D *> & tableCmRelations,
                                     std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex);
 
-    SurfaceIndex  * CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize,
+    std::pair<SurfaceIndex *, CmBufferUP*> CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize,
                                  std::map<mfxU8 *, CmBufferUP *> & tableSysRelations,
                                  std::map<CmBufferUP *,  SurfaceIndex *> & tableSysIndex);
-
 };
 
 #endif // !defined(MFX_VA_OSX)

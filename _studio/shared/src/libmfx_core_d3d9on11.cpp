@@ -74,7 +74,9 @@ D3D9ON11VideoCORE_T<Base>::D3D9ON11VideoCORE_T(
     , m_hasDX9FrameAllocator(false)
     , m_isDX11AuxBufferAllocated(false)
     , m_dx9FrameAllocator()
-{}
+{
+    m_bCmUseCache = false;
+}
 
 template <class Base>
 D3D9ON11VideoCORE_T<Base>::~D3D9ON11VideoCORE_T() {}
