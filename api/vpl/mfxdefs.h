@@ -318,6 +318,17 @@ typedef enum
 } mfxStatus;
 
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
+/*! Represents Globally Unique Identifier (GUID) with memory layout 
+    compliant to RFC 4122. See https://www.rfc-editor.org/info/rfc4122 for details. */
+typedef struct
+{
+    mfxU8 Data[16]; /*!< Array to keep GUID. */
+} mfxGUID;
+MFX_PACK_END()
+
+
+
 // Application
 #if defined(MFX_DISPATCHER_EXPOSED_PREFIX)
 

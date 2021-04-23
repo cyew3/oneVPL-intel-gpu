@@ -567,8 +567,26 @@ typedef struct mfxFrameSurfaceInterface {
 
     */
     void               (MFX_CDECL *OnComplete)(mfxStatus sts);
+    
+   /*! @brief
+    Returns an interface defined by the GUID. If the returned interface is a reference 
+    counted object the caller should release the obtained interface to avoid memory leaks.
 
-    mfxHDL              reserved2[3];
+    @param[in]  surface   Valid surface.
+    @param[in]  guid      GUID of the requested interface.
+    @param[out] interface Interface.
+
+
+    @return
+     MFX_ERR_NONE               If no error. \n
+     MFX_ERR_NULL_PTR           If interface or surface is NULL. \n
+     MFX_ERR_UNSUPPORTED        If requested interface is not supported. \n
+     MFX_ERR_NOT_IMPLEMENTED    If requested interface is not implemented. \n
+     MFX_ERR_UNKNOWN            Any internal error.
+    */
+    mfxStatus           (MFX_CDECL *QueryInterface)(mfxFrameSurface1* surface, mfxGUID guid, mfxHDL* iface); 
+
+    mfxHDL              reserved2[2];
 } mfxFrameSurfaceInterface;
 MFX_PACK_END()
 

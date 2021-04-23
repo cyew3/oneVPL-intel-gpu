@@ -102,10 +102,12 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxI16Pair                ,4    )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxHDLPair                ,16   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxStatus                 ,4    )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxGUID                   ,16   )
     #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxI16Pair                ,4    )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxHDLPair                ,8    )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxStatus                 ,4    )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxGUID                   ,16   )
     #endif
 #endif //defined (__MFXCOMMON_H__)
 
@@ -1108,12 +1110,14 @@
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxHDLPair                         ,first                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxHDLPair                         ,second                        ,8    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxGUID                            ,Data                          ,0    )
     #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxI16Pair                         ,x                             ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxI16Pair                         ,y                             ,2    )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxHDLPair                         ,first                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxHDLPair                         ,second                        ,4    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxGUID                            ,Data                          ,0    )
     #endif
 #endif //defined (__MFXDEFS_H__)
 
