@@ -42,6 +42,10 @@ public:
 
     mfxHDL GetCurrentOutputSurface() const;
 
+    void SetCurrentSurfaceDecComplete();
+
+    void SetHevcDec();
+
 #ifdef UMC_VA_LINUX
     VAProcPipelineParameterBuffer m_pipelineParams;
 #endif
@@ -58,6 +62,8 @@ protected:
 #endif
 
     mfxHDL m_currentOutputSurface;
+    bool   m_isCurrentOutputSurfaceInUse;
+    bool   m_isHevcDec;
 #endif // #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 };
 

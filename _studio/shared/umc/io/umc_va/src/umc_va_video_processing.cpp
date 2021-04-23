@@ -32,6 +32,8 @@ VideoProcessingVA::VideoProcessingVA()
 #else
     : m_currentOutputSurface()
 #endif
+    , m_isCurrentOutputSurfaceInUse(false)
+    , m_isHevcDec(false)
 {
 }
 
@@ -41,7 +43,25 @@ VideoProcessingVA::~VideoProcessingVA()
 
 void VideoProcessingVA::SetOutputSurface(mfxHDL surfHDL)
 {
-    m_currentOutputSurface = surfHDL;
+    if(!m_isCurrentOutputSurfaceInUse)
+    {
+        m_currentOutputSurface = surfHDL;
+
+        if(m_isHevcDec)
+        {
+            m_isCurrentOutputSurfaceInUse = true;
+        }
+    }
+}
+
+void VideoProcessingVA::SetCurrentSurfaceDecComplete()
+{
+    m_isCurrentOutputSurfaceInUse = false;
+}
+
+void VideoProcessingVA::SetHevcDec()
+{
+    m_isHevcDec = true;
 }
 
 mfxHDL VideoProcessingVA::GetCurrentOutputSurface() const
