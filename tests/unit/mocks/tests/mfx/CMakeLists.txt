@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2021 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,23 +18,53 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-if(BUILD_MOCK_TESTS)
-  add_subdirectory(tests)
-endif()
+cmake_minimum_required (VERSION 3.7)
 
-add_library (mocks INTERFACE)
-target_include_directories (mocks
-    INTERFACE
-        ${CMAKE_HOME_DIRECTORY}/tests/unit
+file (GLOB
+    MOCKS_MFX_TESTS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/allocator.cpp"
 )
 
-target_compile_features (mocks
-    INTERFACE cxx_std_17
+add_executable (mocks-mfx-tests
+    ${MOCKS_MFX_TESTS_SRC}
 )
 
-target_compile_options (mocks
-    INTERFACE
-        $<$<PLATFORM_ID:Windows>:/bigobj>
+set_target_properties (mocks-mfx-tests
+    PROPERTIES
+        FOLDER tests
 )
 
-add_library (mocks::mocks ALIAS mocks)
+target_link_libraries (mocks-mfx-tests
+    PRIVATE
+        gmock
+        gtest_main
+
+        mocks::mocks
+
+        mfx_va_properties
+        mfx_shared_lib
+)
+
+target_compile_definitions (mocks-mfx-tests
+    PRIVATE
+        ENABLE_MFX_INTEL_GUID_PRIVATE
+        ENABLE_MFX_INTEL_GUID_ENCODE
+        ENABLE_MFX_INTEL_GUID_DECODE
+)
+
+set_target_properties (mocks-mfx-tests
+    PROPERTIES
+        FOLDER "tests"
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+)
+
+add_test (NAME mocks-mfx-tests
+    COMMAND
+        $<TARGET_FILE:mocks-mfx-tests>
+    WORKING_DIRECTORY
+        WORKING_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+)
+
+set_property (TEST mocks-mfx-tests
+    PROPERTY
+        ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}"
+)

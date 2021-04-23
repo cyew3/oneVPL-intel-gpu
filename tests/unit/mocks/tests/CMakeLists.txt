@@ -21,3 +21,5 @@
 if(CMAKE_SYSTEM_NAME MATCHES Linux)
     add_subdirectory(va)
 endif()
+
+add_subdirectory(mfx)

@@ -27,11 +27,11 @@ file (GLOB
     MOCKS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/resource/*.cpp"
 )
 
-add_executable(mocks_test
+add_executable(mocks-va-tests
     $<$<PLATFORM_ID:Linux>:${MOCKS_SRC}>
 )
 
-target_link_libraries (mocks_test
+target_link_libraries (mocks-va-tests
     PRIVATE
         gmock
         gtest_main
@@ -39,13 +39,15 @@ target_link_libraries (mocks_test
         mfx_va_properties
 )
 
-set_target_properties (mocks_test
+set_target_properties (mocks-va-tests
     PROPERTIES
         FOLDER "tests"
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
 )
 
-add_test (NAME mocks_test
-    COMMAND mocks_test
-    WORKING_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+add_test (NAME mocks-va-tests
+    COMMAND
+        $<TARGET_FILE:mocks-mfx-tests>
+    WORKING_DIRECTORY
+        ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
 )
