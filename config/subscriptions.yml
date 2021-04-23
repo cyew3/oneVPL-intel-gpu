@@ -4,6 +4,6 @@ components:
   mediasdk_1x_binaries:
     configuration_path: products/mediasdk/mediasdk-1x/components/mediasdk/build
   contrib:
-    configuration_path: products/mediasdk/mediasdk-1x/components/contib/build
+    configuration_path: products/mediasdk/mediasdk-1x/components/contrib/build
   val-tools:
     configuration_path: products/mediasdk/mediasdk-1x/components/val-tools/build
