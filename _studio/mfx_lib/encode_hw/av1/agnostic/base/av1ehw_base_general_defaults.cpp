@@ -220,7 +220,14 @@ public:
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
     {
-        return par.base.GetGopRefDist(par) > 1 ? 2 : 1;
+        mfxU16 NumRefActiveP[8], NumRefActiveBL0[8], NumRefActiveBL1[8];
+        par.base.GetNumRefActive(par, &NumRefActiveP, &NumRefActiveBL0, &NumRefActiveBL1);
+
+        const mfxU16 RefActiveP   = *std::max_element(NumRefActiveP,   NumRefActiveP   + Size(NumRefActiveP));
+        const mfxU16 RefActiveBL0 = *std::max_element(NumRefActiveBL0, NumRefActiveBL0 + Size(NumRefActiveBL0));
+        const mfxU16 RefActiveBL1 = *std::max_element(NumRefActiveBL1, NumRefActiveBL1 + Size(NumRefActiveBL1));
+
+        return mfxU16((par.base.GetGopRefDist(par) > 1) ? std::max<mfxU16>(RefActiveP, RefActiveBL0 + RefActiveBL1) : RefActiveP);
     }
 
     static mfxU16 NumRefFrames(
@@ -270,18 +277,42 @@ public:
         , mfxU16(*pBL1)[8])
     {
         bool bExternal = false;
+        const mfxU16 numRefByTU[3][7] =
+        {
+            { 2, 2, 2, 2, 2, 1, 1 },
+            { 1, 1, 1, 1, 1, 1, 1 },
+            { 1, 1, 1, 1, 1, 1, 1 }
+        };
+
         mfxU16 maxP = 0, maxBL0 = 0, maxBL1 = 0;
         std::tie(maxP, maxBL0, maxBL1) = par.base.GetMaxNumRef(par);
+
+        // Get default active ref frame number
+        mfxU16 tu = par.mvp.mfx.TargetUsage;
+        CheckRangeOrSetDefault<mfxU16>(tu, 1, 7, DEFAULT_TARGET_USAGE);
+
+        mfxU16 defaultP = 0, defaultBL0 = 0, defaultBL1 = 0;
+        std::tie(defaultP, defaultBL0, defaultBL1) = std::make_tuple(
+            std::min<mfxU16>(numRefByTU[0][tu - 1], maxP)
+            , std::min<mfxU16>(numRefByTU[1][tu - 1], maxBL0)
+            , std::min<mfxU16>(numRefByTU[2][tu - 1], maxBL1));
 
         auto SetDefaultNRef =
             [](const mfxU16(*extRef)[8], mfxU16 defaultRef, mfxU16(*NumRefActive)[8])
         {
             bool bExternal = false;
-            bool bDone = false;
+            if (!NumRefActive)
+            {
+                return bExternal;
+            }
+            
+            if (!extRef)
+            {
+                std::fill_n(*NumRefActive, 8, defaultRef);
+                return bExternal;
+            }
 
-            bDone |= !NumRefActive;
-            bDone |= !bDone && !extRef && std::fill_n(*NumRefActive, 8, defaultRef);
-            bDone |= !bDone && std::transform(
+            std::transform(
                 *extRef
                 , std::end(*extRef)
                 , *NumRefActive
@@ -307,9 +338,9 @@ public:
             extRefBL1 = &pCO3->NumRefActiveBL1;
         }
 
-        bExternal |= SetDefaultNRef(extRefP,   maxP,   pP);
-        bExternal |= SetDefaultNRef(extRefBL0, maxBL0, pBL0);
-        bExternal |= SetDefaultNRef(extRefBL1, maxBL1, pBL1);
+        bExternal |= SetDefaultNRef(extRefP,   defaultP,   pP);
+        bExternal |= SetDefaultNRef(extRefBL0, defaultBL0, pBL0);
+        bExternal |= SetDefaultNRef(extRefBL1, defaultBL1, pBL1);
 
         return bExternal;
     }
