@@ -3245,17 +3245,21 @@ mfxU32 General::GetRawBytes(mfxU16 w, mfxU16 h, mfxU16 ChromaFormat, mfxU16 BitD
 }
 mfxStatus General::CheckIOPattern(mfxVideoParam & par)
 {
-    if (Check<mfxU16
+    mfxU32 invalid = 0;
+
+    invalid += Check<mfxU16
         , MFX_IOPATTERN_IN_VIDEO_MEMORY
         , MFX_IOPATTERN_IN_SYSTEM_MEMORY
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         , MFX_IOPATTERN_IN_OPAQUE_MEMORY
 #endif
         , 0>
-        (par.IOPattern))
+        (par.IOPattern);
+
+    if (invalid)
     {
-        par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        par.IOPattern = 0;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     return MFX_ERR_NONE;
