@@ -23,6 +23,7 @@ message( STATUS "Global Configuration of Targets" )
 include(CMakeDependentOption)
 
 option( MFX_ENABLE_KERNELS "Build with advanced media kernels support?" ON )
+option( MFX_ENABLE_JPEG_SW_FALLBACK "Enabled software fallback for JPEG ?" ON )
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   set(OPEN_SOURCE OFF)

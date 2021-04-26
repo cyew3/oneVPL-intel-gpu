@@ -49,14 +49,7 @@
 #endif
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
-#if defined(MFX_VA)
 #include "mfx_mjpeg_encode_hw.h"
-#if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-#include "mfx_mjpeg_encode.h"
-#endif
-#else
-#include "mfx_mjpeg_encode.h"
-#endif
 #endif
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -348,24 +341,6 @@ static const CodecId2Handlers codecId2Handlers =
             },
             // .fallback =
             {
-  #if defined(MFX_ENABLE_JPEG_SW_FALLBACK)
-                // .ctor =
-                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    return new MFXVideoENCODEMJPEG(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
-                {
-                    return MFXVideoENCODEMJPEG::Query(in, out);
-                },
-                // .queryIOSurf =
-                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                {
-                    return MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
-                }
-  #endif
             }
 #else // MFX_VA
             // .primary =
