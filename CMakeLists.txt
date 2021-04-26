@@ -28,7 +28,7 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES WindowsStore)
 endif()
 
 # Througout this project MFX_VERSION refers to uAPI version and MEDIA_VERSION refers to product version
-set(MEDIA_VERSION 21.2.0) # auto-update
+set(MEDIA_VERSION 21.2.1) # auto-update
 set(MEDIA_VERSION_STR "${MEDIA_VERSION}${MEDIA_VERSION_EXTRA}" CACHE STRING "" FORCE)
 
 if(CMAKE_SYSTEM_NAME MATCHES WindowsStore)
