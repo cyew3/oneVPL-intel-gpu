@@ -472,7 +472,7 @@ mfxStatus D3D11Encoder::Execute(
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
 #else
-	encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1;
+    encodeExecuteParams.PavpEncryptionMode.eEncryptionType = 1;
 #endif
 
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
@@ -596,7 +596,7 @@ mfxStatus D3D11Encoder::Execute(
     catch (...)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on executing task!\n");
-        return MFX_ERR_DEVICE_FAILED;
+        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
     }
 
     return MFX_ERR_NONE;
@@ -641,7 +641,7 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
         catch (...)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on quering task status!\n");
-            return MFX_ERR_DEVICE_FAILED;
+            MFX_RETURN(MFX_ERR_DEVICE_FAILED);
         }
 
         // Put all with ENCODE_OK into cache.
@@ -674,7 +674,7 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
         sts = MFX_ERR_DEVICE_FAILED;
     }
 
-    return sts;
+    MFX_RETURN(sts);
 } // mfxStatus D3D11Encoder::QueryStatus(mfxU32 feedbackNumber, mfxU32& bytesWritten)
 
 

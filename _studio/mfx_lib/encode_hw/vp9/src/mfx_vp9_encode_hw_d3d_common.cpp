@@ -64,7 +64,7 @@ namespace MfxHwVP9Encode
         pScheduler = (MFXIScheduler2 *)pCore->GetSession()->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
 
         if (pScheduler == NULL)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
 
         MFX_SCHEDULER_PARAM schedule_Param;
         mfxStatus paramsts = pScheduler->GetParam(&schedule_Param);
@@ -116,7 +116,7 @@ namespace MfxHwVP9Encode
             MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "WaitForSingleObject", "Event %p", task.m_GpuEvent.gpuSyncEvent);
         }
 
-        return sts;
+        MFX_RETURN(sts);
     }
 #endif
 
@@ -142,10 +142,10 @@ namespace MfxHwVP9Encode
             if (sts == MFX_WRN_DEVICE_BUSY)
             {
                 // Need to add a check for TDRHang
-                return m_bSingleThreadMode ? MFX_WRN_DEVICE_BUSY : MFX_ERR_GPU_HANG;
+                MFX_RETURN(m_bSingleThreadMode ? MFX_WRN_DEVICE_BUSY : MFX_ERR_GPU_HANG);
             }
             else if (sts != MFX_ERR_NONE)
-                return MFX_ERR_DEVICE_FAILED;
+                MFX_RETURN(MFX_ERR_DEVICE_FAILED);
 
             m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);
 
@@ -161,7 +161,7 @@ namespace MfxHwVP9Encode
 #else
         sts = QueryStatusAsync(task);
 #endif
-        return sts;
+        MFX_RETURN(sts);
     }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC

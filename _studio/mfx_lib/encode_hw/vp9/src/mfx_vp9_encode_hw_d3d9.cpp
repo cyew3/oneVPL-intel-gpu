@@ -344,7 +344,7 @@ mfxStatus FillSegmentMap(Task const & task,
     FrameLocker lock(m_pmfxCore, segMap, task.m_pSegmentMap->pSurface->Data.MemId);
     if (segMap.Y == 0)
     {
-        return MFX_ERR_LOCK_MEMORY;
+        MFX_RETURN(MFX_ERR_LOCK_MEMORY);
     }
 
     mfxExtVP9Segmentation const & seg = GetActualExtBufferRef(*task.m_pParam, task.m_ctrl);
@@ -366,7 +366,7 @@ mfxStatus FillSegmentMap(Task const & task,
     if (seg.NumSegmentIdAlloc < srcW * srcH || seg.SegmentId == 0 ||
         srcW != (dstW + ratio - 1) / ratio || srcH != (dstH + ratio - 1) / ratio)
     {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 
     mfxU32 dstPitch = 0;
@@ -544,7 +544,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     if (pCore == 0)
     {
-        return MFX_ERR_NULL_PTR;
+        MFX_RETURN(MFX_ERR_NULL_PTR);
     }
 
     m_pmfxCore = pCore;
@@ -830,7 +830,7 @@ mfxStatus D3D9Encoder::Execute(
     catch (...)
     {
         MFX_LTRACE_X(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on executing task!");
-        return MFX_ERR_DEVICE_FAILED;
+        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
     }
 
     return MFX_ERR_NONE;
@@ -872,7 +872,7 @@ mfxStatus D3D9Encoder::QueryStatusAsync(
         catch (...)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on quering task status!");
-            return MFX_ERR_DEVICE_FAILED;
+            MFX_RETURN(MFX_ERR_DEVICE_FAILED);
         }
 
         // Put all with ENCODE_OK into cache.
@@ -903,7 +903,7 @@ mfxStatus D3D9Encoder::QueryStatusAsync(
         sts = MFX_ERR_DEVICE_FAILED;
     }
 
-    return sts;
+    MFX_RETURN(sts);
 } // mfxStatus D3D9Encoder::QueryStatus(mfxU32 feedbackNumber, mfxU32& bytesWritten)
 
 

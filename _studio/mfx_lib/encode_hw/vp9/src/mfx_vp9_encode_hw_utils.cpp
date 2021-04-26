@@ -634,7 +634,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
     if (NumFrameActual < req.NumFrameMin)
     {
-        return MFX_ERR_MEMORY_ALLOC;
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
     }
 
     m_pCore = pCore;
@@ -649,13 +649,13 @@ mfxStatus MfxFrameAllocResponse::Release()
 {
     if (m_numFrameActualReturnedByAllocFrames == 0)
     {
-        // nothing was allocated, nothig to do
+        // nothing was allocated, nothing to do
         return MFX_ERR_NONE;
     }
 
     if (m_pCore == 0)
     {
-        return MFX_ERR_NULL_PTR;
+        MFX_RETURN(MFX_ERR_NULL_PTR);
     }
 
     if (m_pCore->GetVAType() == MFX_HW_D3D11)
@@ -744,8 +744,7 @@ mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq
 
     //printf("internal frames init %d (request)\n", req.NumFrameSuggested);
 
-    mfxStatus sts = MFX_ERR_NONE;
-    sts = m_response.Alloc(pCore, *pAllocReq, isCopyRequired);
+    mfxStatus sts = m_response.Alloc(pCore, *pAllocReq, isCopyRequired);
     MFX_CHECK_STS(sts);
 
     //printf("internal frames init %d (%d) [%d](response)\n", m_response.NumFrameActual,Num(),nFrames);
@@ -768,7 +767,7 @@ mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq
         m_surfaces[i].Info = pAllocReq->Info;
         m_frames[i].pSurface = &m_surfaces[i];
     }
-    return sts;
+    return MFX_ERR_NONE;
 }
 
 sFrameEx * InternalFrames::GetFreeFrame()
@@ -793,7 +792,7 @@ mfxStatus  InternalFrames::GetFrame(mfxU32 numFrame, sFrameEx * &Frame)
         Frame = &m_frames[numFrame];
         return MFX_ERR_NONE;
     }
-    return MFX_WRN_DEVICE_BUSY;
+    MFX_RETURN(MFX_WRN_DEVICE_BUSY);
 }
 
 mfxStatus InternalFrames::Release()
@@ -901,9 +900,9 @@ mfxStatus GetNativeHandleToRawSurface(
         sts = core.GetFrameHDL(surf, handle);
 #endif
     else
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    return sts;
+    MFX_RETURN(sts);
 }
 
 } // MfxHwVP9Encode

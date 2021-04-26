@@ -78,7 +78,7 @@ mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, boo
         {
             if (extParam[j]->BufferId == pBuf->BufferId)
             {
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+                MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
             }
         }
 
@@ -87,7 +87,7 @@ mfxStatus CheckExtBufferHeaders(mfxU16 numExtParam, mfxExtBuffer** extParam, boo
 
         if (!isSupported)
         {
-            return MFX_ERR_UNSUPPORTED;
+            MFX_RETURN(MFX_ERR_UNSUPPORTED);
         }
     }
 
@@ -424,7 +424,7 @@ mfxStatus CleanOutNonconfigurableParameters(VP9MfxVideoParam &par)
     CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(mfxExtVP9Segmentation);
     CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(mfxExtVP9TemporalLayers);
 
-    return sts;
+    MFX_RETURN(sts);
 }
 
 bool IsBrcModeSupported(mfxU16 brc)
@@ -668,8 +668,8 @@ mfxStatus CheckPerSegmentParams(mfxVP9SegmentParam& segPar, ENCODE_CAPS_VP9 cons
         changed = true;
     }
 
-    return (changed == true) ?
-        MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+    MFX_RETURN((changed == true) ?
+        MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE);
 }
 
 mfxStatus CheckSegmentationMap(mfxU8 const * segMap, mfxU32 numSegmentIdAlloc, mfxU16 numSegments)
@@ -678,7 +678,7 @@ mfxStatus CheckSegmentationMap(mfxU8 const * segMap, mfxU32 numSegmentIdAlloc, m
     {
         if (segMap[i] >= numSegments)
         {
-            return MFX_ERR_UNSUPPORTED;
+            MFX_RETURN(MFX_ERR_UNSUPPORTED);
         }
     }
 
@@ -689,10 +689,10 @@ inline mfxStatus GetCheckStatus(Bool& changed, Bool& unsupported)
 {
     if (unsupported == true)
     {
-        return MFX_ERR_UNSUPPORTED;
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
 
-    return (changed == true) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+    MFX_RETURN((changed == true) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE);
 }
 
 inline void ConvertStatusToBools(Bool& changed, Bool& unsupported, mfxStatus sts)
@@ -852,7 +852,7 @@ mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxU32 frameWidth, 
         }
     }
 
-    return GetCheckStatus(changed, unsupported);
+    MFX_RETURN(GetCheckStatus(changed, unsupported));
 }
 
 mfxStatus CheckTemporalLayers(VP9MfxVideoParam& par, ENCODE_CAPS_VP9 const & caps)
@@ -948,7 +948,7 @@ mfxStatus CheckTemporalLayers(VP9MfxVideoParam& par, ENCODE_CAPS_VP9 const & cap
         }
     }
 
-    return GetCheckStatus(changed, unsupported);
+    MFX_RETURN(GetCheckStatus(changed, unsupported));
 }
 
 inline mfxU16 MinRefsForTemporalLayers(mfxU16 numTL)
@@ -1593,7 +1593,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
 #endif // MFX_VERSION >= 1029
 
-    return GetCheckStatus(changed, unsupported);
+    MFX_RETURN(GetCheckStatus(changed, unsupported));
 }
 
 template <typename T>
@@ -1805,7 +1805,7 @@ mfxStatus CheckParametersAndSetDefaults(
     checkSts = CheckParameters(par, caps);
     if (checkSts == MFX_ERR_UNSUPPORTED)
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // check presence of mandatory parameters
@@ -1813,13 +1813,13 @@ mfxStatus CheckParametersAndSetDefaults(
     mfxFrameInfo const &fi = par.mfx.FrameInfo;
     if (fi.Width == 0 || fi.Height == 0)
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // (2) fourcc
     if (fi.FourCC == 0)
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // (3) target bitrate
@@ -1828,18 +1828,18 @@ mfxStatus CheckParametersAndSetDefaults(
         && par.m_numLayers == 0
         && par.m_targetKbps == 0)
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // (4) crops
     if ((fi.CropW == 0) != (fi.CropH == 0))
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
     mfxExtVP9Param& extPar = GetExtBufferRef(par);
     if ((extPar.FrameWidth == 0) != (extPar.FrameHeight == 0))
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
@@ -1851,7 +1851,7 @@ mfxStatus CheckParametersAndSetDefaults(
             opaq.In.Surfaces == 0 ||
             (opaq.In.Type & MFX_MEMTYPE_SYS_OR_D3D) == 0)
         {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
         }
     }
 #endif //MFX_ENABLE_OPAQUE_MEMORY
@@ -1860,7 +1860,7 @@ mfxStatus CheckParametersAndSetDefaults(
     mfxExtVP9Segmentation const & seg = GetExtBufferRef(par);
     if (AnyMandatorySegMapParam(seg) && seg.NumSegments != 0 && !AllMandatorySegMapParams(seg))
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     // (7) At least one valid layer for temporal scalability
@@ -1871,7 +1871,7 @@ mfxStatus CheckParametersAndSetDefaults(
         {
             if (tl.Layer[i].FrameRateScale != 0)
             {
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+                MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
             }
         }
     }
@@ -1884,7 +1884,7 @@ mfxStatus CheckParametersAndSetDefaults(
         {
             if (par.m_layerParam[i].targetKbps == 0)
             {
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+                MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
             }
         }
     }
@@ -1911,7 +1911,7 @@ mfxStatus CheckParametersAndSetDefaults(
     // now need to update external (API) versions of these parameters
     par.SyncInternalParamToExternal();
 
-    return checkSts;
+    MFX_RETURN(checkSts);
 }
 
 mfxStatus CheckSurface(
@@ -2063,14 +2063,13 @@ mfxStatus CheckAndFixCtrl(
         MFX_CHECK_STS(sts);
     }
 
-    return checkSts;
+    MFX_RETURN(checkSts);
 }
 
 mfxStatus CheckBitstream(
     VP9MfxVideoParam const & video,
     mfxBitstream        * bs)
 {
-    mfxStatus checkSts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(bs);
     MFX_CHECK_NULL_PTR1(bs->Data);
 
@@ -2080,6 +2079,6 @@ mfxStatus CheckBitstream(
     MFX_CHECK(bs->MaxLength > bs->DataOffset + bs->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
     MFX_CHECK(bs->DataOffset + bs->DataLength + video.m_bufferSizeInKb * 1000 <= bs->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
 
-    return checkSts;
+    return MFX_ERR_NONE;
 }
 } //namespace MfxHwVP9Encode
