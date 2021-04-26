@@ -100,6 +100,8 @@ CODEOWNERS  oleg.nabiullin@intel.com dmitry.ermilov@intel.com eugene.ponomarev@i
 # vpp:
 /_studio/shared/asc/**                             furong.zhang@intel.com sebastian.possos@intel.com
 /_studio/mfx_lib/vpp/**                            furong.zhang@intel.com
+/_studio/shared/src/include/mfx_vpp*               furong.zhang@intel.com
+/_studio/shared/src/src/mfx_vpp*                   furong.zhang@intel.com
 /_studio/mfx_lib/fs_det/**                         furong.zhang@intel.com
 /_studio/mfx_lib/mctf_package/**                   furong.zhang@intel.com sebastian.possos@intel.com
 /_studio/shared/umc/codec/color_space_converter/** furong.zhang@intel.com
