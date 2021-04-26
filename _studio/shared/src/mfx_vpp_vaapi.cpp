@@ -1241,7 +1241,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
      * Execute mirroring for MIRROR_WO_EXEC only because MSDK will do
      * copy-with-mirror for others.
      */
-    printf("2: pParams->mirroring: %d\n", pParams->mirroring);
     if (pParams->mirroringPosition == MIRROR_WO_EXEC) {
         switch (pParams->mirroring) {
         case MFX_MIRRORING_HORIZONTAL:
