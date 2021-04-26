@@ -30,9 +30,12 @@
 namespace EncToolsBRC
 {
 
-#define MIN_RACA 0.25
-#define MAX_RACA 361.0
-#define RACA_SCALE 128.0
+    constexpr mfxU8  LA_P_UPDATE_DIST = 8;
+    constexpr mfxU8  MAX_GOP_REFDIST = 8;
+
+    constexpr mfxF64 MIN_RACA = 0.25;
+    constexpr mfxF64 MAX_RACA = 361.0;
+    constexpr mfxF64 RACA_SCALE = 128.0;
 
 /*
 NalHrdConformance | VuiNalHrdParameters   |  Result
@@ -127,6 +130,7 @@ public:
     //BRC accurancy params
     mfxF64 fAbPeriodLong;   // number on frames to calculate abberation from target frame
     mfxF64 fAbPeriodShort;  // number on frames to calculate abberation from target frame
+    mfxF64 fAbPeriodLA;     // number on frames to calculate abberation from target frame (LA)
     mfxF64 dqAbPeriod;      // number on frames to calculate abberation from dequant
     mfxF64 bAbPeriod;       // number of frames to calculate abberation from target bitrate
 
@@ -181,6 +185,7 @@ public:
         bFieldMode(0),
         fAbPeriodLong(0),
         fAbPeriodShort(0),
+        fAbPeriodLA(0),
         dqAbPeriod(0),
         bAbPeriod(0),
         quantOffset(0),
@@ -304,6 +309,45 @@ private:
 
 struct BRC_Ctx
 {
+    BRC_Ctx() :
+        QuantIDR(0),
+        QuantI(0),
+        QuantP(0),
+        QuantB(0),
+        Quant(0),
+        QuantMin(0),
+        QuantMax(0),
+        bToRecode(false),
+        bPanic(false),
+        encOrder(0),
+        poc(0),
+        SceneChange(0),
+        SChPoc(0),
+        LastIEncOrder(0),
+        LastIDREncOrder(0),
+        LastIDRSceneChange(0),
+        LastIQpAct(0),
+        LastIFrameSize(0),
+        LastICmplx(0),
+        LastLaIBits(0),
+        LastIQpSetOrder(0),
+        LastQpUpdateOrder(0),
+        LastIQpMin(0),
+        LastIQpSet(0),
+        LastLaPBitsAvg(LA_P_UPDATE_DIST + MAX_GOP_REFDIST, 0),
+        LastLaQpCalc(0),
+        LastLaQpCalcOrder(0),
+        LastLaQpUpdateOrder(0),
+        LastNonBFrameSize(0),
+        fAbLong(0),
+        fAbShort(0),
+        fAbLA(0),
+        dQuantAb(0),
+        totalDeviation(0),
+        eRate(0),
+        eRateSH(0)
+    {}
+
     mfxI32 QuantIDR;  //currect qp for intra frames
     mfxI32 QuantI;  //currect qp for intra frames
     mfxI32 QuantP;  //currect qp for P frames
@@ -327,13 +371,19 @@ struct BRC_Ctx
     mfxF64 LastICmplx;      // Cmplx of last intra frame
     mfxU32 LastLaIBits;     // La bits of Last Intra Frame
     mfxU32 LastIQpSetOrder; // Qp of last intra frame
-    mfxU32 LastIQpMin; // Qp of last intra frame
+    mfxU32 LastQpUpdateOrder;   // When using UpdateQpParams
+    mfxU32 LastIQpMin;      // Qp of last intra frame
     mfxU32 LastIQpSet;      // Qp of last intra frame
+    std::vector<mfxU32> LastLaPBitsAvg;  // History of Moving Avg of LA bits of last P frames
+    mfxU32 LastLaQpCalc;   // Last LaQp calculated
+    mfxU32 LastLaQpCalcOrder;
+    mfxU32 LastLaQpUpdateOrder;
 
     mfxU32 LastNonBFrameSize; // encoded frame size of last non B frame (is used for sceneChange)
 
     mfxF64 fAbLong;         // frame abberation (long period)
     mfxF64 fAbShort;        // frame abberation (short period)
+    mfxF64 fAbLA;          // frame abberation (LA period)
     mfxF64 dQuantAb;        // dequant abberation
     mfxF64 totalDeviation;   // deviation from  target bitrate (total)
 
@@ -506,7 +556,8 @@ protected:
     mfxI32 GetCurQP(mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod, mfxI32 qpDeltaP) const;
     mfxI32 GetSeqQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod, mfxI32 qpDeltaP) const;
     mfxI32 GetPicQP(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxU16 qpMod, mfxI32 qpDeltaP) const;
-    mfxF64 ResetQuantAb(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxF64 fAbLong, mfxU32 eo, bool bIdr, mfxU16 qpMod, mfxI32 qpDeltaP) const;
+    mfxF64 ResetQuantAb(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, mfxF64 fAbLong, mfxU32 eo, bool bIdr, mfxU16 qpMod, mfxI32 qpDeltaP, bool bNoNewQp) const;
+    mfxI32 GetLaQpEst(mfxU32 LaAvgEncodedSize, mfxF64 inputBitsPerFrame) const;
 };
 
 };

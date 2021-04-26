@@ -123,12 +123,24 @@ mfxStatus InitCtrl(mfxVideoParam const & par, mfxEncToolsCtrl *ctrl)
         ctrl->ExtParam[1] = Et_GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_ENCTOOLS_ALLOCATOR);
     }
 
+    // LaScale here
     ctrl->LaScale = 0;
     ctrl->LaQp = 30;
-    mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
-    if (crW >= 720) {
-        ctrl->LaScale = 2;
-        if (ctrl->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) ctrl->LaQp = 26;
+    if (ctrl->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) 
+    {
+        mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+        if (crW >= 720) ctrl->LaScale = 2;
+    }
+    else 
+    {
+        mfxU16 crH = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
+        mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+        mfxU16 maxDim = std::max(crH, crW);
+        if (maxDim >= 720) 
+        {
+            ctrl->LaScale = 2;
+            ctrl->LaQp = 26;
+        }
     }
 
     return MFX_ERR_NONE;
@@ -637,6 +649,8 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                     m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams.vpp.Out.CropH;
                     if (m_config.AdaptiveI) {
                         m_scd.GetIntraDecision(par->DisplayOrder, &FrameType);
+                        if (FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR)) 
+                            FrameType = (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR); // convert to IREFIDR for Analysis
                     }
                 }
                 mfxStatus stsla = MFX_ERR_NONE;
@@ -665,6 +679,8 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                 {
                     if (m_config.AdaptiveI) {
                         m_scd.GetIntraDecision(par->DisplayOrder, &FrameType);
+                        if (FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR))
+                            FrameType = (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR); // convert to IREFIDR for Analysis
                     }
                 }
                 mfxStatus stsla = m_lpLookAhead.Submit(pFrameData->Surface, FrameType);

@@ -219,8 +219,8 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     m_extBufHevcParam = {};
     m_extBufHevcParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_extBufHevcParam.Header.BufferSz = sizeof(m_extBufHevcParam);
-    if (ctrl.CodecId  == MFX_CODEC_AVC)
-        m_extBufHevcParam.SampleAdaptiveOffset = MFX_SAO_DISABLE;
+
+    m_extBufHevcParam.SampleAdaptiveOffset = MFX_SAO_DISABLE;
 
     extBuf[m_encParams.NumExtParam] = &m_extBufHevcParam.Header;
     m_encParams.NumExtParam++;

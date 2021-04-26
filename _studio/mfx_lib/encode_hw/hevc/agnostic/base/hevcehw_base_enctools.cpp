@@ -271,8 +271,8 @@ static void SetDefaultConfig(mfxVideoParam &video, mfxExtEncToolsConfig &config)
             bool bAdaptiveI = !(pExtOpt2 && IsOff(pExtOpt2->AdaptiveI)) && !(video.mfx.GopOptFlag & MFX_GOP_STRICT);
             SetDefaultOpt(config.AdaptiveI, bAdaptiveI);
             SetDefaultOpt(config.AdaptiveB, !(pExtOpt2 && IsOff(pExtOpt2->AdaptiveB)));
-            SetDefaultOpt(config.AdaptivePyramidQuantP, true);
-            SetDefaultOpt(config.AdaptivePyramidQuantB, true);
+            SetDefaultOpt(config.AdaptivePyramidQuantP, false);
+            SetDefaultOpt(config.AdaptivePyramidQuantB, false);
 
             bool bAdaptiveRef = IsAdaptiveRefAllowed(video);
             SetDefaultOpt(config.AdaptiveRefP, bAdaptiveRef);
@@ -481,10 +481,21 @@ static mfxStatus InitEncToolsCtrl(
     // LaScale here
     ctrl->LaScale = 0;
     ctrl->LaQp = 30;
-    mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
-    if (crW >= 720) {
-        ctrl->LaScale = 2;
-        if (ctrl->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) ctrl->LaQp = 26;
+    if (ctrl->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) 
+    {
+        mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+        if (crW >= 720) ctrl->LaScale = 2;
+    }
+    else 
+    {
+        mfxU16 crH = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
+        mfxU16 crW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+        mfxU16 maxDim = std::max(crH, crW);
+        if (maxDim >= 720) 
+        {
+            ctrl->LaScale = 2;
+            ctrl->LaQp = 26;
+        }
     }
 
     return MFX_ERR_NONE;

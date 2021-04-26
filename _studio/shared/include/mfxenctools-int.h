@@ -287,7 +287,8 @@ enum
     MFX_QP_MODULATION_LOW,              /* Use low pyramid delta QP for this frame. This type of content prefers low delta QP between P/B Layers. */
     MFX_QP_MODULATION_MEDIUM,           /* Use medium pyramid delta QP for this frame. This type of content prefers medium delta QP between P/B Layers. */
     MFX_QP_MODULATION_HIGH,             /* Use high pyramid delta QP for this frame. This type of content prefers high delta QP between P/B Layers. */
-    MFX_QP_MODULATION_MIXED             /* Use pyramid delta QP appropriate for mixed content. */
+    MFX_QP_MODULATION_MIXED,            /* Use pyramid delta QP appropriate for mixed content. */
+    MFX_QP_MODULATION_RESERVED0
 };
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
