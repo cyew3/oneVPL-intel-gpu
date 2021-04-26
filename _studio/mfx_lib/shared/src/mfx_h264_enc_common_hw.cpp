@@ -5917,7 +5917,8 @@ void MfxHwH264Encode::SetDefaults(
     if (par.mfx.RateControlMethod == 0)
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&
+        par.calcParam.cqpHrdMode == 0)
     {
         mfxU16 maxQP = 51;
         mfxU16 minQP = IsOn(par.mfx.LowPower) ? 10 : 1;   // 10 is min QP for VDENC
