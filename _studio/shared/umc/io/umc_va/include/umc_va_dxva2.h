@@ -356,11 +356,11 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H264_VLD:
     case H264_VLD_MVC:
         if (profile_flags & VA_LONG_SLICE_MODE)
-            res = (1 == config->ConfigBitstreamRaw);
+            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)
-            res = (2 == config->ConfigBitstreamRaw);
+            res = (H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else
-            res = (1 == config->ConfigBitstreamRaw || 2 == config->ConfigBitstreamRaw);
+            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw || H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         break;
     case H264_VLD_MVC_MULTIVIEW:
     case H264_VLD_MVC_STEREO:
@@ -368,12 +368,11 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H264_VLD_SVC_BASELINE:
     case H264_VLD_SVC_HIGH:
         if (profile_flags & VA_LONG_SLICE_MODE)
-            res = (1 == config->ConfigBitstreamRaw) || (3 == config->ConfigBitstreamRaw) || (5 == config->ConfigBitstreamRaw);
+            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)
-            res = (2 == config->ConfigBitstreamRaw) || (4 == config->ConfigBitstreamRaw) || (6 == config->ConfigBitstreamRaw);
+            res = (H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else
-            res = (1 == config->ConfigBitstreamRaw || 2 == config->ConfigBitstreamRaw) || (3 == config->ConfigBitstreamRaw || 4 == config->ConfigBitstreamRaw) ||
-             (5 == config->ConfigBitstreamRaw || 6 == config->ConfigBitstreamRaw);
+            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw || H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         break;
 
     case H265_VLD:
@@ -398,14 +397,14 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
             || (profile_flags & VA_PROFILE_SCC)
 #endif
             )
-            res = 3 == config->ConfigBitstreamRaw;
+            res = (HEVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else
         if (profile_flags & VA_LONG_SLICE_MODE)
-            res = (2 == config->ConfigBitstreamRaw || 3 == config->ConfigBitstreamRaw);
+            res = (HEVC_LONG_FORMAT_SLICE_NON_REXT_DATA == config->ConfigBitstreamRaw || HEVC_LONG_FORMAT_SLICE_REXT_DATA == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)
-            res = (1 == config->ConfigBitstreamRaw);
+            res = (HEVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else
-            res = (1 == config->ConfigBitstreamRaw || 2 == config->ConfigBitstreamRaw || 3 == config->ConfigBitstreamRaw);
+            res = (HEVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw || HEVC_LONG_FORMAT_SLICE_NON_REXT_DATA == config->ConfigBitstreamRaw || HEVC_LONG_FORMAT_SLICE_REXT_DATA == config->ConfigBitstreamRaw);
         break;
 
     default:

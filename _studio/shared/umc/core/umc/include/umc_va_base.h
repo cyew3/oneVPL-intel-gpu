@@ -240,6 +240,19 @@ enum VideoAccelerationPlatform
     VA_LINUX     = 0x030000,
 };
 
+enum HevcConfigBitstreamRawValue
+{
+    HEVC_SHORT_FORMAT_SLICE_DATA = 0x1,
+    HEVC_LONG_FORMAT_SLICE_NON_REXT_DATA = 0x2,
+    HEVC_LONG_FORMAT_SLICE_REXT_DATA = 0x3,
+};
+
+enum H264ConfigBitstreamRawValue
+{
+    H264_LONG_FORMAT_SLICE_DATA = 0x1,
+    H264_SHORT_FORMAT_SLICE_DATA = 0x2,
+};
+
 class UMCVACompBuffer;
 class ProtectedVA;
 class VideoProcessingVA;

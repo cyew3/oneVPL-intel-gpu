@@ -579,14 +579,14 @@ bool GuidProfile::isShortFormat(bool isHEVCGUID, uint32_t configBitstreamRaw)
 {
     if (isHEVCGUID)
     {
-        if (2 == configBitstreamRaw || 3 == configBitstreamRaw)
+        if (HEVC_LONG_FORMAT_SLICE_NON_REXT_DATA == configBitstreamRaw || HEVC_LONG_FORMAT_SLICE_REXT_DATA == configBitstreamRaw)
         { // prefer long mode
             return false;
         }
     }
     else
     {
-        if (1 == configBitstreamRaw || 3 == configBitstreamRaw || 5 == configBitstreamRaw)
+        if (H264_LONG_FORMAT_SLICE_DATA == configBitstreamRaw)
         {
             return false;
         }
