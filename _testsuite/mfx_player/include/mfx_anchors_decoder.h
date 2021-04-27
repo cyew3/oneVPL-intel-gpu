@@ -33,7 +33,8 @@ public:
         mfxVideoParam &frameParam,
         IMFXPipelineFactory * pFactory,
         const vm_char *  anchorsFileInput,
-        mfxU32 anchorFramesNum);
+        mfxU32 anchorFramesNum,
+        MemoryModel memoryModel);
 
     // anchors from stream (first frames are anchors)
     MFXAV1AnchorsDecoder(

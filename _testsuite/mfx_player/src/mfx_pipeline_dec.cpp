@@ -464,8 +464,11 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         , m_inParams.bUseVPP ? m_components[eVPP].m_extCO : m_components[eDEC].m_extCO );
 
 
-    MFX_CHECK_STS_SET_ERR(CreateAllocator(), PE_CREATE_ALLOCATOR);
-    TIME_PRINT(VM_STRING("CreateAlloc"));
+    if (m_inParams.nMemoryModel == GENERAL_ALLOC)
+    {
+        MFX_CHECK_STS_SET_ERR(CreateAllocator(), PE_CREATE_ALLOCATOR);
+        TIME_PRINT(VM_STRING("CreateAlloc"));
+    }
 
     //async  0 in terms of pipeline structure is equal to -no_pipe_sync
     if (m_inParams.bNoPipelineSync)
@@ -513,8 +516,11 @@ mfxStatus MFXDecPipeline::ReleaseMFXPart()
     MFX_DELETE(m_pVPP);
 
     //destroying a surfaces
-    MFX_CHECK_STS(m_components[eDEC].DestroySurfaces());
-    MFX_CHECK_STS(m_components[eVPP].DestroySurfaces());
+    if (m_inParams.nMemoryModel == GENERAL_ALLOC)
+    {
+        MFX_CHECK_STS(m_components[eDEC].DestroySurfaces());
+        MFX_CHECK_STS(m_components[eVPP].DestroySurfaces());
+    }
 
     MFX_CHECK_STS_SKIP(stsRenderClose, MFX_ERR_NOT_INITIALIZED);
     return MFX_ERR_NONE;
@@ -2164,6 +2170,12 @@ mfxStatus MFXDecPipeline::CreateRender()
     renderParams.alwaysWriteChroma = m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_HEVC ? false : true;
     renderParams.useForceDecodeDumpFmt = m_inParams.isForceDecodeDump;
 
+    if (m_RenderType == MFX_SCREEN_RENDER)
+    {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: MFX_SCREEN_RENDER is not supported with memoty 2.0\n"))); });
+    }
+
     switch (m_RenderType)
     {
     case MFX_FW_RENDER :
@@ -2362,6 +2374,8 @@ mfxStatus MFXDecPipeline::CreateRender()
 #endif // defined(ANDROID)
     case MFX_METRIC_CHECK_RENDER:
         {
+            MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: MFX_METRIC_CHECK_RENDER is not supported with memoty 2.0\n"))); });
             MFXMetricComparatorRender *pRender;
             m_pRender = pRender = new MFXMetricComparatorRender(renderParams, m_components[eREN].m_pSession, &sts);
             MFX_CHECK_POINTER(m_pRender);
@@ -2381,6 +2395,8 @@ mfxStatus MFXDecPipeline::CreateRender()
         }
     case MFX_OUTLINE_RENDER:
         {
+            MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: MFX_OUTLINE_RENDER is not supported with memoty 2.0\n"))); });
             MFXOutlineRender *pRender = new MFXOutlineRender(renderParams, m_components[eREN].m_pSession, &sts);
             MFX_CHECK_WITH_ERR(pRender, MFX_ERR_MEMORY_ALLOC);
 
@@ -2417,6 +2433,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         //        MFX_CHECK_STS(m_pRender->SetOutputFourcc(m_components[eREN].m_params.mfx.FrameInfo.FourCC));
         MFX_CHECK_STS(m_pRender->SetAutoView(m_inParams.bMultiFiles));
         MFX_CHECK_STS(m_pRender->SetVDSFCFormat(m_inParams.bVDSFCFormatSetting));
+        m_pRender->SetMemoryModel(m_inParams.nMemoryModel);
     }
 
     return sts;
@@ -2439,11 +2456,15 @@ mfxStatus MFXDecPipeline::DecorateRender()
     //need frame reordering based on decodeorder filed
     if (1 == m_inParams.DecodedOrder)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: MFXDecodeOrderedRender is not supported with memoty 2.0\n"))); });
         MFX_CHECK_WITH_ERR(m_pRender = new MFXDecodeOrderedRender(m_pRender), MFX_ERR_MEMORY_ALLOC);
     }
     //
     if (m_inParams.bMultiFiles)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: MFXMultiRender is not supported with memoty 2.0\n"))); });
         MFX_CHECK_WITH_ERR(m_pRender = new MFXMultiRender(m_pRender), MFX_ERR_MEMORY_ALLOC);
     }
     else if (!m_inParams.DecodedOrder)
@@ -2454,6 +2475,8 @@ mfxStatus MFXDecPipeline::DecorateRender()
     //burst decorator should be after RateControlRender because it issues renderframe calls in different thread
     if (0.0f != m_inParams.fLimitPipelineFps)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: FPSLimiterRender is not supported with memoty 2.0\n"))); });
         MFX_CHECK_WITH_ERR(m_pRender = new FPSLimiterRender(m_inParams.bVerbose
             , m_inParams.fLimitPipelineFps
             , &PerfCounterTime::Instance()
@@ -2462,18 +2485,24 @@ mfxStatus MFXDecPipeline::DecorateRender()
 
     if (m_inParams.nBurstDecodeFrames != 0)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: BurstRender is not supported with memoty 2.0\n"))); });
         MFX_CHECK_WITH_ERR(m_pRender = new BurstRender(m_inParams.bVerbose, m_inParams.nBurstDecodeFrames
             , &PerfCounterTime::Instance(), *m_threadPool.get(), m_pRender), MFX_ERR_MEMORY_ALLOC);
     }
 
     if (m_inParams.bUseSeparateFileWriter)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: SeparateFilesRender is not supported with memoty 2.0\n"))); });
         MFX_CHECK_WITH_ERR(m_pRender = new SeparateFilesRender(m_pRender), MFX_ERR_MEMORY_ALLOC);
     }
 
     //decorating with drop render
     if (m_components[eREN].m_nDropCyle != 0)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                        { PipelineTrace((VM_STRING("Error: FramesDrop is not supported with memoty 2.0\n"))); });
         MFX_CHECK_WITH_ERR(m_pRender = new FramesDrop<IMFXVideoRender>(m_components[eREN].m_nDropCount, m_components[eREN].m_nDropCyle, m_pRender), MFX_ERR_MEMORY_ALLOC);
     }
 
@@ -2634,7 +2663,8 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
             , m_inParams.FrameInfo.FourCC
             , m_inParams.bDisableSurfaceAlign
             , m_pFactory.get()
-            , m_inParams.strOutlineInputFile));
+            , m_inParams.strOutlineInputFile
+            , m_inParams.nMemoryModel));
         bGenerateViewIds = true;
         m_YUV_Width  = m_inParams.FrameInfo.Width  = yuvDecParam.mfx.FrameInfo.Width;
         m_YUV_Height = m_inParams.FrameInfo.Height = yuvDecParam.mfx.FrameInfo.Height;
@@ -2645,12 +2675,21 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     }
 
     if (m_inParams.nYUVLoop) {
+        MFX_CHECK_STS_CUSTOM_HANDLER(MFX_ERR_UNSUPPORTED,
+                                    { PipelineTrace((VM_STRING("Error: nYUVLoop is not supported with memoty 2.0"))); });
         m_pYUVSource .reset( new MFXLoopDecoder( m_inParams.nYUVLoop, std::move(m_pYUVSource)));
     }
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (MFX_CODEC_AV1 == m_components[eDEC].m_params.mfx.CodecId)
     {
+        if (m_inParams.nMemoryModel != GENERAL_ALLOC && 
+            (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES ||
+             m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM))
+        {
+            MFX_CHECK_STS_CUSTOM_HANDLER(MFX_ERR_UNSUPPORTED,
+                                        { PipelineTrace((VM_STRING("Error: MFXAV1AnchorsDecoder is not supported with memoty 2.0\n"))); });
+        }
         if (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES)
         {
             m_pYUVSource.reset(
@@ -2660,7 +2699,8 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
                     , yuvDecParam
                     , m_pFactory.get()
                     , m_inParams.strAV1AnchorFilePath
-                    , m_inParams.AV1AnchorFramesNum));
+                    , m_inParams.AV1AnchorFramesNum
+                    , m_inParams.nMemoryModel));
         }
         else if (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM)
         {
@@ -2676,47 +2716,65 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
 #endif
 
     if (m_inParams.nDecodeInAdvance) {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: MFXAdvanceDecoder is not supported with memoty 2.0\n"))); });
         m_pYUVSource .reset( new MFXAdvanceDecoder(m_inParams.nDecodeInAdvance, std::move(m_pYUVSource)));
     }
 
     if (!m_viewOrderMap.empty()) {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: TargetViewsDecoder is not supported with memoty 2.0\n"))); });
         m_pYUVSource .reset( new TargetViewsDecoder(m_viewOrderMap, m_inParams.targetViewsTemporalId, std::move(m_pYUVSource)));
     }
 
     //dependency structure specified
     if (!m_InputExtBuffers.empty()) {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: MVCDecoder is not supported with memoty 2.0\n"))); });
         m_pYUVSource .reset( new MVCDecoder(bGenerateViewIds, yuvDecParam, std::move(m_pYUVSource)));
     }
 
     if (m_components[eDEC].m_bCalcLatency)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: LatencyDecoder is not supported with memoty 2.0\n"))); });
         //calc aggregated timestamps only if there is no intermediate synchronizations
         m_pYUVSource .reset( new LatencyDecoder(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder"), std::move(m_pYUVSource)));
     }
 
     if (!m_InputExtBuffers.empty() || MFX_CODEC_AVC == m_components[eDEC].m_params.mfx.CodecId || MFX_CODEC_VP8 == m_components[eDEC].m_params.mfx.CodecId)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: MVCHandler is not supported with memoty 2.0\n"))); });
         m_pYUVSource .reset( new MVCHandler<IYUVSource>(m_components[eDEC].m_extParams, m_components[eDEC].m_bForceMVCDetection, std::move(m_pYUVSource)));
     }
 
     if (MFX_CODEC_JPEG == m_components[eDEC].m_params.mfx.CodecId)
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: JPEGBsParser is not supported with memoty 2.0\n"))); });
         m_pYUVSource .reset( new JPEGBsParser(m_inParams.FrameInfo, std::move(m_pYUVSource)));
 
         if (0 != m_inParams.nRotation)
         {
+            MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: RotatedDecoder is not supported with memoty 2.0\n"))); });
             m_pYUVSource .reset( new RotatedDecoder(m_inParams.nRotation, std::move(m_pYUVSource)));
         }
     }
 
     if (!m_components[eDEC].m_SkipModes.empty())
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: SkipModesSeterDecoder is not supported with memoty 2.0\n"))); });
         m_pYUVSource .reset( new SkipModesSeterDecoder(m_components[eDEC].m_SkipModes, std::move(m_pYUVSource)));
     }
 
     //header is inited if option is specified
     if (m_inParams.svc_layer.Header.BufferId != 0 )
     {
+        MFX_CHECK_STS_CUSTOM_HANDLER({ m_inParams.nMemoryModel == GENERAL_ALLOC ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED },
+                                     { PipelineTrace((VM_STRING("Error: TargetLayerSvcDecoder is not supported with memoty 2.0\n"))); });
         m_pYUVSource .reset( new TargetLayerSvcDecoder(m_inParams.svc_layer, std::move(m_pYUVSource)));
     }
 
@@ -3101,6 +3159,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         );
 
         m_components[eDEC].m_bAdaptivePlayback = m_inParams.bAdaptivePlayback;
+
         MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, m_inParams.isRawSurfaceLinear, false));
 
         // Set frame allocator
@@ -3442,7 +3501,16 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                 MFX_CHECK_STS(m_pYUVSource->SyncOperation(m_components[eDEC].m_SyncPoints.begin()->first, TimeoutVal<>::val()));
             }
         }
-        MFX_CHECK_STS(m_components[eDEC].FindFreeSurface(bs.DependencyId, &inSurface, m_pRender, &inMid));
+
+        if (m_inParams.nMemoryModel == GENERAL_ALLOC)
+        {
+            MFX_CHECK_STS(m_components[eDEC].FindFreeSurface(bs.DependencyId, &inSurface, m_pRender, &inMid));
+        }
+        else if (m_inParams.nMemoryModel == VISIBLE_INT_ALLOC)
+        {
+            MFX_CHECK_STS(m_pYUVSource->GetSurface(&inSurface.pSurface));
+        }
+
         if (m_inParams.bPrintSplTimeStamps && !bs.isNull)
         {
             vm_string_printf(VM_STRING("spl_pts = %.2lf\n"), ConvertMFXTime2mfxF64(bs.TimeStamp));
@@ -3470,12 +3538,20 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
             inSurface.pSurface->Info.Width = m_YUV_Width;
             inSurface.pSurface->Info.Height = m_YUV_Height;
 
-            m_components[eDEC].ReallocSurface(inMid, &inSurface.pSurface->Info, inSurface.pSurface->Data.MemType, &outMid);
+            if (m_inParams.nMemoryModel == GENERAL_ALLOC)
+            {
+                m_components[eDEC].ReallocSurface(inMid, &inSurface.pSurface->Info, inSurface.pSurface->Data.MemType, &outMid);
+            }
+            else if (m_inParams.nMemoryModel == VISIBLE_INT_ALLOC)
+            {
+                MFX_CHECK_STS(m_pYUVSource->GetSurface(&inSurface.pSurface));
+            }
+
             // We have to lock surface in case of system memory allocator to have right pitches in Data
             // (that can be needed for INTERNAL->SYS copy operations)
             // Better way is locking surface in decoder, but we don't know real memid inside decoders (in case of sysmem)
             // It's a good point for improvement
-            if (inSurface.pSurface->Data.MemType & MFX_MEMTYPE_SYSTEM_MEMORY)
+            if (inSurface.pSurface->Data.MemType & MFX_MEMTYPE_SYSTEM_MEMORY && m_inParams.nMemoryModel == GENERAL_ALLOC)
             {
                 m_components[eDEC].m_pAllocator->Lock(m_components[eDEC].m_pAllocator->pthis, outMid, &inSurface.pSurface->Data);
                 m_components[eDEC].m_pAllocator->Unlock(m_components[eDEC].m_pAllocator->pthis, outMid, NULL);
@@ -3491,7 +3567,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         if (m_pSpl == NULL)
             bs.isNull = true;
 #ifdef LIBVA_SUPPORT
-        if ( m_inParams.bAdaptivePlayback && m_components[eDEC].m_bufType == MFX_BUF_HW )
+        if ( m_inParams.bAdaptivePlayback && m_components[eDEC].m_bufType == MFX_BUF_HW && m_inParams.nMemoryModel == GENERAL_ALLOC)
         {
             vaapiMemId *vapi_id = (vaapiMemId *)(inSurface.pSurface->Data.MemId);
             if ( (VASurfaceID)VA_INVALID_ID == *(vapi_id->m_surface))
@@ -3502,11 +3578,18 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         }
 #endif
         sts = m_pYUVSource->DecodeFrameAsync(bs, inSurface.pSurface, &pDecodedSurface, &syncp);
+
+        // decrease reference in case memory 2.0 and manual surfaces control, because reference is increased in GetSurface
+        if (m_inParams.nMemoryModel == VISIBLE_INT_ALLOC && inSurface.pSurface && inSurface.pSurface->FrameInterface)
+        {
+            MFX_CHECK_STS(inSurface.pSurface->FrameInterface->Release(inSurface.pSurface));
+        }
+
         HandleIncompatParamsCode(sts, IP_DECASYNC, bs.isNull);
     }
 
     // need to fill map of frames to display
-    if (NULL != pReoderRnd && bs.isNull && m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_VC1)
+    if (NULL != pReoderRnd && bs.isNull && m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_VC1 && m_inParams.nMemoryModel == GENERAL_ALLOC)
     {
 
         std::vector<SrfEncCtl> &sfr = m_components[eDEC].m_Surfaces1.front().surfaces;
@@ -3538,6 +3621,11 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         if (NULL != pDecodedSurface)
         {
             IncreaseReference(&pDecodedSurface->Data);
+            if ((m_inParams.nMemoryModel == HIDDEN_INT_ALLOC || m_inParams.nMemoryModel == VISIBLE_INT_ALLOC) &&
+                 pDecodedSurface && pDecodedSurface->FrameInterface)
+            {
+                MFX_CHECK_STS(pDecodedSurface->FrameInterface->AddRef(pDecodedSurface));
+            }
             m_components[eDEC].m_SyncPoints.push_back(ComponentParams::SyncPair(syncp, pDecodedSurface));
         }
 
@@ -3553,6 +3641,12 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                     // we shold ignore this and call DecodeFrameAsync to retrieve ERR_GPU_HANG.
                     pDecodedSurface = m_components[eDEC].m_SyncPoints.begin()->second.pSurface;
                     DecreaseReference(&pDecodedSurface->Data);
+                    if ((m_inParams.nMemoryModel == HIDDEN_INT_ALLOC || m_inParams.nMemoryModel == VISIBLE_INT_ALLOC) &&
+                         pDecodedSurface && pDecodedSurface->FrameInterface)
+                    {
+                        MFX_CHECK_STS(pDecodedSurface->FrameInterface->Release(pDecodedSurface));
+                    }
+
                     m_components[eDEC].m_SyncPoints.pop_front();
 
                     sts = MFX_ERR_NONE;
@@ -3576,6 +3670,11 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                     sts = RunVPP(pDecodedSurface);
                     //always decreasing lock to prevent timeout event happened
                     DecreaseReference(&pDecodedSurface->Data);
+                    if ((m_inParams.nMemoryModel == HIDDEN_INT_ALLOC || m_inParams.nMemoryModel == VISIBLE_INT_ALLOC) &&
+                         pDecodedSurface && pDecodedSurface->FrameInterface)
+                    {
+                        MFX_CHECK_STS(pDecodedSurface->FrameInterface->Release(pDecodedSurface));
+                    }
                     MFX_CHECK_STS_TRACE_EXPR(sts, RunVPP(pDecodedSurface));
                     //check exiting status
                     if (MFX_ERR_NONE != (sts = CheckExitingCondition()))
@@ -3590,12 +3689,19 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                 break;
             }
         }
-    }else
+    }
+    else
     {
         //no synhronisation
         if (NULL != pDecodedSurface)
         {
             MFX_CHECK_STS(RunVPP(pDecodedSurface));
+            // decrease reference in case memory 2.0, because reference is increased in DecodeFrameAsync
+            if ((m_inParams.nMemoryModel == VISIBLE_INT_ALLOC || m_inParams.nMemoryModel == HIDDEN_INT_ALLOC) &&
+                NULL != pDecodedSurface && pDecodedSurface->FrameInterface)
+            {
+                pDecodedSurface->FrameInterface->Release(pDecodedSurface);
+            }
         }
     }
 
@@ -3709,18 +3815,31 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         mfxStatus     sts              = MFX_ERR_MORE_SURFACE;
         bool          bOneMoreRunFrame = false;
 
-        if( m_inParams.bExtVppApi )
+        if (m_inParams.nMemoryModel == GENERAL_ALLOC)
         {
-            // RunFrameVPPAsyncEx needs work surfaces
-            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppWork, m_pRender, &workMid));
+            if( m_inParams.bExtVppApi )
+            {
+                // RunFrameVPPAsyncEx needs work surfaces
+                MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppWork, m_pRender, &workMid));
+            }
+            else
+            {
+                MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppOut, m_pRender, &outMid));
+                if ( vppOut.pSurface )
+                {
+                    /* picstruct of the output frame could be incorrect since frames are taken from a single pool. To eliminate
+                    * mess, drop picstruct to the original that was used at allocation stage */
+                    vppOut.pSurface->Info.PicStruct = m_components[eREN].m_params.mfx.FrameInfo.PicStruct;
+                }
+            }
         }
-        else
+        else if (m_inParams.nMemoryModel == VISIBLE_INT_ALLOC)
         {
-            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppOut, m_pRender, &outMid));
+            MFX_CHECK_STS(m_pVPP->GetSurfaceOut(&vppOut.pSurface));
             if ( vppOut.pSurface )
             {
                 /* picstruct of the output frame could be incorrect since frames are taken from a single pool. To eliminate
-                 * mess, drop picstruct to the original that was used at allocation stage */
+                * mess, drop picstruct to the original that was used at allocation stage */
                 vppOut.pSurface->Info.PicStruct = m_components[eREN].m_params.mfx.FrameInfo.PicStruct;
             }
         }
@@ -3731,7 +3850,7 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
             vm_time_sleep(m_inParams.encodeExtraParams.nDelayOnMSDKCalls);
         }
 
-        if ( m_inParams.bExtVppApi )
+        if ( m_inParams.bExtVppApi && m_inParams.nMemoryModel == GENERAL_ALLOC)
         {
             //RunFrameVPPAsyncEx decoder-like processing
             sts = m_pVPP->RunFrameVPPAsyncEx(pSurface, vppWork.pSurface, &vppOut.pSurface, NULL, &syncp);
@@ -3795,7 +3914,15 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                     }
                 }
             }
-            sts = m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp);
+
+            if (m_inParams.nMemoryModel == HIDDEN_INT_ALLOC)
+            {
+                sts = m_pVPP->ProcessFrameAsync(pSurface, &vppOut.pSurface);
+            }
+            else
+            {
+                sts = m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp);
+            }
         }
 
         if (sts == MFX_WRN_DEVICE_BUSY)
@@ -3836,6 +3963,12 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
             //if last frame is retrieved from buffer we should retrieve it from encoder also
             if (NULL != pSurface)
             {
+                // decrease reference, in case memory 2.0
+                if ((m_inParams.nMemoryModel == VISIBLE_INT_ALLOC || m_inParams.nMemoryModel == HIDDEN_INT_ALLOC) &&
+                    vppOut.pSurface && vppOut.pSurface->FrameInterface)
+                {
+                    MFX_CHECK_STS(vppOut.pSurface->FrameInterface->Release(vppOut.pSurface));
+                }
                 //cannot return error codes from runvpp - only true failure
                 return MFX_ERR_NONE;
             }
@@ -3847,6 +3980,11 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
             if (NULL != syncp && NULL != vppOut.pSurface)
             {
                 IncreaseReference(&vppOut.pSurface->Data);
+                if ((m_inParams.nMemoryModel == HIDDEN_INT_ALLOC || m_inParams.nMemoryModel == VISIBLE_INT_ALLOC) &&
+                     vppOut.pSurface && vppOut.pSurface->FrameInterface)
+                {
+                    MFX_CHECK_STS(vppOut.pSurface->FrameInterface->AddRef(vppOut.pSurface));
+                }
 
                 m_components[eVPP].m_SyncPoints.push_back(ComponentParams::SyncPair(syncp, vppOut));
             }
@@ -3873,8 +4011,12 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
                     if (NULL != pVpp)
                     {
                         MFX_CHECK_STS(RunRender(pVpp, pControl));
-
                         DecreaseReference(&pVpp->Data);
+                        if ((m_inParams.nMemoryModel == VISIBLE_INT_ALLOC || m_inParams.nMemoryModel == HIDDEN_INT_ALLOC) &&
+                             pVpp && pVpp->FrameInterface)
+                        {
+                            MFX_CHECK_STS(pVpp->FrameInterface->Release(pVpp));
+                        }
                     }
                 }
                 if (NULL != pSurface)
@@ -3886,6 +4028,11 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         else
         {
             MFX_CHECK_STS(RunRender(vppOut.pSurface, vppOut.pCtrl));
+            if ((m_inParams.nMemoryModel == VISIBLE_INT_ALLOC || m_inParams.nMemoryModel == HIDDEN_INT_ALLOC) &&
+                 vppOut.pSurface && vppOut.pSurface->FrameInterface)
+            {
+                MFX_CHECK_STS(vppOut.pSurface->FrameInterface->Release(vppOut.pSurface));
+            }
         }
 
         if (NULL != pSurface && !bOneMoreRunFrame)
@@ -5637,6 +5784,24 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
               m_inParams.bIgnoreLevelConstrain = true;
           }
 #endif
+        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-memory:(GeneralAlloc|VisibleIntAlloc|HiddenIntAlloc)"), VM_STRING("Force usage of internal/external allocation with/without manual surfaces control"), OPT_UNDEFINED)))
+        {
+            switch (nPattern)
+            {
+            case 1 :
+                m_inParams.nMemoryModel = GENERAL_ALLOC;
+                break;
+            case 2 :
+                m_inParams.nMemoryModel = VISIBLE_INT_ALLOC;
+                break;
+            case 3 :
+                m_inParams.nMemoryModel = HIDDEN_INT_ALLOC;
+                break;
+            default:
+                m_inParams.nMemoryModel = GENERAL_ALLOC;
+                break;
+            }
+        }
           else
           {
                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
@@ -6025,11 +6190,23 @@ mfxStatus MFXDecPipeline::ResetAfterSeek()
     ////remove queued sync points
     for ( ; !m_components[eDEC].m_SyncPoints.empty(); m_components[eDEC].m_SyncPoints.pop_front())
     {
-        DecreaseReference(&m_components[eDEC].m_SyncPoints.front().second.pSurface->Data);
+        mfxFrameSurface1 *surf = m_components[eDEC].m_SyncPoints.front().second.pSurface;
+        DecreaseReference(&surf->Data);
+        if ((m_inParams.nMemoryModel == VISIBLE_INT_ALLOC || m_inParams.nMemoryModel == HIDDEN_INT_ALLOC) &&
+            surf && surf->FrameInterface)
+        {
+            surf->FrameInterface->Release(surf);
+        }
     }
     for ( ; !m_components[eVPP].m_SyncPoints.empty(); m_components[eVPP].m_SyncPoints.pop_front())
     {
-        DecreaseReference(&m_components[eVPP].m_SyncPoints.front().second.pSurface->Data);
+        mfxFrameSurface1 *surf = m_components[eVPP].m_SyncPoints.front().second.pSurface;
+        DecreaseReference(&surf->Data);
+        if ((m_inParams.nMemoryModel == VISIBLE_INT_ALLOC || m_inParams.nMemoryModel == HIDDEN_INT_ALLOC) &&
+            surf && surf->FrameInterface)
+        {
+            surf->FrameInterface->Release(surf);
+        }
     }
 
     return MFX_ERR_NONE;

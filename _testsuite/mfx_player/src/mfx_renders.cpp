@@ -36,6 +36,7 @@ MFXVideoRender::MFXVideoRender( IVideoSession * core
     , m_bIsViewRender(false)//until we call to init we don't know whether the render is a view render
     , m_bAutoView(false)
     , m_nViewId()
+    , m_nMemoryModel(GENERAL_ALLOC)
 {
     if (NULL != status)
         *status = MFX_ERR_NONE;
@@ -119,35 +120,49 @@ mfxStatus MFXVideoRender::GetEncodeStat(mfxEncodeStat *stat)
 
 mfxStatus MFXVideoRender::LockFrame(mfxFrameSurface1 *pSurface)
 {
-    if (NULL != pSurface)
+    if (m_nMemoryModel == GENERAL_ALLOC)
     {
-        if (NULL == pSurface->Data.Y && 
-            NULL == pSurface->Data.U &&
-            NULL == pSurface->Data.V &&
-            NULL != pSurface->Data.MemId)
+        if (NULL != pSurface)
         {
-            //external allocator is used
-            MFX_CHECK_POINTER(m_pSessionWrapper);
-            mfxFrameAllocator *pAlloc = m_pSessionWrapper->GetFrameAllocator();
-            MFX_CHECK_POINTER(pAlloc);
-            MFX_CHECK_STS(pAlloc->Lock(pAlloc->pthis, pSurface->Data.MemId, &pSurface->Data));
-            m_bFrameLocked = true; //to prevent double unlock case
+            if (NULL == pSurface->Data.Y && 
+                NULL == pSurface->Data.U &&
+                NULL == pSurface->Data.V &&
+                NULL != pSurface->Data.MemId)
+            {
+                //external allocator is used
+                MFX_CHECK_POINTER(m_pSessionWrapper);
+                mfxFrameAllocator *pAlloc = m_pSessionWrapper->GetFrameAllocator();
+                MFX_CHECK_POINTER(pAlloc);
+                MFX_CHECK_STS(pAlloc->Lock(pAlloc->pthis, pSurface->Data.MemId, &pSurface->Data));
+                m_bFrameLocked = true; //to prevent double unlock case
+            }
         }
     }
-
+    else if ((m_nMemoryModel == VISIBLE_INT_ALLOC || m_nMemoryModel == HIDDEN_INT_ALLOC) && pSurface->FrameInterface)
+    {
+        MFX_CHECK_STS(pSurface->FrameInterface->Map(pSurface, MFX_MAP_READ));
+    }
+    
     return MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoRender::UnlockFrame(mfxFrameSurface1 *pSurface)
 {
-    if (NULL != pSurface && NULL != pSurface->Data.MemId && m_bFrameLocked)
+    if (m_nMemoryModel == GENERAL_ALLOC)
     {
-        //external allocator is used
-        MFX_CHECK_POINTER(m_pSessionWrapper);
-        mfxFrameAllocator *pAlloc = m_pSessionWrapper->GetFrameAllocator();
-        MFX_CHECK_POINTER(pAlloc);
-        MFX_CHECK_STS(pAlloc->Unlock(pAlloc->pthis, pSurface->Data.MemId, &pSurface->Data));
-        m_bFrameLocked = false;
+        if (NULL != pSurface && NULL != pSurface->Data.MemId && m_bFrameLocked)
+        {
+            //external allocator is used
+            MFX_CHECK_POINTER(m_pSessionWrapper);
+            mfxFrameAllocator *pAlloc = m_pSessionWrapper->GetFrameAllocator();
+            MFX_CHECK_POINTER(pAlloc);
+            MFX_CHECK_STS(pAlloc->Unlock(pAlloc->pthis, pSurface->Data.MemId, &pSurface->Data));
+            m_bFrameLocked = false;
+        }
+    }
+    else if ((m_nMemoryModel == VISIBLE_INT_ALLOC || m_nMemoryModel == HIDDEN_INT_ALLOC) && pSurface->FrameInterface)
+    {
+        MFX_CHECK_STS(pSurface->FrameInterface->Unmap(pSurface));
     }
     
     return MFX_ERR_NONE;
@@ -181,6 +196,11 @@ mfxStatus MFXVideoRender::SetAutoView(bool bIsAutoViewRender)
 {
     m_bAutoView = bIsAutoViewRender;
     return MFX_ERR_NONE;
+}
+
+void MFXVideoRender::SetMemoryModel(MemoryModel memoryModel)
+{
+    m_nMemoryModel = memoryModel;
 }
 
 mfxStatus MFXVideoRender::GetDownStream(IFile **ppFile)
@@ -382,9 +402,7 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     }
 #endif
 
-
     MFX_CHECK_STS(LockFrame(pSurface));
-
 
     mfxFrameSurface1 * pConvertedSurface = pSurface;
 

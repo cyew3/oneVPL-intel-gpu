@@ -25,7 +25,8 @@ MFXAV1AnchorsDecoder::MFXAV1AnchorsDecoder(
         mfxVideoParam &frameParam,
         IMFXPipelineFactory * pFactory,
         const vm_char *  anchorsFileInput,
-        mfxU32 anchorFramesNum)
+        mfxU32 anchorFramesNum,
+        MemoryModel memoryModel)
         : InterfaceProxy<IYUVSource>(std::move(pTarget))
         , m_anchors_source(MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES)
         , m_PreloadedFramesNum(anchorFramesNum)
@@ -39,7 +40,7 @@ MFXAV1AnchorsDecoder::MFXAV1AnchorsDecoder(
     {
         vm_string_strcpy_s(m_srcFile, MFX_ARRAY_SIZE(m_srcFile), anchorsFileInput);
     }
-    m_pAnchorsYUVSource.reset(new MFXYUVDecoder(session, frameParam, 30.0, frameParam.mfx.FrameInfo.FourCC, false, pFactory, nullptr));
+    m_pAnchorsYUVSource.reset(new MFXYUVDecoder(session, frameParam, 30.0, frameParam.mfx.FrameInfo.FourCC, false, pFactory, nullptr, memoryModel));
 }
 
 MFXAV1AnchorsDecoder::MFXAV1AnchorsDecoder(

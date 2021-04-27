@@ -28,6 +28,9 @@ public:
     virtual mfxStatus RunFrameVPPAsync  (mfxFrameSurface1 *in, mfxFrameSurface1 *out,  mfxExtVppAuxData *aux, mfxSyncPoint *syncp)   = 0;
     virtual mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)   = 0;
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) = 0;
+    virtual mfxStatus GetSurfaceIn(mfxFrameSurface1** output_surf) = 0;
+    virtual mfxStatus GetSurfaceOut(mfxFrameSurface1** output_surf) = 0;
+    virtual mfxStatus ProcessFrameAsync(mfxFrameSurface1 *in, mfxFrameSurface1 **out) = 0;
 };
 
 
@@ -82,6 +85,18 @@ public:
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait)
     {
         return Target().SyncOperation(syncp, wait);
+    }
+
+    virtual mfxStatus GetSurfaceIn(mfxFrameSurface1** output_surf) {
+        return m_pTarget->GetSurfaceIn(output_surf);
+    }
+
+    virtual mfxStatus GetSurfaceOut(mfxFrameSurface1** output_surf) {
+        return m_pTarget->GetSurfaceOut(output_surf);
+    }
+
+    virtual mfxStatus ProcessFrameAsync(mfxFrameSurface1 *in, mfxFrameSurface1 **out) {
+        return m_pTarget->ProcessFrameAsync(in, out);
     }
 };
 

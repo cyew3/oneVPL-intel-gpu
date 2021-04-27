@@ -22,13 +22,15 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
                              mfxU32 nInFourCC,
                              bool   bDisableSurfaceAlign,
                              IMFXPipelineFactory * pFactory,
-                             const vm_char *  outlineInput)
+                             const vm_char *  outlineInput,
+                             MemoryModel memoryModel)
     : m_session(session)
     , m_vParam()
     , m_internalBS()
     , m_syncPoint((mfxSyncPoint)&m_syncPoint)
     , m_nFrames(0)
     , m_pOutlineFileName(outlineInput && vm_string_strlen(outlineInput) ? outlineInput : NULL)
+    , m_nMemoryModel(memoryModel)
 {
     //Set up width and height from outline file if this information not found in stream info
     if ((m_pOutlineFileName != NULL) && (!frameParam.mfx.FrameInfo.Width) && (!frameParam.mfx.FrameInfo.Height))
@@ -140,9 +142,16 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
     MFXFrameAllocatorRW* pAlloc = NULL;
     if (LumaIsNull(surface))
     {
-        pAlloc = m_session->GetFrameAllocator();
-        MFX_CHECK_POINTER(pAlloc); // no allocator means we can't get YUV pointers, so report an error
-        MFX_CHECK_STS(pAlloc->LockFrameRW(surface->Data.MemId, &surface->Data, MFXReadWriteMid::write));
+        if ((m_nMemoryModel == VISIBLE_INT_ALLOC || m_nMemoryModel == HIDDEN_INT_ALLOC) && surface->FrameInterface)
+        {
+            MFX_CHECK_STS(surface->FrameInterface->Map(surface, MFX_MAP_READ_WRITE));
+        }
+        else
+        {   
+            pAlloc = m_session->GetFrameAllocator();
+            MFX_CHECK_POINTER(pAlloc); // no allocator means we can't get YUV pointers, so report an error
+            MFX_CHECK_STS(pAlloc->LockFrameRW(surface->Data.MemId, &surface->Data, MFXReadWriteMid::write));
+        }
     }
 
     surface->Data.Corrupted   = 0;
@@ -234,7 +243,11 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
         }
     }
 
-    if (NULL != pAlloc)
+    if ((m_nMemoryModel == VISIBLE_INT_ALLOC || m_nMemoryModel == HIDDEN_INT_ALLOC) && surface->FrameInterface)
+    {
+        MFX_CHECK_STS(surface->FrameInterface->Unmap(surface));
+    }
+    else if (NULL != pAlloc)
     {
         MFX_CHECK_STS(pAlloc->UnlockFrameRW( surface->Data.MemId
                                            , &surface->Data
@@ -261,7 +274,19 @@ mfxStatus MFXYUVDecoder::DecodeFrameAsync( mfxBitstream2 & bs
     *surface_out = surface_work;
     *syncp = m_syncPoint;
 
+    // increase reference expected here for memory 2.0, since reference of surface_out is increased in MFXVideoDECODE_DecodeFrameAsync
+    // TODO: move to Refcount Surface Wrapper
+    if (m_nMemoryModel != GENERAL_ALLOC)
+    {
+        (*surface_out)->FrameInterface->AddRef(*surface_out);
+    }
+
     return MFX_ERR_NONE;
+}
+
+mfxStatus MFXYUVDecoder::GetSurface(mfxFrameSurface1** output_surf)
+{
+    return MFXMemory_GetSurfaceForEncode(m_session->GetMFXSession(), output_surf);
 }
 
 mfxStatus MFXYUVDecoder::DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)

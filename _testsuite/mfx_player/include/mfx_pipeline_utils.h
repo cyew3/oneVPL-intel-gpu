@@ -16,6 +16,7 @@ File Name: .h
 #include <vector>
 #include "mfxdispatcher.h"
 
+
 //////////////////////////////////////////////////////////////////////////
 //trace support functions
 void             PipelineSetLastErr( mfxU32
@@ -106,6 +107,7 @@ mfxI32           Convert_MFXPS_to_CmdPS(mfxU16 mfxPicStruct, mfxU16 extco = MFX_
 //utilityz
 void             IncreaseReference(mfxFrameData *ptr);
 void             DecreaseReference(mfxFrameData *ptr);
+
 void             PrintInfoNoCR(const vm_char *name, const vm_char *value, ...);
 
 void             PrintInfo(const vm_char *name, const vm_char *value, ...);

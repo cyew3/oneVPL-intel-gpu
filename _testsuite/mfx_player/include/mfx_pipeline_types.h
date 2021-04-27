@@ -36,6 +36,14 @@ struct FourCC
         : m_id(nId){}
 };
 
+enum MemoryModel
+{
+    UNKNOWN_ALLOC = 0, // GENERAL_ALLOC will be used by default
+    GENERAL_ALLOC = 1,
+    VISIBLE_INT_ALLOC = 2,
+    HIDDEN_INT_ALLOC = 3
+};
+
 enum MFXBufType
 {
     MFX_BUF_UNSPECIFIED = 0,
@@ -165,6 +173,7 @@ typedef struct
     bool        bZeroBottomStripe;
     mfxU32      nDelayOnMSDKCalls; //pipeline will call Sleep after MSDK async calls
     mfxU16      nBufferSizeInKB;
+    MemoryModel nMemoryModel;
 } EncodeExtraParams;
 
 

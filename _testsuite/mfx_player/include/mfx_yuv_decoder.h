@@ -29,7 +29,8 @@ public:
                   mfxU32 nInFourCC,
                   bool   bDisableSurfaceAlign,
                   IMFXPipelineFactory * pFactory,
-                  const vm_char * outlineInput);
+                  const vm_char * outlineInput,
+                  MemoryModel memoryModel);
     virtual ~MFXYUVDecoder();
 
     virtual mfxStatus Init(mfxVideoParam *par);
@@ -38,7 +39,7 @@ public:
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);
-
+    virtual mfxStatus GetSurface(mfxFrameSurface1** output_surf);
     virtual mfxStatus DecodeFrameAsync(
         mfxBitstream2 &bs,
         mfxFrameSurface1 *surface_work,
@@ -69,6 +70,7 @@ protected:
     mfxBitstream            m_internalBS;//rudiment bs
     mfxSyncPoint            m_syncPoint;
     mfxU32                  m_nFrames;
+    MemoryModel             m_nMemoryModel;
     //fourcc of bitstream
     //mfxU32                  m_nInFourCC;
     //mfxU32                  m_nOutFourCC;

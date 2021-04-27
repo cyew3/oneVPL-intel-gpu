@@ -29,6 +29,7 @@ public:
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) { return MFXVideoDECODE_Query(m_session, in, out); }
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request){return MFXVideoDECODE_QueryIOSurf(m_session, par, request);}
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat) { return MFXVideoDECODE_GetDecodeStat(m_session, stat); }
+    virtual mfxStatus GetSurface(mfxFrameSurface1** output_surf) { return MFXMemory_GetSurfaceForDecode(m_session, output_surf); }
     virtual mfxStatus DecodeFrameAsync(mfxBitstream2 &bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
     {
         return MFXVideoDECODE_DecodeFrameAsync(m_session, bs.isNull ? NULL : &bs, surface_work, surface_out, syncp);

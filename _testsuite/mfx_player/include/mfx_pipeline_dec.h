@@ -89,6 +89,8 @@ struct sCommandlineParams
   mfxU64         nLimitInputBs;
   mfxI32         nSeed;
   mfxU16         nInputBitdepth;
+  MemoryModel    nMemoryModel;
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
   bool           bIgnoreLevelConstrain;
 #endif
@@ -286,7 +288,7 @@ struct sCommandlineParams
       vm_string_strcpy_s(strPAVPLibPath, MFX_ARRAY_SIZE(strPAVPLibPath), VM_STRING("mfx_pavp"));
       cpImpl = cpImplUnknown;
 #endif//PAVP_BUILD
-
+      nMemoryModel = GENERAL_ALLOC;
       //default parameters for sCommandLine
       isDefaultFC       =  true;
       //fourcc passed to decoder input(only for yuv case)

@@ -28,13 +28,12 @@ public:
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) = 0;
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) = 0;
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat) = 0;
-
+    virtual mfxStatus GetSurface(mfxFrameSurface1** output_surf) = 0;
     virtual mfxStatus DecodeFrameAsync(
         mfxBitstream2 &bs,
         mfxFrameSurface1 *surface_work,
         mfxFrameSurface1 **surface_out,
         mfxSyncPoint *syncp) = 0;
-
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) = 0;
     virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) = 0;
     virtual mfxStatus Reset(mfxVideoParam *par) = 0;
@@ -60,6 +59,7 @@ public:
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) { return m_pTarget->Query(in, out); }
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request){return m_pTarget->QueryIOSurf(par, request);}
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat) { return m_pTarget->GetDecodeStat(stat); }
+    virtual mfxStatus GetSurface(mfxFrameSurface1** output_surf) { return m_pTarget->GetSurface(output_surf); }
     virtual mfxStatus DecodeFrameAsync(mfxBitstream2 &bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
     {
         return m_pTarget->DecodeFrameAsync(bs, surface_work, surface_out, syncp);

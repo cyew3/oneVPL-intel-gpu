@@ -69,6 +69,13 @@ public:
         return MFX_ERR_NONE;
     }
 
+    virtual mfxStatus GetSurface(mfxFrameSurface1** output_surf)
+    {
+        IYUVSource *current = ItemFromIdx((CurrentItemIdx(&MultiDecode::GetSurface)));
+        MFX_CHECK_POINTER(current);
+        return current->GetSurface(output_surf);
+    }
+
     virtual mfxStatus DecodeFrameAsync(
         mfxBitstream2 &bs2,
         mfxFrameSurface1 *surface_work,

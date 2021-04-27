@@ -79,6 +79,7 @@ public:
     virtual mfxStatus WaitTasks(mfxU32 nMilisecconds);
     virtual mfxStatus SetOutputFourcc(mfxU32 nFourCC);
     virtual mfxStatus SetAutoView(bool bIsAutoViewRender);
+    virtual void SetMemoryModel(MemoryModel memoryModel);
     virtual mfxStatus GetDownStream(IFile **ppFile);
     virtual mfxStatus SetDownStream(IFile *ppFile);
     virtual mfxStatus GetDevice(IHWDevice **pDevice);
@@ -93,9 +94,10 @@ protected:
     mfxVideoParam           m_VideoParams;//params in init
     bool                    m_bIsViewRender;
     bool                    m_bAutoView;
-    mfxU32                  m_nViewId;         
+    mfxU32                  m_nViewId;
     std::auto_ptr<IFile>    m_pFile;
     bool                    m_bVDSFCFormatSetting;
+    MemoryModel             m_nMemoryModel;
 
     virtual mfxStatus LockFrame(mfxFrameSurface1 *surface);
     virtual mfxStatus UnlockFrame(mfxFrameSurface1 *surface);

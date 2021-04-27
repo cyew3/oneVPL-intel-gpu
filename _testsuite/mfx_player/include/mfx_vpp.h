@@ -30,6 +30,9 @@ public:
     virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoVPP_GetVideoParam(m_session, par); }
     virtual mfxStatus GetVPPStat(mfxVPPStat *stat) { return MFXVideoVPP_GetVPPStat(m_session, stat); }
     virtual mfxStatus RunFrameVPPAsync(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) { return MFXVideoVPP_RunFrameVPPAsync(m_session, in, out, aux, syncp); }
+    virtual mfxStatus GetSurfaceIn(mfxFrameSurface1** output_surf) { return MFXMemory_GetSurfaceForVPP(m_session, output_surf); }
+    virtual mfxStatus GetSurfaceOut(mfxFrameSurface1** output_surf) { return MFXMemory_GetSurfaceForVPPOut(m_session, output_surf); }
+    virtual mfxStatus ProcessFrameAsync(mfxFrameSurface1 *in, mfxFrameSurface1 **out) { return MFXVideoVPP_ProcessFrameAsync(m_session, in, out); }
     virtual mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work,  mfxFrameSurface1 **out, mfxExtVppAuxData * /* aux */, mfxSyncPoint *syncp)
     {
 #ifndef MFX_ONEVPL

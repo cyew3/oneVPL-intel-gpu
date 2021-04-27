@@ -3336,6 +3336,7 @@ mfxStatus MFXTranscodingPipeline::CreateRender()
 
     m_inParams.encodeExtraParams.pRefFile = m_inParams.refFile;
     m_inParams.encodeExtraParams.bVerbose = m_inParams.bVerbose;
+    m_inParams.encodeExtraParams.nMemoryModel = m_inParams.nMemoryModel;
 
     MFX_CHECK_STS(pEncoderWrp->SetExtraParams(&m_inParams.encodeExtraParams));
 

@@ -132,6 +132,13 @@ public:
         MFX_CHECK_STS(m_pTarget->SetVDSFCFormat(bVDSFCFormatSetting));
         return MFX_ERR_NONE;
     }
+    void SetMemoryModel(MemoryModel nMemoryModel)
+    {
+        if (m_pTarget.get())
+        {
+            m_pTarget->SetMemoryModel(nMemoryModel);
+        }
+    }
 };
 
 
