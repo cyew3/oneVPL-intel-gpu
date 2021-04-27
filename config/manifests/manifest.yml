@@ -24,7 +24,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.val-tools.git
     branch: master
-    revision: fec4418ccef65676b827ee1caea620050b7cf0de
+    revision: c13994367937fd7a8bd3a6528fa7df0391f95c9e
     dest_dir: sources/mdp_msdk-val-tools
   test_system:
     type: git
@@ -120,7 +120,7 @@ components:
     root_url: https://gfx-assets.inn.intel.com/artifactory
     asset_path: mediasdk-builds/ci
     asset_name: mediasdk-1x
-    asset_version: mediasdk-ci-mediasdk-1x-1.0.82
+    asset_version: mediasdk-ci-mediasdk-1x-1.0.99
     asset_patterns:
     - Windows/msdk/runtime/*.zip
     - Windows/msdk/tools/*.zip
