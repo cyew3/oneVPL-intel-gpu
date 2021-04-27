@@ -473,7 +473,9 @@
 #define UMC_ENABLE_FIO_READER
 #define UMC_ENABLE_VC1_SPLITTER
 
+#if !defined(NDEBUG)
 #define MFX_ENV_CFG_ENABLE
+#endif
 
 #if defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
     #define MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
