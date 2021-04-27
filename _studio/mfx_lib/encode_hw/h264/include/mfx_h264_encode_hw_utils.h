@@ -2833,12 +2833,15 @@ protected:
             config.AdaptivePyramidQuantP = (mfxU16)(IsNotDefined(config.AdaptivePyramidQuantP) ?
                 (bLA ?  MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptivePyramidQuantP);
 
-            if(extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
-                config.AdaptiveQuantMatrices = (mfxU16)(IsNotDefined(config.AdaptiveQuantMatrices) ?
-                    (bLA ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptiveQuantMatrices);
+            config.AdaptiveQuantMatrices = (mfxU16)(IsNotDefined(config.AdaptiveQuantMatrices) ?
+                (bLA ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF) : config.AdaptiveQuantMatrices);
 
             config.AdaptiveI = (mfxU16)(IsNotDefined(config.AdaptiveI) ?
                 MFX_CODINGOPTION_OFF : config.AdaptiveI);
+
+            config.AdaptiveB = (mfxU16)(IsNotDefined(config.AdaptiveB) ?
+                MFX_CODINGOPTION_ON : config.AdaptiveB);
+
         }
 #endif
    }
@@ -2876,6 +2879,11 @@ protected:
                video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) &&
                video.calcParam.numTemporalLayer == 0);
            bool bAdaptiveI = !(video.mfx.GopOptFlag & MFX_GOP_STRICT) && !IsOff(extOpt2.AdaptiveI);
+#ifdef MFX_ENABLE_ENCTOOLS_LPLA
+           // LPLA assumes reordering for I frames, doesn't make much sense with closed GOP
+           if (extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+               bAdaptiveI = bAdaptiveI && !(video.mfx.GopOptFlag & MFX_GOP_CLOSED);
+#endif
            bool bAdaptiveRef = isAdaptiveRefAllowed(video);
 
            CheckFlag(pConfig->AdaptiveI, bEncToolsCnd && bAdaptiveI, numChanges);

@@ -291,12 +291,14 @@ static void SetDefaultConfig(mfxVideoParam &video, mfxExtEncToolsConfig &config)
         bool bLA = (pExtOpt2 && pExtOpt2->LookAheadDepth > 0 &&
             (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
                 video.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
+        // LPLA assumes reordering for I frames, doesn't make much sense with closed GOP
+        bool bAdaptiveI = !(pExtOpt2 && IsOff(pExtOpt2->AdaptiveI)) && !(video.mfx.GopOptFlag & (MFX_GOP_STRICT | MFX_GOP_CLOSED));
 
        SetDefaultOpt(config.BRCBufferHints, bLA);
        SetDefaultOpt(config.AdaptivePyramidQuantP, bLA);
        SetDefaultOpt(config.AdaptivePyramidQuantB, bLA);
        SetDefaultOpt(config.AdaptiveQuantMatrices, bLA);
-       SetDefaultOpt(config.AdaptiveI, bLA);
+       SetDefaultOpt(config.AdaptiveI, bLA && bAdaptiveI);
        SetDefaultOpt(config.AdaptiveB, bLA);
     }
 #endif
@@ -330,6 +332,13 @@ static mfxU32 CorrectVideoParams(mfxVideoParam & video, mfxExtEncToolsConfig & s
     if (pConfig)
     {
         bool bAdaptiveI = !(pExtOpt2 && IsOff(pExtOpt2->AdaptiveI)) && !(video.mfx.GopOptFlag & MFX_GOP_STRICT);
+#ifdef MFX_ENABLE_ENCTOOLS_LPLA
+        if (pExtOpt3 && pExtOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+        {
+            // LPLA assumes reordering for I frames, doesn't make much sense with closed GOP
+            bAdaptiveI = bAdaptiveI && !(video.mfx.GopOptFlag & MFX_GOP_CLOSED);
+        }
+#endif
         bool bAdaptiveB = !(pExtOpt2 && IsOff(pExtOpt2->AdaptiveB));
         bool bAdaptiveRef = IsAdaptiveRefAllowed(video);
 
@@ -825,8 +834,7 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
 
     auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
     task.GopHints.MiniGopSize = preEncodeGOP.MiniGopSize;
-    task.GopHints.FrameType = (m_EncToolCtrl.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING ? 0 : preEncodeGOP.FrameType);
-    task.GopHints.SceneChange = preEncodeSChg.SceneChangeFlag;
+    task.GopHints.FrameType = preEncodeGOP.FrameType;
 
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     if (IsOn(m_EncToolConfig.BRCBufferHints) && !isLABRC)

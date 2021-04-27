@@ -297,7 +297,8 @@ mfxStatus EncTools::InitVPP(mfxEncToolsCtrl const & ctrl)
         initPar.Version.Major = 1;
         initPar.Version.Minor = 0;
         initPar.Implementation = MFX_IMPL_HARDWARE;
-        initPar.Implementation |= (m_deviceType == MFX_HANDLE_D3D11_DEVICE ? MFX_IMPL_VIA_D3D11 : (m_deviceType == MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 ? MFX_IMPL_VIA_D3D9 : MFX_IMPL_VIA_VAAPI));
+        initPar.Implementation |= (m_deviceType == MFX_HANDLE_D3D11_DEVICE ? MFX_IMPL_VIA_D3D11 :
+            (m_deviceType == MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 ? MFX_IMPL_VIA_D3D9 : MFX_IMPL_VIA_VAAPI));
         initPar.GPUCopy = MFX_GPUCOPY_DEFAULT;
 
         sts = m_mfxSession.InitEx(initPar);
@@ -333,7 +334,7 @@ mfxStatus EncTools::InitVPP(mfxEncToolsCtrl const & ctrl)
     sts = m_pmfxVPP->Init(&m_mfxVppParams);
     MFX_CHECK_STS(sts);
 
-    mfxFrameAllocRequest VppRequest[2]{};
+    mfxFrameAllocRequest VppRequest[2] {};
     sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, VppRequest);
     MFX_CHECK_STS(sts);
 
@@ -350,7 +351,6 @@ mfxStatus EncTools::InitVPP(mfxEncToolsCtrl const & ctrl)
 
     m_bVPPInit = true;
     return MFX_ERR_NONE;
-
 }
 
 mfxStatus EncTools::InitMfxVppParams(mfxEncToolsCtrl const & ctrl)
@@ -622,11 +622,11 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                     if (isPreEncLA(m_config, m_ctrl))
                     {
                         m_pIntSurfaces.data()->Info.CropW = m_mfxVppParams_AEnc.vpp.Out.CropW;
-                            m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams_AEnc.vpp.Out.CropH;
+                        m_pIntSurfaces.data()->Info.CropH = m_mfxVppParams_AEnc.vpp.Out.CropH;
                     }
 
                     sts = VPPDownScaleSurface(pFrameData->Surface, m_pIntSurfaces.data());
-                        MFX_CHECK_STS(sts);
+                    MFX_CHECK_STS(sts);
                     m_pAllocator->Lock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);
                     sts = m_scd.SubmitFrame(m_pIntSurfaces.data());
                     m_pAllocator->Unlock(m_pAllocator->pthis, m_pIntSurfaces[0].Data.MemId, &m_pIntSurfaces[0].Data);

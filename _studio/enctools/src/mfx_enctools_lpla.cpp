@@ -51,6 +51,8 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
     if (m_GopPicSize)
         m_IdrInterval = ctrl.MaxIDRDist / m_GopPicSize;
 
+    m_GopRefDist = ctrl.MaxGopRefDist;
+
     sts = InitEncParams(ctrl, config);
     MFX_CHECK_STS(sts);
     if (config.AdaptiveI && ctrl.ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) m_encParams.mfx.GopPicSize = 0xffff;
@@ -256,9 +258,9 @@ mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface, mfxU16 FrameType)
 
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtLpLaStatus* lplaHints = (mfxExtLpLaStatus*)Et_GetExtBuffer(m_bitstream.ExtParam, m_bitstream.NumExtParam, MFX_EXTBUFF_LPLA_STATUS);
-    if(lplaHints)
+    if (lplaHints)
     {
-        if (lplaHints->CqmHint != CQM_HINT_INVALID || (surface->Data.FrameOrder >= m_lookAheadDepth))
+        if (lplaHints->CqmHint != CQM_HINT_INVALID)
         {
             //printf("Submit %d: CQM %d FrmSize %d BufferFullness %d \n", surface->Data.FrameOrder, lplaHints->CqmHint, lplaHints->TargetFrameSize, lplaHints->TargetBufferFullnessInBit);
             m_encodeHints.push_back({
@@ -311,7 +313,7 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPr
         case 2:
         case 4:
         case 8:
-            pPreEncGOP->MiniGopSize = IsOn(m_config.AdaptiveB)? m_curEncodeHints.MiniGopSize:0;
+            pPreEncGOP->MiniGopSize = IsOn(m_config.AdaptiveB) ? m_curEncodeHints.MiniGopSize : 0;
             break;
         default:
             pPreEncGOP->MiniGopSize = 0;
@@ -325,13 +327,17 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPr
             pPreEncGOP->QPModulation = MFX_QP_MODULATION_NOT_DEFINED;
 
         if (m_curEncodeHints.IntraHint && IsOn(m_config.AdaptiveI))
-            pPreEncGOP->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
-        else
-            pPreEncGOP->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+            m_nextPisIntra = true;
+
+        pPreEncGOP->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
     }
 
-    if (dispOrder == 0) // just in case
+    if (dispOrder == 0)
+    {
         pPreEncGOP->FrameType = MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+        m_lastIDRFrameNumber = dispOrder;
+        m_nextPisIntra = false;
+    }
 
     // for adaptiveI==off only: m_encParams.mfx.GopPicSize is "infinite" (0xffff) when adaptiveI==on
     if (m_encParams.mfx.GopPicSize && (dispOrder - m_lastIFrameNumber >= (mfxU32)m_encParams.mfx.GopPicSize))
@@ -339,13 +345,44 @@ mfxStatus LPLA_EncTool::Query(mfxU32 dispOrder, mfxEncToolsHintPreEncodeGOP *pPr
 
     if (pPreEncGOP->FrameType & MFX_FRAMETYPE_I)
     {
-        m_lastIFrameNumber = dispOrder;
+        m_lastIFrameNumber = m_lastIPFrameNumber = dispOrder;
         if (m_GopPicSize && (dispOrder - m_lastIDRFrameNumber > (mfxU32)m_GopPicSize * m_IdrInterval))
         {
             pPreEncGOP->FrameType |= MFX_FRAMETYPE_IDR;
             m_lastIDRFrameNumber = dispOrder;
         }
     }
+    else if (m_GopRefDist > 1)
+    {
+        mfxU32 miniGopSize = pPreEncGOP->MiniGopSize ? pPreEncGOP->MiniGopSize : m_GopRefDist;
+        if ((dispOrder - m_lastIPFrameNumber) % miniGopSize)
+        {
+            pPreEncGOP->FrameType = MFX_FRAMETYPE_B;
+        }
+        else
+        {
+            pPreEncGOP->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+            if (m_nextPisIntra)
+            {
+                pPreEncGOP->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+                m_nextPisIntra = false;
+                m_lastIFrameNumber = dispOrder;
+            }
+            m_lastIPFrameNumber = dispOrder;
+        }
+    }
+    else
+    {
+        pPreEncGOP->FrameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+        if (m_nextPisIntra)
+        {
+            pPreEncGOP->FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+            m_nextPisIntra = false;
+            m_lastIFrameNumber = dispOrder;
+        }
+        m_lastIPFrameNumber = dispOrder;
+    }
+
 
     return sts;
 }

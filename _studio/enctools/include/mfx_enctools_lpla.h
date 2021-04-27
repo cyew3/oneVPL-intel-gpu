@@ -75,7 +75,10 @@ public:
         m_lookAheadDepth (0),
         m_lastIFrameNumber(0),
         m_lastIDRFrameNumber(0),
+        m_lastIPFrameNumber(0),
+        m_nextPisIntra(false),
         m_GopPicSize(0),
+        m_GopRefDist(0),
         m_IdrInterval(1)
     {
         m_bitstream  = {};
@@ -138,7 +141,10 @@ protected:
     mfxU32                        m_lookAheadDepth;
     mfxU32                        m_lastIFrameNumber;
     mfxU32                        m_lastIDRFrameNumber;
+    mfxU32                        m_lastIPFrameNumber;
+    bool                          m_nextPisIntra;
     mfxU16                        m_GopPicSize;
+    mfxU16                        m_GopRefDist;
     mfxU16                        m_IdrInterval;
     std::list<MfxFrameSize>       m_frameSizes;
     mfxExtEncToolsConfig          m_config;
