@@ -512,6 +512,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_AUX_DATA(EnableOrderHint, OPT_TRI_STATE, "0-127"),
         HANDLE_AV1_AUX_DATA(OrderHintBits, OPT_UINT_8, "0-8"),
         HANDLE_AV1_AUX_DATA(DisplayFormatSwizzle, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(Palette, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(IBC, OPT_TRI_STATE, "on/off SCC IBC Mode"),
 #else
         HANDLE_AV1_OPTION(InterpFilter, OPT_TRI_STATE, "on/off Interpolation filters during mode decision"),
         HANDLE_AV1_OPTION(CDEF, OPT_TRI_STATE, "on/off CDEF"),

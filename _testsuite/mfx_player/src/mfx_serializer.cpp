@@ -623,6 +623,7 @@ void MFXStructureRef <mfxExtAV1AuxData>::ConstructValues() const
     SERIALIZE_INT(EnableOrderHint);
     SERIALIZE_INT(OrderHintBits);
     SERIALIZE_INT(DisplayFormatSwizzle);
+    SERIALIZE_INT(Palette);
 }
 void MFXStructureRef <mfxExtAV1LargeScaleTileParam>::ConstructValues() const
 {

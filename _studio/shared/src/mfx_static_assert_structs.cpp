@@ -1970,6 +1970,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,EnableOrderHint               ,105  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,OrderHintBits                 ,106  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,DisplayFormatSwizzle          ,107  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,Palette                       ,108  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,IBC                           ,110  )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,FeatureEnabled                ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,AltQIndex                     ,2    )
@@ -2870,6 +2872,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,EnableOrderHint               ,105  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,OrderHintBits                 ,106  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,DisplayFormatSwizzle          ,107  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,Palette                       ,108  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,IBC                           ,110  )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,FeatureEnabled                ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,AltQIndex                     ,2    )
@@ -3767,6 +3771,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,EnableOrderHint               ,105  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,OrderHintBits                 ,106  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,DisplayFormatSwizzle          ,107  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,Palette                       ,108  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,IBC                           ,110  )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,FeatureEnabled                ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,AltQIndex                     ,2    )

@@ -1344,32 +1344,6 @@ void General::PreReorderTask(const FeatureBlocks& blocks, TPushPreRT Push)
     });
 }
 
-inline void SetCDEFLossless(FH& fh)
-{
-    fh.cdef_params.cdef_bits               = 0;
-    fh.cdef_params.cdef_y_pri_strength[0]  = 0;
-    fh.cdef_params.cdef_y_sec_strength[0]  = 0;
-    fh.cdef_params.cdef_uv_pri_strength[0] = 0;
-    fh.cdef_params.cdef_uv_sec_strength[0] = 0;
-    fh.cdef_params.cdef_damping            = 3;
-}
-
-inline void SetLoopFilterLossless(FH& fh)
-{
-    fh.loop_filter_params.loop_filter_level[0]                  = 0;
-    fh.loop_filter_params.loop_filter_level[1]                  = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[INTRA_FRAME]   = 1;
-    fh.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME]    = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[LAST2_FRAME]   = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[LAST3_FRAME]   = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[BWDREF_FRAME]  = 0;
-    fh.loop_filter_params.loop_filter_ref_deltas[GOLDEN_FRAME]  = -1;
-    fh.loop_filter_params.loop_filter_ref_deltas[ALTREF_FRAME]  = -1;
-    fh.loop_filter_params.loop_filter_ref_deltas[ALTREF2_FRAME] = -1;
-    for (int i = 0; i < MAX_MODE_LF_DELTAS; i++)
-        fh.loop_filter_params.loop_filter_mode_deltas[i] = 0;
-}
-
 inline bool IsLossless(FH& fh)
 {
     return (fh.quantization_params.base_q_idx == 0 && fh.quantization_params.DeltaQYDc == 0 && fh.quantization_params.DeltaQUAc == 0
@@ -3731,11 +3705,6 @@ inline void SetCDEFByAuxData(
     }
 }
 
-inline bool FrameIsIntra(FRAME_TYPE ft)
-{
-    return ft == INTRA_ONLY_FRAME || ft == KEY_FRAME;
-}
-
 inline void SetCDEF(
     const Defaults::Param& dflts
     , const SH& sh
@@ -3969,7 +3938,7 @@ mfxStatus General::GetCurrentFrameHeader(
 
     currFH.order_hint = task.DisplayOrderInGOP;
 
-    const bool frameIsIntra = FrameIsIntra(currFH.frame_type);
+    const bool frameIsIntra = FrameIsIntra(currFH);
     SetRefFrameFlags(task, currFH, frameIsIntra);
     SetRefFrameIndex(task, currFH, frameIsIntra);
 
@@ -3978,8 +3947,8 @@ mfxStatus General::GetCurrentFrameHeader(
     if (IsLossless(currFH))
     {
         currFH.CodedLossless = 1;
-        SetCDEFLossless(currFH);
-        SetLoopFilterLossless(currFH);
+        DisableCDEF(currFH);
+        DisableLoopFilter(currFH);
     }
     else
     {

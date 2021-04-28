@@ -102,7 +102,7 @@ typedef struct tagENCODE_CAPS_AV1
             UINT   enable_interintra_compound : 1;
             UINT   enable_masked_compound     : 1;
             UINT   enable_warped_motion       : 1;
-            UINT   allow_screen_content_tools : 1;
+            UINT   PaletteMode                : 1;
             UINT   enable_dual_filter         : 1;
             UINT   enable_order_hint          : 1;
             UINT   enable_jnt_comp            : 1;
@@ -351,7 +351,8 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
             UINT DisableFrameRecon            : 1; // [0..1]
             UINT LongTermReference            : 1; // [0..1]
             UINT allow_intrabc                : 1; // [0..1]
-            UINT ReservedField                : 16;
+            UINT PaletteModeEnable            : 1; // [0..1]
+            UINT ReservedField                : 15;
         } fields;
         UINT value;
     } PicFlags;

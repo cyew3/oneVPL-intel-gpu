@@ -147,7 +147,7 @@ DECL_START(ENCODE_CAPS_AV1)
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_interintra_compound);
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_masked_compound    );
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_warped_motion      );
-    TRACE_AUTO(AV1ToolSupportFlags.fields.allow_screen_content_tools);
+    TRACE_AUTO(AV1ToolSupportFlags.fields.PaletteMode               );
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_dual_filter        );
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_order_hint         );
     TRACE_AUTO(AV1ToolSupportFlags.fields.enable_jnt_comp           );
@@ -399,6 +399,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1)
     TRACE_AUTO(PicFlags.fields.DisableFrameRecon           );
     TRACE_AUTO(PicFlags.fields.LongTermReference           );
     TRACE_AUTO(PicFlags.fields.allow_intrabc               );
+    TRACE_AUTO(PicFlags.fields.PaletteModeEnable           );
 
     TRACE_ARRAY_ROW("%d", filter_level, 2                  );
     TRACE_AUTO(filter_level_u                              );

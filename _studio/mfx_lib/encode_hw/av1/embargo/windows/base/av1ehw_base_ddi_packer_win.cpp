@@ -400,6 +400,7 @@ void DDIPacker::FillPpsBuffer(
     pps.PicFlags.fields.use_superres = bs_fh.use_superres;
     pps.PicFlags.fields.allow_high_precision_mv = bs_fh.allow_high_precision_mv;
     pps.PicFlags.fields.reduced_tx_set_used = bs_fh.reduced_tx_set;
+    pps.PicFlags.fields.PaletteModeEnable = bs_fh.allow_screen_content_tools;
     //description for tx_mode in DDI 0.04 is outdated (lists TX modes not supported by 1.0.0.errata1)
     pps.dwModeControlFlags.fields.tx_mode = bs_fh.TxMode;
     pps.temporal_id = 0;
@@ -618,6 +619,7 @@ void DDIPacker::FillPpsBuffer(
     pps.CurrOriginalPic = task.Rec.Idx;
     pps.CurrReconstructedPic = task.Rec.Idx;
     pps.PicFlags.fields.EnableFrameOBU = (task.InsertHeaders & INSERT_FRM_OBU) ? 1 : 0;
+    pps.PicFlags.fields.allow_intrabc = bs_fh.allow_intrabc;
 
     //offsets
     auto& offsets = task.Offsets;
