@@ -321,114 +321,112 @@ namespace le_hevce_query
         {/*41*/ MFX_ERR_INVALID_HANDLE, SESSION_NULL, NONE, MFX_HYPERMODE_ON, {} },
         
         /* set alloc handle */
-        {/*42*/ MFX_ERR_NONE, SET_ALLOCK, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY } },
-        {/*43*/ MFX_ERR_NONE, SET_ALLOCK, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
-        {/*44*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
-        {/*45*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
-        {/*46*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
-        {/*47*/ MFX_ERR_UNSUPPORTED, SET_ALLOCK, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY } },
+        {/*42*/ MFX_ERR_NONE, SET_ALLOCK, NONE, MFX_HYPERMODE_ON, { } },
+        {/*43*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, MFX_HYPERMODE_ON, { } },
+        {/*44*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, MFX_HYPERMODE_OFF, { } },
+        {/*45*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, MFX_HYPERMODE_ADAPTIVE, { } },
+        {/*46*/ MFX_ERR_UNSUPPORTED, SET_ALLOCK, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY } },
 
         /* zero param */
-        {/*48*/ MFX_ERR_NONE, IN_PAR_NULL, NONE, MFX_HYPERMODE_ON, {} },
-        {/*49*/ MFX_ERR_NONE, IN_PAR_NULL, NONE, MFX_HYPERMODE_ADAPTIVE, {} },
-        {/*50*/ MFX_ERR_NULL_PTR, OUT_PAR_NULL, NONE, MFX_HYPERMODE_ADAPTIVE, {} },
+        {/*47*/ MFX_ERR_NONE, IN_PAR_NULL, NONE, MFX_HYPERMODE_ON, {} },
+        {/*48*/ MFX_ERR_NONE, IN_PAR_NULL, NONE, MFX_HYPERMODE_ADAPTIVE, {} },
+        {/*49*/ MFX_ERR_NULL_PTR, OUT_PAR_NULL, NONE, MFX_HYPERMODE_ADAPTIVE, {} },
         
         /* IOPattern */
-        {/*51*/ MFX_ERR_NONE, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY } },
-        {/*52*/ MFX_ERR_NONE, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
-        {/*53*/ MFX_ERR_UNSUPPORTED, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY } },
-        {/*54*/ MFX_ERR_UNSUPPORTED, IO_PATTERN, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0x8000 } },
+        {/*50*/ MFX_ERR_NONE, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { } },
+        {/*51*/ MFX_ERR_UNSUPPORTED, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY } },
+        {/*52*/ MFX_ERR_UNSUPPORTED, IO_PATTERN, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0x8000 } },
         
         /* Unsupported FourCC */
-        {/*55*/ MFX_ERR_UNSUPPORTED, NONE, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
+        {/*53*/ MFX_ERR_UNSUPPORTED, NONE, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
                                                                      { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, 0 },}},
         
         /* Resolution */
-        {/*56*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 3 } },
-        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 3 } },
-        {/*58*/ MFX_ERR_UNSUPPORTED, RESOLUTION, W_GT_MAX, MFX_HYPERMODE_ON, {} },
-        {/*59*/ MFX_ERR_UNSUPPORTED, RESOLUTION, H_GT_MAX, MFX_HYPERMODE_ON, {} },
-        {/*60*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*54*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 3 } },
+        {/*55*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 3 } },
+        {/*56*/ MFX_ERR_UNSUPPORTED, RESOLUTION, W_GT_MAX, MFX_HYPERMODE_ON, {} },
+        {/*57*/ MFX_ERR_UNSUPPORTED, RESOLUTION, H_GT_MAX, MFX_HYPERMODE_ON, {} },
+        {/*58*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },}},
         
         /* PicStruct */
-        {/*61*/ MFX_ERR_NONE, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-        {/*62*/ MFX_ERR_NONE, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-        {/*63*/ MFX_ERR_NONE, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE } },
-        {/*64*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
-        {/*65*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
+        {/*59*/ MFX_ERR_NONE, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+        {/*60*/ MFX_ERR_NONE, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+        {/*61*/ MFX_ERR_NONE, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE } },
+        {/*62*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
+        {/*63*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
         
         /* Crops */
-        {/*66*/ MFX_ERR_UNSUPPORTED, CROP, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
-        {/*67*/ MFX_ERR_UNSUPPORTED, CROP, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
-        {/*68*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 } },
-        {/*69*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 10 } },
-        {/*70*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 },
+        {/*64*/ MFX_ERR_UNSUPPORTED, CROP, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
+        {/*65*/ MFX_ERR_UNSUPPORTED, CROP, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
+        {/*66*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 } },
+        {/*67*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 10 } },
+        {/*68*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 },
                                                                       { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 10 }}},
-        {/*71*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 1 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },}},
-        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*70*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },}},
-        {/*73*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*71*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },}},
-        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                                                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },}},
         
         /* frame rate */
-        {/*75*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 0 } },
-        {/*76*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
+        {/*73*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 0 } },
+        {/*74*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
         
         /* chroma format */
-        {/*77*/ MFX_ERR_UNSUPPORTED, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 255 } },
+        {/*75*/ MFX_ERR_UNSUPPORTED, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 255 } },
         
         /* num thread */
-        {/*78*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 1 } },
-        {/*79*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 4 } },
+        {/*76*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 1 } },
+        {/*77*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 4 } },
 
         /* gop ref dist */
-        {/*80*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 } },
+        {/*78*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 } },
         
         /* got opt flag */
-        {/*81*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
+        {/*79*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
         
         /* protected */
-        {/*82*/ MFX_ERR_NONE, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
-        {/*83*/ MFX_ERR_NONE, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
-        {/*84*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
+        {/*80*/ MFX_ERR_NONE, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
+        {/*81*/ MFX_ERR_NONE, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
+        {/*82*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
         
         /* Alignment */
         // single fallback if it is not supported in dual mode
-        {/*85*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, MFX_HYPERMODE_ADAPTIVE, {} },
-        {/*86*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
-        {/*87*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
-        {/*88*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
-        {/*89*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
+        {/*83*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, MFX_HYPERMODE_ADAPTIVE, {} },
+        {/*84*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
+        {/*85*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
+        {/*86*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
+        {/*87*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
         // forced single mode
-        {/*90*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, MFX_HYPERMODE_OFF, {} },
-        {/*91*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
-        {/*92*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
-        {/*93*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
-        {/*94*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
+        {/*88*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, MFX_HYPERMODE_OFF, {} },
+        {/*89*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
+        {/*90*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
+        {/*91*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
+        {/*92*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
         // forced dual mode
-        {/*95*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, MFX_HYPERMODE_ON, {} },
-        {/*96*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
-        {/*97*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
-        {/*98*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
-        {/*99*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
+        {/*93*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, MFX_HYPERMODE_ON, {} },
+        {/*94*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
+        {/*95*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
+        {/*96*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
+        {/*97*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(tc_struct);
@@ -486,15 +484,18 @@ namespace le_hevce_query
             return 0;
         }
 
+        m_par.IOPattern = (g_tsImpl == MFX_IMPL_HARDWARE) ?
+            MFX_IOPATTERN_IN_SYSTEM_MEMORY :
+            (g_tsImpl & MFX_IMPL_VIA_D3D11) ? MFX_IOPATTERN_IN_VIDEO_MEMORY : m_par.IOPattern;
+
+        bool isSw = (m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+
         if (!GetAllocator())
         {
             if (m_pVAHandle)
                 SetAllocator(m_pVAHandle, true);
             else
-                UseDefaultAllocator(
-                (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-                    || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-                );
+                UseDefaultAllocator(isSw);
         }
 
         mfxStatus caps_sts = GetCaps(&caps, &capSize);
@@ -552,7 +553,7 @@ namespace le_hevce_query
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();
 
-            if (!m_is_handle_set)
+            if (!isSw && !m_is_handle_set)
             {
                 m_pFrameAllocator->get_hdl(type, hdl);
                 SetHandle(m_session, type, hdl);
@@ -668,7 +669,7 @@ namespace le_hevce_query
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();
 
-            if (!m_is_handle_set)
+            if (!isSw && !m_is_handle_set)
             {
                 m_pFrameAllocator->get_hdl(type, hdl);
 
