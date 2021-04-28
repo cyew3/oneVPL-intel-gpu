@@ -48,11 +48,7 @@ namespace UMC
     class VideoData;
 } // namespace UMC
 
-#if defined (MFX_VA)
 typedef UMC::VATaskSupplier  MFX_AVC_Decoder;
-#else
-typedef UMC::MFX_SW_TaskSupplier MFX_AVC_Decoder;
-#endif
 
 struct ThreadTaskInfo;
 class VideoDECODE;

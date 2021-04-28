@@ -199,9 +199,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
                 //intensity compensation.
                 VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-                FillTablesForIntensityCompensation(pContext, picLayerHeader->LUMSCALE,picLayerHeader->LUMSHIFT);
-#endif
             }
 
         picLayerHeader->MVMODE2 = pContext->m_picLayerHeader->MVMODE;
@@ -272,10 +269,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
                 //or INTCOMP = 1. Refer to section 4.4.8 for a description of
                 //intensity compensation.
                 VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-                FillTablesForIntensityCompensation(pContext, picLayerHeader->LUMSCALE,picLayerHeader->LUMSHIFT);
-#endif
 
                 picLayerHeader->MVMODE2 = pContext->m_picLayerHeader->MVMODE;
             }
@@ -379,17 +372,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
     //If TRANSDCTAB = 0 then the low motion huffman table is used.
     //If TRANSDCTAB = 1 then the high motion huffman table is used.
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-    pContext->interp_params_luma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
-    pContext->interp_params_chroma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
-
-    ChooseTTMB_TTBLK_SBP(pContext);
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB];      //MVTAB
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-#endif
 
     return vc1Res;
 }

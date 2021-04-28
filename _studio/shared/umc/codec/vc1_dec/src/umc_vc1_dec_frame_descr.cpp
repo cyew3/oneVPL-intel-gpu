@@ -31,10 +31,6 @@
 #include "umc_vc1_dec_exception.h"
 #include "mfx_trace.h"
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-#include "umc_vc1_dec_job.h"
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
-
 using namespace UMC;
 using namespace UMC::VC1Exceptions;
 
@@ -57,12 +53,6 @@ bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
         ptr += mfx::align2_value(sizeof(VC1Context));
         ptr += mfx::align2_value(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
         ptr += mfx::align2_value((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
-#ifdef ALLOW_SW_VC1_FALLBACK
-        ptr += mfx::align2_value(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
-        ptr += mfx::align2_value(sizeof(uint8_t)*HeightMB*WidthMB);
-        ptr += mfx::align2_value(sizeof(VC1MB)*(HeightMB*WidthMB));
-        ptr += mfx::align2_value(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
-#endif
 
         // Need to replace with MFX allocator
         if (m_pMemoryAllocator->Alloc(&m_iMemContextID,
@@ -83,16 +73,6 @@ bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
         ptr += mfx::align2_value((sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM));
         m_pContext->m_pBitplane.m_databits = ptr;
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-        ptr += mfx::align2_value((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
-        m_pContext->m_MBs = (VC1MB*)ptr;
-        ptr += mfx::align2_value(sizeof(VC1MB)*(HeightMB*WidthMB));
-        m_pContext->DCACParams = (VC1DCMBParam*)ptr;
-        ptr += mfx::align2_value(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
-        m_pContext->savedMV = (int16_t*)(ptr);
-        ptr += mfx::align2_value(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
-        m_pContext->savedMVSamePolarity  = ptr;
-#endif
     }
     uint32_t buffSize =  2*(HeightMB*VC1_PIXEL_IN_LUMA)*(WidthMB*VC1_PIXEL_IN_LUMA);
 
@@ -140,10 +120,6 @@ bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
     m_pContext->m_frmBuff.m_iToFreeIndex = -1;
 
     m_pContext->m_seqLayerHeader = pContext->m_seqLayerHeader;
-#ifdef ALLOW_SW_VC1_FALLBACK
-    m_pContext->savedMV_Curr = pContext->savedMV_Curr;
-    m_pContext->savedMVSamePolarity_Curr = pContext->savedMVSamePolarity_Curr;
-#endif
     m_iSelfID = DescriporID;
     return true;
 }
@@ -326,20 +302,6 @@ Status VC1FrameDescriptor::SetPictureIndices(uint32_t PTYPE, bool& skip)
 
     m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].FCM = m_pContext->m_picLayerHeader->FCM;
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    m_pContext->LumaTable[0] =  m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].LumaTable[0];
-    m_pContext->LumaTable[1] =  m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].LumaTable[1];
-    m_pContext->LumaTable[2] =  m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].LumaTable[2];
-    m_pContext->LumaTable[3] =  m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].LumaTable[3];
-
-    m_pContext->ChromaTable[0] = m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ChromaTable[0];
-    m_pContext->ChromaTable[1] = m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ChromaTable[1];
-    m_pContext->ChromaTable[2] = m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ChromaTable[2];
-    m_pContext->ChromaTable[3] = m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ChromaTable[3];
-    *m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].pRANGE_MAPY =
-        m_pContext->m_picLayerHeader->RANGEREDFRM - 1;
-#endif
-
     m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ICFieldMask = 0;
 
     if (m_pContext->m_frmBuff.m_iPrevIndex > -1)
@@ -355,327 +317,5 @@ Status VC1FrameDescriptor::SetPictureIndices(uint32_t PTYPE, bool& skip)
 
     return vc1Sts;
 }
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-void VC1FrameDescriptor::processFrame(uint32_t*  pOffsets,
-    uint32_t*  pValues)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1FrameDescriptor::processFrame");
-    SliceParams slparams;
-    memset(&slparams, 0, sizeof(SliceParams));
-    VC1Task task(0);
-
-    VC1TaskStoreSW *pStore = (VC1TaskStoreSW *)m_pStore;
-
-    uint32_t temp_value = 0;
-    uint32_t* bitstream;
-    int32_t bitoffset = 31;
-
-    uint16_t heightMB = m_pContext->m_seqLayerHeader.heightMB;
-    uint32_t IsField = 0;
-
-    bool isSecondField = false;
-    slparams.MBStartRow = 0;
-    slparams.is_continue = 1;
-    slparams.MBEndRow = heightMB;
-
-    if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
-    {
-        m_bIsSkippedFrame = true;
-        m_bIsReadyToProcess = false;
-        SZTables(m_pContext);
-        return;
-    }
-    else
-    {
-        m_bIsSkippedFrame = false;
-    }
-
-
-    if (m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)
-        DecodePicHeader(m_pContext);
-    else
-        Decode_PictureLayer(m_pContext);
-
-
-    slparams.m_pstart = m_pContext->m_bitstream.pBitstream;
-    slparams.m_bitOffset = m_pContext->m_bitstream.bitOffset;
-    slparams.m_picLayerHeader = m_pContext->m_picLayerHeader;
-    slparams.m_vlcTbl = m_pContext->m_vlcTbl;
-
-    if (m_pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
-    {
-        slparams.MBRowsToDecode = slparams.MBEndRow - slparams.MBStartRow;
-        task.m_pSlice = &slparams;
-        task.setSliceParams(m_pContext);
-        task.m_isFieldReady = true;
-        pStore->AddSampleTask(&task, m_iSelfID);
-        task.m_pSlice = NULL;
-        pStore->DistributeTasks(m_iSelfID);
-        m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].isIC = m_pContext->m_bIntensityCompensation;
-
-        SZTables(m_pContext);
-        if (VC1_P_FRAME == m_pContext->m_picLayerHeader->PTYPE)
-            CreateComplexICTablesForFrame(m_pContext);
-        return;
-    }
-
-    //skip user data
-    while (*(pValues + 1) == 0x1B010000 || *(pValues + 1) == 0x1D010000 || *(pValues + 1) == 0x1C010000)
-    {
-        pOffsets++;
-        pValues++;
-    }
-
-
-    if (*(pValues + 1) == 0x0B010000)
-    {
-        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
-        VC1BitstreamParser::GetNBits(bitstream, bitoffset, 32, temp_value);
-        bitoffset = 31;
-        VC1BitstreamParser::GetNBits(bitstream, bitoffset, 9, slparams.MBEndRow);     //SLICE_ADDR
-
-        m_pContext->m_picLayerHeader->is_slice = 1;
-    }
-    else if (*(pValues + 1) == 0x0C010000)
-    {
-        slparams.m_picLayerHeader->CurrField = 0;
-        slparams.m_picLayerHeader->PTYPE = m_pContext->m_picLayerHeader->PTypeField1;
-        slparams.m_picLayerHeader->BottomField = (uint8_t)(1 - m_pContext->m_picLayerHeader->TFF);
-        slparams.MBEndRow = (heightMB + 1) / 2;
-        IsField = 1;
-    }
-
-
-    slparams.MBRowsToDecode = slparams.MBEndRow - slparams.MBStartRow;
-    task.m_pSlice = &slparams;
-#ifdef SLICE_INFO
-    int32_t slice_counter = 0;
-    printf("Slice number %d\n", slice_counter);
-    printf("Number MB rows to decode  =%d\n", slparams.MBRowsToDecode);
-    ++slice_counter;
-#endif
-    task.setSliceParams(m_pContext);
-
-    task.m_isFieldReady = true;
-    pStore->AddSampleTask(&task, m_iSelfID);
-
-    pOffsets++;
-    pValues++;
-
-    while (*pOffsets)
-    {
-        task.m_isFirstInSecondSlice = false;
-        if (*(pValues) == 0x0C010000)
-        {
-            isSecondField = true;
-            IsField = 1;
-            task.m_isFirstInSecondSlice = true;
-            m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
-            m_pContext->m_bitstream.pBitstream += 1; // skip start code
-            m_pContext->m_bitstream.bitOffset = 31;
-            ++m_pContext->m_picLayerHeader;
-            *m_pContext->m_picLayerHeader = *m_pContext->m_InitPicLayer;
-
-            m_pContext->m_picLayerHeader->BottomField = (uint8_t)m_pContext->m_InitPicLayer->TFF;
-            m_pContext->m_picLayerHeader->PTYPE = m_pContext->m_InitPicLayer->PTypeField2;
-            m_pContext->m_picLayerHeader->CurrField = 1;
-            m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].RANGE_MAPY = m_pContext->m_seqLayerHeader.RANGE_MAPY;
-            m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].RANGE_MAPUV = m_pContext->m_seqLayerHeader.RANGE_MAPUV;
-
-            m_pContext->m_picLayerHeader->is_slice = 0;
-            DecodePicHeader(m_pContext);
-
-            slparams.MBStartRow = (heightMB + 1) / 2;
-
-            //skip user data
-            while (*(pValues + 1) == 0x1B010000 || *(pValues + 1) == 0x1D010000 || *(pValues + 1) == 0x1C010000)
-            {
-                pOffsets++;
-                pValues++;
-            }
-
-            if (*(pOffsets + 1) && *(pValues + 1) == 0x0B010000)
-            {
-                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
-                VC1BitstreamParser::GetNBits(bitstream, bitoffset, 32, temp_value);
-                bitoffset = 31;
-                VC1BitstreamParser::GetNBits(bitstream, bitoffset, 9, slparams.MBEndRow);
-            }
-            else
-            {
-                if (!IsField)
-                    slparams.MBEndRow = heightMB;
-                else
-                {
-                    slparams.MBEndRow = heightMB + (heightMB & 1);
-                }
-            }
-
-            slparams.m_picLayerHeader = m_pContext->m_picLayerHeader;
-            slparams.m_vlcTbl = m_pContext->m_vlcTbl;
-            slparams.m_pstart = m_pContext->m_bitstream.pBitstream;
-            slparams.m_bitOffset = m_pContext->m_bitstream.bitOffset;
-            slparams.MBRowsToDecode = slparams.MBEndRow - slparams.MBStartRow;
-            task.m_pSlice = &slparams;
-            task.setSliceParams(m_pContext);
-            if (isSecondField)
-                task.m_isFieldReady = false;
-            else
-                task.m_isFieldReady = true;
-            pStore->AddSampleTask(&task, m_iSelfID);
-            slparams.MBStartRow = slparams.MBEndRow;
-            ++pOffsets;
-            ++pValues;
-        }
-        else if (*(pValues) == 0x0B010000)
-        {
-            m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
-            VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream, m_pContext->m_bitstream.bitOffset, 32, temp_value);
-            m_pContext->m_bitstream.bitOffset = 31;
-
-            VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream, m_pContext->m_bitstream.bitOffset, 9, slparams.MBStartRow);     //SLICE_ADDR
-            VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream, m_pContext->m_bitstream.bitOffset, 1, temp_value);            //PIC_HEADER_FLAG
-
-
-            if (temp_value == 1)                //PIC_HEADER_FLAG
-            {
-                ++m_pContext->m_picLayerHeader;
-                if (isSecondField)
-                    m_pContext->m_picLayerHeader->CurrField = 1;
-                else
-                    m_pContext->m_picLayerHeader->CurrField = 0;
-                DecodePictureHeader_Adv(m_pContext);
-                DecodePicHeader(m_pContext);
-            }
-            m_pContext->m_picLayerHeader->is_slice = 1;
-
-            //skip user data
-            while (*(pValues + 1) == 0x1B010000 || *(pValues + 1) == 0x1D010000 || *(pValues + 1) == 0x1C010000)
-            {
-                pOffsets++;
-                pValues++;
-            }
-
-            if (*(pOffsets + 1) && (*(pValues + 1) == 0x0B010000 || *(pValues + 1) == 0x1B010000))
-            {
-                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
-                VC1BitstreamParser::GetNBits(bitstream, bitoffset, 32, temp_value);
-                bitoffset = 31;
-                VC1BitstreamParser::GetNBits(bitstream, bitoffset, 9, slparams.MBEndRow);
-
-            }
-            else if (*(pValues + 1) == 0x0C010000)
-                slparams.MBEndRow = (heightMB + 1) / 2;
-            else
-                if (!IsField)
-                    slparams.MBEndRow = heightMB;
-                else
-                {
-                    slparams.MBEndRow = heightMB + (heightMB & 1);
-                }
-
-            slparams.m_picLayerHeader = m_pContext->m_picLayerHeader;
-            slparams.m_vlcTbl = m_pContext->m_vlcTbl;
-            slparams.m_pstart = m_pContext->m_bitstream.pBitstream;
-            slparams.m_bitOffset = m_pContext->m_bitstream.bitOffset;
-            slparams.MBRowsToDecode = slparams.MBEndRow - slparams.MBStartRow;
-            task.m_pSlice = &slparams;
-            task.setSliceParams(m_pContext);
-            if (isSecondField)
-                task.m_isFieldReady = false;
-            else
-                task.m_isFieldReady = true;
-            pStore->AddSampleTask(&task, m_iSelfID);
-#ifdef SLICE_INFO
-            printf("Slice number %d\n", slice_counter);
-            printf("Number MB rows to decode  =%d\n", slparams.MBRowsToDecode);
-            ++slice_counter;
-#endif
-            slparams.MBStartRow = slparams.MBEndRow;
-
-            ++pOffsets;
-            ++pValues;
-        }
-        else
-        {
-            pOffsets++;
-            pValues++;
-        }
-    }
-
-    // incorrect field bs. Absence of second field
-    if (m_pContext->m_picLayerHeader->FCM == VC1_FieldInterlace && !isSecondField)
-    {
-        task.m_pSlice = NULL;
-        throw VC1Exceptions::vc1_exception(VC1Exceptions::invalid_stream);
-    }
-    SZTables(m_pContext);
-    if ((VC1_B_FRAME != m_pContext->m_picLayerHeader->PTYPE) &&
-        (VC1_BI_FRAME != m_pContext->m_picLayerHeader->PTYPE))
-
-    {
-        if ((m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ICFieldMask) ||
-            ((m_pContext->m_frmBuff.m_iPrevIndex > -1) &&
-            (m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iPrevIndex].ICFieldMask)))
-        {
-            if (m_pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
-                CreateComplexICTablesForFields(m_pContext);
-            else
-                CreateComplexICTablesForFrame(m_pContext);
-        }
-    }
-
-
-    // Intensity compensation for frame
-    m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].isIC = m_pContext->m_bIntensityCompensation;
-    task.m_pSlice = NULL;
-    pStore->DistributeTasks(m_iSelfID);
-}
-
-Status VC1FrameDescriptor::preProcData(VC1Context*            pContext,
-    uint32_t                 bufferSize,
-    unsigned long long                 frameCount,
-    bool& skip)
-{
-    Status vc1Sts = UMC_OK;
-
-    uint32_t Ptype;
-    uint8_t* pbufferStart = pContext->m_pBufferStart;
-    m_iFrameCounter = frameCount;
-    m_pContext->m_FrameSize = bufferSize;
-
-    MFX_INTERNAL_CPY(m_pContext->m_pBufferStart, pbufferStart, (bufferSize & 0xFFFFFFF8) + 8); // (bufferSize & 0xFFFFFFF8) + 8 - skip frames
-    m_pContext->m_bitstream.pBitstream = (uint32_t*)m_pContext->m_pBufferStart;
-
-    m_pContext->m_bitstream.pBitstream += 1;
-
-    m_pContext->m_bitstream.bitOffset = 31;
-
-    m_pContext->m_picLayerHeader = m_pContext->m_InitPicLayer;
-    m_pContext->m_seqLayerHeader = pContext->m_seqLayerHeader;
-
-    m_bIsSpecialBSkipFrame = false;
-    if (m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)
-    {
-        GetNextPicHeader_Adv(m_pContext);
-        Ptype = m_pContext->m_picLayerHeader->PTYPE | m_pContext->m_picLayerHeader->PTypeField1;
-        vc1Sts = SetPictureIndices(Ptype, skip);
-        if (vc1Sts != UMC_OK)
-            return vc1Sts;
-    }
-    else
-    {
-        m_pContext->m_bitstream.pBitstream = (uint32_t*)m_pContext->m_pBufferStart + 2;
-        GetNextPicHeader(m_pContext, false);
-        vc1Sts = SetPictureIndices(m_pContext->m_picLayerHeader->PTYPE, skip);
-        if (vc1Sts != UMC_OK)
-            return vc1Sts;
-    }
-    m_pContext->m_bIntensityCompensation = 0;
-    m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].m_bIsExpanded = 0;
-    return vc1Sts;
-}
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 #endif

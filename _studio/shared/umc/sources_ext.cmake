@@ -277,7 +277,6 @@ add_subdirectory(codec/h265_dec)
 add_subdirectory(codec/h264_spl)
 add_subdirectory(codec/mpeg2_enc)
 add_subdirectory(codec/mpeg2_dec/hw)
-add_subdirectory(codec/mpeg2_dec/sw)
 
 add_subdirectory(codec/me)
 

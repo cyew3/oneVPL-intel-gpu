@@ -46,12 +46,10 @@
 
 #include "vm_sys_info.h"
 
-#if defined(MFX_VA)
 #include "umc_h265_va_supplier.h"
 #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
-#endif
 #endif
 
 #include "libmfx_core_interface.h"
@@ -189,11 +187,9 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     MFX_CHECK(!m_decoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     m_platform = MFX_VPX_Utility::GetPlatform(m_core, par);
-    eMFXHWType type = MFX_HW_UNKNOWN;
-    if (m_platform == MFX_PLATFORM_HARDWARE)
-    {
-        type = m_core->GetHWType();
-    }
+
+    MFX_CHECK(m_platform == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
+    eMFXHWType type = m_core->GetHWType();
 
     MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq()) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -202,12 +198,8 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     m_first_par = (mfxVideoParamWrapper)(*par);
     m_video_par = m_first_par;
     MFX_CHECK(m_platform != MFX_PLATFORM_SOFTWARE, MFX_ERR_UNSUPPORTED);
-#if !defined (MFX_VA)
-    MFX_RETURN(MFX_ERR_UNSUPPORTED);
 
-#else
     m_decoder.reset(new UMC_AV1_DECODER::AV1DecoderVA());
-#endif
 
     m_request = {};
     m_response = {};
@@ -229,8 +221,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     m_decoder->SetInFrameRate(m_in_framerate);
 
     //mfxFrameAllocResponse response{};
-    bool internal = ((m_platform == MFX_PLATFORM_SOFTWARE) ?
-        (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
+    bool internal = par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
@@ -327,12 +318,10 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
         vp.async_depth = MFX_AUTO_ASYNC_DEPTH_VALUE;
     vp.io_pattern = par->IOPattern;
 
-#if defined (MFX_VA)
     sts = m_core->CreateVA(par, &m_request, &m_response, m_surface_source.get());
     MFX_CHECK_STS(sts);
 
     m_core->GetVA((mfxHDL*)&vp.pVideoAccelerator, MFX_MEMTYPE_FROM_DECODE);
-#endif
 
     ConvertMFXParamsToUMC(par, &vp);
 
@@ -680,9 +669,7 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
     eMFXPlatform platform = MFX_VPX_Utility::GetPlatform(core, out);
     if (platform != core->GetPlatformType())
     {
-#ifdef MFX_VA
         sts = MFX_ERR_UNSUPPORTED;
-#endif
     }
 
     sts = CheckLevel(in, out);
@@ -976,11 +963,7 @@ mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderF
 
     UMC::FrameMemID id = frame->GetFrameData()->GetFrameMID();
     mfxStatus sts = m_surface_source->PrepareToOutput(surface_out, id, &m_video_par, m_opaque);
-#ifdef MFX_VA
     frame->Displayed(true);
-#else
-    frame->Reset();
-#endif
     return sts;
 }
 
@@ -1133,7 +1116,6 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
                 case UMC::UMC_NTF_NEW_RESOLUTION:
                     MFX_RETURN(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-#if defined(MFX_VA)
                 case UMC::UMC_ERR_DEVICE_FAILED:
                     sts = MFX_ERR_DEVICE_FAILED;
                     break;
@@ -1141,7 +1123,6 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
                 case UMC::UMC_ERR_GPU_HANG:
                     sts = MFX_ERR_GPU_HANG;
                     break;
-#endif
 
                 case UMC::UMC_ERR_NOT_ENOUGH_BUFFER:
                 case UMC::UMC_WRN_INFO_NOT_READY:

@@ -27,45 +27,6 @@
 #include "umc_vc1_huffman.h"
 #include "umc_vc1_common_tables.h"
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-void PrepareForNextFrame(VC1Context*pContext)
-{
-
-    if(pContext->m_picLayerHeader->FCM != VC1_FieldInterlace)
-    {
-
-        //for range map
-        //luma
-        pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].RANGE_MAPY = pContext->m_seqLayerHeader.RANGE_MAPY;
-        pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].RANGE_MAPUV = pContext->m_seqLayerHeader.RANGE_MAPUV;
-
-    }
-    else
-    {
-
-        //for range map
-        //luma
-        if (pContext->m_bIntensityCompensation)
-        {
-            pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iRangeMapIndex].RANGE_MAPY = pContext->m_seqLayerHeader.RANGE_MAPY;
-            pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].RANGE_MAPY = pContext->m_seqLayerHeader.RANGE_MAPY;
-        }
-        else
-            pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].RANGE_MAPY = pContext->m_seqLayerHeader.RANGE_MAPY;
-
-
-        if (pContext->m_bIntensityCompensation)
-        {
-            pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iRangeMapIndex].RANGE_MAPY = pContext->m_seqLayerHeader.RANGE_MAPY;
-            pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].RANGE_MAPY = pContext->m_seqLayerHeader.RANGE_MAPY;
-        }
-        else
-            pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].RANGE_MAPUV = pContext->m_seqLayerHeader.RANGE_MAPUV;
-
-    }
-}
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
-
 VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
 {
     VC1Status vc1Sts = VC1_OK;
@@ -296,28 +257,25 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
 }
 
 typedef VC1Status (*DecoderPicHeader)(VC1Context* pContext);
-static const DecoderPicHeader DecoderPicHeader_table[3][5] =
+static const DecoderPicHeader DecoderPicHeader_table[3][4] =
 {
     {
         (DecoderPicHeader)(DecodePictHeaderParams_ProgressiveIpicture_Adv),
         (DecoderPicHeader)(DecodePictHeaderParams_ProgressivePpicture_Adv),
         (DecoderPicHeader)(DecodePictHeaderParams_ProgressiveBpicture_Adv),
-        (DecoderPicHeader)(DecodePictHeaderParams_ProgressiveIpicture_Adv),
-        (DecoderPicHeader)(DecodeSkippicture)
+        (DecoderPicHeader)(DecodePictHeaderParams_ProgressiveIpicture_Adv)
     },
     {
         (DecoderPicHeader)(DecodePictHeaderParams_InterlaceIpicture_Adv),
         (DecoderPicHeader)(DecodePictHeaderParams_InterlacePpicture_Adv),
         (DecoderPicHeader)(DecodePictHeaderParams_InterlaceBpicture_Adv),
-        (DecoderPicHeader)(DecodePictHeaderParams_InterlaceIpicture_Adv),
-        (DecoderPicHeader)(DecodeSkippicture)
+        (DecoderPicHeader)(DecodePictHeaderParams_InterlaceIpicture_Adv)
     },
     {
         (DecoderPicHeader)(DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv),
         (DecoderPicHeader)(DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv),
         (DecoderPicHeader)(DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv),
-        (DecoderPicHeader)(DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv),
-        (DecoderPicHeader)(DecodeSkippicture)
+        (DecoderPicHeader)(DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv)
     }
 };
 
@@ -328,18 +286,6 @@ VC1Status DecodePicHeader(VC1Context* pContext)
    vc1Sts = DecoderPicHeader_table[pContext->m_picLayerHeader->FCM][pContext->m_picLayerHeader->PTYPE](pContext);
 
    return vc1Sts;
-}
-
-VC1Status DecodeSkippicture(VC1Context* pContext)
-{
-#ifdef ALLOW_SW_VC1_FALLBACK
-    MFX_INTERNAL_CPY(pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iToSkipCoping].m_pAllocatedMemory,
-                pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_pAllocatedMemory,
-                pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_AllocatedMemorySize);
-#else
-    (void)pContext;
-#endif
-    return VC1_OK;
 }
 
 VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext)

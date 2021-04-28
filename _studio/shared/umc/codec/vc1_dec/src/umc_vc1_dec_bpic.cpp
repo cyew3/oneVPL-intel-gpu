@@ -131,14 +131,6 @@ VC1Status DecodePictureLayer_ProgressiveBpicture(VC1Context* pContext)
 
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    ChooseTTMB_TTBLK_SBP(pContext);
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB]; //MVTAB
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-#endif
-
     return vc1Res;
 }
 #endif //MFX_ENABLE_VC1_VIDEO_DECODE
