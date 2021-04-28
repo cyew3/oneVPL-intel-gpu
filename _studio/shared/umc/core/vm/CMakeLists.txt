@@ -54,6 +54,7 @@ target_link_libraries(vm
     mfx_static_lib
   PRIVATE
     mfx_sdl_properties
+    ${CMAKE_DL_LIBS}
   )
 
 if (BUILD_VAL_TOOLS AND MFX_DISABLE_SW_FALLBACK)
