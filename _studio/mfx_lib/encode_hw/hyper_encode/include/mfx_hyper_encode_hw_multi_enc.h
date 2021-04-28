@@ -43,6 +43,9 @@ public:
 
         if (!m_gopSize)
             *sts = MFX_ERR_NOT_INITIALIZED;
+
+        if (*sts == MFX_ERR_NONE)
+            *sts = InitEncodeParams(par);
     }
     virtual ~HyperEncodeBase()
     {
@@ -51,7 +54,7 @@ public:
     }
 
     virtual mfxStatus AllocateSurfacePool(mfxVideoParam* par) = 0;
-    virtual mfxStatus Init(mfxVideoParam* par) = 0;
+    virtual mfxStatus Init() = 0;
 
     mfxStatus GetVideoParam(mfxVideoParam* par);
     mfxStatus GetFrameParam(mfxFrameParam* /*par*/)
@@ -108,6 +111,8 @@ protected:
     virtual mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) = 0;
     mfxBitstreamWrapperWithLock* GetFreeBitstream(mfxU16 adapterType);
 
+    mfxStatus InitEncodeParams(mfxVideoParam* par);
+
 protected:
     mfxSession m_appSession = nullptr;
     std::unique_ptr<DeviceManagerBase> m_devMngr;
@@ -128,6 +133,9 @@ protected:
 
     mfxU32 m_surfaceNum = 0;
     mfxU16 m_gopSize = 0;
+    bool m_paramsChanged = false;
+
+    mfxVideoParamWrapper m_mfxEncParams;
 };
 
 class HyperEncodeSys : public HyperEncodeBase
@@ -147,7 +155,7 @@ public:
     {
         return MFX_ERR_NONE;
     }
-    mfxStatus Init(mfxVideoParam* par) override;
+    mfxStatus Init() override;
 
 protected:
     mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) override;
@@ -177,8 +185,7 @@ public:
     }
 
     mfxStatus AllocateSurfacePool(mfxVideoParam* par) override;
-    mfxStatus Init(mfxVideoParam* par) override;
-
+    mfxStatus Init() override;
     mfxStatus Close() override;
 
 protected:

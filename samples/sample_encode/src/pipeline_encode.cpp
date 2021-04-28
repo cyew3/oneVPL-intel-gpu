@@ -802,10 +802,6 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     {
         auto hyperEncodeParam = m_mfxEncParams.AddExtBuffer<mfxExtHyperModeParam>();
         hyperEncodeParam->Mode = pInParams->hyperMode;
-
-        auto codingOption = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption>();
-        codingOption->NalHrdConformance = MFX_CODINGOPTION_OFF;
-        codingOption->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
     }
 #endif
 

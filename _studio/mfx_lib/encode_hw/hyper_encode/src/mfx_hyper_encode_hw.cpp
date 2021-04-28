@@ -146,6 +146,12 @@ mfxStatus ImplementationGopBased::CheckParams(mfxVideoParam* par)
         MFX_IOPATTERN_IN_VIDEO_MEMORY != par->IOPattern)
         return MFX_ERR_UNSUPPORTED;
 
+    mfxExtCodingOption* codingOption =
+        (mfxExtCodingOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION);
+
+    if (codingOption && (IsOn(codingOption->NalHrdConformance) || IsOn(codingOption->VuiNalHrdParameters)))
+        return MFX_ERR_UNSUPPORTED;
+
 #ifdef SINGLE_GPU_DEBUG
     return MFX_ERR_NONE;
 #else
@@ -221,7 +227,7 @@ mfxStatus ImplementationGopBased::Init(mfxVideoParam* par)
     mfxStatus sts = m_HyperEncode->AllocateSurfacePool(par);
     MFX_CHECK_STS(sts);
 
-    return m_HyperEncode->Init(par);
+    return m_HyperEncode->Init();
 }
 
 mfxStatus ImplementationGopBased::Close()
