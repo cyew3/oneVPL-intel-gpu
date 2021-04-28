@@ -42,67 +42,6 @@ public:
     // this function is used by VPP Pipeline Query to correct application request
     static mfxStatus Query( mfxExtBuffer* pHint );
 
-#if !defined (MFX_ENABLE_HW_ONLY_VPP)
-
-    MFXVideoVPPDetailEnhancement(VideoCORE *core, mfxStatus* sts);
-    virtual ~MFXVideoVPPDetailEnhancement();
-
-    // VideoVPP
-    virtual mfxStatus RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, InternalParam* pParam);
-
-    // VideoBase methods
-    virtual mfxStatus Close(void);
-    virtual mfxStatus Init(mfxFrameInfo* In, mfxFrameInfo* Out);
-    virtual mfxStatus Reset(mfxVideoParam *par);
-
-    // tuning parameters
-    virtual mfxStatus SetParam( mfxExtBuffer* pHint );
-
-    virtual mfxU8 GetInFramesCount( void ){ return GetInFramesCountExt(); };
-    virtual mfxU8 GetOutFramesCount( void ){ return GetOutFramesCountExt(); };
-
-    // work buffer management
-    virtual mfxStatus GetBufferSize( mfxU32* pBufferSize );
-    virtual mfxStatus SetBuffer( mfxU8* pBuffer );
-
-    virtual mfxStatus CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out );
-    virtual bool      IsReadyOutput( mfxRequestType requestType );
-
-protected:
-    //mfxStatus PassThrough(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
-
-private:
-    uint8_t     m_divTable[256];
-
-    int       m_gainFactor;                     //strength of sharpening
-    int       m_internalGainFactor;             //real strength of sharpening
-
-    int       m_strongSobel;                    //strong edge threshold
-    int       m_weakSobel;                      //no edge threshold
-
-    int       m_strongWeight;                   //strength of sharpening for strong edge
-    int       m_regularWeight;                  //strength of sharpening for regular edge
-    int       m_weakWeight;                     //strength of sharpening for weak edge
-
-    // internal buffers
-    uint8_t*    m_pSobelBuffer;
-    int       m_sobelPitch;
-
-    uint8_t*    m_pDiffBuffer;
-    int       m_diffPitch;
-
-    uint8_t*    m_pExtBuffer;
-    int       m_extPitch;
-
-    // iin case of default params filter can be excluded from pipeline to high performance
-    bool      m_isFilterActive;
-
-    mfxStatus DetailFilterCore( uint8_t* pSrc, int srcPitch,
-                                uint8_t* pDst, int dstPitch,
-                                uint8_t* pSobel, int sobelPitch,
-                                uint8_t* pDiff,  int diffPitch,
-                                mfxSize size);
-#endif
 };
 
 #endif // __MFX_DETAIL_ENHANCEMENT_VPP_H

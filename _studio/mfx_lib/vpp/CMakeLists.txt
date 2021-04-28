@@ -10,7 +10,6 @@ set(sources
     src/mfx_vpp_hw.cpp
     src/mfx_vpp_main.cpp
     src/mfx_vpp_mvc.cpp
-    src/mfx_vpp_service.cpp
     src/mfx_vpp_sw_core.cpp
     src/mfx_vpp_sw_internal.cpp
     src/mfx_vpp_utils.cpp
@@ -33,5 +32,3 @@ target_link_libraries(vpp_hw
     genx
     IPP::core
   )
-
-include(sources_ext.cmake OPTIONAL)

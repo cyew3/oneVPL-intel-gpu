@@ -154,28 +154,6 @@ typedef enum
 
 } mfxGamutMode;
 
-#if !defined (MFX_ENABLE_HW_ONLY_VPP)
-// frames for internal float-point calculation of SW algorithms
-typedef struct
-{
-    union {
-        float* pY;
-        float* pL;
-    };
-    union {
-        float* pUV;
-        float* pCH;
-    };
-
-    mfxU32  FourCC;
-
-    mfxU16  Pitch;
-    mfxU16  Width;
-    mfxU16  Height;
-
-} Surface1_32f;
-#endif
-
 typedef enum
 {
     MIRROR_INPUT   = 0x0001,

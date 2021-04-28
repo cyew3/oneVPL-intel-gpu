@@ -32,30 +32,11 @@
 
 #include "mfx_vpp_mvc.h"
 
-#ifdef MFX_ENABLE_VPP_SVC
-#include "mfx_vpp_svc.h"
-#endif
-
 using namespace MfxVideoProcessing;
 
 /* ******************************************************************** */
 /*                 Main (High Level) Class of MSDK VPP                  */
 /* ******************************************************************** */
-
-#ifdef MFX_ENABLE_VPP_SVC
-static bool IsSvcMode(mfxVideoParam * par)
-{
-    if(par)
-    {
-        mfxExtBuffer*  pHint = NULL;
-        GetFilterParam(par, MFX_EXTBUFF_SVC_SEQ_DESC, &pHint);
-        if( pHint ) return true;
-    }
-
-    return false;
-
-} // bool IsSvcMode(mfxVideoParam * par)
-#endif
 
 mfxStatus VideoVPPMain::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -65,13 +46,7 @@ mfxStatus VideoVPPMain::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam 
 
 mfxStatus VideoVPPMain::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-#ifdef MFX_ENABLE_VPP_SVC
-    if (IsSvcMode(par))
-        return ImplementationSvc::QueryIOSurf(core, par, request);
-#endif
-
     return ImplementationMvc::QueryIOSurf(core, par, request);
-
 } // mfxStatus VideoVPPMain::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request, const mfxU32 adapterNum)
 
 
@@ -104,12 +79,7 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    std::unique_ptr<VideoVPP> impl(
-#ifdef MFX_ENABLE_VPP_SVC
-        IsSvcMode(par)
-            ? (VideoVPP*) new ImplementationSvc(m_core) :
-#endif
-              (VideoVPP*) new ImplementationMvc(m_core));
+    std::unique_ptr<VideoVPP> impl((VideoVPP*) new ImplementationMvc(m_core));
 
     mfxStatus mfxSts = impl->Init(par);
     MFX_CHECK(

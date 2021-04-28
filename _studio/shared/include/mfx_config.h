@@ -426,8 +426,6 @@
     #define MFX_ENABLE_VPP_ROTATION
     #define MFX_ENABLE_VPP_VIDEO_SIGNAL
 
-    #define MFX_ENABLE_HW_ONLY_VPP
-
     #if defined(OPEN_SOURCE)
         #define MFX_ENABLE_DENOISE_VIDEO_VPP
         #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP

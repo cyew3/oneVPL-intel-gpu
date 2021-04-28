@@ -3920,12 +3920,6 @@ mfxStatus VideoVPPHW::ProcessFieldCopy(mfxHDL in, mfxHDL out, mfxU32 fieldMask)
     return MFX_ERR_NONE;
 
 }
-
-#else
-    mfxStatus VideoVPPHW::ProcessFieldCopy(mfxHDL, mfxHDL, mfxU32)
-    {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
 #endif /* #if  defined(MFX_VA)*/
 
 

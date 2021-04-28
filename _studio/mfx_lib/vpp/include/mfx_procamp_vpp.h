@@ -42,51 +42,6 @@ public:
     // this function is used by VPP Pipeline Query to correct application request
     static mfxStatus Query( mfxExtBuffer* pHint );
 
-#if !defined (MFX_ENABLE_HW_ONLY_VPP)
-    MFXVideoVPPProcAmp(VideoCORE *core, mfxStatus* sts);
-    virtual ~MFXVideoVPPProcAmp();
-
-    // VideoVPP
-    virtual mfxStatus RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, InternalParam* pParam);
-
-    // VideoBase methods
-    virtual mfxStatus Close(void);
-    virtual mfxStatus Init(mfxFrameInfo* In, mfxFrameInfo* Out);
-    virtual mfxStatus Reset(mfxVideoParam *par);
-
-    // tuning parameters
-    virtual mfxStatus SetParam( mfxExtBuffer* pHint );
-
-    virtual mfxU8 GetInFramesCount( void ){ return GetInFramesCountExt(); };
-    virtual mfxU8 GetOutFramesCount( void ){ return GetOutFramesCountExt(); };
-
-    // work buffer management
-    virtual mfxStatus GetBufferSize( mfxU32* pBufferSize );
-    virtual mfxStatus SetBuffer( mfxU8* pBuffer );
-
-    virtual mfxStatus CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out );
-    virtual bool      IsReadyOutput( mfxRequestType requestType );
-
-protected:
-    //mfxStatus PassThrough(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
-
-private:
-
-    mfxF64    m_brightness;            // brightness value from application is stored here.
-    mfxF64    m_contrast;              // contrast value from application is stored here.
-    mfxF64    m_hue;                   // hue value from application is stored here.
-    mfxF64    m_saturation;            // saturation value from application is stored here.
-
-    mfxI32    m_internalBrightness;
-    mfxI32    m_internalContrast;
-    mfxI32    m_internalSinCS;
-    mfxI32    m_internalCosCS;
-
-    // in case of default params filter can be excluded from pipeline to high performance
-    bool      m_isFilterActive;
-
-    void CalculateInternalParams( void );
-#endif
 };
 
 #endif // __MFX_PROCAMP_VPP_H
