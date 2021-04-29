@@ -304,7 +304,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
 
 #if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEMJPEG::QueryImplsDescription(
-    VideoCORE& core,
+    VideoCORE&,
     mfxDecoderDescription::decoder& caps,
     mfx::PODArraysHolder& ah)
 {
@@ -334,7 +334,6 @@ mfxStatus VideoDECODEMJPEG::QueryImplsDescription(
     caps.CodecID = MFX_CODEC_JPEG;
     caps.MaxcodecLevel = MFX_LEVEL_UNKNOWN;
 
-    mfxStatus sts = MFX_ERR_NONE;
     for (mfxU32 profile : SupportedProfiles)
     {
         auto& pfCaps = ah.PushBack(caps.Profiles);

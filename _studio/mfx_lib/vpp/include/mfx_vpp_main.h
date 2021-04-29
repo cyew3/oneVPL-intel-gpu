@@ -110,7 +110,7 @@ public:
 private:
 
     // Opaq processing
-    mfxFrameSurface1 *GetNativeSurface(mfxFrameSurface1 *surface, mfxU32 type )
+    mfxFrameSurface1 *GetNativeSurface(mfxFrameSurface1 *surface, mfxU32 type)
     {
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if( m_bOpaqMode[type] )
@@ -125,6 +125,8 @@ private:
 
             return nativeSurface;
         }
+#else
+        std::ignore = type;
 #endif
         return surface;
     }

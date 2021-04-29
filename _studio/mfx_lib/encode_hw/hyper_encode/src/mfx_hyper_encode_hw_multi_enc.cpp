@@ -408,8 +408,8 @@ mfxStatus HyperEncodeVideo::Init()
     for (auto& encoder : m_singleGpuEncoders) {
         MFX_CHECK(encoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        m_mfxEncParams.IOPattern = (encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
-            MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+        m_mfxEncParams.IOPattern = mfxU16((encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
+            MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
         sts = encoder->Init(&m_mfxEncParams);
         MFX_CHECK_STS(sts);

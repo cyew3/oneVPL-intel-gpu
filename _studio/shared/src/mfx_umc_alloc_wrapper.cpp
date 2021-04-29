@@ -1331,6 +1331,9 @@ SurfaceSource::SurfaceSource(VideoCORE* core, const mfxVideoParam& video_param, 
                 opaq->Out.NumSurface);
         }
         else
+#else
+        std::ignore = opaq_surfaces;
+        std::ignore = mapOpaq;
 #endif
         {
 #if !defined (MFX_VA_OSX)

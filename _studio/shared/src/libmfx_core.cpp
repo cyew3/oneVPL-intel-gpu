@@ -1769,6 +1769,7 @@ bool CommonCORE::CheckOpaqueRequest(mfxFrameAllocRequest *request,
         return false;
 
 #if !defined(MFX_ENABLE_OPAQUE_MEMORY)
+    std::ignore = ExtendedSearch;
     return false;
 #else
     if (!(request->Type  & MFX_MEMTYPE_OPAQUE_FRAME))

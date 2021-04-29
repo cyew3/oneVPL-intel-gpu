@@ -481,7 +481,7 @@ mfxStatus VideoDECODEH264::QueryImplsDescription(
     mfxDecoderDescription::decoder& caps,
     mfx::PODArraysHolder& ah)
 {
-    const mfxU32 SupportedProfiles[] =
+    const mfxU16 SupportedProfiles[] =
     {
         MFX_PROFILE_AVC_BASELINE
         , MFX_PROFILE_AVC_MAIN
@@ -521,7 +521,7 @@ mfxStatus VideoDECODEH264::QueryImplsDescription(
     par.mfx.CodecLevel = caps.MaxcodecLevel;
 
     mfxStatus sts = MFX_ERR_NONE;
-    for (mfxU32 profile : SupportedProfiles)
+    for (mfxU16 profile : SupportedProfiles)
     {
         par.mfx.CodecProfile = profile;
         // Set FourCC to pass IsNeedPartialAcceleration check
