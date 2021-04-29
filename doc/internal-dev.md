@@ -48,6 +48,18 @@ if(IOPattern == IN_SYSTEM_MEMORY){
 }
 ```
 
+|**IOPattern**|**MemId**|**ptrs**|**Behavior (see next columns for details)**|**External memory behavior**|**Internal memory behavior**|
+|-----------|-------|------|-----------------------------------------|--------------------------|--------------------------|
+|VideoMemory|non-zero|non-zero|HW lib uses MemId, SW use internal memory and copy to external, no error. *Do we need a warning here?*|Preferred to use memid (but check existing behavior), and refine spec
+Don’t want to perform implicit copies|Treat as mapped and proceed to copy as for SW surface|
+|VideoMemory|non-zero|zero|OK - fully according to spec (doing map in library)|-|-|
+|VideoMemory|zero|non-zero|Copy data to external memory for HW and SW|Return error|Treat as mapped and proceed to copy as for SW surface|
+|VideoMemory|zero|zero|return error - invalid surface|-|-|
+|SystemMemory|non-zero|non-zero|OK - fully according to spec, we use pointers and ignore memID|-|-|
+|SystemMemory|non-zero|zero|OK - fully according to spec (doing map in library)|-|-|
+|SystemMemory|zero|non-zero|OK - fully according to spec|-|-|
+|SystemMemory|zero|zero|return error - invalid surface|-|-|
+
 ## Surface sharing
 
 Component has to calculate `NumFrameMin` taking into account `AsyncDepth`. For optimal memory usage `AsyncDepth` should be set to 1 by application. As result in all feasible cases `NumFrameMin` is equal to `NumFrameSuggested`. Two different values (min and suggested) were introduced to API before `AsyncDepth` and intention was to use them to show number of surfaces for memory constrained and performance optimum cases. One variable is enough starting from API 1.1 (`AsyncDepth` was added in API 1.1 but behavior was not aligned till 1.3).
