@@ -120,7 +120,7 @@ components:
     root_url: https://gfx-assets.inn.intel.com/artifactory
     asset_path: mediasdk-builds/ci
     asset_name: mediasdk-1x
-    asset_version: mediasdk-ci-mediasdk-1x-1.0.100
+    asset_version: mediasdk-ci-mediasdk-1x-1.0.104
     asset_patterns:
     - Windows/msdk/runtime/*.zip
     - Windows/msdk/tools/*.zip
