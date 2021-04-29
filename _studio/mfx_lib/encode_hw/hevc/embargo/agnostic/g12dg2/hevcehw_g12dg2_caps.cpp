@@ -164,6 +164,24 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             return MFX_ERR_NONE;
         });
 
+        defaults.GetSPS.Push([](
+            Defaults::TGetSPS::TExt prev
+            , const Defaults::Param& defPar
+            , const Base::VPS& vps
+            , Base::SPS& sps)
+        {
+            const mfxExtCodingOptionDDI* pCODDI = ExtBuffer::Get(defPar.mvp);
+            auto sts = prev(defPar, vps, sps);
+
+            if (!(pCODDI && pCODDI->TMVP))
+            {
+                mfxU16 tu = defPar.mvp.mfx.TargetUsage;
+                sps.temporal_mvp_enabled_flag = (tu < 6);
+            }
+
+            return sts;
+        });
+
         bSet = true;
 
         return MFX_ERR_NONE;
