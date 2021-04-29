@@ -475,7 +475,7 @@
 #define MFX_ENV_CFG_ENABLE
 #endif
 
-#if defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64)) && !defined(STRIP_EMBARGO)
     #define MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
 #endif
 
