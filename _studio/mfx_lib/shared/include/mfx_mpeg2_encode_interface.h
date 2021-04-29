@@ -21,7 +21,7 @@
 #include "mfx_common.h"
 
 #if defined(MFX_VA)
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #ifndef __MFX_MPEG2_ENCODE_INTERFACE__H
 #define __MFX_MPEG2_ENCODE_INTERFACE__H
@@ -168,13 +168,6 @@ namespace MfxHwMpeg2Encode
         void      InitFramesSet(mfxMemId curr, bool bExternal, mfxMemId rec, mfxMemId ref_0,mfxMemId ref_1);
         mfxStatus InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8 * mbqp, mfxU32 numMB);
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_ENC)
-        mfxStatus InitPictureParameters(mfxFrameCUC* pCUC);
-        mfxStatus InitSliceParameters(mfxFrameCUC* pCUC);
-        mfxStatus GetMBParameters(mfxFrameCUC* pCUC);
-        mfxStatus SetMBParameters(mfxFrameCUC* pCUC);
-#endif
-
         ENCODE_ENC_CTRL_CAPS                    m_caps;
 
         ENCODE_SET_SEQUENCE_PARAMETERS_MPEG2    m_sps;
@@ -267,6 +260,6 @@ namespace MfxHwMpeg2Encode
 #endif
 
 #endif //#ifndef __MFX_MPEG2_ENCODE_INTERFACE__H
-#endif //(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
+#endif //(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 #endif // MFX_VA
 /* EOF */

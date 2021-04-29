@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,17 +23,12 @@ add_subdirectory(shared/umc)
 add_subdirectory(shared/asc)
 add_subdirectory(mfx_lib/cmrt_cross_platform)
 add_subdirectory(mfx_lib/decode)
-add_subdirectory(mfx_lib/encode)
 add_subdirectory(mfx_lib/encode_hw)
 add_subdirectory(mfx_lib/genx)
 add_subdirectory(mfx_lib/vpp)
 add_subdirectory(mfx_lib/mctf_package)
 add_subdirectory(mfx_lib/shared)
 add_subdirectory(mfx_lib)
-
-if (NOT API_USE_VPL)
-add_subdirectory(mfx_lib/fei)
-endif()
 
 if (MFX_ENABLE_USER_ENCTOOLS)
   add_subdirectory(enctools)

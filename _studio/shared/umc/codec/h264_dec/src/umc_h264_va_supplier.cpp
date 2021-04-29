@@ -370,12 +370,6 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
             throw h264_exception(UMC_ERR_ALLOC);
 
         mfxExtBuffer* extbuf = nullptr;
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-        extbuf =
-            GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-        if (extbuf)
-            frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
-#endif
 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         extbuf = GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);

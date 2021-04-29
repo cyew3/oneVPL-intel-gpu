@@ -84,9 +84,8 @@
 
 struct CodecKey {
     const mfxU32 codecId;
-    const bool   fei;
 
-    CodecKey(mfxU32 codecId, bool fei) : codecId(codecId), fei(fei) {}
+    CodecKey(mfxU32 codecId) : codecId(codecId) {}
 
     enum {
         // special value for codecId to denote plugin, it must be
@@ -95,11 +94,8 @@ struct CodecKey {
     };
 
     // Exact ordering rule is unsignificant as far as it provides strict weak ordering.
-    // Compare for fei after codecId because fei values are mostly same.
     friend bool operator<(CodecKey l, CodecKey r)
     {
-        if (l.codecId == r.codecId)
-            return l.fei < r.fei;
         return l.codecId < r.codecId;
     }
 };
@@ -127,9 +123,7 @@ static const CodecId2Handlers codecId2Handlers =
 #ifdef MFX_ENABLE_USER_ENCODE
     {
         {
-            CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN,
-            // .fei =
-            false
+            CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN
         },
         {
             // .primary =
@@ -160,8 +154,6 @@ static const CodecId2Handlers codecId2Handlers =
     {
         {
             MFX_CODEC_AVC,
-            // .fei =
-            false
         },
         {
 #if defined(MFX_VA) && defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
@@ -244,9 +236,7 @@ static const CodecId2Handlers codecId2Handlers =
 #ifdef MFX_ENABLE_MPEG2_VIDEO_ENCODE
     {
         {
-            MFX_CODEC_MPEG2,
-            // .fei =
-            false
+            MFX_CODEC_MPEG2
         },
         {
 #if defined(MFX_VA)
@@ -307,12 +297,9 @@ static const CodecId2Handlers codecId2Handlers =
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
     {
         {
-            MFX_CODEC_JPEG,
-            // .fei =
-            false
+            MFX_CODEC_JPEG
         },
         {
-#if defined(MFX_VA)
             // .primary =
             {
                 // .ctor =
@@ -342,27 +329,6 @@ static const CodecId2Handlers codecId2Handlers =
             // .fallback =
             {
             }
-#else // MFX_VA
-            // .primary =
-            {
-                // .ctor =
-                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    return new MFXVideoENCODEMJPEG(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
-                {
-                    return MFXVideoENCODEMJPEG::Query(in, out);
-                },
-                // .queryIOSurf =
-                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                {
-                    return MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
-                }
-            }
-#endif // MFX_VA
         }
     },
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
@@ -370,9 +336,7 @@ static const CodecId2Handlers codecId2Handlers =
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && (defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN))
     {
         {
-            MFX_CODEC_HEVC,
-            // .fei =
-            false
+            MFX_CODEC_HEVC
         },
         {
             // .primary =
@@ -407,9 +371,7 @@ static const CodecId2Handlers codecId2Handlers =
 #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
     {
         {
-            MFX_CODEC_VP9,
-            // .fei =
-            false
+            MFX_CODEC_VP9
         },
         {
             // .primary =
@@ -448,9 +410,7 @@ static const CodecId2Handlers codecId2Handlers =
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
     {
         {
-            MFX_CODEC_AV1,
-            // .fei =
-            false
+            MFX_CODEC_AV1
         },
         {
             // .primary =
@@ -482,17 +442,6 @@ static const CodecId2Handlers codecId2Handlers =
     }
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE
 }; // codecId2Handlers
-
-// first - is QueryCoreInterface() returns non-null ptr, second - fei status
-std::pair<bool, bool> check_fei(VideoCORE* core)
-{
-    bool *feiEnabled = (bool*)core->QueryCoreInterface(MFXIFEIEnabled_GUID);
-    if (!feiEnabled)
-    {
-        return std::pair<bool,bool>(false,false);
-    }
-    return std::pair<bool,bool>(true, *feiEnabled);
-}
 
 #if defined(MFX_ONEVPL)
 bool isHyperEncodeRequired(mfxVideoParam* par)
@@ -531,15 +480,8 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
     else
 #endif
     {
-        bool feiStatusAvailable = false, fei = false;
-        std::tie(feiStatusAvailable, fei) = check_fei(core);
-        if (!feiStatusAvailable)
-        {
-            return nullptr;
-        }
-
         // create a codec instance
-        auto handler = codecId2Handlers.find(CodecKey(CodecId, fei));
+        auto handler = codecId2Handlers.find(CodecKey(CodecId));
         if (handler == codecId2Handlers.end())
         {
             return nullptr;
@@ -611,19 +553,14 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #if defined(MFX_ENABLE_USER_ENCODE)
             if (session->m_plgEnc.get())
             {
-                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
+                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN));
                 assert(handler != codecId2Handlers.end());
             }
             // if plugin is not supported, or wrong parameters passed we should not look into library
             else
 #endif //!MFX_ENABLE_USER_ENCODE
             {
-                // required to check FEI plugin registration
-                bool feiStatusAvailable = false, fei = false;
-                std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
-                MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
-
-                handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId, fei));
+                handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId));
             }
 
             mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_UNSUPPORTED
@@ -727,19 +664,14 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #if defined(MFX_ENABLE_USER_ENCODE)
             if (session->m_plgEnc.get())
             {
-                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN, /*fei=*/false));
+                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN));
                 assert(handler != codecId2Handlers.end());
             }
             // if plugin is not supported, or wrong parameters passed we should not look into library
             else
 #endif //MFX_ENABLE_USER_ENCODE
             {
-                // required to check FEI plugin registration
-                bool feiStatusAvailable = false, fei = false;
-                std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
-                MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
-
-                handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId, fei));
+                handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId));
             }
 
             mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_INVALID_VIDEO_PARAM

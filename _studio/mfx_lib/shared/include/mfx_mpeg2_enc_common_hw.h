@@ -24,8 +24,7 @@
 #include "mfx_common.h"
 #include "mfx_ext_buffers.h"
 
-#if defined(MFX_VA)
-#if defined (MFX_ENABLE_MPEG2_VIDEO_PAK) || defined (MFX_ENABLE_MPEG2_VIDEO_ENC) || defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #define D3DDDIFORMAT        D3DFORMAT
 #define DXVADDI_VIDEODESC   DXVA2_VideoDesc
@@ -211,7 +210,6 @@ namespace MfxHwMpeg2Encode
 
 }; // namespace MfxHwMpeg2Encode
 
-#endif
 #endif
 #endif
 /* EOF */

@@ -20,8 +20,8 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_VA) && defined(MFX_D3D11_ENABLED)
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENC)|| defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#if defined(MFX_D3D11_ENABLED)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include <atlbase.h>
 #include "assert.h"
@@ -1406,6 +1406,6 @@ mfxStatus D3D11Encoder::RegisterRefFrames (const mfxFrameAllocResponse* pRespons
 
 } // mfxStatus D3D11Encoder::RegisterRefFrames (const mfxFrameAllocResponse* pResponse)
 
-#endif // #if defined(MFX_ENABLE_MPEG2_VIDEO_ENC)|| defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
-#endif // #if defined(MFX_VA) && defined(MFX_D3D11_ENABLED)
+#endif // #if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#endif // #if defined(MFX_D3D11_ENABLED)
 /* EOF */

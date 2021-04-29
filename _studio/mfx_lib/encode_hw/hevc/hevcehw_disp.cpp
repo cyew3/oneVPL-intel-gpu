@@ -146,11 +146,6 @@ VideoENCODE* Create(
 
     auto p = CreateSpecific(hw, core, status, eFeatureMode::INIT);
 
-    if (p && bFEI)
-    {
-        p = p->ApplyMode(IMPL_MODE_FEI);
-    }
-
     return p;
 }
 

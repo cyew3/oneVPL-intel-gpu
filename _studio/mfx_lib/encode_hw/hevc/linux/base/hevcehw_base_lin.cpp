@@ -47,7 +47,6 @@
 #include "hevcehw_base_roi_lin.h"
 #endif
 #include "hevcehw_base_max_frame_size_lin.h"
-#include "hevcehw_base_fei_lin.h"
 #ifdef MFX_ENABLE_ENCTOOLS
 #include "hevcehw_base_enctools.h"
 #endif
@@ -128,28 +127,6 @@ Linux::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
         qIA.splice(qIA.end(), qIA, Get(qIA, { FEATURE_ROI, ROI::BLK_SetCallChains }));
 #endif
     }
-}
-
-ImplBase* Linux::Base::MFXVideoENCODEH265_HW::ApplyMode(mfxU32 mode)
-{
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-    bool bInitFEI = (mode == IMPL_MODE_FEI) && !FindFeature<FEI>(FEATURE_FEI);
-
-    if (bInitFEI)
-    {
-        mfxU32 featureMode =
-              (QUERY0        * !BQ<BQ_Query0>::Get(*this).empty())
-            + (QUERY1        * !BQ<BQ_Query1NoCaps>::Get(*this).empty())
-            + (QUERY_IO_SURF * !BQ<BQ_QueryIOSurf>::Get(*this).empty())
-            + (INIT          * !BQ<BQ_InitAlloc>::Get(*this).empty())
-            + (RUNTIME       * !BQ<BQ_SubmitTask>::Get(*this).empty());
-
-        m_features.emplace_back(new FEI(FEATURE_FEI));
-        m_features.back()->Init(featureMode, *this);
-    }
-#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
-
-    return this;
 }
 
 mfxStatus Linux::Base::MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)

@@ -788,12 +788,6 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
         }
     }
 
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-    mfxExtBuffer* extbuf = GetExtendedBuffer(surf->Data.ExtParam, surf->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-    if (extbuf && !m_IsUseExternalFrames)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-#endif //MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
-
     if (m_externalFramesResponse && surf->Data.MemId)
     {
         bool isFound = false;

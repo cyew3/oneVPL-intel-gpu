@@ -264,18 +264,14 @@ add_subdirectory(codec/color_space_converter)
 add_subdirectory(codec/vc1_common)
 ### UMC codec vc1_common
 
-add_subdirectory(codec/vc1_enc)
 add_subdirectory(codec/vc1_dec)
 
 add_subdirectory(codec/jpeg_common)
 add_subdirectory(codec/jpeg_dec)
-add_subdirectory(codec/jpeg_enc)
 
-add_subdirectory(codec/h264_enc)
 add_subdirectory(codec/h264_dec)
 add_subdirectory(codec/h265_dec)
 add_subdirectory(codec/h264_spl)
-add_subdirectory(codec/mpeg2_enc)
 add_subdirectory(codec/mpeg2_dec/hw)
 
 add_subdirectory(codec/me)

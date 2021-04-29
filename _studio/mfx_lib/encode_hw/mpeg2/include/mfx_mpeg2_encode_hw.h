@@ -30,10 +30,6 @@
 #include "mfx_mpeg2_encode_full_hw.h"
 #include "mfx_mpeg2_encode_utils_hw.h"
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_PAK) && defined (MFX_ENABLE_MPEG2_VIDEO_ENC)
-#include "mfx_mpeg2_encode_hybrid_hw.h"
-#endif
-
 class MFXVideoENCODEMPEG2_HW : public VideoENCODE {
 protected:
 
@@ -76,12 +72,6 @@ public:
         {
             pEncoder = new MPEG2EncoderHW::FullEncode(m_pCore,&sts);        
         }
-#if defined (MFX_ENABLE_MPEG2_VIDEO_PAK) && defined (MFX_ENABLE_MPEG2_VIDEO_ENC)
-        else if (mode == MPEG2EncoderHW::HYBRID_ENCODE)
-        {
-            pEncoder = new MPEG2EncoderHW::HybridEncode(m_pCore,&sts);        
-        }
-#endif
         else
         {
             return MFX_WRN_PARTIAL_ACCELERATION;

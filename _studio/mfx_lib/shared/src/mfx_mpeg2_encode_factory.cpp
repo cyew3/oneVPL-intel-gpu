@@ -22,8 +22,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_VA)
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include "mfx_mpeg2_encode_interface.h"
 
@@ -75,6 +74,5 @@ DriverEncoder* MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder( VideoCORE* core )
 
 } // DriverEncoder* MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder( VideoCORE* core )
 
-#endif // #if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
-#endif // #if defined(MFX_VA)
+#endif // #if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 /* EOF */

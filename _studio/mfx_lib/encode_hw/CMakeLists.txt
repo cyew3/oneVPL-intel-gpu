@@ -94,7 +94,6 @@ set( sources
     hevc/linux/g12/hevcehw_g12_lin.h
     hevc/linux/g12/hevcehw_g12_rext_lin.h
     hevc/linux/base/hevcehw_base_encoded_frame_info_lin.h
-    hevc/linux/base/hevcehw_base_fei_lin.h
     hevc/linux/base/hevcehw_base_interlace_lin.h
     hevc/linux/base/hevcehw_base_lin.h
     hevc/linux/base/hevcehw_base_roi_lin.h
@@ -133,7 +132,6 @@ set( sources
     hevc/agnostic/g12/hevcehw_g12_rext.cpp
     hevc/agnostic/g12/hevcehw_g12_scc.cpp
 
-    hevc/linux/base/hevcehw_base_fei_lin.cpp
     hevc/linux/base/hevcehw_base_interlace_lin.cpp
     hevc/linux/base/hevcehw_base_lin.cpp
     hevc/linux/base/hevcehw_base_roi_lin.cpp
@@ -156,7 +154,6 @@ set( sources
 
     ${MSDK_LIB_ROOT}/shared/include/encoder_ddi.hpp
     ${MSDK_LIB_ROOT}/shared/include/encoding_ddi.h
-    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_enc_common.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_h264_enc_common_hw.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d11.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d9.h
@@ -174,7 +171,6 @@ set( sources
 
     ${MSDK_LIB_ROOT}/shared/src/mfx_ddi_enc_dump.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_h264_encode_vaapi.cpp
-    ${MSDK_LIB_ROOT}/shared/src/mfx_h264_fei_vaapi.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_h264_encode_factory.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_enc_common_hw.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_encode_factory.cpp
@@ -211,10 +207,8 @@ target_include_directories(encode_hw
     hevc/linux/g12
     hevc/linux/base
 
-    ${MSDK_LIB_ROOT}/enc_hw/mpeg2/include
     ${MSDK_LIB_ROOT}/encode_hw/shared
 
-    ${MSDK_LIB_ROOT}/fei/include
     ${MSDK_LIB_ROOT}/pak/mpeg2/include
     $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:
       ${MSDK_LIB_ROOT}/fei/h264_common
@@ -238,7 +232,6 @@ target_include_directories(encode_hw
     ${MSDK_UMC_ROOT}/codec/jpeg_common/include
     ${MSDK_UMC_ROOT}/codec/brc/include
     ${MSDK_UMC_ROOT}/codec/color_space_converter/include
-    ${MSDK_UMC_ROOT}/codec/h264_enc/include
     $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:
       ${MSDK_LIB_ROOT}/lpla
     >
@@ -255,7 +248,6 @@ target_link_libraries(encode_hw
   PRIVATE
     mfx_sdl_properties
     bitrate_control
-    enc_hw
   )
 
 

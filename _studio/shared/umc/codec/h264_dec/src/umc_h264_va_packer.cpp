@@ -39,14 +39,8 @@
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
 
-#include "umc_va_fei.h"
-
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
-#endif
-
-#if defined(MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT)
-#include "mfxfei.h"
 #endif
 
 #include "mfx_trace.h"

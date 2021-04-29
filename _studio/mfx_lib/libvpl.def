@@ -55,25 +55,8 @@ EXPORTS
     MFXVideoUSER_GetPlugin
     MFXVideoUSER_ProcessFrameAsync
 
-    MFXVideoENC_Query
-    MFXVideoENC_QueryIOSurf
-    MFXVideoENC_Init
-    MFXVideoENC_Reset
-    MFXVideoENC_Close
-    MFXVideoENC_ProcessFrameAsync
-
-    MFXVideoPAK_Query
-    MFXVideoPAK_QueryIOSurf
-    MFXVideoPAK_Init
-    MFXVideoPAK_Reset
-    MFXVideoPAK_Close
-    MFXVideoPAK_ProcessFrameAsync
-
     MFXInitEx
     MFXDoWork
-
-    MFXVideoENC_GetVideoParam
-    MFXVideoPAK_GetVideoParam
 
     MFXInitialize
     MFXQueryImplsDescription

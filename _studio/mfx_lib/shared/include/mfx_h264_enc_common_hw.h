@@ -27,7 +27,7 @@
 #include "mfxla.h"
 #endif
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
 
 #include <vector>
 #include <assert.h>
@@ -207,10 +207,6 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtVideoSignalInfo,      MFX_EXTBUFF_VIDEO_SIGNAL_INFO        );
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,   MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-#endif
-#if defined (MFX_ENABLE_H264_VIDEO_PAK) || defined (MFX_ENABLE_H264_VIDEO_ENC)
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtAvcMvData,            MFX_CUC_AVC_MV                       );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtAvcRefFrameParam,     MFX_CUC_AVC_REFFRAME                 );
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCSeqDesc,           MFX_EXTBUFF_MVC_SEQ_DESC             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCTargetViews,       MFX_EXTBUFF_MVC_TARGET_VIEWS         );

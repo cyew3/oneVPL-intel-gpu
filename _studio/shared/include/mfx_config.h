@@ -146,11 +146,6 @@
         #define MFX_ENABLE_LA_H264_VIDEO_HW
     #endif
 
-    // H265 FEI plugin
-    #if defined(AS_H265FEI_PLUGIN)
-        #define MFX_ENABLE_H265FEI_HW
-    #endif
-
     #if defined(MFX_ENABLE_SVC_VIDEO_ENCODE)
         #define MFX_ENABLE_SVC_VIDEO_ENCODE_HW
     #endif
@@ -180,8 +175,6 @@
         #undef MFX_ENABLE_MVC_VIDEO_ENCODE
         #undef MFX_ENABLE_MPEG2_VIDEO_DECODE
         #undef MFX_ENABLE_MPEG2_VIDEO_ENCODE
-        #undef MFX_ENABLE_MPEG2_VIDEO_PAK
-        #undef MFX_ENABLE_MPEG2_VIDEO_ENC
         #undef MFX_ENABLE_VC1_VIDEO_DECODE
         #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
         #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE

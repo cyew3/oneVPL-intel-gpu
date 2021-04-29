@@ -31,11 +31,6 @@
 #include <va/va_enc_h264.h>
 #include "vaapi_ext_interface.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-//#include <va/vendor/va_intel_fei.h>
-//#include <va/vendor/va_intel_statistics.h>
-#endif
-
 #include "mfx_h264_encode_interface.h"
 #include "mfx_h264_encode_hw_utils.h"
 
@@ -90,11 +85,6 @@ namespace MfxHwH264Encode
         mfxU32 number       = 0;
         mfxU32 idxBs        = 0;
         mfxU32 size         = 0; // valid only if Surface ID == VA_INVALID_SURFACE (skipped frames)
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC) || defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-        VASurfaceID mv      = VA_INVALID_ID;
-        VASurfaceID mbstat  = VA_INVALID_ID;
-        VASurfaceID mbcode  = VA_INVALID_ID;
-#endif
     };
 
     void UpdatePPS(
@@ -308,110 +298,6 @@ namespace MfxHwH264Encode
 
         std::vector<mfxU8>             m_mb_noskip_buffer;
     };
-
-    //extend encoder to FEI interface
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-    //typedef std::pair<VASurfaceID, VABufferID> SurfaceAndBufferPair;
-
-    class VAAPIFEIPREENCEncoder : public VAAPIEncoder
-    {
-    public:
-        VAAPIFEIPREENCEncoder();
-
-        virtual
-        ~VAAPIFEIPREENCEncoder();
-
-        virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par) override;
-        virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type) override;
-        virtual mfxStatus Execute(mfxHDLPair pair, DdiTask const & task,
-                mfxU32 fieldId, PreAllocatedVector const & sei) override;
-        virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEvent = true) override;
-        virtual mfxStatus Destroy() override;
-
-    protected:
-        //helper functions
-        mfxStatus CreatePREENCAccelerationService(MfxVideoParam const & par);
-
-        mfxI32 m_codingFunction;
-
-        VABufferID m_statParamsId;
-        std::vector<VABufferID> m_statMVId;
-        std::vector<VABufferID> m_statOutId;
-
-        std::vector<ExtVASurface> m_statFeedbackCache;
-        std::vector<ExtVASurface> m_inputQueue;
-        //std::vector <SurfaceAndBufferPair> m_statPairs;
-    };
-#endif
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)
-    class VAAPIFEIENCEncoder : public VAAPIEncoder
-    {
-    public:
-        VAAPIFEIENCEncoder();
-
-        virtual
-        ~VAAPIFEIENCEncoder();
-
-        virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par) override;
-        virtual mfxStatus Reset(MfxVideoParam const & par) override;
-        virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type) override;
-        virtual mfxStatus Execute(mfxHDLPair pair, DdiTask const & task,
-                mfxU32 fieldId, PreAllocatedVector const & sei) override;
-        virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEvent = true) override;
-        virtual mfxStatus Destroy() override;
-
-    protected:
-        //helper functions
-        mfxStatus CreateENCAccelerationService(MfxVideoParam const & par);
-
-        mfxI32 m_codingFunction;
-
-        VABufferID m_statParamsId;
-        VABufferID m_statMVId;
-        VABufferID m_statOutId;
-
-        std::vector<ExtVASurface> m_statFeedbackCache;
-        std::vector<ExtVASurface> m_inputQueue;
-
-        VABufferID m_codedBufferId;
-    };
-#endif
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_PAK) && defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)
-    class VAAPIFEIPAKEncoder : public VAAPIEncoder
-    {
-    public:
-        VAAPIFEIPAKEncoder();
-
-        virtual
-        ~VAAPIFEIPAKEncoder();
-
-        virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par) override;
-        virtual mfxStatus Reset(MfxVideoParam const & par) override;
-        virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type) override;
-        virtual mfxStatus Execute(mfxHDLPair pair, DdiTask const & task,
-                mfxU32 fieldId, PreAllocatedVector const & sei) override;
-        virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEvent = true) override;
-        virtual mfxStatus Destroy() override;
-
-    protected:
-        //helper functions
-        mfxStatus CreatePAKAccelerationService(MfxVideoParam const & par);
-
-        mfxI32 m_codingFunction;
-
-        VABufferID m_statParamsId;
-        VABufferID m_statMVId;
-        VABufferID m_statOutId;
-
-        std::vector<ExtVASurface> m_statFeedbackCache;
-        std::vector<ExtVASurface> m_inputQueue;
-
-        VABufferID m_codedBufferId[2];
-    };
-#endif
-
 
 }; // namespace
 

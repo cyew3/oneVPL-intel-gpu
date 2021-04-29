@@ -24,7 +24,7 @@
 #include "mfx_common.h"
 
 #if defined (MFX_VA_LINUX)
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include <vector>
 #include <assert.h>
@@ -184,7 +184,7 @@ namespace MfxHwMpeg2Encode
 
 }; // namespace
 
-#endif // defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
+#endif // defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 #endif // defined (MFX_VA_LINUX)
 #endif // __MFX_MPEG2_ENCODE_VAAPI__H
 /* EOF */
