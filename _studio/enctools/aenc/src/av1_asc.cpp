@@ -2212,6 +2212,25 @@ namespace aenc {
             return 0;
     }
 
+    uint32_t ASC::CorrectScdMiniGopDecision() {
+        int32_t  sc = Get_frame_SC();
+        int32_t qsc = (sc < 2048) ? (sc >> 9) : (4 + ((sc - 2048) >> 10));
+        qsc = (qsc < 0) ? 0 : ((qsc > 9) ? 9 : qsc);
+        int32_t  mv = Get_frame_MVSize();
+        int32_t qmv = 0;
+        if (mv < 1024) {
+            qmv = (mv < 256) ? 0 : ((mv < 512) ? 1 : 2);
+        }
+        else {
+            qmv = 3 + ((mv - 1024) >> 10);
+            qmv = (qmv < 0) ? 0 : ((qmv > 9) ? 9 : qmv);
+        }
+        int32_t  MV_TH[10] = { 2,4,4,4,4,4,4,4,4,6 };
+        uint32_t miniGopSize = (qmv < MV_TH[qsc]) ? 2 : 1;
+
+        return miniGopSize;
+    }
+
     /**
     ***********************************************************************
     * \Brief Tells if LTR mode should be on/off or forced on.

@@ -312,6 +312,9 @@ namespace aenc {
         Scd.PutFrameProgressive(const_cast<uint8_t*>(InFrame), pitch, false/*LTR*/);
 
         f.MiniGopSize = Scd.GetFrameGopSize();
+        if (InitParam.CodecId == MFX_CODEC_HEVC && InitParam.MaxMiniGopSize == 2) {
+            f.MiniGopSize = Scd.CorrectScdMiniGopDecision();
+        }
         f.SceneChanged = Scd.Get_frame_shot_Decision();
         f.RepeatedFrame = Scd.Get_Repeated_Frame_Flag();
         f.TemporalComplexity = Scd.Get_frame_Temporal_complexity();

@@ -458,6 +458,7 @@ namespace aenc {
         bool   Get_LTR_advice();
         bool   Get_RepeatedFrame_advice();
         mfxStatus get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint);
+        uint32_t CorrectScdMiniGopDecision();
 
         mfxStatus calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs);
         bool Check_last_frame_processed(mfxU32 frameOrder);
