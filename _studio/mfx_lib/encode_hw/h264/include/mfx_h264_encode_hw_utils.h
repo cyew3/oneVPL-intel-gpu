@@ -2435,6 +2435,12 @@ public:
         return MFX_ERR_NONE;
     }
 
+    void Discard(mfxU32 displayOrder)
+    {
+        if (m_pEncTools)
+            m_pEncTools->Discard(m_pEncTools->Context, displayOrder);
+    }
+
     void  Close()
     {
         if (m_pEncTools)

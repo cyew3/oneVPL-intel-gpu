@@ -2826,6 +2826,12 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     }
 #endif
     mfxU32 numBits = 8 * (task->m_bsDataLength[0] + task->m_bsDataLength[1]);
+
+#if defined(MFX_ENABLE_ENCTOOLS)
+    if (m_enabledEncTools)
+        m_encTools.Discard(task->m_frameOrder);
+#endif
+
     *task = DdiTask();
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
@@ -4917,7 +4923,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 m_listOfPairsForFieldOutputMode.pop_front();
             }
         }
-
     }
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_RESTART)
