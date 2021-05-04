@@ -32,17 +32,7 @@ else()
   set( os_arch "${os_arch}_ia32" )
 endif()
 
-if( NOT DEFINED API )
-  message( FATAL_ERROR "API is not defined")
-elseif (${API} STREQUAL "master"
-     OR ${API} STREQUAL "latest"
-     OR ${API} VERSION_LESS 2.0 )
-  set( MFX_API_HOME ${MFX_API_HOME} )
-elseif( ${API} VERSION_GREATER_EQUAL 2.0 )
-  set( MFX_API_HOME ${MFX_API_HOME}/vpl)
-else()
-  message( FATAL_ERROR "Unknown API = ${API}")
-endif()
+set( MFX_API_HOME ${MFX_API_HOME}/vpl)
 
 unset( MFX_INCLUDE CACHE )
 find_path( MFX_INCLUDE
@@ -59,24 +49,6 @@ set( MFX_API_HOME ${MFX_INCLUDE} )
 if (NOT MFX_FOUND)
   message( FATAL_ERROR "Unknown API = ${API}")
 endif()
-
-macro( make_api_target target)
-
-  add_library( ${target}-api INTERFACE )
-  target_include_directories(${target}-api
-    INTERFACE
-    ${MFX_API_HOME}
-    ${MFX_API_HOME}/../mediasdk_structures
-    $<$<BOOL:${API_USE_VPL}>:${MFX_API_HOME}/private>
-  )
-  target_compile_definitions(${target}-api
-    INTERFACE $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
-  )
-
-  add_library( ${target}::api ALIAS ${target}-api )
-  set (MFX_API_TARGET ${target}::api)
-
-endmacro()
 
 function( get_mfx_version mfx_version_major mfx_version_minor )
   file(STRINGS ${MFX_API_HOME}/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR" LIMIT_COUNT 1)
@@ -95,51 +67,28 @@ endfunction()
 
 # Potential source of confusion here. MFX_VERSION should contain API version i.e. 1025 for API 1.25, 
 # Product version stored in MEDIA_VERSION_STR
-if( ${API} STREQUAL "master")
-  set( API_FLAGS "")
-  set( API_USE_LATEST FALSE )
-  get_mfx_version(major_vers minor_vers)
-else( )
-  if( ${API} STREQUAL "latest" )
-    # This would enable all latest non-production features
-    set( API_FLAGS -DMFX_VERSION_USE_LATEST )
-    set( API_USE_LATEST TRUE )
-    get_mfx_version(major_vers minor_vers)
-  else()
-    set( VERSION_REGEX "[0-9]+\\.[0-9]+" )
-
-    # Breaks up a string in the form maj.min into two parts and stores
-    # them in major, minor.  version should be a value, not a
-    # variable, while major and minor should be variables.
-    macro( split_api_version version major minor )
-      if(${version} MATCHES ${VERSION_REGEX})
-        string(REGEX REPLACE "^([0-9]+)\\.[0-9]+" "\\1" ${major} "${version}")
-        string(REGEX REPLACE "^[0-9]+\\.([0-9]+)" "\\1" ${minor} "${version}")
-      else(${version} MATCHES ${VERSION_REGEX})
-        message("macro( split_api_version ${version} ${major} ${minor} ")
-        message(FATAL_ERROR "Problem parsing API version string.")
-      endif(${version} MATCHES ${VERSION_REGEX})
-    endmacro( split_api_version )
-
-    split_api_version(${API} major_vers minor_vers)
-      # Compute a version number
-    math(EXPR version_number "${major_vers} * 1000 + ${minor_vers}" )
-    set(API_FLAGS -DMFX_VERSION=${version_number})
-  endif()
-endif()
+get_mfx_version(major_vers minor_vers)
 
 set( API_VERSION "${major_vers}.${minor_vers}")
 set( MFX_VERSION_MAJOR ${major_vers})
 set( MFX_VERSION_MINOR ${minor_vers})
 
-if ( ${API_VERSION} VERSION_GREATER_EQUAL 2.0 )
-  set( API_USE_VPL TRUE )
-  set( API_USE_LATEST TRUE )
-  set( API_FLAGS -DMFX_VERSION_USE_LATEST )
-  make_api_target( onevpl )
-else()
-  set( API_USE_VPL FALSE )
-  make_api_target( mfx )
-endif()
+set( API_USE_VPL TRUE )
+set( API_USE_LATEST TRUE )
+set( API_FLAGS -DMFX_VERSION_USE_LATEST )
+
+add_library( onevpl-api INTERFACE )
+target_include_directories(onevpl-api
+  INTERFACE
+  ${MFX_API_HOME}
+  ${MFX_API_HOME}/../mediasdk_structures
+  ${MFX_API_HOME}/private
+)
+target_compile_definitions(onevpl-api
+  INTERFACE MFX_ONEVPL
+)
+
+add_library( onevpl::api ALIAS onevpl-api )
+set (MFX_API_TARGET onevpl::api)
 
 message(STATUS "Enabling API ${major_vers}.${minor_vers} feature set with flags ${API_FLAGS}")

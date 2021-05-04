@@ -53,8 +53,9 @@ endif()
 
 set( BUILDER_ROOT "${CMAKE_HOME_DIRECTORY}/builder" )
 
-if(NOT DEFINED API)
-  set( API "latest" CACHE STRING "Use this API version. Options: latest, master, <major.minor>")
+if(DEFINED API)
+  message(STATUS "Ignoring specified API: $API in favor or version in mfxdefs.h")
+  set( API "" )
   set( MFX_API_HOME "${MFX_HOME}/api")
 endif()
 
