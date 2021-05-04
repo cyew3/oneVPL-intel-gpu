@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2020 Intel Corporation
+# Copyright (c) 2017-2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -42,5 +42,6 @@ add_subdirectory(suites/hevce)
 
 #TEMP
 if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
+  add_subdirectory(suites/core)
   add_subdirectory(suites/memory)
 endif()

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,14 +20,21 @@
 
 #if defined(MFX_ENABLE_UNIT_TEST_CORE)
 
-#include "core_base.h"
+#if (defined(_WIN32) || defined(_WIN64))
+    #include "core_base_windows.h"
+#elif defined(__linux__)
+    #include "core_base_linux.h"
+#endif
+
+#include "mocks/include/va/ioctl.h"
 
 namespace test
 {
+
     TEST_F(coreMain, DoFastCopyNullptrDst)
     {
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopy(nullptr, src),
+            core->DoFastCopy(nullptr, src),
             MFX_ERR_NULL_PTR
         );
     }
@@ -35,7 +42,7 @@ namespace test
     TEST_F(coreMain, DoFastCopyNullptrSrc)
     {
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopy(dst, nullptr),
+            core->DoFastCopy(dst, nullptr),
             MFX_ERR_NULL_PTR
         );
     }
@@ -46,8 +53,9 @@ namespace test
             dst->FrameInterface->Unmap(dst),
             MFX_ERR_NONE
         );
+
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopy(dst, src),
+            core->DoFastCopy(dst, src),
             MFX_ERR_NULL_PTR
         );
     }
@@ -58,8 +66,9 @@ namespace test
             src->FrameInterface->Unmap(src),
             MFX_ERR_NONE
         );
+
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopy(dst, src),
+            core->DoFastCopy(dst, src),
             MFX_ERR_NULL_PTR
         );
     }
@@ -67,8 +76,9 @@ namespace test
     TEST_F(coreMain, DoFastCopyExtended)
     {
         dst->Data.MemId = src->Data.MemId = nullptr;
+
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyExtended(dst, src),
+            core->DoFastCopyExtended(dst, src),
             MFX_ERR_NONE
         );
     }
@@ -76,7 +86,7 @@ namespace test
     TEST_F(coreMain, DoFastCopyExtendedNullptrDst)
     {
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyExtended(nullptr, src),
+            core->DoFastCopyExtended(nullptr, src),
             MFX_ERR_NULL_PTR
         );
     }
@@ -84,7 +94,7 @@ namespace test
     TEST_F(coreMain, DoFastCopyExtendedNullptrSrc)
     {
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyExtended(dst, nullptr),
+            core->DoFastCopyExtended(dst, nullptr),
             MFX_ERR_NULL_PTR
         );
     }

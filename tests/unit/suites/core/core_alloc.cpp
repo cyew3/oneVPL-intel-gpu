@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,11 @@
 
 #if defined(MFX_ENABLE_UNIT_TEST_CORE)
 
-#include "core_base.h"
+#if (defined(_WIN32) || defined(_WIN64))
+    #include "core_base_windows.h"
+#elif defined(__linux__)
+    #include "core_base_linux.h"
+#endif
 
 namespace test
 {
@@ -33,8 +37,8 @@ namespace test
             coreMain::SetUp();
             req.AllocId = 1;
             req.NumFrameMin = req.NumFrameSuggested = 1;
-            req.Info.Width = vp.mfx.FrameInfo.Width;
-            req.Info.Height = vp.mfx.FrameInfo.Height;
+            req.Info.Width = info.Width;
+            req.Info.Height = info.Height;
             req.Info.FourCC = MFX_FOURCC_NV12;
         }
     };
@@ -42,7 +46,7 @@ namespace test
     TEST_F(coreAlloc, AllocFrames)
     {
         EXPECT_EQ(
-            s->m_pCORE->AllocFrames(&req, &res),
+            core->AllocFrames(&req, &res),
             MFX_ERR_NONE
         );
     }
@@ -50,7 +54,7 @@ namespace test
     TEST_F(coreAlloc, AllocFramesNeedntCopy)
     {
         EXPECT_EQ(
-            s->m_pCORE->AllocFrames(&req, &res, false),
+            core->AllocFrames(&req, &res, false),
             MFX_ERR_NONE
         );
     }
@@ -58,7 +62,7 @@ namespace test
     TEST_F(coreAlloc, AllocFramesNullptrRequest)
     {
         EXPECT_EQ(
-            s->m_pCORE->AllocFrames(nullptr, &res),
+            core->AllocFrames(nullptr, &res),
             MFX_ERR_NULL_PTR
         );
     }
@@ -66,7 +70,7 @@ namespace test
     TEST_F(coreAlloc, AllocFramesNullptrResponse)
     {
         EXPECT_EQ(
-            s->m_pCORE->AllocFrames(&req, nullptr),
+            core->AllocFrames(&req, nullptr),
             MFX_ERR_NULL_PTR
         );
     }
@@ -74,11 +78,12 @@ namespace test
     TEST_F(coreAlloc, Free)
     {
         ASSERT_EQ(
-            s->m_pCORE->AllocFrames(&req, &res),
+            core->AllocFrames(&req, &res),
             MFX_ERR_NONE
         );
+
         EXPECT_EQ(
-            s->m_pCORE->FreeFrames(&res),
+            core->FreeFrames(&res),
             MFX_ERR_NONE
         );
     }
@@ -86,7 +91,7 @@ namespace test
     TEST_F(coreAlloc, FreeFramesWithoutAlloc)
     {
         EXPECT_EQ(
-            s->m_pCORE->FreeFrames(&res),
+            core->FreeFrames(&res),
             MFX_ERR_NULL_PTR
         );
     }
@@ -96,7 +101,7 @@ namespace test
     {
         mfxMemId memId{};
         EXPECT_EQ(
-            s->m_pCORE->AllocBuffer(50, 50, &memId),
+            core->AllocBuffer(50, 50, &memId),
             MFX_ERR_UNSUPPORTED
         );
     }
@@ -105,7 +110,7 @@ namespace test
     {
         mfxMemId memId{};
         EXPECT_EQ(
-            s->m_pCORE->FreeBuffer(&memId),
+            core->FreeBuffer(&memId),
             MFX_ERR_UNSUPPORTED
         );
     }

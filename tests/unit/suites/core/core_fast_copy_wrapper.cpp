@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,14 @@
 
 #if defined(MFX_ENABLE_UNIT_TEST_CORE)
 
-#include "core_base.h"
+#if (defined(_WIN32) || defined(_WIN64))
+    #include "core_base_windows.h"
+#elif defined(__linux__)
+    #include "core_base_linux.h"
+#endif
+
+#include "libmfx_allocator.h"
+#include <vector>
 
 namespace test
 {
@@ -28,7 +35,7 @@ namespace test
     TEST_F(coreMain, DoFastCopyWrapperNullptrDst)
     {
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyWrapper(nullptr, MFX_MEMTYPE_SYSTEM_MEMORY, src, MFX_MEMTYPE_SYSTEM_MEMORY),
+            core->DoFastCopyWrapper(nullptr, MFX_MEMTYPE_SYSTEM_MEMORY, src, MFX_MEMTYPE_SYSTEM_MEMORY),
             MFX_ERR_NULL_PTR
         );
     }
@@ -36,7 +43,7 @@ namespace test
     TEST_F(coreMain, DoFastCopyWrapperNullptrSrc)
     {
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyWrapper(dst, MFX_MEMTYPE_SYSTEM_MEMORY, nullptr, MFX_MEMTYPE_SYSTEM_MEMORY),
+            core->DoFastCopyWrapper(dst, MFX_MEMTYPE_SYSTEM_MEMORY, nullptr, MFX_MEMTYPE_SYSTEM_MEMORY),
             MFX_ERR_NULL_PTR
         );
     }
@@ -45,29 +52,44 @@ namespace test
         : public coreBase
         , testing::WithParamInterface<std::tuple<mfxU16, mfxU16>>
     {
-        mfxU16                                                                   memtype;
-        mfxU16                                                                   iopattern;
 
-        static testing::MockFunction<mfxStatus(mfxFrameSurface1*, mfxU32)>*      mockPtr;
-        testing::MockFunction<mfxStatus(mfxFrameSurface1*, mfxU32)>              mock;
-
+        static testing::MockFunction<mfxStatus(mfxFrameSurface1*, mfxU32)>* mockPtr;
+        testing::MockFunction<mfxStatus(mfxFrameSurface1*, mfxU32)>         mock;
+        mfxU16                                                              memtype;
         void SetUp() override
         {
             mockPtr = &mock;
             coreBase::SetUp();
-            iopattern = vp.IOPattern = std::get<0>(GetParam());
-            auto constexpr type = mocks::mfx::HW_SCL;
-            if (std::get<0>(GetParam()) == MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-                component = mocks::mfx::dx11::make_decoder(type, nullptr, vp);
-            else
-                component = mocks::mfx::dx11::make_encoder(type, nullptr, vp);
 
-            EndInitialization(MFX_FOURCC_NV12, std::get<0>(GetParam()));
+            auto memtype = std::get<0>(GetParam());
+
+            SetAllocator(memtype);
+
+            ASSERT_EQ(
+                allocator->CreateSurface(memtype, info, dst),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_EQ(
+                allocator->CreateSurface(memtype, info, src),
+                MFX_ERR_NONE
+            );
+
+            memtype |= std::get<1>(GetParam());
+
+            ASSERT_EQ(
+                src->FrameInterface->Map(src, MFX_MAP_READ),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_EQ(
+                dst->FrameInterface->Map(dst, MFX_MAP_READ),
+                MFX_ERR_NONE
+            );
 
             ON_CALL(mock, Call(testing::_, testing::_))
                 .WillByDefault(testing::Invoke(&mfxFrameSurfaceInterfaceImpl::Map_impl));
             dst->FrameInterface->Map = src->FrameInterface->Map = &Map;
-            memtype = std::get<1>(GetParam());
         }
 
         void TearDown() override
@@ -83,31 +105,31 @@ namespace test
 
     testing::MockFunction<mfxStatus(mfxFrameSurface1*, mfxU32)>* coreCopy::mockPtr = nullptr;
 
-    std::vector<mfxU16> IOPatterns =
+    std::vector<mfxU16> memory =
     {
-        MFX_IOPATTERN_OUT_SYSTEM_MEMORY
-      , MFX_IOPATTERN_IN_VIDEO_MEMORY
+        MFX_MEMTYPE_SYSTEM_MEMORY
+      , MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET
     };
 
-    std::vector<mfxU16> memory =
+    std::vector<mfxU16> frame =
     {
         MFX_MEMTYPE_INTERNAL_FRAME
       , MFX_MEMTYPE_EXTERNAL_FRAME
     };
 
     INSTANTIATE_TEST_SUITE_P(
-        IOPatterns,
+        memtype,
         coreCopy,
         testing::Combine(
-            testing::ValuesIn(IOPatterns),
-            testing::ValuesIn(memory)
+            testing::ValuesIn(memory),
+            testing::ValuesIn(frame)
         )
     );
 
     TEST_P(coreCopy, DoFastCopyWrapperSystemMemory)
     {
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyWrapper(dst, MFX_MEMTYPE_SYSTEM_MEMORY, src, MFX_MEMTYPE_SYSTEM_MEMORY),
+            core->DoFastCopyWrapper(dst, MFX_MEMTYPE_SYSTEM_MEMORY, src, MFX_MEMTYPE_SYSTEM_MEMORY),
             MFX_ERR_NONE
         );
     }
@@ -115,8 +137,9 @@ namespace test
     TEST_P(coreCopy, DoFastCopyWrapper)
     {
         EXPECT_CALL(mock, Call(testing::_, testing::_)).Times(0);
+
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyWrapper(dst, memtype, src, memtype),
+            core->DoFastCopyWrapper(dst, memtype, src, memtype),
             MFX_ERR_NONE
         );
     }
@@ -126,10 +149,8 @@ namespace test
         EXPECT_CALL(mock, Call(testing::_, testing::_)).Times(0);
         mfxFrameSurface1 emptydst{}, emptysrc{};
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyWrapper(&emptydst, memtype, &emptysrc, memtype),
-            memtype == MFX_MEMTYPE_INTERNAL_FRAME ?
-            MFX_ERR_LOCK_MEMORY :
-            MFX_ERR_UNDEFINED_BEHAVIOR
+            core->DoFastCopyWrapper(&emptydst, memtype, &emptysrc, memtype),
+            MFX_ERR_LOCK_MEMORY
         );
     }
 
@@ -138,7 +159,7 @@ namespace test
         EXPECT_CALL(mock, Call(testing::_, testing::_)).Times(0);
         dst->Data.MemId = src->Data.MemId = nullptr;
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyWrapper(dst, memtype, src, memtype),
+            core->DoFastCopyWrapper(dst, memtype, src, memtype),
             MFX_ERR_NONE
         );
     }
@@ -153,9 +174,11 @@ namespace test
             src->FrameInterface->Unmap(src),
             MFX_ERR_NONE
         );
+
         EXPECT_CALL(mock, Call(testing::_, testing::_)).Times(2);
+
         EXPECT_EQ(
-            s->m_pCORE->DoFastCopyWrapper(dst, memtype, src, memtype),
+            core->DoFastCopyWrapper(dst, memtype, src, memtype),
             MFX_ERR_NONE
         );
     }
