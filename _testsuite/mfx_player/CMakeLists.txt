@@ -219,7 +219,7 @@ target_link_libraries(mfx_player
     vm
     vm_plus
     mfx_trace
-    ${ITT_LIBRARIES}
+    $<$<BOOL:${ITT_FOUND}>:itt>
     mfx_shared_lib
     media_buffers
     Threads::Threads
@@ -250,7 +250,7 @@ target_link_libraries(mfx_player_lucas
     vm
     vm_plus
     mfx_trace
-    ${ITT_LIBRARIES}
+    $<$<BOOL:${ITT_FOUND}>:itt>
     mfx_shared_lib
     Threads::Threads
     ${CMAKE_DL_LIBS}

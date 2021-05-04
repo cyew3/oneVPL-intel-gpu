@@ -65,31 +65,19 @@ if( ENABLE_ITT )
     endif()
   else()
 
-    # VTune is a source of ITT library
-    if( NOT CMAKE_VTUNE_HOME )
-      set( CMAKE_VTUNE_HOME "$ENV{ProgramFiles(x86)}/IntelSWTools/VTune Amplifier" )
+    if( NOT CMAKE_ITT_HOME )
+      set( CMAKE_ITT_HOME "${MFX_HOME}/../mdp_msdk-contrib/itt/windows" )
     endif()
 
     find_path( ITT_INCLUDE_DIRS ittnotify.h
-      PATHS ${CMAKE_ITT_HOME} ${CMAKE_VTUNE_HOME}
+      PATHS ${CMAKE_ITT_HOME}
       PATH_SUFFIXES include )
 
-    # Unfortunately SEAPI and VTune uses different names for itt library:
-    #  * SEAPI uses libittnotify${arch}.lib
-    #  * VTune uses libittnotify.lib
-    # We are trying to check both giving preference to SEAPI name.
-    find_path( ITT_LIBRARY_DIRS libittnotify${arch}.lib
-      PATHS ${CMAKE_ITT_HOME} ${CMAKE_VTUNE_HOME}
-      PATH_SUFFIXES lib64 )
-    if( NOT ITT_LIBRARY_DIRS MATCHES NOTFOUND )
-      set( ITT_LIBRARIES "ittnotify${arch}" )
-    else()
-      find_path( ITT_LIBRARY_DIRS libittnotify.lib
-        PATHS ${CMAKE_ITT_HOME} ${CMAKE_VTUNE_HOME}
-        PATH_SUFFIXES lib64 )
-      if( NOT ITT_LIBRARY_PATH MATCHES NOTFOUND )
-        set( ITT_LIBRARIES "ittnotify" )
-      endif()
+    find_path( ITT_LIBRARY_DIRS libittnotify.lib
+      PATHS ${CMAKE_ITT_HOME}
+      PATH_SUFFIXES lib${arch} )
+    if( NOT ITT_LIBRARY_PATH MATCHES NOTFOUND )
+      set( ITT_LIBRARIES "libittnotify.lib" )
     endif()
 
     if(NOT ITT_INCLUDE_DIRS MATCHES NOTFOUND AND
