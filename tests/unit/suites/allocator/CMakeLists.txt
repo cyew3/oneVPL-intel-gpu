@@ -25,8 +25,10 @@
 
 set (SOURCES
     ${CMAKE_HOME_DIRECTORY}/_studio/shared/src/libmfx_allocator.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/shared/src/libmfx_allocator_vaapi.cpp
     ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src/libmfxsw_async.cpp
+    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src/mfx_common_int.cpp
+    $<$<PLATFORM_ID:Linux>:${CMAKE_HOME_DIRECTORY}/_studio/shared/src/libmfx_allocator_vaapi.cpp>
+    $<$<PLATFORM_ID:Windows>:${CMAKE_HOME_DIRECTORY}/_studio/shared/src/libmfx_allocator_d3d11.cpp>
 )
 
 add_executable (mfx_allocator_test
@@ -38,6 +40,7 @@ add_executable (mfx_allocator_test
     flexible_allocator_lock_fourcc.cpp
     test_surface_array.cpp
     $<$<PLATFORM_ID:Linux>:scoped_lock.cpp>
+    allocator_wrapper.cpp
     ${SOURCES}
 )
 
@@ -45,7 +48,7 @@ target_link_libraries (mfx_allocator_test
     PRIVATE
         ${MFX_DISPATCHER}
         $<$<PLATFORM_ID:Windows>:detours>
-        mfx_common_hw
+        mfx_shared_lib
         mfx_trace
         gtest_main
         gmock
@@ -56,6 +59,8 @@ target_link_libraries (mfx_allocator_test
 target_compile_definitions (mfx_allocator_test
     PRIVATE
         MFX_ENABLE_UNIT_TEST_ALLOCATOR
+        ENABLE_MFX_INTEL_GUID_DECODE
+        ENABLE_MFX_INTEL_GUID_PRIVATE
 )
 
 set_target_properties (mfx_allocator_test
