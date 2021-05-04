@@ -285,6 +285,8 @@ protected:
     EncodeHWCaps                               m_encode_caps;
     EncodeHWCaps                               m_encode_mbprocrate;
 
+    EncodeDdiVersion                           m_encoderDdiVersion;
+
     std::vector<mfxFrameAllocResponse>         m_PlugInMids;
 
     API_1_19_Adapter                           m_API_1_19;

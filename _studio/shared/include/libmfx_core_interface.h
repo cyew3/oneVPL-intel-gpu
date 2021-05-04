@@ -98,6 +98,10 @@ static const
 MFX_GUID MFXIFEIEnabled_GUID =
 { 0x7df28d19, 0x889a, 0x45c1,{ 0xaa, 0x5, 0xa4, 0xf7, 0xef, 0xae, 0x95, 0x28 } };
 
+// {6CE480A6-E881-44DA-903C-AD4B54177EF0}
+static const MFX_GUID MFXIHWDDI_GUID =
+{ 0x6ce480a6, 0xe881, 0x44da, { 0x90, 0x3c, 0xad, 0x4b, 0x54, 0x17, 0x7e, 0xf0 } };
+
 #if defined(MFX_ONEVPL)
 // {2C3163A0-B061-4931-AF0D-2301AC99DA77}
 static const
@@ -198,6 +202,47 @@ private:
     EncodeHWCaps(const EncodeHWCaps&);
     void operator=(const EncodeHWCaps&);
 
+};
+
+class EncodeDdiVersion
+{
+public:
+    static const MFX_GUID getGuid()
+    {
+        return MFXIHWDDI_GUID;
+    }
+
+    EncodeDdiVersion() {};
+    virtual ~EncodeDdiVersion()
+    {
+        m_codecId_ddiVersion.clear();
+    };
+
+    mfxStatus GetDdiVersion(mfxU32 codecId, mfxU32* ddiVersion)
+    {
+        std::map<mfxU32, mfxU32>::iterator ddi_it = m_codecId_ddiVersion.find(codecId);
+        if (m_codecId_ddiVersion.end() != ddi_it)
+        {
+            *ddiVersion = ddi_it->second;
+            return MFX_ERR_NONE;
+        }
+        else
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+    }
+
+    mfxStatus SetDdiVersion(mfxU32 codecId, mfxU32 ddiVersion)
+    {
+        m_codecId_ddiVersion.insert(std::make_pair(codecId, ddiVersion));
+        return MFX_ERR_NONE;
+    }
+
+protected:
+    std::map<mfxU32, mfxU32> m_codecId_ddiVersion;
+
+private:
+    EncodeDdiVersion(const EncodeDdiVersion&);
 };
 
 template <class T>

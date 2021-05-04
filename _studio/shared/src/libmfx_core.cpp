@@ -1912,6 +1912,9 @@ void* CommonCORE::QueryCoreInterface(const MFX_GUID &guid)
     if (MFXICORE_API_2_0_GUID == guid)
         return &m_enabled20Interface;
 
+    if (MFXIHWDDI_GUID == guid)
+        return (void*)&m_encoderDdiVersion;
+
     return nullptr;
 }
 
