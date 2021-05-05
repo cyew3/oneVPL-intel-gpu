@@ -566,6 +566,9 @@ mfxStatus VideoVPPBase::CheckIOPattern( mfxVideoParam* par )
     return MFX_ERR_INVALID_VIDEO_PARAM;
   }
 
+  if (par->IOPattern & (MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+
   return MFX_ERR_NONE;
 
 } // mfxStatus VideoVPPBase::CheckIOPattern( mfxVideoParam* par )

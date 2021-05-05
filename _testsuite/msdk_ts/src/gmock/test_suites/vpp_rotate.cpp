@@ -32,7 +32,6 @@ private:
     {
         MFX_PAR = 1,
         EXTBUFF_VPP_ROTATION,
-        ALLOC_OPAQUE
     };
 
     struct tc_struct
@@ -100,95 +99,35 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY|MFX_IOPATTERN_IN_VIDEO_MEMORY},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_270}}
     },
-    {/*12*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_90}}
-    },
-    {/*13*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_90}}
-    },
-    {/*14*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_90}}
-    },
-    {/*15*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_90}}
-    },
-    {/*16*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_90}}
-    },
-    {/*17*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_180}}
-    },
-    {/*18*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_180}}
-    },
-    {/*19*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_180}}
-    },
-    {/*20*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_180}}
-    },
-    {/*21*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_180}}
-    },
-    {/*22*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_270}}
-    },
-    {/*23*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_270}}
-    },
-    {/*24*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_270}}
-    },
-    {/*25*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_270}}
-    },
-    {/*26*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
-        {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, MFX_ANGLE_270}}
-    },
-    {/*27*/ MFX_ERR_NONE, 0, {
+    {/*12*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 0}}
     },
-    {/*28*/
+    {/*13*/
      //Invalid angle
         MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 100}}
     },
-    {/*29*/
+    {/*14*/
      //Invalid angle
         MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 360}}
     },
-    {/*30*/
+    {/*15*/
         MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
-    {/*31*/
+    {/*16*/
         MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
-    {/*32*/
+    {/*17*/
         MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_NV12},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV420},
@@ -196,7 +135,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
-    {/*33*/
+    {/*18*/
         MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_RGB4},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV444},
@@ -204,7 +143,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV444},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
-    {/*34*/
+    {/*19*/
      //Unsupported FourCC
         MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_YV12},
@@ -213,7 +152,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV420},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
-    {/*35*/
+    {/*20*/
      //Unsupported FourCC
         MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_NV16},
@@ -222,7 +161,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV422},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
-    {/*36*/
+    {/*21*/
         MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_YUY2},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV422},
@@ -230,7 +169,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat, MFX_CHROMAFORMAT_YUV422},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
-    {/*37*/
+    {/*22*/
         MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_YUY2},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV422},
@@ -268,22 +207,6 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(&ext_buf_rotation, EXTBUFF_VPP_ROTATION);
 
     buffs.push_back((mfxExtBuffer*)&ext_buf_rotation);
-
-    if (tc.mode == ALLOC_OPAQUE)
-    {
-        mfxExtOpaqueSurfaceAlloc osa;
-        memset(&osa, 0, sizeof(mfxExtOpaqueSurfaceAlloc));
-        osa.Header.BufferId = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION;
-        osa.Header.BufferSz = sizeof(mfxExtOpaqueSurfaceAlloc);
-        QueryIOSurf();
-
-        if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            m_spool_in.AllocOpaque(m_request[0], osa);
-        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            m_spool_out.AllocOpaque(m_request[1], osa);
-
-        buffs.push_back((mfxExtBuffer*)&osa);
-    }
 
     m_par.NumExtParam = (mfxU16)buffs.size();
     m_par.ExtParam = &buffs[0];

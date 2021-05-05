@@ -72,8 +72,7 @@ private:
 };
 
 const mfxU16 IOPatterns[] = {MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY,
-                             MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY,
-                             MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY};
+                             MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY};
 
 const mfxU32 frameNumber = 4;
 
@@ -117,16 +116,7 @@ int TestSuite::RunTest(tc_struct const& tc, mfxU16 IOP)
     SetHandle();
 
     QueryIOSurf();
-    if (m_par.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
-    {
-        mfxExtOpaqueSurfaceAlloc& osa = m_par;
-        m_pSurfPoolIn->AllocOpaque(m_request[0], osa);
-        m_pSurfPoolOut->AllocOpaque(m_request[1], osa);
-    }
-    else
-    {
-        AllocSurfaces();
-    }
+    AllocSurfaces();
 
     // calling pipeline
     switch (tc.mode)

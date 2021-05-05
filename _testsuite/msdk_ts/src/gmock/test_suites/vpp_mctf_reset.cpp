@@ -214,21 +214,6 @@ namespace vpp_mctf_reset
         SetFrameAllocator();
         SetHandle();
 
-        mfxExtOpaqueSurfaceAlloc* pOSA = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            QueryIOSurf();
-
-            m_request[0].NumFrameMin = m_request[0].NumFrameSuggested = pOSA->In.NumSurface;
-            m_request[1].NumFrameMin = m_request[1].NumFrameSuggested = pOSA->Out.NumSurface;
-        }
-
-        if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            m_pSurfPoolIn->AllocOpaque(m_request[0], *pOSA);
-        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            m_pSurfPoolOut->AllocOpaque(m_request[1], *pOSA);
-
         g_tsStatus.expect(MFX_ERR_NONE);
         Init(m_session, &m_par);
 

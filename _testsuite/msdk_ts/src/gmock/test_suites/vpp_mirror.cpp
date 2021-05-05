@@ -32,7 +32,6 @@ private:
     {
         MFX_PAR = 1,
         EXTBUFF_VPP_MIRRORING,
-        ALLOC_OPAQUE
     };
 
     struct tc_struct
@@ -77,13 +76,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
         {EXTBUFF_VPP_MIRRORING, &tsStruct::mfxExtVPPMirroring.Type, MFX_MIRRORING_HORIZONTAL}}
     },
-    {/*04*/ MFX_ERR_NONE, ALLOC_OPAQUE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-        {EXTBUFF_VPP_MIRRORING, &tsStruct::mfxExtVPPMirroring.Type, MFX_MIRRORING_HORIZONTAL}}
-    },
-
     /*  bad parameters test cases */
-    {/*05*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*04*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
         {EXTBUFF_VPP_MIRRORING, &tsStruct::mfxExtVPPMirroring.Type, MFX_MIRRORING_HORIZONTAL + 100}}
     },
@@ -116,21 +110,6 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(&ext_buffer_mirroring, EXTBUFF_VPP_MIRRORING);
     ext_buffers.push_back((mfxExtBuffer*)&ext_buffer_mirroring);
 
-    if (mode == ALLOC_OPAQUE) {
-        mfxExtOpaqueSurfaceAlloc osa;
-        memset(&osa, 0, sizeof(mfxExtOpaqueSurfaceAlloc));
-        osa.Header.BufferId = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION;
-        osa.Header.BufferSz = sizeof(mfxExtOpaqueSurfaceAlloc);
-        QueryIOSurf();
-
-        if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            m_spool_in.AllocOpaque(m_request[0], osa);
-        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            m_spool_out.AllocOpaque(m_request[1], osa);
-
-        ext_buffers.push_back((mfxExtBuffer*)&osa);
-    }
-
     m_par.NumExtParam = (mfxU16)ext_buffers.size();
     m_par.ExtParam = &ext_buffers[0];
 
@@ -146,7 +125,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         // run VPP and check its behaviour
         g_tsStatus.expect(MFX_ERR_NONE);
-        if (mode != ALLOC_OPAQUE) AllocSurfaces();
+        AllocSurfaces();
         ProcessFrames(10);
     }
 

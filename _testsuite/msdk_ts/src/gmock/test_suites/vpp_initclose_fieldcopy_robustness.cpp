@@ -81,30 +81,17 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD},
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*02*/ FIELDCOPY_FIRST, {
-        {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
-        {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD},
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}
-    },
-
-    {/*03*/ FIELDCOPY_RESET, {
+    {/*02*/ FIELDCOPY_RESET, {
         {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD},
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*04*/ FIELDCOPY_RESET, {
+    {/*03*/ FIELDCOPY_RESET, {
         {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD},
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
-    },
-    {/*05*/ FIELDCOPY_RESET, {
-        {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
-        {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {FCOPY, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD},
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}
     },
 };
 
@@ -137,16 +124,7 @@ int TestSuite::RunTest(unsigned int id)
 
         Init();
 
-        if (m_par.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
-        {
-            mfxExtOpaqueSurfaceAlloc& osa = m_par;
-            m_pSurfPoolIn->AllocOpaque(m_request[0], osa);
-            m_pSurfPoolOut->AllocOpaque(m_request[1], osa);
-        }
-        else
-        {
-            AllocSurfaces();
-        }
+        AllocSurfaces();
 
         for(mfxU8 i = 0; i < frame_number; i++)
         {

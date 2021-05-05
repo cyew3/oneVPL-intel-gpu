@@ -126,6 +126,9 @@ static const tsStruct::Field* ChromaFormat(&tsStruct::mfxVideoParam.mfx.FrameInf
 static const tsStruct::Field* InitialDelayInKB(&tsStruct::mfxVideoParam.mfx.InitialDelayInKB);
 static const tsStruct::Field* TargetKbps(&tsStruct::mfxVideoParam.mfx.TargetKbps);
 static const tsStruct::Field* MaxKbps(&tsStruct::mfxVideoParam.mfx.MaxKbps);
+static const tsStruct::Field* IOPattern(&tsStruct::mfxVideoParam.IOPattern);
+
+
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {//  id   component     codec          Query()   Init()    Parameters to set                            Additional parameters to set
@@ -225,6 +228,19 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*35 / 55*/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {RateCtrlMthd,  16, true}, set_brc_params},
     {/*36 / 56*/ ENCODE, MFX_CODEC_HEVC,    E_UNSPRT, E_INVLID, {RateCtrlMthd,  16, true}, set_brc_params },
     {/*37 / 57*/ ENCODE, MFX_CODEC_VP9,     E_UNSPRT, E_INVLID, {RateCtrlMthd,  16, true}, set_brc_params },
+
+    {/*58*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY , true} },
+    {/*59*/ ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY , true} },
+    {/*60*/ ENCODE, MFX_CODEC_HEVC,  E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY , true} },
+    {/*61*/ ENCODE, MFX_CODEC_VP9,   E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY, true} },
+
+    {/*03*/ DECODE, MFX_CODEC_AVC,    E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY , true} },
+    {/*04*/ DECODE, MFX_CODEC_MPEG2,  E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY , true} },
+    {/*05*/ DECODE, MFX_CODEC_VC1,    E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY , true} },
+    {/*06*/ DECODE, MFX_CODEC_JPEG,   E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY , true} },
+
+
+    {/*63*/ VPP,    0,               E_UNSPRT, E_INVLID, {IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY, true} },
 
 
 
