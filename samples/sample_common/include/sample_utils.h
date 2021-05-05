@@ -399,6 +399,9 @@ template<>struct mfx_ext_buffer_id<mfxExtHEVCTiles> {
 template<>struct mfx_ext_buffer_id<mfxExtVP9Param> {
     enum {id = MFX_EXTBUFF_VP9_PARAM};
 };
+template<>struct mfx_ext_buffer_id<mfxExtAV1Param> {
+    enum {id = MFX_EXTBUFF_AV1_PARAM};
+};
 template<>struct mfx_ext_buffer_id<mfxExtVideoSignalInfo> {
     enum {id = MFX_EXTBUFF_VIDEO_SIGNAL_INFO};
 };
@@ -709,6 +712,7 @@ private:
             MFX_EXTBUFF_BRC,
             MFX_EXTBUFF_HEVC_PARAM,
             MFX_EXTBUFF_VP9_PARAM,
+            MFX_EXTBUFF_AV1_PARAM,
 #if !defined(MFX_ONEVPL)
             MFX_EXTBUFF_FEI_PARAM,
             MFX_EXTBUFF_FEI_PPS,
