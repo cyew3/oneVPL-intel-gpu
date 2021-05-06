@@ -629,6 +629,9 @@ static mfxU32 DXGItoMFX(DXGI_FORMAT format)
     case DXGI_FORMAT_R8G8B8A8_UNORM:
         return MFX_FOURCC_BGR4;
 
+    case DXGI_FORMAT_R10G10B10A2_UNORM:
+        return MFX_FOURCC_A2RGB10;
+
     case DXGI_FORMAT_AYUV:
         return MFX_FOURCC_AYUV;
 
