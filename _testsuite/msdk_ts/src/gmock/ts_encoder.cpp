@@ -697,7 +697,7 @@ mfxStatus tsVideoEncoder::GetVACaps(VADisplay& device, void *pCaps, mfxU32 *pCap
 
         hevc_caps->VCMBitRateControl =
             attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM ? 1 : 0; //Video conference mode
-        hevc_caps->RollingIntraRefresh = (attrs[idx_map[VAConfigAttribEncIntraRefresh]].value != VA_ATTRIB_NOT_SUPPORTED);
+        hevc_caps->RollingIntraRefresh = attrs[idx_map[VAConfigAttribEncIntraRefresh]].value & (~VA_ATTRIB_NOT_SUPPORTED) ? 1 : 0;
         if (attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value != VA_ATTRIB_NOT_SUPPORTED)
             hevc_caps->UserMaxFrameSizeSupport = attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value;
         hevc_caps->MBBRCSupport = 1;
