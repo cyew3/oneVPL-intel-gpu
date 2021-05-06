@@ -582,6 +582,7 @@ typedef struct mfxFrameSurfaceInterface {
      MFX_ERR_NULL_PTR           If interface or surface is NULL. \n
      MFX_ERR_UNSUPPORTED        If requested interface is not supported. \n
      MFX_ERR_NOT_IMPLEMENTED    If requested interface is not implemented. \n
+     MFX_ERR_NOT_INITIALIZED    If requested interface is not available (not created or already deleted). \n
      MFX_ERR_UNKNOWN            Any internal error.
     */
     mfxStatus           (MFX_CDECL *QueryInterface)(mfxFrameSurface1* surface, mfxGUID guid, mfxHDL* iface); 
