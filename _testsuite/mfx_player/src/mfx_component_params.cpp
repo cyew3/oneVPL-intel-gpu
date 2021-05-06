@@ -62,8 +62,7 @@ mfxStatus ComponentParams::CorrectParams()
 {
     mfxIMPL impl;
     MFX_CHECK_POINTER(m_pSession);
-    //query implementation set by mfx_application, not real one
-    MFX_CHECK_STS(m_pSession->QueryIMPLExternal(&impl));
+    MFX_CHECK_STS(m_pSession->QueryIMPL(&impl));
 
     mfxU32 impl_pure = impl & ~(-MFX_IMPL_VIA_ANY);
     mfxU32 via = impl & (-MFX_IMPL_VIA_ANY);
