@@ -1727,12 +1727,16 @@ typedef struct {
        @note Not all codecs and implementations support this value. Use the Query API function to check if this feature is supported.
     */
     mfxU16      EnableNalUnitType;
-    /*!
-       Turn OFF to prevent Adaptive marking of Long Term Reference Frames when using ExtBRC. When set to ON and using ExtBRC, encoders will mark,
-       modify, or remove LTR frames based on encoding parameters and content properties. The application must set each input frame's
-       mfxFrameData::FrameOrder for correct operation of LTR.
-    */
-    mfxU16      ExtBrcAdaptiveLTR;         /* Tri-state option for ExtBRC. */
+
+    union {
+        mfxU16      ExtBrcAdaptiveLTR; /* Deprecated */
+        
+        /*!
+            If this flag is set to ON, encoder will mark, modify, or remove LTR frames based on encoding parameters and content          
+            properties. Turn OFF to prevent Adaptive marking of Long Term Reference Frames. 
+        */
+        mfxU16      AdaptiveLTR;
+    };
     /*!
        If this flag is set to ON, encoder adaptively selects one of implementation-defined quantization matrices for each frame.
        Non-default quantization matrices aim to improve subjective visual quality under certain conditions.
@@ -1741,8 +1745,13 @@ typedef struct {
        This parameter is valid only during initialization.
     */
     mfxU16      AdaptiveCQM;
-
-    mfxU16      reserved[162];
+    /*!
+       If this flag is set to ON, encoder adaptively selects list of reference frames to imrove encoding quality.
+       Enabling of the flag can increase computation complexity and introduce additional delay.
+       If this flag is set to OFF, regular reference frames are used for encoding.
+    */
+    mfxU16      AdaptiveRef;
+    mfxU16      reserved[161];
 } mfxExtCodingOption3;
 MFX_PACK_END()
 
