@@ -7,35 +7,70 @@ target_include_directories(vc1_dec
 
 target_sources(vc1_dec
   PRIVATE
+    src/umc_vc1_choose_table.cpp
+    src/umc_vc1_deblock.cpp
+    src/umc_vc1_deblock_adv.cpp
+    src/umc_vc1_deblock_com.cpp
     src/umc_vc1_dec_bitplane.cpp
+    src/umc_vc1_dec_blk.cpp
+    src/umc_vc1_dec_blk_adv.cpp
+    src/umc_vc1_dec_blk_com.cpp
     src/umc_vc1_dec_bpic.cpp
     src/umc_vc1_dec_bpic_adv.cpp
+    src/umc_vc1_dec_cbp.cpp
+    src/umc_vc1_dec_debug.cpp
     src/umc_vc1_dec_frame_descr.cpp
     src/umc_vc1_dec_frame_va.cpp
+    src/umc_vc1_dec_intens_comp_tbl.cpp
     src/umc_vc1_dec_ipic.cpp
     src/umc_vc1_dec_ipic_adv.cpp
+    src/umc_vc1_dec_job.cpp
+    src/umc_vc1_dec_mb_bpic.cpp
+    src/umc_vc1_dec_mb_bpic_adv.cpp
+    src/umc_vc1_dec_mb_com.cpp
+    src/umc_vc1_dec_mb_interpolate.cpp
+    src/umc_vc1_dec_mb_interpolate_adv.cpp
+    src/umc_vc1_dec_mb_interpolate_com.cpp
+    src/umc_vc1_dec_mb_ipic.cpp
+    src/umc_vc1_dec_mb_ipic_adv.cpp
+    src/umc_vc1_dec_mb_ppic.cpp
+    src/umc_vc1_dec_mb_ppic_adv.cpp
+    src/umc_vc1_dec_mc.cpp
+    src/umc_vc1_dec_mv.cpp
+    src/umc_vc1_dec_mv_adv.cpp
+    src/umc_vc1_dec_mv_com.cpp
     src/umc_vc1_dec_pic_com.cpp
     src/umc_vc1_dec_pic_com_adv.cpp
     src/umc_vc1_dec_ppic.cpp
     src/umc_vc1_dec_ppic_adv.cpp
+    src/umc_vc1_dec_run_level_tbl.cpp
     src/umc_vc1_dec_seq.cpp
     src/umc_vc1_dec_skipping.cpp
     src/umc_vc1_dec_task_store.cpp
+    src/umc_vc1_dec_thread.cpp
     src/umc_vc1_dec_vopdq.cpp
     src/umc_vc1_huffman.cpp
+    src/umc_vc1_smoothing.cpp
+    src/umc_vc1_smoothing_adv.cpp
     src/umc_vc1_video_decoder.cpp
+    src/umc_vc1_video_decoder_sw.cpp
 
     include/umc_vc1_dec_debug.h
     include/umc_vc1_dec_exception.h
     include/umc_vc1_dec_frame_descr.h
     include/umc_vc1_dec_frame_descr_va.h
+    include/umc_vc1_dec_intens_comp_tbl.h
+    include/umc_vc1_dec_job.h
+    include/umc_vc1_dec_run_level_tbl.h
     include/umc_vc1_dec_seq.h
     include/umc_vc1_dec_skipping.h
     include/umc_vc1_dec_task.h
     include/umc_vc1_dec_task_store.h
+    include/umc_vc1_dec_thread.h
     include/umc_vc1_dec_va_defs.h
     include/umc_vc1_huffman.h
     include/umc_vc1_video_decoder.h
+    include/umc_vc1_video_decoder_sw.h
 )
 
 target_link_libraries(vc1_dec

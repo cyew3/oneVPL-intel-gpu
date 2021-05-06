@@ -42,6 +42,10 @@
 #include "umc_frame_data.h"
 #include "umc_h265_debug.h"
 
+#ifndef MFX_VA
+#include "umc_h265_segment_decoder_mt.h"
+#endif
+
 #include "mfx_common.h" //  for trace routines
 
 namespace UMC_HEVC_DECODER
@@ -715,6 +719,34 @@ UMC::Status TaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
     m_isInitialized = true;
 
     return UMC::UMC_OK;
+}
+
+
+void TaskSupplier_H265::CreateTaskBroker()
+{
+#ifdef MFX_VA
+
+#else
+    switch(m_iThreadNum)
+    {
+    case 1:
+        m_pTaskBroker = new TaskBrokerSingleThread_H265(this);
+        break;
+    case 4:
+    case 3:
+    case 2:
+        m_pTaskBroker = new TaskBrokerTwoThread_H265(this);
+        break;
+    default:
+        m_pTaskBroker = new TaskBrokerTwoThread_H265(this);
+        break;
+    };
+
+    for (uint32_t i = 0; i < m_iThreadNum; i += 1)
+    {
+        m_pSegmentDecoder[i] = new H265SegmentDecoderMultiThreaded(m_pTaskBroker);
+    }
+#endif
 }
 
 // Initialize what is necessary to decode bitstream header before the main part is initialized
@@ -2388,9 +2420,38 @@ H265DecoderFrame* TaskSupplier_H265::AddSelfReferenceFrame(H265Slice* slice)
         slice->GetCurrentFrame();
 }
 
+#ifndef MFX_VA
+// Initialize array of POC deltas from current POC to reference frames in DPB
+void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * frame)
+{
+    int32_t max_index = 0;
+    for (const H265DecoderFrame *curr = dpb->head(); curr; curr = curr->future())
+    {
+        if (curr->GetFrameMID() > max_index)
+            max_index = curr->GetFrameMID();
+    }
+
+    frame->getCD()->m_refFrameInfo.resize(max_index + 1);
+
+    for (const H265DecoderFrame *curr = dpb->head(); curr; curr = curr->future())
+    {
+        if (curr->GetFrameMID() < 0)
+            continue;
+
+        int32_t POCDelta = frame->m_PicOrderCnt - curr->m_PicOrderCnt;
+        frame->getCD()->m_refFrameInfo[curr->GetFrameMID()].pocDelta = POCDelta;
+        frame->getCD()->m_refFrameInfo[curr->GetFrameMID()].flags = curr->isLongTermRef() ? COL_TU_LT_INTER : COL_TU_ST_INTER;
+    }
+}
+#endif
+
 // Mark frame as full with slices
 void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
 {
+#ifndef MFX_VA
+    ViewItem_H265 *pView = GetView();
+    SetDeltaPocs(pView->pDPB.get(), pFrame);
+#endif
     pFrame->SetFullFrame(true);
 
     if (!pFrame->GetAU()->GetSlice(0)) // seems that it was skipped and slices was dropped
@@ -2439,6 +2500,18 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
         DEBUG_PRINT((VM_STRING("Skip frame ForCRAorBLA - %s\n"), GetFrameInfoString(pFrame)));
         return;
     }
+
+#ifndef MFX_VA
+    if (slicesInfo->GetSlice(0)->GetFirstMB())
+    {
+        H265Task task(0);
+        task.m_iFirstMB = 0;
+        task.m_iMBToProcess = slicesInfo->GetSlice(0)->GetFirstMB();
+        task.m_pSlice = slicesInfo->GetSlice(0);
+        task.m_pSlicesInfo = slicesInfo;
+        m_pSegmentDecoder[0]->RestoreErrorRect(&task);
+    }
+#endif
 
     slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_FILLED);
 }
@@ -2518,7 +2591,11 @@ UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, mfxS
     pFrame->allocate(frmData, &info);
     pFrame->m_index = frmMID;
 
+#ifndef MFX_VA
+    pFrame->allocateCodingData(pSeqParamSet, pPicParamSet);
+#else
     (void)pPicParamSet;
+#endif
 
     return UMC::UMC_OK;
 }
@@ -2586,6 +2663,14 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     {
         pFrame->m_DisplayPictureStruct_H265 = DPS_FRAME_H265;
     }
+
+#ifndef MFX_VA
+    //fill chroma planes in case of 4:0:0
+    if (pFrame->m_chroma_format == 0)
+    {
+        pFrame->DefaultFill(true);
+    }
+#endif
 
     InitFrameCounter(pFrame, pSlice);
     return pFrame;
@@ -2734,8 +2819,12 @@ int32_t CalculateDPBSize(uint32_t profile_idc, uint32_t &level_idc, int32_t widt
 
         uint32_t MaxLumaPs = lumaPsArray[index];
         uint32_t const maxDpbPicBuf =
+#ifndef MFX_VA
+            profile_idc != H265_PROFILE_SCC ? 6 : 7;
+#else
             6;//HW handles second version of current reference (twoVersionsOfCurrDecPicFlag) itself
         (void)profile_idc;
+#endif
 
         uint32_t PicSizeInSamplesY = width * height;
 

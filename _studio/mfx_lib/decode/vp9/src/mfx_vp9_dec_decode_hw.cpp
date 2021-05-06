@@ -47,7 +47,9 @@
 //#define VP9_STATUS_REPORTING_ENABLED //need to implement different code for Intel/MSFT guids, disable for now
 #endif
 
+#if defined(MFX_VA)
 #include "umc_va_video_processing.h"
+#endif
 
 #include "libmfx_core_interface.h"
 using namespace UMC_VP9_DECODER;

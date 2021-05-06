@@ -152,6 +152,23 @@ VC1Status DecodePictureLayer_ProgressiveIpicture(VC1Context* pContext)
     //If TRANSDCTAB = 1 then the high motion huffman table is used.
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);         //TRANSDCTAB
 
+#ifdef ALLOW_SW_VC1_FALLBACK
+    pContext->interp_params_luma.roundControl = seqLayerHeader->RNDCTRL;
+    pContext->interp_params_chroma.roundControl = seqLayerHeader->RNDCTRL;
+
+    //Whether the index is specified at the picture or macroblock
+    //level is signaled by the value of DCTACMBF specified in the
+    //picture layer (see section 4.1.1.2 for a description). If the
+    //index is specified in the picture header, then the value decoded
+    //from the DCTACFRM2 field is used as the coding set index for Y
+    //blocks and the value decoded from the DCTACFRM field is used as
+    //the coding set index for Cr and Cb blocks. If the index is signaled
+    //at the macroblock level then the value decoded from the DCTTAB field
+    //is used as the index for both inter and intra sets.
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);         //TRANSDCTAB
+#endif
+
     return vc1Res;
 }
 

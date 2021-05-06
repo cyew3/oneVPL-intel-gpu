@@ -217,6 +217,8 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     }
     else
     {
+#if defined (MFX_VA)
+
         VideoDECODEMJPEGBase_HW * dec = new VideoDECODEMJPEGBase_HW;
         decoder.reset(dec);
         bool usePostProcessing = GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
@@ -251,6 +253,10 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
                 MFX_CHECK_STS(ex.sts);
             }
         }
+
+#else // Not VA
+        return MFX_ERR_UNSUPPORTED;
+#endif
     }
 
     decoder->m_vPar = m_vPar;
@@ -688,6 +694,8 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
     }
     else
     {
+#if defined (MFX_VA)
+
         eMFXHWType type = MFX_HW_UNKNOWN;
         if (platform == MFX_PLATFORM_HARDWARE)
         {
@@ -714,6 +722,10 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
         }
         else
             request->Type |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+
+#else
+        return MFX_ERR_UNSUPPORTED;
+#endif
     }
 
     return MFX_ERR_NONE;
@@ -1280,6 +1292,7 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
             return MFX_PLATFORM_SOFTWARE;
         }
 
+#if defined (MFX_VA)
         if (MFX_ERR_NONE != core->IsGuidSupported(sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT, par))
         {
             return MFX_PLATFORM_SOFTWARE;
@@ -1297,7 +1310,7 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
         {
             needVpp = true;
         }
-
+#if defined (MFX_VA)
         mfxFrameAllocRequest request;
         memset(&request, 0, sizeof(request));
         request.Info = par->mfx.FrameInfo;
@@ -1314,6 +1327,10 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
                 return MFX_PLATFORM_SOFTWARE;
             }
         }
+#endif
+#else
+        return MFX_PLATFORM_SOFTWARE;
+#endif
     }
 
     return platform;
@@ -1755,6 +1772,7 @@ mfxStatus VideoDECODEMJPEGBase::GetVideoParam(mfxVideoParam *par, UMC::MJPEGVide
     return MFX_ERR_NONE;
 }
 
+#if defined (MFX_VA)
 VideoDECODEMJPEGBase_HW::VideoDECODEMJPEGBase_HW()
 {
     m_pMJPEGVideoDecoder.reset(new UMC::MJPEGVideoDecoderMFX_HW()); // HW
@@ -2647,6 +2665,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::CompleteTask(void *pParam, mfxStatus )
     delete (ThreadTaskInfo *)pParam;
     return MFX_ERR_NONE;
 }
+#endif
 
 #ifdef MFX_ENABLE_JPEG_SW_FALLBACK
 VideoDECODEMJPEGBase_SW::VideoDECODEMJPEGBase_SW()

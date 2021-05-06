@@ -37,6 +37,10 @@
 
 #include "mfx_task.h"
 
+#ifdef MFX_ENABLE_WATERMARK
+#include "watermark.h"
+#endif
+
 namespace UMC
 {
     class VideoData;
@@ -49,7 +53,12 @@ namespace UMC_HEVC_DECODER
     class H265DecoderFrame;
 }
 
+
+#if defined (MFX_VA)
 typedef UMC_HEVC_DECODER::VATaskSupplier  MFX_AVC_Decoder_H265;
+#else
+typedef UMC_HEVC_DECODER::MFXTaskSupplier_H265 MFX_AVC_Decoder_H265;
+#endif
 
 class VideoDECODE;
 // HEVC decoder interface class
@@ -165,6 +174,9 @@ protected:
     };
 
     bool m_isFirstRun;
+#ifdef MFX_ENABLE_WATERMARK
+    Watermark *m_watermark;
+#endif
 };
 
 #endif // _MFX_H265_DEC_DECODE_H_

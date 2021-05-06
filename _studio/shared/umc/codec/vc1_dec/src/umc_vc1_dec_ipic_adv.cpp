@@ -93,6 +93,11 @@ VC1Status DecodePictHeaderParams_ProgressiveIpicture_Adv(VC1Context* pContext)
     //macroblock quantization
     vc1Res = VOPDQuant(pContext);
 
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
+#endif
+
     return vc1Res;
 }
 
@@ -164,6 +169,11 @@ VC1Status DecodePictHeaderParams_InterlaceIpicture_Adv(VC1Context* pContext)
 
     //macroblock quantization
     vc1Res = VOPDQuant(pContext);
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
+#endif
 
     return vc1Res;
 }
@@ -271,6 +281,66 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
     //macroblock quantization
     vc1Res = VOPDQuant(pContext);
 
+#ifdef ALLOW_SW_VC1_FALLBACK
+    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM2);
+    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);        //TRANSDCTAB
+#endif
+
     return vc1Res;
 }
+
+#ifdef ALLOW_SW_VC1_FALLBACK
+VC1Status Decode_InterlaceFieldIpicture_Adv(VC1Context* pContext)
+{
+    int32_t i, j;
+    VC1Status vc1Res = VC1_OK;
+    VC1SingletonMB* sMB = pContext->m_pSingleMB;
+
+    DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(pContext);
+
+    if (pContext->m_picLayerHeader->is_slice)
+        return vc1Res;
+
+    for(i = 0; i < sMB->widthMB;i++)
+    {
+        for (j = 0; j < (sMB->heightMB/2); j++)
+        {
+            vc1Res = MBLayer_Field_InterlaceIpicture(pContext);
+            if(vc1Res != VC1_OK)
+            {
+                VM_ASSERT(0);
+                break;
+            }
+
+            sMB->m_currMBXpos++;
+            pContext->m_pBlock += 8*8*6;
+
+            pContext->m_pCurrMB++;
+            pContext->CurrDC++;
+        }
+        sMB->m_currMBXpos = 0;
+        sMB->m_currMBYpos++;
+        sMB->slice_currMBYpos++;
+        pContext->CurrDC += (sMB->MaxWidthMB - sMB->widthMB);
+        pContext->m_pBlock += (sMB->MaxWidthMB - sMB->widthMB)*8*8*6;
+    }
+
+    if ((pContext->m_seqLayerHeader.LOOPFILTER))
+    {
+        uint32_t deblock_offset = 0;
+        if (!pContext->DeblockInfo.is_last_deblock)
+            deblock_offset = 1;
+
+        pContext->DeblockInfo.start_pos =
+            pContext->DeblockInfo.start_pos+pContext->DeblockInfo.HeightMB-deblock_offset;
+        pContext->DeblockInfo.HeightMB = sMB->slice_currMBYpos+1;
+
+        pContext->DeblockInfo.is_last_deblock = 1;
+
+        Deblocking_ProgressiveIpicture_Adv(pContext);
+    }
+
+    return vc1Res;
+};
+#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 #endif //MFX_ENABLE_VC1_VIDEO_DECODE

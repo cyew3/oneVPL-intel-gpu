@@ -341,7 +341,13 @@ Status VC1VideoDecoder::ContextAllocation(uint32_t mbWidth,uint32_t mbHeight)
         m_pContext->m_vlcTbl = (VC1VLCTables*)ptr;
 
         ptr += mfx::align2_value(sizeof(VC1VLCTables));
+#ifdef ALLOW_SW_VC1_FALLBACK
+        m_pContext->savedMV_Curr = (int16_t*)ptr;
+#endif
         ptr += mfx::align2_value(sizeof(int16_t)*mbHeight*mbWidth*2*2);
+#ifdef ALLOW_SW_VC1_FALLBACK
+        m_pContext->savedMVSamePolarity_Curr = ptr;
+#endif
 
         ptr +=  mfx::align2_value(mbHeight*mbWidth);
         m_pHeap = (VC1TSHeap*)ptr;

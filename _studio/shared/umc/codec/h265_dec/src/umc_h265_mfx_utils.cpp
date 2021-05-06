@@ -33,7 +33,9 @@
 #include "mfxpavp.h"
 #endif
 
+#if defined (MFX_VA)
 #include "umc_va_dxva2.h"
+#endif
 
 #if defined (MFX_VA_WIN)
 #include "libmfx_core_hw.h"
@@ -114,6 +116,7 @@ struct checker
 };
 #endif
 
+#if defined (MFX_VA)
 inline
 bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
 {
@@ -166,6 +169,7 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
     return false;
 #endif
 }
+#endif
 
 // Returns implementation platform
 eMFXPlatform GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
@@ -173,19 +177,29 @@ eMFXPlatform GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
     if (!par)
         return MFX_PLATFORM_SOFTWARE;
 
+#if !defined (MFX_VA) && defined (AS_HEVCD_PLUGIN)
+    (void)core;
+    //we sure that plug-in implementation is SW
+    return MFX_PLATFORM_SOFTWARE;
+#else
     eMFXPlatform platform = core->GetPlatformType();
     eMFXHWType typeHW = MFX_HW_UNKNOWN;
+#if defined (MFX_VA)
     typeHW = core->GetHWType();
+#endif
 
     if (IsNeedPartialAcceleration_H265(par, typeHW) && platform != MFX_PLATFORM_SOFTWARE)
     {
         return MFX_PLATFORM_SOFTWARE;
     }
 
+#if defined (MFX_VA)
     if (platform != MFX_PLATFORM_SOFTWARE && !CheckGUID(core, typeHW, par))
         platform = MFX_PLATFORM_SOFTWARE;
+#endif
 
     return platform;
+#endif
 }
 
 bool IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVideoParam * par)
@@ -213,6 +227,9 @@ mfxU16 QueryMaxProfile(eMFXHWType type)
 {
     (void)type;
 
+#if !defined(MFX_VA)
+    return MFX_PROFILE_HEVC_REXT;
+#else
     if (type < MFX_HW_SCL)
         return MFX_PROFILE_HEVC_MAIN;
     else if (type < MFX_HW_ICL)
@@ -224,6 +241,7 @@ mfxU16 QueryMaxProfile(eMFXHWType type)
         return MFX_PROFILE_HEVC_SCC;
 #else
         return MFX_PROFILE_HEVC_REXT;
+#endif
 #endif
 }
 
@@ -252,7 +270,13 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
         { MFX_PROFILE_HEVC_MAIN,   {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1,                      -1 } },
         { MFX_PROFILE_HEVC_MAIN10, {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1,                      -1 } },
         { MFX_PROFILE_HEVC_MAINSP, {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1,                      -1 } },
+
+#if !defined(MFX_VA)
+        { MFX_PROFILE_HEVC_REXT,   { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422,                      -1 } },
+#else
         { MFX_PROFILE_HEVC_REXT,   {                      -1, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444 } },
+#endif
+
 #if (MFX_VERSION >= 1032)
         { MFX_PROFILE_HEVC_SCC,    {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1, MFX_CHROMAFORMAT_YUV444 } },
 #endif
@@ -338,7 +362,12 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     mfxU32 const map[][4] =
     {
             /* 8 bit */      /* 10 bit */
-#if   (MFX_VERSION >= 1031)
+#ifndef MFX_VA
+        { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //400
+        { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
+        { MFX_FOURCC_NV16, MFX_FOURCC_P210,               0, 0 }, //422
+        {               0,               0,               0, 0 }, //444
+#elif (MFX_VERSION >= 1031)
         {               0,               0,               0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, MFX_FOURCC_P016, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, MFX_FOURCC_Y216, 0 }, //422
@@ -1085,7 +1114,9 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
         if (GetPlatform_H265(core, out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
         {
             VM_ASSERT(GetPlatform_H265(core, out) == MFX_PLATFORM_SOFTWARE);
+#ifdef MFX_VA
             sts = MFX_ERR_UNSUPPORTED;
+#endif
         }
     }
     else

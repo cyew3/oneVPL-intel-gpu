@@ -27,12 +27,83 @@
 namespace UMC_HEVC_DECODER
 {
 
+#ifndef MFX_VA
+// Initialize tiles and slices threading information
+void H265DecoderFrameInfo::FillTileInfo()
+{
+    H265Slice * slice = GetAnySlice();
+    const H265PicParamSet * pps = slice->GetPicParam();
+    uint32_t tilesCount = pps->getNumTiles();
+    m_tilesThreadingInfo.resize(tilesCount);
+
+    for (uint32_t i = 0; i < tilesCount; i++)
+    {
+        TileThreadingInfo & info = m_tilesThreadingInfo[i];
+        info.processInfo.firstCU = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].firstCUAddr);
+        info.processInfo.Initialize(m_tilesThreadingInfo[i].processInfo.firstCU, pps->tilesInfo[i].width);
+        info.processInfo.maxCU = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].endCUAddr);
+        info.m_context = 0;
+    }
+
+    if (!m_hasTiles)
+    {
+        for (uint32_t i = 0; i < LAST_PROCESS_ID; i++)
+        {
+            m_curCUToProcess[i] = m_pSliceQueue[0]->GetFirstMB(); // it can be more then 0
+        }
+    }
+
+    if (!IsNeedSAO())
+    {
+        m_curCUToProcess[SAO_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
+    }
+
+    if (!IsNeedDeblocking())
+    {
+        m_curCUToProcess[DEB_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
+    }
+
+    if (!m_hasTiles)
+    {
+        bool deblStopped = !IsNeedDeblocking();
+        for (int32_t i = 0; i < m_SliceCount; i ++)
+        {
+            H265Slice *slice = m_pSliceQueue[i];
+
+            slice->processInfo.maxCU = slice->m_iMaxMB;
+
+            if (slice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
+            {
+                slice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
+                if (!deblStopped)
+                    m_curCUToProcess[DEB_PROCESS_ID] = slice->m_iMaxMB;
+            }else
+                deblStopped = true;
+        }
+    }
+}
+#endif
+
 bool H265DecoderFrameInfo::IsCompleted() const
 {
     if (GetStatus() == H265DecoderFrameInfo::STATUS_COMPLETED)
         return true;
 
+#ifndef MFX_VA
+    if (!m_pFrame->getCD())
+        return false;
+
+    int32_t maxCUAddr = m_pFrame->getCD()->m_NumCUsInFrame;
+    for (int32_t i = 0; i < LAST_PROCESS_ID; i++)
+    {
+        if (m_curCUToProcess[i] < maxCUAddr)
+            return false;
+    }
+
+    return true;
+#else
     return false;
+#endif
 }
 
 void H265DecoderFrameInfo::Reset()
@@ -40,6 +111,12 @@ void H265DecoderFrameInfo::Reset()
     Free();
 
     m_hasTiles = false;
+
+#ifndef MFX_VA
+    memset(m_curCUToProcess, 0, sizeof(m_curCUToProcess));
+    memset(m_processInProgress, 0, sizeof(m_processInProgress));
+    m_tilesThreadingInfo.clear();
+#endif
 
     m_isNeedDeblocking = false;
     m_isNeedSAO = false;

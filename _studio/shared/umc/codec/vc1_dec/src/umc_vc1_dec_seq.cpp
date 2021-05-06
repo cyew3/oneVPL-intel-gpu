@@ -36,6 +36,10 @@
 #include "umc_vc1_common.h"
 #include "umc_structures.h"
 
+#ifdef ALLOW_SW_VC1_FALLBACK
+#include "umc_vc1_common_mvdiff_tbl.h"
+#endif
+
 using namespace UMC;
 using namespace UMC::VC1Common;
 
@@ -525,6 +529,134 @@ double MapFrameRateIntoUMC(uint32_t ENR,uint32_t EDR, uint32_t& FCode)
     return frate;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef ALLOW_SW_VC1_FALLBACK
+VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
+    uint32_t scale,
+    uint32_t shift)
+{
+    //uint32_t index = pContext->m_frmBuff.m_iPrevIndex;
+    /*scale, shift parameters are in [0,63]*/
+    int32_t i;
+    int32_t iscale = (scale) ? scale + 32 : -64;
+    int32_t ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
+    int32_t z = (scale) ? -1 : 2;
+    int32_t j;
+
+
+    ishift += (shift>31) ? z << 12 : 0;
+#ifdef VC1_DEBUG_ON
+    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+        VM_STRING("shift=%d, scale=%d, iscale=%d, ishift=%d\n"),
+        shift, scale, iscale, ishift);
+#endif
+
+    for (i = 0; i<256; i++)
+    {
+        j = (i*iscale + ishift + 32) >> 6;
+        pContext->LumaTable[0][i] = mfx::byte_clamp(j);
+        pContext->LumaTable[1][i] = mfx::byte_clamp(j);
+        j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
+        pContext->ChromaTable[0][i] = mfx::byte_clamp(j);
+        pContext->ChromaTable[1][i] = mfx::byte_clamp(j);
+
+#ifdef VC1_DEBUG_ON
+        VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+            VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
+            pContext->LumaTable[0][i], pContext->ChromaTable[0][i]);
+#endif
+    }
+
+    return VC1_OK;
+}
+
+VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
+    uint32_t scale,
+    uint32_t shift,
+    uint32_t bottom_field,
+    int32_t index)
+{
+    /*scale, shift parameters are in [0,63]*/
+    int32_t i;
+    int32_t iscale = (scale) ? scale + 32 : -64;
+    int32_t ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
+    int32_t z = (scale) ? -1 : 2;
+    int32_t j;
+    uint8_t *pY, *pU, *pV;
+    mfxSize roiSize;
+
+    roiSize.width = (pContext->m_seqLayerHeader.CODED_WIDTH + 1) << 1;
+    roiSize.height = (pContext->m_seqLayerHeader.CODED_HEIGHT + 1) << 1;
+
+    int32_t YPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
+    int32_t UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
+    int32_t VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
+
+    pY = pContext->m_frmBuff.m_pFrames[index].m_pY;
+    pU = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    pV = pContext->m_frmBuff.m_pFrames[index].m_pV;
+
+    if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+    {
+        if (bottom_field)
+        {
+            pY += YPitch;
+            pU += UPitch;
+            pV += VPitch;
+        }
+        YPitch <<= 1;
+        UPitch <<= 1;
+        VPitch <<= 1;
+
+        roiSize.height >>= 1;
+    }
+
+    ishift += (shift>31) ? z * 64 * 64 : 0;
+#ifdef VC1_DEBUG_ON
+    VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+        VM_STRING("shift=%d, scale=%d, iscale=%d, ishift=%d\n"),
+        shift, scale, iscale, ishift);
+#endif
+    uint32_t LUTindex = bottom_field + (pContext->m_picLayerHeader->CurrField << 1);
+
+    if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+    {
+        for (i = 0; i<256; i++)
+        {
+            j = (i*iscale + ishift + 32) >> 6;
+            pContext->LumaTable[LUTindex][i] = mfx::byte_clamp(j);
+            j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
+            pContext->ChromaTable[LUTindex][i] = mfx::byte_clamp(j);
+#ifdef VC1_DEBUG_ON
+            VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+                VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
+                pContext->LumaTable[LUTindex][i], pContext->ChromaTable[LUTindex][i]);
+#endif
+        }
+    }
+    else
+    {
+        for (i = 0; i<256; i++)
+        {
+            j = (i*iscale + ishift + 32) >> 6;
+            pContext->LumaTable[0][i] = mfx::byte_clamp(j);
+            pContext->LumaTable[1][i] = mfx::byte_clamp(j);
+            j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
+            pContext->ChromaTable[0][i] = mfx::byte_clamp(j);
+            pContext->ChromaTable[1][i] = mfx::byte_clamp(j);
+#ifdef VC1_DEBUG_ON
+            VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
+                VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
+                pContext->LumaTable[LUTindex][i], pContext->ChromaTable[LUTindex][i]);
+#endif
+        }
+    }
+    return VC1_OK;
+}
+#endif
+
 VC1Status MVRangeDecode(VC1Context* pContext)
 {
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
@@ -554,7 +686,10 @@ VC1Status MVRangeDecode(VC1Context* pContext)
     {
         picLayerHeader->MVRANGE = 0;
     }
-
+    
+#ifdef ALLOW_SW_VC1_FALLBACK
+    picLayerHeader->m_pCurrMVRangetbl = &VC1_MVRangeTbl[picLayerHeader->MVRANGE];
+#endif
     return VC1_OK;
 }
 

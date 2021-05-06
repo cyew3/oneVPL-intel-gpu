@@ -169,6 +169,9 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
     GetView()->dpbSize = 16;
     m_DPBSizeEx = m_iThreadNum + init->info.bitrate;
 
+#ifndef MFX_VA
+    MFX_HEVC_PP::InitDispatcher();
+#endif
     return UMC::UMC_OK;
 }
 
@@ -219,10 +222,12 @@ mfxStatus MFXTaskSupplier_H265::RunThread(mfxU32 threadNumber)
 
     if (sts == UMC::UMC_ERR_NOT_ENOUGH_DATA)
         return MFX_TASK_BUSY;
+#if defined (MFX_VA)
     else if(sts == UMC::UMC_ERR_DEVICE_FAILED)
         return MFX_ERR_DEVICE_FAILED;
     else if (sts == UMC::UMC_ERR_GPU_HANG)
         return MFX_ERR_GPU_HANG;
+#endif
 
     if (sts != UMC::UMC_OK)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
