@@ -139,7 +139,8 @@ mfxStatus ImplementationGopBased::CheckParams(mfxVideoParam* par)
         return MFX_ERR_UNSUPPORTED;
 
     if (MFX_FOURCC_NV12 != par->mfx.FrameInfo.FourCC &&
-        MFX_FOURCC_P010 != par->mfx.FrameInfo.FourCC)
+        MFX_FOURCC_P010 != par->mfx.FrameInfo.FourCC &&
+        MFX_FOURCC_RGB4 != par->mfx.FrameInfo.FourCC)
         return MFX_ERR_UNSUPPORTED;
 
     if (MFX_IOPATTERN_IN_SYSTEM_MEMORY != par->IOPattern &&
