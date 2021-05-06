@@ -506,6 +506,11 @@ namespace hevce_query
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, MFX_TARGETUSAGE_BEST_QUALITY },
                                            { EXT_CO3, &tsStruct::mfxExtCodingOption3.NumRefActiveBL0[0], 4 },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 20 }}},
+        //Invalid GoRefDist > GopPicSize
+        {/*76*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2 },
+                                                                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 },
+                                                              }
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);

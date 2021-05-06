@@ -603,6 +603,11 @@ namespace hevce_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 20 },
             }
         },
+        //Invalid GoRefDist > GopPicSize
+        {/*112*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2 },
+                                                                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 },
+                                                               }
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
