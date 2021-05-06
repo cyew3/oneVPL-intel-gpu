@@ -2564,10 +2564,8 @@ typedef struct {
     mfxU8  EnableOrderHint;             /* tri-state option */
     mfxU8  OrderHintBits;               /* 0..8, 0 = default */
     mfxU8  DisplayFormatSwizzle;        /* 0, 1 */
-    mfxU16 Palette;                     /* tri-state option */
-    mfxU16 IBC;                         /* tri-state option */
 
-    mfxU8  reserved[56];
+    mfxU8  reserved[60];
 } mfxExtAV1AuxData;
 MFX_PACK_END()
 

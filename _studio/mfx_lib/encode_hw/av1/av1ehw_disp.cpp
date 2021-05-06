@@ -34,12 +34,10 @@
 #if !defined(MFX_VA_LINUX)
     #include "av1ehw_g12_win.h"
     #include "av1ehw_g13_win.h"
-    #include "av1ehw_g13_1_win.h"
     namespace AV1EHWDisp
     {
         namespace DG2 { using namespace AV1EHW::Windows::Gen12; };
         namespace MTL { using namespace AV1EHW::Windows::Gen13; };
-        namespace ELG { using namespace AV1EHW::Windows::Gen13_1; };
     };
 #else
     #include "av1ehw_g12_lin.h"
@@ -66,13 +64,10 @@ static ImplBase* CreateSpecific(
 #ifndef STRIP_EMBARGO
     if (hw == MFX_HW_DG2)
         impl = new AV1EHWDisp::DG2::MFXVideoENCODEAV1_HW(core, status, mode);
-#if !defined(MFX_VA_LINUX)
-    else if (hw == MFX_HW_MTL)
-        impl = new AV1EHWDisp::MTL::MFXVideoENCODEAV1_HW(core, status, mode);
-    else if (hw >= MFX_HW_ELG)
-        impl = new AV1EHWDisp::ELG::MFXVideoENCODEAV1_HW(core, status, mode);
-#else
     else if (hw >= MFX_HW_MTL)
+#if !defined(MFX_VA_LINUX)
+        impl = new AV1EHWDisp::MTL::MFXVideoENCODEAV1_HW(core, status, mode);
+#else
         status = MFX_ERR_UNSUPPORTED;
 #endif
 #endif

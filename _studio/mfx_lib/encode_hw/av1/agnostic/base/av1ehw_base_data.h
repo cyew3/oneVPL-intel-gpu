@@ -538,47 +538,6 @@ namespace Base
         uint32_t large_scale_tile;
     } FH;
 
-    inline bool FrameIsIntra(const FrameHeader& fh)
-    {
-        return (fh.frame_type == INTRA_ONLY_FRAME || fh.frame_type == KEY_FRAME);
-    }
-
-    inline void DisableLoopFilter(FH& fh)
-    {
-        // AV1 spec 5.9.11
-        fh.loop_filter_params.loop_filter_level[0] = 0;
-        fh.loop_filter_params.loop_filter_level[1] = 0;
-        fh.loop_filter_params.loop_filter_ref_deltas[INTRA_FRAME] = 1;
-        fh.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME] = 0;
-        fh.loop_filter_params.loop_filter_ref_deltas[LAST2_FRAME] = 0;
-        fh.loop_filter_params.loop_filter_ref_deltas[LAST3_FRAME] = 0;
-        fh.loop_filter_params.loop_filter_ref_deltas[BWDREF_FRAME] = 0;
-        fh.loop_filter_params.loop_filter_ref_deltas[GOLDEN_FRAME] = -1;
-        fh.loop_filter_params.loop_filter_ref_deltas[ALTREF_FRAME] = -1;
-        fh.loop_filter_params.loop_filter_ref_deltas[ALTREF2_FRAME] = -1;
-        for (int i = 0; i < MAX_MODE_LF_DELTAS; i++)
-            fh.loop_filter_params.loop_filter_mode_deltas[i] = 0;
-    }
-
-    inline void DisableCDEF(FH& fh)
-    {
-        // AV1 spec 5.9.19
-        fh.cdef_params.cdef_bits = 0;
-        fh.cdef_params.cdef_y_pri_strength[0] = 0;
-        fh.cdef_params.cdef_y_sec_strength[0] = 0;
-        fh.cdef_params.cdef_uv_pri_strength[0] = 0;
-        fh.cdef_params.cdef_uv_sec_strength[0] = 0;
-        fh.cdef_params.cdef_damping = 3;
-    }
-
-    inline void DisableLoopRestoration(FH& fh)
-    {
-        // AV1 spec 5.9.20
-        fh.lr_params.lr_type[0] = RESTORE_NONE;
-        fh.lr_params.lr_type[1] = RESTORE_NONE;
-        fh.lr_params.lr_type[2] = RESTORE_NONE;
-    }
-
     struct ObuExtensionHeader {
         uint32_t temporal_id;
         uint32_t spatial_id;

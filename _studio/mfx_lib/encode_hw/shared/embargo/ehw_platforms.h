@@ -23,5 +23,4 @@
 #define Gen12XEHP PlatformK
 #define Gen12DG2 PlatformL
 #define Gen13    PlatformM
-#define Gen13_1  PlatformO
 
