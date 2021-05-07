@@ -1194,6 +1194,24 @@ mfxStatus D3D11Encoder::Init(
         CHECK_HRES(hRes);
     }
 
+    {
+        // Query the version of ddi
+        mfxU32 ddi_version;
+        D3D11_VIDEO_DECODER_EXTENSION ext = {};
+        ext.Function = ENCODE_QUERY_DRIVER_VERSION_ID;
+        ext.pPrivateOutputData = &ddi_version;
+        ext.PrivateOutputDataSize = sizeof(ddi_version);
+
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
+        CHECK_HRES(hRes);
+
+        EncodeDdiVersion* encDdiVersion = QueryCoreInterface<EncodeDdiVersion>(m_core);
+        MFX_CHECK(encDdiVersion, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        sts = encDdiVersion->SetDdiVersion(MFX_CODEC_AVC, ddi_version);
+        MFX_CHECK_STS(sts);
+    }
+
     D3DXCommonEncoder::Init(m_core);
     // [6] specific encoder caps
 
