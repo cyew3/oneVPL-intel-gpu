@@ -586,7 +586,7 @@ bool GuidProfile::isShortFormat(bool isHEVCGUID, uint32_t configBitstreamRaw)
     }
     else
     {
-        if (H264_LONG_FORMAT_SLICE_DATA == configBitstreamRaw)
+        if (H264_LONG_FORMAT_SLICE_DATA == configBitstreamRaw || H264_MVC_LONG_FORMAT_SLICE_DATA == configBitstreamRaw || H264_SVC_LONG_FORMAT_SLICE_DATA == configBitstreamRaw)
         {
             return false;
         }

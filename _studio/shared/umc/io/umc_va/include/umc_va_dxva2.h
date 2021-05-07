@@ -368,11 +368,13 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H264_VLD_SVC_BASELINE:
     case H264_VLD_SVC_HIGH:
         if (profile_flags & VA_LONG_SLICE_MODE)
-            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
+            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw) || (H264_MVC_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw) || (H264_SVC_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)
-            res = (H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
+            res = (H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw)|| (H264_MVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw) || (H264_SVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else
-            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw || H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
+            res = (H264_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw || H264_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw)||
+                  (H264_MVC_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw || H264_MVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw) ||
+                  (H264_SVC_LONG_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw || H264_SVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         break;
 
     case H265_VLD:
