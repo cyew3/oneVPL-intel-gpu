@@ -132,35 +132,19 @@ namespace hevce_reset
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY }
             }
         },
-        {/* 11*/ MFX_ERR_NONE, MFX_ERR_NONE, IOPATTERN, NO_ENCODE, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY },
-            }
-        },
-        {/* 12*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, CHANGE, 1,
-            {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
-            }
-        },
-        {/* 13*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, CHANGE, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
-            }
-        },
-        {/* 14*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, WRONG, 1,
+        {/* 11*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, WRONG, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, 0x800 }
             }
         },
         //Chroma Format
-        {/* 15*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
+        {/* 12*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 }
             }
         },
         //resolution
-        {/* 16*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
+        {/* 13*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 64 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 64 },
@@ -168,48 +152,48 @@ namespace hevce_reset
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 64 },
             }
         },
-        {/* 17*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, W_GT_MAX, 1,
+        {/* 14*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, W_GT_MAX, 1,
          },
-        {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, H_GT_MAX, 1,
+        {/* 15*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, H_GT_MAX, 1,
         },
-        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
+        {/* 16*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 25 },
             }
         },
-        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
+        {/* 17*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 },
             }
         },
         //Crops
-        {/* 21*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
+        {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 50 },
             }
         },
-        {/* 22*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
+        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 50 },
             }
         },
-        {/* 23*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
+        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 50 },
             }
         },
-        {/* 24*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
+        {/* 21*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 50 },
             }
         },
-        {/* 25*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
+        {/* 22*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 50 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 50 },
             }
         },
-        {/* 26*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
+        {/* 23*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },
@@ -217,7 +201,7 @@ namespace hevce_reset
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },
             }
         },
-        {/* 27*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
+        {/* 24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },
@@ -226,7 +210,7 @@ namespace hevce_reset
 
             }
         },
-        {/* 28*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
+        {/* 25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },
@@ -236,78 +220,78 @@ namespace hevce_reset
 
         },
         //Async Depth
-        {/* 29*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, NONE, CHANGE, 1,
+        {/* 26*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, NONE, CHANGE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.AsyncDepth, 10 }
             }
         },
-        {/* 30*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, NONE, CHANGE, 1,
+        {/* 27*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, NONE, CHANGE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.AsyncDepth, 1 }
             }
         },
         //Protected
-        {/* 31*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PROTECTED, NONE, 1,
+        {/* 28*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PROTECTED, NONE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP }
             }
         },
-        {/* 32*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PROTECTED, NONE, 1,
+        {/* 29*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PROTECTED, NONE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP }
             }
         },
-        {/* 33*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, PROTECTED, INVALID, 1,
+        {/* 30*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, PROTECTED, INVALID, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, 0xfff }
             }
         },
         //Frame Rate
-        {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, FRAMERATE, CHANGE, 1,
+        {/* 31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, FRAMERATE, CHANGE, 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 29 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1 }
             }
         },
-        {/* 35*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FRAMERATE, WRONG, 1,
+        {/* 32*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FRAMERATE, WRONG, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,350 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1 }
             }
         },
         //FourCC
-        {/* 36*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, WRONG, 1,
+        {/* 33*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, WRONG, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
             }
         },
         // PicStruct
-        {/* 37*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, CHANGE, 1,
+        {/* 34*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, CHANGE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 },
             }
         },
         // Ext Buffer
-        {/* 38*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION_SPSPPS, 1,
+        {/* 35*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION_SPSPPS, 1,
         },
-        {/* 39*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_VIDEO_SIGNAL_INFO, 1,
+        {/* 36*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_VIDEO_SIGNAL_INFO, 1,
         },
-        {/* 40*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION, 1,
+        {/* 37*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION, 1,
         },
-        {/* 41*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION2, 1,
+        {/* 38*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION2, 1,
         },
-        {/* 42*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, 1,
+        {/* 40*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, 1,
         },
-        {/* 43*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, 1,
+        {/* 41*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, 1,
         },
-        {/* 44*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, 1,
+        {/* 42*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, 1,
         },
-        {/* 45*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, 1,
+        {/* 43*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, 1,
         },
-        {/* 46*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, 1,
+        {/* 44*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, 1,
         },
-        {/* 47*/ MFX_ERR_INVALID_VIDEO_PARAM,
+        {/* 45*/ MFX_ERR_INVALID_VIDEO_PARAM,
 #if (defined(LINUX32) || defined(LINUX64))
                 MFX_ERR_INVALID_VIDEO_PARAM,
 #else
@@ -315,12 +299,12 @@ namespace hevce_reset
 #endif
                 EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, 1,
         },
-        {/* 48*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, 1,
+        {/* 46*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, 1,
         },
-        {/* 49*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NULL_PTR, EXT_BUFF, NONE, 1,
+        {/* 47*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NULL_PTR, EXT_BUFF, NONE, 1,
         },
         //not wait finish encoding
-        {/* 50*/ MFX_ERR_NONE, MFX_ERR_NONE, NO_SYNC, NONE, 1,
+        {/* 48*/ MFX_ERR_NONE, MFX_ERR_NONE, NO_SYNC, NONE, 1,
         },
     };
 

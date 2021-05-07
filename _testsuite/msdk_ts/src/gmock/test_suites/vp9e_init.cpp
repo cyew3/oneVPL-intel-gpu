@@ -93,40 +93,35 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY }
             }
         },
-        {/*02 Check Opaque memory*/ MFX_ERR_NONE, MEMORY_TYPE, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
-            }
-        },
-        {/*03 Null session handler*/ MFX_ERR_INVALID_HANDLE, SESSION_NULL, NONE, {} },
-        {/*04 Null params handler*/ MFX_ERR_NULL_PTR, PAR_NULL, NONE, {} },
-        {/*05 Twice call init*/ MFX_ERR_UNDEFINED_BEHAVIOR, _2_CALL, NONE, {} },
-        {/*06 Twice call close*/ MFX_ERR_NONE, _2_CALL_CLOSE, NONE, {} },
+        {/*02 Null session handler*/ MFX_ERR_INVALID_HANDLE, SESSION_NULL, NONE, {} },
+        {/*03 Null params handler*/ MFX_ERR_NULL_PTR, PAR_NULL, NONE, {} },
+        {/*04 Twice call init*/ MFX_ERR_UNDEFINED_BEHAVIOR, _2_CALL, NONE, {} },
+        {/*05 Twice call close*/ MFX_ERR_NONE, _2_CALL_CLOSE, NONE, {} },
 
         //PicStruct
-        {/*07 Check Field_tff*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-        {/*08 Check Field_bff*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-        {/*09 Check incorrect PictStruct value*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
-        {/*10 Check incorrect PictStruct value*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
-        {/*11 Check zero resolution*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, ZEROED,
+        {/*06 Check Field_tff*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+        {/*07 Check Field_bff*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+        {/*08 Check incorrect PictStruct value*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
+        {/*09 Check incorrect PictStruct value*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
+        {/*10 Check zero resolution*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, ZEROED,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 }
             }
         },
-        {/*12 Height is 0*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
+        {/*11 Height is 0*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 720 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 }
             }
         },
-        {/*13 Width is 0*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
+        {/*12 Width is 0*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 }
             }
         },
-        {/*14 Check too big resolution*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
+        {/*13 Check too big resolution*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 4096 + 1 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 + 1 }
@@ -134,17 +129,17 @@ namespace vp9e_init
         },
 
         //Crops
-        {/*15 Invalid crop region*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
-        {/*16 Invalid crop region*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
-        {/*17 Valid crop region*/ MFX_ERR_NONE, CROP, W, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 } },
-        {/*18 Valid crop region*/ MFX_ERR_NONE, CROP, H, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 } },
-        {/*19 Crop region exceeds frame size*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, WH,
+        {/*14 Invalid crop region*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
+        {/*15 Invalid crop region*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
+        {/*16 Valid crop region*/ MFX_ERR_NONE, CROP, W, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 } },
+        {/*17 Valid crop region*/ MFX_ERR_NONE, CROP, H, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 } },
+        {/*18 Crop region exceeds frame size*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, WH,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 + 10 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 + 10 }
             }
         },
-        {/*20 Check crops*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XW,
+        {/*19 Check crops*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XW,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
@@ -154,7 +149,7 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },
             }
         },
-        {/*21 Check crops*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, YH,
+        {/*20 Check crops*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, YH,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
@@ -166,7 +161,7 @@ namespace vp9e_init
         },
         //It is applicable for 420-format because of ChromaFormat restrictions
         //TODO: it is not applicable for 444-format, needs to be fixed
-        {/*22 Unsupported cropW*/ MFX_ERR_UNSUPPORTED, CROP, W,
+        {/*21 Unsupported cropW*/ MFX_ERR_UNSUPPORTED, CROP, W,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
@@ -174,7 +169,7 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 },
             }
         },
-        {/*23 Unsupported cropH*/ MFX_ERR_UNSUPPORTED, CROP, H,
+        {/*22 Unsupported cropH*/ MFX_ERR_UNSUPPORTED, CROP, H,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
@@ -184,77 +179,77 @@ namespace vp9e_init
         },
 
         //chroma format
-        {/*24 Incorrect chroma format*/ MFX_ERR_INVALID_VIDEO_PARAM, CHROMA_FORMAT, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 } },
-        {/*25 Incorrect nominator for frame rate*/ MFX_ERR_INVALID_VIDEO_PARAM, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 0 } },
-        {/*26 Incorrect denominator for frame rate*/ MFX_ERR_INVALID_VIDEO_PARAM, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
-        {/*27 Empty ext_buffer*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, NONE, {} },
+        {/*23 Incorrect chroma format*/ MFX_ERR_INVALID_VIDEO_PARAM, CHROMA_FORMAT, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 } },
+        {/*24 Incorrect nominator for frame rate*/ MFX_ERR_INVALID_VIDEO_PARAM, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 0 } },
+        {/*25 Incorrect denominator for frame rate*/ MFX_ERR_INVALID_VIDEO_PARAM, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
+        {/*26 Empty ext_buffer*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, NONE, {} },
 
         //encoded order [currently the feature is not supported and treated as non-configurable]
-        {/*28*/ MFX_ERR_NONE, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
+        {/*27*/ MFX_ERR_NONE, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
 
         //currently plugin only required as a proxy
-        {/*29*/ MFX_ERR_NONE, NOT_LOAD_PLUGIN, NONE, {} },
+        {/*28*/ MFX_ERR_NONE, NOT_LOAD_PLUGIN, NONE, {} },
 
         //call query
-        {/*30*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
-        {/*31 Check async 1*/ MFX_ERR_NONE, NONE, NONE,
+        {/*29*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
+        {/*30 Check async 1*/ MFX_ERR_NONE, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 1 },
             }
         },
-        {/*32 Check async 10*/ MFX_ERR_NONE, NONE, NONE,
+        {/*31 Check async 10*/ MFX_ERR_NONE, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
             }
         },
-        {/*33 Chroma format is not set*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+        {/*32 Chroma format is not set*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 0 },
             }
         },
-        {/*34 Bit depth luma is not set*/ MFX_ERR_NONE, NONE, NONE,
+        {/*33 Bit depth luma is not set*/ MFX_ERR_NONE, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 0 },
             }
         },
-        {/*35 Bit depth luma is wrong*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+        {/*34 Bit depth luma is wrong*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 9 },
             }
         },
-        {/*36 Bit depth chroma is not set*/ MFX_ERR_NONE, NONE, NONE,
+        {/*35 Bit depth chroma is not set*/ MFX_ERR_NONE, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 0 },
             }
         },
-        {/*37 Bit depth chroma is wrong*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+        {/*36 Bit depth chroma is wrong*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 9 },
             }
         },
-        {/*38 Bit depths and chroma format are not set*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+        {/*37 Bit depths and chroma format are not set*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 0 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 0 },
             }
         },
-        {/*39 Invalid LowPowerValue*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,
+        {/*38 Invalid LowPowerValue*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ADAPTIVE },
             }
         },
-        {/*40 Invalid LowPower value*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,
+        {/*39 Invalid LowPower value*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, 1 },
             }
         },
-        {/*41 Unsupported LowPower value*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+        {/*40 Unsupported LowPower value*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_OFF },
             }
         },
-        {/*42 Check RefreshFrameContext option*/ MFX_ERR_NONE, EXT_BUFF, PRIVATE_DDI }
+        {/*41 Check RefreshFrameContext option*/ MFX_ERR_NONE, EXT_BUFF, PRIVATE_DDI }
 
         /* Check this on Post-Si (on Pre-Si long hanging)
         {MFX_ERR_MEMORY_ALLOC, NONE, NONE,
@@ -361,17 +356,7 @@ namespace vp9e_init
             m_extDDI->RefreshFrameContext = MFX_CODINGOPTION_ON;
         }
 
-        if (m_pPar->IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            AllocSurfaces();
 
-            m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
-            mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-            MFXVideoENCODE_QueryIOSurf(m_session, m_pPar, &m_request);
-
-            AllocOpaque(m_request, *osa);
-        }
 
         if (tc.type == CALL_QUERY)
             Query();

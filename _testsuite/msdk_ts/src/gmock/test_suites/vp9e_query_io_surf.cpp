@@ -80,54 +80,44 @@ namespace vp9e_query_io_surf
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
             }
         },
-        {/*02*/ MFX_ERR_NONE, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY },
-            }
-        },
-        {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY },
             }
         },
-        {/*04*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY },
             }
         },
-        {/*05*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY },
-            }
-        },
-        {/*06*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/*04*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0 },
             }
         },
-        {/*07*/ MFX_ERR_NONE, ASYNC5,
+        {/*05*/ MFX_ERR_NONE, ASYNC5,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY },
+            }
+        },
+        {/*06*/ MFX_ERR_NONE, ASYNC10,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY },
+            }
+        },
+        {/*07*/ MFX_ERR_NONE, ASYNC5,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
             }
         },
         {/*08*/ MFX_ERR_NONE, ASYNC10,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY },
-            }
-        },
-        {/*09*/ MFX_ERR_NONE, ASYNC5,
-            {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
             }
         },
-        {/*10*/ MFX_ERR_NONE, ASYNC10,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
-            }
-        },
-        {/*11*/ MFX_ERR_INVALID_HANDLE, NULL_SESSION },
-        {/*12*/ MFX_ERR_NULL_PTR, NULL_PAR },
-        {/*13*/ MFX_ERR_NULL_PTR, NULL_REQUEST },
+        {/*09*/ MFX_ERR_INVALID_HANDLE, NULL_SESSION },
+        {/*10*/ MFX_ERR_NULL_PTR, NULL_PAR },
+        {/*11*/ MFX_ERR_NULL_PTR, NULL_REQUEST },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -224,9 +214,6 @@ namespace vp9e_query_io_surf
                 break;
             case MFX_IOPATTERN_IN_VIDEO_MEMORY:
                 type = MFX_MEMTYPE_D3D_EXT;
-                break;
-            case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
-                type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
                 break;
             default: return MFX_ERR_INVALID_VIDEO_PARAM;
             }

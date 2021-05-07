@@ -56,7 +56,7 @@ namespace hevce_query_io_surf
 
         enum
         {
-            MFX_IOPATTERN_IN_MASK = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY,
+            MFX_IOPATTERN_IN_MASK = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY,
             MFX_MEMTYPE_D3D_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
             MFX_MEMTYPE_D3D_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME,
             MFX_MEMTYPE_SYS_EXT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME,
@@ -83,27 +83,17 @@ namespace hevce_query_io_surf
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
             }
         },
-        {/* 6*/ MFX_ERR_NONE, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY },
-            }
-        },
-        {/* 7*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/* 6*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY },
             }
         },
-        {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/* 7*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY },
             }
         },
-        {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY },
-            }
-        },
-        {/* 10*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
+        {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0 },
             }
@@ -298,19 +288,13 @@ namespace hevce_query_io_surf
                 case MFX_IOPATTERN_IN_VIDEO_MEMORY:
                     type = MFX_MEMTYPE_D3D_EXT;
                     break;
-                case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
-                    type = MFX_MEMTYPE_SYS | MFX_MEMTYPE_OPAQUE_FRAME;
-                    break;
+        
                 default: return MFX_ERR_INVALID_VIDEO_PARAM;
                 }
 
                 if (isHW)
                 {
-                    if (m_par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-                    {
-                        type &= ~MFX_MEMTYPE_SYSTEM_MEMORY;
-                        type |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-                    }
+     
                     if (nFrameMin)
                         nFrameMin -= 1;
                     if (nFrameSuggested)

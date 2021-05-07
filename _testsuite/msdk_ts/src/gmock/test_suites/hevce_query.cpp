@@ -367,48 +367,46 @@ namespace hevce_query
         //set alloc handle
         {/*30*/ MFX_ERR_NONE, SET_ALLOCK, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY } },
         {/*31*/ MFX_ERR_NONE, SET_ALLOCK, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
-        {/*32*/ MFX_ERR_NONE, SET_ALLOCK, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY } },
-        {/*33*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
+        {/*32*/ MFX_ERR_NONE, SET_ALLOCK, AFTER, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
         //zero param
-        {/*34*/ MFX_ERR_NONE, IN_PAR_NULL, NONE, {} },
-        {/*35*/ MFX_ERR_NULL_PTR, OUT_PAR_NULL, NONE, {} },
+        {/*33*/ MFX_ERR_NONE, IN_PAR_NULL, NONE, {} },
+        {/*34*/ MFX_ERR_NULL_PTR, OUT_PAR_NULL, NONE, {} },
         //IOPattern
-        {/*36*/ MFX_ERR_NONE, IO_PATTERN, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY } },
-        {/*37*/ MFX_ERR_NONE, IO_PATTERN, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
-        {/*38*/ MFX_ERR_NONE, IO_PATTERN, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY } },
-        {/*39*/ MFX_ERR_UNSUPPORTED, IO_PATTERN, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0x8000 } },
+        {/*35*/ MFX_ERR_NONE, IO_PATTERN, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY } },
+        {/*36*/ MFX_ERR_NONE, IO_PATTERN, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY } },
+        {/*37*/ MFX_ERR_UNSUPPORTED, IO_PATTERN, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0x8000 } },
         //Unsupported FourCC
-        {/*40*/ MFX_ERR_UNSUPPORTED, NONE, NONE, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
+        {/*38*/ MFX_ERR_UNSUPPORTED, NONE, NONE, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
                                                    { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, 0 },
                                                  }
         },
         //Resolution
-        {/*41*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 3 } },
-        {/*42*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 3 } },
-        {/*43*/ MFX_ERR_UNSUPPORTED, RESOLUTION, W_GT_MAX, {} },
-        {/*44*/ MFX_ERR_UNSUPPORTED, RESOLUTION, H_GT_MAX, {} },
-        {/*45*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*40*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 3 } },
+        {/*41*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 3 } },
+        {/*42*/ MFX_ERR_UNSUPPORTED, RESOLUTION, W_GT_MAX, {} },
+        {/*43*/ MFX_ERR_UNSUPPORTED, RESOLUTION, H_GT_MAX, {} },
+        {/*44*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                          { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                          { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                                                          { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },
                                                        }
         },
         //PicStruct
-        {/*46*/ MFX_ERR_NONE, PIC_STRUCT, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-        {/*47*/ MFX_ERR_NONE, PIC_STRUCT, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-        {/*48*/ MFX_ERR_NONE, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE } },
-        {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
-        {/*50*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
+        {/*45*/ MFX_ERR_NONE, PIC_STRUCT, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+        {/*46*/ MFX_ERR_NONE, PIC_STRUCT, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+        {/*47*/ MFX_ERR_NONE, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE } },
+        {/*48*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
+        {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
         //Crops
-        {/*51*/ MFX_ERR_UNSUPPORTED, CROP, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
-        {/*52*/ MFX_ERR_UNSUPPORTED, CROP, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
-        {/*53*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 } },
-        {/*54*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 10 } },
-        {/*55*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 },
+        {/*50*/ MFX_ERR_UNSUPPORTED, CROP, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
+        {/*51*/ MFX_ERR_UNSUPPORTED, CROP, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
+        {/*52*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 } },
+        {/*53*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 10 } },
+        {/*54*/ MFX_ERR_UNSUPPORTED, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 10 },
                                                     { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 10 }
                                                   }
         },
-        {/*56*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*55*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },
@@ -416,7 +414,7 @@ namespace hevce_query
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },
                                                                }
         },
-        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*56*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },
@@ -424,84 +422,84 @@ namespace hevce_query
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
                                                                }
         },
-        {/*58*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },
                                                                }
         },
-        {/*59*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*58*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CROP, DELTA, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },
                                                                }
         },
         //frame rate
-        {/*60*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 0 } },
-        {/*61*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
+        {/*59*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 0 } },
+        {/*60*/ MFX_ERR_UNSUPPORTED, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
         //chroma format
-        {/*62*/ MFX_ERR_UNSUPPORTED, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 255 } },
+        {/*61*/ MFX_ERR_UNSUPPORTED, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 255 } },
         //num thread
-        {/*63*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 1 } },
-        {/*64*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 4 } },
+        {/*62*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 1 } },
+        {/*63*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 4 } },
         //gop pic size
-        {/*65*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 } },
+        {/*64*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 } },
         //gop ref dist
-        {/*66*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 } },
+        {/*65*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 } },
         //got opt flag
-        {/*67*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
+        {/*66*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
         //protected
-        {/*68*/
+        {/*67*/
 #if (defined(LINUX32) || defined(LINUX64))
             MFX_ERR_UNSUPPORTED,
 #else
             MFX_ERR_NONE,
 #endif
                           PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
-        {/*69*/
+        {/*68*/
 #if (defined(LINUX32) || defined(LINUX64))
             MFX_ERR_UNSUPPORTED,
 #else
             MFX_ERR_NONE,
 #endif
                           PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
-        {/*70*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
+        {/*69*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
         //Alignment
-        {/*71*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, {} },
-        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
-        {/*73*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
-        {/*74*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
-        {/*75*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
+        {/*70*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, {} },
+        {/*71*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
+        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
+        {/*73*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
+        {/*74*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
         // Parallel BRC with LowPower ON
-        {/*76*/ MFX_ERR_NONE, Compatibility, PBRC, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        {/*75*/ MFX_ERR_NONE, Compatibility, PBRC, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4 },
                                            { EXT_CO2, &tsStruct::mfxExtCodingOption2.BRefType, MFX_B_REF_PYRAMID }}},
-        {/*77*/ MFX_ERR_NONE, Compatibility, PBRC, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        {/*76*/ MFX_ERR_NONE, Compatibility, PBRC, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
                                            { EXT_CO2, &tsStruct::mfxExtCodingOption2.BRefType, MFX_B_REF_PYRAMID }}},
         // ICQ Mode with LowPower ON
-        {/*78*/ MFX_ERR_NONE, Compatibility, ICQ, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ },
+        {/*77*/ MFX_ERR_NONE, Compatibility, ICQ, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.ICQQuality, 22 },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4 }}},
         // QP range with LowPower ON
-        {/*79*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, Compatibility, QPRange, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+        {/*78*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, Compatibility, QPRange, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 6 },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2 }}},
-        {/*80*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, Compatibility, QPRange, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+        {/*79*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, Compatibility, QPRange, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPB, 6 },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3 }}},
         // NumActiveRef with LowPower ON
-        {/*81*/ MFX_ERR_NONE, Compatibility, NumReference, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+        {/*80*/ MFX_ERR_NONE, Compatibility, NumReference, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, MFX_TARGETUSAGE_BEST_QUALITY },
                                            { EXT_CO3, &tsStruct::mfxExtCodingOption3.NumRefActiveP[0], 4 },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 20 }}},
-        {/*82*/ MFX_ERR_NONE, Compatibility, NumReference, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+        {/*81*/ MFX_ERR_NONE, Compatibility, NumReference, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, MFX_TARGETUSAGE_BEST_QUALITY },
                                            { EXT_CO3, &tsStruct::mfxExtCodingOption3.NumRefActiveBL0[0], 4 },
