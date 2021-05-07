@@ -464,6 +464,8 @@ namespace le_hevce_pts_dts
     int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
+        mfxStatus init_sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // LE turns off HRD at the Init stage
+        mfxStatus enc_sts = tc.sts;
 
         MFXInit();
         Load();
@@ -532,6 +534,10 @@ namespace le_hevce_pts_dts
         m_filler = &sf;
         m_bs_processor = &bs_check;
 
+        g_tsStatus.expect(init_sts);
+        Init();
+
+        g_tsStatus.expect(enc_sts);
         EncodeFrames(MAX_PTS);
 
         TS_END;

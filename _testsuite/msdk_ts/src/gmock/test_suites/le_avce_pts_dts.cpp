@@ -416,10 +416,12 @@ namespace le_avce_pts_dts
     int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
+        mfxStatus init_sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // LE turns off HRD at the Init stage
+        mfxStatus enc_sts = tc.sts;
+        m_par = {};
+
         MFXInit();
 
-        m_par = {};
-        
         if (fourcc_id == MFX_FOURCC_NV12)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
@@ -477,6 +479,10 @@ namespace le_avce_pts_dts
         m_filler = &sf;
         m_bs_processor = &bs_check;
 
+        g_tsStatus.expect(init_sts);
+        Init();
+
+        g_tsStatus.expect(enc_sts);
         EncodeFrames(MAX_PTS);
 
         TS_END;
