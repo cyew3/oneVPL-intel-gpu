@@ -45,6 +45,7 @@ public:
 
     virtual bool      IsValid() const override { return m_pCore && m_vcontext; }
     virtual mfxStatus QueryCaps(void* pCaps, mfxU32 size) override;
+    virtual mfxStatus QueryDdiVersion(mfxU32 codecId) override;
     virtual mfxStatus QueryCompBufferInfo(mfxU32, mfxFrameInfo&) override;
     virtual mfxStatus Init(const std::list<DDIExecParam>*) override;
     virtual mfxStatus Execute(const DDIExecParam&) override;
