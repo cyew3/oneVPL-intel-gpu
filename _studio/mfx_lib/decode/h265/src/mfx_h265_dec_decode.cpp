@@ -390,7 +390,6 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         if (m_va->GetVideoProcessingVA())
         {
             umcSts = m_va->GetVideoProcessingVA()->Init(par, videoProcessing);
-            m_va->GetVideoProcessingVA()->SetHevcDec();
             MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif
@@ -1240,14 +1239,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 UMC::UMC_ERR_NEED_FORCE_OUTPUT : m_pH265VideoDecoder->AddSource(bs ? &src : 0);
 
             umcAddSourceRes = umcFrameRes = umcRes;
-
-#if defined(MFX_VA) && !defined MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-            //SFC Decode Process Complete
-            if(umcAddSourceRes == UMC::UMC_OK && m_va->GetVideoProcessingVA() && m_core->GetVAType() == MFX_HW_VAAPI)
-            {
-                m_va->GetVideoProcessingVA()->SetCurrentSurfaceDecComplete();
-            }
-#endif // !MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 
             if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION || umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS || umcRes == UMC::UMC_ERR_UNSUPPORTED)
             {
