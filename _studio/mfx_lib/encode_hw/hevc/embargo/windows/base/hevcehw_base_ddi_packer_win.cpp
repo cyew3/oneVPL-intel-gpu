@@ -485,7 +485,7 @@ void DDIPacker::FillSpsBuffer(
     sps.FrameSizeTolerance = FSTByLDBRC[IsOn(CO3.LowDelayBRC)];
 
     sps.ICQQualityFactor = mfxU8(
-        par.mfx.ICQQuality * (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ) * (par.mfx.LowPower != MFX_CODINGOPTION_ON)
+        par.mfx.ICQQuality * (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         + CO3.QVBRQuality * (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR));
 
     if (sps.ParallelBRC)
