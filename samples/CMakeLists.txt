@@ -24,11 +24,9 @@ add_subdirectory(sample_common)
 add_subdirectory(sample_multi_transcode)
 add_subdirectory(sample_encode)
 add_subdirectory(sample_decode)
-
-if (NOT ${API_USE_VPL})
-#Temporary disabled for VPL
 add_subdirectory(sample_vpp)
 
+if (NOT ${API_USE_VPL})
 #Not supported in VPL
 add_subdirectory(sample_plugins/rotate_cpu)
 add_subdirectory(sample_plugins/rotate_opencl)

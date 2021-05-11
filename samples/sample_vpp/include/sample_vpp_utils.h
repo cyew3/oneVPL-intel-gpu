@@ -175,6 +175,7 @@ struct sInputParams
     //bool   bd3dAlloc;
     mfxU16   IOPattern;
     mfxIMPL  ImpLib;
+    mfxAccelerationMode accelerationMode;
 
 #if defined(LINUX32) || defined(LINUX64)
     std::string strDevicePath; // path to device for processing
@@ -196,7 +197,6 @@ struct sInputParams
     bool     bChromaSiting;
     mfxU16   uChromaSiting;
 
-    bool     bInitEx;
     mfxU16   GPUCopyValue;
 
     bool     bPartialAccel;
@@ -212,10 +212,6 @@ struct sInputParams
 
     /* roi checking parameters */
     sROICheckParam roiCheckParam;
-
-    /*  plug-in GUID */
-    msdk_char strPlgGuid[MSDK_MAX_FILENAME_LEN];
-    bool    need_plugin;
 
 #ifdef ENABLE_VPP_RUNTIME_HSBC
     /* run-time ProcAmp parameters */
@@ -240,9 +236,6 @@ struct sInputParams
 
     msdk_char  strPerfFile[MSDK_MAX_FILENAME_LEN];
     mfxU32  forcedOutputFourcc;
-
-    /* Use extended API (RunFrameVPPAsyncEx) */
-    bool  use_extapi;
 
     /* MFXVideoVPP_Reset */
     std::vector<mfxU32> resetFrmNums;
@@ -274,18 +267,13 @@ struct sInputParams
         forcedOutputFourcc=0;
         numStreams=0;
 
-        MSDK_ZERO_MEMORY(strPlgGuid);
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strPerfFile);
         MSDK_ZERO_MEMORY(inFrameInfo);
         MSDK_ZERO_MEMORY(compositionParam);
         MSDK_ZERO_MEMORY(roiCheckParam);
 
-        bInitEx             = false;
         bPerf               = false;
-        need_plugin         = false;
-        use_extapi          = false;
-        MSDK_ZERO_MEMORY(strPlgGuid);
         MSDK_ZERO_MEMORY(strSrcFile);
         MSDK_ZERO_MEMORY(strPerfFile);
         strDstFiles.clear();
@@ -308,12 +296,11 @@ struct sInputParams
 
 struct sFrameProcessor
 {
-    MFXVideoSession     mfxSession;
+    std::unique_ptr<VPLImplementationLoader> pLoader;
+    MainVideoSession    mfxSession;
     MFXVideoVPP*        pmfxVPP;
-    mfxPluginUID        mfxGuid;
-    bool                plugin;
 
-    sFrameProcessor( void ){ pmfxVPP = NULL; plugin = false; return;};
+    sFrameProcessor( void ){ pmfxVPP = NULL; return;};
 };
 
 struct sMemoryAllocator

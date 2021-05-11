@@ -39,6 +39,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vaapi_allocator.h"
 #endif
 
+#include "mfxdispatcher.h"
+#include "mfxvideo++.h"
 #include "general_allocator.h"
 #include <algorithm>
 
@@ -235,10 +237,6 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
 
     msdk_printf(MSDK_STRING("IOpattern type               \t%s\n"), IOpattern2Str( pParams->IOPattern ));
     msdk_printf(MSDK_STRING("Number of asynchronious tasks\t%d\n"), pParams->asyncNum);
-    if ( pParams->bInitEx )
-    {
-        msdk_printf(MSDK_STRING("GPU Copy mode                \t%d\n"), pParams->GPUCopyValue);
-    }
     msdk_printf(MSDK_STRING("Time stamps checking         \t%s\n"), pParams->ptsCheck ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
 
     // info about ROI testing
@@ -294,38 +292,6 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
 }
 
 /* ******************************************************************* */
-
-mfxStatus ParseGUID(msdk_char strPlgGuid[MSDK_MAX_FILENAME_LEN], mfxU8 DataGUID[16])
-{
-    const msdk_char *uid = strPlgGuid;
-    mfxU32 i   = 0;
-    mfxU32 hex = 0;
-    for(i = 0; i != 16; i++)
-    {
-        hex = 0;
-#if defined(_WIN32) || defined(_WIN64)
-        if (1 != _stscanf_s(uid + 2*i, L"%2x", &hex))
-#else
-        if (1 != sscanf(uid + 2*i, "%2x", &hex))
-#endif
-        {
-            msdk_printf(MSDK_STRING("Failed to parse plugin uid: %s"), uid);
-            return MFX_ERR_UNKNOWN;
-        }
-#if defined(_WIN32) || defined(_WIN64)
-        if (hex == 0 && (uid + 2*i != _tcsstr(uid + 2*i, L"00")))
-#else
-        if (hex == 0 && (uid + 2*i != strstr(uid + 2*i, "00")))
-#endif
-        {
-            msdk_printf(MSDK_STRING("Failed to parse plugin uid: %s"), uid);
-            return MFX_ERR_UNKNOWN;
-        }
-        DataGUID[i] = (mfxU8)hex;
-    }
-
-    return MFX_ERR_NONE;
-}
 
 mfxStatus InitParamsVPP(MfxVideoParamsWrapper* pParams, sInputParams* pInParams, mfxU32 paramID)
 {
@@ -405,16 +371,6 @@ mfxStatus InitParamsVPP(MfxVideoParamsWrapper* pParams, sInputParams* pInParams,
     pParams->vpp.Out.Width = MSDK_ALIGN16(pInParams->frameInfoOut[paramID].nWidth);
     pParams->vpp.Out.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfoOut[paramID].PicStruct)?
         MSDK_ALIGN16(pInParams->frameInfoOut[paramID].nHeight) : MSDK_ALIGN32(pInParams->frameInfoOut[paramID].nHeight);
-    if(pInParams->need_plugin)
-    {
-        mfxPluginUID mfxGuid;
-        ParseGUID(pInParams->strPlgGuid, mfxGuid.Data);
-        if(!memcmp(&mfxGuid,&MFX_PLUGINID_ITELECINE_HW,sizeof(mfxPluginUID)))
-        {
-            //CM PTIR require equal input and output frame sizes
-            pParams->vpp.Out.Height = pParams->vpp.In.Height;
-        }
-    }
 
     pParams->vpp.Out.PicStruct = pInParams->frameInfoOut[paramID].PicStruct;
 
@@ -482,7 +438,7 @@ mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputPara
     return 0;
 }
 
-mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputParams & cmd_params)
+mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputParams & cmd_params, mfxU32 & adapterNum, mfxU16 & deviceID)
 {
     if (!(impl & MFX_IMPL_HARDWARE))
         return MFX_ERR_NONE;
@@ -508,6 +464,8 @@ mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputPara
     impl &= ~MFX_IMPL_HARDWARE;
 
     mfxU32 idx = GetPreferredAdapterNum(adapters, cmd_params);
+    adapterNum = adapters.Adapters[idx].Number;
+    deviceID = adapters.Adapters[idx].Platform.DeviceId;
     switch (adapters.Adapters[idx].Number)
     {
     case 0:
@@ -536,8 +494,9 @@ mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputPara
 mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 {
     mfxStatus  sts = MFX_ERR_NONE;
-    mfxVersion version = { {10, 1} };
     mfxIMPL    impl    = pInParams->ImpLib;
+    mfxU32 adapterNum;
+    mfxU16 deviceID;
 
     MSDK_CHECK_POINTER(pProcessor, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
@@ -545,41 +504,24 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     WipeFrameProcessor(pProcessor);
 
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
-    sts = GetImpl(*pParams, impl, *pInParams);
+    sts = GetImpl(*pParams, impl, *pInParams, adapterNum, deviceID);
     MSDK_CHECK_STATUS(sts, "GetImpl failed");
 #endif
 
     //MFX session
-    if ( ! pInParams->bInitEx )
-        sts = pProcessor->mfxSession.Init(impl, &version);
-    else
-    {
-        mfxInitParamlWrap initParams;
-        initParams.ExternalThreads = 0;
-        initParams.GPUCopy         = pInParams->GPUCopyValue;
-        initParams.Implementation  = impl;
-        initParams.Version         = version;
-        initParams.NumExtParam     = 0;
-        sts = pProcessor->mfxSession.InitEx(initParams);
-    }
-    MSDK_CHECK_STATUS_SAFE(sts, "pProcessor->mfxSession.Init failed", {WipeFrameProcessor(pProcessor);});
-
-    // Plug-in
-    if ( pInParams->need_plugin )
-    {
-        pProcessor->plugin = true;
-        ParseGUID(pInParams->strPlgGuid, pProcessor->mfxGuid.Data);
-    }
-
-    if ( pProcessor->plugin )
-    {
-        sts = MFXVideoUSER_Load(pProcessor->mfxSession, &(pProcessor->mfxGuid), 1);
-        if (MFX_ERR_NONE != sts)
-        {
-            msdk_printf(MSDK_STRING("Failed to load plugin\n"));
-            return sts;
-        }
-    }
+    pProcessor->pLoader.reset(new VPLImplementationLoader);
+    sts = pProcessor->pLoader->ConfigureImplementation(impl);
+    MSDK_CHECK_STATUS(sts, "mfxSession.ConfigureImplementation failed");
+    sts = pProcessor->pLoader->ConfigureAccelerationMode(pInParams->accelerationMode, impl);
+    MSDK_CHECK_STATUS(sts, "mfxSession.ConfigureAccelerationMode failed");
+#if (defined(_WIN64) || defined(_WIN32))
+    sts = pProcessor->pLoader->EnumImplementations(deviceID, adapterNum);
+#else
+    sts = pProcessor->pLoader->EnumImplementations();
+#endif
+    MSDK_CHECK_STATUS(sts, "mfxSession.EnumImplementations failed");
+    sts = pProcessor->mfxSession.CreateSession(pProcessor->pLoader.get());
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
     // VPP
     pProcessor->pmfxVPP = new MFXVideoVPP(pProcessor->mfxSession);
@@ -667,7 +609,7 @@ mfxStatus InitMemoryAllocator(
 #ifdef D3D_SURFACES_SUPPORT
             // prepare device manager
             pAllocator->pDevice = new CD3D9Device();
-            sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
+            sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession, pProcessor->pLoader.get()));
             MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pDevice->Init failed", WipeMemoryAllocator(pAllocator));
 
             mfxHDL hdl = 0;
@@ -688,7 +630,7 @@ mfxStatus InitMemoryAllocator(
 #if MFX_D3D11_SUPPORT
             pAllocator->pDevice = new CD3D11Device();
 
-            sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
+            sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession, pProcessor->pLoader.get()));
             MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pDevice->Init failed", WipeMemoryAllocator(pAllocator));
 
             mfxHDL hdl = 0;
@@ -710,7 +652,7 @@ mfxStatus InitMemoryAllocator(
             pAllocator->pDevice = CreateVAAPIDevice(pInParams->strDevicePath);
             MSDK_CHECK_POINTER(pAllocator->pDevice, MFX_ERR_NULL_PTR);
 
-            sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
+            sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession, pProcessor->pLoader.get()));
             MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pDevice->Init failed", WipeMemoryAllocator(pAllocator));
 
             mfxHDL hdl = 0;
@@ -832,11 +774,6 @@ void WipeFrameProcessor(sFrameProcessor* pProcessor)
     MSDK_CHECK_POINTER_NO_RET(pProcessor);
 
     MSDK_SAFE_DELETE(pProcessor->pmfxVPP);
-
-    if ( pProcessor->plugin )
-    {
-        MFXVideoUSER_UnLoad(pProcessor->mfxSession, &(pProcessor->mfxGuid));
-    }
 
     pProcessor->mfxSession.Close();
 }

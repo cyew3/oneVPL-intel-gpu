@@ -62,10 +62,6 @@ msdk_printf(MSDK_STRING("   [-d3d11]                    - use d3d11 surfaces\n\n
 #ifdef LIBVA_SUPPORT
 msdk_printf(MSDK_STRING("   [-vaapi]                    - work with vaapi surfaces\n\n"));
 #endif
-msdk_printf(MSDK_STRING("   [-plugin_guid GUID]\n"));
-msdk_printf(MSDK_STRING("   [-p GUID]                   - use VPP plug-in with specified GUID\n\n"));
-msdk_printf(MSDK_STRING("   [-extapi]                   - use RunFrameVPPAsyncEx instead of RunFrameVPPAsync. Need for PTIR.\n\n"));
-msdk_printf(MSDK_STRING("   [-gpu_copy]                 - Specify GPU copy mode. This option triggers using of InitEX instead of Init.\n\n"));
 
 msdk_printf(MSDK_STRING("   [-sw   width]               - width  of src video (def: 352)\n"));
 msdk_printf(MSDK_STRING("   [-sh   height]              - height of src video (def: 288)\n"));
@@ -1173,13 +1169,6 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->mirroringParam[0].Type);
             }
-            else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpu_copy")) )
-            {
-                VAL_CHECK(1 + i == nArgNum);
-                i++;
-                pParams->bInitEx = true;
-                msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->GPUCopyValue);
-            }
             else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
@@ -1785,6 +1774,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 pParams->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
                 pParams->ImpLib |= MFX_IMPL_VIA_D3D9;
+                pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
             }
 #endif
 #if MFX_D3D11_SUPPORT
@@ -1792,6 +1782,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 pParams->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
                 pParams->ImpLib |= MFX_IMPL_VIA_D3D11;
+                pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
             }
 #endif
 #ifdef LIBVA_SUPPORT
@@ -1799,6 +1790,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 pParams->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
                 pParams->ImpLib |= MFX_IMPL_VIA_VAAPI;
+                pParams->accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
             }
 #endif
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")) )
@@ -1849,26 +1841,6 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), reinterpret_cast<short int*>(&pParams->numFrames));
 
             }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p")))
-            {
-                VAL_CHECK(1 + i == nArgNum);
-                i++;
-                msdk_strncopy_s(pParams->strPlgGuid, MSDK_MAX_FILENAME_LEN, strInput[i],MSDK_MAX_FILENAME_LEN-1);
-                pParams->strPlgGuid[MSDK_MAX_FILENAME_LEN - 1] = 0;
-                pParams->need_plugin = true;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-plugin_guid")))
-            {
-                VAL_CHECK(1 + i == nArgNum);
-                i++;
-                msdk_strncopy_s(pParams->strPlgGuid, MSDK_MAX_FILENAME_LEN, strInput[i],MSDK_MAX_FILENAME_LEN-1);
-                pParams->strPlgGuid[MSDK_MAX_FILENAME_LEN - 1] = 0;
-                pParams->need_plugin = true;
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extapi")) )
-            {
-                pParams->use_extapi = true;
-            }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_start")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
@@ -1898,11 +1870,13 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 
     if ((pParams->ImpLib & MFX_IMPL_HARDWARE) && !(pParams->ImpLib & MFX_IMPL_VIA_D3D11))
     {
-        pParams->ImpLib = MFX_IMPL_HARDWARE |
+        pParams->ImpLib = MFX_IMPL_HARDWARE;
         #ifdef LIBVA_SUPPORT
-                MFX_IMPL_VIA_VAAPI;
+                pParams->ImpLib |= MFX_IMPL_VIA_VAAPI;
+                pParams->accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
         #else
-                MFX_IMPL_VIA_D3D9;
+                pParams->ImpLib |= MFX_IMPL_VIA_D3D9;
+                pParams->accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
         #endif
     }
 

@@ -148,16 +148,9 @@ static
     pParams->roiCheckParam.dstSeed = 0;
     pParams->forcedOutputFourcc = 0;
 
-    // plug-in GUID
-    pParams->need_plugin = false;
-
-    // Use RunFrameVPPAsyncEx
-    pParams->use_extapi  = false;
-
     // Do not call MFXVideoVPP_Reset
     pParams->resetFrmNums.clear();
 
-    pParams->bInitEx      = false;
     pParams->GPUCopyValue = MFX_GPUCOPY_DEFAULT;
 
     return;
@@ -571,10 +564,7 @@ int main(int argc, msdk_char *argv[])
         }
     }
 
-
     bool bDoNotUpdateIn = false;
-    if(Params.use_extapi)
-        bDoNotUpdateIn = true;
 
     // pre-multi-view preparation
     bool bMultiView   = (VPP_FILTER_ENABLED_CONFIGURED == Params.multiViewParam[0].mode) ? true : false;
@@ -699,7 +689,7 @@ int main(int argc, msdk_char *argv[])
             sts = GetFreeSurface(
                 allocator.pSurfacesOut,
                 allocator.responseOut.NumFrameActual ,
-                (Params.use_extapi ? &pWorkSurf : &pOutSurf));
+                &pOutSurf);
             MSDK_BREAK_ON_ERROR(sts);
 
             if( bROITest[VPP_IN] )
@@ -708,68 +698,48 @@ int main(int argc, msdk_char *argv[])
             }
             if( bROITest[VPP_OUT] )
             {
-                outROIGenerator.SetROI((Params.use_extapi ? &pWorkSurf->Info : &pOutSurf->Info));
+                outROIGenerator.SetROI(&pOutSurf->Info);
             }
 
-            if ( Params.use_extapi )
-            {
-                mfxFrameSurface1 * out_surface = nullptr;
-                do
-                {
-                    sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
-                        pInSurf[nInStreamInd],
-                        pWorkSurf,
-                        //pExtData,
-                        &out_surface,
-                        &syncPoint);
-                } while (MFX_WRN_DEVICE_BUSY == sts);
-
-                pOutSurf = static_cast<mfxFrameSurfaceWrap*>(out_surface);
-                if(MFX_ERR_MORE_DATA != sts)
-                    bDoNotUpdateIn = true;
-            }
-            else
-            {
 #ifdef ENABLE_VPP_RUNTIME_HSBC
-                if (Params.rtHue.isEnabled || Params.rtSaturation.isEnabled ||
-                    Params.rtBrightness.isEnabled || Params.rtContrast.isEnabled)
+            if (Params.rtHue.isEnabled || Params.rtSaturation.isEnabled ||
+                Params.rtBrightness.isEnabled || Params.rtContrast.isEnabled)
+            {
+                auto procAmp = pOutSurf->AddExtBuffer<mfxExtVPPProcAmp>();
+                // set default values for ProcAmp filters
+                procAmp->Brightness = 0.0F;
+                procAmp->Contrast   = 1.0F;
+                procAmp->Hue        = 0.0F;
+                procAmp->Saturation = 1.0F;
+
+                if (Params.rtHue.isEnabled)
                 {
-                    auto procAmp = pOutSurf->AddExtBuffer<mfxExtVPPProcAmp>();
-                    // set default values for ProcAmp filters
-                    procAmp->Brightness = 0.0F;
-                    procAmp->Contrast   = 1.0F;
-                    procAmp->Hue        = 0.0F;
-                    procAmp->Saturation = 1.0F;
-
-                    if (Params.rtHue.isEnabled)
-                    {
-                        procAmp->Hue = ((nOutFrames / Params.rtHue.interval & 0x1) == 0) ? Params.rtHue.value1 : Params.rtHue.value2;
-                    }
-
-                    if (Params.rtSaturation.isEnabled)
-                    {
-                        procAmp->Saturation = ((nOutFrames / Params.rtSaturation.interval & 0x1) == 0) ? Params.rtSaturation.value1 : Params.rtSaturation.value2;
-                    }
-
-                    if (Params.rtBrightness.isEnabled)
-                    {
-                        procAmp->Brightness = ((nOutFrames / Params.rtBrightness.interval & 0x1) == 0) ? Params.rtBrightness.value1 : Params.rtBrightness.value2;
-                    }
-
-                    if (Params.rtContrast.isEnabled)
-                    {
-                        procAmp->Contrast = ((nOutFrames / Params.rtContrast.interval & 0x1) == 0) ? Params.rtContrast.value1 : Params.rtContrast.value2;
-                    }
+                    procAmp->Hue = ((nOutFrames / Params.rtHue.interval & 0x1) == 0) ? Params.rtHue.value1 : Params.rtHue.value2;
                 }
-                nOutFrames++;
+
+                if (Params.rtSaturation.isEnabled)
+                {
+                    procAmp->Saturation = ((nOutFrames / Params.rtSaturation.interval & 0x1) == 0) ? Params.rtSaturation.value1 : Params.rtSaturation.value2;
+                }
+
+                if (Params.rtBrightness.isEnabled)
+                {
+                    procAmp->Brightness = ((nOutFrames / Params.rtBrightness.interval & 0x1) == 0) ? Params.rtBrightness.value1 : Params.rtBrightness.value2;
+                }
+
+                if (Params.rtContrast.isEnabled)
+                {
+                    procAmp->Contrast = ((nOutFrames / Params.rtContrast.interval & 0x1) == 0) ? Params.rtContrast.value1 : Params.rtContrast.value2;
+                }
+            }
+            nOutFrames++;
 #endif
 
-                sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
-                    pInSurf[nInStreamInd],
-                    pOutSurf,
-                    NULL,
-                    &syncPoint);
-            }
+            sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
+                pInSurf[nInStreamInd],
+                pOutSurf,
+                NULL,
+                &syncPoint);
 
             nInStreamInd++;
             if (nInStreamInd == Resources.numSrcFiles)
@@ -803,12 +773,6 @@ int main(int argc, msdk_char *argv[])
                 else
                 {
                     bDoNotUpdateIn = true;
-                }
-
-                if ( Params.use_extapi )
-                {
-                    // RunFrameAsyncEx is used
-                    continue;
                 }
             }
             else if (MFX_ERR_NONE == sts && !((nFrames+1)% StartJumpFrame) && ptsMaker.get() && Params.ptsJump) // pts jump
@@ -856,67 +820,51 @@ int main(int argc, msdk_char *argv[])
             sts = GetFreeSurface(
                 allocator.pSurfacesOut,
                 allocator.responseOut.NumFrameActual ,
-                (Params.use_extapi ? &pWorkSurf : &pOutSurf));
+                &pOutSurf);
             MSDK_BREAK_ON_ERROR(sts);
 
             bDoNotUpdateIn = false;
 
-            if ( Params.use_extapi )
-            {
-                mfxFrameSurface1 * out_surface = nullptr;
-                do
-                {
-                    sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
-                        NULL,
-                        pWorkSurf,
-                        &out_surface,
-                        &syncPoint );
-                } while (MFX_WRN_DEVICE_BUSY == sts);
-
-                pOutSurf = static_cast<mfxFrameSurfaceWrap*>(out_surface);
-            }
-            else
-            {
 #ifdef ENABLE_VPP_RUNTIME_HSBC
-                if (Params.rtHue.isEnabled || Params.rtSaturation.isEnabled ||
-                    Params.rtBrightness.isEnabled || Params.rtContrast.isEnabled)
+            if (Params.rtHue.isEnabled || Params.rtSaturation.isEnabled ||
+                Params.rtBrightness.isEnabled || Params.rtContrast.isEnabled)
+            {
+                auto procAmp = pOutSurf->AddExtBuffer<mfxExtVPPProcAmp>();
+                // set default values for ProcAmp filters
+                procAmp->Brightness = 0.0F;
+                procAmp->Contrast   = 1.0F;
+                procAmp->Hue        = 0.0F;
+                procAmp->Saturation = 1.0F;
+
+                if (Params.rtHue.isEnabled)
                 {
-                    auto procAmp = pOutSurf->AddExtBuffer<mfxExtVPPProcAmp>();
-                    // set default values for ProcAmp filters
-                    procAmp->Brightness = 0.0F;
-                    procAmp->Contrast   = 1.0F;
-                    procAmp->Hue        = 0.0F;
-                    procAmp->Saturation = 1.0F;
-
-                    if (Params.rtHue.isEnabled)
-                    {
-                        procAmp->Hue = ((nOutFrames / Params.rtHue.interval & 0x1) == 0) ? Params.rtHue.value1 : Params.rtHue.value2;
-                    }
-
-                    if (Params.rtSaturation.isEnabled)
-                    {
-                        procAmp->Saturation = ((nOutFrames / Params.rtSaturation.interval & 0x1) == 0) ? Params.rtSaturation.value1 : Params.rtSaturation.value2;
-                    }
-
-                    if (Params.rtBrightness.isEnabled)
-                    {
-                        procAmp->Brightness = ((nOutFrames / Params.rtBrightness.interval & 0x1) == 0) ? Params.rtBrightness.value1 : Params.rtBrightness.value2;
-                    }
-
-                    if (Params.rtContrast.isEnabled)
-                    {
-                        procAmp->Contrast = ((nOutFrames / Params.rtContrast.interval & 0x1) == 0) ? Params.rtContrast.value1 : Params.rtContrast.value2;
-                    }
+                    procAmp->Hue = ((nOutFrames / Params.rtHue.interval & 0x1) == 0) ? Params.rtHue.value1 : Params.rtHue.value2;
                 }
-                nOutFrames++;
+
+                if (Params.rtSaturation.isEnabled)
+                {
+                    procAmp->Saturation = ((nOutFrames / Params.rtSaturation.interval & 0x1) == 0) ? Params.rtSaturation.value1 : Params.rtSaturation.value2;
+                }
+
+                if (Params.rtBrightness.isEnabled)
+                {
+                    procAmp->Brightness = ((nOutFrames / Params.rtBrightness.interval & 0x1) == 0) ? Params.rtBrightness.value1 : Params.rtBrightness.value2;
+                }
+
+                if (Params.rtContrast.isEnabled)
+                {
+                    procAmp->Contrast = ((nOutFrames / Params.rtContrast.interval & 0x1) == 0) ? Params.rtContrast.value1 : Params.rtContrast.value2;
+                }
+            }
+            nOutFrames++;
 #endif
 
-                sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
-                    NULL,
-                    pOutSurf,
-                    NULL,
-                    &syncPoint );
-            }
+            sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
+                NULL,
+                pOutSurf,
+                NULL,
+                &syncPoint );
+
             MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
             MSDK_BREAK_ON_ERROR(sts);
 

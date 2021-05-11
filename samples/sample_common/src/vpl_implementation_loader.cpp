@@ -126,7 +126,7 @@ mfxStatus VPLImplementationLoader::ConfigureImplementation(mfxIMPL impl)
 mfxStatus VPLImplementationLoader::ConfigureAccelerationMode(mfxAccelerationMode accelerationMode, mfxIMPL impl)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    bool isHW = impl == MFX_IMPL_SOFTWARE ? false : true;
+    bool isHW = MFX_IMPL_BASETYPE(impl) != MFX_IMPL_SOFTWARE;
 
     // configure accelerationMode, except when required implementation is MFX_IMPL_TYPE_HARDWARE, but m_accelerationMode not set
     if (accelerationMode != MFX_ACCEL_MODE_NA || !isHW)
