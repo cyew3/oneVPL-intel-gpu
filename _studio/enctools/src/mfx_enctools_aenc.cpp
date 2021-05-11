@@ -202,11 +202,47 @@ mfxStatus AEnc_EncTool::GetSCDecision(mfxU32 displayOrder, mfxEncToolsHintPreEnc
     return sts;
 }
 
+mfxStatus AEnc_EncTool::GetPersistenceMap(mfxU32 displayOrder, mfxEncToolsHintPreEncodeSceneChange *pPreEncSC)
+{
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+    mfxStatus sts = FindOutFrame(displayOrder);
+    MFX_CHECK_STS(sts);
+    mfxU16 count = 0;
+    if (m_outframes.size() > m_aencPar.MaxMiniGopSize) 
+    {
+        memset(pPreEncSC->PersistenceMap, 0, sizeof(pPreEncSC->PersistenceMap));
+
+        pPreEncSC->PersistenceMapNZ = 0;
+        std::vector<AEncFrame>::iterator startIt = ++m_frameIt;
+        if (startIt != m_outframes.end()) 
+        {
+            for (mfxU32 i = 0; i < MFX_ENCTOOLS_PREENC_MAP_SIZE; i++) 
+            {
+                std::vector<AEncFrame>::iterator frameIt = startIt;
+                do {
+                    if (frameIt->PMap[i]) 
+                    {
+                        if (pPreEncSC->PersistenceMap[i] < UCHAR_MAX) pPreEncSC->PersistenceMap[i] += frameIt->PMap[i];
+                    }
+                    else
+                        break;
+                } while (++frameIt != m_outframes.end());
+                if (pPreEncSC->PersistenceMap[i]) count++;
+            }
+            pPreEncSC->PersistenceMapNZ = count;
+        }
+    }
+    else {
+        pPreEncSC->PersistenceMapNZ =  AEncGetPersistenceMap(m_aenc, displayOrder, pPreEncSC->PersistenceMap);
+    }
+    return MFX_ERR_NONE;
+}
+
 mfxStatus AEnc_EncTool::GetIntraDecision(mfxU32 displayOrder, mfxU16 *frameType)
 {
     displayOrder;
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
-    *frameType = AEncGetIntraDecision(m_aenc);
+    *frameType = AEncGetIntraDecision(m_aenc, displayOrder);
     return MFX_ERR_NONE;
 }
 

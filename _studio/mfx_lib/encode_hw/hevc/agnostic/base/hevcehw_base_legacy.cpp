@@ -3465,7 +3465,9 @@ void SetDefaultBRC(
             , Bool2CO(
               !(   par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
                 || Legacy::IsSWBRC(par)
-                || !defPar.caps.MbQpDataSupport)));
+                || !defPar.caps.MbQpDataSupport)                                // Default OFF
+              || (Legacy::IsEnctoolsLABRC(par) && defPar.caps.MbQpDataSupport)  // Default ON
+            ));
 
         bool bSetWinBRC = pCO3->WinBRCSize || pCO3->WinBRCMaxAvgKbps;
 
@@ -4017,7 +4019,7 @@ bool Legacy::IsSWBRC(const ExtBuffer::Param<mfxVideoParam>& par)
     const mfxExtEncToolsConfig *pCfg = ExtBuffer::Get(par);
 #endif
     return
-        (      ((pCO2 && IsOn(pCO2->ExtBRC))
+        (      ((pCO2 && IsOn(pCO2->ExtBRC) && pCO2->LookAheadDepth == 0)
 #ifdef MFX_ENABLE_ENCTOOLS
             || (pCfg && IsOn(pCfg->BRC))
 #endif
@@ -4028,6 +4030,28 @@ bool Legacy::IsSWBRC(const ExtBuffer::Param<mfxVideoParam>& par)
         || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
 #endif
         ;
+}
+
+bool Legacy::IsEnctoolsLABRC(const ExtBuffer::Param<mfxVideoParam>&par)
+{
+#ifdef MFX_ENABLE_ENCTOOLS
+    const mfxExtCodingOption2 * pCO2 = ExtBuffer::Get(par);
+    const mfxExtCodingOption3 * pCO3 = ExtBuffer::Get(par);
+    const mfxExtEncToolsConfig * pCfg = ExtBuffer::Get(par);
+
+    if (
+        (
+            ((par.mfx.GopRefDist == 2 || par.mfx.GopRefDist == 8)
+            && pCO2 && pCO2->ExtBRC == MFX_CODINGOPTION_ON && pCO2->LookAheadDepth > par.mfx.GopRefDist
+            && (pCO3 && pCO3->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING)
+            )
+            || (pCfg && IsOn(pCfg->BRC) && pCO2 && pCO2->LookAheadDepth > par.mfx.GopRefDist)
+        )
+        && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    )
+        return true;
+#endif
+    return false;
 }
 
 bool CheckBufferSizeInKB(

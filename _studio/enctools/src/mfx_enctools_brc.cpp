@@ -211,6 +211,7 @@ mfxStatus cBRCParams::Init(mfxEncToolsCtrl const & ctrl, bool fieldMode)
     mLaScale = ctrl.LaScale;
     mLaDepth = ctrl.MaxDelayInFrames;
     mHasALTR = (ctrl.CodecId == MFX_CODEC_AVC);   // check if codec support ALTR
+    mMBBRC = (ctrl.CodecId == MFX_CODEC_HEVC && ctrl.MBBRC);
     return MFX_ERR_NONE;
 }
 
@@ -1084,7 +1085,7 @@ mfxStatus BRC_EncTool::UpdateFrame(mfxU32 dispOrder, mfxEncToolsBRCStatus *pFram
         mfxF64 maxFrameSizeByRatio = dqf * FRM_RATIO(picType, m_ctx.encOrder, bSHStart, m_par.bPyr) * targetFrameSize;
         // Aref
         if (picType == MFX_FRAMETYPE_P && frameStruct.longTerm && frameStruct.qpDelta<0) maxFrameSizeByRatio *= 1.58;
-
+        if (frameStruct.QpMapNZ) maxFrameSizeByRatio *= 1.16; // some boost expected
         if (m_par.rateControlMethod == MFX_RATECONTROL_CBR && m_par.HRDConformance != MFX_BRC_NO_HRD) {
             mfxF64 bufferDeviation = m_hrdSpec->GetBufferDeviation(frameStruct.encOrder);
             mfxF64 dev = -1.0*maxFrameSizeByRatio - bufferDeviation;
@@ -1943,6 +1944,27 @@ mfxStatus BRC_EncTool::ProcessFrame(mfxU32 dispOrder, mfxEncToolsBRCQuantControl
     pFrameQp->QpY = frameStruct.qp;
     pFrameQp->NumDeltaQP = 0;
 
+    // PAQ
+    frameStructItr->QpMapNZ = 0;    // save for update
+    memset(frameStructItr->QpMap, 0, sizeof(frameStructItr->QpMap));
+
+    if (m_par.codecId == MFX_CODEC_HEVC && m_par.mMBBRC) 
+    {
+        if (type != MFX_FRAMETYPE_B) 
+        {
+            mfxU16 count = 0;
+            for (mfxU32 i = 0; i < MFX_ENCTOOLS_PREENC_MAP_SIZE; i++)
+            {
+                frameStructItr->QpMap[i] = (mfxI8) (-1 * std::min(6, (frameStructItr->PersistenceMap[i] + 1) / 3));
+                if (frameStructItr->QpMap[i]) count++;
+            }
+            frameStructItr->QpMapNZ = count;
+        }
+    }
+
+    pFrameQp->QpMapNZ = frameStructItr->QpMapNZ;
+    memcpy(pFrameQp->QpMap, frameStructItr->QpMap, sizeof(pFrameQp->QpMap));
+
     return MFX_ERR_NONE;
 }
 
@@ -1973,6 +1995,8 @@ mfxStatus BRC_EncTool::SetFrameStruct(mfxU32 dispOrder, mfxEncToolsBRCFrameParam
         frStruct.encOrder = pFrameStruct.EncodeOrder;
         frStruct.longTerm = pFrameStruct.LongTerm;
         frStruct.sceneChange = pFrameStruct.SceneChange;
+        frStruct.PersistenceMapNZ = pFrameStruct.PersistenceMapNZ;
+        memcpy(frStruct.PersistenceMap, pFrameStruct.PersistenceMap, sizeof(frStruct.PersistenceMap));
         m_FrameStruct.push_back(frStruct);
         frameStruct = m_FrameStruct.end() - 1;
     }
@@ -1984,6 +2008,9 @@ mfxStatus BRC_EncTool::SetFrameStruct(mfxU32 dispOrder, mfxEncToolsBRCFrameParam
         (*frameStruct).numRecode++;  // ??? check
         (*frameStruct).longTerm = pFrameStruct.LongTerm;
         (*frameStruct).sceneChange = pFrameStruct.SceneChange;
+        (*frameStruct).PersistenceMapNZ = pFrameStruct.PersistenceMapNZ;
+        memcpy((*frameStruct).PersistenceMap, pFrameStruct.PersistenceMap, sizeof((*frameStruct).PersistenceMap));
+
     }
     return MFX_ERR_NONE;
 }

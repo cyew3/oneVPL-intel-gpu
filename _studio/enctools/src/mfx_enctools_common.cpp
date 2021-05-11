@@ -53,6 +53,7 @@ mfxStatus InitCtrl(mfxVideoParam const & par, mfxEncToolsCtrl *ctrl)
     ctrl->FrameInfo = par.mfx.FrameInfo;
     ctrl->IOPattern = par.IOPattern;
     ctrl->MaxDelayInFrames = CO2->LookAheadDepth;
+    ctrl->MBBRC = (ctrl->CodecId == MFX_CODEC_HEVC && ctrl->MaxDelayInFrames > par.mfx.GopRefDist && CO3 && IsOn(CO3->EnableMBQP));
 
     ctrl->MaxGopSize = par.mfx.GopPicSize;
     ctrl->MaxGopRefDist = par.mfx.GopRefDist;
@@ -732,6 +733,7 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
     if (pPreEncSC && isPreEncSCD(m_config, m_ctrl))
     {
         sts = m_scd.GetSCDecision(par->DisplayOrder, pPreEncSC);
+        sts = m_scd.GetPersistenceMap(par->DisplayOrder, pPreEncSC);
         MFX_CHECK_STS(sts);
     }
     mfxEncToolsHintPreEncodeGOP *pPreEncGOP = (mfxEncToolsHintPreEncodeGOP *)Et_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCTOOLS_HINT_GOP);

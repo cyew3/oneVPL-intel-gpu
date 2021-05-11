@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <iterator>
 #include <cmath>
-
+#include <string.h>
 #include "aenc++.h"
 
 #if defined(ENABLE_ADAPTIVE_ENCODE)
@@ -66,14 +66,14 @@ mfxStatus AEncProcessFrame(mfxHDL pthis, mfxU32 POC, mfxU8* InFrame, mfxI32 pitc
     }
 }
 
-mfxU16 AEncGetIntraDecision(mfxHDL pthis) {
+mfxU16 AEncGetIntraDecision(mfxHDL pthis, mfxU32 displayOrder) {
     if (!pthis) {
         return 0;
     }
 
     try {
         aenc::AEnc* a = reinterpret_cast<aenc::AEnc*>(pthis);
-        return a->GetIntraDecision();
+        return a->GetIntraDecision(displayOrder);
     }
     catch (aenc::Error) {
         return 0;
@@ -84,6 +84,23 @@ mfxU16 AEncGetIntraDecision(mfxHDL pthis) {
     }
 }
 
+mfxU16 AEncGetPersistenceMap(mfxHDL pthis, mfxU32 displayOrder, mfxU8 PMap[AENC_MAP_SIZE]) {
+    if (!pthis) {
+        return 0;
+    }
+
+    try {
+        aenc::AEnc* a = reinterpret_cast<aenc::AEnc*>(pthis);
+        return a->GetPersistenceMap(displayOrder, PMap);
+    }
+    catch (aenc::Error) {
+        return 0;
+    }
+    catch (...)
+    {
+        return 0;
+    }
+}
 void AEncUpdatePFrameBits(mfxHDL pthis, mfxU32 displayOrder, mfxU32 bits, mfxU32 QpY, mfxU32 ClassCmplx) {
     if (!pthis) {
         return;
@@ -134,6 +151,7 @@ namespace aenc {
         ext.KeepInDPB = KeepInDPB;
         ext.RemoveFromDPB = RemoveFromDPB;
         ext.RefList = RefList;
+        memcpy(ext.PMap, PMap, sizeof(ext.PMap));
         return ext;
     }
 
@@ -181,6 +199,7 @@ namespace aenc {
         }
         out.RefListSize = static_cast<mfxU32>(RefList.size());
         std::copy(RefList.begin(), RefList.end(), out.RefList);
+        memcpy(out.PMap, PMap, sizeof(out.PMap));
 
         return out;
     }
@@ -245,6 +264,8 @@ namespace aenc {
         LastPFrameNoisy = 0;
         LastPFrameQp = 0;
         m_isLtrOn = InitParam.ALTR ? true : false;
+        memset(m_PersistenceMap, 0, sizeof(m_PersistenceMap));
+
     }
 
 
@@ -321,6 +342,8 @@ namespace aenc {
         f.UseLtrAsReference = true;
 
         Scd.GetImageAndStat(f.ScdImage, f.ScdStat, ASCReference_Frame, ASCprevious_frame_data);
+        Scd.get_PersistenceMap(f.PMap, false);
+        Scd.get_PersistenceMap(m_PersistenceMap, true);
     }
 
 
@@ -626,21 +649,55 @@ namespace aenc {
         LastPFrameQp = qp;
     }
 
-    mfxU16 AEnc::GetIntraDecision()
+    InternalFrame* AEnc::FindInternalFrame(mfxU32 displayOrder)
     {
-        if (!FrameBuffer.empty()) {
-            switch (FrameBuffer.back().Type) {
-            case FrameType::IDR:
-                return MFX_FRAMETYPE_IDR;
-                break;
-            case FrameType::I:
-                return MFX_FRAMETYPE_I;
-                break;
-            default:
-                return 0;
+        auto outframe = std::find_if(FrameBuffer.begin(), FrameBuffer.end(), [&](auto& x) {return x.POC == displayOrder; });
+        return (outframe == FrameBuffer.end() ? nullptr : &*outframe);
+    }
+
+    ExternalFrame* AEnc::FindExternalFrame(mfxU32 displayOrder)
+    {
+        auto outframe = std::find_if(OutputBuffer.begin(), OutputBuffer.end(), [&](auto& x) {return x.POC == displayOrder; });
+        return (outframe == OutputBuffer.end() ? nullptr : &*outframe);
+    }
+
+    mfxU16 AEnc::GetIntraDecision(mfxU32 displayOrder)
+    {
+        FrameType ftype = FrameType::UNDEF;
+        auto internalMatchFrame = FindInternalFrame(displayOrder);
+        if (internalMatchFrame) 
+        {
+            ftype = internalMatchFrame->Type;
+        }
+        else 
+        {
+            auto externalMatchFrame = FindExternalFrame(displayOrder);
+            if (externalMatchFrame)
+            {
+                ftype = externalMatchFrame->Type;
             }
         }
+        switch (ftype) {
+        case FrameType::IDR:
+            return MFX_FRAMETYPE_IDR;
+            break;
+        case FrameType::I:
+            return MFX_FRAMETYPE_I;
+            break;
+        default:
+            return 0;
+        }
         return 0;
+    }
+
+    mfxU16 AEnc::GetPersistenceMap(mfxU32 , mfxU8 PMap[ASC_MAP_SIZE])
+    {
+        mfxU16 count = 0;
+        for (mfxU32 i = 0; i < ASC_MAP_SIZE; i++) {
+            PMap[i] = m_PersistenceMap[i];
+            if (PMap[i]) count++;
+        }
+        return count;
     }
 
     void AEnc::ComputeStatApq(InternalFrame& f) {

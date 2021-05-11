@@ -67,7 +67,11 @@ struct BRC_FrameStruct
         LaCurEncodedSize(0),
         LaIDist(0),
         qpDelta(MFX_QP_UNDEFINED),
-        qpModulation(MFX_QP_MODULATION_NOT_DEFINED)
+        qpModulation(MFX_QP_MODULATION_NOT_DEFINED),
+        PersistenceMapNZ(0),
+        PersistenceMap(),
+        QpMapNZ(0),
+        QpMap()
     {}
     mfxU16 frameType;
     mfxU16 pyrLayer;
@@ -85,6 +89,10 @@ struct BRC_FrameStruct
     mfxU32 LaIDist;
     mfxI16 qpDelta;
     mfxU16 qpModulation;
+    mfxU16 PersistenceMapNZ;
+    mfxU8  PersistenceMap[MFX_ENCTOOLS_PREENC_MAP_SIZE];
+    mfxU16 QpMapNZ;
+    mfxI8  QpMap[MFX_ENCTOOLS_PREENC_MAP_SIZE];
 };
 
 
@@ -156,6 +164,7 @@ public:
     mfxU16   mLaScale;
     mfxU16   mHasALTR; // When mHasALTR, LTR marking decision (on/off) based on content.
     mfxU32   codecId;
+    bool     mMBBRC;    // Enable Macroblock-CU level QP control (true/false)
 
 public:
     cBRCParams() :
@@ -207,7 +216,8 @@ public:
         mLaQp(0),
         mLaScale(0),
         mHasALTR(0),
-        codecId(0)
+        codecId(0),
+        mMBBRC(false)
     {}
 
     mfxStatus Init(mfxEncToolsCtrl const & ctrl, bool bFieldMode = false);

@@ -159,6 +159,109 @@ namespace aenc {
         }
     }
 
+    void RsCsCalc_4x4_NoBlkShift(mfxU8 *pSrc, int srcPitch, int wblocks, int hblocks, mfxU16 *pRs, mfxU16 *pCs)
+    {
+        pSrc += (1 * srcPitch) + 1;
+        for (mfxI16 i = 0; i < hblocks - 1; i++)
+        {
+            for (mfxI16 j = 0; j < wblocks - 1; j++)
+            {
+                mfxU16 accRs = 0;
+                mfxU16 accCs = 0;
+
+                for (mfxI32 k = 0; k < 4; k++)
+                {
+                    for (mfxI32 l = 0; l < 4; l++)
+                    {
+                        mfxU16 dRs = (mfxU16)abs(pSrc[l] - pSrc[l - srcPitch]) >> 2;
+                        mfxU16 dCs = (mfxU16)abs(pSrc[l] - pSrc[l - 1]) >> 2;
+                        accRs += (mfxU16)(dRs * dRs);
+                        accCs += (mfxU16)(dCs * dCs);
+                    }
+                    pSrc += srcPitch;
+                }
+                pRs[i * wblocks + j] = accRs;
+                pCs[i * wblocks + j] = accCs;
+
+                pSrc -= 4 * srcPitch;
+                pSrc += 4;
+            }
+            mfxI32 j = wblocks - 1;
+            {
+                mfxU16 accRs = 0;
+                mfxU16 accCs = 0;
+
+                for (mfxI32 k = 0; k < 4; k++)
+                {
+                    for (mfxI32 l = 0; l < 3; l++)
+                    {
+                        mfxU16 dRs = (mfxU16)abs(pSrc[l] - pSrc[l - srcPitch]) >> 2;
+                        mfxU16 dCs = (mfxU16)abs(pSrc[l] - pSrc[l - 1]) >> 2;
+                        accRs += (mfxU16)(dRs * dRs);
+                        accCs += (mfxU16)(dCs * dCs);
+                    }
+                    pSrc += srcPitch;
+                }
+                pRs[i * wblocks + j] = accRs;
+                pCs[i * wblocks + j] = accCs;
+
+                pSrc -= 4 * srcPitch;
+                pSrc += 4;
+            }
+            pSrc -= 4 * (wblocks);
+            pSrc += 4 * srcPitch;
+        }
+        {
+            mfxI32 i = hblocks - 1;
+            for (mfxI16 j = 0; j < wblocks - 1; j++)
+            {
+                mfxU16 accRs = 0;
+                mfxU16 accCs = 0;
+
+                for (mfxI32 k = 0; k < 3; k++)
+                {
+                    for (mfxI32 l = 0; l < 4; l++)
+                    {
+                        mfxU16 dRs = (mfxU16)abs(pSrc[l] - pSrc[l - srcPitch]) >> 2;
+                        mfxU16 dCs = (mfxU16)abs(pSrc[l] - pSrc[l - 1]) >> 2;
+                        accRs += (mfxU16)(dRs * dRs);
+                        accCs += (mfxU16)(dCs * dCs);
+                    }
+                    pSrc += srcPitch;
+                }
+                pRs[i * wblocks + j] = accRs;
+                pCs[i * wblocks + j] = accCs;
+
+                pSrc -= 4 * srcPitch;
+                pSrc += 4;
+            }
+            mfxI32 j = wblocks - 1;
+            {
+                mfxU16 accRs = 0;
+                mfxU16 accCs = 0;
+
+                for (mfxI32 k = 0; k < 3; k++)
+                {
+                    for (mfxI32 l = 0; l < 3; l++)
+                    {
+                        mfxU16 dRs = (mfxU16)abs(pSrc[l] - pSrc[l - srcPitch]) >> 2;
+                        mfxU16 dCs = (mfxU16)abs(pSrc[l] - pSrc[l - 1]) >> 2;
+                        accRs += (mfxU16)(dRs * dRs);
+                        accCs += (mfxU16)(dCs * dCs);
+                    }
+                    pSrc += srcPitch;
+                }
+                pRs[i * wblocks + j] = accRs;
+                pCs[i * wblocks + j] = accCs;
+
+                pSrc -= 4 * srcPitch;
+                pSrc += 4;
+            }
+            pSrc -= 4 * (wblocks);
+            pSrc += 4 * srcPitch;
+        }
+    }
+
     void RsCsCalc_4x4_SSE4(mfxU8* pSrc, int srcPitch, int wblocks, int hblocks, mfxU16* pRs, mfxU16* pCs)
     {
         pSrc += (4 * srcPitch) + 4;
@@ -799,8 +902,11 @@ namespace aenc {
         memset(&Buffer->pInteger, 0, sizeof(ASCMVector));
         memset(&Buffer->Cs, 0, sizeof(Buffer->Cs));
         memset(&Buffer->Rs, 0, sizeof(Buffer->Rs));
+        memset(&Buffer->Cs1, 0, sizeof(Buffer->Cs1));
+        memset(&Buffer->Rs1, 0, sizeof(Buffer->Rs1));
         memset(&Buffer->RsCs, 0, sizeof(Buffer->RsCs));
         memset(&Buffer->SAD, 0, sizeof(Buffer->SAD));
+        memset(&Buffer->PAQ, 0, sizeof(Buffer->PAQ));
         Buffer->Contrast = 0;
         Buffer->CsVal = 0;
         Buffer->RsVal = 0;
@@ -916,8 +1022,11 @@ namespace aenc {
         avgval(0),
         Cs(),
         Rs(),
+        Cs1(),
+        Rs1(),
         RsCs(),
-        SAD()
+        SAD(),
+        PAQ()
     {}
 
     ASCimageData::~ASCimageData()
@@ -958,8 +1067,11 @@ namespace aenc {
 
         std::copy(iData.Cs, iData.Cs + texSpaceSize, Cs);
         std::copy(iData.Rs, iData.Rs + texSpaceSize, Rs);
+        std::copy(iData.Cs1, iData.Cs1 + texSpaceSize, Cs1);
+        std::copy(iData.Rs1, iData.Rs1 + texSpaceSize, Rs1);
         std::copy(iData.RsCs, iData.RsCs + texSpaceSize, RsCs);
         std::copy(iData.SAD, iData.SAD + mvSpaceSize, SAD);
+        std::copy(iData.PAQ, iData.PAQ + mvSpaceSize, PAQ);
         return *this;
     }
 
@@ -1431,6 +1543,7 @@ namespace aenc {
 
         RsCsCalc_4x4(ss, pFrame->pitch, wblocks, hblocks, m_videoData[ASCCurrent_Frame]->layer.Rs, m_videoData[ASCCurrent_Frame]->layer.Cs);
         RsCsCalc_bound(m_videoData[ASCCurrent_Frame]->layer.Rs, m_videoData[ASCCurrent_Frame]->layer.Cs, m_videoData[ASCCurrent_Frame]->layer.RsCs, &m_videoData[ASCCurrent_Frame]->layer.RsVal, &m_videoData[ASCCurrent_Frame]->layer.CsVal, &m_videoData[ASCCurrent_Frame]->layer.Contrast, wblocks, hblocks);
+        RsCsCalc_4x4_NoBlkShift(ss, pFrame->pitch, wblocks, hblocks, m_videoData[ASCCurrent_Frame]->layer.Rs1, m_videoData[ASCCurrent_Frame]->layer.Cs1);
         return MFX_ERR_NONE;
     }
 
@@ -1536,6 +1649,8 @@ namespace aenc {
 
         ASCimageData
             *referenceImageIn = &videoRef->layer;
+        mfxU32
+            wblocks = (videoIn->layer.Image.width >> BLOCK_SIZE_SHIFT);
 
         if (abs(diff) >= GAINDIFF_THR) {
             referenceImageIn = m_support->gainCorrection;
@@ -1553,6 +1668,22 @@ namespace aenc {
             {
                 mfxU16 fPos = prevFPos + j;
                 acc += ME_simple(m_support, fPos, m_dataIn->layer, &videoIn->layer, referenceImageIn, true, m_dataIn, ME_SAD_8x8_Block_Search);
+                mfxF32 Rs2 = (mfxF32)(videoIn->layer.Rs1[i * 2 * wblocks + j * 2] 
+                                    + videoIn->layer.Rs1[i * 2 * wblocks + j * 2 + 1] 
+                                    + videoIn->layer.Rs1[(i * 2 + 1) * wblocks + j * 2] 
+                                    + videoIn->layer.Rs1[(i * 2 + 1) * wblocks + j * 2 + 1]);
+                mfxF32 Cs2 = (mfxF32)(videoIn->layer.Cs1[i * 2 * wblocks + j * 2] 
+                                    + videoIn->layer.Cs1[i * 2 * wblocks + j * 2 + 1] 
+                                    + videoIn->layer.Cs1[(i * 2 + 1) * wblocks + j * 2] 
+                                    + videoIn->layer.Cs1[(i * 2 + 1) * wblocks + j * 2 + 1]);
+                mfxF32 SC = sqrtf(Rs2 + Cs2) / 1.414f;
+
+                if (SC > 4 && videoIn->layer.SAD[fPos] < SC) {
+                    videoIn->layer.PAQ[fPos] = 1;
+                }
+                else {
+                    videoIn->layer.PAQ[fPos] = 0;
+                }
                 valb += videoIn->layer.SAD[fPos];
                 *MVdiffVal += (videoIn->layer.pInteger[fPos].x - videoRef->layer.pInteger[fPos].x) * (videoIn->layer.pInteger[fPos].x - videoRef->layer.pInteger[fPos].x);
                 *MVdiffVal += (videoIn->layer.pInteger[fPos].y - videoRef->layer.pInteger[fPos].y) * (videoIn->layer.pInteger[fPos].y - videoRef->layer.pInteger[fPos].y);
@@ -2212,6 +2343,31 @@ namespace aenc {
             return 0;
     }
 
+    void ASC::get_PersistenceMap(mfxU8 PMap[ASC_MAP_SIZE], bool add) 
+    {
+        if (m_dataReady) 
+        {
+            for (int i = 0; i < ASC_MAP_SIZE; i++) 
+            {
+                if (m_videoData[ASCReference_Frame]->layer.PAQ[i] && !m_support->logic[ASCprevious_frame_data]->Schg && !m_support->logic[ASCprevious_frame_data]->firstFrame) 
+                {
+                    if (add) 
+                    {
+                        if (PMap[i] < UCHAR_MAX) PMap[i] += m_videoData[ASCReference_Frame]->layer.PAQ[i];
+                    }
+                    else
+                    {
+                        PMap[i] = m_videoData[ASCReference_Frame]->layer.PAQ[i];
+                    }
+                }
+                else 
+                {
+                    PMap[i] = 0;
+                }
+            }
+        }
+    }
+
     uint32_t ASC::CorrectScdMiniGopDecision() {
         int32_t  sc = Get_frame_SC();
         int32_t qsc = (sc < 2048) ? (sc >> 9) : (4 + ((sc - 2048) >> 10));
@@ -2230,7 +2386,6 @@ namespace aenc {
 
         return miniGopSize;
     }
-
     /**
     ***********************************************************************
     * \Brief Tells if LTR mode should be on/off or forced on.

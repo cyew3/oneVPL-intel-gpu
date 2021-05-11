@@ -5316,6 +5316,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, PanicMode, 552)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaQp, 556)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaScale, 558)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, MBBRC, 562)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, NumExtParam, 684)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, ExtParam, 688)
 
@@ -5384,6 +5385,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, MaxFrameSize, 20)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, DeltaQP, 24)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, NumDeltaQP, 32)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, QpMapNZ, 34)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, QpMap, 36)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCHRDPos, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCHRDPos, Version, 8)
@@ -5443,6 +5446,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, PanicMode, 552)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaQp, 556)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, LaScale, 558)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, MBBRC, 562)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, NumExtParam, 684)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsCtrl, ExtParam, 688)
 
@@ -5511,6 +5515,8 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, MaxFrameSize, 20)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, DeltaQP, 24)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, NumDeltaQP, 32)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, QpMapNZ, 34)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCQuantControl, QpMap, 36)
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCHRDPos, Header, 0)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxEncToolsBRCHRDPos, Version, 8)

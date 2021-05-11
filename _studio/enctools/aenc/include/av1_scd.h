@@ -40,6 +40,7 @@
 #define ASC_SMALL_WIDTH         128
 #define ASC_SMALL_HEIGHT        64
 #define MAX_BSTRUCTRUE_GOP_SIZE 16
+#define ASC_MAP_SIZE            ((ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 6)
 
 namespace aenc {
 
@@ -280,8 +281,12 @@ namespace aenc {
         mfxU16
             Cs[(ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 4],
             Rs[(ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 4],
+            Cs1[(ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 4],
+            Rs1[(ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 4],
             RsCs[(ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 4],
             SAD[(ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 6];
+        mfxU8 
+            PAQ[(ASC_SMALL_WIDTH * ASC_SMALL_HEIGHT) >> 6];
         mfxStatus
             InitFrame();
     };
@@ -458,6 +463,7 @@ namespace aenc {
         bool   Get_LTR_advice();
         bool   Get_RepeatedFrame_advice();
         mfxStatus get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint);
+        void get_PersistenceMap(mfxU8 PMap[ASC_MAP_SIZE], bool add);
         uint32_t CorrectScdMiniGopDecision();
 
         mfxStatus calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs);

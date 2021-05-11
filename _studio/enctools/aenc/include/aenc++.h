@@ -60,7 +60,7 @@ namespace aenc {
         bool KeepInDPB = 0;
         std::vector<uint32_t> RemoveFromDPB;
         std::vector<uint32_t> RefList;
-
+        uint8_t PMap[ASC_MAP_SIZE] = {};
         void print();
         operator AEncFrame();
     };
@@ -110,6 +110,7 @@ namespace aenc {
         ASCVidSample ScdImage;
         ASCTSCstat ScdStat;
 
+        uint8_t PMap[ASC_MAP_SIZE] = {};
         operator ExternalFrame();
     };
 
@@ -123,7 +124,8 @@ namespace aenc {
 
         mfxStatus ProcessFrame(uint32_t POC, const uint8_t* InFrame, int32_t pitch, AEncFrame* OutFrame);
         void   UpdatePFrameBits(uint32_t displayOrder, uint32_t bits, uint32_t QpY, uint32_t ClassCmplx);
-        mfxU16 GetIntraDecision();
+        mfxU16 GetIntraDecision(mfxU32 displayOrder);
+        mfxU16 GetPersistenceMap(mfxU32 displayOrder, mfxU8 PMap[ASC_MAP_SIZE]);
 
     protected:
         //stat computation
@@ -177,7 +179,8 @@ namespace aenc {
         void AddFrameToRefList(InternalFrame& f, Condition C); //add frame to ref list in "f" from DPB, that satisfies condition
         template <size_t size>
         void SetFrameQP(InternalFrame& f, std::array<int32_t, size> QpTable);
-
+        InternalFrame* FindInternalFrame(mfxU32 displayOrder);
+        ExternalFrame* FindExternalFrame(mfxU32 displayOrder);
 
         //general
         ASC Scd;
@@ -211,6 +214,8 @@ namespace aenc {
         mfxU8  m_hasLowActivity = 0;
         uint32_t PocOfLastArefKeyFrame = 0;
         int32_t DeltaQpOffsetForAref = 0;
+
+        mfxU8 m_PersistenceMap[ASC_MAP_SIZE] = {};  // Lookback Persistence
     };
 
 } //namespace aenc

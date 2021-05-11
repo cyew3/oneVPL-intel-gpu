@@ -415,6 +415,7 @@ static mfxStatus InitEncToolsCtrl(
     ctrl->FrameInfo = par.mfx.FrameInfo;
     ctrl->IOPattern = par.IOPattern;
     ctrl->MaxDelayInFrames = pCO2 ? pCO2->LookAheadDepth : 0 ;
+    ctrl->MBBRC = (ctrl->CodecId == MFX_CODEC_HEVC && ctrl->MaxDelayInFrames > par.mfx.GopRefDist && pCO3 && IsOn(pCO3->EnableMBQP));
 
     ctrl->MaxGopSize = par.mfx.GopPicSize;
     ctrl->MaxGopRefDist = par.mfx.GopRefDist;
@@ -719,6 +720,8 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
         extFrameData.FrameType = task.FrameType;
         extFrameData.PyramidLayer = (mfxU16) task.PyramidLevel;
         extFrameData.SceneChange = task.GopHints.SceneChange;
+        extFrameData.PersistenceMapNZ = task.GopHints.PersistenceMapNZ;
+        memcpy(extFrameData.PersistenceMap, task.GopHints.PersistenceMap, sizeof(extFrameData.PersistenceMap));
 
         extParams.push_back(&extFrameData.Header);
 
@@ -835,6 +838,9 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
     auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
     task.GopHints.MiniGopSize = preEncodeGOP.MiniGopSize;
     task.GopHints.FrameType = preEncodeGOP.FrameType;
+    task.GopHints.SceneChange = preEncodeSChg.SceneChangeFlag;
+    task.GopHints.PersistenceMapNZ = preEncodeSChg.PersistenceMapNZ;
+    memcpy(task.GopHints.PersistenceMap, preEncodeSChg.PersistenceMap, sizeof(task.GopHints.PersistenceMap));
 
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     if (IsOn(m_EncToolConfig.BRCBufferHints) && !isLABRC)
@@ -1137,6 +1143,15 @@ void HevcEncTools::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         sh.slice_qp_delta = mfxI8(task.QpY - (pps.init_qp_minus26 + 26));
 
         sh.temporal_mvp_enabled_flag &= !(par.AsyncDepth > 1 && task.NumRecode); // WA
+
+        task.etQpMapNZ = quantCtrl.QpMapNZ;
+        memcpy(task.etQpMap, quantCtrl.QpMap, sizeof(task.etQpMap));
+
+        // Internal MAP
+        const mfxExtCodingOption3* CO3 = ExtBuffer::Get(par);
+        if (!task.bCUQPMap && IsOn(CO3->EnableMBQP)) {
+            task.bCUQPMap = (task.etQpMapNZ > 0);
+        }
         return MFX_ERR_NONE;
 
     });
