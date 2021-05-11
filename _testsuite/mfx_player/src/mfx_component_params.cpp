@@ -506,14 +506,12 @@ mfxStatus ComponentParams::ConfigureLoader()
 
     MFX_CHECK_STS(m_pLoader->ConfigureAccelerationMode(m_accelerationMode, m_libType));
 
-    if (m_adapterNum == -1 || m_deviceID == -1)
+    if (m_deviceID != -1 && m_adapterNum != -1)
     {
-        MFX_CHECK_STS(m_pLoader->EnumImplementations());
+        m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
     }
-    else
-    {
-        MFX_CHECK_STS(m_pLoader->EnumImplementations(m_deviceID, m_adapterNum));
-    }
+
+    MFX_CHECK_STS(m_pLoader->EnumImplementations());
 
     return MFX_ERR_NONE;
 }

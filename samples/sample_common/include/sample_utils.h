@@ -1438,4 +1438,10 @@ protected:
     msdk_tick               m_delayTicks = 0;
 };
 
+#if defined(_WIN32) || defined(_WIN64)
+mfxStatus PrintLoadedModules();
+#else
+int PrintLibMFXPath(struct dl_phdr_info *info, size_t size, void *data);
+#endif
+
 #endif //__SAMPLE_UTILS_H__

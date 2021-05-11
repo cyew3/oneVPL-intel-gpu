@@ -10,7 +10,7 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 #include "ts_session.h"
 #include "mfxdispatcher.h"
-#include "shared_utils.h"
+#include "sample_utils.h"
 
 #if (defined(LINUX32) || defined(LINUX64))
 
@@ -132,8 +132,8 @@ mfxStatus tsSession::CreateSession(mfxIMPL impl, mfxVersion *ver, mfxSession *se
     g_tsStatus.check(MFXCreateSession(m_Loader, implIndex, session));
 
 #if (defined(LINUX32) || defined(LINUX64))
-    vm_string_printf(VM_STRING("Used implementation number: %d \n"), implIndex);
-    vm_string_printf(VM_STRING("Loaded modules:\n"));
+    msdk_printf(MSDK_STRING("Used implementation number: %d \n"), implIndex);
+    msdk_printf(MSDK_STRING("Loaded modules:\n"));
     int numLoad = 0;
     dl_iterate_phdr(PrintLibMFXPath, &numLoad);
 #else

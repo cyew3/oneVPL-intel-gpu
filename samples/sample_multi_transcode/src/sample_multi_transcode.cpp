@@ -169,7 +169,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
 #if defined(_WIN32) || defined(_WIN64)
         ForceImplForSession(i);
-        sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
+        m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
+        sts = m_pLoader->EnumImplementations();
         MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
 
         if (m_eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
@@ -513,7 +514,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             if(m_InputParamsArray[i].libType != MFX_IMPL_SOFTWARE)
             {
                 ForceImplForSession(i);
-                sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
+                m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
+                sts = m_pLoader->EnumImplementations();
                 MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
             }
 #endif
@@ -534,7 +536,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             if (m_InputParamsArray[i].libType != MFX_IMPL_SOFTWARE)
             {
                 ForceImplForSession(i);
-                sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
+                m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
+                sts = m_pLoader->EnumImplementations();
                 MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
             }
 #endif

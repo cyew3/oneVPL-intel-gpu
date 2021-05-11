@@ -439,12 +439,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, pParams->bUseHWLib);
     MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureAccelerationMode failed");
 #if (defined(_WIN64) || defined(_WIN32))
-    sts = m_pLoader->EnumImplementations(m_deviceID, m_adapterNum);
-    MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
-#else
+    m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
+#endif
     sts = m_pLoader->EnumImplementations();
     MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");
-#endif
 
     sts = m_mfxSession.CreateSession(m_pLoader.get());
     MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");

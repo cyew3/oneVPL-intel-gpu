@@ -16,6 +16,7 @@ File Name: .h
 #include "vm_interlocked.h"
 #include "vm_file.h"
 #include "shared_utils.h"
+#include "sample_utils.h"
 #include <iomanip>
 #include <limits>
 #include <assert.h>

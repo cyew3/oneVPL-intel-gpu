@@ -18,8 +18,29 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "vpl_implementation_loader.h"
+#include "sample_utils.h"
 #include "sample_defs.h"
 #include "mfxdispatcher.h"
+
+#if defined(LINUX32) || defined(LINUX64)
+#include <link.h>
+#include <string.h>
+#endif
+
+#include <map>
+
+ const std::map<mfxAccelerationMode, const msdk_tstring> mfxAccelerationModeNames = {
+    { MFX_ACCEL_MODE_NA, MSDK_STRING("MFX_ACCEL_MODE_NA") },
+    { MFX_ACCEL_MODE_VIA_D3D9, MSDK_STRING("MFX_ACCEL_MODE_VIA_D3D9") },
+    { MFX_ACCEL_MODE_VIA_D3D11, MSDK_STRING("MFX_ACCEL_MODE_VIA_D3D11") },
+    { MFX_ACCEL_MODE_VIA_VAAPI, MSDK_STRING("MFX_ACCEL_MODE_VIA_VAAPI") },
+    { MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE, MSDK_STRING("MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE") },
+    { MFX_ACCEL_MODE_VIA_VAAPI_DRM_MODESET, MSDK_STRING("MFX_ACCEL_MODE_VIA_VAAPI_DRM_MODESET") },
+    { MFX_ACCEL_MODE_VIA_VAAPI_GLX, MSDK_STRING("MFX_ACCEL_MODE_VIA_VAAPI_GLX") },
+    { MFX_ACCEL_MODE_VIA_VAAPI_X11, MSDK_STRING("MFX_ACCEL_MODE_VIA_VAAPI_X11") },
+    { MFX_ACCEL_MODE_VIA_VAAPI_WAYLAND, MSDK_STRING("MFX_ACCEL_MODE_VIA_VAAPI_WAYLAND") },
+    { MFX_ACCEL_MODE_VIA_HDDLUNITE, MSDK_STRING("MFX_ACCEL_MODE_VIA_HDDLUNITE") }
+};
 
 VPLImplementationLoader::VPLImplementationLoader()
 { 
@@ -98,6 +119,7 @@ mfxStatus VPLImplementationLoader::ConfigureImplementation(mfxIMPL impl)
     mfxStatus sts = MFXSetConfigFilterProperty(cfgImpl, (mfxU8*)"mfxImplDescription.Impl", ImplVariant);
     MSDK_CHECK_STATUS(sts, "MFXSetConfigFilterProperty failed");
     m_Configs.push_back(cfgImpl);
+    msdk_printf(MSDK_STRING("CONFIGURE LOADER: required implemetation: %s \n"), ImplVariant.Data.U32 == MFX_IMPL_TYPE_HARDWARE ? MSDK_STRING("hw") : MSDK_STRING("sw"));
     return sts;
 }
 
@@ -110,6 +132,7 @@ mfxStatus VPLImplementationLoader::ConfigureAccelerationMode(mfxAccelerationMode
     if (accelerationMode != MFX_ACCEL_MODE_NA || !isHW)
     {
         sts = CreateConfig((mfxU32)accelerationMode, "mfxImplDescription.AccelerationMode");
+        msdk_printf(MSDK_STRING("CONFIGURE LOADER: required implemetation mfxAccelerationMode: %s \n"), mfxAccelerationModeNames.at(accelerationMode).c_str());
     }
 
     return sts;
@@ -122,33 +145,26 @@ mfxStatus VPLImplementationLoader::ConfigureVersion(mfxVersion const& version)
     sts = CreateConfig(version.Version, "mfxImplDescription.ApiVersion.Version");
     sts = CreateConfig(version.Major, "mfxImplDescription.ApiVersion.Major");
     sts = CreateConfig(version.Minor, "mfxImplDescription.ApiVersion.Minor");
+    msdk_printf(MSDK_STRING("CONFIGURE LOADER: required version: %d.%d.%d\n"), version.Major, version.Minor, version.Version);
 
     return sts;
+}
+
+void VPLImplementationLoader::SetDeviceAndAdapter(mfxU16 deviceID, mfxU32 adapterNum)
+{
+    snprintf(devIDAndAdapter, sizeof(devIDAndAdapter), "%x/%d", deviceID, adapterNum);
+    msdk_tstring strDevIDAndAdapter;
+    std::copy(devIDAndAdapter, devIDAndAdapter + strlen(devIDAndAdapter), back_inserter(strDevIDAndAdapter));
+    msdk_printf(MSDK_STRING("CONFIGURE LOADER: required deviceID/adapterNum: %s \n"), strDevIDAndAdapter.c_str());
 }
 
 mfxStatus VPLImplementationLoader::EnumImplementations()
 {
-// pick the first available implementation, m_desc is checked only for being non-equal to NULL
-// potentially may be needed loop by implementations, set implIndex corresponding better implementation and add meaningful validation for the m_idesc
-    mfxImplDescription * idesc;
-    mfxStatus sts = MFXEnumImplementations(m_Loader, 0, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc);
-    MSDK_CHECK_STATUS(sts, "MFXEnumImplementations failed");
-    MSDK_CHECK_POINTER(idesc, MFX_ERR_NULL_PTR);
-    m_idesc = idesc;
-
-    m_ImplIndex = 0;
-
-    return sts;
-}
-
-mfxStatus VPLImplementationLoader::EnumImplementations(mfxU16 deviceID, mfxU32 adapterNum)
-{
     mfxImplDescription * idesc;
     mfxStatus sts = MFX_ERR_NONE;
-    mfxChar devIDAndAdapter[MFX_STRFIELD_LEN] = {};
-    snprintf(devIDAndAdapter, sizeof(devIDAndAdapter), "%x/%d", deviceID, adapterNum);
 
     int impl = 0;
+    m_ImplIndex = -1;
     while (sts == MFX_ERR_NONE)
     {
         sts = MFXEnumImplementations(m_Loader, impl, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc);
@@ -157,13 +173,19 @@ mfxStatus VPLImplementationLoader::EnumImplementations(mfxU16 deviceID, mfxU32 a
             sts = MFX_ERR_NULL_PTR;
             break;
         }
-        else if (strncmp(idesc->Dev.DeviceID, devIDAndAdapter, sizeof(devIDAndAdapter)) == 0)
+        else if ((devIDAndAdapter && strncmp(idesc->Dev.DeviceID, devIDAndAdapter, sizeof(devIDAndAdapter)) == 0) || strcmp(devIDAndAdapter, "") == 0)
         {
             m_idesc = idesc;
             m_ImplIndex = impl;
             break;
         }
         impl++;
+    }
+
+    if (m_ImplIndex == -1)
+    {
+        msdk_printf(MSDK_STRING("Library was not found with required deviceIDAndAdapter, use implemetation: 0 \n"));
+        m_ImplIndex = 0;
     }
 
     return sts;
@@ -191,7 +213,7 @@ mfxLoader VPLImplementationLoader::GetLoader() { return m_Loader; }
 mfxU32 VPLImplementationLoader::GetImplIndex() const
 {
     return m_ImplIndex;
-};
+}
 
 mfxStatus VPLImplementationLoader::GetVersion(mfxVersion *version)
 {
@@ -211,7 +233,45 @@ mfxStatus VPLImplementationLoader::GetVersion(mfxVersion *version)
     return MFX_ERR_UNKNOWN;
 }
 
+mfxStatus VPLImplementationLoader::GetImplName(mfxChar *implName)
+{
+    if (!m_idesc)
+    {
+        EnumImplementations();
+    }
+
+    if (m_idesc)
+    {
+        strncpy(implName, m_idesc->ImplName, sizeof(m_idesc->ImplName));
+        return MFX_ERR_NONE;
+    }
+
+    return MFX_ERR_NOT_FOUND;
+}
+
 mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader* Loader)
 {
-    return MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
+    mfxStatus sts = MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
+    mfxVersion version;
+    Loader->GetVersion(&version);
+    msdk_printf(MSDK_STRING("Loaded Library Version: %d.%d \n"), version.Major, version.Minor);
+    mfxChar implName[MFX_IMPL_NAME_LEN] = {};
+    Loader->GetImplName(implName);
+    msdk_tstring strImplName;
+    std::copy(implName, implName + strlen(implName), back_inserter(strImplName));
+    msdk_printf(MSDK_STRING("Loaded Library ImplName: %s \n"),  strImplName.c_str());
+
+#if (defined(LINUX32) || defined(LINUX64))
+    msdk_printf(MSDK_STRING("Used implementation number: %d \n"), Loader->GetImplIndex());
+    msdk_printf(MSDK_STRING("Loaded modules:\n"));
+    int numLoad = 0;
+    dl_iterate_phdr(PrintLibMFXPath, &numLoad);
+#else
+#if !defined(MFX_DISPATCHER_LOG)
+    PrintLoadedModules();
+#endif // !defined(MFX_DISPATCHER_LOG)
+#endif //(defined(LINUX32) || defined(LINUX64))
+    msdk_printf(MSDK_STRING("\n"));
+
+    return sts;
 }
