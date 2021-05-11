@@ -153,9 +153,6 @@ void DDI_D3D9::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             sts = m_pDevice->QueryCaps(&hwCaps, sizeof(hwCaps));
             MFX_CHECK_STS(sts);
 
-            sts = m_pDevice->QueryDdiVersion(MFX_CODEC_HEVC);
-            MFX_CHECK_STS(sts);
-
             m_guid = guid;
         }
 
@@ -204,9 +201,6 @@ void DDI_D3D9::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         auto& caps = Glob::EncodeCaps::GetOrConstruct(strg);
         auto& hwCaps = dynamic_cast<ENCODE_CAPS_HEVC&>(caps);
         sts = m_pDevice->QueryCaps(&hwCaps, sizeof(hwCaps));
-        MFX_CHECK_STS(sts);
-
-        sts = m_pDevice->QueryDdiVersion(MFX_CODEC_HEVC);
         MFX_CHECK_STS(sts);
 
         {

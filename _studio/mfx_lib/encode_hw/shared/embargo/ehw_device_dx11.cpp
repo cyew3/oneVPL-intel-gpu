@@ -170,28 +170,6 @@ mfxStatus DeviceDX11::QueryCaps(void* pCaps, mfxU32 size)
     return MFX_ERR_NONE;
 }
 
-mfxStatus DeviceDX11::QueryDdiVersion(mfxU32 codecId)
-{
-    MFX_CHECK(IsValid(), MFX_ERR_NOT_INITIALIZED);
-
-    mfxU32 pDdiVersion;
-    DDIExecParam xpar;
-    xpar.Function = ENCODE_QUERY_DRIVER_VERSION_ID;
-    xpar.Out.pData = &pDdiVersion;
-    xpar.Out.Size = sizeof(pDdiVersion);
-
-    mfxStatus sts = Execute(xpar);
-    MFX_CHECK_STS(sts);
-
-    EncodeDdiVersion* encDdiVersion = QueryCoreInterface<EncodeDdiVersion>(m_pCore);
-    MFX_CHECK(encDdiVersion, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    sts = encDdiVersion->SetDdiVersion(codecId, pDdiVersion);
-    MFX_CHECK_STS(sts);
-
-    return MFX_ERR_NONE;
-}
-
 mfxStatus DeviceDX11::QueryCompBufferInfo(mfxU32 type, mfxFrameInfo& info)
 {
     MFX_CHECK(IsValid(), MFX_ERR_NOT_INITIALIZED);
