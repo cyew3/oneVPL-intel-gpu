@@ -266,6 +266,13 @@ mfxStatus MFXYUVDecoder::DecodeFrameAsync( mfxBitstream2 & bs
 
     mfxStatus sts;
 
+    // component that called MFXVideoDECODE_DecodeFrameAsync expects, that in case of HIDDEN_INT_ALLOC
+    // getting/release surface_work will happen inside function
+    if (m_nMemoryModel == HIDDEN_INT_ALLOC)
+    {
+        GetSurface(&surface_work);
+    }
+
     if (MFX_ERR_NONE != (sts = DecodeFrame(&bs, surface_work)))
     {
         return sts;
@@ -274,9 +281,10 @@ mfxStatus MFXYUVDecoder::DecodeFrameAsync( mfxBitstream2 & bs
     *surface_out = surface_work;
     *syncp = m_syncPoint;
 
-    // increase reference expected here for memory 2.0, since reference of surface_out is increased in MFXVideoDECODE_DecodeFrameAsync
+    // component that called MFXVideoDECODE_DecodeFrameAsync, in case of VISIBLE_INT_ALLOC
+    // will release surface_work and expects surface_out has a self ref
     // TODO: move to Refcount Surface Wrapper
-    if (m_nMemoryModel != GENERAL_ALLOC)
+    if (m_nMemoryModel == VISIBLE_INT_ALLOC && (*surface_out)->FrameInterface)
     {
         (*surface_out)->FrameInterface->AddRef(*surface_out);
     }
