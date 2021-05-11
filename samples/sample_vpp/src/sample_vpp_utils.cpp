@@ -515,10 +515,9 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     sts = pProcessor->pLoader->ConfigureAccelerationMode(pInParams->accelerationMode, impl);
     MSDK_CHECK_STATUS(sts, "mfxSession.ConfigureAccelerationMode failed");
 #if (defined(_WIN64) || defined(_WIN32))
-    sts = pProcessor->pLoader->EnumImplementations(deviceID, adapterNum);
-#else
-    sts = pProcessor->pLoader->EnumImplementations();
+    pProcessor->pLoader->SetDeviceAndAdapter(deviceID, adapterNum);
 #endif
+    sts = pProcessor->pLoader->EnumImplementations();
     MSDK_CHECK_STATUS(sts, "mfxSession.EnumImplementations failed");
     sts = pProcessor->mfxSession.CreateSession(pProcessor->pLoader.get());
     MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
