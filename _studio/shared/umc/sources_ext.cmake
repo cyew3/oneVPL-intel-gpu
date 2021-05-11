@@ -233,28 +233,7 @@ target_link_libraries(mpeg4_spl PUBLIC vm_plus PRIVATE spl_common common media_b
 
 ### UMC codec mpeg4_spl
 
-add_library(scene_analyzer STATIC)
-set_property(TARGET scene_analyzer PROPERTY FOLDER "umc")
-
-target_sources(scene_analyzer
-  PRIVATE
-    codec/scene_analyzer/src/umc_scene_analyzer.cpp
-    codec/scene_analyzer/src/umc_scene_analyzer_base.cpp
-    codec/scene_analyzer/src/umc_scene_analyzer_frame.cpp
-    codec/scene_analyzer/src/umc_scene_analyzer_mb_func.cpp
-    codec/scene_analyzer/src/umc_scene_analyzer_p.cpp
-    codec/scene_analyzer/src/umc_scene_analyzer_p_func.cpp
-    codec/scene_analyzer/src/umc_scene_analyzer_p_func_mb.cpp
-    codec/scene_analyzer/src/umc_video_data_scene_info.cpp
-  )
-
 #target_compile_definitions (bitrate_control PRIVATE ${API_FLAGS} ${WARNING_FLAGS})
-target_include_directories(scene_analyzer
-  PUBLIC
-    codec/scene_analyzer/include
-  )
-
-target_link_libraries(scene_analyzer PUBLIC umc)
 
 ### UMC codec color_space_converter
 add_subdirectory(codec/color_space_converter)
@@ -274,8 +253,6 @@ add_subdirectory(codec/h265_dec)
 add_subdirectory(codec/h264_spl)
 add_subdirectory(codec/mpeg2_dec/hw)
 add_subdirectory(codec/mpeg2_dec/sw)
-
-add_subdirectory(codec/me)
 
 ### UMC io
 add_subdirectory(io/umc_io)
