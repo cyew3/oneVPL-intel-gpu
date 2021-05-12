@@ -172,7 +172,7 @@ namespace MfxHwH264Encode
             ENCODE_ENC_CTRL_CAPS const & /*caps*/) { return MFX_ERR_UNSUPPORTED; };
 
         virtual
-        mfxStatus CreateWrapBuffers(
+        mfxStatus CreateWrapSurfaces(
             const mfxU16& /*numFrameMin*/,
             const mfxVideoParam& /*par*/) { return MFX_ERR_NONE; }
 

@@ -80,13 +80,43 @@ private:
     IDirect3DDeviceManager9*     m_pDirect3DDeviceManager;
     bool                         m_hasDX9FrameAllocator;
     mfxFrameAllocator            m_dx9FrameAllocator;
-    bool                         m_isDX11AuxBufferAllocated;
     std::map<mfxMemId, mfxMemId> m_dx9MemIdMap;
     std::map<mfxMemId, mfxMemId> m_dx9MemIdUsed; //for lightweight opposite-mapping
     static std::mutex            m_copyMutex;
 };
 
 using D3D9ON11VideoCORE = D3D9ON11VideoCORE_T<D3D11VideoCORE>;
+
+
+class MfxWrapController
+{
+public:
+    MfxWrapController();
+    ~MfxWrapController();
+    MfxWrapController(const MfxWrapController&) = delete;
+    MfxWrapController& operator=(const MfxWrapController&) = delete;
+
+    mfxStatus Alloc(VideoCORE* core, const mfxU16& numFrameMin, const mfxVideoParam& par, const mfxU16& reqType);
+    mfxStatus WrapSurface(mfxFrameSurface1* dx9Surface, mfxHDL* frameHDL);
+    mfxStatus UnwrapSurface(mfxFrameSurface1* dx9Surface);
+private:
+    bool      isDX9ON11Wrapper();
+    mfxStatus Lock(mfxU32 idx);
+    bool      IsLocked(mfxU32 idx);
+    mfxStatus Unlock(mfxU32 idx);
+    mfxStatus AcquireResource(mfxMemId& dx11MemId);
+    mfxStatus ReleaseResource(mfxMemId dx11MemId);
+    mfxStatus ConfigureRequest(mfxFrameAllocRequest& req, const mfxVideoParam& par, const mfxU16& numFrameMin, const mfxU16& reqType);
+    bool      IsInputSurface();
+    bool      IsOutputSurface();
+
+    D3D9ON11VideoCORE*                 m_pDX9ON11Core;
+    std::vector<mfxFrameAllocResponse> m_responseQueue;
+    std::vector<mfxMemId>              m_mids;
+    std::vector<mfxU32>                m_locked;
+    std::map<mfxMemId, mfxMemId>       m_dx9Todx11;
+    mfxU16                             m_originalReqType;
+};
 
 #endif
 #endif

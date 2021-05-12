@@ -1184,7 +1184,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(m_video);
 #endif
 
-    sts = m_ddi->CreateWrapBuffers((mfxU16)CalcNumSurfRaw(m_video), m_video);
+    sts = m_ddi->CreateWrapSurfaces(m_video.AsyncDepth, m_video);
     MFX_CHECK_STS(sts);
 
     // Allocate raw surfaces.

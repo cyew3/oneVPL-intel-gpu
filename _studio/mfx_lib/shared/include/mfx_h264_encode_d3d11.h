@@ -116,7 +116,7 @@ namespace MfxHwH264Encode
             bool useEvent = true) override;
 
         virtual
-        mfxStatus CreateWrapBuffers(
+        mfxStatus CreateWrapSurfaces(
             const mfxU16& numFrameMin,
             const mfxVideoParam& par) override;
 
@@ -187,8 +187,7 @@ namespace MfxHwH264Encode
         CachedFeedback                              m_feedbackCached;
         HeaderPacker                                m_headerPacker;
 
-        mfxFrameAllocResponse                       m_dx9on11response;
-        D3D9ON11VideoCORE *                         m_pDX9ON11Core;
+        MfxWrapController                           m_dx9on11ctrl;
 
         std::vector<mfxHDLPair>                     m_reconQueue;
         std::vector<mfxHDLPair>                     m_bsQueue;
