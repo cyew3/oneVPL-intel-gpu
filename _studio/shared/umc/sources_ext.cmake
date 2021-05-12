@@ -252,7 +252,6 @@ add_subdirectory(codec/h264_dec)
 add_subdirectory(codec/h265_dec)
 add_subdirectory(codec/h264_spl)
 add_subdirectory(codec/mpeg2_dec/hw)
-add_subdirectory(codec/mpeg2_dec/sw)
 
 ### UMC io
 add_subdirectory(io/umc_io)

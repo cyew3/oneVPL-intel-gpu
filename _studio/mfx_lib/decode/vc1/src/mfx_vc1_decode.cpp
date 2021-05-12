@@ -32,9 +32,7 @@
 #include "mfx_thread_task.h"
 #include "mfx_common_decode_int.h"
 
-#if defined (MFX_VA)
 #include "umc_va_dxva2.h"
-#endif
 
 using namespace MFXVC1DecCommon;
 using namespace UMC;
@@ -65,10 +63,7 @@ static void SetFrameType(const uint32_t type, mfxFrameSurface1 &surface)
     }
 }
 
-#ifdef MFX_VA
 #define VC1_SKIPPED_DISABLE
-#endif
-
 void MFXVideoDECODEVC1::SetFrameOrder(SurfaceSource* pFrameAlloc, mfxVideoParam* par, bool isLast, VC1TSDescriptor tsd, bool isSamePolar)
 {
     mfxFrameSurface1 surface = { };
@@ -136,7 +131,6 @@ m_SaveBytesSize(0),
 m_sbs(),
 m_CurrentBufFrame(0),
 m_bIsBuffering(false),
-m_isSWPlatform(false),
 m_CurrentTask(0),
 m_WaitedTask(0),
 m_BufOffset(0),
@@ -189,7 +183,6 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     UMC::Status     umcSts = UMC::UMC_OK;
     bool            isPartMode = false;
 
-    m_isSWPlatform = true;
     m_CurrentTask = 0;
     m_WaitedTask = 0;
 
@@ -217,85 +210,49 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_par);
     m_par.mfx.NumThread = (mfxU16)(m_par.AsyncDepth ? m_par.AsyncDepth : m_pCore->GetAutoAsyncDepth());
 
-    if (MFX_PLATFORM_SOFTWARE == m_pCore->GetPlatformType())
-    {
-#ifdef ALLOW_SW_VC1_FALLBACK
-        m_pVC1VideoDecoder.reset(new UMC::VC1VideoDecoderSW);
-#endif
-    }
-    else
-    {
-        if (IsHWSupported(m_pCore, par))
-        {
-#if defined (MFX_VA)
-            m_pVC1VideoDecoder.reset(new UMC::VC1VideoDecoderHW);
-#endif
-            m_isSWPlatform = false;
-        }
-        else
-        {
-#ifdef ALLOW_SW_VC1_FALLBACK
-            m_pVC1VideoDecoder.reset(new UMC::VC1VideoDecoderSW);
-            isPartMode = true;
-#else
-            MFX_RETURN(MFX_ERR_UNSUPPORTED);
-#endif
-        }
-    }
+    MFX_CHECK(m_pCore->GetPlatformType() == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(IsHWSupported(m_pCore, par), MFX_ERR_UNSUPPORTED);
+
+    m_pVC1VideoDecoder.reset(new UMC::VC1VideoDecoderHW);
 
     // frames allocation
     mfxFrameAllocRequest request = {};
     SetAllocRequestInternal(m_pCore, &m_par, &request);
 
-    // SW platform and system external
-    if (m_isSWPlatform && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-    {
-        // no need to alloc surfaces - direct working with external
-        memset(&m_response, 0, sizeof(mfxFrameAllocResponse));
-        m_bIsSWD3D = false;
-    }
-    else
-    {
-        mfxFrameAllocRequest request_internal = request;
+    mfxFrameAllocRequest request_internal = request;
 
-        bool MapOpaq = false;
+    bool MapOpaq = false;
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        MapOpaq = true;
-        // to process Opaque surfaces
-        mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
-        MFXSts = UpdateAllocRequest(&m_par, &request, &pOpqAlloc, MapOpaq, Polar);
-        MFX_CHECK_STS(MFXSts);
+    MapOpaq = true;
+    // to process Opaque surfaces
+    mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
+    MFXSts = UpdateAllocRequest(&m_par, &request, &pOpqAlloc, MapOpaq, false);
+    MFX_CHECK_STS(MFXSts);
 #endif
-        try
-        {
-            m_surface_source.reset(new SurfaceSource(m_pCore, *par, m_pCore->GetPlatformType(), request, request_internal, m_response, m_response_alien,
+    try
+    {
+        m_surface_source.reset(new SurfaceSource(m_pCore, *par, m_pCore->GetPlatformType(), request, request_internal, m_response, m_response_alien,
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            pOpqAlloc,
+        pOpqAlloc,
 #else
-            nullptr,
+        nullptr,
 #endif
-            MapOpaq));
-        }
-        catch (const mfx::mfxStatus_exception& ex)
-        {
-            MFX_CHECK_STS(ex.sts);
-        }
-
-#if defined (MFX_VA)
-        if (!m_isSWPlatform)
-        {
-            MFXSts = m_pCore->CreateVA(&m_par, &request, &m_response, m_surface_source.get());
-            MFX_CHECK(MFXSts >= MFX_ERR_NONE, MFXSts);
-        }
-#endif
-
-        // External allocator already was set
-        MFXSts = MFX_ERR_NONE; // there are no errors
-
-        MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
-
-        m_bIsSWD3D = true;
+        MapOpaq));
     }
+    catch (const mfx::mfxStatus_exception& ex)
+    {
+        MFX_CHECK_STS(ex.sts);
+    }
+
+    MFXSts = m_pCore->CreateVA(&m_par, &request, &m_response, m_surface_source.get());
+    MFX_CHECK(MFXSts >= MFX_ERR_NONE, MFXSts);
+
+    // External allocator already was set
+    MFXSts = MFX_ERR_NONE; // there are no errors
+
+    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
+
+    m_bIsSWD3D = true;
 
     MFX_CHECK(!m_IsOpaq || m_pCore->IsCompatibleForOpaq(), MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -349,8 +306,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     if (MFX_ERR_NONE == MFXSts && isPartMode)
         MFXSts = MFX_WRN_PARTIAL_ACCELERATION;
 
-    if ((m_isSWPlatform && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) ||
-        (!m_isSWPlatform && (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)))
+    if (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
     {
         m_bIsSamePolar = true;
     }
@@ -469,10 +425,7 @@ mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
     m_par = *par;
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_par);
 
-    if (m_isSWPlatform)
-        m_par.mfx.NumThread = (mfxU16)(m_par.AsyncDepth ? m_par.AsyncDepth : (mfxU16)vm_sys_info_get_cpu_num());
-    else
-        m_par.mfx.NumThread = m_pCore->GetAutoAsyncDepth();
+    m_par.mfx.NumThread = m_pCore->GetAutoAsyncDepth();
 
     ConvertMfxToCodecParams(par);
     m_VideoParams->lpMemoryAllocator = &m_MemoryAllocator;
@@ -578,17 +531,13 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
 
 mfxTaskThreadingPolicy MFXVideoDECODEVC1::GetThreadingPolicy(void)
 {
-    if (m_isSWPlatform)
-    {
-        return MFX_TASK_THREADING_SHARED;
-    }
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-    else if (MFX_HW_VAAPI == m_pCore->GetVAType())
+    if (MFX_HW_VAAPI == m_pCore->GetVAType())
     {
         return MFX_TASK_THREADING_INTRA;
     }
-#endif
     else
+#endif
     {
         return MFX_TASK_THREADING_DEFAULT;
     }
@@ -1131,8 +1080,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
 
 #ifndef VC1_SKIPPED_DISABLE
             // if we faced with skipped frame - let coping it
-            if (!m_isSWPlatform &&
-                m_pVC1VideoDecoder->IsLastFrameSkipped() &&
+            if (m_pVC1VideoDecoder->IsLastFrameSkipped() &&
                 m_bIsSamePolar)
             {
                 MFXSts = ProcessSkippedFrame();
@@ -1390,50 +1338,6 @@ mfxStatus MFXVideoDECODEVC1::PostProcessFrameHW(mfxFrameSurface1 *surface_work, 
     return MFX_ERR_NONE;
 }
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-mfxStatus MFXVideoDECODEVC1::PostProcessFrame(mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_disp)
-{
-    mfxStatus  sts = MFX_ERR_NONE;
-    FrameMemID memID;
-    FrameMemID memIDdisp = -1;
-    bool isSkip = false;
-    mfxFrameSurface1 *surface_out;
-    mfxU16 Corrupted = 0;
-
-    // m_DisplayList - nned for buffering in HW mode only
-    surface_out = surface_disp;
-    {
-        memIDdisp = m_qMemID.front();
-        m_qMemID.pop_front();
-        if (m_bIsSamePolar)
-        {
-            sts = ProcessSkippedFrame();
-            MFX_CHECK_STS(sts);
-        }
-
-        memID = m_pVC1VideoDecoder->ProcessQueuesForNextFrame(isSkip, Corrupted);
-        if ((memID > -1) && !m_bIsSWD3D)
-        {
-            MFX_CHECK_NULL_PTR1(surface_work);
-            sts = m_surface_source->PrepareToOutput(surface_work, memID, &m_par, m_IsOpaq);
-            MFX_CHECK_STS(sts);
-        }
-    }
-
-    if (m_bIsSWD3D && memIDdisp > -1)
-    {
-        if (!(m_bIsDecodeOrder && isSkip))
-            sts = m_surface_source->PrepareToOutput(surface_out, memIDdisp, &m_par, m_IsOpaq);
-        MFX_CHECK_STS(sts);
-    }
-    m_pVC1VideoDecoder->UnlockSurfaces();
-
-    if (memID > -1)
-        surface_disp->Data.Corrupted = Corrupted;
-
-    return (-1 == memIDdisp)?MFX_ERR_MORE_DATA:MFX_ERR_NONE;
-}
-#endif
 mfxStatus MFXVideoDECODEVC1::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
 {
     mfxStatus       MFXSts = MFX_ERR_NONE;
@@ -1828,10 +1732,8 @@ bool MFXVideoDECODEVC1::IsHWSupported(VideoCORE *pCore, mfxVideoParam *par)
 {
     if (MFX_PLATFORM_SOFTWARE != pCore->GetPlatformType())
     {
-#if defined (MFX_VA)
         if (MFX_ERR_NONE != pCore->IsGuidSupported(sDXVA2_Intel_ModeVC1_D_Super, par))
             return false;
-#endif
     }
     return true;
 }
@@ -1872,31 +1774,14 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
 
             if ((*pOpaqAlloc)->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
             {
-                if (m_isSWPlatform) // SW platform
-                {
-                    // need to map surfaces with opaque
-                    request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_SYSTEM_MEMORY;
-                    request->NumFrameMin = request->NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
-                }
-                else
-                {
-                    Polar = true;
-                    request->Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-                }
+                Polar = true;
+                request->Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
             }
             else
             {
-                if (!m_isSWPlatform) // HW platform
-                {
-                    // need to map surfaces with opaque
-                    request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-                    request->NumFrameMin = request->NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
-                }
-                else
-                {
-                    Polar = true;
-                    request->Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-                }
+                // need to map surfaces with opaque
+                request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+                request->NumFrameMin = request->NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
 
             }
         }
@@ -2107,44 +1992,7 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
     (void)threadNumber;
     mfxStatus sts;
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    // for SW we need to process task
-    // for HW just process ready frame
-    if (m_isSWPlatform)
     {
-        Status umcRes = m_pVC1VideoDecoder->RunThread(threadNumber);  // threadNumber can be more than real number of m_pdecoder!!!!
-
-        if (UMC_ERR_NOT_ENOUGH_DATA == umcRes || UMC_WRN_INFO_NOT_READY == umcRes)
-            return MFX_TASK_NEED_CONTINUE;
-        else if (UMC_OK == umcRes || UMC_LAST_FRAME == umcRes) // surface is prepare to output
-        {
-            UMC::AutomaticUMCMutex guard(m_guard);
-
-            // if not waiting task - free desriptor and wait needed task
-            if (taskID != m_WaitedTask)
-            {
-                ((VC1TaskStoreSW*)(m_pVC1VideoDecoder->m_pStore))->FreeBusyDescriptor();
-                if (UMC_LAST_FRAME == umcRes)
-                    m_pVC1VideoDecoder->m_pStore->SeLastFramesMode();
-
-                return MFX_TASK_NEED_CONTINUE;
-            }
-            sts =  PostProcessFrame(surface_work, surface_disp);
-            if (MFX_ERR_NONE ==  sts)
-            {
-                m_WaitedTask++;
-                return MFX_TASK_DONE;
-            }
-            else if (MFX_ERR_MORE_DATA ==  sts)
-                return MFX_TASK_NEED_CONTINUE;
-            else
-                return sts;
-        }
-    }
-    else // HW implementation
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
-    {
-#ifdef MFX_VA
         if (IsStatusReportEnable())
         {
             sts = MFX_ERR_NONE;
@@ -2184,7 +2032,6 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
 
             return sts;
         }
-#endif // #ifdef MFX_VA
     }
 
     return MFX_ERR_ABORTED;
@@ -2218,7 +2065,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->pCompleteProc = &VC1CompleteProc;
         pEntryPoint->pState = this;
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-        if (MFX_HW_VAAPI == m_pCore->GetVAType() && !m_isSWPlatform)
+        if (MFX_HW_VAAPI == m_pCore->GetVAType())
             pEntryPoint->requiredNumThreads = 1;
         else
 #endif
@@ -2242,14 +2089,7 @@ mfxStatus  MFXVideoDECODEVC1::ProcessSkippedFrame()
     mfxFrameSurface1 *surface_out;
     mfxFrameSurface1 tSurface;
 
-    if (m_isSWPlatform)
-    {
-        MemType = MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_EXTERNAL_FRAME;
-    }
-    else
-    {
-        MemType = MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_EXTERNAL_FRAME;
-    }
+    MemType = MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_EXTERNAL_FRAME;
 
     FrameMemID origMemID = m_pVC1VideoDecoder->GetSkippedIndex();
     FrameMemID displayMemID = m_pVC1VideoDecoder->GetSkippedIndex(false);

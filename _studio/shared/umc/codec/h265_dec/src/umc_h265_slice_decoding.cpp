@@ -261,46 +261,6 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
 } // bool H265Slice::DecodeSliceHeader(bool bFullInitialization)
 
-#ifndef MFX_VA
-// Initialize CABAC context depending on slice type
-void H265Slice::InitializeContexts()
-{
-    SliceType slice_type = m_SliceHeader.slice_type;
-
-    if (m_pPicParamSet->cabac_init_present_flag && m_SliceHeader.cabac_init_flag)
-    {
-        switch (slice_type)
-        {
-            case P_SLICE:
-                slice_type = B_SLICE;
-                break;
-            case B_SLICE:
-                slice_type = P_SLICE;
-                break;
-            default:
-                VM_ASSERT(0);
-        }
-    }
-
-    int32_t InitializationType;
-    if (I_SLICE == slice_type)
-    {
-        InitializationType = 2;
-    }
-    else if (P_SLICE == slice_type)
-    {
-        InitializationType = 1;
-    }
-    else
-    {
-        InitializationType = 0;
-    }
-
-    m_BitStream.InitializeContextVariablesHEVC_CABAC(InitializationType,
-        m_SliceHeader.SliceQP + m_SliceHeader.slice_qp_delta);
-}
-#endif
-
 // Get tile column CTB width
 uint32_t H265Slice::getTileColumnWidth(uint32_t col) const
 {

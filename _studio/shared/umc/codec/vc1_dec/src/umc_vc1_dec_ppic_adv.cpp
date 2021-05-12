@@ -96,14 +96,6 @@ VC1Status DecodePictHeaderParams_ProgressivePpicture_Adv    (VC1Context* pContex
                 //Luma shift
                 VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-                FillTablesForIntensityCompensation_Adv(pContext,
-                                                       picLayerHeader->LUMSCALE,
-                                                       picLayerHeader->LUMSHIFT,
-                                                       0,
-                                                       pContext->m_frmBuff.m_iPrevIndex);
-#endif
-
                 pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_bIsExpanded = 0;
                 pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].ICFieldMask = 0xC;
                 pContext->m_picLayerHeader->MVMODE2 = pContext->m_picLayerHeader->MVMODE;
@@ -160,14 +152,6 @@ VC1Status DecodePictHeaderParams_ProgressivePpicture_Adv    (VC1Context* pContex
 
                 //Luma shift
                 VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-                FillTablesForIntensityCompensation_Adv(pContext,
-                                                       picLayerHeader->LUMSCALE,
-                                                       picLayerHeader->LUMSHIFT,
-                                                       0,
-                                                       pContext->m_frmBuff.m_iPrevIndex);
-#endif
 
                 pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_bIsExpanded = 0;
 
@@ -229,14 +213,6 @@ VC1Status DecodePictHeaderParams_ProgressivePpicture_Adv    (VC1Context* pContex
 
     //intra transfrmDC table
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-    ChooseTTMB_TTBLK_SBP(pContext);
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB];  //MVTAB
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-#endif
 
     return vc1Res;
 }
@@ -308,11 +284,6 @@ VC1Status DecodePictHeaderParams_InterlacePpicture_Adv    (VC1Context* pContext)
         VC1_GET_BITS(6, picLayerHeader->LUMSCALE);
         VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-        FillTablesForIntensityCompensation_Adv(pContext,picLayerHeader->LUMSCALE,picLayerHeader->LUMSHIFT,
-           0,pContext->m_frmBuff.m_iPrevIndex);
-#endif
-
        pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].ICFieldMask = 0xC;
     }
 
@@ -367,22 +338,6 @@ VC1Status DecodePictHeaderParams_InterlacePpicture_Adv    (VC1Context* pContext)
     }
 
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-    ChooseTTMB_TTBLK_SBP(pContext);
-    ChooseMBModeInterlaceFrame(pContext, picLayerHeader->MV4SWITCH, picLayerHeader->MBMODETAB);
-    picLayerHeader->m_pCurrMVDifftbl =
-        pContext->m_vlcTbl->MV_INTERLACE_TABLES[8 + picLayerHeader->MVTAB]; //MVTAB
-    picLayerHeader->m_pCurrCBPCYtbl =
-        pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB];     //CBPTAB
-    picLayerHeader->m_pMV2BP = pContext->m_vlcTbl->MV2BP_TABLES[picLayerHeader->MV2BPTAB];
-    if (picLayerHeader->MV4SWITCH)
-    {
-        picLayerHeader->m_pMV4BP = pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
-    }
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-#endif
 
     return vc1Res;
 }
@@ -531,11 +486,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                         VC1_GET_BITS(6, picLayerHeader->LUMSCALE);
                         //Luma shift
                         VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-                        FillTablesForIntensityCompensation_Adv(pContext, picLayerHeader->LUMSCALE,picLayerHeader->LUMSHIFT,
-                            0,index_top);
-#endif
                     }
 
                     if(VC1_IS_INT_BOTTOM_FIELD(picLayerHeader->INTCOMFIELD) )
@@ -547,11 +497,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                         VC1_GET_BITS(6, picLayerHeader->LUMSCALE1);
                         //Luma shift
                         VC1_GET_BITS(6, picLayerHeader->LUMSHIFT1);
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-                        FillTablesForIntensityCompensation_Adv(pContext, picLayerHeader->LUMSCALE1, picLayerHeader->LUMSHIFT1,
-                                            1,index_bottom);
-#endif
                     }
                     pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].ICFieldMask |= picLayerHeader->INTCOMFIELD << (2 * (1 - picLayerHeader->CurrField));
 
@@ -644,14 +589,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                         VC1_GET_BITS(6, picLayerHeader->LUMSCALE);
                         //Luma shift
                         VC1_GET_BITS(6, picLayerHeader->LUMSHIFT);
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-                        FillTablesForIntensityCompensation_Adv(pContext, 
-                                                               picLayerHeader->LUMSCALE,
-                                                               picLayerHeader->LUMSHIFT,
-                                                               0,
-                                                               index_top);
-#endif
                     }
 
                     if(VC1_IS_INT_BOTTOM_FIELD(picLayerHeader->INTCOMFIELD) )
@@ -663,14 +600,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                         VC1_GET_BITS(6, picLayerHeader->LUMSCALE1);
                         //Luma shift
                         VC1_GET_BITS(6, picLayerHeader->LUMSHIFT1);
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-                        FillTablesForIntensityCompensation_Adv(pContext,
-                                                               picLayerHeader->LUMSCALE1,
-                                                               picLayerHeader->LUMSHIFT1,
-                                                               1,
-                                                               index_bottom);
-#endif
                     }
 
                     pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].ICFieldMask |= picLayerHeader->INTCOMFIELD << (2*(1 - picLayerHeader->CurrField));
@@ -731,84 +660,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
 
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    ChooseTTMB_TTBLK_SBP(pContext);
-
-    //for scaling mv predictors
-    ChoosePredScaleValuePPictbl(picLayerHeader);
-
-    ChooseMBModeInterlaceField(pContext, picLayerHeader->MBMODETAB);
-    if (picLayerHeader->NUMREF)
-    {
-        picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[picLayerHeader->MVTAB]; //MVTAB
-    }
-    else
-    {
-        picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[8 + picLayerHeader->MVTAB]; //MVTAB
-    }
-
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB]; //CBPTAB
-    if (picLayerHeader->MVMODE == VC1_MVMODE_MIXED_MV)
-    {
-        picLayerHeader->m_pMV4BP = pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
-    }
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-#endif
     return vc1Res;
 }
-
-#ifdef ALLOW_SW_VC1_FALLBACK
-VC1Status Decode_InterlaceFieldPpicture_Adv(VC1Context* pContext)
-{
-    int32_t i, j;
-    VC1Status vc1Res = VC1_OK;
-    VC1SingletonMB* sMB = pContext->m_pSingleMB;
-
-    DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv(pContext);
-
-    for(i = 0; i < sMB->widthMB; i++)
-    {
-        for(j = 0; j < (sMB->heightMB/2);j++)
-        {
-            vc1Res = MBLayer_Field_InterlacedPpicture(pContext);
-            if(vc1Res != VC1_OK)
-            {
-                VM_ASSERT(0);
-                break;
-            }
-
-            sMB->m_currMBXpos++;
-            pContext->m_pBlock += 8*8*6;
-
-            pContext->m_pCurrMB++;
-            pContext->CurrDC++;
-        }
-        sMB->m_currMBXpos = 0;
-        sMB->m_currMBYpos++;
-        sMB->slice_currMBYpos++;
-        pContext->m_pBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
-        pContext->CurrDC += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
-        pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
-    }
-
-    if ((pContext->m_seqLayerHeader.LOOPFILTER))
-    {
-        uint32_t deblock_offset = 0;
-        if (!pContext->DeblockInfo.is_last_deblock)
-            deblock_offset = 1;
-
-        pContext->DeblockInfo.start_pos = pContext->DeblockInfo.start_pos+pContext->DeblockInfo.HeightMB-deblock_offset;
-        pContext->DeblockInfo.HeightMB = sMB->slice_currMBYpos+1;
-
-        pContext->DeblockInfo.is_last_deblock = 1;
-
-        Deblocking_ProgressivePpicture_Adv(pContext);
-    }
-
-    pContext->m_picLayerHeader->is_slice = 0;
-
-    return vc1Res;
-}
-#endif
 #endif //MFX_ENABLE_VC1_VIDEO_DECODE

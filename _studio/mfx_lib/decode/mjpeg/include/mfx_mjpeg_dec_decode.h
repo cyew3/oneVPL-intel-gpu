@@ -38,10 +38,7 @@
 
 #include "mfx_task.h"
 
-
-#if defined (MFX_VA)
 #include "mfx_vpp_jpeg_d3d.h"
-#endif
 
 namespace UMC
 {
@@ -86,7 +83,6 @@ protected:
     mfxStatus GetVideoParam(mfxVideoParam *par, UMC::MJPEGVideoDecoderBaseMFX * mjpegDecoder);
 };
 
-#if defined (MFX_VA)
 namespace UMC
 {
     class MJPEGVideoDecoderMFX_HW;
@@ -137,7 +133,6 @@ protected:
 
     UMC::VideoAccelerator * m_va;
 };
-#endif
 
 #ifdef MFX_ENABLE_JPEG_SW_FALLBACK
 // Forward declaration of used classes

@@ -96,13 +96,6 @@ VC1Status DecodePictHeaderParams_ProgressiveBpicture_Adv (VC1Context* pContext)
 
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    ChooseTTMB_TTBLK_SBP(pContext);
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MVDIFF_PB_TABLES[picLayerHeader->MVTAB];    //MVTAB
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-#endif
     return vc1Res;
 }
 
@@ -241,16 +234,6 @@ VC1Status DecodePictHeaderParams_InterlaceBpicture_Adv(VC1Context* pContext)
 
     VC1_GET_BITS(1, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    ChooseTTMB_TTBLK_SBP(pContext);
-    ChooseMBModeInterlaceFrame(pContext, 0, picLayerHeader->MBMODETAB);
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM);//TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-    picLayerHeader->m_pMV2BP = pContext->m_vlcTbl->MV2BP_TABLES[picLayerHeader->MV2BPTAB];
-    picLayerHeader->m_pMV4BP = pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB];       //CBPTAB
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[8 + picLayerHeader->MVTAB]; //MVTAB
-#endif
 
     return vc1Res;
 }
@@ -402,71 +385,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
 
     picLayerHeader->REFDIST = *pContext->pRefDist;
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-    ChooseTTMB_TTBLK_SBP(pContext);
-    picLayerHeader->m_pCurrMVDifftbl = pContext->m_vlcTbl->MV_INTERLACE_TABLES[picLayerHeader->MVTAB]; //MVTAB
-    picLayerHeader->m_pCurrCBPCYtbl = pContext->m_vlcTbl->CBPCY_PB_INTERLACE_TABLES[picLayerHeader->CBPTAB];     //CBPTAB
-    if (picLayerHeader->MVMODE == VC1_MVMODE_MIXED_MV)
-    {
-        picLayerHeader->m_pMV4BP = pContext->m_vlcTbl->MV4BP_TABLES[picLayerHeader->MV4BPTAB];
-    }
-
-    ChooseMBModeInterlaceField(pContext, picLayerHeader->MBMODETAB);
-    ChooseACTable(pContext, picLayerHeader->TRANSACFRM, picLayerHeader->TRANSACFRM); //TRANSACFRM
-    ChooseDCTable(pContext, picLayerHeader->TRANSDCTAB);       //TRANSDCTAB
-    ChoosePredScaleValueBPictbl(picLayerHeader);
-#endif
-
     return vc1Res;
 }
 
-#ifdef ALLOW_SW_VC1_FALLBACK
-VC1Status Decode_InterlaceFieldBpicture_Adv (VC1Context* pContext)
-{
-    int32_t i,j;
-    VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    VC1Status vc1Res = VC1_OK;
-
-    DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv(pContext);
-
-    for(i = 0; i < sMB->widthMB;i++)
-    {
-        for(j = 0; j < (sMB->heightMB+1)/2; j++)
-        {
-            vc1Res = MBLayer_Field_InterlacedBpicture(pContext);
-            if(vc1Res != VC1_OK)
-            {
-                VM_ASSERT(0);
-                break;
-            }
-            sMB->m_currMBXpos++;
-            pContext->m_pBlock += 8*8*6;
-
-            pContext->m_pCurrMB++;
-            pContext->CurrDC++;
-        }
-
-        sMB->m_currMBXpos = 0;
-        sMB->m_currMBYpos++;
-        sMB->slice_currMBYpos++;
-        pContext->CurrDC += (sMB->MaxWidthMB - sMB->widthMB);
-        pContext->m_pBlock += (sMB->MaxWidthMB - sMB->widthMB)*8*8*6;
-    }
-
-    if ((pContext->m_seqLayerHeader.LOOPFILTER))
-    {
-        uint32_t deblock_offset = 0;
-        if (!pContext->DeblockInfo.is_last_deblock)
-            deblock_offset = 1;
-
-        pContext->DeblockInfo.start_pos = pContext->DeblockInfo.start_pos+pContext->DeblockInfo.HeightMB-deblock_offset;
-        pContext->DeblockInfo.HeightMB = sMB->slice_currMBYpos+1;
-
-        Deblocking_InterlaceFieldBpicture_Adv(pContext);
-    }
-
-    pContext->m_picLayerHeader->is_slice = 0;
-    return vc1Res;
-}
-#endif // #ifdef ALLOW_SW_VC1_FALLBACK
 #endif //MFX_ENABLE_VC1_VIDEO_DECODE

@@ -42,9 +42,7 @@
 #include "mfxpavp.h"
 #endif
 
-#if defined (MFX_VA)
 #include "umc_va_dxva2.h"
-#endif
 
 #include "mfx_enc_common.h"
 
@@ -262,12 +260,10 @@ mfxStatus MFXTaskSupplier::RunThread(mfxU32 threadNumber)
     Status sts = m_pSegmentDecoder[threadNumber]->ProcessSegment();
     if (sts == UMC_ERR_NOT_ENOUGH_DATA)
         return MFX_TASK_BUSY;
-#if defined (MFX_VA)
     else if(sts == UMC_ERR_DEVICE_FAILED)
         return MFX_ERR_DEVICE_FAILED;
     else if (sts == UMC_ERR_GPU_HANG)
         return MFX_ERR_GPU_HANG;
-#endif
 
     if (sts != UMC_OK)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -555,16 +551,13 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
         return platform;
 
     eMFXHWType typeHW = MFX_HW_UNKNOWN;
-#if defined (MFX_VA)
     typeHW = core->GetHWType();
-#endif
 
     if (par && IsNeedPartialAcceleration(par, typeHW) && platform != MFX_PLATFORM_SOFTWARE)
     {
         return MFX_PLATFORM_SOFTWARE;
     }
 
-#if defined (MFX_VA)
     GUID name;
 
     switch (typeHW)
@@ -624,7 +617,6 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     {
         return MFX_PLATFORM_SOFTWARE;
     }
-#endif // MFX_VA
 
     return platform;
 }

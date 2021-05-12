@@ -28,7 +28,7 @@
 
 #include "umc_defs.h"
 
-#if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && defined (MFX_VA)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 class mfx_UMC_FrameAllocator;
 

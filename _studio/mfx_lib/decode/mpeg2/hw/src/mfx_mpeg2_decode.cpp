@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE) && defined (MFX_VA)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #include <thread>
 #include <assert.h>
@@ -210,15 +210,10 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam* par)
 
     MFX_CHECK(m_platform != MFX_PLATFORM_SOFTWARE, MFX_ERR_UNSUPPORTED);
 
-#if !defined (MFX_VA)
-    return MFX_ERR_UNSUPPORTED;
-#else
     m_decoder.reset(new UMC_MPEG2_DECODER::MPEG2DecoderVA());
-#endif
 
     // Internal or expernal memory
-    bool internal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
-        (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+    bool internal = par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (m_video_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
@@ -226,7 +221,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam* par)
         auto pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         MFX_CHECK(pOpaqAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        internal = (m_platform == MFX_PLATFORM_SOFTWARE) ? !(pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+        internal = pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY;
     }
 #endif //MFX_ENABLE_OPAQUE_MEMORY
 
@@ -277,12 +272,10 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam* par)
     vp.allocator = m_surface_source.get();
     vp.async_depth = CalculateAsyncDepth(par);
 
-#if defined (MFX_VA)
     mfxSts = m_core->CreateVA(par, &request, &m_response, m_surface_source.get());
     MFX_CHECK_STS(mfxSts);
 
     m_core->GetVA((mfxHDL*)&vp.pVideoAccelerator, MFX_MEMTYPE_FROM_DECODE);
-#endif
 
     ConvertMFXParamsToUMC(par, &vp);
 
@@ -940,11 +933,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrame(mfxFrameSurface1 *surface_out, MPEG2Deco
 
     const auto id = frame->GetFrameData()->GetFrameMID();
     mfxStatus sts = m_surface_source->PrepareToOutput(surface_out, id, &m_video_par, m_opaque); // Copy to system memory if needed
-#ifdef MFX_VA
     frame->SetDisplayed();
-#else
-    frame->Reset();
-#endif
 
     return sts;
 }
@@ -1020,13 +1009,11 @@ mfxStatus VideoDECODEMPEG2::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surf
 
             case UMC::UMC_NTF_NEW_RESOLUTION:
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-#if defined(MFX_VA)
             case UMC::UMC_ERR_DEVICE_FAILED: // return errors immediatelly
                 return MFX_ERR_DEVICE_FAILED;
 
             case UMC::UMC_ERR_GPU_HANG: // return errors immediatelly
                 return MFX_ERR_GPU_HANG;
-#endif
             }
 
             if (umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS) // New sequence header

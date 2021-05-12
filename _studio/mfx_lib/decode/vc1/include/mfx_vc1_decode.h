@@ -235,7 +235,6 @@ protected:
     std::vector<mfxFrameSurface1*>   m_DisplayListAsync;
     bool                             m_bTakeBufferedFrame;
     bool                             m_bIsBuffering;
-    bool                             m_isSWPlatform;
     mfxU32                           m_CurrentTask;
     mfxU32                           m_WaitedTask;
 
