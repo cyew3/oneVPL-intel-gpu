@@ -519,7 +519,7 @@ inline void PackOrderHint(BitstreamWriter& bs, SH const& sh, FH const& fh)
 
 inline void PackRefFrameFlags(BitstreamWriter& bs, FH const& fh, mfxU8 const error_resilient_mode)
 {
-    mfxU8 frameIsIntra = (fh.frame_type == INTRA_ONLY_FRAME || fh.frame_type == KEY_FRAME);
+    const mfxU8 frameIsIntra = FrameIsIntra(fh);
 
     mfxU8 primary_ref_frame = PRIMARY_REF_NONE;
     if (frameIsIntra || error_resilient_mode)
@@ -780,7 +780,7 @@ inline void PackDeltaQParams(BitstreamWriter& bs, FH const& fh)
 
 inline void PackLoopFilterParams(BitstreamWriter& bs, FH const& fh)
 {
-    if (fh.CodedLossless)  
+    if (fh.CodedLossless || fh.allow_intrabc)
         return;
     
     bs.PutBits(6, fh.loop_filter_params.loop_filter_level[0]); //loop_filter_level[0]
@@ -797,7 +797,7 @@ inline void PackLoopFilterParams(BitstreamWriter& bs, FH const& fh)
 
 void PackCdefParams(BitstreamWriter& bs, SH const& sh, FH const& fh)
 {
-    if (!sh.enable_cdef || fh.CodedLossless)
+    if (!sh.enable_cdef || fh.CodedLossless || fh.allow_intrabc)
         return;
 
     mfxU16 num_planes = sh.color_config.mono_chrome ? 1 : 3;
@@ -904,7 +904,7 @@ inline void PackFrameHeader(
     , FH const& fh)
 {
     //frame_type
-    mfxU8 frameIsIntra = (fh.frame_type == INTRA_ONLY_FRAME || fh.frame_type == KEY_FRAME);
+    const mfxU8 frameIsIntra = FrameIsIntra(fh);
     bs.PutBits(2, fh.frame_type);
 
     PackShowFrame(bs, fh);
@@ -912,9 +912,9 @@ inline void PackFrameHeader(
     mfxU8 error_resilient_mode = 0;
     PackErrorResilientMode(bs, fh, error_resilient_mode);
 
-    bs.PutBit(fh.disable_cdf_update); //disable_cdf_update
-    bs.PutBit(0); //allow_screen_content_tools
-    bs.PutBit(fh.frame_size_override_flag); //frame_size_override_flag
+    bs.PutBit(fh.disable_cdf_update);
+    bs.PutBit(fh.allow_screen_content_tools);
+    bs.PutBit(fh.frame_size_override_flag);
 
     PackOrderHint(bs, sh, fh);
 
@@ -926,6 +926,8 @@ inline void PackFrameHeader(
     {
         PackFrameSize(bs, sh, fh);
         PackRenderSize(bs, fh);
+        if (fh.allow_screen_content_tools && fh.UpscaledWidth == fh.FrameWidth)
+            bs.PutBit(fh.allow_intrabc);
     }
 
     if (!fh.disable_cdf_update)

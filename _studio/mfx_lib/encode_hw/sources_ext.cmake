@@ -33,8 +33,10 @@ target_include_directories(encode_hw PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/base
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g12
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g13
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g13_1
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g12
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo
 )
 
@@ -193,6 +195,9 @@ target_sources(encode_hw
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13/av1ehw_g13.h
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1/av1ehw_g13_1_scc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1/av1ehw_g13_1_scc.h
+
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux/g12/av1ehw_g12_lin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux/g12/av1ehw_g12_lin.h
 
@@ -217,6 +222,8 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g12/av1ehw_g12_win.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g13/av1ehw_g13_win.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g13/av1ehw_g13_win.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g13_1/av1ehw_g13_1_win.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/windows/g13_1/av1ehw_g13_1_win.h
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_alloc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_alloc.h

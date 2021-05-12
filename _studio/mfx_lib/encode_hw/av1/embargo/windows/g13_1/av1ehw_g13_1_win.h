@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +20,39 @@
 
 #pragma once
 
-#define Gen12XEHP PlatformK
-#define Gen12DG2 PlatformL
-#define Gen13    PlatformM
-#define Gen13_1  PlatformO
+#include "mfx_common.h"
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
+#include "av1ehw_base_data.h"
+#include "av1ehw_base_win.h"
+#include "ehw_platforms.h"
+
+namespace AV1EHW
+{
+namespace Windows
+{
+namespace Gen13_1
+{
+    enum eFeatureId
+    {
+        FEATURE_SCC = AV1EHW::Base::eFeatureId::NUM_FEATURES
+        , NUM_FEATURES
+    };
+
+    class MFXVideoENCODEAV1_HW
+        : public Windows::Base::MFXVideoENCODEAV1_HW
+    {
+    public:
+        using TBaseImpl = Windows::Base::MFXVideoENCODEAV1_HW;
+
+        MFXVideoENCODEAV1_HW(
+            VideoCORE& core
+            , mfxStatus& status
+            , eFeatureMode mode = eFeatureMode::INIT);
+    };
+
+} //Gen13_1
+} //Windows
+}// namespace AV1EHW
+
+#endif
