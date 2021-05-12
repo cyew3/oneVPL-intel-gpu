@@ -28,8 +28,8 @@
 #include "aenc.h"
 #include "mfx_enctools_utils.h"
 
-#define ENC_TOOLS_DS_FRAME_WIDTH 256
-#define ENC_TOOLS_DS_FRAME_HEIGHT 128
+#define ENC_TOOLS_DS_FRAME_WIDTH 576
+#define ENC_TOOLS_DS_FRAME_HEIGHT 576
 
 class AEnc_EncTool
 {

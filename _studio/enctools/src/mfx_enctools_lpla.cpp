@@ -239,22 +239,42 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     return sts;
 }
 
-mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface, mfxU16 FrameType)
+mfxStatus LPLA_EncTool::DisjoinSession()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    sts = m_mfxSession.DisjoinSession();
+    return sts;
+}
+
+MFXVideoSession* LPLA_EncTool::GetEncSession()
+{
+    return &m_mfxSession;
+}
+
+mfxStatus LPLA_EncTool::EncodeLA(mfxFrameSurface1* surface, mfxU16 FrameType, mfxSyncPoint* pVppSyncp)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
     m_bitstream.DataLength = 0;
     m_bitstream.DataOffset = 0;
-    mfxSyncPoint encSyncPoint;
     mfxEncodeCtrl ctrl = { 0 };
     ctrl.FrameType = FrameType;
-    sts = m_pmfxENC->EncodeFrameAsync(&ctrl, surface, &m_bitstream, &encSyncPoint);
-    MFX_CHECK_STS(sts);
-    const static mfxU32 msdk_wait_interval = 300000;
-    sts = m_mfxSession.SyncOperation(encSyncPoint, msdk_wait_interval);
+    sts = m_pmfxENC->EncodeFrameAsync(&ctrl, surface, &m_bitstream, pVppSyncp);
     MFX_CHECK_STS(sts);
 
-    m_frameSizes.push_back({surface->Data.FrameOrder, m_bitstream.DataLength, FrameType});
+    return sts;
+}
+
+mfxStatus LPLA_EncTool::StoreLAResults(mfxFrameSurface1* surface, mfxU16 FrameType)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    
+    if (m_bitstream.DataLength == 0)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    //printf("LPLA_EncTool::Submit encoded frame size %7d\n", m_bitstream.DataLength);
+
+    m_frameSizes.push_back({ surface->Data.FrameOrder, m_bitstream.DataLength, FrameType });
 
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtLpLaStatus* lplaHints = (mfxExtLpLaStatus*)Et_GetExtBuffer(m_bitstream.ExtParam, m_bitstream.NumExtParam, MFX_EXTBUFF_LPLA_STATUS);
@@ -274,6 +294,25 @@ mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface, mfxU16 FrameType)
         }
     }
 #endif
+    return sts;
+}
+
+mfxStatus LPLA_EncTool::Submit(mfxFrameSurface1 * surface, mfxU16 FrameType)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxSyncPoint encSyncp;
+    MFX_CHECK_NULL_PTR1(surface);
+
+    sts = EncodeLA(surface, FrameType, &encSyncp);
+    MFX_CHECK_STS(sts);
+
+    const static mfxU32 msdk_wait_interval = 300000;
+    sts = m_mfxSession.SyncOperation(encSyncp, msdk_wait_interval);
+    MFX_CHECK_STS(sts);
+
+    sts = StoreLAResults(surface, FrameType);
+    MFX_CHECK_STS(sts);
+
     return sts;
 }
 
