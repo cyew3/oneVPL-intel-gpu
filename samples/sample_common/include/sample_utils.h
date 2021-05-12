@@ -1343,9 +1343,15 @@ struct APIChangeFeatures {
 };
 
 inline
-mfxU32 MakeVersion(mfxU16 major, mfxU16 minor)
+mfxU32 MakeVersion(const mfxU16 major, const mfxU16 minor)
 {
     return major * 1000 + minor;
+}
+
+inline
+mfxU32 MakeVersion(const mfxVersion version)
+{
+    return MakeVersion(version.Major, version.Minor);
 }
 
 mfxVersion getMinimalRequiredVersion(const APIChangeFeatures &features);

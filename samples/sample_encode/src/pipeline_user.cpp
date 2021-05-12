@@ -226,7 +226,7 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     sts = m_mfxSession.CreateSession(m_pLoader.get());
     MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
-    sts = m_pLoader->GetVersion(&version); // get real API version of the loaded library
+    sts = m_pLoader->GetVersion(version); // get real API version of the loaded library
     MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {

@@ -30,6 +30,7 @@ class VPLImplementationLoader {
     mfxImplDescription* m_idesc;
     mfxU32 m_ImplIndex;
     mfxChar devIDAndAdapter[MFX_STRFIELD_LEN] = {};
+    mfxU32 m_MinVersion;
 
 public:
     VPLImplementationLoader();
@@ -39,14 +40,15 @@ public:
     mfxStatus CreateConfig(mfxU32 data, const char* propertyName);
     mfxStatus ConfigureImplementation(mfxIMPL impl);
     mfxStatus ConfigureAccelerationMode(mfxAccelerationMode accelerationMode, mfxIMPL impl);
-    mfxStatus ConfigureVersion(mfxVersion const& version);
+    mfxStatus ConfigureVersion(mfxVersion const version);
     void SetDeviceAndAdapter(mfxU16 deviceID, mfxU32 adapterNum);
     mfxStatus EnumImplementations();
-    mfxStatus ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxVersion const& version);
+    mfxStatus ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode);
     mfxLoader GetLoader();
     mfxU32 GetImplIndex() const;
     mfxStatus GetImplName(mfxChar *implName);
-    mfxStatus GetVersion(mfxVersion *version);
+    mfxStatus GetVersion(mfxVersion& version);
+    void SetMinVersion(mfxVersion const version);
 };
 
 class MainVideoSession : public MFXVideoSession {

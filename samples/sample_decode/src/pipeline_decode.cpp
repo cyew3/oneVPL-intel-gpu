@@ -384,10 +384,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     auto threadsPar = initPar.AddExtBuffer<mfxExtThreadsParam>();
     MSDK_CHECK_POINTER(threadsPar, MFX_ERR_MEMORY_ALLOC);
 
-    // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    initPar.Version.Major = MFX_VERSION_MAJOR;
-    initPar.Version.Minor = MFX_VERSION_MINOR;
-
     initPar.GPUCopy = pParams->gpuCopy;
 
     if (pParams->nThreadsNum)
@@ -432,11 +428,9 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     m_pLoader.reset(new VPLImplementationLoader);
 
-    sts = m_pLoader->ConfigureVersion(initPar.Version);
-    MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureVersion failed");
     sts = m_pLoader->ConfigureImplementation(initPar.Implementation);
     MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
-    sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, pParams->bUseHWLib);
+    sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, initPar.Implementation);
     MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureAccelerationMode failed");
 #if (defined(_WIN64) || defined(_WIN32))
     m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);

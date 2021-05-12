@@ -43,10 +43,11 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 };
 
 VPLImplementationLoader::VPLImplementationLoader()
-{ 
+{
     m_Loader = MFXLoad();
     m_idesc = nullptr;
     m_ImplIndex = 0;
+    m_MinVersion = MakeVersion(2, 0);
 }
 
 VPLImplementationLoader::~VPLImplementationLoader()
@@ -138,7 +139,7 @@ mfxStatus VPLImplementationLoader::ConfigureAccelerationMode(mfxAccelerationMode
     return sts;
 }
 
-mfxStatus VPLImplementationLoader::ConfigureVersion(mfxVersion const& version)
+mfxStatus VPLImplementationLoader::ConfigureVersion(mfxVersion const version)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -168,12 +169,14 @@ mfxStatus VPLImplementationLoader::EnumImplementations()
     while (sts == MFX_ERR_NONE)
     {
         sts = MFXEnumImplementations(m_Loader, impl, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc);
+        MSDK_CHECK_STATUS(sts, "MFXEnumImplementations failed");
         if (!idesc)
         {
             sts = MFX_ERR_NULL_PTR;
             break;
         }
-        else if ((devIDAndAdapter && strncmp(idesc->Dev.DeviceID, devIDAndAdapter, sizeof(devIDAndAdapter)) == 0) || strcmp(devIDAndAdapter, "") == 0)
+        else if (((devIDAndAdapter && strncmp(idesc->Dev.DeviceID, devIDAndAdapter, sizeof(devIDAndAdapter)) == 0) || strcmp(devIDAndAdapter, "") == 0)
+            && MakeVersion(idesc->ApiVersion) >= m_MinVersion)
         {
             m_idesc = idesc;
             m_ImplIndex = impl;
@@ -191,17 +194,14 @@ mfxStatus VPLImplementationLoader::EnumImplementations()
     return sts;
 }
 
-mfxStatus VPLImplementationLoader::ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxVersion const& version)
+mfxStatus VPLImplementationLoader::ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode)
 {
     mfxStatus sts;
 
     sts = ConfigureImplementation(impl);
     MSDK_CHECK_STATUS(sts, "ConfigureImplementation failed");
-    sts = ConfigureVersion(version);
-    MSDK_CHECK_STATUS(sts, "ConfigureVersion failed");
     sts = ConfigureAccelerationMode(accelerationMode, impl);
     MSDK_CHECK_STATUS(sts, "ConfigureAccelerationMode failed");
-
     sts = EnumImplementations();
     MSDK_CHECK_STATUS(sts, "EnumImplementations failed");
 
@@ -215,7 +215,7 @@ mfxU32 VPLImplementationLoader::GetImplIndex() const
     return m_ImplIndex;
 }
 
-mfxStatus VPLImplementationLoader::GetVersion(mfxVersion *version)
+mfxStatus VPLImplementationLoader::GetVersion(mfxVersion& version)
 {
     if (!m_idesc)
     {
@@ -224,9 +224,7 @@ mfxStatus VPLImplementationLoader::GetVersion(mfxVersion *version)
 
     if (m_idesc)
     {
-        version->Major = m_idesc->ApiVersion.Major;
-        version->Minor = m_idesc->ApiVersion.Minor;
-        version->Version = m_idesc->ApiVersion.Version;
+        version = m_idesc->ApiVersion;
         return MFX_ERR_NONE;
     }
 
@@ -249,11 +247,16 @@ mfxStatus VPLImplementationLoader::GetImplName(mfxChar *implName)
     return MFX_ERR_NOT_FOUND;
 }
 
+void VPLImplementationLoader::SetMinVersion(mfxVersion const version)
+{
+    m_MinVersion = MakeVersion(version);
+}
+
 mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader* Loader)
 {
     mfxStatus sts = MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
     mfxVersion version;
-    Loader->GetVersion(&version);
+    Loader->GetVersion(version);
     msdk_printf(MSDK_STRING("Loaded Library Version: %d.%d \n"), version.Major, version.Minor);
     mfxChar implName[MFX_IMPL_NAME_LEN] = {};
     Loader->GetImplName(implName);

@@ -339,12 +339,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
     if (pParams->nNumSlice == 0)
         pParams->nNumSlice = 1;
 
-    mfxVersion min_version;
     mfxVersion version;     // real API version with which library is initialized
-
-    // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    min_version.Major = MFX_VERSION_MAJOR;
-    min_version.Minor = MFX_VERSION_MINOR;
 
     // Init session
     if (pParams->bUseHWLib)
@@ -354,8 +349,6 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
     }
     else
     {
-        sts = m_pLoader->ConfigureVersion(min_version);
-        MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureVersion failed");
         sts = m_pLoader->ConfigureImplementation(MFX_IMPL_SOFTWARE);
         MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
         sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, pParams->bUseHWLib);
@@ -371,7 +364,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "m_resources.Init failed");
     }
 
-    sts = m_pLoader->GetVersion(&version); // get real API version of the loaded library
+    sts = m_pLoader->GetVersion(version); // get real API version of the loaded library
     MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
 
     if ((pParams->MVC_flags & MVC_ENABLED) != 0 && !CheckVersion(&version, MSDK_FEATURE_MVC)) {

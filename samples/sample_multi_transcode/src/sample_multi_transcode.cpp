@@ -142,10 +142,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     sts = VerifyCrossSessionsOptions();
     MSDK_CHECK_STATUS(sts, "VerifyCrossSessionsOptions failed");
 
-    mfxVersion ver = {{ MFX_VERSION_MINOR, MFX_VERSION_MAJOR }};
-
     m_pLoader.reset(new VPLImplementationLoader);
-    sts = m_pLoader->ConfigureAndEnumImplementations(m_InputParamsArray[0].libType, m_accelerationMode, ver);
+    sts = m_pLoader->ConfigureAndEnumImplementations(m_InputParamsArray[0].libType, m_accelerationMode);
     MSDK_CHECK_STATUS(sts, "pLoader->ConfigureAndEnumImplementations failed");
 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
