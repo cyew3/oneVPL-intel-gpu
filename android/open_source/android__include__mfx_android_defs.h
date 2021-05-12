@@ -45,6 +45,4 @@
 
   #define MFX_ENABLE_VPP
 
-  #define MFX_ENABLE_USER_ENCODE
-
 #endif // #ifndef __MFX_ANDROID_DEFS_H__

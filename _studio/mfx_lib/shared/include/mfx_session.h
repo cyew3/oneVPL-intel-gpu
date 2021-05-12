@@ -149,11 +149,6 @@ struct _mfxSession
 #endif
 
 #if !defined(MFX_ONEVPL)
-    std::unique_ptr<VideoCodecUSER> m_plgDec;
-    std::unique_ptr<VideoCodecUSER> m_plgEnc;
-    std::unique_ptr<VideoCodecUSER> m_plgVPP;
-    std::unique_ptr<VideoCodecUSER> m_plgGen;
-
     // Wrapper of interface for core object
     mfxCoreInterface m_coreInt;
 #endif //!MFX_ONEVPL
@@ -247,9 +242,6 @@ public:
     // Finish initialization. Should be called before Init().
     virtual void SetAdapterNum(const mfxU32 adapterNum) = 0;
 
-#if !defined(MFX_ONEVPL)
-    virtual std::unique_ptr<VideoCodecUSER> & GetPreEncPlugin() = 0;
-#endif
 };
 
 MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session);
@@ -300,12 +292,6 @@ public:
     //--- MFXISession_1_9 interface -------------------------------------------------------------------
 
     void SetAdapterNum(const mfxU32 adapterNum) override;
-#if !defined(MFX_ONEVPL)
-    std::unique_ptr<VideoCodecUSER> &  GetPreEncPlugin() override;
-
-    // Declare additional session's components
-    std::unique_ptr<VideoCodecUSER> m_plgPreEnc;
-#endif
 
 protected:
     // Reference counters

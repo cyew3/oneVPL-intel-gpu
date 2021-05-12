@@ -57,7 +57,6 @@ target_sources(hevce_tests
 ###################################################################################################
 
 # Defines and Libs
-target_compile_definitions(hevce_tests PRIVATE AS_HEVCE_PLUGIN)
 
 target_link_libraries(hevce_tests
   PRIVATE

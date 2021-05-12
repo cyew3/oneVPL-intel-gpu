@@ -571,47 +571,17 @@ void _mfxSession::Cleanup(void)
             m_pScheduler->WaitForAllTasksCompletion(m_pENCODE.get());
 
 #if !defined(MFX_ONEVPL)
-        if (m_plgGen.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_plgGen.get());
-        if (m_plgDec.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_plgDec.get());
-        if (m_plgVPP.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_plgVPP.get());
-
         if (m_pENC.get())
             m_pScheduler->WaitForAllTasksCompletion(m_pENC.get());
         if (m_pPAK.get())
             m_pScheduler->WaitForAllTasksCompletion(m_pPAK.get());
-        if (m_plgEnc.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_plgEnc.get());
 #endif //!MFX_ONEVPL
     }
-
-    // unregister plugin before closing
-#if !defined(MFX_ONEVPL)
-    if (m_plgGen.get())
-    {
-        m_plgGen->PluginClose();
-    }
-    if (m_plgEnc.get())
-    {
-        m_plgEnc->PluginClose();
-    }
-    if (m_plgDec.get())
-    {
-        m_plgDec->PluginClose();
-    }
-    if (m_plgVPP.get())
-    {
-        m_plgVPP->PluginClose();
-    }
-#endif //!MFX_ONEVPL
 
     // release the components the excplicit way.
     // do not relay on default deallocation order,
     // somebody could change it.
 #if !defined(MFX_ONEVPL)
-    m_plgGen.reset();
     m_pPAK.reset();
     m_pENC.reset();
 #endif //!MFX_ONEVPL
@@ -811,13 +781,6 @@ _mfxVersionedSessionImpl::_mfxVersionedSessionImpl(mfxU32 adapterNum)
 
 _mfxVersionedSessionImpl::~_mfxVersionedSessionImpl(void)
 {
-#if defined(MFX_ENABLE_USER_ENC)
-    if (m_plgPreEnc.get())
-    {
-        m_plgPreEnc->PluginClose();
-    }
-    m_plgPreEnc.reset();
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -829,13 +792,6 @@ void _mfxVersionedSessionImpl::SetAdapterNum(const mfxU32 adapterNum)
 {
     m_adapterNum = adapterNum;
 }
-
-#if !defined(MFX_ONEVPL)
-std::unique_ptr<VideoCodecUSER> &  _mfxVersionedSessionImpl::GetPreEncPlugin()
-{
-    return m_plgPreEnc;
-}
-#endif //!MFX_ONEVPL
 
 //////////////////////////////////////////////////////////////////////////
 // _mfxVersionedSessionImpl::MFXIUnknown members

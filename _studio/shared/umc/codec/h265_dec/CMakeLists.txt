@@ -43,7 +43,6 @@ target_sources(umc_h265_hw
 
 target_compile_definitions(umc_h265_hw
   PRIVATE
-    AS_HEVCD_PLUGIN
     MFX_VA
   )
 

@@ -64,8 +64,6 @@ Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
         #define MFX_ENABLE_VPP
 
-        #define MFX_ENABLE_USER_ENCODE
-
     #else // MFX_VA
 
         #define MFX_ENABLE_H265_VIDEO_DECODE

@@ -36,9 +36,6 @@
 #endif
 #endif
 #include "tgllp_copy_kernel_genx_isa.h"
-#if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))
-#include "cht_copy_kernel_genx_isa.h"
-#endif
 #endif
 #if !defined(OSX)
 

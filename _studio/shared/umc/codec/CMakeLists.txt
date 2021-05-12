@@ -64,8 +64,6 @@ target_include_directories(umc_codecs_merged
 
 target_compile_definitions(umc_codecs_merged
   PRIVATE
-    AS_HEVCD_PLUGIN
-    AS_HEVCE_PLUGIN
     AS_H264LA_PLUGIN
   )
 

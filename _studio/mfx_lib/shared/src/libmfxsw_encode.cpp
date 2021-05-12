@@ -53,16 +53,12 @@
 #endif
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
-#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
 #if defined(MFX_VA)
 #include "../../encode_hw/hevc/hevcehw_disp.h"
 #endif
-#else
-#include "mfx_h265_encode_api.h"
-#endif
 #endif
 
-#if defined (MFX_ENABLE_VP9_VIDEO_ENCODE_HW) && !defined (AS_VP9E_PLUGIN) && defined(MFX_VA)
+#if defined (MFX_ENABLE_VP9_VIDEO_ENCODE_HW) && defined(MFX_VA)
 #include "mfx_vp9_encode_hw.h"
 #endif
 
@@ -120,36 +116,6 @@ typedef std::map<CodecKey, EHandlers> CodecId2Handlers;
 
 static const CodecId2Handlers codecId2Handlers =
 {
-#ifdef MFX_ENABLE_USER_ENCODE
-    {
-        {
-            CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN
-        },
-        {
-            // .primary =
-            {
-                // .ctor =
-                nullptr,
-                // .query =
-                [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
-                {
-                    assert(session->m_plgEnc);
-                    return session->m_plgEnc->Query(session->m_pCORE.get(), in, out);
-                },
-                // .queryIOSurf =
-                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                {
-                    assert(session->m_plgEnc);
-                    return session->m_plgEnc->QueryIOSurf(session->m_pCORE.get(), par, request, 0);
-                }
-            },
-            // .fallback =
-            {
-            }
-        }
-    },
-#endif
-
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE) && ! defined(AS_H264LA_PLUGIN)
     {
         {
@@ -333,7 +299,7 @@ static const CodecId2Handlers codecId2Handlers =
     },
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && (defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN))
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA)
     {
         {
             MFX_CODEC_HEVC
@@ -549,20 +515,8 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #endif
         {
             CodecId2Handlers::const_iterator handler;
-
-#if defined(MFX_ENABLE_USER_ENCODE)
-            if (session->m_plgEnc.get())
-            {
-                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN));
-                assert(handler != codecId2Handlers.end());
-            }
-            // if plugin is not supported, or wrong parameters passed we should not look into library
-            else
-#endif //!MFX_ENABLE_USER_ENCODE
-            {
-                handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId));
-            }
-
+            handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId));
+            
             mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_UNSUPPORTED
                 : (handler->second.primary.query)(session, in, out);
 
@@ -570,14 +524,8 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             {
                 assert(handler != codecId2Handlers.end());
 
-#if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
-                // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
-                if (!session->m_plgEnc.get())
-#endif //!MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
-                {
-                    mfxRes = !handler->second.fallback.query ? MFX_ERR_UNSUPPORTED
-                        : (handler->second.fallback.query)(session, in, out);
-                }
+                mfxRes = !handler->second.fallback.query ? MFX_ERR_UNSUPPORTED
+                    : (handler->second.fallback.query)(session, in, out);
             }
             else
             {
@@ -599,7 +547,6 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     }
 
 #if (MFX_VERSION >= 1025)
-#if !defined(AS_HEVCE_PLUGIN)
     if (mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || mfxRes == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
     {
         try
@@ -620,7 +567,6 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, "Unknown exception was caught while comparing In and Out VideoParams.");
         }
     }
-#endif
 #endif
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, out);
@@ -660,19 +606,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #endif
         {
             CodecId2Handlers::const_iterator handler;
-
-#if defined(MFX_ENABLE_USER_ENCODE)
-            if (session->m_plgEnc.get())
-            {
-                handler = codecId2Handlers.find(CodecKey(CodecKey::MFX_CODEC_DUMMY_FOR_PLUGIN));
-                assert(handler != codecId2Handlers.end());
-            }
-            // if plugin is not supported, or wrong parameters passed we should not look into library
-            else
-#endif //MFX_ENABLE_USER_ENCODE
-            {
-                handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId));
-            }
+            handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId));
 
             mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_INVALID_VIDEO_PARAM
                 : (handler->second.primary.queryIOSurf)(session, par, request);
@@ -681,14 +615,9 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             {
                 assert(handler != codecId2Handlers.end());
 
-#if defined(MFX_ENABLE_USER_ENCODE) && !defined(OPEN_SOURCE)
-                // for plugin, do not touch MFX_WRN_PARTIAL_ACCELERATION
-                if (!session->m_plgEnc.get())
-#endif //MFX_ENABLE_USER_ENCODE && !OPEN_SOURCE
-                {
-                    mfxRes = !handler->second.fallback.query ? MFX_ERR_INVALID_VIDEO_PARAM
-                        : (handler->second.fallback.queryIOSurf)(session, par, request);
-                }
+                mfxRes = !handler->second.fallback.query ? MFX_ERR_INVALID_VIDEO_PARAM
+                    : (handler->second.fallback.queryIOSurf)(session, par, request);
+
             }
             else
             {
@@ -790,13 +719,8 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
 
         mfxRes = session->m_pENCODE->Close();
 
-#if !defined(MFX_ONEVPL)
-        // delete the codec's instance if not plugin
-        if (!session->m_plgEnc)
-#endif
-        {
-            session->m_pENCODE.reset(nullptr);
-        }
+        session->m_pENCODE.reset(nullptr);
+
     }
     // handle error(s)
     catch(...)
@@ -916,11 +840,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                     // fill dependencies
                     task.pSrc[0] = surface;
                     task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;
-                    
-                    // specific plug-in case to run additional task after main task
-#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
                     task.pSrc[1] = bs;
-#endif
                     task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
 
 #ifdef MFX_TRACE_ENABLE
@@ -942,10 +862,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                     task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
                     // fill dependencies
                     task.pSrc[0] = surface;
-                    // specific plug-in case to run additional task after main task
-#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
                     task.pSrc[1] = bs;
-#endif
                     task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
                     task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;
 

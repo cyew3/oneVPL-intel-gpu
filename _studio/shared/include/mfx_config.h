@@ -61,14 +61,6 @@
 #endif // #if defined(LINUX32) || defined(LINUX64)
 #endif // MFX_VA
 
-#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
-    #if defined(HEVCE_EVALUATION)
-        #define MFX_MAX_ENCODE_FRAMES 1000
-    #endif
-    #if defined(HEVCD_EVALUATION)
-        #define MFX_MAX_DECODE_FRAMES 1000
-    #endif
-#endif
 
 #if defined(_WIN32) || defined(_WIN64)
     // mfxconfig.h is auto-generated file containing mediasdk per-component
@@ -90,7 +82,7 @@
     #endif
     #define MFX_ENABLE_VC1_VIDEO_DECODE
 
-    #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
+    #if defined(MFX_VA)
         #define MFX_ENABLE_H265_VIDEO_ENCODE
     #endif
     #if defined(AS_H264LA_PLUGIN)
@@ -167,7 +159,7 @@
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
     #endif
 
-    #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined (MFX_RT) || defined(AS_H264LA_PLUGIN)
+    #if defined (MFX_RT) || defined(AS_H264LA_PLUGIN)
         #undef MFX_ENABLE_H265_VIDEO_DECODE
         #undef MFX_ENABLE_H265_VIDEO_ENCODE
         #undef MFX_ENABLE_H264_VIDEO_DECODE
@@ -184,8 +176,6 @@
         #undef MFX_ENABLE_MJPEG_WEAVE_DI_VPP
         #undef MFX_ENABLE_H264_VIDEO_ENCODE_HW
         #undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
-        #undef MFX_ENABLE_USER_DECODE
-        #undef MFX_ENABLE_USER_ENCODE
         #undef MFX_ENABLE_AV1_VIDEO_DECODE
         #undef MFX_ENABLE_VP9_VIDEO_DECODE
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
@@ -193,7 +183,7 @@
         #if defined(__linux__)
             #undef MFX_ENABLE_VP9_VIDEO_ENCODE_HW
         #endif
-    #endif // #if defined(AS_HEVCD_PLUGIN)
+    #endif
 
     #if defined(AS_H264LA_PLUGIN)
         #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
@@ -204,31 +194,6 @@
             #undef MFX_ENABLE_VPP
         #else
             #define MFX_ENABLE_VPP
-        #endif
-    #endif
-
-    #if defined(AS_HEVCD_PLUGIN)
-        #define MFX_ENABLE_H265_VIDEO_DECODE
-    #endif
-    #if defined(AS_HEVCE_PLUGIN)
-        #define MFX_ENABLE_H265_VIDEO_ENCODE
-    #endif
-
-    #if defined(AS_AV1E_PLUGIN)
-        #define MFX_ENABLE_AV1_VIDEO_ENCODE
-    #endif
-
-    #if defined(AS_VP8DHW_PLUGIN) || defined(AS_VP8D_PLUGIN)
-        #define MFX_ENABLE_VP8_VIDEO_DECODE
-    #endif
-
-    #if defined(AS_VP9D_PLUGIN)
-        #define MFX_ENABLE_VP9_VIDEO_DECODE
-    #endif
-
-    #if defined(AS_VP9E_PLUGIN)
-        #ifdef MFX_VA
-            #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
         #endif
     #endif
 

@@ -24,10 +24,6 @@
 #include <mfx_tools.h>
 #include <mfx_common.h>
 
-#if defined (MFX_ENABLE_USER_VPP)
-#include <mfx_user_plugin.h>
-#endif
-
 // sheduling and threading stuff
 #include <mfx_task.h>
 
@@ -88,24 +84,13 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 
     try
     {
-#ifdef MFX_ENABLE_USER_VPP
-        if (session->m_plgVPP.get())
-        {
-            mfxRes = session->m_plgVPP->Query(session->m_pCORE.get(), in, out);
-        }
-        else
-        {
-#endif
 
 #if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
-            mfxRes = VideoVPPMain::Query(session->m_pCORE.get(), in, out);
+        mfxRes = VideoVPPMain::Query(session->m_pCORE.get(), in, out);
 #endif // MFX_ENABLE_VPP
 #endif
 
-#ifdef MFX_ENABLE_USER_VPP
-        }
-#endif
     }
     // handle error(s)
     catch(...)
@@ -133,23 +118,10 @@ mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 
     try
     {
-#ifdef MFX_ENABLE_USER_VPP
-        if (session->m_plgVPP.get())
-        {
-            mfxRes = session->m_plgVPP->QueryIOSurf(session->m_pCORE.get(), par, &(request[0]),  &(request[1]) );
-        }
-        else
-        {
-#endif
-
 #if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
-            mfxRes = VideoVPPMain::QueryIOSurf(session->m_pCORE.get(), par, request/*, session->m_adapterNum*/);
+        mfxRes = VideoVPPMain::QueryIOSurf(session->m_pCORE.get(), par, request/*, session->m_adapterNum*/);
 #endif // MFX_ENABLE_VPP
-#endif 
-
-#ifdef MFX_ENABLE_USER_VPP
-        }
 #endif
     }
     // handle error(s)
@@ -177,33 +149,21 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
 
     try
     {
-#ifdef MFX_ENABLE_USER_VPP
-        if (session->m_plgVPP)
-        {
-            mfxRes = session->m_plgVPP->Init(par);
-        }
-        else
-        {
-#endif
-
 #if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
-            // close the existing video processor,
-            // if it is initialized.
-            if (session->m_pVPP.get())
-            {
-                MFXVideoVPP_Close(session);
-            }
-
-
-            // create a new instance
-            session->m_pVPP.reset(session->Create<VideoVPP>(*par));
-            MFX_CHECK(session->m_pVPP.get(), MFX_ERR_INVALID_VIDEO_PARAM);
-            mfxRes = session->m_pVPP->Init(par);
-#endif // MFX_ENABLE_VPP
-#endif 
-#ifdef MFX_ENABLE_USER_VPP
+        // close the existing video processor,
+        // if it is initialized.
+        if (session->m_pVPP.get())
+        {
+            MFXVideoVPP_Close(session);
         }
+
+
+        // create a new instance
+        session->m_pVPP.reset(session->Create<VideoVPP>(*par));
+        MFX_CHECK(session->m_pVPP.get(), MFX_ERR_INVALID_VIDEO_PARAM);
+        mfxRes = session->m_pVPP->Init(par);
+#endif // MFX_ENABLE_VPP
 #endif
     }
     // handle error(s)
@@ -238,13 +198,8 @@ mfxStatus MFXVideoVPP_Close(mfxSession session)
         session->m_pScheduler->WaitForAllTasksCompletion(session->m_pVPP.get());
 
         mfxRes = session->m_pVPP->Close();
-#if !defined(MFX_ONEVPL)
-        // delete the codec's instance if not plugin
-        if (!session->m_plgVPP)
-#endif
-        {
-            session->m_pVPP.reset(nullptr);
-        }
+
+        session->m_pVPP.reset(nullptr);
     }
     // handle error(s)
     catch(...)
@@ -308,55 +263,6 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 
     try
     {
-#ifdef MFX_ENABLE_USER_VPP
-      if (session->m_plgVPP.get())
-      {
-          MFX_TASK task;
-          mfxSyncPoint syncPoint = NULL;
-          *syncp = NULL;
-          memset(&task, 0, sizeof(MFX_TASK));
-
-          mfxRes = session->m_plgVPP->VPPFrameCheck(in, out, aux, &task.entryPoint);
-
-          if (task.entryPoint.pRoutine)
-          {
-              mfxStatus mfxAddRes;
-  
-              task.pOwner = session->m_plgVPP.get();
-              task.priority = session->m_priority;
-              task.threadingPolicy = session->m_plgVPP->GetThreadingPolicy();
-              // fill dependencies
-              task.pSrc[0] = in;
-              task.pDst[0] = out;
-              if (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes))
-                task.pDst[0] = NULL;
-  
-              #ifdef MFX_TRACE_ENABLE
-              task.nParentId = MFX_AUTO_TRACE_GETID();
-              task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_VPP;
-              #endif
-  
-              // register input and call the task
-              mfxAddRes = session->m_pScheduler->AddTask(task, &syncPoint);
-              if (MFX_ERR_NONE != mfxAddRes)
-              {
-                  return mfxAddRes;
-              }
-
-#if defined(MFX_ONEVPL)
-              if (syncPoint && out && out->FrameInterface)
-              {
-                  MFX_CHECK_HDL(out->FrameInterface->Context);
-                  static_cast<mfxFrameSurfaceBaseInterface*>(out->FrameInterface->Context)->SetSyncPoint(syncPoint);
-              }
-#endif
-
-              *syncp = syncPoint;
-          }
-      }
-      else
-      {
-#endif
         mfxSyncPoint syncPoint = NULL;
         MFX_ENTRY_POINT entryPoints[MFX_NUM_ENTRY_POINTS];
         mfxU32 numEntryPoints = MFX_NUM_ENTRY_POINTS;
@@ -492,9 +398,6 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 
         // return pointer to synchronization point
         *syncp = syncPoint;
-#ifdef MFX_ENABLE_USER_VPP
-      }
-#endif
     }
     // handle error(s)
     catch(...)
@@ -515,11 +418,9 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 
 mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
 {
-#if !defined(MFX_ENABLE_USER_VPP)
     (void)in;
     (void)surface_work;
     (void)surface_out;
-#endif
 
     mfxStatus mfxRes;
 
@@ -534,61 +435,8 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 
     try
     {
-#ifdef MFX_ENABLE_USER_VPP
-      if (session->m_plgVPP.get())
-      {
-          MFX_TASK task;
-          mfxSyncPoint syncPoint = NULL;
-          *syncp = NULL;
-          memset(&task, 0, sizeof(MFX_TASK));
-
-          mfxRes = session->m_plgVPP->VPPFrameCheckEx(in, surface_work, surface_out, &task.entryPoint);
-
-          if (task.entryPoint.pRoutine)
-          {
-              mfxStatus mfxAddRes;
-  
-              task.pOwner = session->m_plgVPP.get();
-              task.priority = session->m_priority;
-              task.threadingPolicy = session->m_plgVPP->GetThreadingPolicy();
-              // fill dependencies
-              task.pSrc[0] = in;
-              task.pDst[0] = surface_work;
-              if (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes))
-                task.pDst[0] = NULL;
-  
-              #ifdef MFX_TRACE_ENABLE
-              task.nParentId = MFX_AUTO_TRACE_GETID();
-              task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_VPP;
-              #endif
-  
-              // register input and call the task
-              mfxAddRes = session->m_pScheduler->AddTask(task, &syncPoint);
-              if (MFX_ERR_NONE != mfxAddRes)
-              {
-                  return mfxAddRes;
-              }
-
-#if defined(MFX_ONEVPL)
-              if (syncPoint && (*surface_out) && (*surface_out)->FrameInterface)
-              {
-                  MFX_CHECK_HDL((*surface_out)->FrameInterface->Context);
-                  static_cast<mfxFrameSurfaceBaseInterface*>((*surface_out)->FrameInterface->Context)->SetSyncPoint(syncPoint);
-              }
-#endif
-
-              *syncp = syncPoint;
-          }
-      }
-      else
-      {
-#endif
         //MediaSDK's VPP should not work through Ex function
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-#ifdef MFX_ENABLE_USER_VPP
-      }
-#endif
     }
     // handle error(s)
     catch(...)
