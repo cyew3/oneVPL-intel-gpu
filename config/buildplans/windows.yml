@@ -37,22 +37,19 @@ steps:
     command: .\sources\mdp_msdk-lib\config\scripts\windows_logs.bat
     always_execute: true
   - name: create integration lib drop
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
-      -BuildDir "C:\workspace\Build" -Msdk1xPath "C:\workspace\mediasdk_1x_binaries\Windows\msdk\runtime\*.zip"
-      -PathToSave "C:\workspace\output\Windows\integration\runtime"
+    command: powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
+      -BuildDir "%WORKSPACE%\Build" -Msdk1xPath "%WORKSPACE%\mediasdk_1x_binaries\Windows\msdk\runtime\*.zip"
+      -PathToSave "%WORKSPACE%\output\Windows\integration\runtime"
   - name: copy integration tools drop
     command: mkdir %WORKSPACE%\output\Windows\integration\tools &&
       xcopy %WORKSPACE%\mediasdk_1x_binaries\Windows\msdk\tools\*.zip %WORKSPACE%\output\Windows\integration\tools
   - name: create vpl lib drop
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\vpl_windows_drop.ps1
-      -BuildDir "C:\workspace\Build" -PathToSave "C:\workspace\output\Windows\vpl\runtime"
+    command: powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\vpl_windows_drop.ps1
+      -BuildDir "%WORKSPACE%\Build" -PathToSave "%WORKSPACE%\output\Windows\vpl\runtime"
   - name: create vpl tools drop
-    command: docker run --rm --storage-opt size=80GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      powershell -file %DOCKER_WORKSPACE%\sources\mdp_msdk-lib\config\scripts\vpl_windows_tools_drop.ps1
-      -BuildDir "C:\workspace\Build" -Msdk1xPath "C:\workspace\mediasdk_1x_binaries\Windows\msdk\tools\*.zip"
-      -PathToSave "C:\workspace\output\Windows\vpl\tools"
+    command: powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\vpl_windows_tools_drop.ps1
+      -BuildDir "%WORKSPACE%\Build" -Msdk1xPath "%WORKSPACE%\mediasdk_1x_binaries\Windows\msdk\tools\*.zip"
+      -PathToSave "%WORKSPACE%\output\Windows\vpl\tools"
 types:
   release:
     env:
