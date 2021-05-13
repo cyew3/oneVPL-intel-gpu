@@ -42,16 +42,14 @@ typedef IDirect3DSurface9*              _mfxPlatformVideoSurface;
 #else // #if (defined(_WIN32) || defined(_WIN64)) 
 
 #if (defined(LINUX32) || defined(LINUX64) )
-    #if defined(MFX_VA)
-        /* That's tricky: if LibVA will not be installed on the machine, you should be able
-         * to build SW Media SDK and some apps in SW mode. Thus, va.h should not be visible.
-         * Since we develop on machines where LibVA is installed, we forget about LibVA-free
-         * build sometimes. So, that's the reminder why MFX_VA protection was added here.
-         */
-        #include <va/va.h>
-        typedef VADisplay                       _mfxPlatformAccelerationService;
-        typedef VASurfaceID                     _mfxPlatformVideoSurface;
-    #endif // #if defined(MFX_VA)
+/* That's tricky: if LibVA will not be installed on the machine, you should be able
+ * to build SW Media SDK and some apps in SW mode. Thus, va.h should not be visible.
+ * Since we develop on machines where LibVA is installed, we forget about LibVA-free
+ * build sometimes. So, that's the reminder why MFX_VA protection was added here.
+ */
+#include <va/va.h>
+typedef VADisplay                       _mfxPlatformAccelerationService;
+typedef VASurfaceID                     _mfxPlatformVideoSurface;
 #endif // #if (defined(LINUX32) || defined(LINUX64) )
 
 #ifndef D3DDDIFORMAT

@@ -337,14 +337,13 @@ private:
     mfxFrameAllocResponse&                    m_response_alien;
 };
 
-#if defined (MFX_VA)
 class mfx_UMC_FrameAllocator_D3D : public mfx_UMC_FrameAllocator
 {
 public:
     virtual mfxStatus PrepareToOutput(mfxFrameSurface1 *surface_work, UMC::FrameMemID index, const mfxVideoParam * videoPar, bool isOpaq);
 };
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 class VideoVppJpegD3D;
 
 struct JPEG_Info
@@ -407,6 +406,5 @@ private:
 };
 
 #endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA_WIN)
-#endif // #if defined (MFX_VA)
 
 #endif //_MFX_ALLOC_WRAPPER_H_

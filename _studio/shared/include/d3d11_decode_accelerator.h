@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 #ifndef _D3D11_DECODE_ACCELERATOR_H_
 #define _D3D11_DECODE_ACCELERATOR_H_
@@ -130,4 +129,4 @@ private:
 
 #endif
 #endif
-#endif
+

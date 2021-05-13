@@ -19,8 +19,6 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined (MFX_VA)
-
 #include "libmfx_core_hw.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
@@ -190,5 +188,4 @@ bool IsHwMvcEncSupported()
 }
 #endif
 
-#endif
 /* EOF */

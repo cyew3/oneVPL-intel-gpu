@@ -110,5 +110,5 @@ public:
     
 };
 #endif  //__LIBMFX_CORE__VDAAPI_H__
-#endif  //#if defined  (MFX_VA) && defined(__APPLE__)
+#endif  //#if defined(__APPLE__)
 

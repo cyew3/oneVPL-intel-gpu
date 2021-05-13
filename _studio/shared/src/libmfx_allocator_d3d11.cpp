@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 
 #include "mfxvideo++int.h"
@@ -1077,6 +1076,5 @@ std::pair<mfxHDL, mfxHandleType> mfxFrameSurface1_hw_d3d11::GetDeviceHandle() co
 
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
-#endif
 #endif
 

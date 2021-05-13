@@ -528,11 +528,7 @@ _mfxSession::_mfxSession(const mfxU32 adapterNum)
     , m_bIsHWENCSupport()
     , m_bIsHWDECSupport()
 {
-#if defined (MFX_VA)
     m_currentPlatform = MFX_PLATFORM_HARDWARE;
-#else
-    m_currentPlatform = MFX_PLATFORM_SOFTWARE;
-#endif
 
 #if defined(MFX_ONEVPL)
     m_versionToReport.Major = MFX_VERSION_MAJOR;

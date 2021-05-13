@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 #include <windows.h>
 #include <initguid.h>
@@ -1715,5 +1714,4 @@ template class D3D11VideoCORE_T<CommonCORE  >;
 template class D3D11VideoCORE_T<CommonCORE20>;
 #endif
 
-#endif
 #endif

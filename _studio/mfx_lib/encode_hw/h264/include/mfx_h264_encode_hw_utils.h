@@ -58,9 +58,6 @@
 class MfxLpLookAhead;
 #endif
 
-#ifdef MFX_UNDOCUMENTED_DUMP_FILES
-#include "vm_file.h"
-#endif
 #ifdef MFX_ENABLE_MCTF_IN_AVC
 #include "cmvm.h"
 #include "mctf_common.h"
@@ -4243,13 +4240,6 @@ private:
     typedef CompleteTaskOnExit<TaskManagerMvc, DdiTask> CompleteTaskOnExitMvcOneView;
 // MVC BD }
 #endif // #ifndef OPEN_SOURCE
-
-#ifdef MFX_UNDOCUMENTED_DUMP_FILES
-    inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)
-    {
-        return name[0] ? vm_file_fopen(name, mode) : 0;
-    }
-#endif
 
     mfxU8 const * SkipStartCode(mfxU8 const * begin, mfxU8 const * end);
     mfxU8 *       SkipStartCode(mfxU8 *       begin, mfxU8 *       end);

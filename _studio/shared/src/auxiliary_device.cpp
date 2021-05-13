@@ -811,4 +811,4 @@ mfxStatus AuxiliaryDevice::QueryAccelRTFormats(CONST GUID *pAccelGuid, D3DFORMAT
 
 } // mfxStatus AuxiliaryDevice::QueryAccelRTFormats(CONST GUID *pAccelGuid, D3DFORMAT **ppFormats, UINT *puCount)
 
-#endif // #if defined (MFX_VA)
+#endif // #if defined (MFX_VA_WIN)

@@ -35,9 +35,7 @@
 #include "mfxvideo++int.h"
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
-#if defined(MFX_VA)
 #include "mfx_h264_encode_hw.h"
-#endif
 
 #if defined(MFX_ENABLE_H264_FEI_ENCPAK)
 #include "mfxfei.h"
@@ -53,12 +51,10 @@
 #endif
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
-#if defined(MFX_VA)
 #include "../../encode_hw/hevc/hevcehw_disp.h"
 #endif
-#endif
 
-#if defined (MFX_ENABLE_VP9_VIDEO_ENCODE_HW) && defined(MFX_VA)
+#if defined (MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
 #include "mfx_vp9_encode_hw.h"
 #endif
 
@@ -122,7 +118,7 @@ static const CodecId2Handlers codecId2Handlers =
             MFX_CODEC_AVC,
         },
         {
-#if defined(MFX_VA) && defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
             // .primary =
             {
                 // .ctor =
@@ -155,7 +151,7 @@ static const CodecId2Handlers codecId2Handlers =
             // .fallback =
             {
             }
-#else // MFX_VA
+#else // MFX_ENABLE_H264_VIDEO_ENCODE_HW
             // .primary =
             {
                 // .ctor =
@@ -194,7 +190,7 @@ static const CodecId2Handlers codecId2Handlers =
                     return mfxRes;
                 }
             }
-#endif // MFX_VA
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW
         }
     },
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE
@@ -205,7 +201,6 @@ static const CodecId2Handlers codecId2Handlers =
             MFX_CODEC_MPEG2
         },
         {
-#if defined(MFX_VA)
             // .primary =
             {
                 // .ctor =
@@ -235,27 +230,6 @@ static const CodecId2Handlers codecId2Handlers =
             // .fallback =
             {
             }
-#else // MFX_VA
-            // .primary =
-            {
-                // .ctor =
-                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    return new MFXVideoENCODEMPEG2(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
-                {
-                    return MFXVideoENCODEMPEG2::Query(in, out);
-                },
-                // .queryIOSurf =
-                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                {
-                    return MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
-                }
-            }
-#endif // MFX_VA
         }
     },
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENCODE
@@ -299,7 +273,7 @@ static const CodecId2Handlers codecId2Handlers =
     },
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
     {
         {
             MFX_CODEC_HEVC

@@ -21,7 +21,6 @@
 #if !defined(__MFX_SCHEDULER_DX11_EVENT)
 #define __MFX_SCHEDULER_DX11_EVENT
 
-#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 
 #include <atlbase.h>
@@ -153,5 +152,5 @@ protected:
 };
 
 #endif
-#endif
+
 #endif // __MFX_SCHEDULER_DX11_EVENT

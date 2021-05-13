@@ -20,12 +20,10 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_VA)
 #if (defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)) && defined(MFX_VA_WIN)
 
 #include "assert.h"
 
-//#define MFX_VA
 #include "libmfx_core_interface.h"
 #include "mfx_mpeg2_encode_d3d9.h"
 #include "fast_copy.h"
@@ -1008,6 +1006,5 @@ mfxStatus D3D9Encoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBits
     return sts;
 }
 
-#endif
 #endif
 /* EOF */

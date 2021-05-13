@@ -88,9 +88,6 @@
 #ifdef PAVP_SUPPORT
         mfxExtPAVPOption        sExtPAVPOption;
 #endif
-#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
-        mfxExtCodingOptionQuantMatrix sQuantMatrix;
-#endif
 
         mfxExtVideoSignalInfo   videoSignalInfo;
         bool                    bAddDisplayExt;

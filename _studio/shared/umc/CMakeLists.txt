@@ -65,7 +65,6 @@ target_sources(umc_va_hw
 
 target_compile_definitions(umc_va_hw
   PRIVATE
-    MFX_VA
     ${API_FLAGS} ${WARNING_FLAGS}
   )
 target_include_directories(umc_va_hw

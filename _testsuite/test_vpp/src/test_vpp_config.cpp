@@ -32,12 +32,6 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_SCENE_ANALYSIS;    
     }
-#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
-    if( VPP_FILTER_DISABLED != pParams->varianceParam[paramID].mode )
-    {
-        pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_VARIANCE_REPORT;    
-    }
-#endif
     if( VPP_FILTER_DISABLED != pParams->idetectParam[paramID].mode )
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION;    
