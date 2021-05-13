@@ -153,6 +153,12 @@ void DDI_D3D9::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             sts = m_pDevice->QueryCaps(&hwCaps, sizeof(hwCaps));
             MFX_CHECK_STS(sts);
 
+            if (IsOn(par.mfx.LowPower))
+            {
+                sts = m_pDevice->QueryDdiVersion(MFX_CODEC_HEVC);
+                MFX_CHECK_STS(sts);
+            }
+
             m_guid = guid;
         }
 
