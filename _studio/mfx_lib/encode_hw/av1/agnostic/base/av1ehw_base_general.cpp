@@ -2501,6 +2501,9 @@ static T Reorder(
         reorderOut = top;
     }
 
+    if(reorderOut == end)
+        return reorderOut;
+
     T firstToDisplay = GetFirstFrameToDisplay(begin, end, reorderOut);
     if (firstToDisplay != end)
         reorderOut->NextBufferedDisplayOrder = firstToDisplay->DisplayOrderInGOP;
