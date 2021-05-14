@@ -87,12 +87,12 @@ enum eMFXHWType
 
     MFX_HW_TGL_LP    = 0x1600000,
     MFX_HW_RKL       = MFX_HW_TGL_LP + 2,
+    MFX_HW_DG1       = MFX_HW_TGL_LP + 3,
     MFX_HW_ADL_S     = MFX_HW_TGL_LP + 4,
-    MFX_HW_DG1       = 0x1600003,
+    MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
 
 #ifndef STRIP_EMBARGO
     MFX_HW_RYF       = MFX_HW_TGL_LP + 1,
-    MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
     MFX_HW_XE_HP_SDV = MFX_HW_TGL_LP + 6,
     MFX_HW_DG2       = MFX_HW_XE_HP_SDV + 1,
     MFX_HW_PVC       = MFX_HW_XE_HP_SDV + 2,
@@ -452,6 +452,26 @@ typedef struct {
     { 0x4698, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
     { 0x4699, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
 
+    /* ADL-P */
+    { 0x46A0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46A1, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46A3, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46A6, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x4626, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+
+    { 0x46B0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46B1, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46B3, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46A8, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x4628, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+
+    { 0x46C0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46C1, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46C3, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x46AA, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+    { 0x462A, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+
+
 #ifndef STRIP_EMBARGO
     { 0xFF20, MFX_HW_TGL_LP, MFX_GT2 },//iTGLSIM
     { 0x9A09, MFX_HW_TGL_LP, MFX_GT2 },
@@ -516,10 +536,6 @@ typedef struct {
     { 0x56B1, MFX_HW_DG2, MFX_GT4 }, // DG2-96  / IDG2_2x3x16_SKU_DEVICE_F0_ID
     { 0x56C0, MFX_HW_DG2, MFX_GT4 }, // DG2-512 / IDG2_8x4x16_SKU_DEVICE_F0_ID
 
-    /* ADL-P */
-    { 0x46A0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
-    { 0x46C0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
-    { 0x46E0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
 
     /* PVC */
     { 0x0BD0, MFX_HW_PVC, MFX_GT4 },

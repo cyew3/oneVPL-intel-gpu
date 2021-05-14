@@ -40,11 +40,11 @@ enum eMFXHWType
     MFX_HW_TGL_LP    = 0x1600000,
     MFX_HW_RKL       = MFX_HW_TGL_LP + 2,
     MFX_HW_DG1       = 0x1600003,
+    MFX_HW_ADL_S     = MFX_HW_TGL_LP + 4,
+    MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
 
 #ifndef STRIP_EMBARGO
     MFX_HW_RYF       = MFX_HW_TGL_LP + 1,
-    MFX_HW_ADL_S     = MFX_HW_TGL_LP + 4,
-    MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
     MFX_HW_XE_HP_SDV = MFX_HW_TGL_LP + 6,
     MFX_HW_DG2       = MFX_HW_XE_HP_SDV + 1,
     MFX_HW_PVC       = MFX_HW_XE_HP_SDV + 2,
@@ -380,6 +380,45 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x4907, MFX_HW_DG1, GT_DISCRETE },
     { 0x4908, MFX_HW_DG1, GT_DISCRETE },
 
+    /* RKL */
+    { 0x4C80, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
+    { 0x4C8A, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
+    { 0x4C81, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
+    { 0x4C8B, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
+    { 0x4C90, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
+    { 0x4C9A, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
+    
+    /* ADL */
+    { 0x4600, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4680, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4681, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4683, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4690, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4691, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4693, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4698, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+    { 0x4699, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
+
+    /* ADL-P */
+    { 0x46A0, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46A1, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46A3, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46A6, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x4626, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+
+    { 0x46B0, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46B1, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46B3, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46A8, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x4628, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+
+    { 0x46C0, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46C1, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46C3, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x46AA, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+    { 0x462A, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
+
+
 #ifndef STRIP_EMBARGO
     { 0xFF20, MFX_HW_TGL_LP, GT_INTEGRATED },//iTGLSIM
     { 0x9A09, MFX_HW_TGL_LP, GT_INTEGRATED },
@@ -441,19 +480,6 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x56B1, MFX_HW_DG2, GT_DISCRETE }, // DG2-96  / IDG2_2x3x16_SKU_DEVICE_F0_ID
     { 0x56C0, MFX_HW_DG2, GT_DISCRETE }, // DG2-512 / IDG2_8x4x16_SKU_DEVICE_F0_ID
 
-    /* RKL */
-    { 0x4C80, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
-    { 0x4C8A, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
-    { 0x4C81, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
-    { 0x4C8B, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
-    { 0x4C90, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
-    { 0x4C9A, MFX_HW_RKL, GT_INTEGRATED }, // RKL-S
-
-    /* ADL */
-    { 0x4600, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
-    { 0x4680, MFX_HW_ADL_S, GT_INTEGRATED },//ADL-S
-    { 0x46A0, MFX_HW_ADL_P, GT_INTEGRATED },//ADL-P
-
     /* PVC */
     { 0x0BD0, MFX_HW_PVC, GT_DISCRETE },
     { 0x0BD5, MFX_HW_PVC, GT_DISCRETE }
@@ -487,10 +513,10 @@ static inline const char *get_name(eMFXHWType platform) {
     case MFX_HW_TGL_LP: return "TGL_LP";
     case MFX_HW_RKL: return "RKL";
     case MFX_HW_DG1: return "DG1";
-#ifndef STRIP_EMBARGO
-    case MFX_HW_RYF: return "RYF";
     case MFX_HW_ADL_S: return "ADL_S";
     case MFX_HW_ADL_P: return "ADL_P";
+#ifndef STRIP_EMBARGO
+    case MFX_HW_RYF: return "RYF";
     // case MFX_HW_XE_HP_SDV: return "TGL_HP"; <-- MFX_HW_XE_HP_SDV == MFX_HW_XE_HP_SDV
     case MFX_HW_XE_HP_SDV: return "XE_HP";
     case MFX_HW_DG2: return "DG2";
