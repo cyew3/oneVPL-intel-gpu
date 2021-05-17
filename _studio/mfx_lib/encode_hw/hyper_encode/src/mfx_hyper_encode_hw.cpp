@@ -26,6 +26,68 @@
 #include "libmfx_core_interface.h" // for MFXIEXTERNALLOC_GUID
 #include "mfx_hyper_encode_hw_adapter.h"
 
+mfxStatus GetDdiVersions(
+    VideoCORE* core,
+    mfxVideoParam* par,
+    mfxU32* ddiVersion1,
+    mfxU32* ddiVersion2)
+{
+    MFX_CHECK_NULL_PTR1(par);
+    mfxVideoParamWrapper in_internal = *par, out_internal = *par;
+
+    EncodeDdiVersion* encodeDdiVersion1 = QueryCoreInterface<EncodeDdiVersion>(core);
+    mfxStatus sts = encodeDdiVersion1->GetDdiVersion(in_internal.mfx.CodecId, ddiVersion1);
+
+    // if app does not call Query/QueryIOSurf, then DDI version for the first adapter will
+    // not be available here. In this case let's call Query and request the version again
+    if (!ddiVersion1) {
+        sts = SingleGpuEncode::Query(core, &in_internal, &out_internal, 0);
+        MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+
+        sts = encodeDdiVersion1->GetDdiVersion(in_internal.mfx.CodecId, ddiVersion1);
+    }
+    MFX_CHECK_STS(sts);
+
+    // app session can be created on any of the adapters
+    // the other adapter must be used for the second Query call
+    mfxI32 adapter = -1;
+    sts = HyperEncodeImpl::MFXQuerySecondAdapter(core->GetSession()->m_adapterNum, &adapter);
+    MFX_CHECK_STS(sts);
+    MFX_CHECK(adapter != -1, MFX_ERR_UNSUPPORTED);
+
+    mfxSession dummy_session;
+    sts = DummySession::Init(adapter, &dummy_session);
+    MFX_CHECK_STS(sts);
+
+    sts = SingleGpuEncode::Query(dummy_session->m_pCORE.get(), &in_internal, &out_internal, 0);
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+
+    EncodeDdiVersion* encodeDdiVersion2 = QueryCoreInterface<EncodeDdiVersion>(dummy_session->m_pCORE.get());
+    sts = encodeDdiVersion2->GetDdiVersion(in_internal.mfx.CodecId, ddiVersion2);
+    MFX_CHECK_STS(sts);
+
+    sts = DummySession::Close(dummy_session);
+    MFX_CHECK_STS(sts);
+
+    return sts;
+}
+
+mfxStatus AreDdiVersionsCompatible(VideoCORE* core, mfxVideoParam* in)
+{
+    mfxU32 ddiVersion1 = 0, ddiVersion2 = 0;
+    mfxStatus sts = GetDdiVersions(core, in, &ddiVersion1, &ddiVersion2);
+    MFX_CHECK_STS(sts);
+
+    if (ddiVersion1 && ddiVersion2) {
+        MFX_CHECK(ddiVersion1 == ddiVersion2, MFX_ERR_UNSUPPORTED);
+    }
+    else {
+        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return sts;
+}
+
 mfxStatus MFXHWVideoHyperENCODE::Query(
     VideoCORE *     core,
     mfxVideoParam * in,
@@ -196,6 +258,9 @@ mfxStatus ImplementationGopBased::Query(
     mfxStatus mfxResParams = CheckParams(in);
     MFX_CHECK_STS(mfxResParams);
 
+    mfxStatus mfxResDdi = AreDdiVersionsCompatible(core, in);
+    MFX_CHECK_STS(mfxResDdi);
+
     return mfxResQuery;
 }
 
@@ -210,14 +275,22 @@ mfxStatus ImplementationGopBased::QueryIOSurf(
     mfxStatus mfxResParams = CheckParams(par);
     MFX_CHECK_STS(mfxResParams);
 
+    mfxStatus mfxResDdi = AreDdiVersionsCompatible(core, par);
+    MFX_CHECK_STS(mfxResDdi);
+
     return mfxResQuery;
 }
 
 ImplementationGopBased::ImplementationGopBased(VideoCORE* core, mfxVideoParam* par, mfxStatus* sts)
 {
-    m_HyperEncode.reset(MFX_IOPATTERN_IN_SYSTEM_MEMORY == par->IOPattern ?
-        (HyperEncodeBase*) new HyperEncodeSys(core->GetSession(), par, sts) :
-        (HyperEncodeBase*) new HyperEncodeVideo(core->GetSession(), par, sts));
+    *sts = AreDdiVersionsCompatible(core, par);
+
+    if (*sts == MFX_ERR_NONE)
+    {
+        m_HyperEncode.reset(MFX_IOPATTERN_IN_SYSTEM_MEMORY == par->IOPattern ?
+            (HyperEncodeBase*) new HyperEncodeSys(core->GetSession(), par, sts) :
+            (HyperEncodeBase*) new HyperEncodeVideo(core->GetSession(), par, sts));
+    }
 }
 
 mfxStatus ImplementationGopBased::Init(mfxVideoParam* par)

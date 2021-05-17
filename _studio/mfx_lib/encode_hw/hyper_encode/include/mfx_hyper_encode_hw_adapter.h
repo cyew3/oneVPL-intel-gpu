@@ -31,6 +31,13 @@ namespace HyperEncodeImpl
 {
     mfxStatus MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapters);
     mfxStatus MFXQueryAdaptersNumber(mfxU32* num_adapters);
+    mfxStatus MFXQuerySecondAdapter(mfxU32 used_adapter, mfxI32* found_adapter);
+}
+
+namespace DummySession
+{
+    mfxStatus Init(mfxU32 adapter_n, mfxSession* dummy_session);
+    mfxStatus Close(mfxSession dummy_session);
 }
 
 #endif // MFX_ENABLE_VIDEO_HYPER_ENCODE_HW

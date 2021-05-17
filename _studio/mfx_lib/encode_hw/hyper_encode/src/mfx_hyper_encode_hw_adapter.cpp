@@ -28,22 +28,6 @@
 #include "mfx_session.h"
 #include "libmfx_core_interface.h"
 
-static mfxStatus InitDummySession(mfxU32 adapter_n, mfxSession *dummy_session)
-{
-    mfxInitializationParam param;
-    param.AccelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
-    param.VendorImplID = adapter_n;
-    param.NumExtParam = 0;
-    param.ExtParam = nullptr;
-
-    return MFXInitialize(param, dummy_session);
-}
-
-static inline mfxStatus CloseDummySession(mfxSession dummy_session)
-{
-    return MFXClose(dummy_session);
-}
-
 static inline bool is_iGPU(const mfxAdapterInfo& adapter_info)
 {
     return adapter_info.Platform.MediaAdapterType == MFX_MEDIA_INTEGRATED;
@@ -102,6 +86,22 @@ static inline bool QueryAdapterInfo(mfxU32 adapter_n, mfxU32& VendorID, mfxU32& 
     return true;
 }
 
+mfxStatus DummySession::Init(mfxU32 adapter_n, mfxSession* dummy_session)
+{
+    mfxInitializationParam param;
+    param.AccelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
+    param.VendorImplID = adapter_n;
+    param.NumExtParam = 0;
+    param.ExtParam = nullptr;
+
+    return MFXInitialize(param, dummy_session);
+}
+
+mfxStatus DummySession::Close(mfxSession dummy_session)
+{
+    return MFXClose(dummy_session);
+}
+
 mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapters)
 {
     MFX_CHECK_NULL_PTR1(adapters);
@@ -123,7 +123,7 @@ mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAda
         // Check if requested capabilities are supported
         mfxSession dummy_session;
 
-        mfxStatus sts = InitDummySession(adapter_n - 1, &dummy_session);
+        mfxStatus sts = DummySession::Init(adapter_n - 1, &dummy_session);
 
         if (sts != MFX_ERR_NONE)
             continue;
@@ -134,13 +134,13 @@ mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAda
         if (version >= 1019) {
             IVideoCore_API_1_19* pInt = (IVideoCore_API_1_19*)dummy_session->m_pCORE.get()->QueryCoreInterface(MFXICORE_API_1_19_GUID);
             if (pInt == nullptr) {
-                CloseDummySession(dummy_session);
+                DummySession::Close(dummy_session);
                 continue;
             }
 
             sts = pInt->QueryPlatform(&info.Platform);
             if (sts != MFX_ERR_NONE) {
-                CloseDummySession(dummy_session);
+                DummySession::Close(dummy_session);
                 continue;
             }
         } else {
@@ -151,7 +151,7 @@ mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAda
         info.Number = adapter_n - 1;
         obtained_info.push_back(info);
 
-        CloseDummySession(dummy_session);
+        DummySession::Close(dummy_session);
     }
 
     return PrepareAdaptersInfo(input_info, obtained_info, *adapters);
@@ -172,6 +172,30 @@ mfxStatus HyperEncodeImpl::MFXQueryAdaptersNumber(mfxU32* num_adapters)
     }
 
     *num_adapters = intel_adapter_count;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HyperEncodeImpl::MFXQuerySecondAdapter(mfxU32 used_adapter, mfxI32* found_adapter)
+{
+    MFX_CHECK_NULL_PTR1(found_adapter);
+
+    mfxU32 adapter = 0, VendorID, DeviceID;
+
+    for (mfxU32 cur_adapter = 0; ; ++cur_adapter) {
+        if (!QueryAdapterInfo(cur_adapter, VendorID, DeviceID))
+            break;
+
+        if (cur_adapter == used_adapter)
+            continue;
+
+        if (VendorID == INTEL_VENDOR_ID) {
+            adapter = cur_adapter;
+            break;
+        }
+    }
+
+    *found_adapter = adapter;
 
     return MFX_ERR_NONE;
 }
