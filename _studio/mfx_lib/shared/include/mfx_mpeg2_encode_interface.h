@@ -184,7 +184,7 @@ namespace MfxHwMpeg2Encode
         VAIQMatrixBufferMPEG2                   m_quantMatrix;
 #endif
 
-        mfxHDL                                  m_pSurface;
+        mfxFrameSurface1*                       m_pSurface;
         mfxHDLPair                              m_pSurfacePair;
 
         DWORD                                   m_idxMb;
