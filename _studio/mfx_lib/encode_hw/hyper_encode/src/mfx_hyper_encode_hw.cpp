@@ -293,12 +293,12 @@ ImplementationGopBased::ImplementationGopBased(VideoCORE* core, mfxVideoParam* p
     }
 }
 
-mfxStatus ImplementationGopBased::Init(mfxVideoParam* par)
+mfxStatus ImplementationGopBased::Init(mfxVideoParam* /*par*/)
 {
     MFX_CHECK(m_HyperEncode.get(), MFX_ERR_NOT_INITIALIZED);
 
     // allocate surface pool for 2nd adapter
-    mfxStatus sts = m_HyperEncode->AllocateSurfacePool(par);
+    mfxStatus sts = m_HyperEncode->AllocateSurfacePool();
     MFX_CHECK_STS(sts);
 
     return m_HyperEncode->Init();

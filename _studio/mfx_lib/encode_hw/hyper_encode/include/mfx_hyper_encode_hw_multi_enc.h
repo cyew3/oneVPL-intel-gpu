@@ -51,9 +51,15 @@ public:
     {
         m_devMngr.reset();
         m_singleGpuEncoders.clear();
+        m_bitstreams.clear();
+
+        while (m_submittedTasks.size())
+            m_submittedTasks.pop();
+
+        m_waitingSyncOpTasks.clear();
     }
 
-    virtual mfxStatus AllocateSurfacePool(mfxVideoParam* par) = 0;
+    virtual mfxStatus AllocateSurfacePool() = 0;
     virtual mfxStatus Init() = 0;
 
     mfxStatus GetVideoParam(mfxVideoParam* par);
@@ -85,7 +91,7 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
 
-    mfxStatus Reset(mfxVideoParam* par);
+    virtual mfxStatus Reset(mfxVideoParam* par);
 
     virtual mfxStatus EncodeFrameAsync(
         mfxEncodeCtrl* ctrl,
@@ -135,7 +141,7 @@ protected:
     mfxU16 m_gopSize = 0;
     bool m_paramsChanged = false;
 
-    mfxVideoParamWrapper m_mfxEncParams;
+    mfxVideoParamWrapper m_mfxEncParams = {};
 };
 
 class HyperEncodeSys : public HyperEncodeBase
@@ -151,7 +157,7 @@ public:
     }
     virtual ~HyperEncodeSys() {}
 
-    mfxStatus AllocateSurfacePool(mfxVideoParam*) override
+    mfxStatus AllocateSurfacePool() override
     {
         return MFX_ERR_NONE;
     }
@@ -174,9 +180,9 @@ public:
             *sts = CreateEncoders();
         }
         if (*sts == MFX_ERR_NONE)
-            *sts = InitVPPparams(par);
+            *sts = InitVPPparams();
         if (*sts == MFX_ERR_NONE)
-            *sts = CreateVPP(par);
+            *sts = CreateVPP();
     }
     virtual ~HyperEncodeVideo()
     {
@@ -184,13 +190,14 @@ public:
         m_pMfxSurfaces.clear();
     }
 
-    mfxStatus AllocateSurfacePool(mfxVideoParam* par) override;
+    mfxStatus AllocateSurfacePool() override;
     mfxStatus Init() override;
+    mfxStatus Reset(mfxVideoParam* par) override;
     mfxStatus Close() override;
 
 protected:
-    mfxStatus CreateVPP(mfxVideoParam* par);
-    mfxStatus InitVPPparams(mfxVideoParam* par);
+    mfxStatus CreateVPP();
+    mfxStatus InitVPPparams();
 
     mfxStatus InitSession(
         mfxSession* appSession, mfxSession* internalSession,
