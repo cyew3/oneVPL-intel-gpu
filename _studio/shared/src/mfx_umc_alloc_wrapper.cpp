@@ -27,7 +27,7 @@
 #include "mfx_common_decode_int.h"
 #include <functional>
 
-#if !defined MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+#if defined(MFX_VA) && !defined MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 // For setting SFC surface
 #include "umc_va_video_processing.h"
 #endif
@@ -36,9 +36,11 @@
 #include "dxgi.h"
 #endif
 
+#if defined (MFX_VA)
 #include "umc_va_dxva2.h"
+#endif
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)
 #include "mfx_vpp_jpeg_d3d.h"
 #endif
 
@@ -2403,6 +2405,7 @@ void SurfaceSource::SetFreeSurfaceAllowedFlag(bool flag)
     }
 }
 
+#if defined (MFX_VA)
 // D3D functionality
 // we should copy to external SW surface
 mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surface_work, UMC::FrameMemID index, const mfxVideoParam *,bool isOpaq)
@@ -2450,3 +2453,5 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
         return sts;
     }
 }
+
+#endif // #if defined (MFX_VA)

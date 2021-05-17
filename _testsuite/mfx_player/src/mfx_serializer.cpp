@@ -680,6 +680,20 @@ void MFXStructureRef <mfxBitstream>::ConstructValues () const
     SERIALIZE_INT(DataFlag);
 }
 
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
+void MFXStructureRef <mfxExtCodingOptionQuantMatrix>::ConstructValues () const
+{
+    SERIALIZE_INT(bIntraQM);
+    SERIALIZE_INT(bInterQM);
+    SERIALIZE_INT(bChromaIntraQM);
+    SERIALIZE_INT(bChromaInterQM);
+    SERIALIZE_POD_ARRAY(IntraQM,64);
+    SERIALIZE_POD_ARRAY(InterQM,64);
+    SERIALIZE_POD_ARRAY(ChromaIntraQM,64);
+    SERIALIZE_POD_ARRAY(ChromaInterQM,64);
+}
+#endif
+
 void MFXStructureRef<mfxInfoVPP>::ConstructValues () const
 {
     SERIALIZE_STRUCT(In);
@@ -1255,6 +1269,12 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("MFE."), *(mfxExtMultiFrameParam*)m_pStruct);
             break;
         }
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
+        case MFX_EXTBUFF_QM: {
+            SerializeStruct(VM_STRING("QuantMatrix."), *(mfxExtCodingOptionQuantMatrix*)m_pStruct);
+            break;
+        }
+#endif
         case MFX_EXTBUFF_HEVCENC :{
             SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
             break;

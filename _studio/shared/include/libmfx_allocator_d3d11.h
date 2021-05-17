@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 #ifndef _LIBMFX_ALLOCATOR_D3D11_H_
 #define _LIBMFX_ALLOCATOR_D3D11_H_
@@ -456,5 +457,6 @@ using FlexibleFrameAllocatorHW_D3D11 = FlexibleFrameAllocator<mfxFrameSurface1_h
 
 #endif
 
+#endif
 #endif
 #endif

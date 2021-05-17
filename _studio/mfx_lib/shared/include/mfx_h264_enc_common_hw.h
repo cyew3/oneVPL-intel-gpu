@@ -211,6 +211,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCSeqDesc,           MFX_EXTBUFF_MVC_SEQ_DESC             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCTargetViews,       MFX_EXTBUFF_MVC_TARGET_VIEWS         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPictureTimingSEI,     MFX_EXTBUFF_PICTURE_TIMING_SEI       );
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtDumpFiles,            MFX_EXTBUFF_DUMP                     );
+#endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSpsHeader,            MFX_EXTBUFF_SPS_HEADER               );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPpsHeader,            MFX_EXTBUFF_PPS_HEADER               );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefListCtrl,       MFX_EXTBUFF_AVC_REFLIST_CTRL         );
@@ -691,6 +694,10 @@ namespace MfxHwH264Encode
         mfxExtMoveRect              m_extMoveRect;
 
         mfxExtCodingOptionDDI       m_extOptDdi;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+        // internal, not documented
+        mfxExtDumpFiles             m_extDumpFiles;
+#endif
         mfxExtSpsHeader             m_extSps;
         mfxExtPpsHeader             m_extPps;
 

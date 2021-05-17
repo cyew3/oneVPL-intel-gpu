@@ -31,7 +31,12 @@ namespace MFX
 inline
 bool IsHWLib(void)
 {
+#ifdef MFX_VA
     return true;
+#else // !MFX_VA
+    return false;
+#endif // MFX_VA
+
 } // bool IsHWLib(void)
 
 #endif // __MFX_TOOLS_H

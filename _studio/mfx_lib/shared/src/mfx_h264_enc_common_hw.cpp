@@ -1825,6 +1825,9 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCTOOLS_ALLOCATOR
 #endif
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+        || id == MFX_EXTBUFF_DUMP
+#endif
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         || id == MFX_EXTBUFF_PAVP_OPTION
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
@@ -8029,6 +8032,9 @@ MfxVideoParam::MfxVideoParam()
     , m_extDirtyRect()
     , m_extMoveRect()
     , m_extOptDdi()
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+    , m_extDumpFiles()
+#endif
     , m_extSps()
     , m_extPps()
 #if defined(__MFXBRC_H__)
@@ -8338,6 +8344,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtSVCRateControl,       m_extSvcRateCtrl);
 #endif
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionDDI,      m_extOptDdi);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+    CONSTRUCT_EXT_BUFFER(mfxExtDumpFiles,            m_extDumpFiles);
+#endif
     CONSTRUCT_EXT_BUFFER(mfxExtSpsHeader,            m_extSps);
     CONSTRUCT_EXT_BUFFER(mfxExtPpsHeader,            m_extPps);
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption2,        m_extOpt2);
@@ -8396,6 +8405,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #undef CONSTRUCT_EXT_BUFFER_EX
 
     ExtParam = m_extParam;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE) && defined (MFX_UNDOCUMENTED_DUMP_FILES) && defined(MFX_ENABLE_SVC_VIDEO_ENCODE_HW)
+    assert(NumExtParam <= mfxU16(sizeof m_extParam / sizeof m_extParam[0]));
+#endif
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(

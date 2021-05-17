@@ -25,7 +25,7 @@
 #include "libmfx_core.h"
 #include "mfx_common_int.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)
 #include "mfx_vpp_jpeg_d3d.h"
 
 UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorParams *,
@@ -601,4 +601,4 @@ mfxStatus SurfaceSourceJPEG::CheckPreparingToOutput(mfxFrameSurface1 *surface_wo
     }
 }
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)

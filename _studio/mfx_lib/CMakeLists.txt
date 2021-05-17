@@ -176,6 +176,11 @@ set(LIBS
   ${CMAKE_DL_LIBS}
 )
 
+target_compile_definitions(${mfxlibname}
+  PRIVATE
+    MFX_VA
+)
+
 target_include_directories(${mfxlibname}
   PRIVATE
     scheduler/include

@@ -23,7 +23,8 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined(MFX_VA_WIN)
+#if defined(MFX_VA)
+#if (defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)) && defined(MFX_VA_WIN)
 
 #include <vector>
 #include <assert.h>
@@ -120,6 +121,7 @@ namespace MfxHwMpeg2Encode
     };
 };
 
+#endif
 #endif //#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 #endif //#ifndef __MFX_MPEG2_ENCODE_D3D9__H
 /* EOF */

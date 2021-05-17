@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 
 #include <d3d11_1.h>
@@ -559,4 +560,5 @@ Status MFXD3D11Accelerator::ExecuteExtension(int function, ExtensionData const& 
     return ExecuteExtensionBuffer(&ext);
 }
 
+#endif
 #endif

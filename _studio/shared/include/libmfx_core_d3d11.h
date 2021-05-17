@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 #ifndef __LIBMFX_CORE__D3D11_H__
 #define __LIBMFX_CORE__D3D11_H__
@@ -237,5 +238,6 @@ private:
 };
 #endif
 
+#endif
 #endif
 #endif

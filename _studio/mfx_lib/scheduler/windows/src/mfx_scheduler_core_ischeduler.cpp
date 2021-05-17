@@ -28,8 +28,10 @@
 #include <mfx_trace.h>
 #include <cassert>
 
+#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 #include "mfx_scheduler_dx11_event.h"
+#endif
 #endif
 
 #if defined(MFX_SCHEDULER_LOG)
@@ -211,11 +213,15 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
     else
     {
         // to run HW listen thread. Will be enabled if tests are OK
+#if defined (MFX_VA)
 #if defined(_WIN32) || defined(_WIN64)
         m_hwTaskDone.handle = CreateEventExW(NULL, 
             _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
             CREATE_EVENT_MANUAL_RESET, 
             STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
+#endif
+#else
+        MFX_CHECK_STS(StartWakeUpThread());
 #endif
 
     }
@@ -700,17 +706,21 @@ mfxStatus mfxSchedulerCore::AdjustPerformance(const mfxSchedulerMessage message)
         break;
 
     case MFX_SCHEDULER_START_HW_LISTENING:
+#if defined (MFX_VA)
         if (m_param.flags != MFX_SINGLE_THREAD)
         {
             mfxRes = StartWakeUpThread();
         }
+#endif
         break;
 
     case MFX_SCHEDULER_STOP_HW_LISTENING:
+#if defined (MFX_VA)
         if (m_param.flags != MFX_SINGLE_THREAD)
         {
             mfxRes = StopWakeUpThread();
         }
+#endif
         break;
 
         // unknown message
@@ -812,6 +822,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
     Ipp32u numThreads;
     mfxU32 requiredNumThreads;
 
+#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
     {
         std::lock_guard<std::mutex> guard(m_guard);
@@ -831,6 +842,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
                 StartWakeUpThread();
         }
     }
+#endif
 #endif
 
     // check error(s)

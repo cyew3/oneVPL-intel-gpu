@@ -22,7 +22,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA)
 
 #include "mfx_h264_encode_interface.h"
 #if defined (MFX_VA_WIN)

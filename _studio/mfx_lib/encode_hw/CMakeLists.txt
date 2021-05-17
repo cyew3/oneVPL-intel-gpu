@@ -192,6 +192,7 @@ add_library(encode_hw STATIC ${sources})
 
 target_compile_definitions(encode_hw
   PRIVATE
+    MFX_VA
     $<$<PLATFORM_ID:Windows>:MFX_VA_WIN> # w/a for missed config inclusion in hevc/av1
   )
 

@@ -30,6 +30,11 @@ target_include_directories(lpla
     ${MSDK_LIB_ROOT}/encode_hw/hevc/embargo/agnostic/g12dg2
 )
 
+target_compile_definitions(lpla
+  PRIVATE
+    MFX_VA
+  )
+
 target_link_libraries(lpla
   PRIVATE
     mfx_static_lib

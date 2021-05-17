@@ -123,11 +123,15 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 #else
     if ((MFX_IMPL_AUTO != impl) &&
         (MFX_IMPL_AUTO_ANY != impl) &&
+#ifdef MFX_VA
         (MFX_IMPL_HARDWARE_ANY != impl) &&
         (MFX_IMPL_HARDWARE != impl) &&
         (MFX_IMPL_HARDWARE2 != impl) &&
         (MFX_IMPL_HARDWARE3 != impl) &&
         (MFX_IMPL_HARDWARE4 != impl))
+#else // !MFX_VA
+        (MFX_IMPL_SOFTWARE != impl))
+#endif // MFX_VA
     {
         MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
@@ -314,7 +318,7 @@ mfxStatus MFXClose(mfxSession session)
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
     }
-#if defined(MFX_TRACE_ENABLE)
+#if defined(MFX_TRACE_ENABLE) && defined(MFX_VA)
     MFX_TRACE_CLOSE();
 #endif
     return mfxRes;

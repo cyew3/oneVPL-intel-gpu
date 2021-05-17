@@ -24,6 +24,7 @@
 #include "mfxdefs.h"
 #include "mfxstructures.h"
 #include "ippi.h"
+#if defined(MFX_VA)
 #include "skl_copy_kernel_genx_isa.h"
 #include "cnl_copy_kernel_genx_isa.h"
 #include "icl_copy_kernel_genx_isa.h"
@@ -35,6 +36,7 @@
 #endif
 #endif
 #include "tgllp_copy_kernel_genx_isa.h"
+#endif
 #if !defined(OSX)
 
 #ifdef _MSVC_LANG

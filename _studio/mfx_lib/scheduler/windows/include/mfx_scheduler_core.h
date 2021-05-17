@@ -69,8 +69,10 @@ struct TASK_STAT
 void GetNumTasks(MFX_SCHEDULER_TASK * const (ppTasks[MFX_PRIORITY_NUMBER][MFX_TYPE_NUMBER]), TASK_STAT &stat);
 #endif // defined(MFX_SCHEDULER_LOG)
 
+#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 class DX11GlobalEvent;
+#endif
 #endif
 enum
 {
@@ -463,8 +465,10 @@ protected:
 
     mfxU32 m_timer_hw_event;
 
+#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
     DX11GlobalEvent* m_pdx11event;
+#endif
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)

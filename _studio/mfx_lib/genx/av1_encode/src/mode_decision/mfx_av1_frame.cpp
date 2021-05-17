@@ -23,6 +23,17 @@
 #include "mfx_av1_frame.h"
 #include "mfx_av1_enc.h"
 
+#ifndef MFX_VA
+#define H265FEI_AllocateSurfaceUp(...) (MFX_ERR_NONE)
+#define H265FEI_AllocateInputSurface(...) (MFX_ERR_NONE)
+#define H265FEI_AllocateReconSurface(...) (MFX_ERR_NONE)
+#define H265FEI_AllocateOutputSurface(...) (MFX_ERR_NONE)
+#define H265FEI_AllocateOutputBuffer(...) (MFX_ERR_NONE)
+#define H265FEI_FreeSurface(...) (MFX_ERR_NONE)
+#define CM_ALIGNED_MALLOC(...) ((void *)NULL)
+#define CM_ALIGNED_FREE(...)
+#endif
+
 namespace H265Enc {
 
     // template to align a pointer

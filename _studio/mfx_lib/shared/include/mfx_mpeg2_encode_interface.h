@@ -20,6 +20,7 @@
 
 #include "mfx_common.h"
 
+#if defined(MFX_VA)
 #if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #ifndef __MFX_MPEG2_ENCODE_INTERFACE__H
@@ -260,4 +261,5 @@ namespace MfxHwMpeg2Encode
 
 #endif //#ifndef __MFX_MPEG2_ENCODE_INTERFACE__H
 #endif //(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#endif // MFX_VA
 /* EOF */

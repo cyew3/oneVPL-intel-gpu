@@ -53,6 +53,11 @@ target_sources(scheduler_tests
     test_main.cpp
 )
 
+target_compile_definitions(scheduler_tests
+  PRIVATE
+    MFX_VA
+)
+
 target_compile_features(scheduler_tests PUBLIC cxx_std_11)
 
 target_link_libraries(scheduler_tests

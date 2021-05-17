@@ -109,6 +109,67 @@ typedef struct {
 
 } mfxExtCodingOptionDDI;
 
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
+#define MFX_EXTBUFF_QM MFX_MAKEFOURCC('E','X','Q','P')
+
+typedef struct {
+    mfxExtBuffer Header;
+    mfxU16 bIntraQM;
+    mfxU16 bInterQM;
+    mfxU16 bChromaIntraQM;
+    mfxU16 bChromaInterQM;
+    mfxU8 IntraQM[64];
+    mfxU8 InterQM[64];
+    mfxU8 ChromaIntraQM[64];
+    mfxU8 ChromaInterQM[64];
+} mfxExtCodingOptionQuantMatrix;
+#endif // #ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
+
+
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+#define MFX_EXTBUFF_DUMP MFX_MAKEFOURCC('D','U','M','P')
+enum
+{
+    MFX_MAX_PATH                = 260
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    vm_char ReconFilename[MFX_MAX_PATH];
+    vm_char InputFramesFilename[MFX_MAX_PATH];
+
+} mfxExtDumpFiles;
+#endif // #ifdef MFX_UNDOCUMENTED_DUMP_FILES
+
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
+#define MFX_EXTBUFF_VPP_VARIANCE_REPORT MFX_MAKEFOURCC('V','R','P','F')
+
+#ifdef _MSVC_LANG
+#pragma warning (disable: 4201 ) /* disable nameless struct/union */
+#endif
+
+typedef struct {
+    mfxExtBuffer    Header;
+    union{
+        struct{
+            mfxU32  SpatialComplexity;
+            mfxU32  TemporalComplexity;
+       };
+       struct{
+           mfxU16  PicStruct;
+           mfxU16  reserved[3];
+       };
+   };
+
+    mfxU16          SceneChangeRate;
+    mfxU16          RepeatedFrame;
+
+    // variances
+    mfxU32          Variances[11];
+} mfxExtVppReport;
+#endif // #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
+
 #ifndef OPEN_SOURCE
 #define MFX_EXTBUFF_HEVCENC MFX_MAKEFOURCC('B','2','6','5')
 typedef struct {

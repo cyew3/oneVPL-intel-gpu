@@ -22,7 +22,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
 
 #include "mfx_mjpeg_encode_interface.h"
 
@@ -75,4 +75,4 @@ DriverEncoder* MfxHwMJpegEncode::CreatePlatformMJpegEncoder( VideoCORE* core )
 
 } // DriverEncoder* MfxHwMJpegEncode::CreatePlatformMJpegEncoder( VideoCORE* core )
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)

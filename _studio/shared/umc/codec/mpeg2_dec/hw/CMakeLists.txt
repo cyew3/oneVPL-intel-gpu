@@ -28,6 +28,8 @@ target_sources(mpeg2_dec_hw
     include/umc_mpeg2_dxva_packer.h
 )
 
+target_compile_definitions(mpeg2_dec_hw PRIVATE MFX_VA)
+
 target_link_libraries(mpeg2_dec_hw
   PUBLIC
     mfx_static_lib

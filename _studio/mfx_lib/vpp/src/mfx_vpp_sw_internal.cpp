@@ -27,7 +27,9 @@
 
 #include "mfx_vpp_hw.h"
 
+#if defined (MFX_VA)
 #include "mfxpcp.h"
+#endif
 
 #include "mfx_vpp_sw.h"
 #include "mfx_vpp_utils.h"
@@ -250,6 +252,16 @@ mfxStatus GetExternalFramesCount(VideoCORE* core,
                 // fake for SW compatibility
                 inputFramesCount[filterIndex]  = MFXVideoVPPImgStab::GetInFramesCountExt();
                 outputFramesCount[filterIndex] = MFXVideoVPPImgStab::GetOutFramesCountExt();
+                break;
+            }
+#endif
+
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
+            case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
+            {
+                // fake for SW compatibility
+                inputFramesCount[filterIndex]  = 2;
+                outputFramesCount[filterIndex] = 1;
                 break;
             }
 #endif

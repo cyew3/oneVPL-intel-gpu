@@ -264,6 +264,36 @@ int main(int argc, vm_char *argv[])
         sts = ConfigVideoEnhancementFilters(Params[i], Resources[i]);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(Resources[i]);});
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
+        // allocate needed number of aux vpp data    
+        //-----------------------------------------------------
+        mfxExtVppReport *extVPPAuxData = new mfxExtVppReport[Params[i]->asyncNum * Params[i]->multiViewParam.viewCount];
+        Resources[i]->pExtVPPAuxData = reinterpret_cast<mfxExtVppAuxData*>(extVPPAuxData);
+
+        if( extVPPAuxData )
+        {
+            mfxU32  BufferId = MFX_EXTBUFF_VPP_SCENE_CHANGE;
+            mfxU32  BufferSz = sizeof(mfxExtVppAuxData);
+
+            if(Params[i]->varianceParam.mode != VPP_FILTER_DISABLED)
+            {
+                BufferId = MFX_EXTBUFF_VPP_VARIANCE_REPORT;
+                BufferSz = sizeof(mfxExtVppReport);
+            }
+            else if( Params[i]->idetectParam.mode != VPP_FILTER_DISABLED )
+            {
+                BufferId = MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION;
+                BufferSz = sizeof(mfxExtVppReport);//aya: fixme
+            }
+
+            for(int auxIdx = 0; auxIdx < Params[i]->asyncNum * Params[i]->multiViewParam.viewCount; auxIdx++)
+            {
+                extVPPAuxData[auxIdx].Header.BufferId = BufferId;
+                extVPPAuxData[auxIdx].Header.BufferSz = BufferSz;
+            }
+        }
+
+#endif
         //-----------------------------------------------------
         sts = InitResources(Resources[i], &Resources[i]->m_mfxParamsVideo, Params[i]);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(Resources[i]);});
@@ -354,6 +384,10 @@ int main(int argc, vm_char *argv[])
     }
 
     WipeResources(&Resources);
+
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
+    SAFE_DELETE_ARRAY(extVPPAuxData);
+#endif
 #endif
     return 0; /* OK */
 } // int _tmain(int argc, vm_char *argv[])

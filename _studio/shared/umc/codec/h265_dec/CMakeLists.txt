@@ -41,6 +41,11 @@ target_sources(umc_h265_hw
     src/umc_h265_yuv.cpp
   )
 
+target_compile_definitions(umc_h265_hw
+  PRIVATE
+    MFX_VA
+  )
+
 target_link_libraries(umc_h265_hw
   PUBLIC
     mfx_static_lib

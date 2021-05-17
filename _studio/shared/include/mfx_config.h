@@ -33,6 +33,7 @@
 #endif
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
+#ifdef MFX_VA
 #if defined(LINUX32) || defined(LINUX64)
     #include <va/va_version.h>
     #undef  MFX_VA_LINUX
@@ -58,6 +59,7 @@
     #undef  UMC_VA_OSX
     #define UMC_VA_OSX
 #endif // #if defined(LINUX32) || defined(LINUX64)
+#endif // MFX_VA
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -65,11 +67,24 @@
     // enable defines
     #include "mfxconfig.h"
 
-    #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
-        #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
+    #if defined(MFX_VA)
+        #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
+            #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
+        #endif
+    #else
+        // explicitly turn off all codecs w/o sw fallback
+        #undef MFX_ENABLE_AV1_VIDEO_DECODE
+        #undef MFX_ENABLE_AV1_VIDEO_ENCODE
+        #undef MFX_ENABLE_VP8_VIDEO_DECODE
+        #undef MFX_ENABLE_VP9_VIDEO_DECODE
+        #undef MFX_ENABLE_H265_VIDEO_DECODE
+        #undef MFX_ENABLE_VP9_VIDEO_ENCODE
     #endif
     #define MFX_ENABLE_VC1_VIDEO_DECODE
-    #define MFX_ENABLE_H265_VIDEO_ENCODE
+
+    #if defined(MFX_VA)
+        #define MFX_ENABLE_H265_VIDEO_ENCODE
+    #endif
     #if defined(AS_H264LA_PLUGIN)
        #define MFX_ENABLE_LA_H264_VIDEO_HW
     #endif
@@ -99,12 +114,14 @@
         #define PRE_SI_GEN 11
     #endif
 
-    #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-    #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        #define MFX_ENABLE_AV1_VIDEO_ENCODE
-    #endif
-    #if (MFX_VERSION >= MFX_VERSION_NEXT) && (defined(LINUX_TARGET_PLATFORM_XEHP) || defined(MFX_VA_WIN))
-        #define MFX_ENABLE_AV1_VIDEO_DECODE
+    #if defined(MFX_VA)
+        #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+        #if (MFX_VERSION >= MFX_VERSION_NEXT)
+            #define MFX_ENABLE_AV1_VIDEO_ENCODE
+        #endif
+        #if (MFX_VERSION >= MFX_VERSION_NEXT) && (defined(LINUX_TARGET_PLATFORM_XEHP) || defined(MFX_VA_WIN))
+            #define MFX_ENABLE_AV1_VIDEO_DECODE
+        #endif
     #endif
 
     #if defined(AS_AV1E_PLUGIN)
@@ -226,7 +243,9 @@
 
 #if defined(_WIN32) || defined(_WIN64)
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_VA
     #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#endif
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D
@@ -352,7 +371,7 @@
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
     #endif
 
-#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
+#if defined(MFX_VA) && defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
     #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 #endif
 
