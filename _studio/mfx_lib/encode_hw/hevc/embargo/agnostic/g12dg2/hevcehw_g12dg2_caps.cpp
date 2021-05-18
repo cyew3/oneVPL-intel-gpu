@@ -234,7 +234,7 @@ void Caps::GetVideoParam(const FeatureBlocks& /*blocks*/, TPushGVP Push)
     Push(BLK_FixParam
         , [](mfxVideoParam& par, StorageR& /*global*/) -> mfxStatus
     {
-        par.mfx.LowPower = MFX_CODINGOPTION_UNKNOWN;
+        par.mfx.LowPower = MFX_CODINGOPTION_ON;
 
         return MFX_ERR_NONE;
     });
