@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED) && defined (MFX_DX9ON11)
 #include <windows.h>
 #include <initguid.h>
@@ -988,4 +987,3 @@ bool MfxWrapController::IsOutputSurface()
 
 #endif //MFX_DX9ON11
 
-#endif

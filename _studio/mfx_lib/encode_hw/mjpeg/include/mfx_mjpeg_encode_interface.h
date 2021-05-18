@@ -23,7 +23,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include <vector>
 #include <assert.h>
@@ -97,5 +97,5 @@ namespace MfxHwMJpegEncode
 
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #endif // __MFX_MJPEG_ENCODE_INTERFACE_H__

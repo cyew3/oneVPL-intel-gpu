@@ -29,8 +29,6 @@ Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
     #define PRE_SI_GEN 11
 
-    #ifdef MFX_VA
-
         #define MFX_ENABLE_VC1_VIDEO_DECODE
 
         #define MFX_ENABLE_MPEG2_VIDEO_DECODE
@@ -63,14 +61,6 @@ Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
         #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
 
         #define MFX_ENABLE_VPP
-
-    #else // MFX_VA
-
-        #define MFX_ENABLE_H265_VIDEO_DECODE
-        #define MFX_TARGET_OPTIMIZATION_ATOM
-        #define MFX_MAKENAME_ATOM
-
-    #endif // MFX_VA
 
 #else
     #error "undefined platform"

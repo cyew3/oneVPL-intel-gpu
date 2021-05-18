@@ -23,7 +23,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include "mfxvideo++int.h"
 #include "mfx_mjpeg_encode_hw_utils.h"
@@ -152,5 +152,5 @@ protected:
     mfxExtBuffer*            m_pCheckedExt[3];
 };
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #endif // __MFX_MJPEG_ENCODE_HW_H__

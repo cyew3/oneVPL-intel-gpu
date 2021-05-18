@@ -1382,5 +1382,5 @@ mfxStatus FastCompositingDDI::CreateSurface(IDirect3DSurface9 **surface,
 
 } // mfxStatus FastCompositingDDI::CreateSurface(IDirect3DSurface9 **surface, mfxU32 width, mfxU32 height, D3DFORMAT format, D3DPOOL pool)
 
-#endif // #if defined (MFX_VA)
+#endif // #if defined (MFX_VA_WIN)
 #endif // #if defined (MFX_ENABLE_VPP)

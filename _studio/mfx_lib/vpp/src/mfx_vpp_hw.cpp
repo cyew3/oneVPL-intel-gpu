@@ -1955,7 +1955,6 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 ,m_pMctfCmDevice(nullptr)
 #endif
 
-#if defined(MFX_VA)
 // cm devices
 ,m_pCmCopy(NULL)
 #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
@@ -1965,7 +1964,6 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 ,m_pCmProgram(NULL)
 ,m_pCmKernel(NULL)
 ,m_pCmQueue(NULL)
-#endif
 {
     m_config.m_bRefFrameEnable = false;
     m_config.m_bMode30i60pEnable = false;
@@ -2540,7 +2538,6 @@ mfxStatus  VideoVPPHW::Init(
     //-----------------------------------------------------
     // [5]  cm device
     //-----------------------------------------------------
-#if defined(MFX_VA)
     if(m_pCmDevice)
     {
         int res = 0;
@@ -2643,7 +2640,7 @@ mfxStatus  VideoVPPHW::Init(
         }
     }
 
-#endif
+
 #ifdef MFX_ENABLE_MCTF
     {
         if (m_executeParams.bEnableMctf)
@@ -3213,8 +3210,6 @@ mfxStatus VideoVPPHW::Close()
     // sync workload mode by default
     m_workloadMode = VPP_SYNC_WORKLOAD;
 
-#if defined (MFX_VA)
-
 #if defined (MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
     m_SCD.Close();
 #endif
@@ -3230,7 +3225,6 @@ mfxStatus VideoVPPHW::Close()
         m_pCmQueue = NULL;
         //::DestroyCmDevice(device);
     }
-#endif
 
 #ifdef MFX_ENABLE_MCTF
     if (m_bMctfAllocatedMemory)
@@ -3575,7 +3569,6 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
             {
                 mfxFrameSurface1 inputVidSurf = MakeSurface(surfQueue[i].pSurf->Info, m_internalVidSurf[VPP_IN].mids[resIdx]);
 
-#if defined(MFX_VA)
                 if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_INPUT == m_executeParams.mirroringPosition && m_pCmCopy)
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (sys->d3d)");
@@ -3622,7 +3615,6 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                 }
                 else
                 {
-#endif
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Copy output (sys->d3d)");
 
                     if (MFX_FOURCC_P010 == inputVidSurf.Info.FourCC && 0 == inputVidSurf.Info.Shift)
@@ -3634,9 +3626,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                         surfQueue[i].pSurf,
                         MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
                     MFX_CHECK_STS(sts);
-#if defined(MFX_VA)
                 }
-#endif
             }
 
             MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_internalVidSurf[VPP_IN].mids[resIdx], (mfxHDL *)&hdl));
@@ -3707,7 +3697,6 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
 
         mfxFrameSurface1 d3dSurf = MakeSurface(output.pSurf->Info, m_internalVidSurf[VPP_OUT].mids[output.resIdx]);
 
-#if defined(MFX_VA)
         if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_OUTPUT == m_executeParams.mirroringPosition && m_pCmCopy)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (d3d->sys)");
@@ -3754,7 +3743,6 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
         }
         else
         {
-#endif
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Copy output (d3d->sys)");
 
             if (MFX_FOURCC_P010 == d3dSurf.Info.FourCC && 0 == d3dSurf.Info.Shift)
@@ -3767,9 +3755,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
                 MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
                 );
             MFX_CHECK_STS(sts);
-#if defined(MFX_VA)
         }
-#endif
     }
     return sts;
 }
@@ -3818,7 +3804,6 @@ mfxStatus VideoVPPHW::PostWorkInputSurface(mfxU32 numSamples)
 } // mfxStatus VideoVPPHW::PostWorkInputSurface(mfxU32 numSamples)
 
 
-#if defined(MFX_VA)
 #define CHECK_CM_ERR(ERR) if ((ERR) != CM_SUCCESS) return MFX_ERR_DEVICE_FAILED;
 
 int RunGpu(
@@ -3918,7 +3903,6 @@ mfxStatus VideoVPPHW::ProcessFieldCopy(mfxHDL in, mfxHDL out, mfxU32 fieldMask)
     return MFX_ERR_NONE;
 
 }
-#endif /* #if  defined(MFX_VA)*/
 
 
 mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcessing::mfxExecuteParams *execParams)
@@ -4239,9 +4223,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     if ((m_executeParams.iFieldProcessingMode != 0)   /* If Mode is enabled*/
         && ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)  /* And we don't do copy frame to frame lets call our FieldCopy*/
-#if defined(MFX_VA)
         && m_pCmDevice                                /* And cm device is loaded*/
-#endif
        )
     /* And remember our previous line imfxFPMode++;*/
     {
@@ -4324,7 +4306,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         return sts;
     }
 
-#if defined(MFX_VA)
     if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_WO_EXEC == m_executeParams.mirroringPosition && m_pCmCopy)
     {
         /* Temporal solution for mirroring that makes nothing but mirroring
@@ -4377,7 +4358,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         m_executeParams.statusReportID = pTask->taskIndex;
         return sts;
     }
-#endif
 
     sts = PreWorkOutSurface(pTask->output);
     MFX_CHECK_STS(sts);
@@ -4385,7 +4365,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     sts = PreWorkInputSurface(surfQueue);
     MFX_CHECK_STS(sts);
 
-#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP) && defined(MFX_VA)
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
     /* In MFX_DEINTERLACING_ADVANCED_SCD (also called ADI_SCD) the current field
      * uses information from previous field and next field (if it is
      * present in current frame) in ADI mode.
@@ -5249,14 +5229,6 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                     //sts = MFX_ERR_INVALID_VIDEO_PARAM;
                     //continue; // stop working with ExtParam[i]
                 }
-
-#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
-                if(MFX_EXTBUFF_VPP_VARIANCE_REPORT == extDoUse->AlgList[algIdx])
-                {
-                    sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
-                    continue; // stop working with ExtParam[i]
-                }
-#endif
 
                 if(MFX_EXTBUFF_VPP_SCENE_ANALYSIS == extDoUse->AlgList[algIdx])
                 {

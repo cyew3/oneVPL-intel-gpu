@@ -88,10 +88,8 @@ mfxSchedulerCore::mfxSchedulerCore(void)
 
     m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT;
 
-#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
     m_pdx11event = 0;
-#endif
 #endif
 
 #if defined(MFX_SCHEDULER_LOG)
@@ -128,7 +126,7 @@ void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
     // because Linux scheduler ensures socket affinity by itself
 #if defined(_WIN32_WCE)
     return;
-#elif (defined(_WIN32) || defined(_WIN64))/* && !defined(MFX_VA)*/
+#elif (defined(_WIN32) || defined(_WIN64))
 
     mfxU64 cpuMasks[16], mask;
     mfxU32 numNodeCpus[16];

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined (MFX_VA) && !defined(OSX)
+#if !defined(OSX)
 
 #include "cm_mem_copy.h"
 #include "cm_gpu_copy_code.h"
@@ -2737,7 +2737,6 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
     if (!m_pCmDevice)
         return MFX_ERR_DEVICE_FAILED;
 
-#if defined(MFX_VA)
     switch (hwtype)
     {
 #ifdef MFX_ENABLE_KERNELS
@@ -2789,7 +2788,6 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         break;
     }
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-#endif
 
     return MFX_ERR_NONE;
 
@@ -3629,4 +3627,4 @@ mfxStatus CmCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1
     mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
     MFX_RETURN(mfxRes);
 }
-#endif // defined (MFX_VA) && !defined(OSX)
+#endif // !defined(OSX)

@@ -3339,20 +3339,6 @@ mfxStatus sAppResources::OutputProcessFrame(
                         Resources.pExtVPPAuxData[counter].TemporalComplexity,
                         Resources.pExtVPPAuxData[counter].SceneChangeRate);
                 }
-#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
-                else if(VPP_FILTER_DISABLED != Resources.m_pParams->varianceParam.mode)
-                {
-                    mfxExtVppReport* pReport = reinterpret_cast<mfxExtVppReport*>(&Resources.pExtVPPAuxData[counter]);
-                    vm_string_printf(VM_STRING("Frame number: %hd, variance:"), nFrames);
-                    for(int vIdx = 0; vIdx < 11; vIdx++)
-                    {
-                        mfxU32 variance = pReport->Variances[vIdx];
-                        vm_string_printf(VM_STRING("%i "), variance);
-                    }
-
-                    vm_string_printf(VM_STRING("\n"));
-                }
-#endif
                 else if(VPP_FILTER_DISABLED != Resources.m_pParams->idetectParam.mode)
                 {
                     vm_string_printf(

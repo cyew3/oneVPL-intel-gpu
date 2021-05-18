@@ -23,7 +23,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_VA) && defined(MFX_D3D11_ENABLED)
+#if defined(MFX_D3D11_ENABLED)
 #if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include <vector>
@@ -174,6 +174,6 @@ namespace MfxHwMpeg2Encode
 };
 
 #endif // #if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
-#endif // #if defined(MFX_VA) && defined(MFX_D3D11_ENABLED)
+#endif // #if defined(MFX_D3D11_ENABLED)
 #endif // #ifndef __MFX_MPEG2_ENCODE_D3D11__H
 /* EOF */

@@ -73,7 +73,6 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 
     //no specific path to obtain event
     // let close handle
-#if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
     if (!m_pdx11event)
     {
@@ -85,7 +84,6 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
         m_pdx11event = 0;
         m_hwTaskDone.handle = 0; // handle has been obtained by UMD
     }
-#endif
 #endif
 
     m_bQuitWakeUpThread = false;

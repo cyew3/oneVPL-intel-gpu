@@ -20,16 +20,6 @@
 
 #pragma once
 
-// Hotfix for VPL build
-#if 0 && !defined(_MFX_CONFIG_H_)
-#define MFX_ENABLE_OPAQUE_MEMORY
-#define MFX_ENABLE_USER_ENCTOOLS
-#define MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-#define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
-#define MFX_ENABLE_H264_VIDEO_DECODE_STREAMOUT
-#endif
-// End of Hotfix for VPL build
-
 #define TYPEDEF_MEMBER(base, member, name) \
     struct name : std::decay<decltype(base::member)>::type {};
 
