@@ -1368,7 +1368,7 @@ bool MfxHwH264Encode::IsExtBrcSceneChangeSupported(
 #if (MFX_VERSION >= 1026)
     // extbrc API change dependency
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
-    extbrcsc = (hasSupportVME(platform) &&
+    extbrcsc = ((hasSupportVME(platform) || platform >= MFX_HW_DG2) &&
         IsOn(extOpt2.ExtBRC) &&
         (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
         && (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) && !video.mfx.EncodedOrder && extOpt2.LookAheadDepth == 0);

@@ -58,6 +58,8 @@
 class MfxLpLookAhead;
 #endif
 
+#include "mfx_vpp_helper.h"
+
 #ifdef MFX_ENABLE_MCTF_IN_AVC
 #include "cmvm.h"
 #include "mctf_common.h"
@@ -65,8 +67,6 @@ class MfxLpLookAhead;
 
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
-
-
 
 #include <unordered_map>
 #include <queue>
@@ -3453,6 +3453,9 @@ private:
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
         std::unique_ptr<MfxLpLookAhead> m_lpLookAhead;
 #endif
+
+        std::unique_ptr<MfxVppHelper> m_vppHelperScaling;
+
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         QpHistory m_qpHistory;
 #endif

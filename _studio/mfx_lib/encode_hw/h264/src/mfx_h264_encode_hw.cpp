@@ -1517,25 +1517,31 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.NumFrameMin = mfxU16(m_video.AsyncDepth);
         request.Info.Width = amtScd.Get_asc_subsampling_width();
         request.Info.Height = amtScd.Get_asc_subsampling_height();
-        if (IsCmNeededForSCD(m_video))
+        if (m_core->GetHWType() < MFX_HW_DG2)
         {
-            if (!m_cmDevice)
+            if (IsCmNeededForSCD(m_video))
             {
-                m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
                 if (!m_cmDevice)
-                    return MFX_ERR_UNSUPPORTED;
+                {
+                    m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
+                    if (!m_cmDevice)
+                        return MFX_ERR_UNSUPPORTED;
+                }
+                request.Type = MFX_MEMTYPE_D3D_INT;
+                sts = m_scd.AllocCmSurfacesUP(m_cmDevice, request);
+                MFX_CHECK_STS(sts);
             }
-            request.Type = MFX_MEMTYPE_D3D_INT;
-            sts = m_scd.AllocCmSurfacesUP(m_cmDevice, request);
-            MFX_CHECK_STS(sts);
+            else
+            {
+                request.Type = MFX_MEMTYPE_SYS_INT;
+                sts = m_scd.AllocFrames(m_core, request);
+                MFX_CHECK_STS(sts);
+            }
         }
         else
         {
-            request.Type = MFX_MEMTYPE_SYS_INT;
-            sts = m_scd.AllocFrames(m_core, request);
-            MFX_CHECK_STS(sts);
         }
-        sts = amtScd.Init(m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.PicStruct, m_cmDevice);// cmDevice_useGPU);
+        sts = amtScd.Init(m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.PicStruct, m_cmDevice, m_core->GetHWType());// cmDevice_useGPU);
         MFX_CHECK_STS(sts);
     }
 
@@ -1738,6 +1744,34 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         MFX_CHECK_STS(sts);
     }
 #endif
+
+
+    m_vppHelperScaling.reset(new MfxVppHelper(m_core, &sts));
+    MFX_CHECK_STS(sts);
+    MfxVideoParam vppParams = {};
+    vppParams.AsyncDepth = 1;
+    vppParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    vppParams.vpp.In = m_video.mfx.FrameInfo;
+    vppParams.vpp.Out = m_video.mfx.FrameInfo;
+    vppParams.vpp.Out.CropX = 0;
+    vppParams.vpp.Out.CropY = 0;
+    vppParams.vpp.Out.CropW = amtScd.Get_asc_subsampling_width();
+    vppParams.vpp.Out.CropH = amtScd.Get_asc_subsampling_height();
+    vppParams.vpp.Out.Width = amtScd.Get_asc_subsampling_width();
+    vppParams.vpp.Out.Height = amtScd.Get_asc_subsampling_height();
+
+    mfxExtVPPScaling       m_scalingConfig = {};
+    m_scalingConfig.Header.BufferId = MFX_EXTBUFF_VPP_SCALING;
+    m_scalingConfig.Header.BufferSz = sizeof(mfxExtVPPScaling);
+    m_scalingConfig.ScalingMode = MFX_SCALING_MODE_LOWPOWER;
+    m_scalingConfig.InterpolationMethod = MFX_INTERPOLATION_NEAREST_NEIGHBOR;
+
+    mfxExtBuffer* extBuffer = &m_scalingConfig.Header;
+    vppParams.NumExtParam = 1;
+    vppParams.ExtParam = &extBuffer;
+    sts = m_vppHelperScaling->Init(&vppParams);
+    MFX_CHECK_STS(sts);
+
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     m_qpHistory.Reset();
@@ -2994,10 +3028,23 @@ mfxStatus ImplementationAvc::QueryFromMctf(void *pParam)
 using namespace ns_asc;
 mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & task)
 {
+    mfxStatus sts;
     task.m_SceneChange = false;
     mfxFrameSurface1 *pSurfI = nullptr;
     pSurfI = m_core->GetNativeSurface(task.m_yuv);
     pSurfI = pSurfI ? pSurfI : task.m_yuv;
+
+    if (m_core->GetHWType() >= MFX_HW_DG2)
+    {
+        sts = m_vppHelperScaling->Submit(pSurfI);
+
+        mfxFrameSurface1* outSurf = m_vppHelperScaling->GetOutptSurface();
+        task.m_Yscd = outSurf->Data.Y;
+        if (task.m_Yscd == 0)
+            return Error(MFX_ERR_LOCK_MEMORY);
+        return MFX_ERR_NONE;
+    }
+
     mfxHDLPair handle = { nullptr,nullptr };
     if (IsCmNeededForSCD(m_video))
     {
@@ -3276,11 +3323,15 @@ mfxStatus ImplementationAvc::SCD_Get_FrameType(DdiTask & task)
 using namespace ns_asc;
 mfxStatus ImplementationAvc::Prd_LTR_Operation(DdiTask & task)
 {
-    if (task.m_wsSubSamplingEv)
+    if (task.m_wsSubSamplingEv && m_core->GetHWType() < MFX_HW_DG2)
     {
         MFX_SAFE_CALL(amtScd.ProcessQueuedFrame(&task.m_wsSubSamplingEv, &task.m_wsSubSamplingTask, &task.m_wsGpuImage, &task.m_Yscd));
         m_scd.UpdateResourcePointers(task.m_idxScd, (void *)task.m_Yscd, (void *)task.m_wsGpuImage);
         ReleaseResource(m_scd, (mfxHDL)task.m_wsGpuImage);
+    }
+    else if (m_core->GetHWType() >= MFX_HW_DG2)
+    {
+        amtScd.ProcessQueuedFrame(&task.m_Yscd);
     }
     task.m_frameLtrReassign = 0;
     task.m_LtrOrder = m_LtrOrder;
@@ -3313,7 +3364,7 @@ mfxStatus ImplementationAvc::CalculateFrameCmplx(DdiTask const &task, mfxU32 &ra
     // Raca = l2 norm of average abs row diff and average abs col diff
     raca128 = 0;
 
-    if (IsCmNeededForSCD(m_video))
+    if (IsCmNeededForSCD(m_video) && m_core->GetHWType() < MFX_HW_DG2)
     {
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
