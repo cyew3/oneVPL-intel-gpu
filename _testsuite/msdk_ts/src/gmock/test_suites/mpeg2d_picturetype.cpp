@@ -39,7 +39,6 @@ private:
     enum
     {
         MFX_PAR = 1,
-        ALLOC_OPAQUE = 8,
     };
 
     enum
@@ -84,32 +83,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*06*/ MFX_ERR_NONE, DISPORDER, "conformance/mpeg2/bsd_pak_test/bugs_fld_IPB.mpg", 4},
     {/*07*/ MFX_ERR_NONE, DISPORDER, "conformance/mpeg2/bsd_pak_test/bugs_int_IPB.mpg", 3},
     {/*08*/ MFX_ERR_NONE, RAND     , "conformance/mpeg2/bsd_pak_test/bugs_fld_IPB.mpg", 4},
-    {/*09*/ MFX_ERR_NONE, DISPORDER, "conformance/mpeg2/bsd_pak_test/bugs_prg_I.mpg"  , 0, ALLOC_OPAQUE, 
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*10*/ MFX_ERR_NONE, DISPORDER, "conformance/mpeg2/bsd_pak_test/bugs_prg_IP.mpg" , 1, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*11*/ MFX_ERR_NONE, DISPORDER, "conformance/mpeg2/bsd_pak_test/bugs_prg_IPB.mpg", 2, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*12*/ MFX_ERR_NONE, RAND     , "conformance/mpeg2/bsd_pak_test/bugs_prg_IPB.mpg", 2, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*13*/ MFX_ERR_NONE, RAND     , "conformance/mpeg2/bsd_pak_test/bugs_int_IPB.mpg", 3, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*14*/ MFX_ERR_NONE, DISPORDER, "conformance/mpeg2/bsd_pak_test/bugs_fld_IPB.mpg", 4, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*15*/ MFX_ERR_NONE, DISPORDER, "conformance/mpeg2/bsd_pak_test/bugs_int_IPB.mpg", 3, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*16*/ MFX_ERR_NONE, RAND     , "conformance/mpeg2/bsd_pak_test/bugs_fld_IPB.mpg", 4, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-
-};
+ };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -248,27 +222,8 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(m_pPar, MFX_PAR);
 
-    if (tc.mem_type == ALLOC_OPAQUE)
-    {
-
-        AllocSurfaces();
-
-        m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
-        mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        m_request.Type = MFX_MEMTYPE_OPAQUE_FRAME;
-        m_request.NumFrameSuggested = m_request.NumFrameMin;
-
-        MFXVideoDECODE_QueryIOSurf(m_session, m_pPar, &m_request);
-
-        AllocOpaque(m_request, *osa);
-        Init(m_session, m_pPar);
-    }
-    else
-    {
-        AllocSurfaces();
-        Init();
-    }
+    AllocSurfaces();
+    Init();
 
     mfxU32 step =  (tc.mode & RAND) ? 2 : 1;
     for (mfxU32 i = 0; i < PoolSize(); i+=step)

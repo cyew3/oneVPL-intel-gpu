@@ -82,7 +82,6 @@ private:
         INIT = 0,
     };
 
-    void AllocOpaque();
 
     int RunTest(const tc_struct& tc);
 };
@@ -158,23 +157,22 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*07*/ MFX_ERR_NONE, NO_EXT_ALLOCATOR},
     {/*08*/ MFX_ERR_NONE, NO_EXT_ALLOCATOR, {IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
 
-    {/*09*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*10*/ MFX_ERR_NONE, 0, {{Width, 1920}, {Height, 1088}}},
-    {/*11*/ MFX_ERR_NONE, 0, {{Width, 3840}, {Height, 2160}}},
-    {/*12*/ MFX_ERR_NONE, 0, {{Width, 0}, {Height, 0}}},
+    {/*09*/ MFX_ERR_NONE, 0, {{Width, 1920}, {Height, 1088}}},
+    {/*10*/ MFX_ERR_NONE, 0, {{Width, 3840}, {Height, 2160}}},
+    {/*11*/ MFX_ERR_NONE, 0, {{Width, 0}, {Height, 0}}},
     //should be ignored during init
-    {/*13*/ MFX_ERR_NONE, 0, {{CropX, 65535, IGNORED}, {CropY, 2160, IGNORED}, {CropW, 23}, {CropH, 15}}},
-    {/*14*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_PROGRESSIVE, IGNORED}},
-    {/*15*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FIELD_TFF, IGNORED}},
-    {/*16*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FIELD_BFF, IGNORED}},
-    {/*17*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING, IGNORED}},
+    {/*12*/ MFX_ERR_NONE, 0, {{CropX, 65535, IGNORED}, {CropY, 2160, IGNORED}, {CropW, 23}, {CropH, 15}}},
+    {/*13*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_PROGRESSIVE, IGNORED}},
+    {/*14*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FIELD_TFF, IGNORED}},
+    {/*15*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FIELD_BFF, IGNORED}},
+    {/*16*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING, IGNORED}},
     //Any valid values or unspecified (zero);
-    {/*18*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}}},
-    {/*19*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}}},
-    {/*20*/ MFX_ERR_UNSUPPORTED, 0, {{AspectRatioW, 0}, {AspectRatioH, 15, INVALID}}},
-    {/*21*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}}},
-    {/*22*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}}},
-    {/*23*/ MFX_ERR_UNSUPPORTED, 0, {{FrameRateExtN, 100, INVALID}, {FrameRateExtD, 0}}},
+    {/*17*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}}},
+    {/*18*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}}},
+    {/*19*/ MFX_ERR_UNSUPPORTED, 0, {{AspectRatioW, 0}, {AspectRatioH, 15, INVALID}}},
+    {/*20*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}}},
+    {/*21*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}}},
+    {/*22*/ MFX_ERR_UNSUPPORTED, 0, {{FrameRateExtN, 100, INVALID}, {FrameRateExtD, 0}}},
 
     {/*24*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_Y210, INVALID} }},
     {/*25*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_UYVY, INVALID} }},

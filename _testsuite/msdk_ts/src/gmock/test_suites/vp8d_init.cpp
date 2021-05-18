@@ -41,7 +41,6 @@ private:
         NULL_SESSION = 1,
         NULL_PARAMS,
         NEED_ALLOC,
-        ALLOC_OPAQUE,
     };
 
     struct tc_struct
@@ -91,8 +90,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
     {/*17*/ MFX_ERR_NONE, TestSuite::NEED_ALLOC, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
     {/*18*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}},
-    {/*19*/ MFX_ERR_NONE, TestSuite::ALLOC_OPAQUE, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
-    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
 
     // Codec profiles (1 to 4 supported)
     {/*21*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_0}}},
@@ -225,15 +222,6 @@ int TestSuite::RunTest(unsigned int id)
         return 0;
     }
 
-    if (tc.mode == ALLOC_OPAQUE)
-    {
-        mfxExtOpaqueSurfaceAlloc& osa = m_par;
-
-        QueryIOSurf();
-        g_tsStatus.expect(MFX_ERR_NONE);
-
-        AllocOpaque(m_request, osa);
-    }
 
     g_tsStatus.expect(tc.sts);
     Init(m_session, m_pPar);

@@ -105,25 +105,24 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*07*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
     {/*08*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*09*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*10*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    {/*09*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
 
-    {/*11*/ MFX_ERR_NONE, 0, {{Width, 1920}, {Height, 1088}}},
-    {/*12*/ MFX_ERR_NONE, 0, {{Width, 3840}, {Height, 2160}}},
-    {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{Width, 0}, {Height, 0}}},
-    {/*14*/ MFX_ERR_NONE, 0, {{CropX, 65535}, {CropY, 2160}, {CropW, 23}, {CropH, 15}}}, // should be ignored during init
-    {/*15*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}}, // should be ignored during init
-    {/*16*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}}},                 // Init only checks SAR for sanity, i.e.
-    {/*17*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}}},               // it should pass if both AspectRatioW/H are zero 
-    {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{AspectRatioW, 0}, {AspectRatioH, 15}}}, // or both are non-zero and fail otherwise
-    {/*19*/ MFX_ERR_NONE, 0, {{AspectRatioW, 1}, {AspectRatioH, 15}}},
-    {/*20*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}}},
-    {/*21*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}}},
-    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FrameRateExtN, 100}, {FrameRateExtD, 0}}},
-    {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y210} }},
-    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_UYVY} }},
-    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_RGB4} }},
-    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_AES128_CTR} }, },
+    {/*10*/ MFX_ERR_NONE, 0, {{Width, 1920}, {Height, 1088}}},
+    {/*11*/ MFX_ERR_NONE, 0, {{Width, 3840}, {Height, 2160}}},
+    {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{Width, 0}, {Height, 0}}},
+    {/*13*/ MFX_ERR_NONE, 0, {{CropX, 65535}, {CropY, 2160}, {CropW, 23}, {CropH, 15}}}, // should be ignored during init
+    {/*14*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}}, // should be ignored during init
+    {/*15*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}}},                 // Init only checks SAR for sanity, i.e.
+    {/*16*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}}},               // it should pass if both AspectRatioW/H are zero 
+    {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{AspectRatioW, 0}, {AspectRatioH, 15}}}, // or both are non-zero and fail otherwise
+    {/*18*/ MFX_ERR_NONE, 0, {{AspectRatioW, 1}, {AspectRatioH, 15}}},
+    {/*19*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}}},
+    {/*20*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}}},
+    {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FrameRateExtN, 100}, {FrameRateExtD, 0}}},
+    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y210} }},
+    {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_UYVY} }},
+    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_RGB4} }},
+    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_AES128_CTR} }, },
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -280,14 +279,7 @@ int TestSuite::RunTest(const tc_struct& tc)
             SetHandle(m_session, type, hdl);
         }
 
-        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            AllocOpaqueSurfaces();
-        }
-        else
-        {
-            SetFrameAllocator(m_session, GetAllocator());
-        }
+        SetFrameAllocator(m_session, GetAllocator());
     }
 
     if(PLUGIN_NOT_LOADED != tc.mode)

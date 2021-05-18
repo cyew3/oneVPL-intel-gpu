@@ -74,29 +74,25 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}}},
     {/* 12*/ MFX_ERR_MEMORY_ALLOC, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*13*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*14*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*17*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
-    {/*18*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 10}},
-    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
+    {/*13*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
+    {/*14*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 10}},
+    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  0}}},
-    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
+    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4106}}},
-    {/*21*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 4},
-    {/*22*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 5},
-    {/*23*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 6},
-    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 1 } },
-    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 1 } },
-    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 42 } },
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 42 } },
+    {/*17*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 4},
+    {/*18*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 5},
+    {/*19*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 6},
+    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 1 } },
+    {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 1 } },
+    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 42 } },
+    {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1,{ &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 42 } },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -160,19 +156,7 @@ int TestSuite::RunTest(tc_struct const& tc)
             }
         }
 
-        if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            mfxExtOpaqueSurfaceAlloc& osa = m_par;
-
-            QueryIOSurf();
-
-            if(frame_allocator::ALLOC_MIN_MINUS_1 == tc.alloc_mode)
-            {
-                m_request.NumFrameSuggested = m_request.NumFrameMin - 1;
-            }
-
-            AllocOpaque(m_request, osa);
-        }
+        
     }
 
     if(tc.zero_ptr == MFXVP)

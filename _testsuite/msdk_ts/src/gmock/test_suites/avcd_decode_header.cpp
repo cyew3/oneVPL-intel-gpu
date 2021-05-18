@@ -107,8 +107,7 @@ public:
         mfxExtVideoSignalInfo vsi_default;
 
         bool encoder_flag = (pPar->IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-        ||(pPar->IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        ||(pPar->IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+        ||(pPar->IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY);
 
         if(!pPar || !pBs) return MFX_ERR_NULL_PTR;
 

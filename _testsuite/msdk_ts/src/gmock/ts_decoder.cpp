@@ -18,18 +18,7 @@ enum eDecoderFunction
     , QUERYIOSURF
 };
 
-static void SkipDecision(mfxVideoParam& par, eDecoderFunction function)
-{
-    if (g_tsConfig.core20)
-    {
-        if (par.IOPattern == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            g_tsLog << "Opaque memory is not supported by core20\n";
-            g_tsStatus.expect(function == QUERY ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM);
-            g_tsStatus.last();
-        }
-    }
-}
+
 
 tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_id)
     : m_default(useDefaults)
@@ -181,10 +170,7 @@ mfxStatus tsVideoDecoder::Init(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoDECODE_Init, session, par);
     IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
-    if (par)
-    {
-        SkipDecision(*par, INIT);
-    }
+
     g_tsStatus.check( MFXVideoDECODE_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
@@ -231,10 +217,7 @@ mfxStatus tsVideoDecoder::Query(mfxSession session, mfxVideoParam *in, mfxVideoP
 {
     TRACE_FUNC3(MFXVideoDECODE_Query, session, in, out);
     IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
-    if (in)
-    {
-        SkipDecision(*in, QUERY);
-    }
+ 
     g_tsStatus.check( MFXVideoDECODE_Query(session, in, out) );
     TS_TRACE(out);
 
@@ -264,10 +247,6 @@ mfxStatus tsVideoDecoder::QueryIOSurf()
 mfxStatus tsVideoDecoder::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     TRACE_FUNC3(MFXVideoDECODE_QueryIOSurf, session, par, request);
-    if (par)
-    {
-        SkipDecision(*par, QUERYIOSURF);
-    }
     g_tsStatus.check( MFXVideoDECODE_QueryIOSurf(session, par, request) );
     TS_TRACE(request);
 
@@ -282,10 +261,6 @@ mfxStatus tsVideoDecoder::Reset()
 mfxStatus tsVideoDecoder::Reset(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoDECODE_Reset, session, par);
-    if (par)
-    {
-        SkipDecision(*par, RESET);
-    }
     g_tsStatus.check( MFXVideoDECODE_Reset(session, par) );
 
     //m_frames_buffered = 0;
@@ -559,13 +534,4 @@ mfxStatus tsVideoDecoder::UnLoad()
     return g_tsStatus.get();
 }
 
-void tsVideoDecoder::AllocOpaqueSurfaces()
-{
-    m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
-    mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 
-    mfxFrameAllocRequest request = {};
-    QueryIOSurf(m_session, m_pPar, &request);
-
-    tsSurfacePool::AllocOpaque(request, *osa);
-}

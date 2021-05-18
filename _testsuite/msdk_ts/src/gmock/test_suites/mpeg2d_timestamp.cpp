@@ -33,7 +33,6 @@ private:
     enum
     {
         MFX_PAR = 1,
-        ALLOC_OPAQUE = 8,
     };
 
     enum
@@ -71,25 +70,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*03*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ, 0},
     {/*04*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME, 0},
     {/*05*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME, 0},
-    {/*06*/ MFX_ERR_NONE, 0, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*07*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*08*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*09*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*10*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*11*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME, ALLOC_OPAQUE,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -266,26 +246,8 @@ int TestSuite::RunTest(unsigned int id)
 
     m_par.AsyncDepth = 1;
     
-    if (tc.mem_type == ALLOC_OPAQUE)
-    {
-        SETPARS(m_pPar, MFX_PAR);
-        AllocSurfaces();
+    Init();
 
-        m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
-        mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        m_request.Type = MFX_MEMTYPE_OPAQUE_FRAME;
-        m_request.NumFrameSuggested = m_request.NumFrameMin;
-
-        MFXVideoDECODE_QueryIOSurf(m_session, m_pPar, &m_request);
-
-        AllocOpaque(m_request, *osa);
-        Init(m_session, m_pPar);
-    }
-    else
-    {
-        Init();
-    }
 
     mfxU32 decoded = 0;
     mfxU32 submitted = 0;

@@ -32,8 +32,6 @@ private:
         mfxStatus sts;
         mfxU32 ses_mode;
         mfxU32 par_mode;
-        mfxU32 osa_type_mode;
-        mfxU32 osa_num_mode;
         mfxU32 num_call;
         struct tctrl{
             mfxU32 type;
@@ -52,12 +50,7 @@ private:
         PAR_NO_EXT_ALLOCATOR,
         PAR_NO_ZERO,
         PAR_ZERO,
-        OSA_TYPE_D3D,
-        OSA_TYPE_SYSTEM,
-        OSA_NUM_LESS,
-        OSA_NUM_BIGGER,
-        OSA_NUM_VALID,
-    };
+     };
 
     enum CTRL_TYPE
     {
@@ -93,67 +86,41 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
+    {/* 0*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_ZERO, 1,
         {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32}, //system
     },
-    {/* 1*/ MFX_ERR_INVALID_HANDLE, SESSION_INVALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
+    {/* 1*/ MFX_ERR_INVALID_HANDLE, SESSION_INVALID, PAR_NO_ZERO, 1,
         {
             {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32}
         }
     },
-    {/* 2*/ MFX_ERR_NULL_PTR, SESSION_VALID, PAR_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
+    {/* 2*/ MFX_ERR_NULL_PTR, SESSION_VALID, PAR_ZERO, 1,
         {
             {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32},
         }
     },
-    {/* 3*/ MFX_ERR_UNDEFINED_BEHAVIOR, SESSION_VALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 2,
+    {/* 3*/ MFX_ERR_UNDEFINED_BEHAVIOR, SESSION_VALID, PAR_NO_ZERO, 2,
         {
             {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32}
         }
     },
-    {/* 4*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
+    {/* 4*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_ZERO,  1,
         {
             {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 16}, //video
         }
     },
-    {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
+    {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, 1,
         {{MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 16}}
     },
-    {/* 6*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
+    {/* 6*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_ZERO,  1,
         {{MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32}}
     },
-    {/* 7*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, OSA_TYPE_SYSTEM, OSA_NUM_VALID, 1,
-        {
-            {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 64} // opaque
-        }
-    },
-    {/* 8*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
-        {
-            {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 64}
-        }
-    },
-    {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, OSA_TYPE_SYSTEM, OSA_NUM_LESS, 1,
-        {
-            {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 64}
-        }
-    },
-    {/* 10*/ MFX_ERR_INVALID_VIDEO_PARAM, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, OSA_TYPE_D3D, OSA_NUM_LESS, 1,
-        {
-            {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 64}
-        }
-    },
-    {/* 11*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, OSA_TYPE_SYSTEM, OSA_NUM_BIGGER, 1,
+    {/* 7*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_EXT_ALLOCATOR,  1,
         {
             {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32}
         }
     },
-    {/* 12*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_EXT_ALLOCATOR, OSA_TYPE_D3D, OSA_NUM_BIGGER, 1,
-        {
-            {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 64}
-        }
-    },
-
-};
+ };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -167,18 +134,18 @@ int TestSuite::RunTest(unsigned int id)
     apply_par(tc, MFXVPAR);
 
 
-    if(tc.ses_mode == SESSION_VALID)
+    if (tc.ses_mode == SESSION_VALID)
     {
-        if(!m_session)
+        if (!m_session)
         {
             MFXInit();
         }
-        if(g_tsImpl == MFX_IMPL_HARDWARE) {
-            if((g_tsHWtype < MFX_HW_HSW) && (tc.sts == MFX_ERR_NONE)) {
+        if (g_tsImpl == MFX_IMPL_HARDWARE) {
+            if ((g_tsHWtype < MFX_HW_HSW) && (tc.sts == MFX_ERR_NONE)) {
                 expected = MFX_WRN_PARTIAL_ACCELERATION;
             }
 #if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
-            if(expected == MFX_ERR_NONE) {
+            if (expected == MFX_ERR_NONE) {
                 expected = MFX_WRN_PARTIAL_ACCELERATION;
             }
 #endif
@@ -194,7 +161,7 @@ int TestSuite::RunTest(unsigned int id)
         m_pPar->mfx.CodecId = 1195724874;
         m_pPar->mfx.JPEGChromaFormat = 2;
 
-        if(m_default)
+        if (m_default)
         {
 
             if (!m_session)
@@ -206,74 +173,36 @@ int TestSuite::RunTest(unsigned int id)
                 Load();
             }
             if (
-                    (
-                        !m_pFrameAllocator
-                        && (
-                               (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
-                               || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-                               || m_use_memid
-                            )
+                (
+                    !m_pFrameAllocator
+                    && (
+                        (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+                        || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+                        || m_use_memid
+                        )
                     )
-                    && (tc.par_mode != PAR_NO_EXT_ALLOCATOR)
+                && (tc.par_mode != PAR_NO_EXT_ALLOCATOR)
                 )
             {
-                if(!GetAllocator())
+                if (!GetAllocator())
                 {
                     if (m_pVAHandle)
                         SetAllocator(m_pVAHandle, true);
                     else
                         UseDefaultAllocator(
-                               (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-                         || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+                            (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+                            || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
                         );
                 }
                 m_pFrameAllocator = GetAllocator();
                 SetFrameAllocator();
             }
 
-            if(!m_par_set && (m_bs_processor || (m_pBitstream && m_pBitstream->DataLength)))
+            if (!m_par_set && (m_bs_processor || (m_pBitstream && m_pBitstream->DataLength)))
             {
                 DecodeHeader();
             }
-            if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            {
-#if defined (LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
-                g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
-#endif
-                QueryIOSurf();
-                AllocOpaque(m_request, m_par);
-            }
         }
-
-        mfxExtOpaqueSurfaceAlloc *extOpaq = ((mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
-        if (extOpaq)
-        {
-            if (tc.osa_num_mode == OSA_NUM_LESS)
-            {
-                extOpaq->Out.NumSurface = (m_request.NumFrameMin - 1);
-            }
-            else if (tc.osa_num_mode == OSA_NUM_BIGGER)
-            {
-                extOpaq->Out.NumSurface = (m_request.NumFrameSuggested + 1);
-            }
-            else if (tc.osa_num_mode != OSA_NUM_VALID)
-            {
-                TS_FAIL_TEST("Filed. Unexpected OSA num!", MFX_ERR_ABORTED);
-            }
-            if (tc.osa_type_mode == OSA_TYPE_SYSTEM)
-            {
-                extOpaq->Out.Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_OPAQUE_FRAME;
-            }
-            else if (tc.osa_type_mode == OSA_TYPE_D3D)
-            {
-                extOpaq->Out.Type = m_request.Type;
-            }
-            else
-            {
-                TS_FAIL_TEST("Filed. Unexpected OSA type!", MFX_ERR_ABORTED);
-            }
-        }
-
     }
 
     if(tc.par_mode == PAR_ZERO)

@@ -76,7 +76,6 @@ namespace av1d_decode_frame_async
             RUNTIME_SURF
         };
 
-        void AllocOpaque();
     };
 
     const TestSuite::tc_struct TestSuite::test_case[] =
@@ -84,55 +83,54 @@ namespace av1d_decode_frame_async
         {/*00*/ MFX_ERR_NONE, 0, 1},
         {/*01*/ MFX_ERR_NONE, NO_EXT_ALLOCATOR, 20},
 
-        {/*02*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY, INIT} },
-        {/*03*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, INIT} },
-        {/*04*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY, INIT} },
+        {/*02*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, INIT} },
+        {/*03*/ MFX_ERR_NONE, 0, 20, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY, INIT} },
 
-        {/*05*/ MFX_ERR_INVALID_HANDLE,  NULL_SESSION   , 1},
-        {/*06*/ MFX_ERR_MORE_DATA,       NULL_BS        , 1},
-        {/*07*/ MFX_ERR_NULL_PTR,        NULL_SURF      , 1},
-        {/*08*/ MFX_ERR_NULL_PTR,        NULL_SURF_OUT  , 1},
-        {/*09*/ MFX_ERR_NULL_PTR,        NULL_SYNCP     , 1},
-        {/*10*/ MFX_ERR_NOT_INITIALIZED, NOT_INITIALIZED, 1},
+        {/*04*/ MFX_ERR_INVALID_HANDLE,  NULL_SESSION   , 1},
+        {/*05*/ MFX_ERR_MORE_DATA,       NULL_BS        , 1},
+        {/*06*/ MFX_ERR_NULL_PTR,        NULL_SURF      , 1},
+        {/*07*/ MFX_ERR_NULL_PTR,        NULL_SURF_OUT  , 1},
+        {/*08*/ MFX_ERR_NULL_PTR,        NULL_SYNCP     , 1},
+        {/*09*/ MFX_ERR_NOT_INITIALIZED, NOT_INITIALIZED, 1},
         // we have to fail init, but alloc frames before decode
-        {/*11*/ MFX_ERR_NOT_INITIALIZED, FAILED_INIT    , 1, {
+        {/*10*/ MFX_ERR_NOT_INITIALIZED, FAILED_INIT    , 1, {
               {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, INIT},
               {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, AFTER_INIT},
                                                              } },
-        {/*12*/ MFX_ERR_NOT_INITIALIZED, CLOSED_DECODER , 1},
+        {/*11*/ MFX_ERR_NOT_INITIALIZED, CLOSED_DECODER , 1},
 
-        {/*13*/ MFX_ERR_NONE, 0, 1, {&tsStruct::mfxBitstream.DataFlag, 0, RUNTIME_BS} },
-        {/*14*/ MFX_ERR_NONE, 0, 1, {&tsStruct::mfxBitstream.DataFlag, MFX_BITSTREAM_COMPLETE_FRAME, RUNTIME_BS} },
-        {/*15*/ MFX_ERR_NULL_PTR,  0, 1, {&tsStruct::mfxBitstream.Data, 0, RUNTIME_BS} },
-        {/*16*/ MFX_ERR_NULL_PTR,  0, 1, { {&tsStruct::mfxBitstream.Data, 0, RUNTIME_BS},
+        {/*12*/ MFX_ERR_NONE, 0, 1, {&tsStruct::mfxBitstream.DataFlag, 0, RUNTIME_BS} },
+        {/*13*/ MFX_ERR_NONE, 0, 1, {&tsStruct::mfxBitstream.DataFlag, MFX_BITSTREAM_COMPLETE_FRAME, RUNTIME_BS} },
+        {/*14*/ MFX_ERR_NULL_PTR,  0, 1, {&tsStruct::mfxBitstream.Data, 0, RUNTIME_BS} },
+        {/*15*/ MFX_ERR_NULL_PTR,  0, 1, { {&tsStruct::mfxBitstream.Data, 0, RUNTIME_BS},
                                            {&tsStruct::mfxBitstream.DataLength, 0, RUNTIME_BS} ,
                                            {&tsStruct::mfxBitstream.MaxLength, 0,  RUNTIME_BS},
                                          } },
-        {/*17*/ MFX_ERR_MORE_DATA, 0, 1, {&tsStruct::mfxBitstream.DataLength, 0, RUNTIME_BS} },
-        {/*18*/ MFX_ERR_MORE_DATA, 0, 1, {&tsStruct::mfxBitstream.DataLength, 10, RUNTIME_BS} },
-        {/*19*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxBitstream.DataLength, 1024*1024, RUNTIME_BS}, {&tsStruct::mfxBitstream.MaxLength, 1024*1024-1, RUNTIME_BS}} },
-        {/*20*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxBitstream.DataOffset, 1024*1024+1, RUNTIME_BS}, {&tsStruct::mfxBitstream.MaxLength, 1024*1024, RUNTIME_BS}} },
-        {/*21*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxBitstream.MaxLength, 4096+4096, RUNTIME_BS},
+        {/*16*/ MFX_ERR_MORE_DATA, 0, 1, {&tsStruct::mfxBitstream.DataLength, 0, RUNTIME_BS} },
+        {/*17*/ MFX_ERR_MORE_DATA, 0, 1, {&tsStruct::mfxBitstream.DataLength, 10, RUNTIME_BS} },
+        {/*18*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxBitstream.DataLength, 1024*1024, RUNTIME_BS}, {&tsStruct::mfxBitstream.MaxLength, 1024*1024-1, RUNTIME_BS}} },
+        {/*19*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxBitstream.DataOffset, 1024*1024+1, RUNTIME_BS}, {&tsStruct::mfxBitstream.MaxLength, 1024*1024, RUNTIME_BS}} },
+        {/*20*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxBitstream.MaxLength, 4096+4096, RUNTIME_BS},
                                                     {&tsStruct::mfxBitstream.DataLength, 4096+1, RUNTIME_BS},
                                                     {&tsStruct::mfxBitstream.DataOffset, 4096, RUNTIME_BS},
                                                   } },
 
         //Init resolution != stream resolution
-        {/*22*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1280, INIT},
+        {/*21*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1280, INIT},
                                                           {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 768, INIT},
                                                           {&tsStruct::mfxFrameSurface1.Info.Width, 1920, RUNTIME_SURF},
                                                           {&tsStruct::mfxFrameSurface1.Info.Height, 1080, RUNTIME_SURF},
                                                         } },
         //Given frames resolution < init&stream resolution
-        {/*23*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.Width, 160, RUNTIME_SURF},
+        {/*22*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.Width, 160, RUNTIME_SURF},
                                                           {&tsStruct::mfxFrameSurface1.Info.Height, 96, RUNTIME_SURF},
                                                         } },
 
-        {/*24*/ MFX_ERR_NONE, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT},
+        {/*23*/ MFX_ERR_NONE, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT},
                                       {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096, AFTER_INIT},
                                     } },
 
-        {/*25*/ MFX_ERR_NONE, 0, 20, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT},
+        {/*24*/ MFX_ERR_NONE, 0, 20, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT},
                                        {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096, AFTER_INIT},
                                      } },
 
@@ -269,15 +267,7 @@ namespace av1d_decode_frame_async
         return 0;
     }
 
-    void TestSuite::AllocOpaque()
-    {
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            AllocOpaqueSurfaces();
-        }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-    }
+ 
 
     template <unsigned fourcc, unsigned profile>
     struct TestSuiteExt

@@ -88,5 +88,4 @@ public:
 
     void SetPar4_DecodeFrameAsync();
 
-    void AllocOpaqueSurfaces();
 };

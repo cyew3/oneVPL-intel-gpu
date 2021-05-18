@@ -69,62 +69,50 @@ const tc_struct TestSuite::test_case[] =
         5,
         MFX_ERR_NONE
     },
-    {// 5
-        0,
-        MFX_IOPATTERN_OUT_OPAQUE_MEMORY,
-        5,
-        MFX_ERR_NONE
-    },
     //IOPattern
-    {// 6
+    {// 5
         0,
         MFX_IOPATTERN_OUT_VIDEO_MEMORY + 2,
         1,
         MFX_ERR_NONE
     },
-    {// 7
+    {// 6
         0,
         MFX_IOPATTERN_OUT_VIDEO_MEMORY + 1,
         1,
         MFX_ERR_NONE
     },
-    {// 8
+    {// 7
         0,
         MFX_IOPATTERN_OUT_SYSTEM_MEMORY + 2,
         1,
         MFX_ERR_NONE
     },
-    {// 9
+    {// 8
         0,
         MFX_IOPATTERN_OUT_SYSTEM_MEMORY + 1,
         1,
         MFX_ERR_NONE
     },
-    {// 10
-        0,
-        MFX_IOPATTERN_OUT_OPAQUE_MEMORY - 4,
-        1,
-        MFX_ERR_INVALID_VIDEO_PARAM
-    },
-    {// 11
+    {// 9
         0,
         6,
         1,
         MFX_ERR_INVALID_VIDEO_PARAM
     },
-    {// 12
+    {// 10
         0,
         1,
         1,
         MFX_ERR_INVALID_VIDEO_PARAM
     },
-    {// 13
+    {// 11
         0,
         2,
         1,
         MFX_ERR_INVALID_VIDEO_PARAM
     },
-    {// 14
+    {// 12
         0,
         0,
         1,
@@ -166,8 +154,6 @@ int TestSuite::RunTest(unsigned int id)
             expectedType |= MFX_MEMTYPE_SYSTEM_MEMORY;
         else if (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
             expectedType |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-        else
-            expectedType = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
 
         EXPECT_EQ(expectedType, m_request.Type);
         EXPECT_EQ(m_par.mfx.FrameInfo, m_request.Info);

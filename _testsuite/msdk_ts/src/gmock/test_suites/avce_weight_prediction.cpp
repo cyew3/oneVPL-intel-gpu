@@ -430,11 +430,7 @@ namespace avce_weight_prediction
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator(); TS_CHECK_MFX;
         }
-        if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            QueryIOSurf();
-            AllocOpaque(m_request, m_par);
-        }
+
 
         // WP on linux is FEI specific feature
         // Change status for legacy encoder on linux to MFX_WRN_INCOMPATIBLE_VIDEO_PARAM

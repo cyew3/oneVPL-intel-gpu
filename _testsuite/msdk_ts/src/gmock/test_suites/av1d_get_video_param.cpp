@@ -60,7 +60,6 @@ private:
         CHECK,
     };
 
-    void AllocOpaque();
     void ReadStream();
 
     int RunTest(const tc_struct& tc);
@@ -141,22 +140,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*04*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY}, 5},
     {/*05*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY} , 5},
 
-    {/*06*/ MFX_ERR_NONE, 0, {IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}, 5},
-    {/*07*/ MFX_ERR_NONE, 0, {{IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
+    {/*06*/ MFX_ERR_NONE, 0, {{IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
                               {IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY, CHECK}}, 0},
 
-    {/*08*/ MFX_ERR_NONE, 0, {{Width, 1920}, {Height, 1088}}, 0},
-    {/*09*/ MFX_ERR_NONE, 0, {{Width, 3840}, {Height, 2160}}, 0},
-    {/*10*/ MFX_ERR_NONE, 0, {{CropX, MAX_WIDTH + 1}, {CropY, 2160}, {CropW, 23}, {CropH, 15}, //should be ignored during init
+    {/*07*/ MFX_ERR_NONE, 0, {{Width, 1920}, {Height, 1088}}, 0},
+    {/*08*/ MFX_ERR_NONE, 0, {{Width, 3840}, {Height, 2160}}, 0},
+    {/*09*/ MFX_ERR_NONE, 0, {{CropX, MAX_WIDTH + 1}, {CropY, 2160}, {CropW, 23}, {CropH, 15}, //should be ignored during init
                               {CropX, 0, CHECK}, {CropY, 0, CHECK}, {CropW, 0, CHECK, 1}, {CropH,  0, CHECK, 1}}, 5}, //real values from stream should be reported
     // Test case is required to check that frame_width/frame_height from stream are mapped to Crops and properly returned by GetVideoParam.
     // There is no such AV1 stream so far. Implementation of stream re-packer to write non-zero frame_width/frame_height is expensive.
     // So there is no such test case so far.
-    {/*11*/ MFX_ERR_NONE, 0, {{PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}, {PicStruct, MFX_PICSTRUCT_PROGRESSIVE, CHECK}}, 5}, //should be ignored during init and reported then
-    {/*12*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}, {AspectRatioW, 0, CHECK, 1}, {AspectRatioH, 0, CHECK, 1},}, 5},
-    {/*13*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}, {AspectRatioW, 80, CHECK, 0}, {AspectRatioH, 33, CHECK, 0}}},
-    {/*14*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}, {FrameRateExtN, 0, CHECK, 1}, {FrameRateExtD, 0, CHECK, 1}}},
-    {/*15*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}, {FrameRateExtN, 30, CHECK, 0}, {FrameRateExtD, 1, CHECK, 0}}},
+    {/*10*/ MFX_ERR_NONE, 0, {{PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}, {PicStruct, MFX_PICSTRUCT_PROGRESSIVE, CHECK}}, 5}, //should be ignored during init and reported then
+    {/*11*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}, {AspectRatioW, 0, CHECK, 1}, {AspectRatioH, 0, CHECK, 1},}, 5},
+    {/*12*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}, {AspectRatioW, 80, CHECK, 0}, {AspectRatioH, 33, CHECK, 0}}},
+    {/*13*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}, {FrameRateExtN, 0, CHECK, 1}, {FrameRateExtD, 0, CHECK, 1}}},
+    {/*14*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}, {FrameRateExtN, 30, CHECK, 0}, {FrameRateExtD, 1, CHECK, 0}}},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -264,7 +262,6 @@ int TestSuite::RunTest(const tc_struct& tc)
         SetHandle(m_session, type, hdl);
     }
 
-    AllocOpaque();
 
     if (FAILED_INIT == tc.mode)
     {
@@ -329,15 +326,7 @@ void TestSuite::ReadStream()
     m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
 }
 
-void TestSuite::AllocOpaque()
-{
-#if !defined(MFX_ONEVPL)
-    if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-    {
-        AllocOpaqueSurfaces();
-    }
-#endif //!MFX_ONEVPL
-}
+
 
 TS_REG_TEST_SUITE_CLASS_ROUTINE(av1d_8b_420_nv12_get_video_param,  RunTest_fourcc<MFX_FOURCC_NV12>, n_cases);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(av1d_10b_420_p010_get_video_param,  RunTest_fourcc<MFX_FOURCC_P010>, n_cases);

@@ -32,14 +32,6 @@ public:
         NULL_BS,
         PAR_ACCEL,
         NO_EXT_ALLOCATOR,
-        ALLOC_OPAQUE = 8,
-        ALLOC_OPAQUE_SYSTEM = ALLOC_OPAQUE+1,
-        ALLOC_OPAQUE_D3D = ALLOC_OPAQUE+2,
-        ALLOC_OPAQUE_LESS_SYSTEM = ALLOC_OPAQUE+3,
-        ALLOC_OPAQUE_LESS_D3D = ALLOC_OPAQUE+4,
-        ALLOC_OPAQUE_MORE_SYSTEM = ALLOC_OPAQUE+5,
-        ALLOC_OPAQUE_MORE_D3D = ALLOC_OPAQUE+6,
-        /**/
         SFC_GET_VIDEO_PARAMS = 100,
         SFC_QUERY_1,
         SFC_QUERY_2,
@@ -82,69 +74,63 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*01*/ MFX_ERR_UNSUPPORTED, 0, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
     },
-    {/*02*/ MFX_ERR_UNSUPPORTED, ALLOC_OPAQUE_SYSTEM, "forBehaviorTest/foreman_cif.h264", 1,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*03*/ MFX_ERR_UNSUPPORTED, ALLOC_OPAQUE_D3D, "forBehaviorTest/foreman_cif.h264", 1,
-        {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
-    },
-    {/*04*/ MFX_ERR_UNSUPPORTED, 0, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*03*/ MFX_ERR_UNSUPPORTED, 0, "forBehaviorTest/foreman_cif.h264", 1,
         {
             {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
             {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF}
         },
     },
     /*Get Video Params */
-    {/*05*/ MFX_ERR_NONE, SFC_GET_VIDEO_PARAMS, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*04*/ MFX_ERR_NONE, SFC_GET_VIDEO_PARAMS, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_QUERY */
-    {/*06*/ MFX_ERR_NONE, SFC_QUERY_1, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*05*/ MFX_ERR_NONE, SFC_QUERY_1, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_QUERY - Negative test*/
-    {/*07*/ MFX_ERR_NONE, SFC_QUERY_2, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*06*/ MFX_ERR_NONE, SFC_QUERY_2, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_QUERY - Negative test*/
-    {/*08*/ MFX_ERR_NONE, SFC_QUERY_3, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*07*/ MFX_ERR_NONE, SFC_QUERY_3, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_QUERY - Negative test*/
-    {/*09*/ MFX_ERR_NONE, SFC_QUERY_4, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*08*/ MFX_ERR_NONE, SFC_QUERY_4, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
 
     /*SFC_RESET - Negative test*/
-    {/*10*/ MFX_ERR_NONE, SFC_RESET_1, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*09*/ MFX_ERR_NONE, SFC_RESET_1, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_RESET - Negative test*/
-    {/*11*/ MFX_ERR_NONE, SFC_RESET_2, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*10*/ MFX_ERR_NONE, SFC_RESET_2, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_RESET - OK, (IN) crops changes*/
-    {/*12*/ MFX_ERR_NONE, SFC_RESET_3, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*11*/ MFX_ERR_NONE, SFC_RESET_3, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_RESET - OK, (OUT) crops changes*/
-    {/*13*/ MFX_ERR_NONE, SFC_RESET_4, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*12*/ MFX_ERR_NONE, SFC_RESET_4, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_RESET - OK, (IN) crops changes*/
-    {/*14*/ MFX_ERR_NONE, SFC_RESET_5, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*13*/ MFX_ERR_NONE, SFC_RESET_5, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_RESET - OK, (OUT) crops changes*/
-    {/*15*/ MFX_ERR_NONE, SFC_RESET_6, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*14*/ MFX_ERR_NONE, SFC_RESET_6, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_RESET - OK, (IN) crops changes*/
-    {/*16*/ MFX_ERR_NONE, SFC_RESET_7, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*15*/ MFX_ERR_NONE, SFC_RESET_7, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
     /*SFC_RESET - OK, (OUT) crops changes*/
-    {/*17*/ MFX_ERR_NONE, SFC_RESET_8, "forBehaviorTest/foreman_cif.h264", 1,
+    {/*16*/ MFX_ERR_NONE, SFC_RESET_8, "forBehaviorTest/foreman_cif.h264", 1,
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
     },
 };
@@ -172,7 +158,7 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(m_pPar, MFX_PAR);
 
-    if ((ALLOC_OPAQUE != tc.mode) || (ALLOC_OPAQUE_SYSTEM != tc.mode) || (ALLOC_OPAQUE_D3D != tc.mode))
+    
     {
         AllocSurfaces();
         if(!m_pFrameAllocator && (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))
@@ -180,30 +166,6 @@ int TestSuite::RunTest(unsigned int id)
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();
         }
-    }
-
-    if ((ALLOC_OPAQUE == tc.mode) || (ALLOC_OPAQUE_SYSTEM == tc.mode) || (ALLOC_OPAQUE_D3D == tc.mode))
-    {
-        AllocSurfaces();
-
-        m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
-        mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        MFXVideoDECODE_QueryIOSurf(m_session, m_pPar, &m_request);
-
-        if (tc.mode == ALLOC_OPAQUE_SYSTEM || tc.mode == ALLOC_OPAQUE_LESS_SYSTEM || tc.mode == ALLOC_OPAQUE_MORE_SYSTEM)
-            m_request.Type = MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_DECODE|MFX_MEMTYPE_OPAQUE_FRAME;
-
-        if (tc.mode == ALLOC_OPAQUE_LESS_SYSTEM || tc.mode == ALLOC_OPAQUE_LESS_D3D)
-        {
-            m_request.NumFrameSuggested = m_request.NumFrameMin = m_request.NumFrameMin - 1;
-        }
-        else if (tc.mode == ALLOC_OPAQUE_MORE_SYSTEM || tc.mode == ALLOC_OPAQUE_MORE_D3D)
-        {
-            m_request.NumFrameSuggested = m_request.NumFrameMin = m_request.NumFrameMin + 1;
-        }
-
-        AllocOpaque(m_request, *osa);
     }
 
     m_par.AddExtBuffer(MFX_EXTBUFF_DEC_VIDEO_PROCESSING, sizeof(mfxExtDecVideoProcessing));

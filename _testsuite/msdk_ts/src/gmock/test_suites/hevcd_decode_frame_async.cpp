@@ -174,22 +174,16 @@ const DecodeSuite::tc_struct DecodeSuite::test_case[] =
             {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {0}}
         }
     },
-    {/*18*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
-    {/*19*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
-    {/*20*/ MFX_ERR_UNDEFINED_BEHAVIOR,
-        {
-            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-            {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {1}}
-        }
-    },
-    {/*21*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*18*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
+
+    {/*19*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
             {INIT|MEMID, 0, { 1 }}
         }
     },
-    {/*22*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*20*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
