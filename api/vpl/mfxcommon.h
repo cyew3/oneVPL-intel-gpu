@@ -354,13 +354,15 @@ typedef struct {
 } mfxVPPDescription;
 MFX_PACK_END()
 
-#define MFX_DEVICEDESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 0)
+/*! The current version of mfxDeviceDescription structure. */
+#define MFX_DEVICEDESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 1)
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
 /*! This structure represents device description. */
 typedef struct {
     mfxStructVersion Version;                            /*!< Version of the structure. */
-    mfxU16 reserved[7];                                  /*!< reserved for future use. */
+    mfxU16 reserved[6];                                  /*!< reserved for future use. */
+    mfxU16 MediaAdapterType; /*!< Graphics adapter type. See the mfxMediaAdapterType enumerator for a list of possible values. */
     mfxChar DeviceID[MFX_STRFIELD_LEN];                  /*!< Null terminated string with device ID. */
     mfxU16 NumSubDevices;                                /*!< Number of available uniform sub-devices. Pure software implementation can report 0. */
     /*! This structure represents sub-device description. */
