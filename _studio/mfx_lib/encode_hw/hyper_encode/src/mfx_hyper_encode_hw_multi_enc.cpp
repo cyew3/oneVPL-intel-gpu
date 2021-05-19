@@ -294,6 +294,13 @@ mfxStatus HyperEncodeBase::CreateEncoders()
     std::unique_ptr<SingleGpuEncode> discreteEncoder{ new SingleGpuEncode(discreteSession->m_pCORE.get(), MFX_MEDIA_DISCRETE) };
     m_singleGpuEncoders.push_back(std::move(discreteEncoder));
 
+    for (auto& encoder : m_singleGpuEncoders)
+        if (encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) {
+            m_appPlatformInternalSession = encoder->m_session;
+            MFX_CHECK_NULL_PTR1(m_appPlatformInternalSession);
+            break;
+        }
+
     return sts;
 }
 
@@ -387,7 +394,7 @@ mfxStatus HyperEncodeVideo::AllocateSurfacePool()
     vppRequest[0].NumFrameMin = vppRequest[0].NumFrameSuggested;
     vppRequest[0].Info = m_mfxVppParams.vpp.In;
 
-    sts = MFXVideoVPP_QueryIOSurf(GetAppPlatformInternalSession(), &m_mfxVppParams, vppRequest);
+    sts = MFXVideoVPP_QueryIOSurf(m_appPlatformInternalSession, &m_mfxVppParams, vppRequest);
     MFX_CHECK_STS(sts);
 
     // calculate number of frames for allocate
@@ -431,7 +438,7 @@ mfxStatus HyperEncodeVideo::Init()
 
     m_mfxEncParams.IOPattern = IOPattern;
 
-    sts = GetAppPlatformInternalSession()->m_pVPP->Init(&m_mfxVppParams);
+    sts = m_appPlatformInternalSession->m_pVPP->Init(&m_mfxVppParams);
     MFX_CHECK_STS(sts);
 
     return m_paramsChanged ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
@@ -439,7 +446,7 @@ mfxStatus HyperEncodeVideo::Init()
 
 mfxStatus HyperEncodeVideo::Reset(mfxVideoParam* par)
 {
-    mfxStatus sts = GetAppPlatformInternalSession()->m_pScheduler->WaitForAllTasksCompletion(GetAppPlatformInternalSession()->m_pVPP.get());
+    mfxStatus sts = m_appPlatformInternalSession->m_pScheduler->WaitForAllTasksCompletion(m_appPlatformInternalSession->m_pVPP.get());
     MFX_CHECK_STS(sts);
 
     mfxStatus stsReset = HyperEncodeBase::Reset(par);
@@ -449,7 +456,7 @@ mfxStatus HyperEncodeVideo::Reset(mfxVideoParam* par)
     m_mfxVppParams.vpp.Out = m_mfxVppParams.vpp.In;
     m_mfxVppParams.AsyncDepth = m_mfxEncParams.AsyncDepth;
 
-    sts = GetAppPlatformInternalSession()->m_pVPP->Reset(&m_mfxVppParams);
+    sts = m_appPlatformInternalSession->m_pVPP->Reset(&m_mfxVppParams);
     MFX_CHECK_STS(sts);
 
     return stsReset;
@@ -466,8 +473,8 @@ mfxStatus HyperEncodeVideo::Close()
 
 mfxStatus HyperEncodeVideo::CreateVPP()
 {
-    GetAppPlatformInternalSession()->m_pVPP.reset(GetAppPlatformInternalSession()->Create<VideoVPP>(m_mfxVppParams));
-    MFX_CHECK(GetAppPlatformInternalSession()->m_pVPP.get(), MFX_ERR_INVALID_VIDEO_PARAM);
+    m_appPlatformInternalSession->m_pVPP.reset(m_appPlatformInternalSession->Create<VideoVPP>(m_mfxVppParams));
+    MFX_CHECK(m_appPlatformInternalSession->m_pVPP.get(), MFX_ERR_INVALID_VIDEO_PARAM);
     return MFX_ERR_NONE;
 }
 
@@ -495,7 +502,7 @@ mfxStatus HyperEncodeVideo::InitVPPparams()
     m_mfxVppParams.NumExtParam = (mfxU16)m_vppExtParams.size();
 
     // Querying VPP
-    mfxStatus sts = MFXVideoVPP_Query(GetAppPlatformInternalSession(), &m_mfxVppParams, &m_mfxVppParams);
+    mfxStatus sts = MFXVideoVPP_Query(m_appPlatformInternalSession, &m_mfxVppParams, &m_mfxVppParams);
     MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
 
     return MFX_ERR_NONE;
@@ -536,7 +543,7 @@ mfxStatus HyperEncodeVideo::CopySurface(mfxFrameSurface1* appSurface, mfxFrameSu
     MFX_CHECK(unlockedSurface, MFX_WRN_DEVICE_BUSY);
 
     for (;;) {
-        sts = MFXVideoVPP_RunFrameVPPAsync(GetAppPlatformInternalSession(), appSurface, unlockedSurface, nullptr, &VppSyncp);
+        sts = MFXVideoVPP_RunFrameVPPAsync(m_appPlatformInternalSession, appSurface, unlockedSurface, nullptr, &VppSyncp);
 
         if (MFX_ERR_NONE > sts) {
             return sts;
@@ -568,15 +575,6 @@ mfxStatus HyperEncodeVideo::CopySurface(mfxFrameSurface1* appSurface, mfxFrameSu
     *surfaceToEncode = unlockedSurface;
 
     return sts;
-}
-
-mfxSession HyperEncodeVideo::GetAppPlatformInternalSession()
-{
-    for (auto& encoder : m_singleGpuEncoders)
-        if (encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType)
-            return encoder->m_session;
-
-    return nullptr;
 }
 
 #endif // MFX_ENABLE_VIDEO_HYPER_ENCODE_HW

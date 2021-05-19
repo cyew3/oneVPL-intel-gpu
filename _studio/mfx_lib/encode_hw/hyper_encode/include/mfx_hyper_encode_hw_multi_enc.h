@@ -142,6 +142,8 @@ protected:
     bool m_paramsChanged = false;
 
     mfxVideoParamWrapper m_mfxEncParams = {};
+
+    mfxSession m_appPlatformInternalSession = nullptr;
 };
 
 class HyperEncodeSys : public HyperEncodeBase
@@ -204,8 +206,6 @@ protected:
         mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxU16 mediaAdapterType, mfxU32 adapterNum) override;
 
     mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) override;
-
-    mfxSession GetAppPlatformInternalSession();
 
 protected:
     mfxVideoParam m_mfxVppParams = {};
