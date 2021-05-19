@@ -31,6 +31,7 @@
 #include "av1ehw_base_va_lin.h"
 #include "av1ehw_base_va_packer_lin.h"
 #include "av1ehw_base_tile.h"
+#include "av1ehw_base_query_impl_desc.h"
 
 using namespace AV1EHW;
 using namespace AV1EHW::Base;
@@ -62,6 +63,7 @@ Linux::Base::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
     m_features.emplace_back(new Packer(FEATURE_PACKER));
     m_features.emplace_back(new Superres(FEATURE_SUPERRES));
     m_features.emplace_back(new Tile(FEATURE_TILE));
+    m_features.emplace_back(new QueryImplDesc(FEATURE_QUERY_IMPL_DESC));
 
     InternalInitFeatures(status, mode);
 }

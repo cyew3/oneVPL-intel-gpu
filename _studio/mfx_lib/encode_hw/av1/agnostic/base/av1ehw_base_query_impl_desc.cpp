@@ -105,6 +105,7 @@ void QueryImplDesc::QueryImplsDescription(const FeatureBlocks& blocks, TPushQID 
             in.mfx.FrameInfo.FourCC          = cfg.FourCC;
             in.mfx.FrameInfo.ChromaFormat    = cfg.CromaFormat;
             in.mfx.FrameInfo.BitDepthLuma    = cfg.BitDepth;
+            in.mfx.FrameInfo.BitDepthChroma  = cfg.BitDepth;
             in.mfx.FrameInfo.Shift           = cfg.Shift;
 
             auto pCO3 = (mfxExtCodingOption3*)in.NewEB(MFX_EXTBUFF_CODING_OPTION3);
@@ -112,6 +113,7 @@ void QueryImplDesc::QueryImplsDescription(const FeatureBlocks& blocks, TPushQID 
 
             MFX_CHECK(pCO3, MFX_ERR_UNKNOWN);
             pCO3->TargetBitDepthLuma      = cfg.BitDepth;
+            pCO3->TargetBitDepthChroma    = cfg.BitDepth;
             pCO3->TargetChromaFormatPlus1 = cfg.CromaFormat + 1;
 
             if (MFX_ERR_NONE != RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, queryNC, in, out, tmpStorage))
