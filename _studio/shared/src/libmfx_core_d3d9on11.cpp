@@ -90,6 +90,9 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::CreateVA(mfxVideoParam* param, mfxFrameAllo
 
     MFX_CHECK(!(param->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && !(param->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_NONE);
 
+    if (MFX_CODEC_AVC == param->mfx.CodecId)
+        return MFX_ERR_NONE;
+
 #ifdef MFX_ENABLE_MJPEG_VIDEO_DECODE
     // Wrap surfaces for this case will be allocated in VPP path
     if(param->mfx.CodecId == MFX_CODEC_JPEG && dynamic_cast<SurfaceSourceJPEG*>(allocator))
@@ -338,12 +341,32 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyWrapper(mfxFrameSurface1* pDst, m
         }
     }
 
+    bool video2video = (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET) && (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+    bool sys2sys = (srcMemType & MFX_MEMTYPE_SYSTEM_MEMORY) && (dstMemType & MFX_MEMTYPE_SYSTEM_MEMORY);
     mfxStatus fcSts = MFX_ERR_NONE;
-
-    if((srcMemType & MFX_MEMTYPE_FROM_VPPIN) && (dstMemType & MFX_MEMTYPE_FROM_VPPOUT))
-        fcSts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
-    else
-        fcSts = Base::DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
+    if (video2video)
+    {
+        if ((srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME) && (dstMemType & MFX_MEMTYPE_EXTERNAL_FRAME))
+            fcSts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);       // d3d9
+        else if ((srcMemType & MFX_MEMTYPE_INTERNAL_FRAME) && (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME))
+            fcSts = Base::DoFastCopyExtended(&dstTempSurface, &srcTempSurface); // d3d11
+        else if ((srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME) && (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME))
+            fcSts = CopyDX9toDX11(pSrc->Data.MemId, pDst->Data.MemId);
+        else
+            fcSts = CopyDX11toDX9(pSrc->Data.MemId, pDst->Data.MemId);
+    }
+    else if (sys2sys)
+    {
+        sts = CoreDoSWFastCopy(*pDst, *pSrc, COPY_SYS_TO_SYS);
+    }
+    else // src or dst in video memory
+    {
+        bool isD3D9Memory = (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET) ? srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME : dstMemType & MFX_MEMTYPE_EXTERNAL_FRAME;
+        if (isD3D9Memory)
+            fcSts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
+        else
+            fcSts = Base::DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
+    }
 
     if (true == isSrcLocked)
     {
@@ -758,6 +781,30 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::CopyDX9toDX11(const mfxMemId dx9MemId, cons
     }
 
     return MFX_ERR_NONE;
+}
+
+template <class Base>
+bool D3D9ON11VideoCORE_T<Base>::m_IsD3D9On11Core = true;
+
+template <class Base>
+void* D3D9ON11VideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID& guid)
+{
+    if (MFXI_IS_CORED3D9ON11_GUID == guid)
+    {
+        return (void*)&m_IsD3D9On11Core;
+    }
+
+    return Base::QueryCoreInterface(guid);
+}
+
+template <class Base>
+mfxStatus D3D9ON11VideoCORE_T<Base>::AllocFrames(mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, bool isNeedCopy)
+{
+    if ((request->Type & MFX_MEMTYPE_INTERNAL_FRAME) &&
+        (request->Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET || request->Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
+        request->Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+
+    return Base::AllocFrames(request, response, isNeedCopy);
 }
 
 MfxWrapController::MfxWrapController()

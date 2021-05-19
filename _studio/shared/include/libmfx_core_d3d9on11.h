@@ -58,6 +58,10 @@ public:
     virtual mfxStatus            SetFrameAllocator(mfxFrameAllocator* allocator) override;
     virtual mfxStatus            SetHandle(mfxHandleType type, mfxHDL handle) override;
     virtual mfxStatus            GetHandle(mfxHandleType type, mfxHDL* handle) override;
+    virtual void*                QueryCoreInterface(const MFX_GUID& guid)     override;
+
+    virtual mfxStatus            AllocFrames(mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, bool isNeedCopy = true)  override;
+
     mfxMemId                     WrapSurface(mfxMemId dx9Surface, const mfxFrameAllocResponse& dx11Surfaces, bool isNeedRewrap = false);
     mfxMemId                     UnWrapSurface(mfxMemId wrappedSurface, bool isNeedUnwrap = false);
     mfxStatus                    CopyDX11toDX9(const mfxMemId dx11MemId, const mfxMemId dx9MemId);
@@ -82,6 +86,8 @@ private:
     std::map<mfxMemId, mfxMemId> m_dx9MemIdMap;
     std::map<mfxMemId, mfxMemId> m_dx9MemIdUsed; //for lightweight opposite-mapping
     static std::mutex            m_copyMutex;
+
+    static bool                  m_IsD3D9On11Core;
 };
 
 using D3D9ON11VideoCORE = D3D9ON11VideoCORE_T<D3D11VideoCORE>;

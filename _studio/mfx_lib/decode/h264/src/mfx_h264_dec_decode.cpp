@@ -370,6 +370,10 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request);
     MFX_CHECK_STS(mfxSts);
 
+    bool* isD3D9On11Core = QueryCoreInterface<bool>(m_core, MFXI_IS_CORED3D9ON11_GUID);
+    if (isD3D9On11Core && (*isD3D9On11Core) == true)
+        useInternal = true;
+
     request.Type |= useInternal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
     request_internal = request;
 
@@ -1027,6 +1031,10 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 #endif
 
     int32_t isInternalManaging = params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+
+    bool* isD3D9On11Core = QueryCoreInterface<bool>(core, MFXI_IS_CORED3D9ON11_GUID);
+    if (isD3D9On11Core && (*isD3D9On11Core) == true && (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        isInternalManaging = true;
 
     mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request);
     MFX_CHECK_STS(sts);
@@ -1741,9 +1749,6 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
 
     if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
         surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
-
-    if(m_va)
-        MFX_CHECK(!m_va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxStatus sts = m_surface_source->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
     MFX_CHECK_STS(sts);
