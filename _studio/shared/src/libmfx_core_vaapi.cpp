@@ -288,28 +288,11 @@ mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
                 }
             }
 
+#if !defined STRIP_EMBARGO && defined(MFX_ONEVPL)
+            // TODO: restore switchers
+            this->m_enabled20Interface = dynamic_cast<VAAPIVideoCORE20*>(this) && (m_HWType == MFX_HW_XE_HP_SDV || m_HWType == MFX_HW_DG2);
+#else
             this->m_enabled20Interface = false;
-
-#if !defined STRIP_EMBARGO
-            if (dynamic_cast<VAAPIVideoCORE20*>(this))
-            {
-                switch (m_HWType)
-                {
-                case MFX_HW_TGL_LP:
-                case MFX_HW_RKL:
-                case MFX_HW_ADL_S:
-                case MFX_HW_ADL_P:
-                case MFX_HW_DG1:
-                case MFX_HW_DG2:
-                case MFX_HW_XE_HP_SDV:
-                    // These platforms support VPL feature set
-                    this->m_enabled20Interface = true;
-                    break;
-                default:
-                    this->m_enabled20Interface = false;
-                    break;
-                }
-            }
 #endif
         }
             break;
