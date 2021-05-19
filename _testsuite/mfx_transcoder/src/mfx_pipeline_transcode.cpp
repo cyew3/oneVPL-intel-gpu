@@ -1388,24 +1388,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             argv++;
         }
-#if (MFX_VERSION >= 1035 )
-        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-ScenarioInfo"), VM_STRING("")))
-        {
-            mfxU32 val;
-            MFX_CHECK(1 + argv != argvEnd);
-            MFX_PARSE_INT(val, argv[1]);
-
-            if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
-            {
-                mfxExtCodingOption3* pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
-
-                pExt->ScenarioInfo = val;
-                m_ExtBuffers.get()->push_back(pExt);
-            }
-
-            argv++;
-        }
-#endif // #if (MFX_VERSION >= 1035 )
         else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-RecoveryPointSEI "), VM_STRING("")))
         {
             MFX_CHECK(1 + argv != argvEnd);
@@ -1841,6 +1823,22 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
 
             m_ExtBuffers.get()->push_back(pExt);
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-ScenarioInfo"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
+            {
+                mfxExtCodingOption3* pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
+
+                pExt->ScenarioInfo = val;
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+
+            argv++;
         }
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
         else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterLevel"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
