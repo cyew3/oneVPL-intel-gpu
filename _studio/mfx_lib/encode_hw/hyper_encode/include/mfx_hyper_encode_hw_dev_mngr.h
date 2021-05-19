@@ -65,12 +65,12 @@ public:
 
 public:
     mfxPlatform m_appSessionPlatform;
+    mfxMemType m_memType;
 
 protected:
     mfxStatus PrepareAdapters();
 
 protected:
-    mfxMemType m_memType;
     mfxSession m_appSession;
     mfxAdaptersInfo m_intelAdapters;
     std::vector<mfxAdapterInfo> m_intelAdaptersData;
