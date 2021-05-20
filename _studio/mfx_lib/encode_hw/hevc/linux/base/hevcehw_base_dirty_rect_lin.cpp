@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_base_dirty_rect_lin.h"
 #include "hevcehw_base_va_packer_lin.h"
@@ -74,3 +75,4 @@ void Linux::Base::DirtyRect::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA 
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_VA_LINUX)

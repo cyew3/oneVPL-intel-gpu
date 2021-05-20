@@ -3104,7 +3104,7 @@ private:
 
     struct LAOutObject;
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined (MFX_VA_WIN)
     #define CM_SURFACE_FORMAT_NV12                  (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #endif
     using ns_asc::ASC;

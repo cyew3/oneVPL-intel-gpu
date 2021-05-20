@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_g12_qp_modulation_lin.h"
 #include "hevcehw_g12_data.h"
@@ -93,3 +94,4 @@ void Linux::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/, T
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_VA_LINUX)

@@ -513,7 +513,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
         m_scan_list[0].AcCodingTblSelector[2] = 1;
     }
 
-#elif defined (MFX_VA_LINUX)
+#else
     // Picture Header
     memset(&m_pps, 0, sizeof(m_pps));
     m_pps.reconstructed_picture = 0;

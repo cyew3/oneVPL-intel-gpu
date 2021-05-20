@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION) && defined (MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
 #include "hevcehw_base_weighted_prediction_lin.h"
 #include "hevcehw_base_va_packer_lin.h"
@@ -90,4 +91,5 @@ void Linux::Base::WeightPred::SubmitTask(const FeatureBlocks& /*blocks*/, TPushS
     });
 }
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+#endif //defined(MFX_VA_LINUX)

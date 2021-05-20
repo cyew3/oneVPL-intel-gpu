@@ -32,13 +32,16 @@
 #include "mfxbrc.h"
 #include "mfx_ext_buffers.h"
 
-#if !defined(MFX_VA_LINUX) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if defined(MFX_VA_WIN)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     #include "mfxpcp.h"
     #include "mfxwidi.h"
     #if defined(MFX_ONEVPL)
         #include "mfxpavp.h"
     #endif
-#endif //defined(MFX_VA_WIN) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#endif //!defined(MFX_PROTECTED_FEATURE_DISABLE)
+#endif //defined(MFX_VA_WIN)
+
 
 #include "mfxvideo++int.h"
 

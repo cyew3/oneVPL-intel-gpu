@@ -21,7 +21,8 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX) && (MFX_VERSION >= 1031)
+#if defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_g12_rext.h"
 
@@ -61,5 +62,5 @@ protected:
 } //Linux
 } //Gen12
 } //HEVCEHW
-
-#endif
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_VA_LINUX)

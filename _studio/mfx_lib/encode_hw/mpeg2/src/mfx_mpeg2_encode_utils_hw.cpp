@@ -1124,7 +1124,7 @@ namespace MPEG2EncoderHW
 #endif
 
         mfxStatus sts = MFX_ERR_NONE;
-#if defined(LINUX32) || defined(LINUX64)
+#if defined (MFX_VA_LINUX)
         sts = core->IsGuidSupported(DXVA2_Intel_Encode_MPEG2, par, true);
         MFX_CHECK_STS(sts);
 #endif
@@ -1158,14 +1158,14 @@ namespace MPEG2EncoderHW
         sts = CheckHwCaps(core, par, ext, &EncCaps);
         MFX_CHECK_STS(sts);
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined (MFX_VA_WIN)
         if (par->mfx.FrameInfo.Width > 0x1fff || (par->mfx.FrameInfo.Width & 0x0f) != 0)
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 #endif
         mfxU32 mask = (par->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)? 0x0f:0x1f;
-#if defined(_WIN32) || defined(_WIN64)
+#if defined (MFX_VA_WIN)
         if (par->mfx.FrameInfo.Height > 0x1fff
 #else
         if ((par->mfx.FrameInfo.Width & 0x0f) != 0

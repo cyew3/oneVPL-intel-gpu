@@ -32,7 +32,7 @@
 #if defined  (MFX_D3D11_ENABLED)
     #include "mfx_mjpeg_encode_d3d11.h"
 #endif
-#elif defined (MFX_VA_LINUX) 
+#else
 #include "mfx_mjpeg_encode_vaapi.h"
 #endif
 
@@ -60,7 +60,7 @@ DriverEncoder* MfxHwMJpegEncode::CreatePlatformMJpegEncoder( VideoCORE* core )
     {
         return NULL;
     }
-#elif defined (MFX_VA_LINUX)
+#else
     if (MFX_HW_VAAPI == core->GetVAType())
     {
         return new VAAPIEncoder;
@@ -69,8 +69,6 @@ DriverEncoder* MfxHwMJpegEncode::CreatePlatformMJpegEncoder( VideoCORE* core )
     {
         return NULL;
     }
-#else
-    return NULL;
 #endif
 
 } // DriverEncoder* MfxHwMJpegEncode::CreatePlatformMJpegEncoder( VideoCORE* core )

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined (MFX_VA_WIN)
 #pragma once
 #include "ehw_device.h"
 #include "encoding_ddi.h"

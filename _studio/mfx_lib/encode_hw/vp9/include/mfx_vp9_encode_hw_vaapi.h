@@ -20,7 +20,7 @@
 
 #pragma once
 
-#if !defined (_WIN32) && !defined (_WIN64)
+#if !defined(MFX_VA_WIN)
 
 #include "mfx_vp9_encode_hw_ddi.h"
 
@@ -172,4 +172,4 @@ namespace MfxHwVP9Encode
 #endif // (MFX_VA_LINUX)
 } // MfxHwVP9Encode
 
-#endif // !(_WIN32) && !(_WIN64)
+#endif // !defined(MFX_VA_WIN)

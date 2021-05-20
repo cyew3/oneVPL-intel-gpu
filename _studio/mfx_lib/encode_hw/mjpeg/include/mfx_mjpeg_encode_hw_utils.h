@@ -31,7 +31,7 @@
 #include <dxva2api.h>
 #include "encoding_ddi.h"
 #include "encoder_ddi.hpp"
-#elif defined (MFX_VA_LINUX)
+#else
 #include <va/va.h>
 #include <va/va_enc_jpeg.h>
 
@@ -153,7 +153,7 @@ namespace MfxHwMJpegEncode
         std::vector<ENCODE_QUANT_TABLE_JPEG>         m_dqt_list;
         std::vector<ENCODE_HUFFMAN_TABLE_JPEG>       m_dht_list;
 
-#elif defined (MFX_VA_LINUX)
+#else
         VAEncPictureParameterBufferJPEG               m_pps;
         std::vector<VAEncSliceParameterBufferJPEG>    m_scan_list;
         std::vector<VAQMatrixBufferJPEG>              m_dqt_list;

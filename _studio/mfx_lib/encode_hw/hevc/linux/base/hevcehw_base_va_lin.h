@@ -23,7 +23,8 @@
 #include "mfx_common.h"
 #include "hevcehw_base.h"
 
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_ddi.h"
 #include "hevcehw_base_data.h"
@@ -81,4 +82,5 @@ protected:
 } //Linux
 } //namespace HEVCEHW
 
-#endif
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_VA_LINUX)

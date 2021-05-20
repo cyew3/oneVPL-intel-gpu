@@ -21,7 +21,8 @@
 #include "mfx_common.h"
 #include "hevcehw_base_va_lin.h"
 
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_base_legacy.h"
 
@@ -478,3 +479,4 @@ uint32_t DDI_VA::ConvertSliceStructureVAAPIToMFX(uint32_t structure)
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_VA_LINUX)

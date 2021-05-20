@@ -165,7 +165,7 @@ namespace MfxHwH264EncodeHW
 
     IDirect3DDeviceManager9 * GetDeviceManager(VideoCORE * core)
     {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined (MFX_VA_WIN)
       D3D9Interface * d3dIface = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
         if (d3dIface == 0)
             return 0;
@@ -272,8 +272,10 @@ mfxStatus MFXHWVideoENCODEH264::QueryImplsDescription(
     caps.MaxcodecLevel           = MFX_LEVEL_AVC_52;
     caps.BiDirectionalPrediction =
         !IsOn(tmp.mfx.LowPower)
-#if !defined(STRIP_EMBARGO) && defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
+#if !defined(STRIP_EMBARGO)
+#if defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
         ||  (platform >= MFX_HW_XE_HP_SDV)
+#endif
 #endif
         ;
 
@@ -5041,7 +5043,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
     mfxU32 &                  numEntryPoints)
 {
     char task_name [240];
-#if defined(_WIN32) || defined(_WIN64)
+#if defined (MFX_VA_WIN)
     _snprintf_s(task_name, sizeof(task_name) - 1, _TRUNCATE, "Avc::EncodeFrameCheck - %p", surface);
 #else
     snprintf(task_name, sizeof(task_name)-1, "Avc::EncodeFrameCheck - %p", surface);

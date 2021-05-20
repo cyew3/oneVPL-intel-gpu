@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if !defined (_WIN32) && !defined (_WIN64)
+#if !defined(MFX_VA_WIN)
 
 #include "mfx_vp9_encode_hw_utils.h"
 #include "mfx_vp9_encode_hw_par.h"
@@ -1418,4 +1418,4 @@ mfxStatus VAAPIEncoder::Destroy()
 
 } // MfxHwVP9Encode
 
-#endif // !(_WIN32) && !(_WIN64)
+#endif // !defined(MFX_VA_WIN)
