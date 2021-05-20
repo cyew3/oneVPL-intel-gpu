@@ -40,7 +40,7 @@ mfxStatus GetDdiVersions(
 
     // if app does not call Query/QueryIOSurf, then DDI version for the first adapter will
     // not be available here. In this case let's call Query and request the version again
-    if (!ddiVersion1) {
+    if (sts != MFX_ERR_NONE) {
         sts = SingleGpuEncode::Query(core, &in_internal, &out_internal, 0);
         MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
