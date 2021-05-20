@@ -539,7 +539,44 @@ typedef struct {
 
     /* PVC */
     { 0x0BD0, MFX_HW_PVC, MFX_GT4 },
-    { 0x0BD5, MFX_HW_PVC, MFX_GT4 }
+    { 0x0BD5, MFX_HW_PVC, MFX_GT4 },
+
+    /* RPL-S */
+    { 0xA780, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA781, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA782, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA783, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA784, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA785, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA786, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA787, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA788, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA789, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA78A, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA78B, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA78C, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA78D, MFX_HW_ADL_S, MFX_GT2 },
+    { 0xA78E, MFX_HW_ADL_S, MFX_GT2 },
+
+   
+    /* RPL-P */
+    { 0xA7A0, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA720, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A8, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A1, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A2, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A3, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A4, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A5, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A6, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA7A7, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA721, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA722, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA723, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA724, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA725, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA726, MFX_HW_ADL_P, MFX_GT2 },
+    { 0xA727, MFX_HW_ADL_P, MFX_GT2 },
 #endif
 };
 
