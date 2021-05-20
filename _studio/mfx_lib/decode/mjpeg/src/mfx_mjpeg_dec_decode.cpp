@@ -1214,11 +1214,13 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
         switch (par->mfx.FrameInfo.FourCC)
         {
             case MFX_FOURCC_NV12:
-                if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
+                if ((par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
                         (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV420  ||
                          par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV444  ||
                          par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422H ||
-                         par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422V))
+                         par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422V)) ||
+                        (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB &&
+                        par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV444))
                     return false;
                 else
                     return true;
@@ -2279,6 +2281,25 @@ void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, const
     else
     {
         VM_ASSERT(false);
+    }
+#endif
+#if defined (MFX_VA_LINUX)
+    else if(info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB)
+    {
+        if(info->JPEGChromaFormat == MFX_CHROMAFORMAT_YUV444)
+            if(hwType >= MFX_HW_SCL &&
+                vaType == MFX_HW_VAAPI &&
+                info->Rotation == MFX_ROTATION_0 &&
+                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED &&
+                requestFrameInfo->CropW >= 128 &&
+                requestFrameInfo->CropH >= 128 &&
+                requestFrameInfo->CropW <= 4096 &&
+                requestFrameInfo->CropH <= 4096 &&
+                !(*needVpp))
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_RGBP;
+                *needVpp = true;
+            }  
     }
 #endif
     return;
