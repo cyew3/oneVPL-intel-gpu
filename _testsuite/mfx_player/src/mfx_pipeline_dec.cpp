@@ -275,21 +275,27 @@ mfxU32 MFXDecPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, 
 
     if (params.bPrefferdGfx)
     {
-        // Find dGfx adapter in list and return it's index
+        auto idx = adapters.Adapters;
+        auto lookup_start = adapters.Adapters;
 
-        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
-            [](const mfxAdapterInfo info)
+        for (mfxU32 dGfxIdxCnt = 0; dGfxIdxCnt <= params.dGfxIdx; dGfxIdxCnt++)
         {
-            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
-        });
+            // Find dGfx adapter in list and return it's index
+            idx = std::find_if(lookup_start, adapters.Adapters + adapters.NumActual,
+                [](const mfxAdapterInfo info)
+                {
+                    return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
+                });
 
-        // No dGfx in list
-        if (idx == adapters.Adapters + adapters.NumActual)
-        {
-            PipelineTrace((VM_STRING("Warning: No dGfx detected on machine. Will pick another adapter\n")));
-            return 0;
+            // No dGfx in list
+            if (idx == adapters.Adapters + adapters.NumActual)
+            {
+                PipelineTrace((VM_STRING("Warning: No specified dGfx detected on machine. Will pick another adapter\n")));
+                return 0;
+            }
+
+            lookup_start = idx + 1;
         }
-
         return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
     }
 
@@ -5756,9 +5762,14 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           {
               m_inParams.bPrefferiGfx = true;
           }
-          else if (m_OptProc.Check(argv[0], VM_STRING("-dGfx"), VM_STRING("preffer processing on dGfx (by default system decides)"), OPT_BOOL))
+          else if (m_OptProc.Check(argv[0], VM_STRING("-dGfx"), VM_STRING("preffer processing on dGfx (by default system decides), also particular dGfx might be spcified, the index starts from 0")))
           {
               m_inParams.bPrefferdGfx = true;
+              if (1 + argv != argvEnd && isdigit(*argv[1]))
+              {
+                  MFX_PARSE_INT(m_inParams.dGfxIdx, argv[1]);
+                  argv++;
+              }
           }
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)

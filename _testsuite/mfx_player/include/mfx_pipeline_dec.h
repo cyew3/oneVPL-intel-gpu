@@ -81,6 +81,7 @@ struct sCommandlineParams
   //Adapter type
   bool           bPrefferiGfx;
   bool           bPrefferdGfx;
+  mfxU32         dGfxIdx;
 #endif
   mfxU32         nCorruptionLevel;
   double         fLimitPipelineFps; //sleeps in every frame processing
@@ -363,6 +364,7 @@ struct sCommandlineParams
       //Adapter type
       bPrefferiGfx = false;
       bPrefferdGfx = false;
+      dGfxIdx = 0;
 #endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
