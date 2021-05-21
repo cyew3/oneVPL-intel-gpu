@@ -553,8 +553,13 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     sts = m_va->EndFrame(&imageLayout);
     if (sts != UMC_OK)
         return sts;
+    std::pair<ChromaType, Status> chromaTypeRes = GetChromaType();
+    if (chromaTypeRes.second != UMC_OK)
+    {
+        return chromaTypeRes.second;
+    }
 
-    m_convertInfo.colorFormat = GetChromaType();
+    m_convertInfo.colorFormat = chromaTypeRes.first;
     m_convertInfo.UOffset = imageLayout.ComponentDataOffset[1];
     m_convertInfo.VOffset = imageLayout.ComponentDataOffset[2];
 #else
@@ -587,11 +592,16 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         JPEG_DECODE_PICTURE_PARAMETERS *picParams = (JPEG_DECODE_PICTURE_PARAMETERS*)m_va->GetCompBuffer(D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA, &compBuf);
         if(!picParams)
             return UMC_ERR_DEVICE_FAILED;
+        std::pair<ChromaType, Status> chromaTypeRes = GetChromaType();
+        if (chromaTypeRes.second != UMC_OK)
+        {
+            return chromaTypeRes.second;
+        }
 
         picParams->FrameWidth                = (USHORT)m_decBase->m_jpeg_width;
         picParams->FrameHeight               = (USHORT)m_decBase->m_jpeg_height;
         picParams->NumCompInFrame            = (USHORT)m_decBase->m_jpeg_ncomp; // TODO: change for multi-scan images
-        picParams->ChromaType                = (UCHAR)GetChromaType();
+        picParams->ChromaType                = (UCHAR)chromaTypeRes.first;
         picParams->TotalScans                = (USHORT)m_decBase->m_num_scans;
 
         switch(m_rotation)
