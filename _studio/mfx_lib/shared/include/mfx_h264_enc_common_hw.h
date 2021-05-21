@@ -281,7 +281,7 @@ namespace MfxHwH264Encode
 #endif
 
 #if defined(MFX_ONEVPL)
-    // MFX_EXTBUFF_MULTI_GPU_PARAM pass through from MultiGpuEncoder (or directly) with MFX_CODINGOPTION_OFF
+    // MFX_EXTBUFF_HYPER_MODE_PARAM pass through from HyperEncoder (or directly) with MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_ADAPTIVE
     // so, no additional logic needed in H264 encoder, just have mfxExtMultiGpuParam support
     BIND_EXTBUF_TYPE_TO_ID(mfxExtHyperModeParam, MFX_EXTBUFF_HYPER_MODE_PARAM);
 #endif

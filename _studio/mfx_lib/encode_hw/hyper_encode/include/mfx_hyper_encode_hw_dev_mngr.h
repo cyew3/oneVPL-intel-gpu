@@ -104,6 +104,7 @@ public:
     {
         if (*sts == MFX_ERR_NONE)
             *sts = PrepareDevices();
+
         if (*sts == MFX_ERR_NONE) {
             m_bufferAllocator.bufferAllocator.pthis = &m_bufferAllocator;
             m_pFrameAllocator.reset(new mfxWideSWFrameAllocator(MFX_MEMTYPE_SYSTEM_MEMORY));

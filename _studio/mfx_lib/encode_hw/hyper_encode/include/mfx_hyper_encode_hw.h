@@ -48,12 +48,7 @@ public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, void * state = 0);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
-    MFXHWVideoHyperENCODE(VideoCORE* core, mfxStatus* sts)
-        : m_core(core)
-    {
-        if (sts)
-            *sts = MFX_ERR_NONE;
-    }
+    MFXHWVideoHyperENCODE(VideoCORE* core, mfxVideoParam* par, mfxStatus* sts);
 
     mfxStatus Init(mfxVideoParam *par) override;
 
@@ -80,30 +75,17 @@ public:
     {
         MFX_CHECK(m_impl.get(), MFX_ERR_NOT_INITIALIZED);
 
-        mfxHyperMode realHyperMode;
-        GetHyperMode(par, realHyperMode);
-        SetHyperMode(par);
+        mfxVideoParamWrapper mfxHyperEncodeParam = *par;
+        SetHyperMode(&mfxHyperEncodeParam);
 
-        mfxStatus sts = m_impl->Reset(par);
-
-        SetHyperMode(par, realHyperMode);
-
-        return sts;
+        return m_impl->Reset(&mfxHyperEncodeParam);
     }
 
     mfxStatus GetVideoParam(mfxVideoParam *par) override
     {
-        MFX_CHECK(m_impl.get(), MFX_ERR_NOT_INITIALIZED);
-
-        mfxHyperMode realHyperMode;
-        GetHyperMode(par, realHyperMode);
-        SetHyperMode(par);
-
-        mfxStatus sts = m_impl->GetVideoParam(par);
-
-        SetHyperMode(par, realHyperMode);
-
-        return sts;
+        return m_impl.get()
+            ? m_impl->GetVideoParam(par)
+            : MFX_ERR_NOT_INITIALIZED;
     }
 
     mfxStatus GetFrameParam(mfxFrameParam *par) override

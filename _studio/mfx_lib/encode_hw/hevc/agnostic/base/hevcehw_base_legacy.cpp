@@ -304,7 +304,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(QP);
     });
 #if defined(MFX_ONEVPL)
-    // MFX_EXTBUFF_MULTI_GPU_PARAM pass through from MultiGpuEncoder (or directly) with MFX_CODINGOPTION_OFF
+    // MFX_EXTBUFF_HYPER_MODE_PARAM pass through from HyperEncoder (or directly) with MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_ADAPTIVE
     // so, no additional logic needed in HEVC encoder, just have mfxExtMultiGpuParam support
     blocks.m_ebCopySupported[MFX_EXTBUFF_HYPER_MODE_PARAM].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void

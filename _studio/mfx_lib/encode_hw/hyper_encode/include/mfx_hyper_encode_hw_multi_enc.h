@@ -38,7 +38,6 @@ public:
     HyperEncodeBase(mfxSession session, mfxVideoParam* par, mfxStatus* sts)
         :m_appSession(session)
     {
-        *sts = MFX_ERR_NONE;
         m_gopSize = par->mfx.GopPicSize;
 
         if (!m_gopSize)
@@ -154,6 +153,7 @@ public:
     {
         if (*sts == MFX_ERR_NONE)
             m_devMngr.reset(new DeviceManagerSys(session, sts));
+
         if (*sts == MFX_ERR_NONE)
             *sts = CreateEncoders();
     }
@@ -177,12 +177,15 @@ public:
     {
         if (*sts == MFX_ERR_NONE)
             m_devMngr.reset(new DeviceManagerVideo(session, sts));
+
         if (*sts == MFX_ERR_NONE) {
             m_pFrameAllocator = m_devMngr->GetInternalAllocator();
             *sts = CreateEncoders();
         }
+
         if (*sts == MFX_ERR_NONE)
             *sts = InitVPPparams();
+
         if (*sts == MFX_ERR_NONE)
             *sts = CreateVPP();
     }

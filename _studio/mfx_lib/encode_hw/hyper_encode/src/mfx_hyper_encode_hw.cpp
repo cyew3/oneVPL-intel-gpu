@@ -74,6 +74,10 @@ mfxStatus GetDdiVersions(
 
 mfxStatus AreDdiVersionsCompatible(VideoCORE* core, mfxVideoParam* in)
 {
+#ifdef SINGLE_GPU_DEBUG
+    return MFX_ERR_NONE;
+#endif
+
     mfxU32 ddiVersion1 = 0, ddiVersion2 = 0;
     mfxStatus sts = GetDdiVersions(core, in, &ddiVersion1, &ddiVersion2);
     MFX_CHECK_STS(sts);
@@ -94,31 +98,14 @@ mfxStatus MFXHWVideoHyperENCODE::Query(
     mfxVideoParam * out,
     void *          state)
 {
-    mfxHyperMode realInHyperMode;
+    mfxVideoParamWrapper mfxHyperEncodeParam = *in;
+    SetHyperMode(&mfxHyperEncodeParam);
+
     mfxHyperMode realOutHyperMode;
-    GetHyperMode(in, realInHyperMode);
-    GetHyperMode(out, realOutHyperMode);
-    MFX_CHECK(IsHyperModeOn(realInHyperMode) || IsHyperModeAdapt(realInHyperMode), MFX_ERR_UNSUPPORTED);
+    GetHyperMode(in, realOutHyperMode);
 
-    SetHyperMode(in);
-    SetHyperMode(out);
+    mfxStatus sts = ImplementationGopBased::Query(core, &mfxHyperEncodeParam, out, state);
 
-    mfxStatus sts = ImplementationGopBased::Query(core, in, out, state);
-
-    bool s_isSingleFallback = false;
-    if (MFX_ERR_NONE > sts)
-        if (IsHyperModeOn(realInHyperMode))
-            return sts;
-        else if (IsHyperModeAdapt(realInHyperMode))
-            s_isSingleFallback = true;
-
-    if (s_isSingleFallback) {
-        sts = SingleGpuEncode::Query(core, in, out, state);
-        SetHyperMode(in, realInHyperMode);
-        return sts;
-    }
-
-    SetHyperMode(in, realInHyperMode);
     SetHyperMode(out, realOutHyperMode);
 
     return sts;
@@ -129,50 +116,29 @@ mfxStatus MFXHWVideoHyperENCODE::QueryIOSurf(
     mfxVideoParam *        par,
     mfxFrameAllocRequest * request)
 {
-    mfxHyperMode realHyperMode;
-    GetHyperMode(par, realHyperMode);
-    MFX_CHECK(IsHyperModeOn(realHyperMode) || IsHyperModeAdapt(realHyperMode), MFX_ERR_UNSUPPORTED);
+    mfxVideoParamWrapper mfxHyperEncodeParam = *par;
+    SetHyperMode(&mfxHyperEncodeParam);
 
-    SetHyperMode(par);
+    return ImplementationGopBased::QueryIOSurf(core, &mfxHyperEncodeParam, request);
+}
 
-    mfxStatus sts = ImplementationGopBased::QueryIOSurf(core, par, request);
+MFXHWVideoHyperENCODE::MFXHWVideoHyperENCODE(VideoCORE* core, mfxVideoParam* par, mfxStatus* sts)
+    : m_core(core)
+{
+    *sts = MFX_ERR_NONE;
 
-    bool s_isSingleFallback = false;
-    if (MFX_ERR_NONE > sts)
-        if (IsHyperModeOn(realHyperMode))
-            return sts;
-        else if (IsHyperModeAdapt(realHyperMode))
-            s_isSingleFallback = true;
+    mfxVideoParamWrapper mfxHyperEncodeParam = *par;
+    SetHyperMode(&mfxHyperEncodeParam);
 
-    if (s_isSingleFallback) {
-        return SingleGpuEncode::QueryIOSurf(core, par, request);
-    }
-
-    SetHyperMode(par, realHyperMode);
-
-    return sts;
+    m_impl.reset(new ImplementationGopBased(m_core, &mfxHyperEncodeParam, sts));
 }
 
 mfxStatus MFXHWVideoHyperENCODE::Init(mfxVideoParam* par)
 {
-    MFX_CHECK(!m_impl.get(), MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxVideoParamWrapper mfxHyperEncodeParam = *par;
+    SetHyperMode(&mfxHyperEncodeParam);
 
-    mfxHyperMode realHyperMode;
-    GetHyperMode(par, realHyperMode);
-    MFX_CHECK(IsHyperModeOn(realHyperMode) || IsHyperModeAdapt(realHyperMode), MFX_ERR_UNSUPPORTED);
-
-    SetHyperMode(par);
-
-    mfxStatus sts = MFX_ERR_NONE;
-    m_impl.reset(new ImplementationGopBased(m_core, par, &sts));
-    MFX_CHECK_STS(sts);
-
-    sts = m_impl->Init(par);
-    MFX_CHECK(sts >= MFX_ERR_NONE && sts != MFX_WRN_PARTIAL_ACCELERATION, sts);
-
-    SetHyperMode(par, realHyperMode);
-
-    return sts;
+    return m_impl->Init(&mfxHyperEncodeParam);
 }
 
 mfxStatus ImplementationGopBased::CheckParams(mfxVideoParam* par)
@@ -252,16 +218,14 @@ mfxStatus ImplementationGopBased::Query(
     mfxVideoParam* out,
     void* state)
 {
-    mfxStatus mfxResQuery = SingleGpuEncode::Query(core, in, out, state);
-    MFX_CHECK(mfxResQuery >= MFX_ERR_NONE, mfxResQuery);
+    mfxStatus mfxRes = CheckParams(in);
+    MFX_CHECK_STS(mfxRes);
 
-    mfxStatus mfxResParams = CheckParams(in);
-    MFX_CHECK_STS(mfxResParams);
+    mfxRes = AreDdiVersionsCompatible(core, in);
+    MFX_CHECK_STS(mfxRes);
 
-    mfxStatus mfxResDdi = AreDdiVersionsCompatible(core, in);
-    MFX_CHECK_STS(mfxResDdi);
-
-    return mfxResQuery;
+    // TODO: query encoder for each adapter
+    return SingleGpuEncode::Query(core, in, out, state);
 }
 
 mfxStatus ImplementationGopBased::QueryIOSurf(
@@ -269,28 +233,27 @@ mfxStatus ImplementationGopBased::QueryIOSurf(
     mfxVideoParam* par,
     mfxFrameAllocRequest* request)
 {
-    mfxStatus mfxResQuery = SingleGpuEncode::QueryIOSurf(core, par, request);
-    MFX_CHECK(mfxResQuery >= MFX_ERR_NONE, mfxResQuery);
+    mfxStatus mfxRes = CheckParams(par);
+    MFX_CHECK_STS(mfxRes);
 
-    mfxStatus mfxResParams = CheckParams(par);
-    MFX_CHECK_STS(mfxResParams);
+    mfxRes = AreDdiVersionsCompatible(core, par);
+    MFX_CHECK_STS(mfxRes);
 
-    mfxStatus mfxResDdi = AreDdiVersionsCompatible(core, par);
-    MFX_CHECK_STS(mfxResDdi);
-
-    return mfxResQuery;
+    // TODO: query encoder for each adapter
+    return SingleGpuEncode::QueryIOSurf(core, par, request);
 }
 
 ImplementationGopBased::ImplementationGopBased(VideoCORE* core, mfxVideoParam* par, mfxStatus* sts)
 {
-    *sts = AreDdiVersionsCompatible(core, par);
+    *sts = CheckParams(par);
 
     if (*sts == MFX_ERR_NONE)
-    {
+        *sts = AreDdiVersionsCompatible(core, par);
+
+    if (*sts == MFX_ERR_NONE)
         m_HyperEncode.reset(MFX_IOPATTERN_IN_SYSTEM_MEMORY == par->IOPattern ?
             (HyperEncodeBase*) new HyperEncodeSys(core->GetSession(), par, sts) :
             (HyperEncodeBase*) new HyperEncodeVideo(core->GetSession(), par, sts));
-    }
 }
 
 mfxStatus ImplementationGopBased::Init(mfxVideoParam* /*par*/)
