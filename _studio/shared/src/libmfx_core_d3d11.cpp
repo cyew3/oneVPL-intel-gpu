@@ -1289,10 +1289,24 @@ D3D11VideoCORE20::D3D11VideoCORE20(const mfxU32 adapterNum, const mfxU32 numThre
     auto itDev = std::find_if(std::begin(listLegalDevIDs), std::end(listLegalDevIDs)
         , [deviceId](mfx_device_item dev) { return dev.device_id == deviceId; });
 
-    // TODO: restore switchers
-    m_enabled20Interface = itDev != std::end(listLegalDevIDs) && (/*itDev->platform == MFX_HW_XE_HP_SDV ||*/ itDev->platform == MFX_HW_DG2);
-#else
-    m_enabled20Interface = false;
+    if (itDev != std::end(listLegalDevIDs))
+    {
+        switch (itDev->platform)
+        {
+        case MFX_HW_TGL_LP:
+        case MFX_HW_RKL:
+        case MFX_HW_ADL_S:
+        case MFX_HW_ADL_P:
+        case MFX_HW_DG1:
+        case MFX_HW_DG2:
+            // These platforms support VPL feature set
+            m_enabled20Interface = true;
+            break;
+        default:
+            m_enabled20Interface = false;
+            break;
+        }
+    }
 #endif
 
     if (m_enabled20Interface)
