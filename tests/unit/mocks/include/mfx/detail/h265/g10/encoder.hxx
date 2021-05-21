@@ -52,7 +52,7 @@ namespace g10
     inline constexpr
     ENCODE_CAPS_HEVC caps(std::false_type /*VME*/)
     {
-        static constexpr ENCODE_CAPS_HEVC c =
+        return
         {
             // Coding Limits
             {
@@ -111,14 +111,12 @@ namespace g10
             0,                          // MaxNum_WeightedPredL0
             0                           // MaxNum_WeightedPredL1
         };
-
-        return c;
     }
 
     inline constexpr
     ENCODE_CAPS_HEVC caps(std::true_type /*VDENC*/)
     {
-        static constexpr ENCODE_CAPS_HEVC c =
+        return
         {
             // Coding Limits
             {
@@ -184,7 +182,5 @@ namespace g10
             3,                              // MaxNum_WeightedPredL0, same as max num references
             3                               // MaxNum_WeightedPredL1, same as max num references
         };
-
-        return c;
     }
 }

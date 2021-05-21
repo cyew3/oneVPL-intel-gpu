@@ -48,7 +48,7 @@ namespace g9
     inline constexpr
     ENCODE_CAPS_HEVC caps(std::integral_constant<bool, LowPower>)
     {
-        static constexpr ENCODE_CAPS_HEVC c =
+        return
         {
             // Coding Limits
             {
@@ -107,7 +107,5 @@ namespace g9
             0,                          // MaxNum_WeightedPredL0
             0                           // MaxNum_WeightedPredL1
         };
-
-        return c;
     }
 }

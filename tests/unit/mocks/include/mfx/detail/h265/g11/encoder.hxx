@@ -32,7 +32,7 @@ namespace g11
     inline constexpr
     ENCODE_CAPS_HEVC caps(std::false_type /*VME*/)
     {
-        static constexpr ENCODE_CAPS_HEVC c =
+        return
         {
             // Coding Limits
             {
@@ -103,15 +103,13 @@ namespace g11
             CODECHAL_ENCODE_HEVC_MAX_NUM_WEIGHTED_PRED_L0,  // MaxNum_WeightedPredL0
             CODECHAL_ENCODE_HEVC_MAX_NUM_WEIGHTED_PRED_L0   // MaxNum_WeightedPredL1
         };
-
-        return c;
     }
 
     inline constexpr
     ENCODE_CAPS_HEVC caps(std::true_type /*VDENC*/)
     {
         //TODO: Per SKU 'Color420Only' adjusment
-        static const ENCODE_CAPS_HEVC c =
+        return
         {
             // Coding Limits
             {
@@ -199,7 +197,5 @@ namespace g11
                 FALSE,                      // LookaheadBRCSupport
             }
         };
-
-        return c;
     }
 }
