@@ -88,13 +88,11 @@ set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_core_vaapi.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_ext_ddi.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_vpp_vaapi.h
-    ${MSDK_STUDIO_ROOT}/shared/include/mfx_vpp_helper.h
 
     ${MSDK_STUDIO_ROOT}/shared/src/auxiliary_device.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/cm_mem_copy.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/fast_compositing_ddi.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_vpp_vaapi.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/mfx_vpp_helper.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_vaapi.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d9.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d11.cpp

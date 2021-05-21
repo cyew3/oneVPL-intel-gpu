@@ -734,7 +734,7 @@ mfxStatus ASC::SetDimensions(mfxI32 Width, mfxI32 Height, mfxI32 Pitch) {
 #define ASC_CPU_DISP_INIT_AVX2_SSE4_C       ASC_CPU_DISP_INIT_SSE4_C
 #define ASC_CPU_DISP_INIT_AVX2_C            ASC_CPU_DISP_INIT_C
 #endif
-mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice, eMFXHWType hwPlatform)
+mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice)
 {
     mfxStatus sts = MFX_ERR_NONE;
     INT res;
@@ -789,7 +789,7 @@ mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct,
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    if (pCmDevice && hwPlatform < MFX_HW_DG2)
+    if (pCmDevice)
     {
         res = InitGPUsurf(pCmDevice);
         SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
@@ -824,7 +824,7 @@ mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct,
     SCD_CHECK_MFX_ERR(sts);
     SetUltraFastDetection();
 
-    if (Query_ASCCmDevice() && hwPlatform < MFX_HW_DG2) {
+    if (Query_ASCCmDevice()) {
         sts = CreateCmKernels();
         SCD_CHECK_MFX_ERR(sts);
     }
@@ -1508,20 +1508,6 @@ mfxStatus ASC::ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subSamplingT
 mfxStatus ASC::ProcessQueuedFrame()
 {
     return ProcessQueuedFrame(&m_subSamplingEv, &m_task, nullptr, nullptr);
-}
-
-mfxStatus ASC::ProcessQueuedFrame(mfxU8** pixelData)
-{
-    if (!IsASCinitialized())
-        return MFX_ERR_DEVICE_FAILED;
-    if (pixelData == nullptr || *pixelData == nullptr)
-        return MFX_ERR_DEVICE_FAILED;
-    //std::swap(m_videoData[ASCCurrent_Frame]->layer.Image.data, *pixelData);
-    memcpy(m_videoData[ASCCurrent_Frame]->layer.Image.data, *pixelData, subWidth * subHeight);
-    m_videoData[ASCCurrent_Frame]->layer.Image.Y = m_videoData[ASCCurrent_Frame]->layer.Image.data;
-
-    AscFrameAnalysis();
-    return MFX_ERR_NONE;
 }
 
 mfxStatus ASC::RunFrame(SurfaceIndex *idxFrom, mfxU32 parity) {
