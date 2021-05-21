@@ -23,7 +23,6 @@
 #include "mfx_common.h"
 #include "mfx_ext_buffers.h"
 #include "mfx_vp9_encode_hw_ddi.h"
-#include "mfxvp9.h"
 
 namespace MfxHwVP9Encode
 {

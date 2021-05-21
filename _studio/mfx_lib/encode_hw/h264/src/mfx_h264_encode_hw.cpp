@@ -34,7 +34,9 @@
 #include "mfx_h264_encode_hw.h"
 #include "mfx_h264_enc_common_hw.h"
 #include "mfx_h264_encode_hw_utils.h"
+#if defined (MFX_VA_WIN)
 #include "umc_va_dxva2_protected.h"
+#endif
 
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_cm_defs.h"

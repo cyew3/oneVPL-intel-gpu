@@ -20,7 +20,6 @@
 
 #include "mfx_common.h"
 
-#include "mfxvp9.h"
 #include "mfx_enc_common.h"
 #include "mfx_vp9_encode_hw_par.h"
 #include "mfx_vp9_encode_hw_utils.h"

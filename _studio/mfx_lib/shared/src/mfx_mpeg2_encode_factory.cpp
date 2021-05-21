@@ -26,9 +26,9 @@
 
 #include "mfx_mpeg2_encode_interface.h"
 
-#if defined (MFX_VA_WIN)   
+#if defined (MFX_VA_WIN)
 #include "mfxvideo++int.h"
-#include "mfx_mpeg2_encode_d3d9.h"   
+#include "mfx_mpeg2_encode_d3d9.h"
 
 #if defined(MFX_D3D11_ENABLED)
     #include "mfx_mpeg2_encode_d3d11.h"
