@@ -17,15 +17,60 @@ File Name: .h
 #include "vaapi_allocator.h"
 #include "mfx_d3d11_allocator.h"
 
+
+
 #if defined(_WIN32) || defined(_WIN64)
     #include "d3d9.h"
+    #include "mfxadapter.h"
 #else
     #define D3DADAPTER_DEFAULT 0
 #endif
 
 mfxU32 ComponentParams::GetAdapter()
 {
-    return m_adapterNum != -1 ? m_adapterNum : D3DADAPTER_DEFAULT;
+    // configure in CreateCore with bPrefferiGfx/bPrefferdGfx
+    if (m_adapterNum != -1)
+    {
+        return m_adapterNum;
+    }
+
+    // get from lib, which was found by loader and will be used for creating session
+    // or get ID of first adapter
+    if (m_pLoader)
+    {
+        mfxU32 adapterNum;
+        mfxU16 deviceID;
+        m_pLoader->GetAdapterNum(adapterNum);
+        m_pLoader->GetDeviceID(deviceID);
+        m_adapterNum = adapterNum;
+        m_deviceID = deviceID;
+
+        return m_adapterNum;
+    }
+    else
+    {
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+        mfxU32 num_adapters_available;
+
+        mfxStatus sts = MFX_ERR_NONE;
+
+        sts = MFXQueryAdaptersNumber(&num_adapters_available);
+        MFX_CHECK_STS(sts);
+
+        std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
+        mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };
+
+        sts = MFXQueryAdapters(nullptr, &adapters);
+        MFX_CHECK_STS(sts);
+
+        m_adapterNum = adapters.Adapters[0].Number;
+        m_deviceID = adapters.Adapters[0].Platform.DeviceId;
+
+        return m_adapterNum;
+#else
+        return 0;
+#endif
+    }
 }
 
 mfxU16 ComponentParams::GetIoPatternIn()

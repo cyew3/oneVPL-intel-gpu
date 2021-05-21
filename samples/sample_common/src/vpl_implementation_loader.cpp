@@ -247,6 +247,48 @@ mfxStatus VPLImplementationLoader::GetImplName(mfxChar *implName)
     return MFX_ERR_NOT_FOUND;
 }
 
+mfxStatus VPLImplementationLoader::GetAdapterNum(mfxU32 &adapterNum)
+{
+    if (!m_idesc)
+    {
+        EnumImplementations();
+    }
+
+    adapterNum = 0;
+
+    if (m_idesc)
+    {
+        mfxChar deviceAdapterInfo[MFX_STRFIELD_LEN] = {};
+        strncpy(deviceAdapterInfo, m_idesc->Dev.DeviceID, sizeof(m_idesc->Dev.DeviceID));
+        char* adapter  = strtok(deviceAdapterInfo, "/");
+        // will scan deviceAdapterInfo
+        adapter = strtok (NULL, "/");
+        adapterNum = (mfxU32)std::stoi(adapter, nullptr, 10);
+        return MFX_ERR_NONE;
+    }
+
+    return MFX_ERR_NOT_FOUND;
+}
+
+mfxStatus VPLImplementationLoader::GetDeviceID(mfxU16 &deviceID)
+{
+    if (!m_idesc)
+    {
+        EnumImplementations();
+    }
+
+    if (m_idesc)
+    {
+        mfxChar deviceAdapterInfo[MFX_STRFIELD_LEN] = {};
+        strncpy(deviceAdapterInfo, m_idesc->Dev.DeviceID, sizeof(m_idesc->Dev.DeviceID));
+        char* device  = strtok(m_idesc->Dev.DeviceID, "/");
+        deviceID = (mfxU32)std::stoi(device, nullptr, 16);
+        return MFX_ERR_NONE;
+    }
+
+    return MFX_ERR_NOT_FOUND;
+}
+
 void VPLImplementationLoader::SetMinVersion(mfxVersion const version)
 {
     m_MinVersion = MakeVersion(version);

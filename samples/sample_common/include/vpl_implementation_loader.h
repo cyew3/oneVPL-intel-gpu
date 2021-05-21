@@ -48,6 +48,8 @@ public:
     mfxU32 GetImplIndex() const;
     mfxStatus GetImplName(mfxChar *implName);
     mfxStatus GetVersion(mfxVersion& version);
+    mfxStatus GetAdapterNum(mfxU32 &adapterNum);
+    mfxStatus GetDeviceID(mfxU16 &deviceID);
     void SetMinVersion(mfxVersion const version);
 };
 

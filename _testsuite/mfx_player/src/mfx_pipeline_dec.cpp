@@ -323,7 +323,7 @@ mfxU32 MFXDecPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, 
     return 0;
 }
 
-mfxStatus MFXDecPipeline::ForceAdapterAndDeviceID(const sCommandlineParams & params, mfxI32 & adapterNum, mfxI32 & deviceID)
+mfxStatus MFXDecPipeline::ForceAdapterAndDeviceID(const sCommandlineParams & params, mfxI32 & adapterNum, mfxI16 & deviceID)
 {
     mfxU32 num_adapters_available;
 
@@ -1147,15 +1147,20 @@ mfxStatus MFXDecPipeline::CreateCore()
             PipelineTrace((VM_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered")));
             m_inParams.bPrefferdGfx = false;
         }
-
-        mfxIMPL tmpDeviceID = m_components.front().m_deviceID;
-        mfxIMPL tmpAdapterNum = m_components.front().m_adapterNum;
-        mfxStatus sts = ForceAdapterAndDeviceID(m_inParams, tmpAdapterNum, tmpDeviceID);
-        MFX_CHECK_STS(sts);
-
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_deviceID, tmpDeviceID));
-        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_adapterNum, tmpAdapterNum));
     }
+
+    mfxI16 tmpDeviceID = m_components.front().m_deviceID;
+    mfxI32 tmpAdapterNum = m_components.front().m_adapterNum;
+    mfxStatus sts = ForceAdapterAndDeviceID(m_inParams, tmpAdapterNum, tmpDeviceID);
+    MFX_CHECK_STS(sts);
+
+    std::for_each(m_components.begin(), m_components.end(),
+        [tmpDeviceID, tmpAdapterNum](ComponentParams& p)
+        {
+            p.m_deviceID  = tmpDeviceID;
+            p.m_adapterNum           = tmpAdapterNum;
+        }
+    );
 #endif
 
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
