@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -88,8 +88,8 @@ void SCCMode::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
         mfxExtCodingOptionDDI* pCODDI = ExtBuffer::Get(par);
         MFX_CHECK(pCODDI, MFX_ERR_NONE);
 
-        SetDefault(pCODDI->IBC, IsOn(par.mfx.LowPower)? (mfxU16)MFX_CODINGOPTION_OFF : (mfxU16)MFX_CODINGOPTION_UNKNOWN);
-        SetDefault(pCODDI->Palette, IsOn(par.mfx.LowPower)? (mfxU16)MFX_CODINGOPTION_OFF : (mfxU16)MFX_CODINGOPTION_UNKNOWN);
+        SetDefault(pCODDI->IBC, (mfxU16)MFX_CODINGOPTION_ON);
+        SetDefault(pCODDI->Palette, (mfxU16)MFX_CODINGOPTION_ON);
 
         return MFX_ERR_NONE;
     });
