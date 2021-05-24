@@ -1469,10 +1469,10 @@ Return value:
 MFX_WRN_INCOMPATIBLE_VIDEO_PARAM - if initial value of par.mfx.LowPower is not equal to MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_UNKNOWN
 MFX_ERR_NONE - if no errors
 */
-mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWType& platfrom)
+mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWType& platform)
 {
 #ifndef STRIP_EMBARGO
-    if (platfrom >= MFX_HW_DG2)
+    if (platform >= MFX_HW_DG2)
     {   // DualPipe (aka VME) is not available
         par.mfx.LowPower = MFX_CODINGOPTION_ON;
         return MFX_ERR_NONE;
@@ -1480,12 +1480,12 @@ mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWTy
 #endif
 
     mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
-    (void)platfrom; // fix wrn for non Gen11 build
+    (void)platform; // fix wrn for non Gen11 build
 #if (MFX_VERSION >= 1031)
-    if (  (platfrom == MFX_HW_JSL
-        || platfrom == MFX_HW_EHL
+    if (  (platform == MFX_HW_JSL
+        || platform == MFX_HW_EHL
 #ifndef STRIP_EMBARGO
-        || platfrom == MFX_HW_LKF
+        || platform == MFX_HW_LKF
 #endif
        )
         && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
@@ -2397,8 +2397,23 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
         {
-            unsupported = true;
-            par.mfx.RateControlMethod = 0;
+#ifndef STRIP_EMBARGO
+            if ((platform >= MFX_HW_DG2) &&
+                bRateControlLA(par.mfx.RateControlMethod)) // non LA modes are used instead
+            {
+                changed = true;
+                if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA) ||
+                    (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
+                    par.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+                else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+                    par.mfx.RateControlMethod = MFX_RATECONTROL_ICQ;
+            }
+            else
+#endif
+            {
+                unsupported = true;
+                par.mfx.RateControlMethod = 0;
+            }
         }
 
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
