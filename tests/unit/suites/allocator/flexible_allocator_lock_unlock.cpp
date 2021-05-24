@@ -143,7 +143,7 @@ namespace test
         {
             FlexibleAllocatorBase::SetUp();
             req.Type = std::get<0>(GetParam());
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
             if(req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
                 req.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
 #endif
@@ -310,7 +310,7 @@ namespace test
         {
             FlexibleAllocatorBase::SetUp();
             req.Type = std::get<0>(GetParam());
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
             if(req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
                 req.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
 #endif

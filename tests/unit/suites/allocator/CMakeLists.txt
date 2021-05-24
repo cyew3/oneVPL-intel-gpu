@@ -50,6 +50,7 @@ target_link_libraries (mfx_allocator_test
         $<$<PLATFORM_ID:Windows>:detours>
         mfx_shared_lib
         mfx_trace
+        encode_hw
         gtest_main
         gmock
         mocks::mocks
@@ -60,6 +61,7 @@ target_compile_definitions (mfx_allocator_test
     PRIVATE
         MFX_ENABLE_UNIT_TEST_ALLOCATOR
         ENABLE_MFX_INTEL_GUID_DECODE
+        ENABLE_MFX_INTEL_GUID_ENCODE
         ENABLE_MFX_INTEL_GUID_PRIVATE
 )
 

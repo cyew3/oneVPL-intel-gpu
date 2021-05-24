@@ -33,7 +33,7 @@ namespace test
             FlexibleAllocatorBase::SetUp();
             req.Info.FourCC = std::get<1>(GetParam());
             req.Type = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | std::get<0>(GetParam());
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
             mocks::dx11::mock_device(*(component->device.p), context.get(),
                 D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_DECODER | D3D11_BIND_VIDEO_ENCODER | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_SHARED },
                 D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_SHARED },
@@ -41,7 +41,7 @@ namespace test
                 D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_DECODER | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_SHARED },
                 D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_DECODER | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_HW_PROTECTED | D3D11_RESOURCE_MISC_SHARED }
             );
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
             VASurfaceAttrib surface_attributes[] = { VASurfaceAttrib{ VASurfaceAttribPixelFormat, VA_SURFACE_ATTRIB_SETTABLE, {VAGenericValueTypeInteger, .value = {.i = VA_FOURCC_ABGR } } },
                                                      VASurfaceAttrib{ VASurfaceAttribUsageHint,   VA_SURFACE_ATTRIB_SETTABLE, {VAGenericValueTypeInteger, .value = {.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER } } }
                                                    };
@@ -61,7 +61,7 @@ namespace test
         }
     };
     std::vector<std::tuple<mfxU32, mfxU32>> typeFlags = {
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
         { MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME, MFX_FOURCC_NV12 },
         { MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET, MFX_FOURCC_NV12 },
         { MFX_MEMTYPE_FROM_VPPIN, MFX_FOURCC_YUY2 },
@@ -72,7 +72,7 @@ namespace test
 #if !defined(OPEN_SOURCE)
         { MFX_MEMTYPE_PROTECTED, MFX_FOURCC_NV12 }
 #endif
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
         { MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, MFX_FOURCC_BGR4 }
 #endif
     };

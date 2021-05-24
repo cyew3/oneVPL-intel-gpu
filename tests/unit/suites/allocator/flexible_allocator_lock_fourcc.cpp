@@ -23,7 +23,7 @@
 
 #include "flexible_allocator_base.h"
 
-#if defined(__linux__)
+#if defined(MFX_VA_LINUX)
 #include "mocks/include/va/format.h"
 #include "mocks/include/mfx/platform.h"
 #include "mocks/include/va/display/context.h"
@@ -38,7 +38,7 @@ namespace test
 {
     int constexpr WIDTH  = 640;
     int constexpr HEIGHT = 480;
-#if defined(_WIN32)
+#if defined(MFX_VA_WIN)
     inline DXGI_FORMAT get_dxgi(mfxU32 FourCC)
     {
         switch (FourCC)
@@ -94,7 +94,7 @@ namespace test
         }
     }
 
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
     enum {
         MFX_FOURCC_VP8_NV12   = MFX_MAKEFOURCC('V', 'P', '8', 'N'),
         MFX_FOURCC_VP8_MBDATA = MFX_MAKEFOURCC('V', 'P', '8', 'M'),
@@ -117,7 +117,7 @@ namespace test
 
     inline mfxU32 get_format(mfxU32 FourCC)
     {
-        switch(FourCC)
+        switch (FourCC)
         {
         case MFX_FOURCC_VP8_NV12:
             return VA_FOURCC_NV12;
@@ -144,7 +144,7 @@ namespace test
         {
             FlexibleAllocatorBase::SetUp();
             platform = std::get<0>(GetParam());
-            type = (platform == 0)?MFX_MEMTYPE_SYSTEM_MEMORY:MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+            type = (platform == 0) ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
             auto infoValue = std::get<1>(GetParam());
             fourcc = std::get<0>(infoValue);
             pitch = std::get<2>(infoValue);
@@ -154,7 +154,7 @@ namespace test
             {
                 req.Type |= MFX_MEMTYPE_FROM_ENCODE;
             }
-            else if (fourcc == MFX_FOURCC_RGBP || fourcc == MFX_FOURCC_RGB3 )
+            else if (fourcc == MFX_FOURCC_RGBP || fourcc == MFX_FOURCC_RGB3)
             {
                 req.Type |= MFX_MEMTYPE_FROM_VPPOUT;
             }
@@ -166,11 +166,10 @@ namespace test
             req.Info.Width = WIDTH;
             req.Info.Height = HEIGHT;
             req.Info.FourCC = fourcc;
-            SetAllocator(static_cast<mfxU16>(type));
         }
     };
 
-#if defined(_WIN32)
+#if defined(MFX_VA_WIN)
     struct FlexibleAllocatorFourCC : public FlexibleAllocatorFourCCBase
     {
         void SetUp() override
@@ -187,8 +186,11 @@ namespace test
             vp.mfx.FrameInfo.Height = HEIGHT;
             vp.mfx.FrameInfo.FourCC = fourcc;
 
+            if (platform > 0)
+                req.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+
             component.reset(
-                new mocks::mfx::dx11::component(type, nullptr, vp)
+                new mocks::mfx::dx11::component(mocks::mfx::HW_TGL_LP, nullptr, vp)
             );
             //for D3D11Device::CreateTexture2D
             mocks::dx11::mock_device(*(component->device.p), context.get(),
@@ -198,8 +200,6 @@ namespace test
             if (fourcc == MFX_FOURCC_P8)
             {
                 req.Type |= MFX_MEMTYPE_FROM_ENCODE;
-                if (platform > 0)
-                    req.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
 
                 // for ID3D11Device::CreateBuffer
                 mocks::dx11::mock_device(*(component->device.p),
@@ -215,10 +215,11 @@ namespace test
                     D3D11_BUFFER_DESC{ mfxU32(0x58), D3D11_USAGE_STAGING, 0u, D3D11_CPU_ACCESS_READ, 0u, 0u }
                 );
             }
+            SetAllocator(static_cast<mfxU16>(type));
         }
     };
 
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
     struct FlexibleAllocatorFourCC : public FlexibleAllocatorFourCCBase
     {
         void SetUp() override
@@ -273,6 +274,7 @@ namespace test
                     )
                 );
             }
+            SetAllocator(static_cast<mfxU16>(type));
         }
     };
 #endif
@@ -285,26 +287,23 @@ namespace test
         mfxU8* mfxFrameData::*, int, // ptr2, offset between ptr2 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int, // ptr3, offset between ptr3 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int  // ptr4, offset between ptr4 and ptr1 (in bytes)
-    >> FourCC_common = {
-      { MFX_FOURCC_NV12,    MFX_ERR_NONE, WIDTH,     &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT,     &mfxFrameData::V, WIDTH*HEIGHT + 1,     nullptr,          0 } // 0
-    , { MFX_FOURCC_P010,    MFX_ERR_NONE, WIDTH * 2, &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT * 2, &mfxFrameData::V, WIDTH*HEIGHT * 2 + 2, nullptr,          0 } // 1
-    , { MFX_FOURCC_YUY2,    MFX_ERR_NONE, WIDTH * 2, &mfxFrameData::Y, &mfxFrameData::U, 1,                  &mfxFrameData::V, 3,                    nullptr,          0 } // 2
-#ifdef MFX_ENABLE_RGBP
-    , { MFX_FOURCC_RGBP,    MFX_ERR_NONE, WIDTH,     &mfxFrameData::B, &mfxFrameData::G, WIDTH * HEIGHT,     &mfxFrameData::R, WIDTH * HEIGHT * 2,   nullptr,          0 } // 3
-#endif
-    , { MFX_FOURCC_RGB4,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::B, &mfxFrameData::G, 1,                  &mfxFrameData::R, 2,                    &mfxFrameData::A, 3 } // 4
-    , { MFX_FOURCC_BGR4,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::R, &mfxFrameData::G, 1,                  &mfxFrameData::B, 2,                    &mfxFrameData::A, 3 } // 5
-    , { MFX_FOURCC_AYUV,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::V, &mfxFrameData::U, 1,                  &mfxFrameData::Y, 2,                    &mfxFrameData::A, 3 } // 6
-    , { MFX_FOURCC_A2RGB10, MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::R, &mfxFrameData::G, 0,                  &mfxFrameData::B, 0,                    &mfxFrameData::A, 0 } // 7
-#if (MFX_VERSION >= 1027)
-    , { MFX_FOURCC_Y210,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::Y, &mfxFrameData::U, 2,                  &mfxFrameData::V, 6,                    nullptr,          0 } // 8
-    , { MFX_FOURCC_Y410,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::U, nullptr,          0,                  nullptr,          0,                    nullptr,          0 } // 9
-#endif
-#if (MFX_VERSION >= 1031)
-    , { MFX_FOURCC_P016,    MFX_ERR_NONE, WIDTH * 2, &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT * 2, &mfxFrameData::V, WIDTH*HEIGHT * 2 + 2, nullptr,          0 } // 10
-    , { MFX_FOURCC_Y216,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::Y, &mfxFrameData::U, 2,                  &mfxFrameData::V, 6,                    nullptr,          0 } // 11
-    , { MFX_FOURCC_Y416,    MFX_ERR_NONE, WIDTH * 8, &mfxFrameData::U, &mfxFrameData::Y, 2,                  &mfxFrameData::V, 4,                    &mfxFrameData::A, 6 } // 12
-#endif
+        >> FourCC_common = {
+          { MFX_FOURCC_NV12,    MFX_ERR_NONE, WIDTH,     &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT,     &mfxFrameData::V, WIDTH * HEIGHT + 1,     nullptr,          0 } // 0
+        , { MFX_FOURCC_P010,    MFX_ERR_NONE, WIDTH * 2, &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT * 2, &mfxFrameData::V, WIDTH * HEIGHT * 2 + 2, nullptr,          0 } // 1
+        , { MFX_FOURCC_YUY2,    MFX_ERR_NONE, WIDTH * 2, &mfxFrameData::Y, &mfxFrameData::U, 1,                  &mfxFrameData::V, 3,                      nullptr,          0 } // 2
+        , { MFX_FOURCC_RGB4,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::B, &mfxFrameData::G, 1,                  &mfxFrameData::R, 2,                      &mfxFrameData::A, 3 } // 3
+        , { MFX_FOURCC_BGR4,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::R, &mfxFrameData::G, 1,                  &mfxFrameData::B, 2,                      &mfxFrameData::A, 3 } // 4
+        , { MFX_FOURCC_AYUV,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::V, &mfxFrameData::U, 1,                  &mfxFrameData::Y, 2,                      &mfxFrameData::A, 3 } // 5
+        , { MFX_FOURCC_A2RGB10, MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::R, &mfxFrameData::G, 0,                  &mfxFrameData::B, 0,                      &mfxFrameData::A, 0 } // 6
+    #if (MFX_VERSION >= 1027)
+        , { MFX_FOURCC_Y210,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::Y, &mfxFrameData::U, 2,                  &mfxFrameData::V, 6,                      nullptr,          0 } // 7
+        , { MFX_FOURCC_Y410,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::U, nullptr,          0,                  nullptr,          0,                      nullptr,          0 } // 8
+    #endif
+    #if (MFX_VERSION >= 1031)
+        , { MFX_FOURCC_P016,    MFX_ERR_NONE, WIDTH * 2, &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT * 2, &mfxFrameData::V, WIDTH * HEIGHT * 2 + 2, nullptr,          0 } // 9
+        , { MFX_FOURCC_Y216,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::Y, &mfxFrameData::U, 2,                  &mfxFrameData::V, 6,                      nullptr,          0 } // 10
+        , { MFX_FOURCC_Y416,    MFX_ERR_NONE, WIDTH * 8, &mfxFrameData::U, &mfxFrameData::Y, 2,                  &mfxFrameData::V, 4,                      &mfxFrameData::A, 6 } // 11
+    #endif
 
     };
 
@@ -316,19 +315,22 @@ namespace test
         mfxU8* mfxFrameData::*, int, // ptr2, offset between ptr2 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int, // ptr3, offset between ptr3 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int  // ptr4, offset between ptr4 and ptr1 (in bytes)
-    >> FourCC_SW = {
-      { MFX_FOURCC_P8,         MFX_ERR_NONE,        WIDTH * HEIGHT, &mfxFrameData::Y, nullptr,          0,                  nullptr,          0,                      nullptr, 0 } // 13
-    , { MFX_FOURCC_P8_TEXTURE, MFX_ERR_NONE,        WIDTH,          &mfxFrameData::Y, nullptr,          0,                  nullptr,          0,                      nullptr, 0 } // 14
-    , { MFX_FOURCC_YV12,       MFX_ERR_NONE,        WIDTH,          &mfxFrameData::Y, &mfxFrameData::V, WIDTH * HEIGHT,     &mfxFrameData::U, WIDTH*HEIGHT * 5 / 4,   nullptr, 0 } // 15
-#if defined (MFX_ENABLE_FOURCC_RGB565)
-    , { MFX_FOURCC_RGB565,     MFX_ERR_NONE,        WIDTH * 2,      &mfxFrameData::B, &mfxFrameData::G, 0,                  &mfxFrameData::R, 0,                      nullptr, 0 } // 16
-#endif
-    , { MFX_FOURCC_P210,       MFX_ERR_NONE,        WIDTH * 2,      &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT * 2, &mfxFrameData::V, WIDTH * HEIGHT * 2 + 2, nullptr, 0 } // 17
-    , { MFX_FOURCC_RGB3,       MFX_ERR_NONE,        WIDTH * 3,      &mfxFrameData::B, &mfxFrameData::G, 1,                  &mfxFrameData::R, 2,                      nullptr, 0 } // 18
-    , { MFX_FOURCC_IMC3,       MFX_ERR_UNSUPPORTED, 0,              nullptr,          nullptr,          0,                  nullptr,          0,                      nullptr, 0 } // 19
+        >> FourCC_SW = {
+          { MFX_FOURCC_P8,         MFX_ERR_NONE,        WIDTH * HEIGHT, &mfxFrameData::Y, nullptr,          0,                  nullptr,          0,                      nullptr, 0 } // 12
+        , { MFX_FOURCC_P8_TEXTURE, MFX_ERR_NONE,        WIDTH,          &mfxFrameData::Y, nullptr,          0,                  nullptr,          0,                      nullptr, 0 } // 13
+        , { MFX_FOURCC_YV12,       MFX_ERR_NONE,        WIDTH,          &mfxFrameData::Y, &mfxFrameData::V, WIDTH * HEIGHT,     &mfxFrameData::U, WIDTH * HEIGHT * 5 / 4, nullptr, 0 } // 14
+    #if defined (MFX_ENABLE_FOURCC_RGB565)
+        , { MFX_FOURCC_RGB565,     MFX_ERR_NONE,        WIDTH * 2,      &mfxFrameData::B, &mfxFrameData::G, 0,                  &mfxFrameData::R, 0,                      nullptr, 0 } // 15
+    #endif
+        , { MFX_FOURCC_P210,       MFX_ERR_NONE,        WIDTH * 2,      &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT * 2, &mfxFrameData::V, WIDTH * HEIGHT * 2 + 2, nullptr, 0 } // 16
+        , { MFX_FOURCC_RGB3,       MFX_ERR_NONE,        WIDTH * 3,      &mfxFrameData::B, &mfxFrameData::G, 1,                  &mfxFrameData::R, 2,                      nullptr, 0 } // 17
+        , { MFX_FOURCC_IMC3,       MFX_ERR_UNSUPPORTED, 0,              nullptr,          nullptr,          0,                  nullptr,          0,                      nullptr, 0 } // 18
+    #ifdef MFX_ENABLE_RGBP
+        , { MFX_FOURCC_RGBP,    MFX_ERR_NONE,           WIDTH,          &mfxFrameData::B, &mfxFrameData::G, WIDTH* HEIGHT,      &mfxFrameData::R, WIDTH* HEIGHT * 2,      nullptr, 0 } // 19
+    #endif
     };
 
-#if defined(_WIN32)
+#if defined(MFX_VA_WIN)
     static std::vector<std::tuple<
         mfxU32,                      // FourCC,
         mfxStatus,                   // return status for Lock
@@ -337,24 +339,27 @@ namespace test
         mfxU8* mfxFrameData::*, int, // ptr2, offset between ptr2 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int, // ptr3, offset between ptr3 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int  // ptr4, offset between ptr4 and ptr1 (in bytes)
-    >> FourCC_HW_D3D11 = {
-      { MFX_FOURCC_P8,         MFX_ERR_NONE,        WIDTH * HEIGHT, &mfxFrameData::Y, nullptr, 0, nullptr, 0, nullptr, 0 } // 13
-    , { MFX_FOURCC_P8_TEXTURE, MFX_ERR_NONE,        WIDTH,          &mfxFrameData::Y, nullptr, 0, nullptr, 0, nullptr, 0 } // 14
-    , { MFX_FOURCC_IMC3,       MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 15
-    , { MFX_FOURCC_YUV400,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 16
-    , { MFX_FOURCC_YUV411,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 17
-    , { MFX_FOURCC_YUV422H,    MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 18
-    , { MFX_FOURCC_YUV422V,    MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 19
-    , { MFX_FOURCC_R16_RGGB,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 20
-    , { MFX_FOURCC_R16_BGGR,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 21
-    , { MFX_FOURCC_R16_GBRG,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 22
-    , { MFX_FOURCC_R16_GRBG,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 23
-    , { MFX_FOURCC_ARGB16,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 24
-    , { MFX_FOURCC_ABGR16,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 25
+        >> FourCC_HW_D3D11 = {
+          { MFX_FOURCC_P8,         MFX_ERR_NONE,        WIDTH * HEIGHT, &mfxFrameData::Y, nullptr, 0, nullptr, 0, nullptr, 0 } // 12
+        , { MFX_FOURCC_P8_TEXTURE, MFX_ERR_NONE,        WIDTH,          &mfxFrameData::Y, nullptr, 0, nullptr, 0, nullptr, 0 } // 13
+        , { MFX_FOURCC_IMC3,       MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 14
+        , { MFX_FOURCC_YUV400,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 15
+        , { MFX_FOURCC_YUV411,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 16
+        , { MFX_FOURCC_YUV422H,    MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 17
+        , { MFX_FOURCC_YUV422V,    MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 18
+        , { MFX_FOURCC_R16_RGGB,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 19
+        , { MFX_FOURCC_R16_BGGR,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 20
+        , { MFX_FOURCC_R16_GBRG,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 21
+        , { MFX_FOURCC_R16_GRBG,   MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 22
+        , { MFX_FOURCC_ARGB16,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 23
+        , { MFX_FOURCC_ABGR16,     MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 24
+    #ifdef MFX_ENABLE_RGBP
+        , { MFX_FOURCC_RGBP,       MFX_ERR_LOCK_MEMORY, 0,              nullptr,          nullptr, 0, nullptr, 0, nullptr, 0 } // 25
+    #endif
     };
 #endif
 
-#if defined(__linux__)
+#if defined(MFX_VA_LINUX)
     static std::vector<std::tuple<
         mfxU32,                      // FourCC,
         mfxStatus,                   // return status for Lock
@@ -363,17 +368,20 @@ namespace test
         mfxU8* mfxFrameData::*, int, // ptr2, offset between ptr2 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int, // ptr3, offset between ptr3 and ptr1 (in bytes)
         mfxU8* mfxFrameData::*, int  // ptr4, offset between ptr4 and ptr1 (in bytes)
-    >> FourCC_HW_VAAPI = {
-      // TO DO: properly analyze case for MFX_FOURCC_P8
-      { MFX_FOURCC_P8,         MFX_ERR_NONE, WIDTH * HEIGHT * 400LL / (16 * 16), &mfxFrameData::Y, nullptr,          0,              nullptr,          0,                    nullptr, 0 } // 13
-    , { MFX_FOURCC_YV12,       MFX_ERR_NONE, WIDTH,                              &mfxFrameData::Y, &mfxFrameData::V, WIDTH * HEIGHT, &mfxFrameData::U, WIDTH*HEIGHT * 5 / 4, nullptr, 0 } // 14
-#if defined (MFX_ENABLE_FOURCC_RGB565)
-    , { MFX_FOURCC_RGB565,     MFX_ERR_NONE, WIDTH * 2,                          &mfxFrameData::B, &mfxFrameData::G, 0             , &mfxFrameData::R, 0,                    nullptr, 0 } // 15
-#endif
-    , { MFX_FOURCC_UYVY,       MFX_ERR_NONE, WIDTH * 2,                          &mfxFrameData::U, &mfxFrameData::Y, 1,              &mfxFrameData::V, 2,                    nullptr, 0 } // 16
-    , { MFX_FOURCC_VP8_NV12,   MFX_ERR_NONE, WIDTH,                              &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT, &mfxFrameData::V, WIDTH*HEIGHT + 1,     nullptr, 0 } // 17
-    , { MFX_FOURCC_VP8_MBDATA, MFX_ERR_NONE, WIDTH * HEIGHT,                     &mfxFrameData::Y, nullptr,          0,              nullptr,          0,                    nullptr, 0 } // 18
-    , { MFX_FOURCC_VP8_SEGMAP, MFX_ERR_NONE, WIDTH,                              &mfxFrameData::Y, nullptr,          0,              nullptr,          0,                    nullptr, 0 } // 19
+        >> FourCC_HW_VAAPI = {
+        // TO DO: properly analyze case for MFX_FOURCC_P8
+        { MFX_FOURCC_P8,         MFX_ERR_NONE, WIDTH * HEIGHT * 400LL / (16 * 16), &mfxFrameData::Y, nullptr,          0,              nullptr,          0,                      nullptr, 0 } // 12
+      , { MFX_FOURCC_YV12,       MFX_ERR_NONE, WIDTH,                              &mfxFrameData::Y, &mfxFrameData::V, WIDTH * HEIGHT, &mfxFrameData::U, WIDTH * HEIGHT * 5 / 4, nullptr, 0 } // 13
+  #if defined (MFX_ENABLE_FOURCC_RGB565)
+      , { MFX_FOURCC_RGB565,     MFX_ERR_NONE, WIDTH * 2,                          &mfxFrameData::B, &mfxFrameData::G, 0             , &mfxFrameData::R, 0,                      nullptr, 0 } // 14
+  #endif
+      , { MFX_FOURCC_UYVY,       MFX_ERR_NONE, WIDTH * 2,                          &mfxFrameData::U, &mfxFrameData::Y, 1,              &mfxFrameData::V, 2,                      nullptr, 0 } // 15
+      , { MFX_FOURCC_VP8_NV12,   MFX_ERR_NONE, WIDTH,                              &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT, &mfxFrameData::V, WIDTH * HEIGHT + 1,     nullptr, 0 } // 16
+      , { MFX_FOURCC_VP8_MBDATA, MFX_ERR_NONE, WIDTH * HEIGHT,                     &mfxFrameData::Y, nullptr,          0,              nullptr,          0,                      nullptr, 0 } // 17
+      , { MFX_FOURCC_VP8_SEGMAP, MFX_ERR_NONE, WIDTH,                              &mfxFrameData::Y, nullptr,          0,              nullptr,          0,                      nullptr, 0 } // 18
+    #ifdef MFX_ENABLE_RGBP
+      , { MFX_FOURCC_RGBP,       MFX_ERR_NONE, WIDTH,                              &mfxFrameData::B, &mfxFrameData::G, WIDTH * HEIGHT, &mfxFrameData::R, WIDTH * HEIGHT * 2,     nullptr, 0 } // 19
+    #endif
     };
 #endif
 
@@ -400,7 +408,7 @@ namespace test
         )
     );
 
-#if defined(_WIN32)
+#if defined(MFX_VA_WIN)
     INSTANTIATE_TEST_SUITE_P(
         MemTypesFourccHWD3D11,
         FlexibleAllocatorFourCC,
@@ -410,7 +418,7 @@ namespace test
         )
     );
 
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
     INSTANTIATE_TEST_SUITE_P(
         MemTypesFourccHWVAAPI,
         FlexibleAllocatorFourCC,
@@ -459,7 +467,7 @@ namespace test
             if (req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
             {
                 auto expected_buffer = (mfxU8*)buffer.data();
-#if defined(__linux__) // TEMP
+#if defined(MFX_VA_LINUX) // TEMP
                 if(fourcc == MFX_FOURCC_P8)
                     expected_buffer = nullptr;
 #endif

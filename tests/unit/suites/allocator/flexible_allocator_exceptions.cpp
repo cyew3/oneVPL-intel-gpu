@@ -40,11 +40,11 @@ namespace test
         {
             FlexibleAllocatorBase::SetUp();
             req.Type = MFX_MEMTYPE_SYSTEM_MEMORY;
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
             allocator.reset(
                 new FlexibleFrameAllocator<mfxFrameSurface1_fake, staging_adapter_stub>{ component->device.p }
             );
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
             allocator.reset(
                 new FlexibleFrameAllocator<mfxFrameSurface1_fake, staging_adapter_stub>{ display.get() }
             );

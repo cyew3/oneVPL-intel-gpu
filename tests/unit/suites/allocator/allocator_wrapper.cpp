@@ -132,7 +132,7 @@ namespace test
                 std::make_tuple(D3D11_MAP_READ_WRITE, buffer.data(), vp.mfx.FrameInfo.Width)
             );
 
-            auto constexpr type = mocks::mfx::HW_SCL;
+            auto constexpr type = mocks::mfx::HW_TGL_LP;
             component.reset(
                 new mocks::mfx::dx11::component(type, nullptr, vp)
             );

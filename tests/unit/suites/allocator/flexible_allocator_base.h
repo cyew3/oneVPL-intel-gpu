@@ -37,11 +37,7 @@
 
 #include "libmfx_allocator_d3d11.h"
 
-#include "mfxpcp.h"
-
-#define ENABLE_MFX_INTEL_GUID_DECODE
-#define ENABLE_MFX_INTEL_GUID_ENCODE
-#define ENABLE_MFX_INTEL_GUID_PRIVATE
+#include "mfxpavp.h"
 
 #include "mocks/include/dxgi/format.h"
 #include "mocks/include/dxgi/device/factory.h"
@@ -103,7 +99,7 @@ namespace test
                 std::make_tuple(D3D11_MAP_READ_WRITE, buffer.data(), vp.mfx.FrameInfo.Width)
             );
 
-            auto constexpr type = mocks::mfx::HW_SCL;
+            auto constexpr type = mocks::mfx::HW_TGL_LP;
             component.reset(
                 new mocks::mfx::dx11::component(type, nullptr, vp)
             );
@@ -194,7 +190,7 @@ namespace test
         {
             FlexibleAllocatorBase::SetUp();
             req.Type = GetParam();
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
             if(req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
                 req.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
 #endif

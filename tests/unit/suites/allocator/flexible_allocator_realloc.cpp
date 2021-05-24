@@ -29,7 +29,7 @@ namespace test
     {
         if (GetParam() & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
         {
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
             mocks::dx11::mock_device(*(component->device.p),
                 D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width * 2), UINT(vp.mfx.FrameInfo.Height * 2), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_DECODER | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_SHARED },
                 D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width * 2), UINT(vp.mfx.FrameInfo.Height * 2), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_STAGING, 0, D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE, D3D11_RESOURCE_MISC_SHARED }
@@ -37,7 +37,7 @@ namespace test
             mocks::dx11::mock_context(*context,
                 std::make_tuple(D3D11_MAP_READ, buffer.data(), vp.mfx.FrameInfo.Width * 2)
             );
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
             auto surface_attributes = VASurfaceAttrib{ VASurfaceAttribPixelFormat, VA_SURFACE_ATTRIB_SETTABLE, {VAGenericValueTypeInteger,.value = {.i = VA_FOURCC_NV12} } };
             auto f = [&](unsigned int /*format*/, unsigned int /*fourcc*/, size_t /*width*/, size_t /*height*/)
                 { return buffer.data(); };
@@ -189,11 +189,11 @@ namespace test
             FlexibleAllocatorRealloc::SetUp();
             if (req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
             {
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
                 mocks::dx11::mock_device(*(component->device.p), context.get(),
                     D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_P016, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_DECODER | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_SHARED }
                 );
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
                 auto surface_attributes = VASurfaceAttrib{ VASurfaceAttribPixelFormat, VA_SURFACE_ATTRIB_SETTABLE, {VAGenericValueTypeInteger,.value = {.i = VA_FOURCC_P016} } };
                 auto f = [&](unsigned int /*format*/, unsigned int /*fourcc*/, size_t /*width*/, size_t /*height*/)
                     { return buffer.data(); };

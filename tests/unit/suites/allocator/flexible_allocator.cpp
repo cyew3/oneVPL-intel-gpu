@@ -127,7 +127,7 @@ namespace test
         );
 
         mfxU16 expectedType = MFX_MEMTYPE_INTERNAL_FRAME;
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
         if (req.Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
             expectedType |= MFX_MEMTYPE_SHARED_RESOURCE;
 #endif
@@ -359,19 +359,19 @@ namespace test
         }
         else if (GetParam() & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET)
         {
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
             allocator.reset(
                 new FlexibleFrameAllocatorHW_D3D11
             );
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
             allocator.reset(
                 new FlexibleFrameAllocatorHW_VAAPI
             );
 #endif
         }
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
         allocator->SetDevice(component->device.p);
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
         allocator->SetDevice(display.get());
 #endif
         EXPECT_EQ(
