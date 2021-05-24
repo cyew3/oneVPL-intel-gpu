@@ -287,7 +287,21 @@ struct sCommandlineParams
 
 #ifdef PAVP_BUILD
       vm_string_strcpy_s(strPAVPLibPath, MFX_ARRAY_SIZE(strPAVPLibPath), VM_STRING("mfx_pavp"));
+      Protected = 0;
       cpImpl = cpImplUnknown;
+      ctr_dec_type = 0;
+      startctr_dec_set = false;
+      startctr_dec = 0;
+
+      ctr_enc_type = 0;
+      startctr_enc_set = false;
+      startctr_enc = 0;
+
+      BitstreamReaderEncryptor_params.isFullEncrypt = false;
+      BitstreamReaderEncryptor_params.sparse = false;
+      encType = 0;
+      extEncPavpOption = {};
+      extDecPavpOption = {};
 #endif//PAVP_BUILD
       nMemoryModel = GENERAL_ALLOC;
       //default parameters for sCommandLine
@@ -338,6 +352,8 @@ struct sCommandlineParams
 
       bFadeBackground = false;
       bVP9_DRC = false;
+      bDisableSurfaceAlign = false;
+      isRawSurfaceLinear = false;
       bAdaptivePlayback = false;
       nInputBitdepth = 8;
       bVDSFCFormatSetting = false;
@@ -351,6 +367,7 @@ struct sCommandlineParams
       bNoVpp = false;
       bVppScaling = false;
       uVppScalingMode = MFX_SCALING_MODE_DEFAULT;
+      uVppInterpolationMethod = MFX_INTERPOLATION_DEFAULT;
 
       bVppChromaSiting = false;
       uVppChromaSiting = MFX_CHROMA_SITING_UNKNOWN;
@@ -379,6 +396,7 @@ struct sCommandlineParams
       EncodedOrder = 0;
       bJoinSessions = false;
       bExtVppApi = false;
+      bUseExplicitEncShift = false;
       nCorruptionLevel = 0;
       bOptimizeForPerf = false;
       m_FieldProcessing = {};
@@ -436,6 +454,10 @@ struct sCommandlineParams
       m_container = MFX_CONTAINER_RAW;
       bGPUHangRecovery = false;
       bUseCameraPipe = false;
+#ifndef MFX_ONEVPL
+      m_CameraPipeControl = {};
+      m_CameraPipePadding = {};
+#endif
       m_nMonitor = 0;
       NumExtParam = 0;
       m_WallN = 0;
