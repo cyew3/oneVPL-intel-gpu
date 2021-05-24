@@ -1042,7 +1042,8 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if (isInternalManaging)
     {
         request->NumFrameSuggested = request->NumFrameMin = (mfxU16)CalculateAsyncDepth(platform, par);
-        request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+        if (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+            request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
     }
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
