@@ -659,8 +659,6 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
     {
         return nullptr;
     }
-
-    return nullptr;
 }
 
 mfxStatus MFX_CDECL MFXReleaseImplDescription(mfxHDL hdl)

@@ -1623,6 +1623,8 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
             tpar.pSurfReal->Data.DataFlag    = tpar.pSurfIn->Data.DataFlag;
         }
         else
+#else
+        std::ignore = par;
 #endif //MFX_ENABLE_OPAQUE_MEMORY
             tpar.pSurfReal = tpar.pSurfIn;
 

@@ -3166,7 +3166,7 @@ mfxStatus General::CheckBRC(
             return CheckMinOrClip(QPO, minQPOffset) + CheckMaxOrClip(QPO, maxQPOffset);
         };
 
-        changed += std::count_if(std::begin(pCO3->QPOffset), std::end(pCO3->QPOffset), CheckQPOffset);
+        changed += !!std::count_if(std::begin(pCO3->QPOffset), std::end(pCO3->QPOffset), CheckQPOffset);
     }
 
     if (pCO2)

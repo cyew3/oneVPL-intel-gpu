@@ -618,6 +618,8 @@ mfxStatus InputSurfaces::Reset(mfxVideoParam *par, mfxU16 NumFrameMin)
         m_bOpaq = true;
     }
     else
+#else
+    std::ignore = NumFrameMin;
 #endif
     {
         bool bSysMemFrames = (par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) != 0;

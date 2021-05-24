@@ -845,6 +845,9 @@ mfxStatus GetRealSurface(
         pSurface = pCore->GetNativeSurface(task.m_pRawFrame->pSurface);
     }
     else
+#else
+    std::ignore = par;
+    std::ignore = pCore;
 #endif //MFX_ENABLE_OPAQUE_MEMORY
     {
         pSurface = task.m_pRawFrame->pSurface;

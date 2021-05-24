@@ -127,6 +127,7 @@ mfxStatus QueryImplsDescription(
     , mfx::PODArraysHolder& ah)
 {
     auto hw = core.GetHWType();
+    std::ignore = hw;
 
     mfxStatus sts = MFX_ERR_NONE;
     std::unique_ptr<ImplBase> impl(CreateSpecific(core, sts, eFeatureMode::QUERY_IMPLS_DESCRIPTION));

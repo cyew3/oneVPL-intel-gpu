@@ -805,7 +805,9 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
     mfxU32 rcIdx = FindLayerBrcParam(*extRc, did, qid, tid);
     if (rcIdx == IDX_NOT_FOUND)
         return MFX_ERR_INVALID_VIDEO_PARAM;
-
+#else
+    std::ignore = did;
+    std::ignore = tid;
 #endif
 
     Zero(sps);

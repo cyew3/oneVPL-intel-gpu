@@ -134,7 +134,7 @@ static ImplBase* CreateSpecific(
 VideoENCODE* Create(
     VideoCORE& core
     , mfxStatus& status
-    , bool bFEI)
+    , bool /*bFEI*/)
 {
     auto hw = core.GetHWType();
 
