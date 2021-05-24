@@ -21,6 +21,7 @@ File Name: .h
 #include "mfx_ifile.h"
 #include "mfx_ivideo_session.h"
 #include "mfx_sysmem_allocator.h"
+#include "mfx_frame_locker_utils.h"
 
 enum MFXVideoRenderType
 {
@@ -83,6 +84,8 @@ public:
     virtual mfxStatus GetDownStream(IFile **ppFile);
     virtual mfxStatus SetDownStream(IFile *ppFile);
     virtual mfxStatus GetDevice(IHWDevice **pDevice);
+    virtual mfxStatus SetDevice(IHWDevice* pDevice);
+    virtual mfxStatus SetDecodeD3D11(bool bDecodeD3D11);
     virtual mfxStatus SetVDSFCFormat(bool bVDSFCFormatSetting);
 
 
@@ -98,9 +101,15 @@ protected:
     std::auto_ptr<IFile>    m_pFile;
     bool                    m_bVDSFCFormatSetting;
     MemoryModel             m_nMemoryModel;
+    IHWDevice*              m_pHWDevice;
+    bool                    m_bDecodeD3D11;
+#if defined(_WIN32) || defined(_WIN64)
+    MFXFrameLocker*         m_pLock;
+#endif
 
     virtual mfxStatus LockFrame(mfxFrameSurface1 *surface);
     virtual mfxStatus UnlockFrame(mfxFrameSurface1 *surface);
+    virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL* handle);
 };
 
 class MFXFileWriteRender : public MFXVideoRender

@@ -50,6 +50,7 @@ set(common_mfx_pipeline_sources
   src/mfx_pts_based_activator.cpp
   src/mfx_render_android.cpp
   src/mfx_renders.cpp
+  src/mfx_frame_locker_utils.cpp
   src/mfx_reorder_render.cpp
   src/mfx_screen_render.cpp
   src/mfx_serializer.cpp

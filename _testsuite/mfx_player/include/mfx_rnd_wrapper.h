@@ -82,6 +82,16 @@ public:
         //get handle used by mfx_player and handle abses isn't and actual error indicator
         return m_pTarget->GetDevice(ppDevice);
     }
+    mfxStatus SetDevice(IHWDevice* pDevice)
+    {
+        MFX_CHECK_POINTER(m_pTarget.get());
+        return m_pTarget->SetDevice(pDevice);
+    }
+    mfxStatus SetDecodeD3D11(bool bDecodeD3D11)
+    {
+        MFX_CHECK_POINTER(m_pTarget.get());
+        return m_pTarget->SetDecodeD3D11(bDecodeD3D11);
+    }
     mfxStatus WaitTasks(mfxU32 nMilisecconds)
     {
         MFX_CHECK_POINTER(m_pTarget.get());
