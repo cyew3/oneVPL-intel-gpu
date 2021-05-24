@@ -324,6 +324,13 @@ mfxStatus MFXClose(mfxSession session)
 #if defined(MFX_ONEVPL)
 mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam param, mfxSession* session)
 {
+    mfxStatus mfxRes = MFX_ERR_NONE;
+
+    MFX_TRACE_INIT();
+    ETW_NEW_EVENT(MFX_TRACE_API_MFXINITIALIZE_TASK_ETW, 0, make_event_data((mfxU32)param.AccelerationMode, param.VendorImplID),
+        [&](){ return make_event_data(mfxRes, session ? *session : nullptr); }
+    );
+
     mfxInitParam par = {};
 
     par.Implementation = MFX_IMPL_HARDWARE;
@@ -351,10 +358,12 @@ mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam param, mfxSession* sess
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     // VendorImplID is used as adapterNum in current implementation - see MFXQueryImplsDescription
     // app. supposed just to copy VendorImplID from mfxImplDescription (returned by MFXQueryImplsDescription) to mfxInitializationParam
-    return MFXInit_Internal(par, session, par.Implementation, param.VendorImplID);
+    mfxRes = MFXInit_Internal(par, session, par.Implementation, param.VendorImplID);
 #else
-    return MFXInit_Internal(par, session, par.Implementation, 0);
+    mfxRes = MFXInit_Internal(par, session, par.Implementation, 0);
 #endif
+
+    return mfxRes;
 }
 
 namespace mfx
@@ -492,8 +501,15 @@ mfxStatus QueryImplsDescription(VideoCORE&, mfxVPPDescription&, mfx::PODArraysHo
 
 mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfxU32* num_impls)
 {
+    mfxHDL* impl = nullptr;
     if (!num_impls)
-        return nullptr;
+        return impl;
+
+    MFX_TRACE_INIT();
+
+    ETW_NEW_EVENT(MFX_TRACE_API_MFXQUERYIMPLSDESCRIPTION_TASK_ETW, 0, make_event_data((mfxU32)format),
+        [&]() { return make_event_data(*num_impls); }
+    );
 
     if (format == MFX_IMPLCAPS_IMPLEMENTEDFUNCTIONS)
     {
@@ -516,12 +532,12 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
         }
         catch (...)
         {
-            return nullptr;
+            return impl;
         }
     }
 
     if (format != MFX_IMPLCAPS_IMPLDESCSTRUCTURE)
-        return nullptr;
+        return impl;
 
     try
     {
@@ -647,17 +663,18 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
 #endif
 
         if (!holder->GetSize())
-            return nullptr;
+            return impl;
 
         *num_impls = mfxU32(holder->GetSize());
 
         holder->Detach();
+        impl = holder.release()->GetArray();
 
-        return holder.release()->GetArray();
+        return impl;
     }
     catch (...)
     {
-        return nullptr;
+        return impl;
     }
 }
 

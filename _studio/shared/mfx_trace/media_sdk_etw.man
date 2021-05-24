@@ -116,6 +116,10 @@
 					</event>
 					<event symbol="CopyDX9toDX11Exit" value="114" version="0" task="CopyDX9toDX11" opcode="win:Stop" template="Entry">
 					</event>
+					<event symbol="MFXInitializeEntry" value="117" version="0" task="MFXInitialize" opcode="win:Start" template="MFXInitialize_Entry" />
+					<event symbol="MFXInitializeExit" value="118" version="0" task="MFXInitialize" opcode="win:Stop" template="MFXInitialize_Exit" />
+					<event symbol="MFXQueryImplsDescriptionEntry" value="121" version="0" task="MFXQueryImplsDescription" opcode="win:Start" template="MFXQueryImplsDescription_Entry" />
+					<event symbol="MFXQueryImplsDescriptionExit" value="122" version="0" task="MFXQueryImplsDescription" opcode="win:Stop" template="MFXQueryImplsDescription_Exit" />
 				</events>
 				<tasks>
 					<task name="DecodeQuery" symbol="MFX_TRACE_API_DECODE_QUERY_TASK_ETW" value="1" eventGUID="{00000000-0000-0000-0000-000000000000}">
@@ -174,6 +178,8 @@
 					</task>
 					<task name="CopyDX9toDX11" symbol="MFX_TRACE_HOTSPOT_COPY_DX9_TO_DX11" value="28" eventGUID="{00000000-0000-0000-0000-000000000000}">
 					</task>
+					<task name="MFXInitialize" symbol="MFX_TRACE_API_MFXINITIALIZE_TASK_ETW" value="29" eventGUID="{00000000-0000-0000-0000-000000000000}" />
+					<task name="MFXQueryImplsDescription" symbol="MFX_TRACE_API_MFXQUERYIMPLSDESCRIPTION_TASK_ETW" value="30" eventGUID="{00000000-0000-0000-0000-000000000000}" />
 				</tasks>
 				<opcodes>
 				</opcodes>
@@ -237,6 +243,21 @@
 						<map value="11"         message="$(string.Map.mfxStatus.MFX_WRN_INCOMPATIBLE_AUDIO_PARAM)" />
 						<map value="12"         message="$(string.Map.mfxStatus.MFX_ERR_NONE_PARTIAL_OUTPUT)" />
 						<map value="55536"      message="$(string.Map.mfxStatus.MFX_ERR_MORE_DATA_SUBMIT_TASK)" />
+					</valueMap>
+					<valueMap name="mfxAccelerationMode">
+						<map value="0"          message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_NA)" />
+						<map value="0x0200"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_D3D9)" />
+						<map value="0x0300"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_D3D11)" />
+						<map value="0x0400"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI)" />
+						<map value="0x0401"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_DRM_MODESET)" />
+						<map value="0x0402"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_GLX)" />
+						<map value="0x0403"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_X11)" />
+						<map value="0x0404"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_WAYLAND)" />
+						<map value="0x0500"     message="$(string.Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_HDDLUNITE)" />
+					</valueMap>
+					<valueMap name="mfxImplCapsDeliveryFormat">
+						<map value="1"          message="$(string.Map.mfxImplCapsDeliveryFormat.MFX_IMPLCAPS_IMPLDESCSTRUCTURE)" />
+						<map value="2"          message="$(string.Map.mfxImplCapsDeliveryFormat.MFX_IMPLCAPS_IMPLEMENTEDFUNCTIONS)" />
 					</valueMap>
 				</maps>
 				<templates>
@@ -455,7 +476,20 @@
 					<template tid="CmCopy_Exit">
 						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
 					</template>
-				</templates>
+					<template tid="MFXInitialize_Entry">
+						<data name="mode" inType="win:UInt32" map="mfxAccelerationMode" />
+						<data name="vendorId" inType="win:UInt16" outType="xs:unsignedShort" />
+					</template>
+					<template tid="MFXInitialize_Exit">
+						<data name="mfxStatus" inType="win:UInt32" map="mfxStatus" />
+					</template>
+					<template tid="MFXQueryImplsDescription_Entry">
+						<data name="format" inType="win:UInt32" map="mfxImplCapsDeliveryFormat" />
+					</template>
+					<template tid="MFXQueryImplsDescription_Exit">
+						<data name="num_impls" inType="win:UInt32" outType="xs:unsignedInt" />
+					</template>
+			</templates>
 			</provider>
 		</events>
 	</instrumentation>
@@ -524,6 +558,20 @@
 				<string id="Map.mfxStatus.MFX_WRN_INCOMPATIBLE_AUDIO_PARAM" value="MFX_WRN_INCOMPATIBLE_AUDIO_PARAM" />
 				<string id="Map.mfxStatus.MFX_ERR_NONE_PARTIAL_OUTPUT" value="MFX_ERR_NONE_PARTIAL_OUTPUT" />
 				<string id="Map.mfxStatus.MFX_ERR_MORE_DATA_SUBMIT_TASK" value="MFX_ERR_MORE_DATA_SUBMIT_TASK" />
+
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_NA" value="MFX_ACCEL_MODE_NA" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_D3D9" value="MFX_ACCEL_MODE_VIA_D3D9" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_D3D11" value="MFX_ACCEL_MODE_VIA_D3D11" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI" value="MFX_ACCEL_MODE_VIA_VAAPI" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE" value="MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_DRM_MODESET" value="MFX_ACCEL_MODE_VIA_VAAPI_DRM_MODESET" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_GLX" value="MFX_ACCEL_MODE_VIA_VAAPI_GLX" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_X11" value="MFX_ACCEL_MODE_VIA_VAAPI_X11" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_VAAPI_WAYLAND" value="MFX_ACCEL_MODE_VIA_VAAPI_WAYLAND" />
+				<string id="Map.mfxAccelerationMode.MFX_ACCEL_MODE_VIA_HDDLUNITE" value="MFX_ACCEL_MODE_VIA_HDDLUNITE" />
+
+				<string id="Map.mfxImplCapsDeliveryFormat.MFX_IMPLCAPS_IMPLDESCSTRUCTURE" value="MFX_IMPLCAPS_IMPLDESCSTRUCTURE" />
+				<string id="Map.mfxImplCapsDeliveryFormat.MFX_IMPLCAPS_IMPLEMENTEDFUNCTIONS" value="MFX_IMPLCAPS_IMPLEMENTEDFUNCTIONS" />
 			</stringTable>
 		</resources>
 	</localization>
