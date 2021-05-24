@@ -1319,6 +1319,14 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
         }
     }
 #endif
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-cs")))
+    { 
+        InputParams.CascadeScaler = true;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-trace")))
+    {
+        InputParams.EnableTracing = true;
+    }
     else
     {
         // no matching argument was found

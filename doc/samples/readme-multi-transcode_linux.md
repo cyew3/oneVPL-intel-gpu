@@ -330,6 +330,55 @@ set -o::h265 /path/to/so/encoder_plugin.so
 -i::mpeg2 input2.mpeg2 -o::h265 output2.265
 ```
 
+## Cascade scaling
+
+Some transcoding pipelines can greatly benefit from so called cascade scaling. This sample demonstrates how to implement and use cascade scaling. 
+
+Let’s look at the transcoding case showed on the diagram below. Here one decoder feeds 8 encoders with different resolutions, frame rates and picture structures.
+![original pipeline](./pic/cs_org_pipeline.jpg)
+
+As can be seen, deinterlacing and downscaling from original HD resolution is performed 6 times. Because deinterlacing is slow operation and downscaling from original resolution consumes a lot of memory bandwidth, this pipeline may be bottlenecked by VPP performance. To remove this bottleneck cascade scaling may be used as shown on the next diagram.
+![CS pipeline](./pic/cs_cs_pipeline.jpg)
+
+Here, number of deinterlacing operations was reduce to two and just three downscaling operations are performed on original HD resolution. With growing number of channels and growing resolution ratio between decoder and encoder channels, benefits of cascade scaling will also grow.
+
+To enable cascade scaling, new command line option was introduced “-cs”. It should be used in parameter file to define cascade scaling configuration. Adding this option to the channel description instructs sample to use output from the previous channel VPP instead of direct decoder output. Option is “sticky”. All subsequent channels specified in parameter file will use the same VPP output until new “-cs” option will be encountered. 
+
+Example of parameter file for the pipeline configuration showed on the diagram above.
+```
+-i::h264 in.h264 -async 3 -o::sink -join -opaq -trace
+-i::source -join -opaq     -w 1920 -h 1080                                  -async 3 -b  8000 -o::h264 out101_di.264 
+-i::source -join -opaq     -w  720 -h  480                                  -async 3 -b  4000 -o::h264 out102_di.264 
+-i::source -join -opaq     -w 1280 -h  720 -FRC::PT -f 60 -deinterlace::ADI -async 3 -b  8000 -o::h264 out103_di.264 
+-i::source -join -opaq -cs -w 1920 -h 1080 -FRC::PT -f 30 -deinterlace::ADI -async 3 -b  8000 -o::h264 out104_di.264
+-i::source -join -opaq -cs -w 1280 -h  720                                  -async 3 -b  4000 -o::h264 out105_di.264 
+-i::source -join -opaq -cs -w  640 -h  360                                  -async 3 -b  2000 -o::h264 out106_di.264
+-i::source -join -opaq     -w  352 -h  288                                  -async 3 -b  1000 -o::h264 out107_di.264
+-i::source -join -opaq     -w  240 -h  180                                  -async 3 -b  1000 -o::h264 out108_di.264
+```
+
+## Tracing
+Cascade scaling performance strongly depends on HW capability, used VPP filters and input output resolution ratio. To facilitate performance optimization, specific for cascade scaling tracing capabilities were added to the sample. To enable tracing add “-trace” command line option to the par file, see parameter file example above. Then, after execution, trace file with unique name will be generated.
+
+In this trace file surface pools utilization will be showed. Picture below is an example for the pipeline described in previous section.
+
+![surface pools utilization](./pic/cs_surface_pool_utilization.jpg)
+
+Eight pools are shown – decoder, three pools for cascade scaling (VPP pools) and four encoders pools (for 2nd, 3rd, 7th and 8th channels). As can be seen, decoder pool is completely utilized,  encoders pool for 2nd, 7th and 8th channels have optimal utilization, high enough, but with some spare frames in reserve and cascade scaling pools for 4th, 5th and 6th channels are underutilized. Reducing number of surfaces in these pools will reduce memory footprint in this particular case.
+
+This trace file will also show general execution flow as illustrated by next three pictures. They are also captured for the pipeline described in previous section. 
+ 
+![overall control flow](./pic/cs_control_flow.jpg)
+On this picture, from top to bottom. First line is decoding events, then three cascade scaling VPPs for 4th 5th and 6th channels, and then 8 encoders. In each channel task submission is shown, under “dec”, “csvpp”, “vpp” and “enc” names, “busy” wait, sync operation wait “syncp” and task dependencies (arrows). Note, that actual processing time (decoding, scaling or encoding) is not shown as a separate block on the diagram, but it can be deduced as a time interval between task submission and corresponded sync operation. Also note, that on high performance system duration of some events may be less than 1 microsecond. Such event is shown as zero duration event and its dependency may be incorrect. If necessary, tracing granularity may be changed in SMTTracer::GetCurrentTS() function to std::nano.
+
+On this picture it can be clearly seen that third channel in this pipeline is the bottleneck. All channels except 3rd start VPP operation and encoding soon after decoding, 3rd channel only after several frames delay. It is also clearly visible from this traces that 3rd channel has two VPP and two encoder calls for each decoded frame, due to i60 to p60 frame rate conversion.
+ 
+![cascade scaling control flow](./pic/cs_control_flow_enc.jpg)
+This is zoomed in area “1” of the previous picture. It shows relations between decoder, cascade scaling , VPPs and encoders in different channels. Note, that 1st channel depends only on decoder output, 2nd uses cascade scaler VPP but also runs its own VPP before encode, 4th uses cascade scaling output directly and so on.
+ 
+![synchronization control flow](./pic/cs_control_flow_sync.jpg)
+This is zoomed in area “2” of the previous picture. It shows sync point wait operations. Note, that all processing has been completed before this wait and wait finishes almost immediately for all channels. This is one more conformation that 3rd channel is the bottleneck in this case.
+
 ## Known Limitations
 
 -   To use lookahead for HEVC encode, we need to have h264 LA plugin and the HEVC HW encode plugin, run in separate sessions. Following par file is an example of lookahead bitrate for HEVC encode:

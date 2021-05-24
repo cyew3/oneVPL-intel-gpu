@@ -197,6 +197,10 @@ namespace TranscodingSample
 
     struct __sInputParams
     {
+        mfxU32 TargetID = 0;
+        bool CascadeScaler = false;
+        bool EnableTracing = false;
+
         // session parameters
         bool         bIsJoin;
         mfxPriority  priority;
@@ -407,6 +411,145 @@ namespace TranscodingSample
 #endif
     };
 
+
+    class SMTTracer {
+    public:
+        enum class ThreadType {
+            DEC,
+            CSVPP,
+            VPP,
+            ENC
+        };
+
+        enum class EventName {
+            UNDEF,
+            BUSY,
+            SYNC
+            //SURF_POOL
+        };
+
+        enum class EventType {
+            DurationStart,
+            DurationEnd,
+            FlowStart,
+            FlowEnd,
+            Counter
+        };
+
+        class Event {
+        public:
+            EventType EvType; //duration, flow, counter
+            ThreadType ThType; //dec, vpp, enc, csvpp
+            mfxU32 ThID;   //channel or pool number in 1toN pipeline
+            EventName Name;  //optional, if not specifyed thread name will be used
+            mfxU32 EvID; //unique event ID
+            mfxU64 InID; //unique dependency ID, e.g. surface pointer
+            mfxU64 OutID;
+            mfxU64 TS; //time stamp
+        };
+
+
+        SMTTracer();
+        ~SMTTracer();
+
+        void Init();
+        void BeginEvent(const ThreadType thType, const mfxU32 thID, const EventName name, const void* inID, const void* outID);
+        void EndEvent(const ThreadType thType, const mfxU32 thID, const EventName name, const void* inID, const void* outID);
+        void AddCounterEvent(const ThreadType thType, const mfxU32 thID, const EventName name, const mfxU64 counter);
+        
+
+    private:
+        //runtime functions
+        void AddEvent(const EventType evType, const ThreadType thType, const mfxU32 thID, const EventName name, const void* inID, const void* outID);
+        mfxU64 GetCurrentTS();
+
+        //log generation functions
+        void SaveTrace(mfxU32 FileID);
+
+        void AddFlowEvents();
+        void AddFlowEvent(const Event a, const Event b);
+
+        void WriteEvent(const Event ev);
+        void WriteDurationEvent(const Event ev);
+        void WriteFlowEvent(const Event ev);
+        void WriteCounterEvent(const Event ev);
+
+        void WriteEventPID();
+        void WriteEventTID(const Event ev);
+        void WriteEventTS(const Event ev);
+        void WriteEventPhase(const Event ev);
+        void WriteEventName(const Event ev);
+        void WriteBindingPoint(const Event ev);
+        void WriteEventInOutIDs(const Event ev);
+        void WriteEventCounter(const Event ev);
+        void WriteEventCategory();
+        void WriteEvID(const Event ev);
+        void WriteComma();
+
+
+        const static mfxU32 TraceBufferSizeInMBytes = 7;
+
+        bool Enabled = false;
+        mfxU32 EvID = 0;
+        std::vector<Event> Log;
+        std::vector<Event> AddonLog;
+        std::chrono::steady_clock::time_point TimeBase;
+        std::mutex TracerFileMutex;
+        std::ofstream TraceFile;
+    };
+
+
+    static const mfxU32 DecoderTargetID = 100;
+    static const mfxU32 DecoderPoolID = 10;
+    class CascadeScalerConfig {
+    public:
+        class TargetDescriptor {
+        public:
+            mfxU32 TargetID = 0;
+            mfxU16 SrcWidth = 0;
+            mfxU16 SrcHeight = 0;
+            mfxU16 DstWidth = 0;
+            mfxU16 DstHeight = 0;
+            double SrcFrameRate = 0.;
+            double DstFrameRate = 0.;
+            mfxU16 SrcPicStruct = MFX_PICSTRUCT_UNKNOWN;
+            mfxU16 DstPicStruct = MFX_PICSTRUCT_UNKNOWN;
+
+            bool CascadeScaler = false; //use cascade scaler for this target
+            bool FRC = false; //this cascade performs FRC
+            bool DI = false; //this cascade performs DI
+
+            mfxU32 PoolID = 0; //surface pool for this target, it is output of decoder side VPP and input of encoder side VPP
+        };
+
+        class PoolDescritpor {
+        public:
+            mfxU32 ID = 0; //ID of the current pool
+            mfxU32 PrevID = 0; //ID of the previous pool in cascade
+            mfxU32 TargetID = 0; //ID of the target channel
+            mfxU16 SurfaceWidth = 0; //not aligned
+            mfxU16 SurfaceHeight = 0;
+            mfxU16 Size = 20;
+
+            mfxFrameAllocRequest  AllocReq{};
+            mfxFrameAllocResponse AllocResp{};
+        };
+
+        TargetDescriptor GetDesc(mfxU32 id);
+        void PropagateCascadeParameters();
+        void CreatePoolList();
+
+        bool ParFileImported = false;
+        bool CascadeScalerRequired = false;
+
+        std::vector<TargetDescriptor> Targets;
+        std::map<mfxU32, PoolDescritpor> Pools; //key is pool ID
+        std::map<mfxU32, sInputParams> InParams; //key is target ID, copy of par file for cascade VPP initialization
+
+        SMTTracer* Tracer = nullptr;
+    };
+
+
     struct PreEncAuxBuffer
     {
        mfxEncodeCtrl     encCtrl;
@@ -417,6 +560,8 @@ namespace TranscodingSample
 
     struct ExtendedSurface
     {
+        mfxU32 TargetID = 0;
+
         mfxFrameSurface1 *pSurface;
         PreEncAuxBuffer  *pAuxCtrl;
         mfxEncodeCtrl    *pEncCtrl;
@@ -592,6 +737,9 @@ namespace TranscodingSample
     class SafetySurfaceBuffer
     {
     public:
+        //this is used only for sanity check
+        mfxU32 TargetID = 0;
+
         struct SurfaceDescriptor
         {
             ExtendedSurface   ExtSurface;
@@ -660,7 +808,8 @@ namespace TranscodingSample
                                CTranscodingPipeline *pParentPipeline,
                                SafetySurfaceBuffer  *pBuffer,
                                FileBitstreamProcessor   *pBSProc,
-                               VPLImplementationLoader *mfxLoader);
+                               VPLImplementationLoader *mfxLoader,
+                               CascadeScalerConfig &CSConfig);
 
         // frames allocation is suspended for heterogeneous pipeline
         virtual mfxStatus CompleteInit();
@@ -704,7 +853,7 @@ namespace TranscodingSample
         virtual mfxStatus Transcode();
         virtual mfxStatus DecodeOneFrame(ExtendedSurface *pExtSurface);
         virtual mfxStatus DecodeLastFrame(ExtendedSurface *pExtSurface);
-        virtual mfxStatus VPPOneFrame(ExtendedSurface *pSurfaceIn, ExtendedSurface *pExtSurface);
+        virtual mfxStatus VPPOneFrame(ExtendedSurface *pSurfaceIn, ExtendedSurface *pExtSurface, mfxU32 ID = 0);
         virtual mfxStatus EncodeOneFrame(ExtendedSurface *pExtSurface, mfxBitstreamWrapper *pBS);
 #if !defined(MFX_ONEVPL)
         virtual mfxStatus PreEncOneFrame(ExtendedSurface *pInSurface, ExtendedSurface *pOutSurface);
@@ -715,7 +864,7 @@ namespace TranscodingSample
 #if !defined(MFX_ONEVPL)
         virtual mfxStatus PreEncPreInit(sInputParams *pParams);
 #endif
-        mfxVideoParam GetDecodeParam();
+        mfxVideoParam GetDecodeParam(mfxU32 ID = 0);
 
         mfxExtMVCSeqDesc GetDecMVCSeqDesc()
         {
@@ -727,6 +876,7 @@ namespace TranscodingSample
 
         // alloc frames for all component
         mfxStatus AllocFrames(mfxFrameAllocRequest  *pRequest, bool isDecAlloc);
+        mfxStatus AllocFramesForCS();
         mfxStatus AllocFrames();
 
 #if !defined(MFX_ONEVPL)
@@ -737,19 +887,20 @@ namespace TranscodingSample
 
         // need for heterogeneous pipeline
         mfxStatus CalculateNumberOfReqFrames(mfxFrameAllocRequest  &pRequestDecOut, mfxFrameAllocRequest  &pRequestVPPOut);
-        void      CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pNewReq);
+        void      CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pNewReq, mfxU32 ID = 0);
         void      FreeFrames();
 
         mfxStatus LoadStaticSurface();
 
         mfxFrameSurface1* GetFreeSurface(bool isDec, mfxU64 timeout);
+        mfxFrameSurface1* GetFreeSurfaceForCS(bool isDec, mfxU64 timeout, mfxU32 ID);
         mfxU32 GetFreeSurfacesCount(bool isDec);
         PreEncAuxBuffer*  GetFreePreEncAuxBuffer();
         void SetEncCtrlRT(ExtendedSurface& extSurface, bool bInsertIDR);
 
         // parameters configuration functions
         mfxStatus InitDecMfxParams(sInputParams *pInParams);
-        mfxStatus InitVppMfxParams(sInputParams *pInParams);
+        mfxStatus InitVppMfxParams(MfxVideoParamsWrapper& par, sInputParams* pInParams, mfxU32 ID = 0);
         virtual mfxStatus InitEncMfxParams(sInputParams *pInParams);
         mfxStatus InitPluginMfxParams(sInputParams *pInParams);
 #if !defined(MFX_ONEVPL)
@@ -758,7 +909,7 @@ namespace TranscodingSample
         virtual mfxU32 FileFourCC2EncFourCC(mfxU32 fcc);
         void FillFrameInfoForEncoding(mfxFrameInfo& info, sInputParams *pInParams);
 
-        mfxStatus AllocAndInitVppDoNotUse(sInputParams *pInParams);
+        mfxStatus AllocAndInitVppDoNotUse(MfxVideoParamsWrapper& par, sInputParams *pInParams);
         mfxStatus AllocMVCSeqDesc();
 
         void FreeVppDoNotUse();
@@ -793,6 +944,10 @@ namespace TranscodingSample
         mfxVersion m_Version; // real API version with which library is initialized
 
         mfxLoader m_mfxLoader;
+
+        //session and VPP for cascade scaling
+        std::map<mfxU32, std::unique_ptr<MainVideoSession>> m_pmfxCSSession;
+        std::map<mfxU32, std::unique_ptr<MFXVideoMultiVPP>> m_pmfxCSVPP;
 
         std::unique_ptr<MainVideoSession> m_pmfxSession;
         std::unique_ptr<MFXVideoDECODE>   m_pmfxDEC;
@@ -829,6 +984,8 @@ namespace TranscodingSample
         typedef std::vector<mfxFrameSurface1*> SurfPointersArray;
         SurfPointersArray  m_pSurfaceDecPool;
         SurfPointersArray  m_pSurfaceEncPool;
+        std::map<mfxU32,SurfPointersArray> m_CSSurfacePools;
+
         mfxU16 m_EncSurfaceType; // actual type of encoder surface pool
         mfxU16 m_DecSurfaceType; // actual type of decoder surface pool
 
@@ -849,6 +1006,9 @@ namespace TranscodingSample
         MfxVideoParamsWrapper          m_mfxDecParams;
         MfxVideoParamsWrapper          m_mfxEncParams;
         MfxVideoParamsWrapper          m_mfxVppParams;
+
+        std::map<mfxU32, MfxVideoParamsWrapper> m_mfxCSVppParams;
+
         MfxVideoParamsWrapper          m_mfxPluginParams;
         bool                           m_bIsVpp; // true if there's VPP in the pipeline
         bool                           m_bIsFieldWeaving;
@@ -955,6 +1115,10 @@ namespace TranscodingSample
         bool bPrefferiGfx;
         bool bPrefferdGfx;
 #endif
+
+        mfxU32 TargetID = 0;
+        CascadeScalerConfig m_ScalerConfig;
+
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

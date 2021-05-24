@@ -133,10 +133,14 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     }
 
     // get parameters for each session from parser
+    mfxU32 id = DecoderTargetID;
     while(m_parser.GetNextSessionParams(InputParams))
     {
+        InputParams.TargetID = id++;
         m_InputParamsArray.push_back(InputParams);
     }
+
+    m_CSConfig.Tracer = &m_Tracer;
 
     // check correctness of input parameters
     sts = VerifyCrossSessionsOptions();
@@ -523,7 +527,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                    pSinkPipeline,
                                                    pBuffer,
                                                    m_pExtBSProcArray.back().get(),
-                                                   m_pLoader.get());
+                                                   m_pLoader.get(),
+                                                   CreateCascadeScalerConfig());
         }
         else
         {
@@ -545,7 +550,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                     pParentPipeline,
                                                     pBuffer,
                                                     m_pExtBSProcArray.back().get(),
-                                                    m_pLoader.get());
+                                                    m_pLoader.get(),
+                                                    CreateCascadeScalerConfig());
         }
 
         MSDK_CHECK_STATUS(sts, "pThreadPipeline->pPipeline->Init failed");
@@ -1184,6 +1190,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 mfxStatus Launcher::CreateSafetyBuffers()
 {
     SafetySurfaceBuffer* pBuffer     = NULL;
+    SafetySurfaceBuffer* pPrevBuffer = NULL;
 
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
@@ -1191,8 +1198,10 @@ mfxStatus Launcher::CreateSafetyBuffers()
         if ((Source == m_InputParamsArray[i].eMode) &&
             (Native == m_InputParamsArray[0].eModeExt))
         {
-            pBuffer = new SafetySurfaceBuffer(pBuffer);
-            m_pBufferArray.push_back(std::unique_ptr<SafetySurfaceBuffer> (pBuffer));
+            pBuffer = new SafetySurfaceBuffer(pPrevBuffer);
+            pBuffer->TargetID = m_InputParamsArray[i].TargetID;
+            pPrevBuffer = pBuffer;
+            m_pBufferArray.push_back((std::unique_ptr<SafetySurfaceBuffer>(pBuffer)));
         }
 
         /* And N_to_1 case: composition should be enabled!
@@ -1201,13 +1210,435 @@ mfxStatus Launcher::CreateSafetyBuffers()
              ( (VppComp     == m_InputParamsArray[0].eModeExt) ||
                (VppCompOnly == m_InputParamsArray[0].eModeExt) ) )
         {
-            pBuffer = new SafetySurfaceBuffer(pBuffer);
-            m_pBufferArray.push_back(std::unique_ptr<SafetySurfaceBuffer> (pBuffer));
+            pBuffer = new SafetySurfaceBuffer(pPrevBuffer);
+            pPrevBuffer = pBuffer;
+            m_pBufferArray.push_back(std::unique_ptr<SafetySurfaceBuffer>(pBuffer));
         }
     }
     return MFX_ERR_NONE;
 
 } // mfxStatus Launcher::CreateSafetyBuffers
+
+
+CascadeScalerConfig::TargetDescriptor CascadeScalerConfig::GetDesc(mfxU32 id) {
+    auto itr = std::find_if(Targets.begin(), Targets.end(), [id](TargetDescriptor& d) {return d.TargetID == id; });
+    if (itr != Targets.end()) {
+        return *itr;
+    }
+    else {
+        return TargetDescriptor();
+    }
+}
+
+CascadeScalerConfig& Launcher::CreateCascadeScalerConfig() {
+    CascadeScalerConfig &cfg = m_CSConfig;
+    if (cfg.ParFileImported) {
+        return m_CSConfig;
+    }
+
+    //process par file
+    for (sInputParams& par : m_InputParamsArray) {
+        if (par.eMode == Sink) {
+            if (par.EnableTracing) {
+                cfg.Tracer->Init();
+            }
+        }
+        else if (par.eMode == Source) {
+            //this is encoder, import par file params
+            CascadeScalerConfig::TargetDescriptor desc;
+            desc.TargetID = par.TargetID;
+            desc.DstHeight = par.nDstHeight;
+            desc.DstWidth = par.nDstWidth;
+
+            desc.FRC = (par.FRCAlgorithm != 0);
+            if (desc.FRC) {
+                desc.DstFrameRate = par.dVPPOutFramerate;
+            }
+
+            desc.DI = par.bEnableDeinterlacing;
+            if (desc.DI) {
+                desc.DstPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            }
+
+            desc.CascadeScaler = par.CascadeScaler;
+            if (desc.CascadeScaler) {
+                cfg.CascadeScalerRequired = true;
+            }
+
+            cfg.Targets.push_back(desc);
+            cfg.InParams[desc.TargetID] = par;
+        }
+    }
+
+    cfg.ParFileImported = true;
+    cfg.CreatePoolList();
+
+    return m_CSConfig;
+}
+
+//propagate cascade parameters, decoder parameters should be set before this call
+void TranscodingSample::CascadeScalerConfig::PropagateCascadeParameters() {
+    if (Targets.size() <= 1) {
+        //we should have at least two enc channels to propagate something
+        return;
+    }
+       
+    //special case for first channel output, should be incorporated into loop below, somehow
+    if (!Targets[0].FRC) {
+        Targets[0].DstFrameRate = Targets[0].SrcFrameRate;
+    }
+    if (!Targets[0].DI) {
+        Targets[0].DstPicStruct = Targets[0].SrcPicStruct;
+    }
+
+
+    //set current parameters equal to decoder output
+    mfxU16 Width = Targets[0].SrcWidth;
+    mfxU16 Height = Targets[0].SrcHeight;
+    double FrameRate = Targets[0].SrcFrameRate;
+    mfxU16 PicStruct = Targets[0].SrcPicStruct;
+
+    for (mfxU32 i = 1; i < Targets.size(); i++) {
+        //resolution
+        if (Targets[i - 1].CascadeScaler) {
+            Width = Targets[i].SrcWidth = Targets[i-1].DstWidth;
+            Height = Targets[i].SrcHeight = Targets[i-1].DstHeight;
+        }
+        else {
+            Targets[i].SrcWidth = Width;
+            Targets[i].SrcHeight = Height;
+        }
+
+        //framerate
+        if (Targets[i - 1].CascadeScaler && Targets[i - 1].FRC) {
+            FrameRate = Targets[i].SrcFrameRate = Targets[i-1].DstFrameRate;
+        }
+        else {
+            Targets[i].SrcFrameRate = FrameRate;
+        }
+        if (!Targets[i].FRC) {
+            Targets[i].DstFrameRate = Targets[i].SrcFrameRate;
+        }
+
+
+        //PicStruct
+        if (Targets[i - 1].CascadeScaler && Targets[i - 1].DI) {
+            PicStruct = Targets[i].SrcPicStruct = Targets[i-1].DstPicStruct;
+        }
+        else {
+            Targets[i].SrcPicStruct = PicStruct;
+        }
+        if (!Targets[i].DI) {
+            Targets[i].DstPicStruct = Targets[i].SrcPicStruct;
+        }
+    }
+
+    PoolDescritpor& pool = Pools[DecoderPoolID];
+    pool.SurfaceWidth = Targets[0].SrcWidth;
+    pool.SurfaceHeight = Targets[0].SrcHeight;
+}
+
+void TranscodingSample::CascadeScalerConfig::CreatePoolList() {
+    if (Targets.empty()) {
+        return;
+    }
+
+    PoolDescritpor pool;
+    pool.PrevID = 0;
+    pool.ID = DecoderPoolID;
+    pool.SurfaceWidth = 0; // Targets[0].SrcWidth;
+    pool.SurfaceHeight = 0; // Targets[0].SrcHeight;
+    Pools[pool.ID] = pool;
+
+    for (TargetDescriptor& desc : Targets) {
+        if (desc.CascadeScaler) {
+            pool.PrevID = pool.ID;
+            pool.ID = DecoderPoolID + (desc.TargetID - DecoderTargetID);
+            pool.TargetID = desc.TargetID;
+            pool.SurfaceWidth = desc.DstWidth;
+            pool.SurfaceHeight = desc.DstHeight;
+            Pools[pool.ID] = pool;
+        }
+        desc.PoolID = pool.ID;
+    }
+}
+
+SMTTracer::SMTTracer() {
+    TimeBase = std::chrono::steady_clock::now();
+}
+
+SMTTracer::~SMTTracer() {
+    //this function is intentionally called from destructor to try to save traces in case of a crush
+    if (!Enabled) return;
+
+    AddFlowEvents();
+    SaveTrace(0xffffff & GetCurrentTS());
+}
+
+void SMTTracer::Init() {
+    if (Enabled) {
+        return;
+    }
+    Enabled = true;
+    Log.reserve(TraceBufferSizeInMBytes * 1024 * 1024 / sizeof(Event));
+}
+
+void SMTTracer::BeginEvent(const ThreadType thType, const mfxU32 thID, const EventName name, const void* inID, const void* outID) {
+    if (!Enabled) return;
+    AddEvent(EventType::DurationStart, thType, thID, name, inID, outID);
+}
+
+
+void SMTTracer::EndEvent(const ThreadType thType, const mfxU32 thID, const EventName name, const void* inID, const void* outID) {
+    if (!Enabled) return;
+    AddEvent(EventType::DurationEnd, thType, thID, name, inID, outID);
+}
+
+
+void SMTTracer::AddCounterEvent(const ThreadType thType, const mfxU32 thID, const EventName name, const mfxU64 counter) {
+    if (!Enabled) return;
+    AddEvent(EventType::Counter, thType, thID, name, reinterpret_cast<void*>(counter), nullptr);
+}
+
+
+void SMTTracer::SaveTrace(mfxU32 FileID) {
+    string FileName = "smt_trace_" + to_string(FileID) + ".json";
+    TraceFile.open(FileName, std::ios::out);
+    if (!TraceFile) {
+        return;
+    }
+
+    printf("\n### trace buffer usage [%d/%d] %.2f%%\n", (int)Log.size(), (int)Log.capacity(), 100. * Log.size() / Log.capacity());
+    printf("trace file name %s\n", FileName.c_str());
+
+    TraceFile << "[" << endl;
+
+    for (const Event ev : Log) {
+        WriteEvent(ev);
+    }
+    for (const Event ev : AddonLog) {
+        WriteEvent(ev);
+    }
+
+    TraceFile.close();
+}
+
+void SMTTracer::AddEvent(const EventType evType, const ThreadType thType, const mfxU32 thID, const EventName name, const void* inID, const void* outID) {
+    Event ev;
+    ev.EvType = evType;
+    ev.ThType = thType;
+    ev.ThID = thID;
+    ev.Name = name;
+    ev.InID = reinterpret_cast<mfxU64>(inID);
+    ev.OutID = reinterpret_cast<mfxU64>(outID);
+    ev.TS = GetCurrentTS();
+
+    if (Log.size() == Log.capacity()) {
+        printf("### Logging stopped\n");
+        return;
+    }
+
+    std::lock_guard<std::mutex> guard(TracerFileMutex);
+    Log.push_back(ev);
+}
+
+mfxU64 SMTTracer::GetCurrentTS() {
+    std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
+    double  ns = std::chrono::duration<double, std::micro>(time - TimeBase).count();
+    return static_cast<mfxU64>(ns);
+}
+
+void SMTTracer::AddFlowEvents() {
+    for (auto it = Log.begin(); it != Log.end(); ++it) {
+        if (it->EvType != EventType::DurationStart) {
+            continue;
+        }
+
+        if (it->InID == 0) {
+            continue;
+        }
+
+        auto itc = std::reverse_iterator<decltype(it)>(it);
+
+        auto itp = find_if(itc, Log.rend(),
+            [&it](Event ev) {return ev.EvType == EventType::DurationEnd && it->InID == ev.OutID; });
+        if (itp == Log.rend()) {
+            continue;
+        }
+
+        AddFlowEvent(*itp, *it);
+    }
+}
+
+void SMTTracer::AddFlowEvent(const Event a, const Event b) {
+    if (a.EvType != EventType::DurationEnd || b.EvType != EventType::DurationStart) {
+        return;
+    }
+
+    Event ev;
+    ev.EvType = EventType::FlowStart;
+    ev.ThType = a.ThType;
+    ev.ThID = a.ThID;
+    ev.EvID = ++EvID;
+    ev.TS = a.TS;
+    AddonLog.push_back(ev);
+
+    ev.EvType = EventType::FlowEnd;
+    ev.ThType = b.ThType;
+    ev.ThID = b.ThID;
+    ev.EvID = EvID;
+    ev.TS = b.TS;
+    AddonLog.push_back(ev);
+}
+
+void SMTTracer::WriteEvent(const Event ev){
+    switch (ev.EvType) {
+    case EventType::DurationStart:
+    case EventType::DurationEnd:
+        WriteDurationEvent(ev);
+        break;
+    case EventType::FlowStart:
+    case EventType::FlowEnd:
+        WriteFlowEvent(ev);
+        break;
+    case EventType::Counter:
+        WriteCounterEvent(ev);
+        break;
+    default:
+        ;
+    }
+}
+
+void SMTTracer::WriteDurationEvent(const Event ev) {
+    TraceFile << "{";
+    WriteEventPID();        WriteComma();
+    WriteEventTID(ev);      WriteComma();
+    WriteEventTS(ev);       WriteComma();
+    WriteEventPhase(ev);    WriteComma();
+    WriteEventName(ev);     WriteComma();
+    WriteEventInOutIDs(ev);
+    TraceFile << "}," << endl;
+}
+
+void SMTTracer::WriteFlowEvent(const Event ev) {
+    TraceFile << "{";
+    WriteEventPID();        WriteComma();
+    WriteEventTID(ev);      WriteComma();
+    WriteEventTS(ev);       WriteComma();
+    WriteEventPhase(ev);    WriteComma();
+    WriteEventName(ev);     WriteComma();
+    WriteBindingPoint(ev);  WriteComma();
+    WriteEventCategory();   WriteComma();
+    WriteEvID(ev);
+    TraceFile << "}," << endl;
+}
+
+void SMTTracer::WriteCounterEvent(const Event ev) {
+    TraceFile << "{";
+    WriteEventPID();        WriteComma();
+    WriteEventTID(ev);      WriteComma();
+    WriteEventTS(ev);       WriteComma();
+    WriteEventPhase(ev);    WriteComma();
+    WriteEventName(ev);     WriteComma();
+    WriteEventCounter(ev);
+    TraceFile << "}," << endl;
+}
+
+void SMTTracer::WriteEventPID() {
+    TraceFile << "\"pid\":\"smt\"";
+}
+
+void SMTTracer::WriteEventTID(const Event ev) {
+    TraceFile << "\"tid\":\"";
+    switch (ev.ThType) {
+    case ThreadType::DEC: TraceFile << "dec"; break;
+    case ThreadType::VPP: TraceFile << "enc" << ev.ThID; break;
+    case ThreadType::ENC: TraceFile << "enc" << ev.ThID; break;
+    case ThreadType::CSVPP: TraceFile << "vpp" << ev.ThID; break;
+    default: TraceFile << "unknown"; break;
+    }
+    TraceFile << "\"";
+}
+
+void SMTTracer::WriteEventTS(const Event ev) {
+    TraceFile << "\"ts\":" << ev.TS;
+}
+
+void SMTTracer::WriteEventPhase(const Event ev) {
+    TraceFile << "\"ph\":\"";
+
+    switch (ev.EvType) {
+    case EventType::DurationStart: TraceFile << "B"; break;
+    case EventType::DurationEnd: TraceFile << "E"; break;
+    case EventType::FlowStart: TraceFile << "s"; break;
+    case EventType::FlowEnd: TraceFile << "f"; break;
+    case EventType::Counter: TraceFile << "C"; break;
+    default: TraceFile << "unknown"; break;
+    }
+    TraceFile << "\"";
+}
+
+void SMTTracer::WriteEventName(const Event ev) {
+    TraceFile << "\"name\":\"";
+    if (ev.EvType == EventType::FlowStart || ev.EvType == EventType::FlowEnd) {
+        TraceFile << "link";
+    }
+    else if (ev.EvType == EventType::Counter) {
+        switch (ev.ThType) {
+        case ThreadType::DEC: TraceFile << "dec_pool"; break;
+        case ThreadType::VPP: TraceFile << "enc_pool" << ev.ThID; break;
+        case ThreadType::ENC: TraceFile << "enc_pool" << ev.ThID; break;
+        case ThreadType::CSVPP: TraceFile << "vpp_pool" << ev.ThID; break;
+        default: TraceFile << "unknown"; break;
+        }
+    }
+    else if (ev.Name != EventName::UNDEF) {
+        switch (ev.Name) {
+        case EventName::BUSY: TraceFile << "busy"; break;
+        case EventName::SYNC: TraceFile << "syncp"; break;
+        default: TraceFile << "unknown"; break;
+        }
+    }
+    else
+    {
+        switch (ev.ThType) {
+        case ThreadType::DEC: TraceFile << "dec"; break;
+        case ThreadType::VPP: TraceFile << "vpp"; break;
+        case ThreadType::ENC: TraceFile << "enc"; break;
+        case ThreadType::CSVPP: TraceFile << "csvpp"; break;
+        default: TraceFile << "unknown"; break;
+        }
+    }
+    TraceFile << "\"";
+}
+
+void SMTTracer::WriteBindingPoint(const Event ev) {
+    if (ev.EvType != EventType::FlowStart && ev.EvType != EventType::FlowEnd) {
+        return;
+    }
+    TraceFile << "\"bp\":\"e\"";
+}
+
+void SMTTracer::WriteEventInOutIDs(const Event ev) {
+    TraceFile << "\"args\":{\"InID\":" << ev.InID << ",\"OutID\":" << ev.OutID << "}";
+}
+
+void SMTTracer::WriteEventCounter(const Event ev) {
+    TraceFile << "\"args\":{\"free surfaces\":" << ev.InID << "}";
+}
+
+void SMTTracer::WriteEventCategory() {
+    TraceFile << "\"cat\":\"link\"";
+}
+
+void SMTTracer::WriteEvID(const Event ev) {
+    TraceFile << "\"id\":\"id_" << ev.EvID << "\"";
+}
+
+void SMTTracer::WriteComma() {
+    TraceFile << ",";
+}
+
 
 void Launcher::Close()
 {

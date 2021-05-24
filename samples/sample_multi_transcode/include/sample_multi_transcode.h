@@ -67,6 +67,7 @@ namespace TranscodingSample
 #endif
         virtual mfxStatus VerifyCrossSessionsOptions();
         virtual mfxStatus CreateSafetyBuffers();
+        CascadeScalerConfig& CreateCascadeScalerConfig();
         virtual void      DoTranscoding();
         virtual void      DoRobustTranscoding();
 
@@ -96,6 +97,9 @@ namespace TranscodingSample
         std::unique_ptr<VPLImplementationLoader> m_pLoader;
 
         std::vector<sVppCompDstRect>         m_VppDstRects;
+
+        CascadeScalerConfig m_CSConfig;
+        SMTTracer m_Tracer;
 
     private:
         DISALLOW_COPY_AND_ASSIGN(Launcher);
