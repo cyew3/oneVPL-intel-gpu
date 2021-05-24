@@ -125,6 +125,7 @@ add_library(mfx_sdl_properties INTERFACE)
 target_compile_options(mfx_sdl_properties
   INTERFACE
     $<$<CXX_COMPILER_ID:MSVC>:
+      /WX
       /W4
       /sdl
       /wd5105  # macro expands to defined(smth)

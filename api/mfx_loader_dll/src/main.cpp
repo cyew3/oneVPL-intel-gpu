@@ -205,7 +205,7 @@ bool ListAllIntelAdaptersFromRegistry(adapter_vector& a_v)
             }
 
             CRegKey key;
-            CONFIGRET result = CM_Open_DevNode_Key(device_instance, KEY_READ, 0, RegDisposition_OpenExisting, &key.m_hKey, CM_REGISTRY_SOFTWARE);
+            result = CM_Open_DevNode_Key(device_instance, KEY_READ, 0, RegDisposition_OpenExisting, &key.m_hKey, CM_REGISTRY_SOFTWARE);
 
             if (result != CR_SUCCESS)
             {
@@ -620,7 +620,7 @@ static std::unique_ptr<MSDK_lib_handler> LoadMSDKLibary(adapter_vector& a_v, mfx
     auto it_to_load = std::find_if(std::begin(a_v), std::end(a_v),
         [preffered_adapter_number](const adapter_description & descr)
         {
-            return (preffered_adapter_number == -1) ? descr.is_integrated : (preffered_adapter_number == descr.adapter_number);
+            return (preffered_adapter_number == -1) ? descr.is_integrated : (static_cast<mfxU32>(preffered_adapter_number) == descr.adapter_number);
         });
 
     if (it_to_load == std::end(a_v))

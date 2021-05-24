@@ -934,7 +934,7 @@ mfxStatus MfxWrapController::Lock(mfxU32 idx)
 
 bool MfxWrapController::IsLocked(mfxU32 idx)
 {
-    MFX_CHECK(idx < m_locked.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(idx < m_locked.size(), true); //In case of index is higher than locked size - return "locked" and prevent unexpected usage
 
     return m_locked[idx] > 0;
 }

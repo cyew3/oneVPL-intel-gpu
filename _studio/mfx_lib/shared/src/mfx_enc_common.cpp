@@ -558,7 +558,9 @@ bool CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 
 mfxStatus InputSurfaces::Reset(mfxVideoParam *par, mfxU16 NumFrameMin)
 {
     mfxStatus sts = MFX_ERR_NONE;
-
+#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
+    std::ignore = NumFrameMin;
+#endif
     mfxU32 ioPattern = par->IOPattern & (
         MFX_IOPATTERN_IN_VIDEO_MEMORY
         | MFX_IOPATTERN_IN_SYSTEM_MEMORY

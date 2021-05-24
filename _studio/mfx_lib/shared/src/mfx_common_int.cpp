@@ -487,6 +487,9 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 {
     mfxStatus sts = CheckVideoParamCommon(in, type);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
+    std::ignore = IsCompatibleForOpaq;
+#endif
 
     auto const supportedMemoryType =
            (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)

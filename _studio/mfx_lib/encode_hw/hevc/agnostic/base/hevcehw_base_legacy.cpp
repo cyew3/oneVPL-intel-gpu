@@ -1594,7 +1594,6 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
             , StorageW& global
             , StorageW& task) -> mfxStatus
     {
-        auto& par = Glob::VideoParam::Get(global);
         auto& core = Glob::VideoCore::Get(global);
         auto& tpar = Task::Common::Get(task);
 
@@ -1611,6 +1610,8 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
             tpar.ctrl = *pCtrl;
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
+        auto& par = Glob::VideoParam::Get(global);
+
         if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
             tpar.pSurfReal = core.GetNativeSurface(tpar.pSurfIn);
@@ -1623,8 +1624,6 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
             tpar.pSurfReal->Data.DataFlag    = tpar.pSurfIn->Data.DataFlag;
         }
         else
-#else
-        std::ignore = par;
 #endif //MFX_ENABLE_OPAQUE_MEMORY
             tpar.pSurfReal = tpar.pSurfIn;
 
