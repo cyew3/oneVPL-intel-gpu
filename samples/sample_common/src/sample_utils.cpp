@@ -2319,6 +2319,7 @@ bool IsEncodeCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_VP8:
         case MFX_CODEC_JPEG:
         case MFX_CODEC_VP9:
+        case MFX_CODEC_AV1:
         break;
     default:
         return false;

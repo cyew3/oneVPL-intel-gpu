@@ -537,7 +537,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         if (m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC)
         {
             auto hevcTiles = m_mfxEncParams.AddExtBuffer<mfxExtHEVCTiles>();
-            hevcTiles->NumTileRows = pInParams->nEncTileRows;
+            hevcTiles->NumTileRows    = pInParams->nEncTileRows;
             hevcTiles->NumTileColumns = pInParams->nEncTileCols;
         }
 #if MFX_VERSION >= MFX_VERSION_NEXT
@@ -548,6 +548,12 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
             vp9Param->NumTileColumns = pInParams->nEncTileCols;
         }
 #endif
+        else if (m_mfxEncParams.mfx.CodecId == MFX_CODEC_AV1)
+        {
+            auto av1par = m_mfxEncParams.AddExtBuffer<mfxExtAV1Param>();
+            av1par->NumTileRows    = pInParams->nEncTileRows;
+            av1par->NumTileColumns = pInParams->nEncTileCols;
+        }
     }
     if (*pInParams->uSEI && (pInParams->CodecId == MFX_CODEC_AVC || pInParams->CodecId == MFX_CODEC_HEVC))
     {
