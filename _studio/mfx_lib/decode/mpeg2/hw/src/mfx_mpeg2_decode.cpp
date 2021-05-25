@@ -235,6 +235,9 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam* par)
     mfxSts = QueryIOSurfInternal(m_platform, &m_video_par, &request);
     MFX_CHECK_STS(mfxSts);
 
+    if (IsD3D9Simulation(*m_core))
+        internal = true;
+
     request.Type |= internal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
     request_internal = request;
 
@@ -533,19 +536,22 @@ mfxStatus VideoDECODEMPEG2::QueryIOSurf(VideoCORE* core, mfxVideoParam* par, mfx
         return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif //MFX_ENABLE_OPAQUE_MEMORY
 
+    mfxStatus sts = QueryIOSurfInternal(platform, &params, request);
+    MFX_CHECK_STS(sts);
+
     bool isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
-    mfxStatus sts = QueryIOSurfInternal(platform, &params, request);
-    MFX_CHECK_STS(sts);
+    bool IsD3D9SimWithVideoMem = IsD3D9Simulation(*core) && (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY);
+    if (IsD3D9SimWithVideoMem)
+        isInternalManaging = true;
 
     if (isInternalManaging)
     {
         request->NumFrameSuggested = request->NumFrameMin = (mfxU16)(CalculateAsyncDepth(par) + 1); // "+1" because we release the latest displayed surface in _sync_ part when another surface comes
-        request->Type = (MFX_PLATFORM_SOFTWARE == platform) ? MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE : MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+        if (!IsD3D9SimWithVideoMem)
+            request->Type = (MFX_PLATFORM_SOFTWARE == platform) ? MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE : MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
     }
-    else
-        request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
@@ -925,11 +931,6 @@ mfxStatus VideoDECODEMPEG2::DecodeFrame(mfxFrameSurface1 *surface_out, MPEG2Deco
         if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
             surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
     }
-
-    UMC::VideoAccelerator* va = nullptr;
-    m_core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
-    if (va)
-        MFX_CHECK(!va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_INVALID_HANDLE);
 
     const auto id = frame->GetFrameData()->GetFrameMID();
     mfxStatus sts = m_surface_source->PrepareToOutput(surface_out, id, &m_video_par, m_opaque); // Copy to system memory if needed
