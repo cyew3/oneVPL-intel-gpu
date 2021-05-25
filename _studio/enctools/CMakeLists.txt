@@ -34,7 +34,8 @@ endif()
 add_library(enctools_hw STATIC ${sources})
 
 target_compile_definitions(enctools_hw
-  PRIVATE 
+  PRIVATE
+    MFX_VA
     $<$<BOOL:${MFX_ENABLE_AENC}>:MFX_ENABLE_AENC>
   )
 
@@ -48,8 +49,8 @@ target_link_libraries(enctools_hw
     mfx_static_lib
     vm
   PRIVATE
-    mfx_sdl_properties    
-    $<$<BOOL:${MFX_ENABLE_AENC}>:aenc> 
+    mfx_sdl_properties
+    $<$<BOOL:${MFX_ENABLE_AENC}>:aenc>
   )
 
 include(sources_ext.cmake OPTIONAL)

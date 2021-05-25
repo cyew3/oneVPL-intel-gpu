@@ -556,9 +556,24 @@ mfxStatus EncTools::Init(mfxExtEncToolsConfig const * pConfig, mfxEncToolsCtrl c
                 pd3dAllocParams->pManager = reinterpret_cast<IDirect3DDeviceManager9 *>(m_device);
 
                 m_pmfxAllocatorParams = pd3dAllocParams;
-            } else
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            } 
+            else
 #endif
+#if defined(MFX_VA_LINUX)
+            if (m_deviceType == MFX_HANDLE_VA_DISPLAY)
+            {
+                m_pETAllocator = new vaapiFrameAllocator;
+                MFX_CHECK_NULL_PTR1(m_pETAllocator);
+
+                vaapiAllocatorParams* pvaapiAllocParams = new vaapiAllocatorParams;
+                MFX_CHECK_NULL_PTR1(pvaapiAllocParams);
+
+                pvaapiAllocParams->m_dpy = (VADisplay)m_device;
+                m_pmfxAllocatorParams = pvaapiAllocParams;
+            } else
+#endif
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
             MFX_CHECK_NULL_PTR1(m_pETAllocator);
 
             sts = m_pETAllocator->Init(m_pmfxAllocatorParams);
