@@ -3698,7 +3698,7 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
         else
             task.m_currGopRefDist = m_video.mfx.GopRefDist;
 
-        if (m_encTools.IsAdaptiveGOP() && !m_encTools.IsAdaptiveLTR() && !m_encTools.IsAdaptiveRef() && !m_encTools.IsAdaptiveQP())
+        if (m_encTools.IsPreEncNeeded())
         {
             task.m_QPdelta = st.QPDelta;
             task.m_bQPDelta = true;
@@ -3706,8 +3706,6 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
 
         if (m_encTools.IsAdaptiveQP())
         {
-            task.m_QPdelta = st.QPDelta;
-            task.m_bQPDelta = true;
             task.m_QPmodulation = st.QPModulation;
 #ifdef ENABLE_APQ_LQ
             if (task.m_currGopRefDist == 8) {
@@ -3736,9 +3734,6 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
 
         if (m_encTools.IsAdaptiveLTR() || m_encTools.IsAdaptiveRef())
         {
-            task.m_QPdelta = st.QPDelta;
-            task.m_bQPDelta = true;
-
             mfxEncToolsHintPreEncodeARefFrames ref = {};
             sts = m_encTools.QueryPreEncARef(task.m_frameOrder, ref);
             MFX_CHECK_STS(sts);

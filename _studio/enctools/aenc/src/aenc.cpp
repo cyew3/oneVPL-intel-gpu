@@ -687,7 +687,6 @@ namespace aenc {
         default:
             return 0;
         }
-        return 0;
     }
 
     mfxU16 AEnc::GetPersistenceMap(mfxU32 , mfxU8 PMap[ASC_MAP_SIZE])
