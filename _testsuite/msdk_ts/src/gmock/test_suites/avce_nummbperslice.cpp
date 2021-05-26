@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2021 Intel Corporation. All Rights Reserved.
 
 File Name: avce_nummbperslice.cpp
 \* ****************************************************************************** */
@@ -368,30 +368,41 @@ namespace avce_nummbperslice{
 
         mfxExtCodingOption2* co2 = (mfxExtCodingOption2*) m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
         mfxU16 before_query = co2->NumMbPerSlice;
-        mfxStatus exp = tc.q_sts;
-        g_tsStatus.expect(exp);
+        mfxStatus exp_status = tc.q_sts;
+
+        bool mb_not_aligned = co2->NumMbPerSlice % (m_par.mfx.FrameInfo.Width / 16) != 0;
+
+        if (g_tsHWtype >= MFX_HW_DG2 && mb_not_aligned)
+           exp_status = MFX_ERR_UNSUPPORTED;
+
+        g_tsStatus.expect(exp_status);
         Query();
 
-        if (exp == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || exp == MFX_ERR_UNSUPPORTED){
+        if (exp_status == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || exp_status == MFX_ERR_UNSUPPORTED){
             EXPECT_NE(before_query, co2->NumMbPerSlice) << "ERROR: NumMbPerSlice was not changed";
         }
 
         SETPARS(&m_par, CDO2_PAR);
         mfxU16 before_init = co2->NumMbPerSlice;
-        exp = tc.i_sts;
-        g_tsStatus.expect(exp);
+        exp_status = tc.i_sts;
+
+        if (g_tsHWtype >= MFX_HW_DG2 && mb_not_aligned)
+            exp_status = MFX_ERR_INVALID_VIDEO_PARAM;
+
+        g_tsStatus.expect(exp_status);
         Init();
 
-        if (exp == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM){
+        if (exp_status == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM){
             GetVideoParam();
-            EXPECT_NE(before_init, co2->NumMbPerSlice) << "ERROR: NumMbPerSlice was not changed";;
+            EXPECT_NE(before_init, co2->NumMbPerSlice) << "ERROR: NumMbPerSlice was not changed";
         }
 
-        if (exp == MFX_ERR_NONE && co2->NumMbPerSlice != 0){
+        if (exp_status == MFX_ERR_NONE && co2->NumMbPerSlice != 0){
             AllocBitstream();
             encode(n_frames, before_query, co2->NumMbPerSlice);
             check_bs(before_query, co2->NumMbPerSlice);
         }
+
         TS_END;
         return 0;
     }
