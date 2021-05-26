@@ -159,8 +159,10 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
 
             UCHAR       minAdaptiveGopPicSize;
             USHORT      maxAdaptiveGopPicSize;
+            UCHAR       FullPassCodecType; // [0..4]
 
-            UINT        reserved32b[16];
+            UCHAR       reserved8b[3];
+            UINT        reserved32b[15];
 
 } ENCODE_SET_SEQUENCE_PARAMETERS_HEVC;
 

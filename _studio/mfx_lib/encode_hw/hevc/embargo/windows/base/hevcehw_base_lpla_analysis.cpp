@@ -66,6 +66,19 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 sps.GopFlags.fields.AdaptiveGop = pCO2 && IsOn(pCO2->AdaptiveB);
                 sps.maxAdaptiveGopPicSize = lpla->MaxAdaptiveGopSize;
                 sps.minAdaptiveGopPicSize = (UCHAR)lpla->MinAdaptiveGopSize;
+
+                if (lpla->codecTypeInEncodePass == MFX_CODEC_AVC)
+                {
+                    sps.FullPassCodecType = 0;
+                }
+                else if (lpla->codecTypeInEncodePass == MFX_CODEC_AV1)
+                {
+                    sps.FullPassCodecType = 1;
+                }
+                else if (lpla->codecTypeInEncodePass == MFX_CODEC_HEVC)
+                {
+                    sps.FullPassCodecType = 2;
+                }
             }
 
             // need to disable SAO for lowpower lookahead analysis since the alogrithm doesn't support
@@ -204,7 +217,7 @@ void LpLookAheadAnalysis::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(GopRefDist);
         MFX_COPY_FIELD(MaxAdaptiveGopSize);
         MFX_COPY_FIELD(MinAdaptiveGopSize);
-
+        MFX_COPY_FIELD(codecTypeInEncodePass);
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
@@ -236,7 +249,7 @@ void LpLookAheadAnalysis::SetInherited(ParamInheritance& par)
         InheritOption(src.GopRefDist, dst.GopRefDist);
         InheritOption(src.MaxAdaptiveGopSize, dst.MaxAdaptiveGopSize);
         InheritOption(src.MinAdaptiveGopSize, dst.MinAdaptiveGopSize);
-
+        InheritOption(src.codecTypeInEncodePass, dst.codecTypeInEncodePass);
     });
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION2].emplace_back(

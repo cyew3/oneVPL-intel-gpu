@@ -367,7 +367,8 @@ typedef struct {
     mfxU16       GopRefDist;
     mfxU16       MaxAdaptiveGopSize;
     mfxU16       MinAdaptiveGopSize;
-    mfxU16       reserved[20];
+    mfxU32       codecTypeInEncodePass;
+    mfxU16       reserved[18];
 } mfxExtLplaParam;
 
 #endif
