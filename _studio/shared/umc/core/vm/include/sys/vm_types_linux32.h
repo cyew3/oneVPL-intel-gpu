@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 
 #include <pthread.h>
 #include <sys/types.h>

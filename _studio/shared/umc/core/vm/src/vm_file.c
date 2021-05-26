@@ -23,7 +23,7 @@
  *       common implementation
  */
 #include "vm_file.h"
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 # define SLASH '/'
 #else
 # define SLASH '\\'

@@ -38,10 +38,6 @@
     #endif
 #include "umc_va_video_processing.h"
 
-#if defined (MFX_VA_OSX)
-#include "umc_h264_vda_supplier.h"
-#endif
-
 #include "mfxpcp.h"
 #if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
@@ -344,10 +340,6 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         if (m_core->GetVAType() == MFX_HW_VAAPI)
             useInternal = true;
     }
-#endif
-
-#if defined (MFX_VA_OSX)
-    useInternal = m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY;    //APPLE - forcing this to act like software version
 #endif
 
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
@@ -999,9 +991,6 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     MFX_CHECK_NULL_PTR2(par, request);
 
     eMFXPlatform platform = MFX_Utility::GetPlatform(core, par);
-#if defined(__APPLE__)
-    platform = MFX_PLATFORM_SOFTWARE;
-#endif
 
     MFX_CHECK(platform == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
 

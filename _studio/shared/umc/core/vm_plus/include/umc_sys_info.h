@@ -44,7 +44,7 @@ typedef struct sSystemInfo
     uint32_t phys_mem;
 } sSystemInfo;
 
-#if ! (defined(_WIN32_WCE) || defined(__linux) || defined(__APPLE__))
+#if ! (defined(_WIN32_WCE) || defined(__linux))
 /* obtain  */
 
 typedef struct _VIRTUAL_MACHINE_COUNTERS {
@@ -110,7 +110,7 @@ typedef int32_t    COUNTERS_STATUS;
 #define IF_SUCCESS(Status) ((COUNTERS_STATUS)(Status) >= 0)
 #define NEXT_AVAILABLE     ((COUNTERS_STATUS)0xC0000004L)
 
-#endif // if !(defined(_WIN32_WCE) || defined(__linux) || defined(__APPLE__))
+#endif // if !(defined(_WIN32_WCE) || defined(__linux))
 
 typedef uint32_t (*FuncGetMemUsage)();
 

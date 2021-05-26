@@ -108,16 +108,10 @@ vm_status vm_socket_init(vm_socket *hd,
     /* network client */
     if (flags&VM_SOCKET_MCAST)
     {
-#ifdef __APPLE__
-        struct ip_mreq imr;
-        imr.imr_multiaddr.s_addr = hd->sar.sin_addr.s_addr;
-        imr.imr_interface.s_addr = INADDR_ANY;
-#else
         struct ip_mreqn imr;
         imr.imr_multiaddr.s_addr = hd->sar.sin_addr.s_addr;
         imr.imr_address.s_addr = INADDR_ANY;
         imr.imr_ifindex = 0;
-#endif
         setsockopt(hd->chns[0], IPPROTO_IP, IP_ADD_MEMBERSHIP, &imr, sizeof(imr));
     }
     if (flags & VM_SOCKET_UDP)

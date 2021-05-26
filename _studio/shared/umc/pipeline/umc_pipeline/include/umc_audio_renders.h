@@ -26,9 +26,7 @@
 #endif    // _WIN32_WINNT
 
 #ifdef LINUX32
-#ifndef OSX32
 #include "oss_audio_render.h"
-#endif // OSX32
 #endif // LINUX32
 
 #include "null_audio_render.h"

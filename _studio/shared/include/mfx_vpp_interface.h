@@ -33,7 +33,7 @@
 
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
-#elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
+#else
     typedef unsigned int   UINT;
 
     typedef struct tagVPreP_StatusParams_V1_0

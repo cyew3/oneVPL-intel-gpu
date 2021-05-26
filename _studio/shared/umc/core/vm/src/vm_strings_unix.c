@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 
 #include "vm_strings.h"
 
@@ -34,4 +34,4 @@ int32_t vm_string_vprintf(const vm_char *format, va_list argptr)
 
 #else
 #pragma warning( disable: 4206 )
-#endif /* #if defined(LINUX32) || (__APPLE__) */
+#endif /* #if defined(LINUX32) */

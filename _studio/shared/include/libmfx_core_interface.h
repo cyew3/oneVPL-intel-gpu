@@ -42,11 +42,6 @@ static const MFX_GUID  MFXICORED3D11_GUID =
 static const MFX_GUID MFXICOREVAAPI_GUID =
 { 0xb0fcb183, 0x1a6d, 0x4f00, { 0x8b, 0xaf, 0x93, 0xf2, 0x85, 0xac, 0xec, 0x93 } };
 
-// {86dc1aab-eb20-47a2-a461-428a7bd60183}
-static const MFX_GUID MFXICOREVDAAPI_GUID =
-{ 0x86dc1aab, 0xeb20, 0x47a2, {0xa4, 0x61, 0x42, 0x8a, 0x7b, 0xd6, 0x01, 0x83 } };
-
-
 // {EA851C02-7F04-4126-9045-48D8282434A5}
 static const MFX_GUID MFXICORE_API_1_19_GUID =
 { 0xea851c02, 0x7f04, 0x4126, { 0x90, 0x45, 0x48, 0xd8, 0x28, 0x24, 0x34, 0xa5 } };
@@ -331,8 +326,7 @@ struct D3D11Interface
     virtual ID3D11VideoContext * GetD3D11VideoContext(bool isTemporal = false) = 0;
 };
 
-
-#elif defined (MFX_VA_LINUX)
+#else
     struct VAAPIInterface
     {
         static const MFX_GUID & getGuid()
@@ -340,16 +334,6 @@ struct D3D11Interface
             return MFXICOREVAAPI_GUID;
         }
     };
-
-#elif defined (MFX_VA_OSX)
-struct VDAAPIInterface
-{
-    static const MFX_GUID & getGuid()
-    {
-        return MFXICOREVDAAPI_GUID;
-    }
-};
-
 #endif
 
 struct CMEnabledCoreInterface

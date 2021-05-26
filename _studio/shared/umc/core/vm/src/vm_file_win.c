@@ -28,7 +28,7 @@
 #endif
 
 /* codecws compilation fence */
-#if !defined(LINUX32) && !defined(__APPLE__)
+#if !defined(LINUX32)
 # include <stdio.h>
 # include <io.h>
 

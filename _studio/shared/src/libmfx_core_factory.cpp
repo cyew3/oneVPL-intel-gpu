@@ -33,8 +33,6 @@
     #endif
 #elif defined(MFX_VA_LINUX)
 #include <libmfx_core_vaapi.h>
-#elif defined(MFX_VA_OSX)
-#include <libmfx_core_vdaapi.h>
 #endif
 
 
@@ -76,7 +74,7 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
         return new D3D9ON11VideoCORE(adapterNum, numThreadsAvailable, session);
 #endif
 #endif
-#elif defined(MFX_VA_LINUX)
+#else
     case MFX_HW_VAAPI:
 #if defined(MFX_ONEVPL)
         if (create_msdk20_core)
@@ -84,9 +82,6 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
 #endif
 
         return new VAAPIVideoCORE(adapterNum, numThreadsAvailable, session);
-#elif defined(MFX_VA_OSX)
-    case MFX_HW_VDAAPI:
-        return new VDAAPIVideoCORE(adapterNum, numThreadsAvailable, session);
 #endif
     default:
         return nullptr;

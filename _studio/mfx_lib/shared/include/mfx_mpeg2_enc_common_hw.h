@@ -40,7 +40,7 @@
         #include "mfxpavp.h"
         #endif
     #endif
-#elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
+#else
     #include "mfx_h264_encode_struct_vaapi.h"
 #endif
 

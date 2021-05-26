@@ -35,7 +35,6 @@
 #endif
 #endif
 #include "tgllp_copy_kernel_genx_isa.h"
-#if !defined(OSX)
 
 #ifdef _MSVC_LANG
 #pragma warning(disable: 4505)
@@ -353,7 +352,5 @@ protected:
                                  std::map<mfxU8 *, CmBufferUP *> & tableSysRelations,
                                  std::map<CmBufferUP *,  SurfaceIndex *> & tableSysIndex);
 };
-
-#endif // !defined(MFX_VA_OSX)
 
 #endif // __CM_MEM_COPY_H__

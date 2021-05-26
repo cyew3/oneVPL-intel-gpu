@@ -314,7 +314,7 @@ mfxU32 DXVA2Device::GetAdapterCount(void) const
     return m_numAdapters;
 
 } // mfxU32 DXVA2Device::GetAdapterCount(void) const
-#elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
+#else
 #include "mfx_dxva2_device.h"
 namespace MFX
 {

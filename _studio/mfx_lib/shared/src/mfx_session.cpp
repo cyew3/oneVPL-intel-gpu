@@ -686,12 +686,6 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
         m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VAAPI, m_adapterNum, maxNumThreads, this));
     }
 
-#elif defined(MFX_VA_OSX)
-
-    else
-    {
-        m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VDAAPI, m_adapterNum, maxNumThreads, this));
-    }
 #endif
 
 #if !defined(MFX_ONEVPL)
@@ -964,17 +958,10 @@ mfxStatus _mfxVersionedSessionImpl::InitEx(mfxInitParam& par)
         }
 
     }
-#elif defined(MFX_VA_LINUX)
+#else
     else
     {
         m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VAAPI, m_adapterNum, maxNumThreads, this));
-    }
-
-#elif defined(MFX_VA_OSX)
-
-    else
-    {
-        m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VDAAPI, m_adapterNum, maxNumThreads, this));
     }
 #endif
 

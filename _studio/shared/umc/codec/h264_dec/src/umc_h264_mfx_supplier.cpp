@@ -61,9 +61,6 @@ void RawHeader::Reset()
 {
     m_id = -1;
     m_buffer.clear();
-#ifdef __APPLE__
-    m_rbspSize = 0;
-#endif
 }
 
 int32_t RawHeader::GetID() const
@@ -86,18 +83,6 @@ void RawHeader::Resize(int32_t id, size_t newSize)
     m_id = id;
     m_buffer.resize(newSize);
 }
-
-#ifdef __APPLE__
-size_t RawHeader::GetRBSPSize()
-{
-    return m_rbspSize;
-}
-
-void RawHeader::SetRBSPSize(size_t rbspSize)
-{
-    m_rbspSize = rbspSize;
-}
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -365,9 +350,6 @@ Status MFXTaskSupplier::DecodeHeaders(NalUnit *nalUnit)
                     hdr->Resize(id, size + sizeof(start_code_prefix));
                     MFX_INTERNAL_CPY(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
                     MFX_INTERNAL_CPY(hdr->GetPointer() + sizeof(start_code_prefix), (uint8_t*)nalUnit->GetDataPointer(), (uint32_t)size);
-#ifdef __APPLE__
-                    hdr->SetRBSPSize(size);
-#endif
                  }
             break;
         }

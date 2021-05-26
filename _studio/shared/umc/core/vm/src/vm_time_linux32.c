@@ -20,7 +20,7 @@
 
 #include "vm_time.h"
 
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 
 #include <sys/time.h>
 #include <sys/types.h>

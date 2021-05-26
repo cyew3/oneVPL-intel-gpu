@@ -18,38 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 
 #include "vm_sys_info.h"
 #include <time.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 
-#ifdef __APPLE__
-#include <sys/syslimits.h>
-/* to access to sysctl function */
-#include <sys/types.h>
-#include <sys/sysctl.h>
-
-/*
- * retrieve information about integer parameter
- * defined as CTL_... (ctl_class) . ENTRY (ctl_entry)
- * return value in res.
- *  status : 1  - OK
- *           0 - operation failed
- */
-uint32_t osx_sysctl_entry_32u( int ctl_class, int ctl_entry, uint32_t *res ) {
-  int dcb[2];
-  size_t i;
-   dcb[0] = ctl_class;  dcb[1] = ctl_entry;
-   i = sizeof(res[0]);
-  return (sysctl(dcb, 2, res, &i, NULL, 0) != -1) ? 1 : 0;
-}
-
-#else
 #include <sys/sysinfo.h>
-
-#endif /* __APPLE__ */
 
 //<WALKAROUND BEGIN>
 #include "vm_strings.h"
@@ -249,14 +225,7 @@ invoke_safe_str_constraint_handler (const char *msg,
 
 uint32_t vm_sys_info_get_cpu_num(void)
 {
-#if defined(__APPLE__)
-    uint32_t cpu_num = 1;
-    return (osx_sysctl_entry_32u(CTL_HW, HW_NCPU, &cpu_num)) ? cpu_num : 1;
-#elif defined(ANDROID)
-    return sysconf(_SC_NPROCESSORS_ONLN); /* on Android *_CONF will return number of _real_ processors */
-#else
     return sysconf(_SC_NPROCESSORS_CONF); /* on Linux *_CONF will return number of _logical_ processors */
-#endif
 } /* uint32_t vm_sys_info_get_cpu_num(void) */
 
 void vm_sys_info_get_cpu_name(vm_char *cpu_name)

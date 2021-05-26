@@ -51,12 +51,6 @@
 
     #define MFX_D3D9_ENABLED
 
-#elif defined(__APPLE__)
-    #undef  MFX_VA_OSX
-    #define MFX_VA_OSX
-
-    #undef  UMC_VA_OSX
-    #define UMC_VA_OSX
 #endif // #if defined(LINUX32) || defined(LINUX64)
 
 

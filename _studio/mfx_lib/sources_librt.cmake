@@ -51,7 +51,6 @@ if(NOT MFX_DISABLE_SW_FALLBACK)
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator_vaapi.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_vaapi.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_vdaapi.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_factory.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_hw.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_dxva2_device.cpp

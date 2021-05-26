@@ -44,10 +44,6 @@
 #   ifndef UMC_VA_DXVA
 #       define UMC_VA_DXVA           // HW acceleration through DXVA
 #   endif
-#elif defined(__APPLE__)
-#   ifndef UMC_VA_OSX
-#      define UMC_VA_OSX
-#   endif
 #else
     #error unsupported platform
 #endif
@@ -92,7 +88,7 @@
 #endif
 
 
-#if defined(LINUX32) || defined(LINUX64) || defined(__APPLE__)
+#if defined(LINUX32) || defined(LINUX64)
 #ifndef GUID_TYPE_DEFINED
 typedef struct {
     unsigned long  Data1;

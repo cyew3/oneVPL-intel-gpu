@@ -50,7 +50,7 @@
 // Linux on IA32
 */
 
-#if (defined(LINUX32) || defined(__APPLE__)) && !defined(ANDROID)
+#if (defined(LINUX32)) && !defined(ANDROID)
 
     // video decoders
     //#define UMC_ENABLE_VP8_VIDEO_DECODER

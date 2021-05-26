@@ -62,13 +62,9 @@ DriverEncoder* MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder( VideoCORE* core )
         return NULL;
     }
 
-#elif defined (MFX_VA_LINUX)
+#else
 
     return new VAAPIEncoder(core);
-
-#elif defined (MFX_VA_OSX)
-
-    return NULL;//new MacosDdiEncoder( core );
 
 #endif
 

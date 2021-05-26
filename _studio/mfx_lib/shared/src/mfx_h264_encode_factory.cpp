@@ -33,12 +33,8 @@
     #include "mfx_h264_encode_d3d11.h"
 #endif
 
-#elif defined (MFX_VA_LINUX)
+#else
     #include "mfx_h264_encode_vaapi.h"
-
-#elif defined (MFX_VA_OSX)
-    //#include "mfx_h264_encode_macos.h"
-
 #endif
 
 
@@ -87,16 +83,10 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
     {
         return NULL;
     }
-#elif defined (MFX_VA_LINUX)
+#else
     (void)core;
 
     return new VAAPIEncoder;//( core );
-
-#elif defined (MFX_VA_OSX)
-    (void)core;
-
-    return NULL;
-
 #endif
 
 } // DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )

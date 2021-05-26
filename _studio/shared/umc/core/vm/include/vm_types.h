@@ -35,7 +35,7 @@
 #pragma GCC diagnostic pop
 #endif
 
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 # include "sys/vm_types_linux32.h"
 #else /* LINUX32 */
 //# include <io.h>

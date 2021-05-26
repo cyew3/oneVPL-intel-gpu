@@ -30,7 +30,6 @@
 #pragma warning(disable: 4201)
 #endif
 
-#if !defined(OSX)
 #include "cmvm.h"
 
 namespace MfxHwH264Encode
@@ -777,7 +776,5 @@ extern "C" void HistogramFields(
 #ifdef _MSVC_LANG
 #pragma warning(pop)
 #endif
-
-#endif //!defined(OSX)
 
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW

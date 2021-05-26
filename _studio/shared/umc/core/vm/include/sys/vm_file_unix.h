@@ -20,7 +20,7 @@
 
 /*
  * VM 64-bits buffered file operations library
- *    Linux and OSX definitions
+ *    Linux definitions
  */
 #ifndef VM_FILE_UNIX_H
 #  define VM_FILE_UNIX_H
@@ -32,9 +32,6 @@
 #  include <sys/stat.h>
 #  include <dirent.h>
 
-# ifdef __APPLE__
-#  define OSX
-# endif
 #if !defined MAX_PATH
 #  define MAX_PATH 260
 #endif
@@ -48,8 +45,7 @@ typedef DIR vm_dir;
 /*
  * file access functions
  */
-# if defined(__ANDROID__) || defined(OSX) || defined(LINUX64)
-/* native fopen is 64-bits on OSX */
+# if defined(__ANDROID__) || defined(LINUX64)
 #  define vm_file_fopen    fopen
 # else
 #  define vm_file_fopen    fopen64

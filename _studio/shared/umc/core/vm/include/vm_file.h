@@ -64,11 +64,11 @@ unsigned long long vm_file_ftell(vm_file *fd);
 int32_t vm_file_getinfo(const vm_char *filename, unsigned long long *file_size, uint32_t *file_attr);
 int32_t vm_file_vfprintf(vm_file *fd, vm_char *format,  va_list argptr);
 
-#if defined(LINUX32) || defined(OSX)
+#if defined(LINUX32)
 
     #define vm_file_fflush fflush
 
-#else /* #if defined(LINUX32) || defined(OSX) */
+#else /* #if defined(LINUX32)*/
 
 
 int32_t vm_file_fflush(vm_file *fd);
@@ -101,7 +101,7 @@ vm_char *vm_file_tmpnam_r(vm_char *RESULT); /* the same as tmpnam_r except that 
 vm_char *vm_file_tempnam(vm_char *DIR, vm_char *PREFIX);
 
 
-#endif /* #if defined(LINUX32) || defined(OSX) */
+#endif /* #if defined(LINUX32) */
 
 /*
  * file name manipulations */

@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(LINUX32) || defined (OSX32)
+#if defined(LINUX32)
 
 #include <dlfcn.h>
 #include "vm_shared_object.h"
@@ -62,4 +62,4 @@ void vm_so_free(vm_so_handle so_handle)
 } /* void vm_so_free(vm_so_handle so_handle) */
 #else
 # pragma warning( disable: 4206 )
-#endif /* LINUX32 || OSX32 */
+#endif /* LINUX32 */

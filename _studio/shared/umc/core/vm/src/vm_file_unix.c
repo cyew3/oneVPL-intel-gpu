@@ -23,9 +23,9 @@
  *       UNIX implementation
  */
 /* codecws compilation fence */
-#if defined(LINUX32) || defined(__APPLE__)
+#if defined(LINUX32)
 
-#if defined(LINUX32) && !defined(__APPLE__) && !defined(__ANDROID__) && !defined(LINUX64)
+#if defined(LINUX32) && !defined(__ANDROID__) && !defined(LINUX64)
 /* These defines are needed to get access to 'struct stat64'. stat64 function is seen without them, but
  * causes segmentation faults working with 'struct stat'.
  */
@@ -49,7 +49,7 @@
 /* obtain file info. return 0 if file is not accessible,
    file_size or file_attr can be NULL if either is not interested */
 int32_t vm_file_getinfo(const vm_char *filename, unsigned long long *file_size, uint32_t *file_attr) {
-#if defined(__APPLE__) || defined(__ANDROID__) || defined(LINUX64)
+#if defined(__ANDROID__) || defined(LINUX64)
    struct stat buf;
    if (stat(filename,&buf) != 0) return 0;
 #else
@@ -69,7 +69,7 @@ int32_t vm_file_getinfo(const vm_char *filename, unsigned long long *file_size, 
 
 
 unsigned long long vm_file_fseek(vm_file *fd, long long position, VM_FILE_SEEK_MODE mode) {
-#if defined(__APPLE__) || defined(__ANDROID__) || defined(LINUX64)
+#if defined(__ANDROID__) || defined(LINUX64)
   return fseeko(fd, (off_t)position, mode);
 #else
   return fseeko64(fd, (__off64_t)position, mode);
@@ -77,7 +77,7 @@ unsigned long long vm_file_fseek(vm_file *fd, long long position, VM_FILE_SEEK_M
   }
 
 unsigned long long vm_file_ftell(vm_file *fd) {
-#if defined(__APPLE__) || defined(__ANDROID__) || defined(LINUX64)
+#if defined(__ANDROID__) || defined(LINUX64)
   return (unsigned long long) ftello(fd);
 #else
   return (unsigned long long)ftello64(fd);

@@ -24,7 +24,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_VA_LINUX) || defined (MFX_VA_OSX)
+#if defined (MFX_VA_LINUX)
 
 #include "mfx_platform_headers.h"
 

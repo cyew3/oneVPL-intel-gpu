@@ -1325,13 +1325,11 @@ SurfaceSource::SurfaceSource(VideoCORE* core, const mfxVideoParam& video_param, 
         std::ignore = mapOpaq;
 #endif
         {
-#if !defined (MFX_VA_OSX)
             if (platform != MFX_PLATFORM_SOFTWARE && !useInternal)
             {
                 request.AllocId = video_param.AllocId;
                 mfxSts = m_core->AllocFrames(&request, &m_response, false);
             }
-#endif
         }
 
         MFX_CHECK_WITH_THROW(mfxSts >= MFX_ERR_NONE, mfxSts, mfx::mfxStatus_exception(mfxSts));
@@ -1354,11 +1352,7 @@ SurfaceSource::SurfaceSource(VideoCORE* core, const mfxVideoParam& video_param, 
             m_umc_allocator_adapter->SetExternalFramesResponse(&m_response);
         }
 
-#if defined(__APPLE__)
-        UMC::Status umcSts = m_umc_allocator_adapter->InitMfx(0, m_core, &video_param, &request, &m_response, !useInternal, true);
-#else
         UMC::Status umcSts = m_umc_allocator_adapter->InitMfx(0, m_core, &video_param, &request, &m_response, !useInternal, platform == MFX_PLATFORM_SOFTWARE);
-#endif
         MFX_CHECK_WITH_THROW(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC, mfx::mfxStatus_exception(MFX_ERR_MEMORY_ALLOC));
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
@@ -1411,11 +1405,7 @@ void SurfaceSource::CreateUMCAllocator(const mfxVideoParam & video_param, eMFXPl
 #endif // defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
             break;
         default:
-#if defined(MFX_VA_OSX)
-            m_umc_allocator_adapter.reset(new mfx_UMC_FrameAllocator());
-#else
             m_umc_allocator_adapter.reset(new mfx_UMC_FrameAllocator_D3D());
-#endif
         }
 #else // #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
         MFX_CHECK_WITH_THROW(false, MFX_ERR_UNSUPPORTED, mfx::mfxStatus_exception(MFX_ERR_UNSUPPORTED));
