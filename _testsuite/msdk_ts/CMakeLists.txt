@@ -128,6 +128,7 @@ if (MFX_ENABLE_H264_VIDEO_ENCODE)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_qp_offset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_qp_range.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_qp_report.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_query.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_repeat_pps.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_reset_cbr_hrd_conf_vui.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/avce_roi.cpp
