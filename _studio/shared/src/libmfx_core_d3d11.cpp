@@ -1284,6 +1284,8 @@ bool D3D11VideoCORE_T<Base>::IsCompatibleForOpaq()
 D3D11VideoCORE20::D3D11VideoCORE20(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
     : D3D11VideoCORE20_base(adapterNum, numThreadsAvailable, session)
 {
+    m_enabled20Interface = false;
+
 #if !defined STRIP_EMBARGO
     int deviceId = MFX::GetDeviceId(adapterNum);
     auto itDev = std::find_if(std::begin(listLegalDevIDs), std::end(listLegalDevIDs)
