@@ -91,6 +91,7 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::CreateVA(mfxVideoParam* param, mfxFrameAllo
     MFX_CHECK(!(param->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && !(param->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_NONE);
 
     if (MFX_CODEC_AVC == param->mfx.CodecId ||
+        MFX_CODEC_VC1 == param->mfx.CodecId ||
         MFX_CODEC_MPEG2 == param->mfx.CodecId)
         return MFX_ERR_NONE;
 
