@@ -70,10 +70,8 @@ public:
 
   virtual mfxTaskThreadingPolicy GetThreadingPolicy(void);
 
-#if defined(MFX_ONEVPL)
   virtual mfxFrameSurface1* GetSurfaceIn() { return nullptr; }
   virtual mfxFrameSurface1* GetSurfaceOut() { return nullptr; }
-#endif
 
 protected:
 
@@ -146,7 +144,6 @@ public:
 
     mfxStatus PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU32 taskIndex);
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurfaceIn() override{
         if (!m_pHWVPP)
         {
@@ -163,7 +160,6 @@ public:
         }
         return m_pHWVPP->GetSurfaceOut();
     }
-#endif
 };
 
 mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);

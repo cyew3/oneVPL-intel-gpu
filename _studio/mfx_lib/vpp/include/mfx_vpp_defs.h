@@ -39,13 +39,13 @@
 #define MAX_NUM_OF_VPP_CONFIG_FILTERS (6)
 
 // Max samples number for composition filter
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (128)
     #define MAX_STREAMS_PER_TILE (8)
 #else
     #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (72)
     #define MAX_STREAMS_PER_TILE (8)
-#endif
+#endif //MFX_VA_WIN
 
 
 // (DO_NOT_USE, DO_USE) + (MAX_NUM_OF_VPP_CONFIG_FILTERS)

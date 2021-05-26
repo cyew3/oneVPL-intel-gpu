@@ -1914,7 +1914,7 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
                 else if (pmode == impl::MFX_SKIPMODE_NOSTATUSREPORT)
                 {
 
-#if defined MFX_VA_WIN
+#if defined(MFX_VA_WIN)
                     UMC::VideoAccelerator *va;
                     m_core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
                     if (va)

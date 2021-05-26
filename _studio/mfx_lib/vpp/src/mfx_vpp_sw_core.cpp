@@ -31,7 +31,7 @@
 #include "libmfx_core_interface.h"
 
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 
@@ -317,9 +317,7 @@ mfxStatus VideoVPPBase::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *ou
         return MFX_ERR_NULL_PTR;
     }
 
-#if defined(MFX_ONEVPL)
     if (!out->FrameInterface)
-#endif
        MFX_CHECK(!out->Data.Locked, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     /* *************************************** */
@@ -546,11 +544,9 @@ mfxStatus VideoVPPBase::CheckIOPattern( mfxVideoParam* par )
       return MFX_ERR_INVALID_VIDEO_PARAM;
   }
 
-#if defined(MFX_ONEVPL)
   // MSDK 2.0 supports internal allocation without Ext. allocator set
   bool core20_interface = Supports20FeatureSet(*m_core);
   if (!core20_interface)
-#endif
     MFX_CHECK(m_core->IsExternalFrameAllocator() || !(par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)), MFX_ERR_INVALID_VIDEO_PARAM);
 
   if ((par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) &&

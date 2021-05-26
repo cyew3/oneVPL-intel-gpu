@@ -102,10 +102,8 @@ public:
 
     mfxStatus ResetTaskCounters();
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurfaceIn() override;
     virtual mfxFrameSurface1* GetSurfaceOut() override;
-#endif
 
 private:
 

@@ -23,13 +23,15 @@
 #if defined (MFX_ENABLE_VPP)
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
-#ifndef __MFX_VPP_JPEG_D3D9_H
-#define __MFX_VPP_JPEG_D3D9_H
+#ifndef __MFX_VPP_JPEG_D3D_H
+#define __MFX_VPP_JPEG_D3D_H
 
 #include "umc_va_base.h"
 #include "mfx_vpp_interface.h"
 #include "umc_mutex.h"
+#if defined(MFX_VA_WIN)
 #include "libmfx_core_d3d9on11.h"
+#endif
 
 #include <map>
 
@@ -73,7 +75,7 @@ protected:
 
 
 
-#endif // __MFX_VPP_JPEG_D3D9_H
+#endif // __MFX_VPP_JPEG_D3D_H
 
 #endif // MFX_ENABLE_MJPEG_VIDEO_DECODE
 #endif // MFX_ENABLE_VPP

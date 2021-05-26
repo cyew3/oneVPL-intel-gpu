@@ -327,7 +327,6 @@ mfxStatus ImplementationMvc::Close(void)
 
 } // mfxStatus ImplementationMvc::Close( void )
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* ImplementationMvc::GetSurfaceIn()
 {
     if (!m_bInit)
@@ -369,6 +368,5 @@ mfxFrameSurface1* ImplementationMvc::GetSurfaceOut()
 
     return m_VPP[viewId]->GetSurfaceOut();
 }
-#endif
 #endif // MFX_ENABLE_VPP
 /* EOF */

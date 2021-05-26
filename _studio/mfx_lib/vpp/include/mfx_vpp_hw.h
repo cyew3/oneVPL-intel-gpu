@@ -32,7 +32,9 @@
 #include "umc_mutex.h"
 #include "mfx_vpp_interface.h"
 #include "mfx_vpp_defs.h"
+#if defined (MFX_VA_WIN)
 #include "mfx_ext_ddi.h"
+#endif
 #include "libmfx_core_interface.h"
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
 #include "mfx_win_event_cache.h"
@@ -659,8 +661,8 @@ namespace MfxHwVideoProcessing
                 m_frcRational[VPP_IN]  = frcRational[VPP_IN];
                 m_frcRational[VPP_OUT] = frcRational[VPP_OUT];
 
-                m_minDeltaTime = std::min(uint64_t(m_frcRational[VPP_IN].FrameRateExtD  * MFX_TIME_STAMP_FREQUENCY) / (mfxU64(2) * m_frcRational[VPP_IN].FrameRateExtN),
-                                          uint64_t(m_frcRational[VPP_OUT].FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (mfxU64(2) * m_frcRational[VPP_OUT].FrameRateExtN));
+                m_minDeltaTime = std::min((uint64_t(m_frcRational[VPP_IN].FrameRateExtD)  * MFX_TIME_STAMP_FREQUENCY) / (mfxU64(2) * m_frcRational[VPP_IN].FrameRateExtN),
+                                          (uint64_t(m_frcRational[VPP_OUT].FrameRateExtD) * MFX_TIME_STAMP_FREQUENCY) / (mfxU64(2) * m_frcRational[VPP_OUT].FrameRateExtN));
             }
 
             mfxStatus DoCpuFRC_AndUpdatePTS(
@@ -899,12 +901,10 @@ namespace MfxHwVideoProcessing
 
         static
         mfxStatus Query(VideoCORE* core,mfxVideoParam *par);
-#if defined(MFX_ONEVPL)
         static
         mfxStatus QueryImplsDescription(VideoCORE* core, mfxVPPDescription& caps, mfx::PODArraysHolder& arrayHolder);
         static
         mfxStatus CheckFormatLimitation(mfxU32 filter, mfxU32 format, mfxU32& formatSupport);
-#endif
         static
         mfxStatus QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
         static
@@ -933,10 +933,9 @@ namespace MfxHwVideoProcessing
 #endif
         );
 
-#if defined(MFX_ONEVPL)
         mfxFrameSurface1* GetSurfaceIn();
         mfxFrameSurface1* GetSurfaceOut();
-#endif
+
     private:
 
         mfxStatus MergeRuntimeParams(const DdiTask* pTask,  MfxHwVideoProcessing::mfxExecuteParams *execParams);
@@ -987,10 +986,8 @@ namespace MfxHwVideoProcessing
 
         MfxFrameAllocResponse   m_internalVidSurf[2];
 
-#if defined(MFX_ONEVPL)
         std::unique_ptr<SurfaceCache> m_surfaceIn;
         std::unique_ptr<SurfaceCache> m_surfaceOut;
-#endif
 
         VideoCORE *m_pCore;
         UMC::Mutex m_guard;

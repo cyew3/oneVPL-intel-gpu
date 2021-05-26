@@ -29,7 +29,7 @@
 
 #include "mfxpcp.h"
 
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 
@@ -509,14 +509,14 @@ bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output)
 void ShowPipeline( std::vector<mfxU32> pipelineList )
 {
 #if !defined(_DEBUG) && \
-    !defined(_WIN32) && !defined(_WIN64) || \
-    !defined(LINUX) && !defined(LINUX32) && !defined(LINUX64)
+    !defined(MFX_VA_WIN) || \
+    !defined(MFX_VA_LINUX)
 
     (void)pipelineList;
 #endif
 
 #ifdef _DEBUG
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     mfxU32 filterIndx;
     char cStr[256];
 
@@ -919,7 +919,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
     } //end of filter search
 
     //fprintf(stderr,"\n");
-#endif // #if defined(LINUX) || defined(LINUX32) || defined(LINUX64)
+#endif // #if defined(MFX_VA_LINUX)
 
 #endif //#ifdef _DEBUG
     return;
@@ -1133,34 +1133,6 @@ void ReorderPipelineListForSpeed(
     mfxVideoParam* videoParam,
     std::vector<mfxU32> & pipelineList)
 {
-#if 0
-    // optimization in case of RS
-    if( IsFilterFound( pList, len, MFX_EXTBUFF_VPP_RESIZE ) )
-    {
-        mfxF64 ratioW = (mfxF64)videoParam->vpp.Out.Width / (mfxF64)videoParam->vpp.In.Width;
-        mfxF64 ratioH = (mfxF64)videoParam->vpp.Out.Height / (mfxF64)videoParam->vpp.In.Height;
-
-        if( ratioW < 1.0 && ratioH < 1.0 )
-        {
-
-            mfxU32 filterIndex = 0;
-            mfxU32 filterIndexRS = GetFilterIndex(pList, len, MFX_EXTBUFF_VPP_RESIZE);
-
-            // RESIZE_DOWNSCALE must be first filter in pipeline
-            for( filterIndex = filterIndexRS; filterIndex > 0; filterIndex-- )
-            {
-                VPP_SWAP(pList[filterIndex], pList[filterIndex-1]);
-            }
-            //exclude CSC
-            if( IsFilterFound( pList, len, MFX_EXTBUFF_VPP_CSC ) )
-            {
-                VPP_SWAP(pList[1], pList[0]);
-            }
-        }
-    }
-#endif
-
-#if 1
     // optimization in case of FRC
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) )
     {
@@ -1187,8 +1159,6 @@ void ReorderPipelineListForSpeed(
             }
         }
     }
-#endif
-
 } // void ReorderPipelineListForSpeed(mfxVideoParam* videoParam, std::vector<mfxU32> & pipelineList)
 
 
@@ -1317,25 +1287,10 @@ mfxStatus GetPipelineList(
     }
 
     /* [Deinterlace] FILTER */
-#if 0
-    mfxU32 extParamCount        = std::max(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
-    std::vector<mfxU32> extParamList(extParamCount);
-
-    GetConfigurableFilterList( videoParam, &extParamList[0], &extParamCount );
-
-    mfxU32*   pExtBufList = NULL;
-    mfxU32    extBufCount = 0;
-#endif
     if( 0 != videoParam->NumExtParam && NULL == videoParam->ExtParam )
     {
         return MFX_ERR_NULL_PTR;
     }
-#if 0
-    GetDoUseFilterList( videoParam, &pExtBufList, &extBufCount );
-
-    extParamList.insert(extParamList.end(), &pExtBufList[0], &pExtBufList[extBufCount]);
-    extParamCount = (mfxU32) extParamList.size();
-#endif
     PicStructMode picStructMode = GetPicStructMode(par->In.PicStruct, par->Out.PicStruct);
 
     mfxI32 deinterlacingMode = 0;
@@ -1668,7 +1623,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
 #endif
             break;
         case MFX_FOURCC_AYUV:
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(MFX_VA_WIN)
             MFX_CHECK(platform >= MFX_HW_ICL, MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
             break;
@@ -1716,12 +1671,6 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-
-#if 0
-    /* AspectRatio */
-    if ((info->AspectRatioW || info->AspectRatioH) && !(info->AspectRatioW && info->AspectRatioH))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-#endif
 
     /* Frame Rate */
     if (0 == info->FrameRateExtN || 0 == info->FrameRateExtD)
@@ -2045,23 +1994,6 @@ size_t GetConfigSize( mfxU32 filterId )
 
 mfxStatus CheckTransferMatrix( mfxU16 /*transferMatrix*/ )
 {
-#if 0
-    switch( transferMatrix )
-    {
-        case MFX_TRANSFERMATRIX_BT601:
-        case MFX_TRANSFERMATRIX_BT709:
-        case MFX_TRANSFERMATRIX_XVYCC_BT601:
-        case MFX_TRASNFERMATRIX_XVYCC_BT709:
-        {
-            return MFX_ERR_NONE;
-        }
-
-        default:
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-    }
-#endif
     return MFX_ERR_NONE;
 
 } // mfxStatus CheckTransferMatrix( mfxU16 transferMatrix )
@@ -2089,24 +2021,6 @@ mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
     {
         mode = GAMUT_PASSIVE_MODE;
     }
-#if 0
-    else if( MFX_TRANSFERMATRIX_XVYCC_BT601 == srcTransferMatrix &&
-             MFX_TRANSFERMATRIX_BT601 == dstTransferMatrix )
-    {
-        mode   = GAMUT_COMPRESS_ADVANCED_MODE;
-        //m_bBT601 = true;
-    }
-    else if( MFX_TRASNFERMATRIX_XVYCC_BT709 == srcTransferMatrix &&
-             MFX_TRANSFERMATRIX_BT709 == dstTransferMatrix )
-    {
-        mode   = GAMUT_COMPRESS_ADVANCED_MODE;
-        //m_bBT601 = false;
-    }
-    else
-    {
-        mode = GAMUT_INVALID_MODE;
-    }
-#endif
     return mode;
 
 } // mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
@@ -2325,7 +2239,7 @@ mfxU16 EstimatePicStruct(
 
 mfxU16 MapDNFactor( mfxU16 denoiseFactor )
 {
-#if defined(LINUX32) || defined(LINUX64)
+#if defined(MFX_VA_LINUX)
     // On Linux detail and de-noise factors mapped to the real libva values
     // at execution time.
     mfxU16 gfxFactor = denoiseFactor;

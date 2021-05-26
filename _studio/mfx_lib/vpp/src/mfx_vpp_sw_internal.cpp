@@ -402,12 +402,6 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
         }
     }
 #endif
-#if 0
-    else if( MFX_EXTBUFF_VPP_GAMUT_MAPPING == filterName )
-    {
-        sts = MFXVideoVPPGamutCompression::Query( pHint );
-    }
-#endif
     else if( MFX_EXTBUFF_VPP_SCENE_ANALYSIS == filterName )
     {
         sts = MFX_ERR_UNSUPPORTED;
@@ -418,7 +412,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     }
     else if( MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName )
     {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         sts = MFX_ERR_UNSUPPORTED;
 #else
         sts = MFX_ERR_NONE;

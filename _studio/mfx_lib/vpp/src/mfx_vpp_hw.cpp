@@ -50,9 +50,7 @@
 
 #include "umc_defs.h"
 
-#if defined(MFX_ONEVPL)
 #include "mfx_common_int.h"
-#endif
 
 using namespace MfxHwVideoProcessing;
 enum
@@ -324,18 +322,6 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
 
     mfxU32 timeStampDifference = abs((mfxI32)(inputTimeStamp - m_expectedTimeStamp));
 
-#if 0
-    // process timestamps jumps
-    if (timeStampDifference > MAX_ACCEPTED_DIFFERENCE)
-    {
-    // jump was happened
-    m_timeStampJump += input->Data.TimeStamp - m_prevInputTimeStamp;
-
-    // recalculate expected timestamp according happened jump
-    m_expectedTimeStamp = ((mfxU64) (m_numOutputFrames - 1) * m_params.vpp.Out.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / m_params.vpp.Out.FrameRateExtN +
-    m_timeOffset + m_timeStampJump;
-    }
-#endif
 
     // process irregularity
     if (m_minDeltaTime > timeStampDifference)
@@ -2216,7 +2202,6 @@ mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
     return sts;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoVPPHW::QueryImplsDescription(VideoCORE* core, mfxVPPDescription& caps, mfx::PODArraysHolder& arrayHolder)
 {
     MfxHwVideoProcessing::mfxVppCaps vppCaps;
@@ -2349,7 +2334,6 @@ mfxStatus VideoVPPHW::CheckFormatLimitation(mfxU32 filter, mfxU32 format, mfxU32
     }
     return MFX_ERR_NONE;
 }
-#endif
 
 mfxStatus  VideoVPPHW::Init(
     mfxVideoParam *par,
@@ -2517,7 +2501,6 @@ mfxStatus  VideoVPPHW::Init(
     // async workload mode by default
     m_workloadMode = VPP_ASYNC_WORKLOAD;
 
-#if defined(MFX_ONEVPL)
     bool core20_interface = Supports20FeatureSet(*m_pCore);
     if (core20_interface && !m_pCore->IsExternalFrameAllocator())
     {
@@ -2527,7 +2510,6 @@ mfxStatus  VideoVPPHW::Init(
         m_surfaceIn.reset(new SurfaceCache(*pCore20, memTypeIn, par->vpp.In));
         m_surfaceOut.reset(new SurfaceCache(*pCore20, memTypeOut, par->vpp.Out));
     }
-#endif
 
     //-----------------------------------------------------
     // [4] resource and task manager
@@ -2549,25 +2531,17 @@ mfxStatus  VideoVPPHW::Init(
 #ifdef MFX_ENABLE_KERNELS
             case MFX_HW_BDW:
             case MFX_HW_CHT:
-                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen8,sizeof(genx_fcopy_gen8),m_pCmProgram,"nojitter");
-                break;
             case MFX_HW_SCL:
             case MFX_HW_APL:
             case MFX_HW_KBL:
             case MFX_HW_GLK:
             case MFX_HW_CFL:
-                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen9,sizeof(genx_fcopy_gen9),m_pCmProgram,"nojitter");
-                break;
             case MFX_HW_CNL:
-                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen10,sizeof(genx_fcopy_gen10),m_pCmProgram,"nojitter");
-                break;
             case MFX_HW_ICL:
-                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen11,sizeof(genx_fcopy_gen11),m_pCmProgram,"nojitter");
-                break;
             case MFX_HW_EHL:
             case MFX_HW_ICL_LP:
             case MFX_HW_JSL:
-                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen11lp,sizeof(genx_fcopy_gen11lp),m_pCmProgram,"nojitter");
+                return MFX_ERR_DEVICE_FAILED;
                 break;
             case MFX_HW_TGL_LP:
             case MFX_HW_DG1:
@@ -3269,10 +3243,8 @@ mfxStatus VideoVPPHW::Close()
             m_ddi->Close();
         }
     }
-#if defined(MFX_ONEVPL)
     m_surfaceIn.reset();
     m_surfaceOut.reset();
-#endif
     return sts;
 
 } // mfxStatus VideoVPPHW::Close()
@@ -4855,23 +4827,6 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
         }
         }
 #endif
-#if 0
-    // code moved in Submission() part due to issue with encoder
-    //// [3] Copy sys -> vid
-    if (SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
-    {
-        MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, pTask->frameNumber);
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
-            sts = CopyFrameDataBothFields(
-                pHwVpp->m_pCore,
-                pHwVpp->m_internalVidSurf[VPP_OUT].mids[pTask->output.resIdx],
-                pTask->output.pSurf,
-                pTask->output.pSurf->Info);
-            MFX_CHECK_STS(sts);
-        }
-    }
-#endif
     // [4] Complete task
     sts = pHwVpp->m_taskMngr.CompleteTask(pTask);
     return sts;
@@ -5033,7 +4988,6 @@ mfxStatus VideoVPPHW::QueryFromMctf(void *pState, void *pParam, bool bMctfReadyT
 }
 #endif
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoVPPHW::GetSurfaceIn()
 {
     if (!m_surfaceIn)
@@ -5053,7 +5007,6 @@ mfxFrameSurface1* VideoVPPHW::GetSurfaceOut()
     }
     return m_surfaceOut->GetSurface();
 }
-#endif
 
 mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable)
 {
@@ -6206,63 +6159,6 @@ mfxStatus ConfigureExecuteParams(
                 config.m_surfCount[VPP_IN]  = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT] = std::max<mfxU16>(2, config.m_surfCount[VPP_OUT]);
                 executeParams.frcModeOrig = static_cast<mfxU16>(GetMFXFrcMode(videoParam));
-#if 0
-                // Disable interpolated FRC until related issues resolved
-
-                // driver supports GFX FRC for progressive content only and NV12 input!!!
-                bool isProgressiveStream = ((MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.In.PicStruct) &&
-                    (MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.Out.PicStruct)) ? true : false;
-
-                bool isNV12Input = (MFX_FOURCC_NV12 == videoParam.vpp.In.FourCC) ? true : false;
-                if(caps.uFrameRateConversion &&
-                   (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(videoParam)) &&
-                    isProgressiveStream &&
-                    isNV12Input)
-                {
-                    mfxF64 inFrameRate  = CalculateUMCFramerate(videoParam.vpp.In.FrameRateExtN,  videoParam.vpp.In.FrameRateExtD);
-                    mfxF64 outFrameRate = CalculateUMCFramerate(videoParam.vpp.Out.FrameRateExtN, videoParam.vpp.Out.FrameRateExtD);
-                    mfxF64 mfxRatio = outFrameRate / inFrameRate;
-
-                    mfxU32 frcCount = (mfxU32)caps.frcCaps.customRateData.size();
-                    mfxF64 FRC_EPS = 0.01;
-
-                    for(mfxU32 frcIdx = 0; frcIdx < frcCount; frcIdx++)
-                    {
-                        CustomRateData* rateData = &(caps.frcCaps.customRateData[frcIdx]);
-                        // it is outFrameRate / inputFrameRate.
-                        mfxF64 gfxRatio = CalculateUMCFramerate(rateData->customRate.FrameRateExtN, rateData->customRate.FrameRateExtD);
-
-                        if( fabs(gfxRatio - mfxRatio) < FRC_EPS )
-                        {
-                            config.m_extConfig.mode = FRC_INTERPOLATION;
-                            config.m_extConfig.customRateData = caps.frcCaps.customRateData[frcIdx];
-
-                            mfxU32 framesCount = (rateData->bkwdRefCount + 1 + rateData->fwdRefCount);
-                            config.m_surfCount[VPP_IN]  = (mfxU16)std::max(framesCount, config.m_surfCount[VPP_IN]);
-                            config.m_surfCount[VPP_OUT] = (mfxU16)std::max(rateData->outputIndexCountPerCycle, config.m_surfCount[VPP_OUT]);
-                            /* case 30->60, or (1->2) */
-                            if (20 == floor(10*mfxRatio))
-                            {
-                                config.m_surfCount[VPP_IN]  = 3;
-                                config.m_extConfig.customRateData.fwdRefCount = 2;
-                                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
-                                config.m_extConfig.customRateData.outputIndexCountPerCycle  = 2;
-                            }
-                            else /* case 24->60 or (2->5)*/
-                            {
-                                config.m_surfCount[VPP_IN]  = 4;
-                                config.m_extConfig.customRateData.fwdRefCount = 3;
-                                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 2;
-                                config.m_extConfig.customRateData.outputIndexCountPerCycle  = 5;
-                            }
-
-                            executeParams.bFRCEnable     = true;
-                            executeParams.customRateData = caps.frcCaps.customRateData[frcIdx];
-                        }
-                    }
-                }
-#endif
-
 
                 inDNRatio = (mfxF64) videoParam.vpp.In.FrameRateExtD / videoParam.vpp.In.FrameRateExtN;
                 outDNRatio = (mfxF64) videoParam.vpp.Out.FrameRateExtD / videoParam.vpp.Out.FrameRateExtN;
@@ -6293,29 +6189,6 @@ mfxStatus ConfigureExecuteParams(
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
-#if 0
-                //DISABLE IMAGE_STABILIZATION
-                if(caps.uIStabFilter)
-                {
-                    executeParams.bImgStabilizationEnable = true;
-                    executeParams.istabMode               = MFX_IMAGESTAB_MODE_BOXING;
-
-                     for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
-                    {
-                        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_IMAGE_STABILIZATION)
-                        {
-                            mfxExtVPPImageStab *extIStab = (mfxExtVPPImageStab*) videoParam.ExtParam[i];
-
-                            executeParams.istabMode = extIStab->Mode;
-                        }
-                    }
-                }
-                else
-                {
-                    executeParams.bImgStabilizationEnable = false;
-                    //bIsPartialAccel = true;
-                }
-#endif
                 executeParams.bImgStabilizationEnable = false;
                 // no SW Fall Back
                 break;
@@ -6772,7 +6645,7 @@ mfxStatus ConfigureExecuteParams(
         }
     }
 
-#if defined(_WIN64) || defined (_WIN32)
+#if defined(MFX_VA_WIN)
     if ( (0 == memcmp(&videoParam.vpp.In, &videoParam.vpp.Out, sizeof(mfxFrameInfo))) &&
          executeParams.IsDoNothing() )
     {

@@ -276,7 +276,6 @@ mfxStatus VideoVPPMain::RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
 
 } // mfxStatus VideoVPPMain::RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux)
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoVPPMain::GetSurfaceIn()
 {
     if (!m_impl)
@@ -296,7 +295,6 @@ mfxFrameSurface1* VideoVPPMain::GetSurfaceOut()
     }
     return m_impl->GetSurfaceOut();
 }
-#endif
 
 #endif // MFX_ENABLE_VPP
 /* EOF */
