@@ -49,12 +49,6 @@ public:
     //render might have this interface
     virtual mfxStatus GetDevice(IHWDevice **pDevice) = 0;
 
-    //render might have this interface
-    virtual mfxStatus SetDevice(IHWDevice* pDevice) = 0;
-
-    //render might use Decode specific lock/unlock based on whether it's Decode D3D11
-    virtual mfxStatus SetDecodeD3D11(bool bDecodeD3D11) = 0;
-
     //render might convert surface based on whether VD SFC format is set or not
     virtual mfxStatus SetVDSFCFormat(bool bVDSFCFormatSetting) = 0;
 
