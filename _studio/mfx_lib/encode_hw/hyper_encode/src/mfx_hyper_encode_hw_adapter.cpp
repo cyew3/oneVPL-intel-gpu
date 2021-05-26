@@ -102,6 +102,14 @@ mfxStatus DummySession::Close(mfxSession dummy_session)
     return MFXClose(dummy_session);
 }
 
+mfxStatus HyperEncodeImpl::MFXQueryCorePlatform(VideoCORE* core, mfxAdapterInfo* info)
+{
+    IVideoCore_API_1_19* pInt = (IVideoCore_API_1_19*)core->QueryCoreInterface(MFXICORE_API_1_19_GUID);
+    MFX_CHECK_NULL_PTR1(pInt);
+
+    return pInt->QueryPlatform(&info->Platform);
+}
+
 mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapters)
 {
     MFX_CHECK_NULL_PTR1(adapters);
@@ -132,13 +140,7 @@ mfxStatus HyperEncodeImpl::MFXQueryAdapters(mfxComponentInfo* input_info, mfxAda
 
         mfxU32 version = MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR;
         if (version >= 1019) {
-            IVideoCore_API_1_19* pInt = (IVideoCore_API_1_19*)dummy_session->m_pCORE.get()->QueryCoreInterface(MFXICORE_API_1_19_GUID);
-            if (pInt == nullptr) {
-                DummySession::Close(dummy_session);
-                continue;
-            }
-
-            sts = pInt->QueryPlatform(&info.Platform);
+            sts = HyperEncodeImpl::MFXQueryCorePlatform(dummy_session->m_pCORE.get(), &info);
             if (sts != MFX_ERR_NONE) {
                 DummySession::Close(dummy_session);
                 continue;
@@ -176,11 +178,11 @@ mfxStatus HyperEncodeImpl::MFXQueryAdaptersNumber(mfxU32* num_adapters)
     return MFX_ERR_NONE;
 }
 
-mfxStatus HyperEncodeImpl::MFXQuerySecondAdapter(mfxU32 used_adapter, mfxI32* found_adapter)
+mfxStatus HyperEncodeImpl::MFXQuerySecondAdapter(mfxU32 used_adapter, mfxU32* found_adapter)
 {
     MFX_CHECK_NULL_PTR1(found_adapter);
 
-    mfxU32 adapter = 0, VendorID, DeviceID;
+    mfxU32 VendorID, DeviceID;
 
     for (mfxU32 cur_adapter = 0; ; ++cur_adapter) {
         if (!QueryAdapterInfo(cur_adapter, VendorID, DeviceID))
@@ -190,14 +192,12 @@ mfxStatus HyperEncodeImpl::MFXQuerySecondAdapter(mfxU32 used_adapter, mfxI32* fo
             continue;
 
         if (VendorID == INTEL_VENDOR_ID) {
-            adapter = cur_adapter;
-            break;
+            *found_adapter = cur_adapter;
+            return MFX_ERR_NONE;
         }
     }
 
-    *found_adapter = adapter;
-
-    return MFX_ERR_NONE;
+    return MFX_ERR_NOT_FOUND;
 }
 
 #endif // MFX_ENABLE_VIDEO_HYPER_ENCODE_HW

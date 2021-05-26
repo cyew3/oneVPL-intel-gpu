@@ -469,7 +469,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     }
 #endif
 
-    mfxStatus mfxRes;
+    mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_AUTO_TRACE("MFXVideoENCODE_Query");
     ETW_NEW_EVENT(MFX_TRACE_API_ENCODE_QUERY_TASK, 0, make_event_data(session, in ? in->mfx.FrameInfo.Width : 0, in ? in->mfx.FrameInfo.Height : 0, in ? in->mfx.CodecId : 0, in ? in->mfx.TargetUsage : 0, in ? in->mfx.LowPower : 0), [&](){ return make_event_data(mfxRes);});
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
@@ -553,8 +553,13 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     }
 #endif
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     // return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM in the case of hyper encode single fallback mode
     mfxRes = (mfxRes == MFX_ERR_NONE && bIsHyperEncodeSingleFallbackMode) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : mfxRes;
+
+    if (bIsHyperEncodeSingleFallbackMode)
+        SetHyperMode(out);
+#endif
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, out);
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
@@ -567,7 +572,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
     MFX_CHECK(request, MFX_ERR_NULL_PTR);
 
-    mfxStatus mfxRes;
+    mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_AUTO_TRACE("MFXVideoENCODE_Query");
     ETW_NEW_EVENT(MFX_TRACE_API_ENCODE_QUERY_IOSURF_TASK, 0, make_event_data(session, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, par->mfx.CodecId, par->mfx.TargetUsage, par->mfx.LowPower), [&](){ return make_event_data(mfxRes);});
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);

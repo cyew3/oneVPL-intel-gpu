@@ -26,7 +26,7 @@
 #include "libmfx_core_interface.h"
 #include "mfx_hyper_encode_hw_adapter.h"
 
-mfxStatus DeviceManagerBase::GetIMPL(mfxU16 mediaAdapterType, mfxAccelerationMode* accelMode, mfxU32* adapterNum)
+mfxStatus DeviceManagerBase::GetIMPL(mfxMediaAdapterType mediaAdapterType, mfxAccelerationMode* accelMode, mfxU32* adapterNum)
 {
     for (auto idx = m_intelAdapters.Adapters; idx != m_intelAdapters.Adapters + m_intelAdapters.NumActual; ++idx)
         if (mediaAdapterType == idx->Platform.MediaAdapterType) {
@@ -53,18 +53,16 @@ mfxStatus DeviceManagerBase::PrepareAdapters()
     MFX_CHECK_STS(sts);
 
     // get appSessionAdapterType
-    IVideoCore_API_1_19* pInt = (IVideoCore_API_1_19*)m_appSession->m_pCORE.get()->QueryCoreInterface(MFXICORE_API_1_19_GUID);
-    if (pInt) {
-        sts = pInt->QueryPlatform(&m_appSessionPlatform);
-        MFX_CHECK_STS(sts);
-    } else {
-        return MFX_ERR_NOT_INITIALIZED;
-    }
+    mfxAdapterInfo info{};
+    mfxStatus mfxRes = HyperEncodeImpl::MFXQueryCorePlatform(m_appSession->m_pCORE.get(), &info);
+    MFX_CHECK_STS(mfxRes);
+
+    m_appSessionPlatform = info.Platform;
 
     return sts;
 }
 
-mfxStatus DeviceManagerVideo::GetHandle(mfxU16 mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType)
+mfxStatus DeviceManagerVideo::GetHandle(mfxMediaAdapterType mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType)
 {
     if (mediaAdapterType == m_appSessionPlatform.MediaAdapterType) {
         if (m_memType == D3D11_MEMORY) {

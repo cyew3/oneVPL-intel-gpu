@@ -155,6 +155,14 @@ class ImplementationGopBased : public ExtVideoENCODE
 public:
     static mfxStatus CheckParams(mfxVideoParam* par);
 
+    static mfxStatus InitEncodeParams(mfxVideoParamWrapper* par, bool isNumExtParamChangable);
+
+    static mfxStatus QueryOnAllAdapters(
+        VideoCORE* core,
+        mfxVideoParam* par,
+        bool& isEncSupportedOnIntegrated,
+        bool& isEncSupportedOnDiscrete);
+
     static mfxStatus Query(
         VideoCORE* core,
         mfxVideoParam* in,
@@ -215,6 +223,8 @@ public:
 
 protected:
     std::unique_ptr<HyperEncodeBase> m_HyperEncode;
+    mfxStatus m_stsInitEncParams = MFX_ERR_NONE;
+    mfxVideoParamWrapper m_mfxEncParams = {};
 };
 
 #endif // MFX_ENABLE_VIDEO_HYPER_ENCODE_HW

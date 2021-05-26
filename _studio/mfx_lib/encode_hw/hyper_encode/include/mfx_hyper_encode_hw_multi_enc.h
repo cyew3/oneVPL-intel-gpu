@@ -35,17 +35,13 @@
 class HyperEncodeBase
 {
 public:
-    HyperEncodeBase(mfxSession session, mfxVideoParam* par, mfxStatus* sts)
+    HyperEncodeBase(mfxSession session, mfxVideoParam* par, bool isEncSupportedOnIntegrated, bool isEncSupportedOnDiscrete, mfxStatus* /*sts*/)
         :m_appSession(session)
-    {
-        m_gopSize = par->mfx.GopPicSize;
+        , m_isEncSupportedOnIntegrated(isEncSupportedOnIntegrated)
+        , m_isEncSupportedOnDiscrete(isEncSupportedOnDiscrete)
+        , m_mfxEncParams(par)
+    {};
 
-        if (!m_gopSize)
-            *sts = MFX_ERR_NOT_INITIALIZED;
-
-        if (*sts == MFX_ERR_NONE)
-            *sts = InitEncodeParams(par);
-    }
     virtual ~HyperEncodeBase()
     {
         m_devMngr.reset();
@@ -108,15 +104,13 @@ public:
 protected:
     virtual mfxStatus InitSession(
         mfxSession* appSession, mfxSession* internalSession,
-        mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxU16 mediaAdapterType, mfxU32 adapterNum);
+        mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxMediaAdapterType mediaAdapterType, mfxU32 adapterNum);
     
-    mfxStatus CreateEncoders();
-    mfxU16 GetAdapterTypeByFrame(mfxU32 frameNum, mfxU16 gopSize);
+    mfxStatus CreateEncoder(mfxMediaAdapterType adapterType, mfxEncoderNum encoderNum);
+    mfxStatus ConfigureEncodersPool();
 
     virtual mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) = 0;
-    mfxBitstreamWrapperWithLock* GetFreeBitstream(mfxU16 adapterType);
-
-    mfxStatus InitEncodeParams(mfxVideoParam* par);
+    mfxBitstreamWrapperWithLock* GetFreeBitstream(mfxEncoderNum adapterType);
 
 protected:
     mfxSession m_appSession = nullptr;
@@ -137,25 +131,28 @@ protected:
     std::mutex m_mutex;
 
     mfxU32 m_surfaceNum = 0;
-    mfxU16 m_gopSize = 0;
-    bool m_paramsChanged = false;
 
-    mfxVideoParamWrapper m_mfxEncParams = {};
+    mfxVideoParam* m_mfxEncParams = nullptr;
 
     mfxSession m_appPlatformInternalSession = nullptr;
+
+    bool m_areAllEncodersOnAppPlatform = true;
+
+    bool m_isEncSupportedOnIntegrated = false;
+    bool m_isEncSupportedOnDiscrete = false;
 };
 
 class HyperEncodeSys : public HyperEncodeBase
 {
 public:
-    HyperEncodeSys(mfxSession session, mfxVideoParam* par, mfxStatus* sts)
-        :HyperEncodeBase(session, par, sts)
+    HyperEncodeSys(mfxSession session, mfxVideoParam* par, bool isEncSupportedOnIntegrated, bool isEncSupportedOnDiscrete, mfxStatus* sts)
+        :HyperEncodeBase(session, par, isEncSupportedOnIntegrated, isEncSupportedOnDiscrete, sts)
     {
         if (*sts == MFX_ERR_NONE)
             m_devMngr.reset(new DeviceManagerSys(session, sts));
 
         if (*sts == MFX_ERR_NONE)
-            *sts = CreateEncoders();
+            *sts = ConfigureEncodersPool();
     }
     virtual ~HyperEncodeSys() {}
 
@@ -172,22 +169,24 @@ protected:
 class HyperEncodeVideo : public HyperEncodeBase
 {
 public:
-    HyperEncodeVideo(mfxSession session, mfxVideoParam* par, mfxStatus* sts)
-        :HyperEncodeBase(session, par, sts)
+    HyperEncodeVideo(mfxSession session, mfxVideoParam* par, bool isEncSupportedOnIntegrated, bool isEncSupportedOnDiscrete, mfxStatus* sts)
+        :HyperEncodeBase(session, par, isEncSupportedOnIntegrated, isEncSupportedOnDiscrete, sts)
     {
         if (*sts == MFX_ERR_NONE)
             m_devMngr.reset(new DeviceManagerVideo(session, sts));
 
         if (*sts == MFX_ERR_NONE) {
             m_pFrameAllocator = m_devMngr->GetInternalAllocator();
-            *sts = CreateEncoders();
+            *sts = ConfigureEncodersPool();
         }
+        // if all encoders on app's adapter - we don't need copy surfaces
+        if (!m_areAllEncodersOnAppPlatform) {
+            if (*sts == MFX_ERR_NONE)
+                *sts = InitVPPparams();
 
-        if (*sts == MFX_ERR_NONE)
-            *sts = InitVPPparams();
-
-        if (*sts == MFX_ERR_NONE)
-            *sts = CreateVPP();
+            if (*sts == MFX_ERR_NONE)
+                *sts = CreateVPP();
+        }
     }
     virtual ~HyperEncodeVideo()
     {
@@ -206,7 +205,7 @@ protected:
 
     mfxStatus InitSession(
         mfxSession* appSession, mfxSession* internalSession,
-        mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxU16 mediaAdapterType, mfxU32 adapterNum) override;
+        mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxMediaAdapterType mediaAdapterType, mfxU32 adapterNum) override;
 
     mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) override;
 

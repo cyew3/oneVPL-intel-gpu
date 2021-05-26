@@ -59,8 +59,8 @@ public:
         m_intelAdaptersData.clear();
     }
 
-    virtual mfxStatus GetIMPL(mfxU16 mediaAdapterType, mfxAccelerationMode* accelMode, mfxU32* adapterNum);
-    virtual mfxStatus GetHandle(mfxU16 mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType) = 0;
+    virtual mfxStatus GetIMPL(mfxMediaAdapterType mediaAdapterType, mfxAccelerationMode* accelMode, mfxU32* adapterNum);
+    virtual mfxStatus GetHandle(mfxMediaAdapterType mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType) = 0;
     virtual mfxFrameAllocator* GetInternalAllocator() = 0;
 
 public:
@@ -86,7 +86,7 @@ public:
     }
     virtual ~DeviceManagerSys() {}
 
-    mfxStatus GetHandle(mfxU16, mfxHDL*, mfxHandleType*) override
+    mfxStatus GetHandle(mfxMediaAdapterType /*mediaAdapterType*/, mfxHDL* /*hdl*/, mfxHandleType* /*hdlType*/) override
     {
         return MFX_ERR_NONE;
     }
@@ -120,7 +120,7 @@ public:
         m_pFrameAllocator.reset();
     }
 
-    mfxStatus GetHandle(mfxU16 mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType) override;
+    mfxStatus GetHandle(mfxMediaAdapterType mediaAdapterType, mfxHDL* hdl, mfxHandleType* hdlType) override;
 
     mfxFrameAllocator* GetInternalAllocator() override
     {

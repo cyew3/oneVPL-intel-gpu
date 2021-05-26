@@ -38,24 +38,24 @@ mfxStatus HyperEncodeBase::GetVideoParam(mfxVideoParam* par)
 
 mfxStatus HyperEncodeBase::Reset(mfxVideoParam* par)
 {
+    mfxStatus sts = MFX_ERR_NONE;
+
     m_surfaceNum = 0;
+    m_mfxEncParams = par;
 
-    mfxStatus sts = InitEncodeParams(par);
-    MFX_CHECK_STS(sts);
-
-    mfxU16 IOPattern = m_mfxEncParams.IOPattern;
+    mfxU16 IOPattern = m_mfxEncParams->IOPattern;
 
     for (auto& encoder : m_singleGpuEncoders) {
         MFX_CHECK(encoder, MFX_ERR_UNDEFINED_BEHAVIOR);
-        m_mfxEncParams.IOPattern = mfxU16((m_devMngr->m_memType != SYSTEM_MEMORY && encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
+        m_mfxEncParams->IOPattern = mfxU16((m_devMngr->m_memType != SYSTEM_MEMORY && encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
             MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-        sts = encoder->Reset(&m_mfxEncParams);
-        MFX_CHECK_STS(sts);
+        sts = encoder->Reset(m_mfxEncParams);
+        MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
     }
 
-    m_mfxEncParams.IOPattern = IOPattern;
+    m_mfxEncParams->IOPattern = IOPattern;
 
-    return m_paramsChanged ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus HyperEncodeBase::EncodeFrameAsync(
@@ -72,18 +72,19 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
 
     *appSyncp = nullptr;
 
-    const auto adapterType = GetAdapterTypeByFrame(m_surfaceNum, m_gopSize);
+    const mfxEncoderNum encoderNum = (mfxEncoderNum)((m_surfaceNum / m_mfxEncParams->mfx.GopPicSize) % MFX_ENCODERS_COUNT);
+
     auto encoder = std::find_if(m_singleGpuEncoders.begin(), m_singleGpuEncoders.end(),
-        [adapterType](const std::unique_ptr<SingleGpuEncode>& it) {
-            return it->m_adapterType == adapterType;
+        [encoderNum](const std::unique_ptr<SingleGpuEncode>& it) {
+            return it->m_encoderNum == encoderNum;
         })->get();
 
     mfxBitstreamWrapperWithLock* bst = nullptr;
 
     if (surface) {
-        auto orderInGop = m_surfaceNum % m_gopSize;
+        auto orderInGop = m_surfaceNum % m_mfxEncParams->mfx.GopPicSize;
         bool bFirstFrameInGOP = !orderInGop;
-        bool bLastFrameInGOP = (orderInGop + 1) / m_gopSize;
+        bool bLastFrameInGOP = (orderInGop + 1) / m_mfxEncParams->mfx.GopPicSize;
 
         mfxFrameSurface1* surfaceToEncode = nullptr;
         if (m_devMngr->m_appSessionPlatform.MediaAdapterType == encoder->m_adapterType)
@@ -93,17 +94,17 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
         MFX_CHECK_STS(sts);
 
         if (bFirstFrameInGOP) {
-            mfxU16 IOPattern = m_mfxEncParams.IOPattern;
+            mfxU16 IOPattern = m_mfxEncParams->IOPattern;
 
-            m_mfxEncParams.IOPattern = mfxU16((m_devMngr->m_memType != SYSTEM_MEMORY && encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
+            m_mfxEncParams->IOPattern = mfxU16((m_devMngr->m_memType != SYSTEM_MEMORY && encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
                 MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-            sts = encoder->Reset(&m_mfxEncParams);
-            MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNKNOWN);
+            sts = encoder->Reset(m_mfxEncParams);
+            MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_UNKNOWN);
 
-            m_mfxEncParams.IOPattern = IOPattern;
+            m_mfxEncParams->IOPattern = IOPattern;
         }
 
-        bst = GetFreeBitstream(adapterType);
+        bst = GetFreeBitstream(encoderNum);
         bst->Extend(appBst->MaxLength);
 
         sts = encoder->EncodeFrameAsync(ctrl, surfaceToEncode, bst, &syncp);
@@ -120,7 +121,7 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
 
         if (bLastFrameInGOP)
             do {
-                bst = GetFreeBitstream(adapterType);
+                bst = GetFreeBitstream(encoderNum);
                 bst->Extend(appBst->MaxLength);
 
                 do {
@@ -141,7 +142,7 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
     } else {
         // Drain
         do {
-            bst = GetFreeBitstream(adapterType);
+            bst = GetFreeBitstream(encoderNum);
             bst->Extend(appBst->MaxLength);
 
             sts = encoder->EncodeFrameAsync(ctrl, nullptr, bst, &syncp);
@@ -159,7 +160,7 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         if ((!surface && m_submittedTasks.size()) ||
-            ((m_submittedTasks.size() >= m_gopSize))) {
+            ((m_submittedTasks.size() >= m_mfxEncParams->mfx.GopPicSize))) {
             mfxSyncPoint fakeSyncp = (mfxSyncPoint)malloc(0);
 
             auto& outTask = m_waitingSyncOpTasks[fakeSyncp];
@@ -231,7 +232,7 @@ mfxStatus HyperEncodeBase::Close()
     return MFX_ERR_NONE;
 }
 
-mfxStatus HyperEncodeBase::InitSession(mfxSession* appSession, mfxSession* internalSession, mfxHandleType, mfxHDL, mfxAccelerationMode accelMode, mfxU16, mfxU32 adapterNum)
+mfxStatus HyperEncodeBase::InitSession(mfxSession* appSession, mfxSession* internalSession, mfxHandleType, mfxHDL, mfxAccelerationMode accelMode, mfxMediaAdapterType, mfxU32 adapterNum)
 {
     mfxInitializationParam param;
     param.AccelerationMode = accelMode;
@@ -245,96 +246,97 @@ mfxStatus HyperEncodeBase::InitSession(mfxSession* appSession, mfxSession* inter
     return MFXJoinSession(*appSession, *internalSession);
 }
 
-mfxStatus HyperEncodeBase::CreateEncoders()
+mfxStatus HyperEncodeBase::CreateEncoder(mfxMediaAdapterType adapterType, mfxEncoderNum encoderNum)
 {
-    mfxHDL integratedDeviceHdl = nullptr, discreteDeviceHdl = nullptr;
-    mfxHandleType integratedDeviceHdlType, discreteDeviceHdlType;
-    mfxAccelerationMode integratedDeviceSessionAccelMode, discreteDeviceSessionAccelMode;
-    mfxU32 integratedDeviceAdapterNum, discreteDeviceAdapterNum;
+    mfxHDL deviceHdl = nullptr;
+    mfxHandleType deviceHdlType;
+    mfxAccelerationMode deviceSessionAccelMode;
+    mfxU32 deviceAdapterNum;
 
-    mfxStatus sts = m_devMngr->GetHandle(MFX_MEDIA_INTEGRATED, &integratedDeviceHdl, &integratedDeviceHdlType);
-    MFX_CHECK_STS(sts);
-
-    sts = m_devMngr->GetHandle(MFX_MEDIA_DISCRETE, &discreteDeviceHdl, &discreteDeviceHdlType);
+    mfxStatus sts = m_devMngr->GetHandle(adapterType, &deviceHdl, &deviceHdlType);
     MFX_CHECK_STS(sts);
 
     sts = m_devMngr->GetIMPL(
 #ifdef SINGLE_GPU_DEBUG
         m_devMngr->m_appSessionPlatform.MediaAdapterType
 #else
-        MFX_MEDIA_INTEGRATED
-#endif        
-        , &integratedDeviceSessionAccelMode
-        , &integratedDeviceAdapterNum);
-    MFX_CHECK_STS(sts);
-
-    sts = m_devMngr->GetIMPL(
-#ifdef SINGLE_GPU_DEBUG
-        m_devMngr->m_appSessionPlatform.MediaAdapterType
-#else
-        MFX_MEDIA_DISCRETE
+        adapterType
 #endif
-        , &discreteDeviceSessionAccelMode
-        , &discreteDeviceAdapterNum);
+        , &deviceSessionAccelMode
+        , &deviceAdapterNum);
     MFX_CHECK_STS(sts);
 
-    // initialize session & encoder on iGfx
-    mfxSession integratedSession;
-    sts = InitSession(&m_appSession, &integratedSession, integratedDeviceHdlType, integratedDeviceHdl, integratedDeviceSessionAccelMode, MFX_MEDIA_INTEGRATED, integratedDeviceAdapterNum);
+    // initialize session & encoder
+    mfxSession session;
+    sts = InitSession(&m_appSession, &session, deviceHdlType, deviceHdl, deviceSessionAccelMode, adapterType, deviceAdapterNum);
     MFX_CHECK_STS(sts);
 
-    std::unique_ptr<SingleGpuEncode> integratedEncoder{ new SingleGpuEncode(integratedSession->m_pCORE.get(), MFX_MEDIA_INTEGRATED) };
-    m_singleGpuEncoders.push_back(std::move(integratedEncoder));
-
-    // initialize session & encoder on dGfx
-    mfxSession discreteSession;
-    sts = InitSession(&m_appSession, &discreteSession, discreteDeviceHdlType, discreteDeviceHdl, discreteDeviceSessionAccelMode, MFX_MEDIA_DISCRETE, discreteDeviceAdapterNum);
-    MFX_CHECK_STS(sts);
-
-    std::unique_ptr<SingleGpuEncode> discreteEncoder{ new SingleGpuEncode(discreteSession->m_pCORE.get(), MFX_MEDIA_DISCRETE) };
-    m_singleGpuEncoders.push_back(std::move(discreteEncoder));
-
-    for (auto& encoder : m_singleGpuEncoders)
-        if (encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) {
-            m_appPlatformInternalSession = encoder->m_session;
-            MFX_CHECK_NULL_PTR1(m_appPlatformInternalSession);
-            break;
-        }
-
-    return sts;
-}
-
-mfxU16 HyperEncodeBase::GetAdapterTypeByFrame(mfxU32 frameNum, mfxU16 gopSize)
-{
-    mfxU16 gopNum = (mfxU16)(frameNum / gopSize);
-    return gopNum % 2;
-}
-
-mfxStatus HyperEncodeBase::InitEncodeParams(mfxVideoParam* par)
-{
-    m_paramsChanged = false;
-    m_mfxEncParams = *par;
-    auto mfxEncExtCodingOpton = m_mfxEncParams.GetExtendedBuffer<mfxExtCodingOption>(MFX_EXTBUFF_CODING_OPTION);
-
-    if (mfxEncExtCodingOpton) {
-        if (!IsOff(mfxEncExtCodingOpton->NalHrdConformance) || !IsOff(mfxEncExtCodingOpton->VuiNalHrdParameters)) {
-            mfxEncExtCodingOpton->NalHrdConformance = MFX_CODINGOPTION_OFF;
-            mfxEncExtCodingOpton->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
-
-            m_paramsChanged = true;
-        }
-    } else {
-        return MFX_ERR_UNKNOWN;
-    }
+    std::unique_ptr<SingleGpuEncode> encoder{ new SingleGpuEncode(session->m_pCORE.get(), adapterType, encoderNum) };
+    m_singleGpuEncoders.push_back(std::move(encoder));
 
     return MFX_ERR_NONE;
 }
 
-mfxBitstreamWrapperWithLock* HyperEncodeBase::GetFreeBitstream(mfxU16 adapterType)
+mfxStatus HyperEncodeBase::ConfigureEncodersPool()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_isEncSupportedOnIntegrated && m_isEncSupportedOnDiscrete) {
+        sts = CreateEncoder(MFX_MEDIA_INTEGRATED, MFX_ENCODER_NUM1);
+        MFX_CHECK_STS(sts);
+        sts = CreateEncoder(MFX_MEDIA_DISCRETE, MFX_ENCODER_NUM2);
+        MFX_CHECK_STS(sts);
+    }
+    else if (m_isEncSupportedOnDiscrete) {
+        sts = CreateEncoder(MFX_MEDIA_DISCRETE, MFX_ENCODER_NUM1);
+        MFX_CHECK_STS(sts);
+        sts = CreateEncoder(MFX_MEDIA_DISCRETE, MFX_ENCODER_NUM2);
+        MFX_CHECK_STS(sts);
+    }
+    else if (m_isEncSupportedOnIntegrated) {
+        sts = CreateEncoder(MFX_MEDIA_INTEGRATED, MFX_ENCODER_NUM1);
+        MFX_CHECK_STS(sts);
+        sts = CreateEncoder(MFX_MEDIA_INTEGRATED, MFX_ENCODER_NUM2);
+        MFX_CHECK_STS(sts);
+    }
+    else {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    mfxMediaAdapterType appSessionPlatformAdapterType = (mfxMediaAdapterType)m_devMngr->m_appSessionPlatform.MediaAdapterType;
+
+    for (auto& encoder : m_singleGpuEncoders)
+        if (encoder->m_adapterType == appSessionPlatformAdapterType) {
+            m_appPlatformInternalSession = encoder->m_session;
+            MFX_CHECK_NULL_PTR1(m_appPlatformInternalSession);
+        } else {
+            m_areAllEncodersOnAppPlatform = false;
+        }
+
+    if (!m_appPlatformInternalSession) {
+        mfxHDL deviceHdl = nullptr;
+        mfxHandleType deviceHdlType;
+        mfxAccelerationMode deviceSessionAccelMode;
+        mfxU32 deviceAdapterNum;
+
+        sts = m_devMngr->GetHandle(appSessionPlatformAdapterType, &deviceHdl, &deviceHdlType);
+        MFX_CHECK_STS(sts);
+
+        sts = m_devMngr->GetIMPL(appSessionPlatformAdapterType, &deviceSessionAccelMode, &deviceAdapterNum);
+        MFX_CHECK_STS(sts);
+
+        sts = InitSession(&m_appSession, &m_appPlatformInternalSession, deviceHdlType, deviceHdl, deviceSessionAccelMode, appSessionPlatformAdapterType, deviceAdapterNum);
+        MFX_CHECK_STS(sts);
+    }
+
+    return sts;
+}
+
+mfxBitstreamWrapperWithLock* HyperEncodeBase::GetFreeBitstream(mfxEncoderNum encoderNum)
 {
     auto encoder = std::find_if(m_singleGpuEncoders.begin(), m_singleGpuEncoders.end(),
-        [adapterType](const std::unique_ptr<SingleGpuEncode>& it) {
-            return it->m_adapterType == adapterType;
+        [encoderNum](const std::unique_ptr<SingleGpuEncode>& it) {
+            return it->m_encoderNum == encoderNum;
         })->get();
 
     auto& bitsteamPool = m_bitstreams[encoder];
@@ -358,13 +360,15 @@ mfxBitstreamWrapperWithLock* HyperEncodeBase::GetFreeBitstream(mfxU16 adapterTyp
 
 mfxStatus HyperEncodeSys::Init()
 {
+    mfxStatus sts = MFX_ERR_NONE;
+
     for (auto& encoder : m_singleGpuEncoders) {
         MFX_CHECK(encoder, MFX_ERR_UNDEFINED_BEHAVIOR);
-        mfxStatus sts = encoder->Init(&m_mfxEncParams);
-        MFX_CHECK_STS(sts);
+        sts = encoder->Init(m_mfxEncParams);
+        MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
     }
 
-    return m_paramsChanged ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus HyperEncodeSys::CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode)
@@ -378,6 +382,10 @@ mfxStatus HyperEncodeSys::CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurf
 
 mfxStatus HyperEncodeVideo::AllocateSurfacePool()
 {
+    // if all encoders on app's adapter - we don't need copy surfaces
+    if (!m_appPlatformInternalSession->m_pVPP.get())
+        return MFX_ERR_NONE;
+
     mfxFrameAllocRequest singleEncRequest = {};
     mfxFrameAllocRequest vppRequest[2] = {};
 
@@ -388,7 +396,7 @@ mfxStatus HyperEncodeVideo::AllocateSurfacePool()
         })->get()->m_session;
 
     // call QueryIOSurf for session on 2nd adapter
-    mfxStatus sts = SingleGpuEncode::QueryIOSurf(session->m_pCORE.get(), &m_mfxEncParams, &singleEncRequest);
+    mfxStatus sts = SingleGpuEncode::QueryIOSurf(session->m_pCORE.get(), m_mfxEncParams, &singleEncRequest);
     MFX_CHECK_STS(sts);
 
     vppRequest[0].NumFrameMin = vppRequest[0].NumFrameSuggested;
@@ -399,10 +407,10 @@ mfxStatus HyperEncodeVideo::AllocateSurfacePool()
 
     // calculate number of frames for allocate
     singleEncRequest.NumFrameSuggested = singleEncRequest.NumFrameMin =
-        singleEncRequest.NumFrameSuggested + vppRequest[0].NumFrameSuggested - m_mfxEncParams.AsyncDepth + 1;
+        singleEncRequest.NumFrameSuggested + vppRequest[0].NumFrameSuggested - m_mfxEncParams->AsyncDepth + 1;
 
     singleEncRequest.Type = MFX_MEMTYPE_SYSTEM_MEMORY;
-    singleEncRequest.Info = m_mfxEncParams.mfx.FrameInfo;
+    singleEncRequest.Info = m_mfxEncParams->mfx.FrameInfo;
 
     // allocate required surfaces for 2nd adapter encoder
     sts = m_pFrameAllocator->Alloc(m_pFrameAllocator->pthis, &singleEncRequest, &m_singleEncResponse);
@@ -411,7 +419,7 @@ mfxStatus HyperEncodeVideo::AllocateSurfacePool()
     for (int i = 0; i < m_singleEncResponse.NumFrameActual; i++) {
         std::unique_ptr<mfxFrameSurface1> surface{ new mfxFrameSurface1 };
         memset(surface.get(), 0, sizeof(mfxFrameSurface1));
-        surface.get()->Info = m_mfxEncParams.mfx.FrameInfo;
+        surface.get()->Info = m_mfxEncParams->mfx.FrameInfo;
         surface.get()->Data.MemId = m_singleEncResponse.mids[i];
         sts = m_pFrameAllocator->Lock(m_pFrameAllocator->pthis, surface.get()->Data.MemId, &surface.get()->Data);
         MFX_CHECK_STS(sts);
@@ -423,41 +431,48 @@ mfxStatus HyperEncodeVideo::AllocateSurfacePool()
 
 mfxStatus HyperEncodeVideo::Init()
 {
-    mfxStatus sts;
-    mfxU16 IOPattern = m_mfxEncParams.IOPattern;
+    mfxStatus stsEnc = MFX_ERR_NONE;
+
+    mfxU16 IOPattern = m_mfxEncParams->IOPattern;
 
     for (auto& encoder : m_singleGpuEncoders) {
         MFX_CHECK(encoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        m_mfxEncParams.IOPattern = mfxU16((encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
+        m_mfxEncParams->IOPattern = mfxU16((encoder->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType) ?
             MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
-        sts = encoder->Init(&m_mfxEncParams);
-        MFX_CHECK_STS(sts);
+        stsEnc = encoder->Init(m_mfxEncParams);
+        MFX_CHECK(stsEnc == MFX_ERR_NONE || stsEnc == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, stsEnc);
     }
 
-    m_mfxEncParams.IOPattern = IOPattern;
+    m_mfxEncParams->IOPattern = IOPattern;
 
-    sts = m_appPlatformInternalSession->m_pVPP->Init(&m_mfxVppParams);
-    MFX_CHECK_STS(sts);
+    if (m_appPlatformInternalSession->m_pVPP.get()) {
+        mfxStatus sts = m_appPlatformInternalSession->m_pVPP->Init(&m_mfxVppParams);
+        MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
+    }
 
-    return m_paramsChanged ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+    return stsEnc;
 }
 
 mfxStatus HyperEncodeVideo::Reset(mfxVideoParam* par)
 {
-    mfxStatus sts = m_appPlatformInternalSession->m_pScheduler->WaitForAllTasksCompletion(m_appPlatformInternalSession->m_pVPP.get());
-    MFX_CHECK_STS(sts);
+    if (m_appPlatformInternalSession->m_pVPP.get()) {
+        mfxStatus sts = m_appPlatformInternalSession->m_pScheduler->WaitForAllTasksCompletion(m_appPlatformInternalSession->m_pVPP.get());
+        MFX_CHECK_STS(sts);
+    }
 
     mfxStatus stsReset = HyperEncodeBase::Reset(par);
-    MFX_CHECK(stsReset >= MFX_ERR_NONE, stsReset);
+    MFX_CHECK(stsReset == MFX_ERR_NONE || stsReset == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, stsReset);
 
-    m_mfxVppParams.vpp.In = m_mfxEncParams.mfx.FrameInfo;
-    m_mfxVppParams.vpp.Out = m_mfxVppParams.vpp.In;
-    m_mfxVppParams.AsyncDepth = m_mfxEncParams.AsyncDepth;
+    if (m_appPlatformInternalSession->m_pVPP.get()) {
+        m_mfxVppParams.vpp.In = m_mfxEncParams->mfx.FrameInfo;
+        m_mfxVppParams.vpp.Out = m_mfxVppParams.vpp.In;
+        m_mfxVppParams.AsyncDepth = m_mfxEncParams->AsyncDepth;
 
-    sts = m_appPlatformInternalSession->m_pVPP->Reset(&m_mfxVppParams);
-    MFX_CHECK_STS(sts);
+        mfxStatus sts = m_appPlatformInternalSession->m_pVPP->Reset(&m_mfxVppParams);
+        MFX_CHECK_STS(sts);
+    }
 
     return stsReset;
 }
@@ -480,10 +495,10 @@ mfxStatus HyperEncodeVideo::CreateVPP()
 
 mfxStatus HyperEncodeVideo::InitVPPparams()
 {
-    m_mfxVppParams.vpp.In = m_mfxEncParams.mfx.FrameInfo;
+    m_mfxVppParams.vpp.In = m_mfxEncParams->mfx.FrameInfo;
     m_mfxVppParams.vpp.Out = m_mfxVppParams.vpp.In;
     m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-    m_mfxVppParams.AsyncDepth = m_mfxEncParams.AsyncDepth;
+    m_mfxVppParams.AsyncDepth = m_mfxEncParams->AsyncDepth;
 
     // configure and attach external parameters
     m_vppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
@@ -510,9 +525,9 @@ mfxStatus HyperEncodeVideo::InitVPPparams()
 
 mfxStatus HyperEncodeVideo::InitSession(
     mfxSession* appSession, mfxSession* internalSession,
-    mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxU16 mediaAdapterType, mfxU32 adapterNum)
+    mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxMediaAdapterType mediaAdapterType, mfxU32 adapterNum)
 {
-    // prepare encode session
+    // create session
     mfxStatus sts = HyperEncodeBase::InitSession(appSession, internalSession, type, hdl, accelMode, mediaAdapterType, adapterNum);
     MFX_CHECK_STS(sts);
 
@@ -529,6 +544,7 @@ mfxStatus HyperEncodeVideo::InitSession(
 mfxStatus HyperEncodeVideo::CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode)
 {
     MFX_CHECK(appSurface, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(m_appPlatformInternalSession->m_pVPP.get(), MFX_ERR_NOT_INITIALIZED);
 
     mfxStatus sts = MFX_ERR_NONE;
     mfxSyncPoint VppSyncp = nullptr;

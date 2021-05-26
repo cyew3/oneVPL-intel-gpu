@@ -29,9 +29,10 @@
 
 namespace HyperEncodeImpl
 {
+    mfxStatus MFXQueryCorePlatform(VideoCORE* core, mfxAdapterInfo* info);
     mfxStatus MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapters);
     mfxStatus MFXQueryAdaptersNumber(mfxU32* num_adapters);
-    mfxStatus MFXQuerySecondAdapter(mfxU32 used_adapter, mfxI32* found_adapter);
+    mfxStatus MFXQuerySecondAdapter(mfxU32 used_adapter, mfxU32* found_adapter);
 }
 
 namespace DummySession

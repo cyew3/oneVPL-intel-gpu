@@ -22,8 +22,15 @@
 #define _MFX_HYPER_ENCODE_HW_REAL_ENC_H_
 
 #include "mfx_session.h"
+#include "mfx_hyper_encode_hw_adapter.h"
 
 #ifdef MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
+
+typedef enum {
+    MFX_ENCODER_NUM1,
+    MFX_ENCODER_NUM2,
+    MFX_ENCODERS_COUNT
+} mfxEncoderNum;
 
 class ExtVideoENCODE: public VideoENCODE
 {
@@ -54,12 +61,99 @@ class SingleGpuEncode : public ExtVideoENCODE
 {
 public:
     static mfxStatus Query(
+        mfxMediaAdapterType adapterType,
+        VideoCORE* core,
+        mfxVideoParam* in,
+        mfxVideoParam* out,
+        void*)
+    {
+        // get type of app adapter
+        mfxAdapterInfo info{};
+        mfxStatus mfxRes = HyperEncodeImpl::MFXQueryCorePlatform(core, &info);
+        MFX_CHECK_STS(mfxRes);
+
+        if (info.Platform.MediaAdapterType == adapterType) {
+            return MFXVideoENCODE_Query(core->GetSession(), in, out);
+        }
+
+        // create dummy_session for second adapter 
+        mfxU32 adapter;
+        mfxRes = HyperEncodeImpl::MFXQuerySecondAdapter(core->GetSession()->m_adapterNum, &adapter);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxSession dummy_session;
+        mfxRes = DummySession::Init(adapter, &dummy_session);
+        MFX_CHECK_STS(mfxRes);
+
+        // check dummy_session adapter type
+        mfxRes = HyperEncodeImpl::MFXQueryCorePlatform(dummy_session->m_pCORE.get(), &info);
+        if (mfxRes != MFX_ERR_NONE) {
+            DummySession::Close(dummy_session);
+            return mfxRes;
+        }
+        if (info.Platform.MediaAdapterType != adapterType) {
+            DummySession::Close(dummy_session);
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        mfxRes = MFXVideoENCODE_Query(dummy_session, in, out);
+        MFX_CHECK_STS(mfxRes);
+
+        DummySession::Close(dummy_session);
+
+        return mfxRes;
+    }
+
+    static mfxStatus Query(
         VideoCORE* core,
         mfxVideoParam* in,
         mfxVideoParam* out,
         void*)
     {
         return MFXVideoENCODE_Query(core->GetSession(), in, out);
+    }
+
+    static mfxStatus QueryIOSurf(
+        mfxMediaAdapterType adapterType,
+        VideoCORE* core,
+        mfxVideoParam* par,
+        mfxFrameAllocRequest* request)
+    {
+        // get type of app adapter
+        mfxAdapterInfo info{};
+        mfxStatus mfxRes = HyperEncodeImpl::MFXQueryCorePlatform(core, &info);
+        MFX_CHECK_STS(mfxRes);
+
+        if (info.Platform.MediaAdapterType == adapterType) {
+            return MFXVideoENCODE_QueryIOSurf(core->GetSession(), par, request);
+        }
+
+        // create dummy_session for second adapter 
+        mfxU32 adapter;
+        mfxRes = HyperEncodeImpl::MFXQuerySecondAdapter(core->GetSession()->m_adapterNum, &adapter);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxSession dummy_session;
+        mfxRes = DummySession::Init(adapter, &dummy_session);
+        MFX_CHECK_STS(mfxRes);
+
+        // check dummy_session adapter type
+        mfxRes = HyperEncodeImpl::MFXQueryCorePlatform(dummy_session->m_pCORE.get(), &info);
+        if (mfxRes != MFX_ERR_NONE) {
+            DummySession::Close(dummy_session);
+            return mfxRes;
+        }
+        if (info.Platform.MediaAdapterType != adapterType) {
+            DummySession::Close(dummy_session);
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        mfxRes = MFXVideoENCODE_QueryIOSurf(dummy_session, par, request);
+        MFX_CHECK_STS(mfxRes);
+
+        DummySession::Close(dummy_session);
+
+        return mfxRes;
     }
 
     static mfxStatus QueryIOSurf(
@@ -70,8 +164,9 @@ public:
         return MFXVideoENCODE_QueryIOSurf(core->GetSession(), par, request);
     }
 
-    SingleGpuEncode(VideoCORE* core, mfxU16 adapterType = MFX_MEDIA_INTEGRATED)
+    SingleGpuEncode(VideoCORE* core, mfxMediaAdapterType adapterType, mfxEncoderNum encoderNum)
         : m_adapterType(adapterType)
+        , m_encoderNum(encoderNum)
     {
         m_session = core->GetSession();
     }
@@ -165,7 +260,8 @@ public:
     }
 
 public:
-    mfxU16 m_adapterType;
+    mfxMediaAdapterType m_adapterType;
+    mfxEncoderNum m_encoderNum;
     mfxSession m_session;
 };
 

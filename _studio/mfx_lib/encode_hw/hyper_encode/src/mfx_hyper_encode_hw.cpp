@@ -24,7 +24,6 @@
 
 #include "mfx_session.h"
 #include "libmfx_core_interface.h" // for MFXIEXTERNALLOC_GUID
-#include "mfx_hyper_encode_hw_adapter.h"
 
 mfxStatus GetDdiVersions(
     VideoCORE* core,
@@ -42,7 +41,7 @@ mfxStatus GetDdiVersions(
     // not be available here. In this case let's call Query and request the version again
     if (sts != MFX_ERR_NONE) {
         sts = SingleGpuEncode::Query(core, &in_internal, &out_internal, 0);
-        MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+        MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
 
         sts = encodeDdiVersion1->GetDdiVersion(in_internal.mfx.CodecId, ddiVersion1);
     }
@@ -50,17 +49,16 @@ mfxStatus GetDdiVersions(
 
     // app session can be created on any of the adapters
     // the other adapter must be used for the second Query call
-    mfxI32 adapter = -1;
+    mfxU32 adapter;
     sts = HyperEncodeImpl::MFXQuerySecondAdapter(core->GetSession()->m_adapterNum, &adapter);
     MFX_CHECK_STS(sts);
-    MFX_CHECK(adapter != -1, MFX_ERR_UNSUPPORTED);
 
     mfxSession dummy_session;
     sts = DummySession::Init(adapter, &dummy_session);
     MFX_CHECK_STS(sts);
 
     sts = SingleGpuEncode::Query(dummy_session->m_pCORE.get(), &in_internal, &out_internal, 0);
-    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+    MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
 
     EncodeDdiVersion* encodeDdiVersion2 = QueryCoreInterface<EncodeDdiVersion>(dummy_session->m_pCORE.get());
     sts = encodeDdiVersion2->GetDdiVersion(in_internal.mfx.CodecId, ddiVersion2);
@@ -212,6 +210,63 @@ mfxStatus ImplementationGopBased::CheckParams(mfxVideoParam* par)
 #endif
 }
 
+mfxStatus ImplementationGopBased::InitEncodeParams(mfxVideoParamWrapper* par, bool isNumExtParamChangable)
+{
+    bool changed = false;
+
+    // codingOption
+    auto codingOption = (mfxExtCodingOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION);
+    if (!codingOption && isNumExtParamChangable) {
+        codingOption = par->GetExtendedBuffer<mfxExtCodingOption>(MFX_EXTBUFF_CODING_OPTION);
+        MFX_CHECK_NULL_PTR1(codingOption);
+    }
+    if (codingOption && (!IsOff(codingOption->NalHrdConformance) || !IsOff(codingOption->VuiNalHrdParameters))) {
+        codingOption->NalHrdConformance = MFX_CODINGOPTION_OFF;
+        codingOption->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+        changed = true;
+    }
+
+    // GopRefDist
+    if (par->mfx.CodecId == MFX_CODEC_AVC && !par->mfx.GopRefDist &&
+        (par->mfx.TargetUsage >= MFX_TARGETUSAGE_4 || !par->mfx.TargetUsage)) {
+        par->mfx.GopRefDist = 1;
+        changed = true;
+    }
+
+    return changed ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+}
+
+mfxStatus ImplementationGopBased::QueryOnAllAdapters(VideoCORE* core, mfxVideoParam* par, bool& isEncSupportedOnIntegrated, bool& isEncSupportedOnDiscrete)
+{
+    MFX_CHECK(isEncSupportedOnIntegrated && isEncSupportedOnDiscrete, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    mfxVideoParamWrapper inInternalIntegrated = *par, outInternalIntegrated = *par;
+    mfxStatus mfxResIntegrated = SingleGpuEncode::Query(MFX_MEDIA_INTEGRATED, core, &inInternalIntegrated, &outInternalIntegrated, 0);
+
+    mfxVideoParamWrapper inInternalDiscrete = *par, outInternalDiscrete = *par;
+    mfxStatus mfxResDiscrete = SingleGpuEncode::Query(MFX_MEDIA_DISCRETE, core, &inInternalDiscrete, &outInternalDiscrete, 0);
+
+    isEncSupportedOnIntegrated = (mfxResIntegrated == MFX_ERR_NONE || mfxResIntegrated == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) ? true : false;
+    isEncSupportedOnDiscrete = (mfxResDiscrete == MFX_ERR_NONE || mfxResDiscrete == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) ? true : false;
+    MFX_CHECK(isEncSupportedOnIntegrated || isEncSupportedOnDiscrete, MFX_ERR_UNSUPPORTED);
+
+    if (par->mfx.CodecId == MFX_CODEC_AVC)
+        if (par->mfx.GopRefDist)
+        {
+            if (isEncSupportedOnIntegrated)
+                isEncSupportedOnIntegrated = (inInternalIntegrated.mfx.GopRefDist == outInternalIntegrated.mfx.GopRefDist) ? true : false;
+            if (isEncSupportedOnDiscrete)
+                isEncSupportedOnDiscrete = (inInternalDiscrete.mfx.GopRefDist == outInternalDiscrete.mfx.GopRefDist) ? true : false;
+        }
+        else {
+            if (isEncSupportedOnIntegrated && isEncSupportedOnDiscrete)
+                MFX_CHECK(outInternalIntegrated.mfx.GopRefDist == outInternalDiscrete.mfx.GopRefDist, MFX_ERR_UNSUPPORTED);
+        }
+    MFX_CHECK(isEncSupportedOnIntegrated || isEncSupportedOnDiscrete, MFX_ERR_UNSUPPORTED);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus ImplementationGopBased::Query(
     VideoCORE* core,
     mfxVideoParam* in,
@@ -221,11 +276,26 @@ mfxStatus ImplementationGopBased::Query(
     mfxStatus mfxRes = CheckParams(in);
     MFX_CHECK_STS(mfxRes);
 
-    mfxRes = AreDdiVersionsCompatible(core, in);
+    mfxVideoParamWrapper mfxEncParams = *in;
+    mfxStatus mfxResInitEncParams = InitEncodeParams(&mfxEncParams, false);
+    MFX_CHECK(mfxResInitEncParams == MFX_ERR_NONE || mfxResInitEncParams == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, mfxResInitEncParams);
+
+    bool isEncSupportedOnIntegrated = true, isEncSupportedOnDiscrete = true;
+    mfxRes = QueryOnAllAdapters(core, &mfxEncParams, isEncSupportedOnIntegrated, isEncSupportedOnDiscrete);
     MFX_CHECK_STS(mfxRes);
 
-    // TODO: query encoder for each adapter
-    return SingleGpuEncode::Query(core, in, out, state);
+    if (isEncSupportedOnIntegrated && isEncSupportedOnDiscrete) {
+        mfxRes = AreDdiVersionsCompatible(core, &mfxEncParams);
+        MFX_CHECK_STS(mfxRes);
+    }
+
+    if (isEncSupportedOnIntegrated)
+        mfxRes = SingleGpuEncode::Query(MFX_MEDIA_INTEGRATED, core, &mfxEncParams, out, state);
+    else
+        mfxRes = SingleGpuEncode::Query(MFX_MEDIA_DISCRETE, core, &mfxEncParams, out, state);
+    MFX_CHECK(mfxRes == MFX_ERR_NONE || mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, mfxRes);
+
+    return (mfxRes >= mfxResInitEncParams) ? mfxRes : mfxResInitEncParams;
 }
 
 mfxStatus ImplementationGopBased::QueryIOSurf(
@@ -236,24 +306,49 @@ mfxStatus ImplementationGopBased::QueryIOSurf(
     mfxStatus mfxRes = CheckParams(par);
     MFX_CHECK_STS(mfxRes);
 
-    mfxRes = AreDdiVersionsCompatible(core, par);
+    mfxVideoParamWrapper mfxEncParams = *par;
+    mfxStatus mfxResInitEncParams = InitEncodeParams(&mfxEncParams, true);
+    MFX_CHECK(mfxResInitEncParams == MFX_ERR_NONE || mfxResInitEncParams == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, mfxResInitEncParams);
+
+    bool isEncSupportedOnIntegrated = true, isEncSupportedOnDiscrete = true;
+    mfxRes = QueryOnAllAdapters(core, &mfxEncParams, isEncSupportedOnIntegrated, isEncSupportedOnDiscrete);
     MFX_CHECK_STS(mfxRes);
 
-    // TODO: query encoder for each adapter
-    return SingleGpuEncode::QueryIOSurf(core, par, request);
+    if (isEncSupportedOnIntegrated && isEncSupportedOnDiscrete) {
+        mfxRes = AreDdiVersionsCompatible(core, &mfxEncParams);
+        MFX_CHECK_STS(mfxRes);
+    }
+
+    if (isEncSupportedOnIntegrated)
+        mfxRes = SingleGpuEncode::QueryIOSurf(MFX_MEDIA_INTEGRATED, core, &mfxEncParams, request);
+    else
+        mfxRes = SingleGpuEncode::QueryIOSurf(MFX_MEDIA_DISCRETE, core, &mfxEncParams, request);
+    MFX_CHECK(mfxRes == MFX_ERR_NONE || mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, mfxRes);
+
+    return (mfxRes >= mfxResInitEncParams) ? mfxRes : mfxResInitEncParams;
 }
 
 ImplementationGopBased::ImplementationGopBased(VideoCORE* core, mfxVideoParam* par, mfxStatus* sts)
 {
     *sts = CheckParams(par);
 
+    m_mfxEncParams = *par;
+    if (*sts == MFX_ERR_NONE) {
+        m_stsInitEncParams = InitEncodeParams(&m_mfxEncParams, true);
+        *sts = (m_stsInitEncParams < MFX_ERR_NONE) ? m_stsInitEncParams : *sts;
+    }
+
+    bool isEncSupportedOnIntegrated = true, isEncSupportedOnDiscrete = true;
     if (*sts == MFX_ERR_NONE)
-        *sts = AreDdiVersionsCompatible(core, par);
+        *sts = QueryOnAllAdapters(core, &m_mfxEncParams, isEncSupportedOnIntegrated, isEncSupportedOnDiscrete);
+
+    if (*sts == MFX_ERR_NONE && isEncSupportedOnIntegrated && isEncSupportedOnDiscrete)
+        *sts = AreDdiVersionsCompatible(core, &m_mfxEncParams);
 
     if (*sts == MFX_ERR_NONE)
-        m_HyperEncode.reset(MFX_IOPATTERN_IN_SYSTEM_MEMORY == par->IOPattern ?
-            (HyperEncodeBase*) new HyperEncodeSys(core->GetSession(), par, sts) :
-            (HyperEncodeBase*) new HyperEncodeVideo(core->GetSession(), par, sts));
+        m_HyperEncode.reset(MFX_IOPATTERN_IN_SYSTEM_MEMORY == m_mfxEncParams.IOPattern ?
+            (HyperEncodeBase*) new HyperEncodeSys(core->GetSession(), &m_mfxEncParams, isEncSupportedOnIntegrated, isEncSupportedOnDiscrete, sts) :
+            (HyperEncodeBase*) new HyperEncodeVideo(core->GetSession(), &m_mfxEncParams, isEncSupportedOnIntegrated, isEncSupportedOnDiscrete, sts));
 }
 
 mfxStatus ImplementationGopBased::Init(mfxVideoParam* /*par*/)
@@ -264,7 +359,10 @@ mfxStatus ImplementationGopBased::Init(mfxVideoParam* /*par*/)
     mfxStatus sts = m_HyperEncode->AllocateSurfacePool();
     MFX_CHECK_STS(sts);
 
-    return m_HyperEncode->Init();
+    sts = m_HyperEncode->Init();
+    MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
+
+    return (sts >= m_stsInitEncParams) ? sts : m_stsInitEncParams;
 }
 
 mfxStatus ImplementationGopBased::Close()
@@ -276,9 +374,19 @@ mfxStatus ImplementationGopBased::Close()
 
 mfxStatus ImplementationGopBased::Reset(mfxVideoParam* par)
 {
-    return m_HyperEncode.get()
-        ? m_HyperEncode->Reset(par)
+    mfxStatus mfxRes = CheckParams(par);
+    MFX_CHECK_STS(mfxRes);
+
+    m_mfxEncParams = *par;
+    mfxStatus mfxResInitEncParams = InitEncodeParams(&m_mfxEncParams, true);
+    MFX_CHECK(mfxResInitEncParams == MFX_ERR_NONE || mfxResInitEncParams == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, mfxResInitEncParams);
+
+    mfxRes = m_HyperEncode.get()
+        ? m_HyperEncode->Reset(&m_mfxEncParams)
         : MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(mfxRes == MFX_ERR_NONE || mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, mfxRes);
+
+    return (mfxRes >= mfxResInitEncParams) ? mfxRes : mfxResInitEncParams;
 }
 
 mfxStatus ImplementationGopBased::GetEncodeStat(mfxEncodeStat* stat)
