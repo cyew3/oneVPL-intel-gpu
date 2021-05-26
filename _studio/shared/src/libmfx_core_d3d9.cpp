@@ -387,7 +387,7 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
         if (isRequeredEarlySetHandle && m_pDirect3DDeviceManager)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
         m_vpp_hw_resmng.Close();
 #endif
 
@@ -658,7 +658,7 @@ mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *r
 mfxStatus D3D9VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+    #if defined (MFX_ENABLE_VPP)
     if (!m_vpp_hw_resmng.GetDevice()){
         sts = m_vpp_hw_resmng.CreateDevice(this);
     }

@@ -88,7 +88,6 @@ if(NOT MFX_DISABLE_SW_FALLBACK)
 
   target_compile_definitions(${mfxrtlibname}
     PRIVATE
-      MFX_RT
       ${defs}
     )
 endif()

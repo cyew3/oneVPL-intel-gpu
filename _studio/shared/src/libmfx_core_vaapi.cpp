@@ -536,7 +536,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::CreateVideoProcessing(mfxVideoParam * param)
 {
     (void)param;
 
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
     if (!m_vpp_hw_resmng.GetDevice()){
         return m_vpp_hw_resmng.CreateDevice(this);
     }

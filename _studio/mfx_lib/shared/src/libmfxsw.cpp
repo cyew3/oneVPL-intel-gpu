@@ -108,19 +108,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     }
 
     // check error(s)
-#if defined (MFX_RT)
-    if ((MFX_IMPL_AUTO != impl) &&
-        (MFX_IMPL_AUTO_ANY != impl) &&
-        (MFX_IMPL_HARDWARE_ANY != impl) &&
-        (MFX_IMPL_HARDWARE != impl) &&
-        (MFX_IMPL_HARDWARE2 != impl) &&
-        (MFX_IMPL_HARDWARE3 != impl) &&
-        (MFX_IMPL_HARDWARE4 != impl) &&
-        (MFX_IMPL_SOFTWARE != impl)) 
-    {
-        MFX_RETURN(MFX_ERR_UNSUPPORTED);
-    }
-#else
     if ((MFX_IMPL_AUTO != impl) &&
         (MFX_IMPL_AUTO_ANY != impl) &&
         (MFX_IMPL_HARDWARE_ANY != impl) &&
@@ -131,7 +118,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     {
         MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
-#endif
 
     // if user did not specify MFX_IMPL_VIA_* treat it as MFX_IMPL_VIA_ANY
     if (!implInterface)

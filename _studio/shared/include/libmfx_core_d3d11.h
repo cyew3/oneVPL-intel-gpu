@@ -34,7 +34,7 @@
 
 #include <memory>
 
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
 #include "d3d11_video_processor.h"
 #endif
 // disable the "conditional expression is constant" warning
@@ -118,7 +118,7 @@ public:
 
         if (type & MFX_MEMTYPE_FROM_DECODE)
             (*phdl = m_pAccelerator.get());
-#if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
         else if (type & (MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_FROM_VPPOUT))
             (*phdl = &m_vpp_hw_resmng);
 #endif
@@ -129,7 +129,7 @@ public:
     virtual eMFXPlatform GetPlatformType() override { return  MFX_PLATFORM_HARDWARE; }
 
     virtual eMFXVAType   GetVAType() const override { return MFX_HW_D3D11; }
-#if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
     virtual void         GetVideoProcessing(mfxHDL* phdl) override
     {
         if (!phdl) return;
@@ -188,7 +188,7 @@ protected:
     // D3D11 VideoAccelrator which works with decode components on MFX/UMC levels
     // and providing HW capabilities
     std::unique_ptr<MFXD3D11Accelerator>    m_pAccelerator;
-    #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+    #if defined (MFX_ENABLE_VPP)
     VPPHWResMng                             m_vpp_hw_resmng;
     #endif
     eMFXHWType                              m_HWType;

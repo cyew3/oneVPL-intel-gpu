@@ -136,7 +136,7 @@
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
     #endif
 
-    #if defined (MFX_RT) || defined(AS_H264LA_PLUGIN)
+    #if defined(AS_H264LA_PLUGIN)
         #undef MFX_ENABLE_H265_VIDEO_DECODE
         #undef MFX_ENABLE_H265_VIDEO_ENCODE
         #undef MFX_ENABLE_H264_VIDEO_DECODE

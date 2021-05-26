@@ -36,7 +36,7 @@
 #include "va/va.h"
 #include "vaapi_ext_interface.h"
 
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
 #include "mfx_vpp_interface.h"
 #endif
 
@@ -181,7 +181,7 @@ public:
     virtual eMFXVAType   GetVAType() const                                                            override { return MFX_HW_VAAPI; }
     virtual void*        QueryCoreInterface(const MFX_GUID &guid)                                     override;
 
-#if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
     virtual void         GetVideoProcessing(mfxHDL* phdl)                                             override
     {
         if (!phdl) return;
@@ -226,7 +226,7 @@ protected:
     bool                                        m_bCmCopy;
     bool                                        m_bCmCopyAllowed;
     std::unique_ptr<CmCopyWrapper>              m_pCmCopy;
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
     VPPHWResMng                                 m_vpp_hw_resmng;
 #endif
 

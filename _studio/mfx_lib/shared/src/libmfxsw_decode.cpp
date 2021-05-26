@@ -62,11 +62,6 @@
 #include "mfx_av1_dec_decode.h"
 #endif
 
-#if defined (MFX_RT)
-#pragma warning(disable:4065)
-#endif
-
-#if !defined (MFX_RT)
 template<>
 VideoDECODE* _mfxSession::Create<VideoDECODE>(mfxVideoParam& par)
 {
@@ -140,7 +135,6 @@ VideoDECODE* _mfxSession::Create<VideoDECODE>(mfxVideoParam& par)
     return pDECODE;
 
 }
-#endif
 
 mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -404,7 +398,6 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
 
     try
     {
-#if !defined (MFX_RT)
         // check existence of component
         if (!session->m_pDECODE)
         {
@@ -412,7 +405,6 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
             session->m_pDECODE.reset(session->Create<VideoDECODE>(*par));
             MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
-#endif
 
         mfxRes = session->m_pDECODE->Init(par);
     }

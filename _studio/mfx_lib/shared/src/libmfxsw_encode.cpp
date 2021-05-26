@@ -69,11 +69,6 @@
 #include "libmfx_core.h"
 #include <libmfx_core_interface.h> // for MFXIFEIEnabled_GUID
 
-#if defined (MFX_RT)
-#pragma warning(disable:4065)
-#endif
-
-
 struct CodecKey {
     const mfxU32 codecId;
 
@@ -404,7 +399,6 @@ static inline bool isHyperEncodeModeAdapt(mfxVideoParam* par)
 }
 #endif
 
-#if !defined (MFX_RT)
 template<>
 VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 {
@@ -457,7 +451,6 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 
     return pENCODE.release();
 } // VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core)
-#endif
 
 mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -658,7 +651,6 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 
     try
     {
-#if !defined (MFX_RT)
         // check existence of component
         if (!session->m_pENCODE)
         {
@@ -667,7 +659,6 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             session->m_pENCODE.reset(session->Create<VideoENCODE>(*par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
-#endif
 
         mfxRes = session->m_pENCODE->Init(par);
 

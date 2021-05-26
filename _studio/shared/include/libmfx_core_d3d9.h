@@ -217,7 +217,7 @@ public:
     mfxStatus              CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator);
     // to check HW capatbilities
     mfxStatus              IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false);
-    #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+    #if defined (MFX_ENABLE_VPP)
     virtual void          GetVideoProcessing(mfxHDL* phdl) 
     {
         *phdl = &m_vpp_hw_resmng;
@@ -260,7 +260,7 @@ private:
 
     HANDLE                                     m_hDirectXHandle; // if m_pDirect3DDeviceManager was used
     std::unique_ptr<UMC::DXVA2Accelerator>       m_pVA;
-    #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+    #if defined (MFX_ENABLE_VPP)
     VPPHWResMng                          m_vpp_hw_resmng;
     #endif
     IDirect3D9                          *m_pD3D;

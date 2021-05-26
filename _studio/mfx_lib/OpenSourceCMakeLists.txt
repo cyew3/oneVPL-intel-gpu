@@ -62,7 +62,6 @@ endforeach()
 
 set( defs "" )
 make_library( mfx_common none static )
-append_property( mfx_common COMPILE_FLAGS " -DMFX_RT" )
 
 foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
@@ -78,7 +77,6 @@ endforeach()
 
 set( defs "" )
 make_library( mfx_common hw static )
-append_property( mfx_common_hw COMPILE_FLAGS " -DMFX_RT" )
 
 ### libmfxhw
 list( APPEND mdirs

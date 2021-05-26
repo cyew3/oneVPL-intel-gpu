@@ -36,7 +36,7 @@
 
 #include <memory>
 
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
 #include "d3d11_video_processor.h"
 #endif
 // disable the "conditional expression is constant" warning

@@ -94,7 +94,7 @@ public:
     mfxStatus CreateVideoProcessing(mfxVideoParam * param) override
     {
         mfxStatus sts = MFX_ERR_NONE;
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
         if (!vpp_hw_resmng.GetDevice()) {
             MfxHwVideoProcessing::D3D11VideoProcessor *ddi = new MfxHwVideoProcessing::D3D11VideoProcessor();
             EXPECT_NE(nullptr, ddi);
@@ -117,7 +117,7 @@ public:
         return sts;
     }
 
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
     void  GetVideoProcessing(mfxHDL* phdl) override
     {
         *phdl = &vpp_hw_resmng;
@@ -126,7 +126,7 @@ public:
 
     void GetVA(mfxHDL* phdl, mfxU16 type) override
     {
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
         if ((type & MFX_MEMTYPE_FROM_VPPIN))
         {
             (*phdl = &vpp_hw_resmng);

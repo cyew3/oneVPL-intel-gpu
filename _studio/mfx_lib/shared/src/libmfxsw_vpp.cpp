@@ -37,7 +37,6 @@
 #endif
 #endif
 
-#if !defined (MFX_RT)
 template<>
 VideoVPP* _mfxSession::Create<VideoVPP>(mfxVideoParam& /*par*/)
 {
@@ -58,7 +57,6 @@ VideoVPP* _mfxSession::Create<VideoVPP>(mfxVideoParam& /*par*/)
     return pVPP;
 
 }
-#endif
 
 mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -84,13 +82,9 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 
     try
     {
-
-#if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
         mfxRes = VideoVPPMain::Query(session->m_pCORE.get(), in, out);
 #endif // MFX_ENABLE_VPP
-#endif
-
     }
     // handle error(s)
     catch(...)
@@ -118,11 +112,9 @@ mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 
     try
     {
-#if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
         mfxRes = VideoVPPMain::QueryIOSurf(session->m_pCORE.get(), par, request/*, session->m_adapterNum*/);
 #endif // MFX_ENABLE_VPP
-#endif
     }
     // handle error(s)
     catch(...)
@@ -149,7 +141,6 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
 
     try
     {
-#if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
         // close the existing video processor,
         // if it is initialized.
@@ -164,7 +155,6 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
         MFX_CHECK(session->m_pVPP.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         mfxRes = session->m_pVPP->Init(par);
 #endif // MFX_ENABLE_VPP
-#endif
     }
     // handle error(s)
     catch(...)

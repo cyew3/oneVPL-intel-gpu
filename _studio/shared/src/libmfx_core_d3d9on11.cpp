@@ -139,7 +139,7 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::SetHandle(mfxHandleType type, mfxHDL handle
 
         try
         {
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+#if defined (MFX_ENABLE_VPP)
             m_vpp_hw_resmng.Close();
 #endif
 
