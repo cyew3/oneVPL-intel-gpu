@@ -185,6 +185,9 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
 
     request_internal = request;
 
+    if (IsD3D9Simulation(*m_core))
+        useInternal = true;
+
     if (useInternal)
         request.Type |= MFX_MEMTYPE_INTERNAL_FRAME        ;
     else
@@ -2413,9 +2416,6 @@ mfxStatus VideoDECODEMJPEGBase_HW::RunThread(void *params, mfxU32, mfxU32 )
     MFX_CHECK_NULL_PTR1(params);
 
     ThreadTaskInfo * info = (ThreadTaskInfo *)params;
-
-    if(m_va)
-        MFX_CHECK(!m_va->UnwrapBuffer(info->surface_out->Data.MemId), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if (m_needVpp)
     {

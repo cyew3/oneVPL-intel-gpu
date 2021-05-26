@@ -93,14 +93,9 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::CreateVA(mfxVideoParam* param, mfxFrameAllo
     if (MFX_CODEC_AVC == param->mfx.CodecId ||
         MFX_CODEC_VC1 == param->mfx.CodecId ||
         MFX_CODEC_HEVC == param->mfx.CodecId ||
+        MFX_CODEC_JPEG == param->mfx.CodecId ||
         MFX_CODEC_MPEG2 == param->mfx.CodecId)
         return MFX_ERR_NONE;
-
-#ifdef MFX_ENABLE_MJPEG_VIDEO_DECODE
-    // Wrap surfaces for this case will be allocated in VPP path
-    if(param->mfx.CodecId == MFX_CODEC_JPEG && dynamic_cast<SurfaceSourceJPEG*>(allocator))
-        return MFX_ERR_NONE;
-#endif
 
     // Need to clear mapping tables to prevent incorrect decode wrap
     // when application inits decoder second time

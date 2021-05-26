@@ -95,17 +95,15 @@ enum
 
 };
 
-VideoVppJpegD3D::VideoVppJpegD3D(VideoCORE *core, bool isD3DToSys, bool isOpaq)
-    : m_surfaces()
+VideoVppJpegD3D::VideoVppJpegD3D(VideoCORE *core, bool useInternalMem, bool isOpaq)
+    : m_IOPattern()
+    , m_surfaces()
     , m_guard()
     , AssocIdx()
     , m_ddi()
 {
     m_pCore = core;
-#ifdef MFX_VA_WIN
-    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(core);
-#endif
-    m_isD3DToSys = isD3DToSys;
+    m_bUseInternalMem = useInternalMem;
 
     m_isOpaq = isOpaq;
 
@@ -129,7 +127,7 @@ mfxStatus VideoVppJpegD3D::Init(const mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (m_isD3DToSys)
+    if (m_bUseInternalMem)
     {
         mfxFrameAllocRequest request;
         memset(&request, 0, sizeof(request));
@@ -164,18 +162,6 @@ mfxStatus VideoVppJpegD3D::Init(const mfxVideoParam *par)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-
-#ifdef MFX_VA_WIN
-    if (!m_isD3DToSys && m_pDX9ON11Core)
-    {
-        mfxU16 numFrameMin = par->AsyncDepth ? par->AsyncDepth : m_pCore->GetAutoAsyncDepth();
-        mfxVideoParam tmp = *par;
-        // To create only output wrap surfaces
-        tmp.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-        tmp.vpp.Out = par->mfx.FrameInfo;
-        MFX_SAFE_CALL(m_ddi->CreateWrapBuffers(numFrameMin, numFrameMin, tmp));
-    }
-#endif
 
     mfxVppCaps caps;
     caps = m_ddi.GetCaps();
@@ -214,6 +200,7 @@ mfxStatus VideoVppJpegD3D::Init(const mfxVideoParam *par)
     {
         return MFX_ERR_UNSUPPORTED;
     }
+    m_IOPattern = par->IOPattern;
 
     return sts;
 
@@ -227,7 +214,7 @@ mfxStatus VideoVppJpegD3D::Close()
 
     m_ddi.Close();
 
-    if(m_isD3DToSys)
+    if(m_bUseInternalMem)
     {
         m_surfaces.clear();
 
@@ -237,7 +224,7 @@ mfxStatus VideoVppJpegD3D::Close()
             MFX_CHECK_STS(sts);
         }
 
-        m_isD3DToSys = false;
+        m_bUseInternalMem = false;
     }
 
     return MFX_ERR_NONE;
@@ -259,7 +246,7 @@ mfxStatus VideoVppJpegD3D::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurface
 
     memset(&m_pExecuteSurface, 0, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
 
-    if(m_isD3DToSys)
+    if(m_bUseInternalMem)
     {
         mfxI32 index = -1; 
         for (mfxU32 i = 0; i < m_surfaces.size(); i++)
@@ -352,11 +339,9 @@ mfxStatus VideoVppJpegD3D::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurface
 
     memset(&m_pExecuteSurface[0], 0, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
     memset(&m_pExecuteSurface[1], 0, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
-    /* KW fix */
-    //memset(&m_executeParams, 0, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
     MemSetZero4mfxExecuteParams(&m_executeParams);
 
-    if(m_isD3DToSys)
+    if(m_bUseInternalMem)
     {
         mfxI32 index = -1; 
         for (mfxU32 i = 0; i < m_surfaces.size(); i++)
@@ -452,7 +437,7 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, 
     mfxI32 index = -1;
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "EndHwJpegProcessing");
 
-    if(m_isD3DToSys)
+    if(m_bUseInternalMem)
     {
         {
             UMC::AutomaticUMCMutex guard(m_guard);
@@ -481,24 +466,15 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, 
     MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurface, hdl));
     in = hdl;
 
-    if (m_isD3DToSys)
+    if (m_bUseInternalMem)
     {
-        sts = m_pCore->DoFastCopyWrapper(pOutputSurface, 
-                                         MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
-                                         &m_surfaces[index],
-                                         MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
-                                         );
-        MFX_CHECK_STS(sts);
-    }
-#ifdef MFX_VA_WIN
-    else if (m_pDX9ON11Core)
-    {
-        // We wrap only output surface in jpeg+built-in vpp case
-        sts = m_ddi->UnwrapBuffers(nullptr, pOutputSurface->Data.MemId);
-        MFX_CHECK_STS(sts);
-    }
-#endif
+        mfxU16 outMemType = static_cast<mfxU16>((m_IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET) |
+                                                MFX_MEMTYPE_EXTERNAL_FRAME);
 
+        sts = m_pCore->DoFastCopyWrapper(pOutputSurface, outMemType,
+                                         &m_surfaces[index], MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+        MFX_CHECK_STS(sts);
+    }
     // unregister output surface
     sts = (m_ddi)->Register(&out, 1, FALSE);
     MFX_CHECK_STS(sts);
@@ -507,7 +483,7 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface, 
     sts = (m_ddi)->Register(&in, 1, FALSE);
     MFX_CHECK_STS(sts);
 
-    if(m_isD3DToSys)
+    if(m_bUseInternalMem)
     {
         m_pCore->DecreasePureReference(m_surfaces[index].Data.Locked);
     }
@@ -527,7 +503,7 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTo
     mfxHDLPair out;
     mfxI32 index = -1;
 
-    if(m_isD3DToSys)
+    if(m_bUseInternalMem)
     {
         {
             UMC::AutomaticUMCMutex guard(m_guard);
@@ -558,24 +534,17 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTo
     MFX_SAFE_CALL(m_pCore->GetFrameHDL(*pInputSurfaceBottom, hdl));
     inBottom = hdl;
 
-    if (m_isD3DToSys)
+    if (m_bUseInternalMem)
     {
+        mfxU16 outMemType = static_cast<mfxU16>((m_IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET) |
+                                                MFX_MEMTYPE_EXTERNAL_FRAME);
         sts = m_pCore->DoFastCopyWrapper(pOutputSurface, 
-                                         MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+                                         outMemType,
                                          &m_surfaces[index],
                                          MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
                                          );
         MFX_CHECK_STS(sts);
     }
-#ifdef MFX_VA_WIN
-    else if (m_pDX9ON11Core)
-    {
-        // We wrap only output surface in jpeg+built-in vpp case
-        sts = m_ddi->UnwrapBuffers(nullptr, pOutputSurface->Data.MemId);
-        MFX_CHECK_STS(sts);
-    }
-#endif
-
     // unregister output surface
     sts = (m_ddi)->Register(&out, 1, FALSE);
     MFX_CHECK_STS(sts);
@@ -586,7 +555,7 @@ mfxStatus VideoVppJpegD3D::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceTo
     sts = (m_ddi)->Register(&inBottom, 1, FALSE);
     MFX_CHECK_STS(sts);
 
-    if(m_isD3DToSys)
+    if(m_bUseInternalMem)
     {
         m_pCore->DecreasePureReference(m_surfaces[index].Data.Locked);
     }
