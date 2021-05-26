@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,20 +33,41 @@ void SCCMode::Query1NoCaps(const FeatureBlocks & /*blocks*/, TPushQ1 Push)
     {
         mfxExtCodingOptionDDI* pCODDI = ExtBuffer::Get(par);
         MFX_CHECK(pCODDI, MFX_ERR_NONE);
+        MFX_CHECK(!IsOff(par.mfx.LowPower), MFX_ERR_NONE);
+
+        mfxU32 changed = 0;
+
+        // IBC or Palette mode can be only controlled for SCC Profile
+        if (par.mfx.CodecProfile != MFX_PROFILE_HEVC_SCC)
+        {
+            if (IsOn(pCODDI->IBC) || IsOn(pCODDI->Palette))
+            {
+                changed += 1;
+                pCODDI->IBC     = MFX_CODINGOPTION_OFF;
+                pCODDI->Palette = MFX_CODINGOPTION_OFF;
+            }
+            MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+
+            return MFX_ERR_NONE;
+        }
 
         auto& sccflags = Glob::SCCFlags::GetOrConstruct(strg);
-        if (IsOff(pCODDI->IBC)) sccflags.IBCEnable = 0;
-        if (IsOff(pCODDI->Palette)) sccflags.PaletteEnable = 0;
-        bool isSCCEnabled = sccflags.IBCEnable || sccflags.PaletteEnable;
-        // if both IBC and Palette mode are turned off, it should be fixed as default setting.
-        if (!isSCCEnabled)
+        if (IsOff(pCODDI->IBC))
+            sccflags.IBCEnable = 0;
+
+        if (IsOff(pCODDI->Palette))
+            sccflags.PaletteEnable = 0;
+
+        // SCC feature switch is controlled by CodecProfile. If both IBC and Palette mode are turned off, it should be fixed as default setting.
+        if (sccflags.IBCEnable == 0 && sccflags.PaletteEnable == 0)
         {
+            changed += 1;
             sccflags.IBCEnable     = 1;
             sccflags.PaletteEnable = 1;
             pCODDI->IBC            = MFX_CODINGOPTION_ON;
             pCODDI->Palette        = MFX_CODINGOPTION_ON;
         }
-        MFX_CHECK(isSCCEnabled, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
         return MFX_ERR_NONE;
     });
@@ -87,9 +108,18 @@ void SCCMode::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
     {
         mfxExtCodingOptionDDI* pCODDI = ExtBuffer::Get(par);
         MFX_CHECK(pCODDI, MFX_ERR_NONE);
+        MFX_CHECK(!IsOff(par.mfx.LowPower), MFX_ERR_NONE);
 
-        SetDefault(pCODDI->IBC, (mfxU16)MFX_CODINGOPTION_ON);
-        SetDefault(pCODDI->Palette, (mfxU16)MFX_CODINGOPTION_ON);
+        if (par.mfx.CodecProfile != MFX_PROFILE_HEVC_SCC)
+        {
+            SetDefault(pCODDI->IBC, (mfxU16)MFX_CODINGOPTION_OFF);
+            SetDefault(pCODDI->Palette, (mfxU16)MFX_CODINGOPTION_OFF);
+        }
+        else
+        {
+            SetDefault(pCODDI->IBC, (mfxU16)MFX_CODINGOPTION_ON);
+            SetDefault(pCODDI->Palette, (mfxU16)MFX_CODINGOPTION_ON);
+        }
 
         return MFX_ERR_NONE;
     });
