@@ -955,11 +955,6 @@ mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderF
             surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
     }
 
-    UMC::VideoAccelerator* va = nullptr;
-    m_core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
-    if (va)
-        MFX_CHECK(!va->UnwrapBuffer(surface_out->Data.MemId), MFX_ERR_INVALID_HANDLE);
-
     UMC::FrameMemID id = frame->GetFrameData()->GetFrameMID();
     mfxStatus sts = m_surface_source->PrepareToOutput(surface_out, id, &m_video_par, m_opaque);
     frame->Displayed(true);
