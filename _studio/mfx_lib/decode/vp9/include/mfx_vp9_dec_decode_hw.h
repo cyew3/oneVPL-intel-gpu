@@ -126,7 +126,6 @@ private:
     std::unique_ptr<UMC_VP9_DECODER::Packer>  m_Packer;
     std::unique_ptr<FrameStorage> m_framesStorage;
 
-    mfxFrameAllocRequest     m_request;
     mfxFrameAllocResponse    m_response;
     mfxFrameAllocResponse    m_response_alien;
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
