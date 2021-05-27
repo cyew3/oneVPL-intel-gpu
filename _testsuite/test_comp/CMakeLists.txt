@@ -1,3 +1,7 @@
+if (NOT BUILD_EXTRA)
+  return()
+endif()
+
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   set(test_comp simple_composite)
 else()

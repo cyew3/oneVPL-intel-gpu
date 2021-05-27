@@ -24,4 +24,3 @@ add_subdirectory(simple_3_encode_vmem_async_int_alloc)
 add_subdirectory(simple_4_vpp_resize_vmem_int_alloc)
 add_subdirectory(simple_11_decode_vp_n_outputs)
 add_subdirectory(simple_11_decode_vp_skip_original)
-

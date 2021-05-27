@@ -1,4 +1,4 @@
-if (CMAKE_SYSTEM_NAME MATCHES Windows OR MFX_BUNDLED_IPP)
+if (CMAKE_SYSTEM_NAME MATCHES Windows OR MFX_BUNDLED_IPP OR NOT BUILD_EXTRA)
   return()
 endif()
 
@@ -19,7 +19,7 @@ target_link_libraries( outline_diff
   PRIVATE
     umc_codecs_merged
     color_space_converter
-    mpeg2_dec_sw
+    mpeg2_dec_hw
     h264_dec
     vc1_dec
     jpeg_dec_sw

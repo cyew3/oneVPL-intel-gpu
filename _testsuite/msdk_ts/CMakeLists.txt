@@ -587,6 +587,10 @@ target_compile_definitions(msdk_gmock
     $<$<PLATFORM_ID:Windows>:MFX_DISPATCHER_LOG>
 )
 
+if(CMAKE_SYSTEM_NAME MATCHES Windows)
+  target_compile_options(msdk_gmock PRIVATE /bigobj)
+endif()
+
 target_link_libraries(msdk_gmock
   PRIVATE
     shared_utils
@@ -606,6 +610,10 @@ target_link_libraries(msdk_gmock
 set_property(TARGET msdk_gmock PROPERTY FOLDER "testsuite")
 
 # =============================================================================
+if (NOT BUILD_EXTRA)
+  return()
+endif()
+
 # msdk_ts application
 
 add_executable(msdk_ts)

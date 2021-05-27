@@ -1,4 +1,4 @@
-if(NOT CMAKE_SYSTEM_NAME MATCHES WindowsStore)
+if(NOT CMAKE_SYSTEM_NAME MATCHES WindowsStore OR NOT BUILD_EXTRA)
   return()
 endif()
 

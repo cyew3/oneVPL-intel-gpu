@@ -1,4 +1,4 @@
-if(MFX_BUNDLED_IPP)
+if(MFX_BUNDLED_IPP OR NOT BUILD_EXTRA)
   return()
 endif()
 

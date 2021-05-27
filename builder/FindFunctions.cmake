@@ -69,10 +69,10 @@ endfunction()
 
 # .....................................................
 # Usage:
-#  create_build_outside_tree(current_repo|<name>)
+#  create_build_outside_tree_rec(current_repo|<name>)
 #    - current_repo|<name>: the alias of the folder for which the built components will be placed
 #
-function( create_build_outside_tree current_repo)
+function( create_build_outside_tree_rec current_repo)
 
   file( GLOB_RECURSE components "${CMAKE_SOURCE_DIR}/*/CMakeLists.txt" )
   foreach( component ${components} )
@@ -83,6 +83,19 @@ function( create_build_outside_tree current_repo)
       add_subdirectory(${path} ./${current_repo}/${folder_name})
     endif()
   endforeach()
+endfunction()
+
+# .....................................................
+# Usage:
+#  create_build_outside_tree(current_repo|<name>)
+#    - current_repo|<name>: the alias of the folder for which the built components will be placed
+#
+function( create_build_outside_tree current_repo)
+  set(component "${CMAKE_SOURCE_DIR}/${current_repo}/CMakeLists.txt")
+  if(EXISTS ${component})
+    add_subdirectory(${CMAKE_SOURCE_DIR}/${current_repo} ./${current_repo})
+    message(STATUS "Adding subdir: ${CMAKE_SOURCE_DIR}/${current_repo} ./${current_repo}")
+  endif()
 endfunction()
 
 # .....................................................

@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-if (BUILD_DISPATCHER)
+if (BUILD_DISPATCHER AND BUILD_EXTRA)
   if(CMAKE_SYSTEM_NAME MATCHES Windows)
     add_subdirectory(suites/mfx_dispatch/windows)
   else()
@@ -32,11 +32,10 @@ if (BUILD_TOOLS)
   endif()
 endif()
 
-#add_subdirectory(suites/scheduler)
 add_subdirectory(suites/compare_struct)
 add_subdirectory(mocks)
 add_subdirectory(suites/allocator)
-add_subdirectory(suites/dvp)
+
 add_subdirectory(suites/utils)
 add_subdirectory(suites/hevce)
 
@@ -44,4 +43,5 @@ add_subdirectory(suites/hevce)
 if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
   add_subdirectory(suites/core)
   add_subdirectory(suites/memory)
+  add_subdirectory(suites/dvp)
 endif()

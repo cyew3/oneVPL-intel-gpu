@@ -17,7 +17,7 @@ target_link_libraries(compare_struct
     vm
     vm_plus
     mfx_trace
-    ${ITT_LIBRARIES}
+    $<$<BOOL:${ITT_FOUND}>:itt>
     gtest
     gtest_main
     gmock

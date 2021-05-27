@@ -29,9 +29,3 @@ if (NOT BUILD_SAMPLES)
 endif()
 
 add_subdirectory(sample_mondello)
-if (NOT ${API_USE_VPL})
-  add_subdirectory(sample_camera)
-
-  add_subdirectory(DONT_RELEASE/sample_encode_mod)
-  add_subdirectory(DONT_RELEASE/sample_multi_transcode_mod)
-endif()

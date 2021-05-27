@@ -59,7 +59,7 @@ target_link_libraries (mfx_allocator_test
 
 target_compile_definitions (mfx_allocator_test
     PRIVATE
-        MFX_ENABLE_UNIT_TEST_ALLOCATOR
+        $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:MFX_ENABLE_UNIT_TEST_ALLOCATOR>
         ENABLE_MFX_INTEL_GUID_DECODE
         ENABLE_MFX_INTEL_GUID_ENCODE
         ENABLE_MFX_INTEL_GUID_PRIVATE

@@ -1,4 +1,4 @@
-if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)
+if(NOT CMAKE_SYSTEM_NAME MATCHES Windows OR NOT BUILD_EXTRA)
   return()
 endif()
 

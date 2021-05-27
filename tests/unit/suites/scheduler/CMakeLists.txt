@@ -64,7 +64,7 @@ target_link_libraries(scheduler_tests
     gtest
     gtest_main
     gmock
-    ${ITT_LIBRARIES}
+    $<$<BOOL:${ITT_FOUND}>:itt>
     mfx_static_lib
     mfx_shared_lib
     mfx_require_sse4_properties

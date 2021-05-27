@@ -56,6 +56,7 @@ target_link_libraries (mfx_core_test
         genx
         vpp_hw
         fast_copy_sse4
+        mfx_trace
 )
 
 target_include_directories(mfx_core_test

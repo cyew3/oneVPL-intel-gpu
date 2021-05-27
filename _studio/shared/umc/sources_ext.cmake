@@ -235,23 +235,32 @@ target_link_libraries(mpeg4_spl PUBLIC vm_plus PRIVATE spl_common common media_b
 
 #target_compile_definitions (bitrate_control PRIVATE ${API_FLAGS} ${WARNING_FLAGS})
 
-### UMC codec color_space_converter
-add_subdirectory(codec/color_space_converter)
-### UMC codec color_space_converter
+  ### UMC codec vc1_common
+  add_subdirectory(codec/vc1_common)
+  ### UMC codec vc1_common
 
-### UMC codec vc1_common
-add_subdirectory(codec/vc1_common)
-### UMC codec vc1_common
 
-add_subdirectory(codec/vc1_dec)
+if (BUILD_EXTRA)
+ 
+  ### UMC codec color_space_converter
+  add_subdirectory(codec/color_space_converter)
+  ### UMC codec color_space_converter
 
-add_subdirectory(codec/jpeg_common)
-add_subdirectory(codec/jpeg_dec)
+  add_subdirectory(codec/mpeg2_dec/hw)
 
-add_subdirectory(codec/h264_dec)
-add_subdirectory(codec/h265_dec)
+  add_subdirectory(codec/h264_dec)
+
+  add_subdirectory(codec/vc1_dec)
+
+  add_subdirectory(codec/jpeg_common)
+  add_subdirectory(codec/jpeg_dec)
+  
+  add_subdirectory(codec/h265_dec)
+
+  add_subdirectory(test_suite/outline_diff/)
+endif()
+
 add_subdirectory(codec/h264_spl)
-add_subdirectory(codec/mpeg2_dec/hw)
 
 ### UMC io
 add_subdirectory(io/umc_io)
@@ -264,4 +273,3 @@ add_subdirectory(io/media_buffers)
 add_subdirectory(codec)
 
 add_subdirectory(test_suite/spy_test_component/)
-add_subdirectory(test_suite/outline_diff/)

@@ -129,9 +129,7 @@ target_link_libraries(mfx_pipeline
     vm
     ${MFX_API_TARGET}
     ${MFX_DISPATCHER}
-     $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:sample_protected>
     $<$<PLATFORM_ID:Windows>:dxva2_dump>
-    $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:mfx_dispatch_trace>
     $<$<PLATFORM_ID:Windows>:sample_spl_mux_dispatcher_v15>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>
@@ -174,9 +172,7 @@ target_link_libraries(mfx_pipeline_lucas
     asf_spl
     mpeg4_spl
     vm
-    $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:sample_protected>
     $<$<PLATFORM_ID:Windows>:dxva2_dump>
-    $<$<AND:$<PLATFORM_ID:Windows>,$<NOT:$<BOOL:${API_USE_VPL}>>>:mfx_dispatch_trace>
     $<$<PLATFORM_ID:Windows>:sample_spl_mux_dispatcher_v15>
     $<$<PLATFORM_ID:Linux>:PkgConfig::PKG_LIBDRM>
     $<$<PLATFORM_ID:Linux>:sample_spl_mux_dispatcher>

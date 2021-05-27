@@ -9,18 +9,14 @@ get_filename_component( MSDK_CONTRIB_ROOT "${MFX_HOME}/../mdp_msdk-contrib" ABSO
 # include( builder/FindMFX.cmake )
 include( builder/FindTrace.cmake )
 
+set( CMAKE_SOURCE_DIR "${CROSS_REPO_SPACE}/mdp_msdk-val-tools" )
+create_build_outside_tree("bs_parser")
+create_build_outside_tree("_testsuite_common")
 
-
-foreach( dir
-  mdp_msdk-contrib
-  mdp_msdk-val-tools
-  mdp_msdk-hevc-stream-generator
-  mdp_msdk-sys-analyzer
-)
-  set( CMAKE_SOURCE_DIR "${CROSS_REPO_SPACE}/${dir}" )
-
-  create_build_outside_tree(${dir})
-endforeach()
+set( CMAKE_SOURCE_DIR "${CROSS_REPO_SPACE}/mdp_msdk-contrib" )
+create_build_outside_tree("gmock")
+# umc/vm required
+create_build_outside_tree("SafeStringStaticLibrary")
 
 foreach(dir _testsuite)
   set( CMAKE_SOURCE_DIR "${CMAKE_HOME_DIRECTORY}/${dir}" )
