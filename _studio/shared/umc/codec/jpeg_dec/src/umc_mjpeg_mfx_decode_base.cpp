@@ -104,7 +104,7 @@ void MJPEGVideoDecoderBaseMFX::AdjustFrameSize(mfxSize & size)
     size.height = mfx::align2_value(size.height, m_interleaved ? 32 : 16);
 }
 
-std::pair<ChromaType, Status> MJPEGVideoDecoderBaseMFX::GetChromaType()
+ChromaType MJPEGVideoDecoderBaseMFX::GetChromaType()
 {
 /*
  0:YUV400 (grayscale image) Y: h=1 v=1,
@@ -119,7 +119,7 @@ std::pair<ChromaType, Status> MJPEGVideoDecoderBaseMFX::GetChromaType()
 
     if (m_decBase->m_jpeg_ncomp == 1)
     {
-        return { CHROMA_TYPE_YUV400, UMC_OK };
+        return CHROMA_TYPE_YUV400;
     }
 
     ChromaType type = CHROMA_TYPE_YUV400;
@@ -133,32 +133,23 @@ std::pair<ChromaType, Status> MJPEGVideoDecoderBaseMFX::GetChromaType()
             else if (m_decBase->m_jpeg_color == JC_RGB)
                 type = CHROMA_TYPE_RGB;
             else
-                return { CHROMA_TYPE_YUV400, UMC_ERR_UNSUPPORTED };
+                VM_ASSERT(false);
         }
         else
         {
-            if (m_decBase->m_ccomp[0].m_vsampling != 2 || m_decBase->m_ccomp[1].m_hsampling != 1)
-            {
-                return { CHROMA_TYPE_YUV400, UMC_ERR_UNSUPPORTED };
-            }
+            VM_ASSERT((m_decBase->m_ccomp[0].m_vsampling == 2) && (m_decBase->m_ccomp[1].m_hsampling == 1));
             type = CHROMA_TYPE_YUV422V_2Y; // YUV422V_2Y
         }
         break;
     case 2: // YUV420, YUV422H_2Y, YUV422H_4Y, YUV422V_4Y
         if (m_decBase->m_ccomp[0].m_vsampling == 1)
         {
-            if ( m_decBase->m_ccomp[1].m_vsampling != 1 || m_decBase->m_ccomp[1].m_hsampling != 1)
-            {
-                return { CHROMA_TYPE_YUV400, UMC_ERR_UNSUPPORTED };
-            }
+            VM_ASSERT(m_decBase->m_ccomp[1].m_vsampling == 1 && m_decBase->m_ccomp[1].m_hsampling == 1);
             type = CHROMA_TYPE_YUV422H_2Y; // YUV422H_2Y
         }
         else
         {
-            if (m_decBase->m_ccomp[0].m_vsampling != 2)
-            {
-                return { CHROMA_TYPE_YUV400, UMC_ERR_UNSUPPORTED };
-            }
+            VM_ASSERT(m_decBase->m_ccomp[0].m_vsampling == 2);
 
             if (m_decBase->m_ccomp[1].m_hsampling == 1 && m_decBase->m_ccomp[1].m_vsampling == 1)
                 type = CHROMA_TYPE_YUV420; // YUV420;
@@ -167,20 +158,18 @@ std::pair<ChromaType, Status> MJPEGVideoDecoderBaseMFX::GetChromaType()
         }
         break;
     case 4: // YUV411
-        if (m_decBase->m_ccomp[0].m_vsampling != 1)
-        {
-            return { CHROMA_TYPE_YUV400, UMC_ERR_UNSUPPORTED };
-        }
+        VM_ASSERT(m_decBase->m_ccomp[0].m_vsampling == 1);
         type = CHROMA_TYPE_YUV411;
         break;
     default:
-        return { CHROMA_TYPE_YUV400, UMC_ERR_UNSUPPORTED };
+        VM_ASSERT(false);
+        break;
     }
 
-    return { type, UMC_OK };
+    return type;
 }
 
-std::pair<JCOLOR, Status> MJPEGVideoDecoderBaseMFX::GetColorType()
+JCOLOR MJPEGVideoDecoderBaseMFX::GetColorType()
 {
     JCOLOR color = JC_UNKNOWN;
     switch(m_decBase->m_jpeg_color)
@@ -198,10 +187,11 @@ std::pair<JCOLOR, Status> MJPEGVideoDecoderBaseMFX::GetColorType()
         color = JC_RGB;
         break;
     default:
-        return { JC_UNKNOWN, UMC_ERR_UNSUPPORTED };
+        VM_ASSERT(false);
+        break;
     }
 
-    return { color, UMC_OK };
+    return color;
 }
 
 Status MJPEGVideoDecoderBaseMFX::FillVideoParam(mfxVideoParam *par, bool /*full*/)
@@ -238,19 +228,8 @@ Status MJPEGVideoDecoderBaseMFX::FillVideoParam(mfxVideoParam *par, bool /*full*
     par->mfx.CodecProfile = 1;
     par->mfx.CodecLevel = 1;
 
-    std::pair<ChromaType, Status> chromaTypeRes = GetChromaType();
-    if (chromaTypeRes.second != UMC_OK)
-    {
-        return chromaTypeRes.second;
-    }
-    par->mfx.JPEGChromaFormat = GetMFXChromaFormat(chromaTypeRes.first);
-
-    std::pair<JCOLOR, Status> colorTypeRes = GetColorType();
-    if (colorTypeRes.second != UMC_OK)
-    {
-        return colorTypeRes.second;
-    }
-    par->mfx.JPEGColorFormat = GetMFXColorFormat(colorTypeRes.first);
+    par->mfx.JPEGChromaFormat = GetMFXChromaFormat(GetChromaType());
+    par->mfx.JPEGColorFormat = GetMFXColorFormat(GetColorType());
     par->mfx.Rotation  = MFX_ROTATION_0;
     par->mfx.InterleavedDec = (mfxU16)(m_interleavedScan ? MFX_SCANTYPE_INTERLEAVED : MFX_SCANTYPE_NONINTERLEAVED);
 

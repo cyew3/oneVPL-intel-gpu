@@ -494,12 +494,7 @@ mfxStatus VideoDECODEMJPEG::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxV
 {
     MFX_CHECK_NULL_PTR2(bs, par);
 
-    mfxStatus sts = CheckBitstream(bs);
-    if (sts != MFX_ERR_NONE)
-    {
-        MFX_CHECK_INIT(sts == MFX_ERR_NULL_PTR);
-        MFX_RETURN(MFX_ERR_NULL_PTR);
-    }
+    MFX_SAFE_CALL(CheckBitstream(bs));
 
     MFXMediaDataAdapter in(bs);
 
@@ -519,29 +514,39 @@ mfxStatus VideoDECODEMJPEG::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxV
     umcVideoParams.lpMemoryAllocator = &tempAllocator;
 
     UMC::Status umcRes = decoder.Init(&umcVideoParams);
-    MFX_CHECK_INIT(umcRes == UMC::UMC_OK);
+    if (umcRes != UMC::UMC_OK)
+    {
+        return ConvertUMCStatusToMfx(umcRes);
+    }
 
     umcRes = decoder.DecodeHeader(&in);
 
     in.Save(bs);
 
-    MFX_CHECK_INIT(umcRes == UMC::UMC_OK);
+    if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
+        return MFX_ERR_MORE_DATA;
+
+    if (umcRes != UMC::UMC_OK)
+        return ConvertUMCStatusToMfx(umcRes);
 
     mfxVideoParam temp;
 
     umcRes = decoder.FillVideoParam(&temp, false);
-    MFX_CHECK_INIT(umcRes == UMC::UMC_OK);
+    if (umcRes != UMC::UMC_OK)
+        return ConvertUMCStatusToMfx(umcRes);
 
     if(jpegQT)
     {
         umcRes = decoder.FillQuantTableExtBuf(jpegQT);
-        MFX_CHECK_INIT(umcRes == UMC::UMC_OK);
+        if (umcRes != UMC::UMC_OK)
+            return ConvertUMCStatusToMfx(umcRes);
     }
 
     if(jpegHT)
     {
         umcRes = decoder.FillHuffmanTableExtBuf(jpegHT);
-        MFX_CHECK_INIT(umcRes == UMC::UMC_OK);
+        if (umcRes != UMC::UMC_OK)
+            return ConvertUMCStatusToMfx(umcRes);
     }
 
     decoder.Close();
