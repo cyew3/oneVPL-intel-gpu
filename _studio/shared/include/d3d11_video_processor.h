@@ -42,11 +42,6 @@
 #include <set>
 #include <algorithm>
 
-template<class Base> class D3D9ON11VideoCORE_T;
-template<class Base> class D3D11VideoCORE_T;
-class CommonCORE;
-using D3D9ON11VideoCORE = D3D9ON11VideoCORE_T<D3D11VideoCORE_T<CommonCORE>>;
-
 //---------------------------------------------------------
 //    VPE INTERFACE Version 1 (SNB, IVB, HSW)
 //---------------------------------------------------------
@@ -783,12 +778,6 @@ namespace MfxHwVideoProcessing
 
         mfxStatus QueryCapabilities(mfxVppCaps& caps);
 
-        mfxStatus CreateWrapBuffers(const mfxU16& numFrameMinInput, const mfxU16& numFrameMinOut, const mfxVideoParam& IOPattern);
-
-        mfxStatus WrapInputSurface(mfxMemId inputMemId, mfxHDL* inputHDL);
-        mfxStatus WrapOutputSurface(mfxMemId outputMemId, mfxHDL* outputHDL);
-
-        mfxStatus UnwrapBuffers(mfxMemId input, mfxMemId output);
         //BOOL IsRunning() {return true; };
 
         mfxStatus QueryVariance(
@@ -934,10 +923,6 @@ namespace MfxHwVideoProcessing
 
         mfxVideoParam                               m_video;
         UMC::Mutex                                  m_mutex;
-
-        mfxFrameAllocResponse                       m_dx9on11InWrap;
-        mfxFrameAllocResponse                       m_dx9on11OutWrap;
-        D3D9ON11VideoCORE*                          m_pDX9ON11Core;
 
         class Multiplier
         {
