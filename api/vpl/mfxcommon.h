@@ -1,5 +1,5 @@
 /*############################################################################
-  # Copyright (C) 2018-2020 Intel Corporation
+  # Copyright (C) 2018-2021 Intel Corporation
   #
   # SPDX-License-Identifier: MIT
   ############################################################################*/
@@ -407,7 +407,34 @@ typedef struct {
 } mfxAccelerationModeDescription;
 MFX_PACK_END()
 
-#define MFX_IMPLDESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 1)
+/*! Specifies the surface pool allocation policies. */
+ typedef enum {
+    /*! Recommends to limit max pool size by sum of requested surfaces asked by components. */
+    MFX_ALLOCATION_OPTIMAL = 0, 
+
+    /*! Dynamic allocation with no limit. */
+    MFX_ALLOCATION_UNLIMITED   = 1, 
+    
+    /*! Max pool size is limited by NumberToPreAllocate + DeltaToAllocateOnTheFly. */
+    MFX_ALLOCATION_LIMITED     = 2,  
+
+} mfxPoolAllocationPolicy;
+
+/*! The current version of mfxPoolPolicyDescription structure. */
+#define MFX_POOLPOLICYDESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 0)
+
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+/*! This structure represents pool policy description. */
+typedef struct {
+    mfxStructVersion Version;                       /*!< Version of the structure. */
+    mfxU16 reserved[2];                             /*!< reserved for future use. */
+    mfxU16 NumPoolPolicies;                         /*!< Number of supported pool policies. */
+    mfxPoolAllocationPolicy* Policy;                /*!< Pointer to the array of supported pool policies. */
+} mfxPoolPolicyDescription;
+MFX_PACK_END()
+
+/*! The current version of mfxImplDescription structure. */
+#define MFX_IMPLDESCRIPTION_VERSION MFX_STRUCT_VERSION(1, 2)
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
 /*! This structure represents the implementation description. */
@@ -430,8 +457,9 @@ typedef struct {
         mfxAccelerationModeDescription   AccelerationModeDescription; /*!< Supported acceleration modes. */
         mfxU32 reserved3[4];
     };
-    mfxU32                 reserved[12];                 /*!< Reserved for future use. */
-    mfxU32                 NumExtParam;                  /*!< Number of extension buffers. Reserved for future use. Must be 0. */
+    mfxPoolPolicyDescription  PoolPolicies;                /*!< Supported surface pool polices. */
+    mfxU32                    reserved[8];                 /*!< Reserved for future use. */
+    mfxU32                    NumExtParam;                 /*!< Number of extension buffers. Reserved for future use. Must be 0. */
     union {
         mfxExtBuffer **ExtParam;                         /*!< Array of extension buffers. */
         mfxU64       Reserved2;                          /*!< Reserved for future use. */

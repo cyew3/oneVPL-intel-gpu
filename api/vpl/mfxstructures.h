@@ -2127,6 +2127,11 @@ enum {
        See the mfxExtVPP3DLut structure for more details.
     */
     MFX_EXTBUFF_VPP_3DLUT = MFX_MAKEFOURCC('T','D','L','T'),
+
+    /*!
+       See the mfxExtAllocationHints structure for more details.
+    */
+    MFX_EXTBUFF_ALLOCATION_HINTS = MFX_MAKEFOURCC('A','L','C','H'),
 };
 
 /* VPP Conf: Do not use certain algorithms  */
