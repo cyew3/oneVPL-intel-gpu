@@ -585,11 +585,8 @@ mfxStatus VideoDECODEH265::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPar
 
     eMFXPlatform platform = MFX_Utility::GetPlatform_H265(core, in);
 
-    eMFXHWType type = MFX_HW_UNKNOWN;
-    if (platform == MFX_PLATFORM_HARDWARE)
-    {
-        type = core->GetHWType();
-    }
+    MFX_CHECK(platform == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
+    eMFXHWType type = core->GetHWType();
 
     return MFX_Utility::Query_H265(core, in, out, type);
 }

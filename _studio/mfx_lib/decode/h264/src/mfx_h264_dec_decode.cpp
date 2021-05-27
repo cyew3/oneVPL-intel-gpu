@@ -766,11 +766,8 @@ mfxStatus VideoDECODEH264::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPar
 
     eMFXPlatform platform = MFX_Utility::GetPlatform(core, in);
 
-    eMFXHWType type = MFX_HW_UNKNOWN;
-    if (platform == MFX_PLATFORM_HARDWARE)
-    {
-        type = core->GetHWType();
-    }
+    MFX_CHECK(platform == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
+    eMFXHWType type = core->GetHWType();
 
     mfxStatus mfxSts = MFX_Utility::Query(core, in, out, type);
     MFX_CHECK_STS(mfxSts);
