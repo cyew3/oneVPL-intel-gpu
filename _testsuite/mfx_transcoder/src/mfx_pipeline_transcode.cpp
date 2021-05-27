@@ -3132,7 +3132,7 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
         decCtx.bCompleteFrame = m_inParams.bCompleteFrame;
 
         // Create allocator
-        if (m_components[eREN].m_bufType == MFX_BUF_HW)
+        if (m_components[eREN].m_bufType == MFX_BUF_HW && m_inParams.nMemoryModel == GENERAL_ALLOC)
         {
 #ifdef D3D_SURFACES_SUPPORT
             MFX_CHECK_STS(CreateDeviceManager());
@@ -3175,7 +3175,7 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
             pAllocatorParams.reset(p_vaapiAllocParams);
 #endif
         }
-        else if(m_components[eREN].m_bufType == MFX_BUF_HW_DX11)
+        else if(m_components[eREN].m_bufType == MFX_BUF_HW_DX11 && m_inParams.nMemoryModel == GENERAL_ALLOC)
         {
 #ifdef MFX_D3D11_SUPPORT
             MFX_CHECK_STS(CreateDeviceManager());

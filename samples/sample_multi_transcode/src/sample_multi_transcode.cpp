@@ -948,6 +948,8 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     bool IsSourcePresence = false;
     bool IsHeterSessionJoin = false;
     bool IsFirstInTopology = true;
+    bool IsInterOrJoined = false;
+    bool IsNeedToCreateDevice = false;
 
     mfxU16 minAsyncDepth = 0;
     bool bUseExternalAllocator = false;
@@ -1130,22 +1132,39 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             if (IsFirstInTopology)
                 IsFirstInTopology = false;
         }
+
+        if(m_InputParamsArray[i].nMemoryModel == UNKNOWN_ALLOC)
+        {
+            m_InputParamsArray[i].nMemoryModel = GENERAL_ALLOC;
+        }
+
+        // Creating a device is only necessary in case of using external memory (generall alloc) or inter/joined sessions.
+        IsInterOrJoined = m_InputParamsArray[i].eMode == Sink || m_InputParamsArray[i].eMode == Source || m_InputParamsArray[i].bIsJoin;
+        if(m_InputParamsArray[i].nMemoryModel == GENERAL_ALLOC || IsInterOrJoined)
+        {
+            IsNeedToCreateDevice = true;
+        }
+
         if (MFX_IMPL_SOFTWARE != m_InputParamsArray[i].libType)
         {
             // TODO: can we avoid ifdef and use MFX_IMPL_VIA_VAAPI?
 #if defined(_WIN32) || defined(_WIN64)
             if(MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(m_InputParamsArray[i].libType))
             {
-                m_eDevType = MFX_HANDLE_D3D11_DEVICE;
+                // If m_eDevType is not specified here, the device will not be created after.
+                if(IsNeedToCreateDevice)
+                    m_eDevType = MFX_HANDLE_D3D11_DEVICE;
                 m_accelerationMode = MFX_ACCEL_MODE_VIA_D3D11;
             }
             else
             {
-                m_eDevType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
+                if(IsNeedToCreateDevice)
+                    m_eDevType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
                 m_accelerationMode = MFX_ACCEL_MODE_VIA_D3D9;
             }
 #elif defined(LIBVA_SUPPORT)
-            m_eDevType = MFX_HANDLE_VA_DISPLAY;
+            if(IsNeedToCreateDevice)
+                m_eDevType = MFX_HANDLE_VA_DISPLAY;
             m_accelerationMode = MFX_ACCEL_MODE_VIA_VAAPI;
 #endif
         }

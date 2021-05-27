@@ -2908,6 +2908,9 @@ D3DFORMAT StrToD3DFORMAT(vm_char *format_name, bool directx11 = false)
 
 mfxStatus MFXDecPipeline::CreateDeviceManager()
 {
+    if(m_inParams.nMemoryModel != GENERAL_ALLOC)
+        return MFX_ERR_NONE;
+
     mfxIMPL implDec, implRen, implDecVia, implRenVia;
     MFX_CHECK_POINTER(m_components[eDEC].m_pSession);
     MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&implDec));

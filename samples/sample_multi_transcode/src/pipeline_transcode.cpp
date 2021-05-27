@@ -3998,7 +3998,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_bExtMBQP = pParams->bExtMBQP;
     m_bROIasQPMAP = pParams->bROIasQPMAP;
 
-    m_MemoryModel = (UNKNOWN_ALLOC == pParams->nMemoryModel) ? GENERAL_ALLOC : pParams->nMemoryModel;
+    m_MemoryModel = pParams->nMemoryModel;
 
 #if MFX_VERSION >= 1022
     m_ROIData = pParams->m_ROIData;
@@ -4629,29 +4629,25 @@ mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
     mfxIMPL impl = 0;
     m_pmfxSession->QueryIMPL(&impl);
 
-    bool bIsMustSetExternalHandle = false;
     mfxHandleType handleType = (mfxHandleType)0;
 
     if (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl))
     {
         handleType = MFX_HANDLE_D3D11_DEVICE;
-        bIsMustSetExternalHandle = false;
     }
     else if (MFX_IMPL_VIA_D3D9 == MFX_IMPL_VIA_MASK(impl))
     {
         handleType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
-        bIsMustSetExternalHandle = false;
     }
 #ifdef LIBVA_SUPPORT
     else if (MFX_IMPL_VIA_VAAPI == MFX_IMPL_VIA_MASK(impl))
     {
         handleType = MFX_HANDLE_VA_DISPLAY;
-        bIsMustSetExternalHandle = true;
     }
 #endif
 
     bool ext_allocator_exists = m_MemoryModel == GENERAL_ALLOC;
-    if (m_hdl && (bIsMustSetExternalHandle || (m_bIsInterOrJoined || ext_allocator_exists)))
+    if (m_hdl && (m_bIsInterOrJoined || ext_allocator_exists))
     {
         sts = m_pmfxSession->SetHandle(handleType, m_hdl);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SetHandle failed");
