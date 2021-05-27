@@ -212,7 +212,7 @@ namespace TranscodingSample
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
         //Adapter type
         bool bPrefferiGfx;
-        bool bPrefferdGfx;
+        mfxI32    dGfxIdx;
 #endif
         bool   bIsPerf;   // special performance mode. Use pre-allocated bitstreams, output
         mfxU16 nThreadsNum; // number of internal session threads number
@@ -841,9 +841,11 @@ namespace TranscodingSample
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
         //Adapter type
         void SetPrefferiGfx(bool prefferiGfx) { bPrefferiGfx = prefferiGfx; };
-        void SetPrefferdGfx(bool prefferdGfx) { bPrefferdGfx = prefferdGfx; };
-        bool IsPrefferiGfx() { return bPrefferiGfx; };
-        bool IsPrefferdGfx() { return bPrefferdGfx; };
+        void SetPrefferdGfx(mfxU32 dGfxIdx = 0) { dGfxIdx = dGfxIdx; };
+
+        bool IsPrefferiGfx() const { return bPrefferiGfx; };
+        bool IsPrefferdGfx() const { return dGfxIdx >= 0; };
+        mfxU32 GetdGfxIdx() const { return dGfxIdx; };
 #endif
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
@@ -1113,7 +1115,7 @@ namespace TranscodingSample
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
         //Adapter type
         bool bPrefferiGfx;
-        bool bPrefferdGfx;
+        mfxU32    dGfxIdx;
 #endif
 
         mfxU32 TargetID = 0;

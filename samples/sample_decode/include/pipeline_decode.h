@@ -134,6 +134,7 @@ struct sInputParams
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
+    mfxU32 dGfxIdx;
 #endif
 
 #if (MFX_VERSION >= 1034)

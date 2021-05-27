@@ -1418,12 +1418,15 @@ mfxU32 CEncodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapter
     if (params.bPrefferdGfx)
     {
         // Find dGfx adapter in list and return it's index
-
+        mfxU32 dGfxIdxCnt = 0;
         auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
-            [](const mfxAdapterInfo info)
-        {
-            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
-        });
+            [&dGfxIdxCnt, &params](const mfxAdapterInfo info)
+            {
+                if (info.Platform.MediaAdapterType != mfxMediaAdapterType::MFX_MEDIA_DISCRETE)
+                    return false;
+
+                return dGfxIdxCnt++ == params.dGfxIdx;
+            });
 
         // No dGfx in list
         if (idx == adapters.Adapters + adapters.NumActual)

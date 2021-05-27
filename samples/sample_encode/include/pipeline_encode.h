@@ -136,6 +136,7 @@ struct sInputParams
 #if (MFX_VERSION >= 1031)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
+    mfxU32 dGfxIdx;
 #endif
 #endif
 

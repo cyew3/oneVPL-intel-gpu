@@ -147,11 +147,14 @@ mfxU32 CDecodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapter
     if (params.bPrefferdGfx)
     {
         // Find dGfx adapter in list and return it's index
-
+        mfxU32 dGfxIdxCnt = 0;
         auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
-            [](const mfxAdapterInfo info)
+            [&dGfxIdxCnt, &params](const mfxAdapterInfo info)
             {
-                return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
+                if (info.Platform.MediaAdapterType != mfxMediaAdapterType::MFX_MEDIA_DISCRETE)
+                    return false;
+
+                return dGfxIdxCnt++ == params.dGfxIdx;
             });
 
         // No dGfx in list

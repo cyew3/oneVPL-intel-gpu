@@ -43,15 +43,17 @@ mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputPara
     if (adapters.NumActual == 0 || !adapters.Adapters)
         return 0;
 
-    if (params.bPrefferdGfx)
+    if (params.dGfxIdx >= 0)
     {
-        // Find dGfx adapter in list and return it's index
-
+        mfxU32 dGfxIdxCnt = 0;
         auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
-            [](const mfxAdapterInfo info)
-        {
-            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
-        });
+            [&dGfxIdxCnt, params](const mfxAdapterInfo info)
+            {
+                if (info.Platform.MediaAdapterType != mfxMediaAdapterType::MFX_MEDIA_DISCRETE)
+                    return false;
+
+                return dGfxIdxCnt++ == params.dGfxIdx;
+            });
 
         // No dGfx in list
         if (idx == adapters.Adapters + adapters.NumActual)
@@ -418,7 +420,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
         pThreadPipeline->pPipeline->SetPrefferiGfx(m_InputParamsArray[i].bPrefferiGfx);
-        pThreadPipeline->pPipeline->SetPrefferdGfx(m_InputParamsArray[i].bPrefferdGfx);
+        pThreadPipeline->pPipeline->SetPrefferdGfx(m_InputParamsArray[i].dGfxIdx);
 #endif
 
         pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back().get();
@@ -882,14 +884,14 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
         return MFX_ERR_NONE;
 
     // Inherited sessions must have the same adapter as parent
-    if ((pParentPipeline->IsPrefferiGfx() || pParentPipeline->IsPrefferdGfx()) && !m_InputParamsArray[idxSession].bPrefferiGfx && !m_InputParamsArray[idxSession].bPrefferdGfx)
+    if ((pParentPipeline->IsPrefferiGfx() || pParentPipeline->IsPrefferdGfx()) && !m_InputParamsArray[idxSession].bPrefferiGfx && !m_InputParamsArray[idxSession].dGfxIdx >= 0)
     {
         m_InputParamsArray[idxSession].bPrefferiGfx = pParentPipeline->IsPrefferiGfx();
-        m_InputParamsArray[idxSession].bPrefferdGfx = pParentPipeline->IsPrefferdGfx();
+        m_InputParamsArray[idxSession].dGfxIdx = pParentPipeline->GetdGfxIdx();
         msdk_stringstream ss;
         ss << MSDK_STRING("\n\n session with index: ") << idxSession
             << MSDK_STRING(" adapter type was forced to ")
-            << (pParentPipeline->IsPrefferiGfx() ? MSDK_STRING("integrated") : MSDK_STRING("discrete"))
+            << (pParentPipeline->IsPrefferiGfx() ? MSDK_STRING("integrated") : MSDK_STRING("discrete with index %d", pParentPipeline->GetdGfxIdx()))
             << std::endl << std::endl;
         msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
 
@@ -897,7 +899,7 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
     }
 
     // App can't change initialization of the previous session (parent session)
-    if (!pParentPipeline->IsPrefferiGfx() && !pParentPipeline->IsPrefferdGfx() && (m_InputParamsArray[idxSession].bPrefferiGfx || m_InputParamsArray[idxSession].bPrefferdGfx))
+    if (!pParentPipeline->IsPrefferiGfx() && !pParentPipeline->IsPrefferdGfx() && (m_InputParamsArray[idxSession].bPrefferiGfx || m_InputParamsArray[idxSession].dGfxIdx >= 0))
     {
         msdk_stringstream ss;
         ss << MSDK_STRING("\n\n session with index: ") << idxSession
@@ -925,7 +927,7 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
     }
 
     // Inherited sessions must have the same adapter as parent
-    if (pParentPipeline->IsPrefferdGfx() && !m_InputParamsArray[idxSession].bPrefferdGfx)
+    if (pParentPipeline->IsPrefferdGfx() && !m_InputParamsArray[idxSession].dGfxIdx >= 0)
     {
         msdk_stringstream ss;
         ss << MSDK_STRING("\n\n session with index: ") << idxSession

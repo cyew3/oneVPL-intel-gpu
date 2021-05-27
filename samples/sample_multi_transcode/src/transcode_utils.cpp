@@ -147,7 +147,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                              If not specified, defaults to the first Intel device found on the system\n"));
 #endif
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
-    msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides)\n"));
+    msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1'\n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
 #endif
 #if (MFX_VERSION >= 1025)
@@ -1246,7 +1246,15 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
     }
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dGfx")))
     {
-        InputParams.bPrefferdGfx = true;
+        InputParams.dGfxIdx = 0;
+        if (i + 1 < argc && isdigit(*argv[1 + i]))
+        {
+            if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.dGfxIdx))
+            {
+                PrintError(argv[0], MSDK_STRING("value of -dGfx is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
     }
 #endif
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dec::sys")))
@@ -2933,10 +2941,10 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     }
 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
-    if (InputParams.bPrefferiGfx && InputParams.bPrefferdGfx)
+    if (InputParams.bPrefferiGfx && InputParams.dGfxIdx >= 0)
     {
         msdk_printf(MSDK_STRING("WARNING: both dGfx and iGfx flags set. iGfx will be preffered\n"));
-        InputParams.bPrefferdGfx = false;
+        InputParams.dGfxIdx = -1;
     }
 #endif
 

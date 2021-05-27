@@ -117,7 +117,7 @@ sInputParams::sInputParams() : __sInputParams()
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
     //Adapter type
     bPrefferiGfx = false;
-    bPrefferdGfx = false;
+    dGfxIdx = -1;
 #endif
     MaxFrameNumber = MFX_INFINITE;
     pVppCompDstRects = NULL;

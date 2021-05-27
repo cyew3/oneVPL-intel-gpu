@@ -63,7 +63,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-d]                      - enable decode error report\n"));
 #endif
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
-    msdk_printf(MSDK_STRING("   [-dGfx]                   - preffer processing on dGfx (by default system decides)\n"));
+    msdk_printf(MSDK_STRING("   [-dGfx]                   - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1'\n"));
     msdk_printf(MSDK_STRING("   [-iGfx]                   - preffer processing on iGfx (by default system decides)\n"));
 #endif
 #if defined(LINUX32) || defined(LINUX64)
@@ -488,6 +488,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dGfx")))
         {
             pParams->bPrefferdGfx = true;
+            pParams->dGfxIdx = 0;
+            if (i + 1 < nArgNum && isdigit(*strInput[1 + i]))
+            {
+                if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->dGfxIdx))
+                {
+                    PrintHelp(strInput[0], MSDK_STRING("value of -dGfx is invalid"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-iGfx")))
         {
