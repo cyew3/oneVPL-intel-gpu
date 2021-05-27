@@ -36,7 +36,6 @@
 #include "mfxdefs.h"
 #include "mfx_task.h"
 #include "vm_interlocked.h"
-#include "mfxplugin++.h"
 
 #include "mfx_av1_encode.h"
 #include "mfx_av1_defs.h"
@@ -367,7 +366,9 @@ static void TaskLogDump()
         const mfxExtOpaqueSurfaceAlloc &opaq = GetExtBuffer(mfxParam);
         const mfxExtCodingOptionAV1E &optHevc = GetExtBuffer(mfxParam);
         const mfxExtHEVCParam &hevcParam = GetExtBuffer(mfxParam);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         mfxExtDumpFiles &dumpFiles = GetExtBuffer(mfxParam);
+#endif
         const mfxExtCodingOption2 &opt2 = GetExtBuffer(mfxParam);
         const mfxExtCodingOption3 &opt3 = GetExtBuffer(mfxParam);
         const mfxExtEncoderROI &roi = GetExtBuffer(mfxParam);
@@ -844,7 +845,7 @@ static void TaskLogDump()
         intParam.strongIntraSmoothingEnabledFlag = 1;
 
         intParam.tcDuration90KHz = (mfxF64)fi.FrameRateExtD / fi.FrameRateExtN * 90000; // calculate tick duration
-
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         intParam.doDumpRecon = (dumpFiles.ReconFilename[0] != 0);
         if (intParam.doDumpRecon)
             Copy(intParam.reconDumpFileName, dumpFiles.ReconFilename);
@@ -852,7 +853,7 @@ static void TaskLogDump()
         intParam.doDumpSource = (dumpFiles.InputFramesFilename[0] != 0);
         if (intParam.doDumpSource)
             Copy(intParam.sourceDumpFileName, dumpFiles.InputFramesFilename);
-
+#endif
         intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) == 0);
 
         intParam.randomRepackThreshold = int32_t(optHevc.RepackProb / 100.0 * MYRAND_MAX);
@@ -2111,12 +2112,14 @@ mfxStatus AV1Encoder::Init(const mfxVideoParam &par)
         //feiParams.DualFilter = m_videoParam.DualFilter;
 
         mfxExtFEIH265Alloc feiAlloc = {};
-        MFXCoreInterface core(m_core.m_core);
-        sts = H265FEI_GetSurfaceDimensions_new(&core, &feiParams, &feiAlloc);
+        sts = H265FEI_GetSurfaceDimensions_new(&m_core, &feiParams, &feiAlloc);
+        printf("\n Using OneVPL RT\n");
+
         if (sts != MFX_ERR_NONE)
             return sts;
 
-        sts = H265FEI_Init(&m_fei, &feiParams, &core);
+        sts = H265FEI_Init(&m_fei, &feiParams, &m_core);
+
         if (sts != MFX_ERR_NONE)
             return sts;
 
@@ -2744,24 +2747,14 @@ Frame *AV1Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, m
             ThrowIf(!ctrl, std::runtime_error(""));
 
             inputFrame->m_picCodeType = ctrl->FrameType;
-#if ENABLE_BRC
-            if (m_brc && m_brc->IsVMEBRC()) {
-                const mfxExtLAFrameStatistics *vmeData = (mfxExtLAFrameStatistics *)GetExtBufferById(ctrl->ExtParam, ctrl->NumExtParam,MFX_EXTBUFF_LOOKAHEAD_STAT);
-                ThrowIf(!vmeData, std::runtime_error(""));
-                mfxStatus sts = m_brc->SetFrameVMEData(vmeData, m_videoParam.Width, m_videoParam.Height);
-                ThrowIf(sts != MFX_ERR_NONE, std::runtime_error(""));
-                mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];
-                inputFrame->m_picCodeType = pInfo->FrameType;
-                inputFrame->m_frameOrder = pInfo->FrameDisplayOrder;
-                inputFrame->m_pyramidLayer = pInfo->Layer;
-                ThrowIf(inputFrame->m_pyramidLayer >= m_videoParam.BiPyramidLayers, std::runtime_error(""));
-            } else { // CQP or internal BRC
+
+            { // CQP or internal BRC
                 inputFrame->m_frameOrder   = surface->Data.FrameOrder;
                 inputFrame->m_pyramidLayer = 0;//will be set after
                 if (ctrl->QP > 0 && ctrl->QP < 52)
                     inputFrame->m_sliceQpY = (uint8_t)ctrl->QP;
             }
-#endif
+
             if (!(inputFrame->m_picCodeType & MFX_FRAMETYPE_B)) {
                 m_frameOrderOfLastIdr = m_frameOrderOfLastIdrB;
                 m_frameOrderOfLastIntra = m_frameOrderOfLastIntraB;
@@ -4725,7 +4718,7 @@ void AV1Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
             fa.Unlock(fa.pthis, in.Data.MemId, &in.Data);
     }
     m_core.DecreaseReference(&inExternal->Data); // do it here
-
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     if (m_videoParam.doDumpSource && (m_videoParam.fourcc == MFX_FOURCC_NV12 || m_videoParam.fourcc == MFX_FOURCC_P010)) {
         std::ofstream outfile;
         std::ios_base::openmode mode(std::ios_base::app | std::ios_base::binary);
@@ -4755,7 +4748,7 @@ void AV1Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
             outfile.close();
         }
     }
-
+#endif
         // attach lowres surface to frame
     if (m_la.get() &&
         (m_videoParam.LowresFactor && (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL)))))

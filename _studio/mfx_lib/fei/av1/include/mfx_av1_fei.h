@@ -38,11 +38,7 @@
 #define USE_HWPAK_RESTRICT 1 // duplicate, since mfx_av1_defs.h is not included here
 
 #define NEWMVPRED 0
-#define ENABLE_HSW 0
-#define ENABLE_BDW 0
-#define ENABLE_SKL 0
-#define ENABLE_ICLLP 0
-#define ENABLE_TGL 0
+
 
     //============================== begin of patch for mfxstructures.h ==============================
     /* required buffer sizes - returned from call to Query() */

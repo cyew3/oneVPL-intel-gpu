@@ -241,8 +241,10 @@ namespace AV1Enc {
 
         uint8_t   doDumpRecon;
         uint8_t   doDumpSource;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         vm_char reconDumpFileName[MFX_MAX_PATH];
         vm_char sourceDumpFileName[MFX_MAX_PATH];
+#endif
         uint8_t   inputVideoMem;
 
         // how many frame encoders will be used

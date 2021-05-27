@@ -44,6 +44,7 @@
 #include "feature_blocks/mfx_feature_blocks_init_macros.h"
 #include "feature_blocks/mfx_feature_blocks_base.h"
 #include "av1ehw_utils.h"
+#include "av1eimplbase.h"
 
 namespace AV1EHW
 {
@@ -129,35 +130,6 @@ protected:
     virtual void SetTraceName(std::string&& /*name*/) {}
 };
 
-class ImplBase
-    : virtual public VideoENCODE
-{
-public:
-    virtual mfxStatus InternalQuery(
-        VideoCORE& core
-        , mfxVideoParam *in
-        , mfxVideoParam& out) = 0;
-
-    virtual mfxStatus InternalQueryIOSurf(
-        VideoCORE& core
-        , mfxVideoParam& par
-        , mfxFrameAllocRequest& request) = 0;
-
-    virtual ImplBase* ApplyMode(mfxU32 /*mode*/)
-    {
-        return this;
-    }
-
-#if defined(MFX_ONEVPL)
-    virtual mfxStatus QueryImplsDescription(
-        VideoCORE&
-        , mfxEncoderDescription::encoder&
-        , mfx::PODArraysHolder&)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-#endif //defined(MFX_ONEVPL)
-};
 
 }; //namespace AV1EHW
 

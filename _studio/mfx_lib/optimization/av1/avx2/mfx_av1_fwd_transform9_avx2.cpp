@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+__pragma(warning(disable:4127))
+
 #include "assert.h"
 #include "immintrin.h"
 #include "mfx_av1_opts_intrin.h"

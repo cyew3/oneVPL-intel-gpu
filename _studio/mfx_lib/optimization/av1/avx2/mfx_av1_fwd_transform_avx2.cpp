@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+__pragma(warning(disable:4127)) // template const checks
+__pragma(warning(disable:4556)) // incorrect template checks
 
 #include "assert.h"
 #include "string.h"

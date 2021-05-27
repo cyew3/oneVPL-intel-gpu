@@ -3,3 +3,8 @@ if(OPEN_SOURCE)
 endif()
 
 add_subdirectory(mfx_lib/lpla)
+if (CMAKE_SYSTEM_NAME MATCHES Windows)
+add_subdirectory(mfx_lib/encode)
+add_subdirectory(mfx_lib/fei)
+add_subdirectory(mfx_lib/optimization)
+endif()

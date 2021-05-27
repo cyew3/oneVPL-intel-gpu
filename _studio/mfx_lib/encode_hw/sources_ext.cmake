@@ -22,6 +22,7 @@ target_include_directories(encode_hw PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g11lkf
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12xehp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/windows/g12dg2
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/linux
@@ -172,6 +173,7 @@ target_sources(encode_hw
     $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/shared/src/mfx_win_event_cache.cpp>
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/av1ehw_disp.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/av1eimplbase.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/av1ehw_disp.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/av1ehw_base.h
@@ -261,3 +263,8 @@ target_link_libraries(encode_hw
 )
 
 target_compile_definitions(encode_hw PRIVATE $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>)
+
+target_include_directories(encode_hw
+  PRIVATE
+    $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/encode/av1/include>
+  )

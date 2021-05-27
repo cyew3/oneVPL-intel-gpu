@@ -31,7 +31,7 @@
 #include "mfx_av1_frame.h"
 #include "mfx_av1_enc.h"
 #include "umc_mutex.h"
-#include "mfxla.h"
+
 #include <vector>
 
 namespace AV1Enc {
@@ -222,78 +222,12 @@ public:
     virtual int32_t GetQP(AV1VideoParam *video, Frame *pFrame[], int32_t numFrames)=0;
     virtual mfxStatus SetQP(int32_t qp, mfxU16 frameType) = 0;
     virtual mfxBRCStatus   PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame *pFrame, int32_t bitsEncodedFrame, int32_t overheadBits, int32_t recode = 0) =0;
-    virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) = 0;
     virtual void GetMinMaxFrameSize(int32_t *minFrameSizeInBits, int32_t *maxFrameSizeInBits) = 0;
     virtual bool IsVMEBRC() = 0;
 
 };
 BrcIface * CreateBrc(mfxVideoParam const * video);
-class VMEBrc : public BrcIface
-{
-public:
-    virtual ~VMEBrc() { Close(); }
 
-    mfxStatus Init(const mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 0);
-    mfxStatus Reset(mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 0)
-    {
-        return  Init( init,video, enableRecode);
-    }
-
-    mfxStatus Close() {  return MFX_ERR_NONE;}
-
-    int32_t GetQP(AV1VideoParam *video, Frame *pFrame[], int32_t numFrames);
-    mfxStatus SetQP(int32_t /* qp */, mfxU16 /* frameType */) { return MFX_ERR_NONE;  }
-
-    void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
-
-    mfxBRCStatus   PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame *pFrame, int32_t bitsEncodedFrame, int32_t overheadBits, int32_t recode = 0)
-    {
-        Report(pFrame->m_picCodeType, bitsEncodedFrame >> 3, 0, 0, pFrame->m_encOrder, 0, 0);
-        return MFX_ERR_NONE;
-    }
-    bool IsVMEBRC()  {return true;}
-    mfxU32          Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp);
-    mfxStatus       SetFrameVMEData(const mfxExtLAFrameStatistics *, uint32_t widthMB, uint32_t heightMB );
-    void            GetMinMaxFrameSize(int32_t *minFrameSizeInBits, int32_t *maxFrameSizeInBits) {*minFrameSizeInBits = 0; *maxFrameSizeInBits = 0;}
-
-
-public:
-    struct LaFrameData
-    {
-        mfxU32  encOrder;
-        mfxU32  dispOrder;
-        mfxI32  poc;
-        mfxI32  deltaQp;
-        mfxF64  estRate[52];
-        mfxF64  estRateTotal[52];
-        mfxU32  interCost;
-        mfxU32  intraCost;
-        mfxU32  propCost;
-        mfxU32  bframe;
-        mfxI32  qp;
-        mfxU16   layer;
-        bool    bNotUsed;
-    };
-
-protected:
-    mfxU32  m_lookAheadDep;
-    mfxU32  m_totNumMb;
-    mfxF64  m_initTargetRate;
-    mfxF64  m_targetRateMin;
-    mfxF64  m_targetRateMax;
-    mfxU32  m_framesBehind;
-    mfxF64  m_bitsBehind;
-    mfxI32  m_curBaseQp;
-    mfxI32  m_curQp;
-    mfxU16  m_qpUpdateRange;
-    bool    m_bPyr;
-
-    std::list <LaFrameData> m_laData;
-    Regression<20>   m_rateCoeffHistory[8][52];
-    UMC::Mutex    m_mutex;
-
-    mfxI32 GetQP(AV1VideoParam &video, Frame *pFrame, mfxI32 *chromaQP );
-};
 class AV1BRC : public BrcIface
 {
 
@@ -417,10 +351,6 @@ public:
 
     void GetMinMaxFrameSize(int32_t *minFrameSizeInBits, int32_t *maxFrameSizeInBits);
     void PreEnc(mfxU32 /* frameType */, std::vector<VmeData *> const & /* vmeData */, mfxU32 /* encOrder */) {}
-    virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 )
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
     bool IsVMEBRC()  {return false;}
 
     double mLayerRatio;

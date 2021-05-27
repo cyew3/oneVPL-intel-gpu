@@ -31,79 +31,24 @@
 #include "mfx_av1_enc_cm_fei.h"
 #include "mfx_av1_enc_cm_utils.h"
 
-#include "genx_av1_prepare_src_hsw_isa.h"
-#include "genx_av1_prepare_src_bdw_isa.h"
-#include "genx_av1_prepare_src_skl_isa.h"
-#include "genx_av1_prepare_src_icllp_isa.h"
-#include "genx_av1_prepare_src_tgl_isa.h"
-#include "genx_av1_prepare_src_tgllp_isa.h"
+#include "genx_av1_prepare_src_gen12lp_isa.h"
 #if NEWMVPRED
-#include "genx_av1_mepu_hsw_isa.h"
-#include "genx_av1_mepu_bdw_isa.h"
-#include "genx_av1_mepu_skl_isa.h"
-#include "genx_av1_mepu_icllp_isa.h"
-#include "genx_av1_mepu_tgl_isa.h"
-#include "genx_av1_mepu_tgllp_isa.h"
+#include "genx_av1_mepu_gen12lp_isa.h"
 #endif
-#include "genx_av1_mode_decision_hsw_isa.h"
-#include "genx_av1_mode_decision_bdw_isa.h"
-#include "genx_av1_mode_decision_skl_isa.h"
-#include "genx_av1_mode_decision_icllp_isa.h"
-#include "genx_av1_mode_decision_tgl_isa.h"
-#include "genx_av1_mode_decision_tgllp_isa.h"
-#include "genx_av1_mode_decision_pass2_hsw_isa.h"
-#include "genx_av1_mode_decision_pass2_bdw_isa.h"
-#include "genx_av1_mode_decision_pass2_skl_isa.h"
-#include "genx_av1_mode_decision_pass2_icllp_isa.h"
-#include "genx_av1_mode_decision_pass2_tgl_isa.h"
-#include "genx_av1_mode_decision_pass2_tgllp_isa.h"
+#include "genx_av1_mode_decision_gen12lp_isa.h"
+#include "genx_av1_mode_decision_pass2_gen12lp_isa.h"
 
-#include "genx_av1_interpolate_decision_hsw_isa.h"
-#include "genx_av1_interpolate_decision_bdw_isa.h"
-#include "genx_av1_interpolate_decision_skl_isa.h"
-#include "genx_av1_interpolate_decision_icllp_isa.h"
-#include "genx_av1_interpolate_decision_tgl_isa.h"
-#include "genx_av1_interpolate_decision_tgllp_isa.h"
-#include "genx_av1_interpolate_decision_single_hsw_isa.h"
-#include "genx_av1_interpolate_decision_single_bdw_isa.h"
-#include "genx_av1_interpolate_decision_single_skl_isa.h"
-#include "genx_av1_interpolate_decision_single_icllp_isa.h"
-#include "genx_av1_interpolate_decision_single_tgl_isa.h"
-#include "genx_av1_interpolate_decision_single_tgllp_isa.h"
+#include "genx_av1_interpolate_decision_gen12lp_isa.h"
+#include "genx_av1_interpolate_decision_single_gen12lp_isa.h"
 
-#include "genx_av1_intra_hsw_isa.h"
-#include "genx_av1_intra_bdw_isa.h"
-#include "genx_av1_intra_skl_isa.h"
-#include "genx_av1_intra_icllp_isa.h"
-#include "genx_av1_intra_tgl_isa.h"
-#include "genx_av1_intra_tgllp_isa.h"
+#include "genx_av1_intra_gen12lp_isa.h"
 #if GPU_VARTX
-#include "genx_av1_vartx_decision_hsw_isa.h"
-#include "genx_av1_vartx_decision_bdw_isa.h"
-#include "genx_av1_vartx_decision_skl_isa.h"
-//#include "genx_av1_vartx_decision_icllp_isa.h"
-//#include "genx_av1_vartx_decision_tgl_isa.h"
-//#include "genx_av1_vartx_decision_tgllp_isa.h"
+#include "genx_av1_vartx_decision_gen12lp_isa.h"
 #endif // GPU_VARTX
 
-#include "genx_av1_me_p16_4mv_and_refine_32x32_hsw_isa.h"
-#include "genx_av1_me_p16_4mv_and_refine_32x32_bdw_isa.h"
-#include "genx_av1_me_p16_4mv_and_refine_32x32_skl_isa.h"
-#include "genx_av1_me_p16_4mv_and_refine_32x32_icllp_isa.h"
-#include "genx_av1_me_p16_4mv_and_refine_32x32_tgl_isa.h"
-#include "genx_av1_me_p16_4mv_and_refine_32x32_tgllp_isa.h"
-#include "genx_av1_refine_me_p_64x64_hsw_isa.h"
-#include "genx_av1_refine_me_p_64x64_bdw_isa.h"
-#include "genx_av1_refine_me_p_64x64_skl_isa.h"
-#include "genx_av1_refine_me_p_64x64_icllp_isa.h"
-#include "genx_av1_refine_me_p_64x64_tgl_isa.h"
-#include "genx_av1_refine_me_p_64x64_tgllp_isa.h"
-#include "genx_av1_hme_and_me_p32_4mv_hsw_isa.h"
-#include "genx_av1_hme_and_me_p32_4mv_bdw_isa.h"
-#include "genx_av1_hme_and_me_p32_4mv_skl_isa.h"
-#include "genx_av1_hme_and_me_p32_4mv_icllp_isa.h"
-#include "genx_av1_hme_and_me_p32_4mv_tgl_isa.h"
-#include "genx_av1_hme_and_me_p32_4mv_tgllp_isa.h"
+#include "genx_av1_me_p16_4mv_and_refine_32x32_gen12lp_isa.h"
+#include "genx_av1_refine_me_p_64x64_gen12lp_isa.h"
+#include "genx_av1_hme_and_me_p32_4mv_gen12lp_isa.h"
 
 #undef MFX_TRACE_ENABLE
 
@@ -410,173 +355,31 @@ void AV1CmCtx::LoadPrograms(GPU_PLATFORM hwType)
 {
     switch (hwType)
     {
-#if defined (CMRT_EMU)
-    case PLATFORM_INTEL_SNB:
-#endif
-#if ENABLE_HSW
-    case PLATFORM_INTEL_HSW:
-        //case MFX_HW_HSW_ULT:
-        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_hsw, sizeof(genx_av1_prepare_src_hsw));
-        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_hsw, sizeof(genx_av1_hme_and_me_p32_4mv_hsw));
-        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_hsw, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_hsw));
-#if NEWMVPRED
-        programMePu = ReadProgram(device, genx_av1_mepu_hsw, sizeof(genx_av1_mepu_hsw));
-#endif
-        programMd = ReadProgram(device, genx_av1_mode_decision_hsw, sizeof(genx_av1_mode_decision_hsw));
-        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_hsw, sizeof(genx_av1_mode_decision_pass2_hsw));
-
-        if (enableInterp) {
-#if !USE_HWPAK_RESTRICT
-            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_hsw, sizeof(genx_av1_interpolate_decision_hsw));
-#else
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_hsw, sizeof(genx_av1_interpolate_decision_single_hsw));
-#endif
-        }
-
-#if GPU_VARTX
-        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_hsw, sizeof(genx_av1_vartx_decision_hsw));
-#endif // GPU_VARTX
-        programAv1Intra = ReadProgram(device, genx_av1_intra_hsw, sizeof(genx_av1_intra_hsw));
-        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_hsw, sizeof(genx_av1_refine_me_p_64x64_hsw));
-        break;
-#endif
-#if ENABLE_BDW
-    case PLATFORM_INTEL_BDW:
-    case PLATFORM_INTEL_CHV:
-        //case MFX_HW_CHV:
-        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_bdw, sizeof(genx_av1_prepare_src_bdw));
-        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_bdw, sizeof(genx_av1_hme_and_me_p32_4mv_bdw));
-        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_bdw, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_bdw));
-#if NEWMVPRED
-        programMePu = ReadProgram(device, genx_av1_mepu_bdw, sizeof(genx_av1_mepu_bdw));
-#endif
-        programMd = ReadProgram(device, genx_av1_mode_decision_bdw, sizeof(genx_av1_mode_decision_bdw));
-        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_bdw, sizeof(genx_av1_mode_decision_pass2_bdw));
-
-        if (enableInterp) {
-#if !USE_HWPAK_RESTRICT
-            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_bdw, sizeof(genx_av1_interpolate_decision_bdw));
-#else
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_bdw, sizeof(genx_av1_interpolate_decision_single_bdw));
-#endif
-        }
-
-#if GPU_VARTX
-        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_bdw, sizeof(genx_av1_vartx_decision_bdw));
-#endif // GPU_VARTX
-        programAv1Intra = ReadProgram(device, genx_av1_intra_bdw, sizeof(genx_av1_intra_bdw));
-        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_bdw, sizeof(genx_av1_refine_me_p_64x64_bdw));
-        break;
-#endif
-#if ENABLE_SKL
-    case PLATFORM_INTEL_SKL:
-    case PLATFORM_INTEL_KBL:
-    case PLATFORM_INTEL_GLK:
-    case PLATFORM_INTEL_CFL:
-    case PLATFORM_INTEL_BXT:
-        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_skl, sizeof(genx_av1_prepare_src_skl));
-        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_skl, sizeof(genx_av1_hme_and_me_p32_4mv_skl));
-        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_skl, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_skl));
-#if NEWMVPRED
-        programMePu = ReadProgram(device, genx_av1_mepu_skl, sizeof(genx_av1_mepu_skl));
-#endif
-        programMd = ReadProgram(device, genx_av1_mode_decision_skl, sizeof(genx_av1_mode_decision_skl));
-        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_skl, sizeof(genx_av1_mode_decision_pass2_skl));
-
-        if (enableInterp) {
-#if !USE_HWPAK_RESTRICT
-            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_skl, sizeof(genx_av1_interpolate_decision_skl));
-#else
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_skl, sizeof(genx_av1_interpolate_decision_single_skl));
-#endif
-        }
-
-#if GPU_VARTX
-        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_skl, sizeof(genx_av1_vartx_decision_skl));
-#endif // GPU_VARTX
-        programAv1Intra = ReadProgram(device, genx_av1_intra_skl, sizeof(genx_av1_intra_skl));
-        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_skl, sizeof(genx_av1_refine_me_p_64x64_skl));
-        break;
-#endif
-#if ENABLE_ICLLP
-    case PLATFORM_INTEL_ICLLP:
-        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_icllp, sizeof(genx_av1_prepare_src_icllp));
-        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_icllp, sizeof(genx_av1_hme_and_me_p32_4mv_icllp));
-        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_icllp, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_icllp));
-#if NEWMVPRED
-        programMePu = ReadProgram(device, genx_av1_mepu_icllp, sizeof(genx_av1_mepu_icllp));
-#endif // NEWMVPRED
-        programMd = ReadProgram(device, genx_av1_mode_decision_icllp, sizeof(genx_av1_mode_decision_icllp));
-        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_icllp, sizeof(genx_av1_mode_decision_pass2_icllp));
-
-        if (enableInterp) {
-#if !USE_HWPAK_RESTRICT
-            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_icllp, sizeof(genx_av1_interpolate_decision_icllp));
-#else
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_icllp, sizeof(genx_av1_interpolate_decision_single_icllp));
-#endif
-        }
-
-#if GPU_VARTX
-        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_icllp, sizeof(genx_av1_vartx_decision_icllp));
-#endif // GPU_VARTX
-        programAv1Intra = ReadProgram(device, genx_av1_intra_icllp, sizeof(genx_av1_intra_icllp));
-        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_icllp, sizeof(genx_av1_refine_me_p_64x64_icllp));
-        break;
-#endif // ENABLE_ICLLP
-
-#if ENABLE_TGL
-    case PLATFORM_INTEL_TGL:
-        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_tgl, sizeof(genx_av1_prepare_src_tgl));
-        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_tgl, sizeof(genx_av1_hme_and_me_p32_4mv_tgl));
-        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_tgl, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_tgl));
-#if NEWMVPRED
-        programMePu = ReadProgram(device, genx_av1_mepu_tgl, sizeof(genx_av1_mepu_tgl));
-#endif // NEWMVPRED
-        programMd = ReadProgram(device, genx_av1_mode_decision_tgl, sizeof(genx_av1_mode_decision_tgl));
-        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_tgl, sizeof(genx_av1_mode_decision_pass2_tgl));
-
-        if (enableInterp) {
-#if !USE_HWPAK_RESTRICT
-            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_tgl, sizeof(genx_av1_interpolate_decision_tgl));
-#else
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_tgl, sizeof(genx_av1_interpolate_decision_single_tgl));
-#endif
-        }
-
-#if GPU_VARTX
-        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_tgl, sizeof(genx_av1_vartx_decision_tgl));
-#endif // GPU_VARTX
-        programAv1Intra = ReadProgram(device, genx_av1_intra_tgl, sizeof(genx_av1_intra_tgl));
-        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_tgl, sizeof(genx_av1_refine_me_p_64x64_tgl));
-        break;
-#endif // ENABLE_TGL
-
     case PLATFORM_INTEL_ADL_P:
     case PLATFORM_INTEL_ADL_S:
     case PLATFORM_INTEL_RKL:
     case PLATFORM_INTEL_DG1:
     case PLATFORM_INTEL_TGLLP:
-        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_tgllp, sizeof(genx_av1_prepare_src_tgllp));
-        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_tgllp, sizeof(genx_av1_hme_and_me_p32_4mv_tgllp));
-        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_tgllp, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_tgllp));
+        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_gen12lp, sizeof(genx_av1_prepare_src_gen12lp));
+        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_gen12lp, sizeof(genx_av1_hme_and_me_p32_4mv_gen12lp));
+        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_gen12lp, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_gen12lp));
 #if NEWMVPRED
-        programMePu = ReadProgram(device, genx_av1_mepu_tgllp, sizeof(genx_av1_mepu_tgllp));
+        programMePu = ReadProgram(device, genx_av1_mepu_gen12lp, sizeof(genx_av1_mepu_gen12lp));
 #endif // NEWMVPRED
-        programMd = ReadProgram(device, genx_av1_mode_decision_tgllp, sizeof(genx_av1_mode_decision_tgllp));
-        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_tgllp, sizeof(genx_av1_mode_decision_pass2_tgllp));
+        programMd = ReadProgram(device, genx_av1_mode_decision_gen12lp, sizeof(genx_av1_mode_decision_gen12lp));
+        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_gen12lp, sizeof(genx_av1_mode_decision_pass2_gen12lp));
         if (enableInterp) {
 #if !USE_HWPAK_RESTRICT
-            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_tgllp, sizeof(genx_av1_interpolate_decision_tgllp));
+            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_gen12lp, sizeof(genx_av1_interpolate_decision_gen12lp));
 #else
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_tgllp, sizeof(genx_av1_interpolate_decision_single_tgllp));
+            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_gen12lp, sizeof(genx_av1_interpolate_decision_single_gen12lp));
 #endif
         }
 #if GPU_VARTX
-        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_tgllp, sizeof(genx_av1_vartx_decision_tgllp));
+        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_gen12lp, sizeof(genx_av1_vartx_decision_gen12lp));
 #endif // GPU_VARTX
-        programAv1Intra = ReadProgram(device, genx_av1_intra_tgllp, sizeof(genx_av1_intra_tgllp));
-        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_tgllp, sizeof(genx_av1_refine_me_p_64x64_tgllp));
+        programAv1Intra = ReadProgram(device, genx_av1_intra_gen12lp, sizeof(genx_av1_intra_gen12lp));
+        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_gen12lp, sizeof(genx_av1_refine_me_p_64x64_gen12lp));
         break;
 
     default:

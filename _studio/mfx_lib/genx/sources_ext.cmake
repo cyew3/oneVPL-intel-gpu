@@ -2,75 +2,22 @@ if(OPEN_SOURCE)
   return()
 endif()
 
-if(ENABLE_AV1 AND CMAKE_SYSTEM_NAME MATCHES Windows)
+if(CMAKE_SYSTEM_NAME MATCHES Windows)
   add_library(genx_av1_encode_embeded STATIC)
   set_property(TARGET genx_av1_encode_embeded PROPERTY FOLDER "kernels")
 
   target_sources(genx_av1_encode_embeded
     PRIVATE
-      av1_encode/src/genx_av1_hme_and_me_p32_4mv_bdw_isa.cpp
-      av1_encode/src/genx_av1_hme_and_me_p32_4mv_hsw_isa.cpp
-      av1_encode/src/genx_av1_hme_and_me_p32_4mv_icllp_isa.cpp
-      av1_encode/src/genx_av1_hme_and_me_p32_4mv_skl_isa.cpp
       av1_encode/src/genx_av1_hme_and_me_p32_4mv_tgllp_isa.cpp
-      av1_encode/src/genx_av1_hme_and_me_p32_4mv_tgl_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_bdw_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_hsw_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_icllp_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_single_bdw_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_single_hsw_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_single_icllp_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_single_skl_isa.cpp
       av1_encode/src/genx_av1_interpolate_decision_single_tgllp_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_single_tgl_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_skl_isa.cpp
       av1_encode/src/genx_av1_interpolate_decision_tgllp_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_tgl_isa.cpp
-      av1_encode/src/genx_av1_intra_bdw_isa.cpp
-      av1_encode/src/genx_av1_intra_hsw_isa.cpp
-      av1_encode/src/genx_av1_intra_icllp_isa.cpp
-      av1_encode/src/genx_av1_intra_skl_isa.cpp
       av1_encode/src/genx_av1_intra_tgllp_isa.cpp
-      av1_encode/src/genx_av1_intra_tgl_isa.cpp
-      av1_encode/src/genx_av1_mepu_bdw_isa.cpp
-      av1_encode/src/genx_av1_mepu_hsw_isa.cpp
-      av1_encode/src/genx_av1_mepu_icllp_isa.cpp
-      av1_encode/src/genx_av1_mepu_skl_isa.cpp
       av1_encode/src/genx_av1_mepu_tgllp_isa.cpp
-      av1_encode/src/genx_av1_mepu_tgl_isa.cpp
-      av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_bdw_isa.cpp
-      av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_hsw_isa.cpp
-      av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_icllp_isa.cpp
-      av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_skl_isa.cpp
       av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_tgllp_isa.cpp
-      av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_tgl_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_bdw_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_hsw_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_icllp_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_pass2_bdw_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_pass2_hsw_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_pass2_icllp_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_pass2_skl_isa.cpp
       av1_encode/src/genx_av1_mode_decision_pass2_tgllp_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_pass2_tgl_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_skl_isa.cpp
       av1_encode/src/genx_av1_mode_decision_tgllp_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_tgl_isa.cpp
-      av1_encode/src/genx_av1_prepare_src_bdw_isa.cpp
-      av1_encode/src/genx_av1_prepare_src_hsw_isa.cpp
-      av1_encode/src/genx_av1_prepare_src_icllp_isa.cpp
-      av1_encode/src/genx_av1_prepare_src_skl_isa.cpp
       av1_encode/src/genx_av1_prepare_src_tgllp_isa.cpp
-      av1_encode/src/genx_av1_prepare_src_tgl_isa.cpp
-      av1_encode/src/genx_av1_refine_me_p_64x64_bdw_isa.cpp
-      av1_encode/src/genx_av1_refine_me_p_64x64_hsw_isa.cpp
-      av1_encode/src/genx_av1_refine_me_p_64x64_icllp_isa.cpp
-      av1_encode/src/genx_av1_refine_me_p_64x64_skl_isa.cpp
       av1_encode/src/genx_av1_refine_me_p_64x64_tgllp_isa.cpp
-      av1_encode/src/genx_av1_refine_me_p_64x64_tgl_isa.cpp
-      av1_encode/src/genx_av1_vartx_decision_bdw_isa.cpp
-      av1_encode/src/genx_av1_vartx_decision_hsw_isa.cpp
-      av1_encode/src/genx_av1_vartx_decision_skl_isa.cpp
   )
 
   target_link_libraries(genx_av1_encode_embeded

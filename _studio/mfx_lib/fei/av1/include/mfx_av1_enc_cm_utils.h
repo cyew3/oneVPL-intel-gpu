@@ -29,8 +29,8 @@
 
 ///#include "mfx_h265_enc.h"
 #include "libmfx_core_interface.h"
-#include "mfxplugin++.h"
-
+#include "mfx_av1_core_iface_wrapper.h"
+#define MFXCoreInterface MFXCoreInterface1
 #include <vector>
 ///#include <assert.h>
 
@@ -147,6 +147,7 @@ void EnqueueCopyCPUToGPUStride(CmQueue *queue, CmSurface2D *surface, const void 
 void EnqueueCopyGPUToCPUStride(CmQueue *queue, CmSurface2D *surface, void *sysMem, mfxU32 pitch, CmEvent *&event);
 void Read(CmBuffer * buffer, void * buf, CmEvent * e = 0);
 void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0);
+
 CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version);
 CmDevice * CreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version);
 CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size);

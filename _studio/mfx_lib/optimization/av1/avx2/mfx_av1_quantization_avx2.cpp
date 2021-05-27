@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-
+__pragma(warning(disable:4127))
 
 #include "assert.h"
 #include "immintrin.h"
@@ -115,10 +115,10 @@ namespace AV1PP
 
         return eob;
     }
-    template int quant_avx2<TX_4X4>(const short *,short *,const short *);
-    template int quant_avx2<TX_8X8>(const short *,short *,const short *);
-    template int quant_avx2<TX_16X16>(const short *,short *,const short *);
-    template int quant_avx2<TX_32X32>(const short *,short *,const short *);
+    template int quant_avx2<TX_4X4>(const short *,short *,const short []);
+    template int quant_avx2<TX_8X8>(const short *,short *,const short []);
+    template int quant_avx2<TX_16X16>(const short *,short *,const short []);
+    template int quant_avx2<TX_32X32>(const short *,short *,const short []);
 
 
     template <int txSize> void dequant_avx2(const int16_t *src, int16_t *dst, const int16_t *scales, int bd) {
@@ -160,10 +160,10 @@ namespace AV1PP
             dequant_avx2<txSize>(qcoef_ptr, coef_ptr, qpar + 8, bd);
         return eob;
     }
-    template int quant_dequant_avx2<0>(int16_t*,int16_t*,const int16_t*);
-    template int quant_dequant_avx2<1>(int16_t*,int16_t*,const int16_t*);
-    template int quant_dequant_avx2<2>(int16_t*,int16_t*,const int16_t*);
-    template int quant_dequant_avx2<3>(int16_t*,int16_t*,const int16_t*);
+    template int quant_dequant_avx2<0>(int16_t*,int16_t*,const int16_t []);
+    template int quant_dequant_avx2<1>(int16_t*,int16_t*,const int16_t []);
+    template int quant_dequant_avx2<2>(int16_t*,int16_t*,const int16_t []);
+    template int quant_dequant_avx2<3>(int16_t*,int16_t*,const int16_t []);
 
 }; // namespace AV1PP
 

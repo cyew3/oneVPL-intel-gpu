@@ -1480,8 +1480,9 @@ void AV1Encoder::CleanGlobalDpb()
 
 void AV1Encoder::OnEncodingQueried(Frame* encoded)
 {
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     Dump(&m_videoParam, encoded, m_dpb);
-
+#endif
     // release reference frames
     for (int32_t i = 0; i < encoded->m_dpbSize; i++)
         encoded->m_dpb[i]->Release();

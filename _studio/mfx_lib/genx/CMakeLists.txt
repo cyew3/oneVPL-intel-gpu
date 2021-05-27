@@ -97,6 +97,7 @@ if(MFX_ENABLE_KERNELS)
       field_copy/include
       h264_encode/include
       mctf/isa
+      av1_encode/include
     )
 
   target_link_libraries(genx

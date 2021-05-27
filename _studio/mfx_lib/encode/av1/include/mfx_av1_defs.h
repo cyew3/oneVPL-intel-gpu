@@ -36,7 +36,7 @@
 #include "ipps.h"
 #include "ippi.h"
 #include "mfxdefs.h"
-#include "mfxla.h"
+
 #include "mfx_ext_buffers.h"
 
 #include <atomic>
@@ -65,7 +65,6 @@
 #endif
 
 #define LOW_COMPLX_PAQ
-#define AMT_HROI_PSY_AQ
 #define ZERO_DELAY_ANALYZE_CMPLX
 #define ADAPTIVE_DEADZONE
 #define AMT_MAX_FRAME_SIZE
@@ -610,7 +609,9 @@ namespace AV1Enc {
     template<class T> struct Type2Id;
     template<> struct Type2Id<mfxExtOpaqueSurfaceAlloc> { enum { id = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION }; };
     template<> struct Type2Id<mfxExtCodingOptionAV1E>   { enum { id = MFX_EXTBUFF_AV1ENC }; };
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     template<> struct Type2Id<mfxExtDumpFiles>          { enum { id = MFX_EXTBUFF_DUMP }; };
+#endif
     template<> struct Type2Id<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES }; };
     template<> struct Type2Id<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION }; };
     template<> struct Type2Id<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM }; };
@@ -619,7 +620,6 @@ namespace AV1Enc {
     template<> struct Type2Id<mfxExtCodingOption3>      { enum { id = MFX_EXTBUFF_CODING_OPTION3 }; };
     template<> struct Type2Id<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS }; };
     template<> struct Type2Id<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS }; };
-    template<> struct Type2Id<mfxExtLAFrameStatistics>  { enum { id = MFX_EXTBUFF_LOOKAHEAD_STAT}; };
     template<> struct Type2Id<mfxExtEncoderROI>         { enum { id = MFX_EXTBUFF_ENCODER_ROI}; };
     template<> struct Type2Id<mfxExtAVCRefListCtrl>     { enum { id = MFX_EXTBUFF_AVC_REFLIST_CTRL}; };
     template<> struct Type2Id<mfxExtAvcTemporalLayers>  { enum { id = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS }; };

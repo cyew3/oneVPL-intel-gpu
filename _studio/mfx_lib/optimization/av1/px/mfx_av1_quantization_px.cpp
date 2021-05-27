@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+__pragma(warning(disable:4127))
+
 #include "assert.h"
 #include "string.h"
 #include "stdlib.h"
@@ -95,15 +97,15 @@ namespace AV1PP
         }
         return eob;
     }
-    template int quant_px<0>(const int16_t*,int16_t*,const int16_t*);
-    template int quant_px<1>(const int16_t*,int16_t*,const int16_t*);
-    template int quant_px<2>(const int16_t*,int16_t*,const int16_t*);
-    template int quant_px<3>(const int16_t*,int16_t*,const int16_t*);
+    template int quant_px<0>(const int16_t*,int16_t*,const int16_t []);
+    template int quant_px<1>(const int16_t*,int16_t*,const int16_t []);
+    template int quant_px<2>(const int16_t*,int16_t*,const int16_t []);
+    template int quant_px<3>(const int16_t*,int16_t*,const int16_t []);
 
-    template int quant_px<0>(const int32_t*, int16_t*, const int16_t*);
-    template int quant_px<1>(const int32_t*, int16_t*, const int16_t*);
-    template int quant_px<2>(const int32_t*, int16_t*, const int16_t*);
-    template int quant_px<3>(const int32_t*, int16_t*, const int16_t*);
+    template int quant_px<0>(const int32_t*, int16_t*, const int16_t []);
+    template int quant_px<1>(const int32_t*, int16_t*, const int16_t []);
+    template int quant_px<2>(const int32_t*, int16_t*, const int16_t []);
+    template int quant_px<3>(const int32_t*, int16_t*, const int16_t []);
 
     template <int txSize, typename TCoeffType> void dequant_px(const int16_t* src, TCoeffType* dst, const int16_t *scales, int bd)
     {

@@ -534,7 +534,13 @@ namespace AV1PP
             sse = update_sse(sse, loada_si256(src1), loada_si256(src2));
         return hsum_i32(sse);
     }
-
+#ifdef _MSC_VER
+#if !defined (_M_X64)
+#define _mm_cvtsi128_si64(a) \
+    ((uint64_t)(uint32_t)_mm_extract_epi32(a, 0)      | \
+     (uint64_t)(uint32_t)_mm_extract_epi32(a, 1) << 32)
+#endif
+#endif
     int64_t sse_cont_avx2(const int16_t *src1, const int16_t *src2, int block_size)
     {
         __m256i zero = _mm256_setzero_si256();

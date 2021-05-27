@@ -29,7 +29,9 @@
 #else
     #include "av1ehw_base_lin.h"
 #endif
-
+#if defined(MFX_VA_WIN)
+    #include "mfx_av1_encode_api.h"
+#endif
 #ifndef STRIP_EMBARGO
 #if !defined(MFX_VA_LINUX)
     #include "av1ehw_g12_win.h"
@@ -75,6 +77,10 @@ static ImplBase* CreateSpecific(
     else if (hw >= MFX_HW_MTL)
         status = MFX_ERR_UNSUPPORTED;
 #endif
+#endif
+#if defined(MFX_VA_WIN)
+    if (!impl && hw >= MFX_HW_TGL_LP && hw <= MFX_HW_ADL_P && hw != MFX_HW_DG1)
+        impl = new MFXVideoENCODEAV1(&core, &status);
 #endif
 
     return impl;

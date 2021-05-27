@@ -654,9 +654,9 @@ namespace AV1Enc {
     typedef std::list<Frame*> FrameList;
     typedef std::list<Frame*>::iterator FrameIter;
     typedef std::list<Frame*>::const_iterator ConstFrameIter;
-
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     void Dump(AV1VideoParam *par, Frame* frame, FrameList & dpb);
-
+#endif
     void PadRectLuma         (const FrameData &fdata, int32_t fourcc, int32_t rectx, int32_t recty, int32_t rectw, int32_t recth);
     void PadRectChroma       (const FrameData &fdata, int32_t fourcc, int32_t rectx, int32_t recty, int32_t rectw, int32_t recth);
     void PadRectLumaAndChroma(const FrameData &fdata, int32_t fourcc, int32_t rectx, int32_t recty, int32_t rectw, int32_t recth);

@@ -754,7 +754,9 @@ namespace {
         mfxExtCodingOption *opt = GetExtBuffer(par);
         mfxExtCodingOption2 *opt2 = GetExtBuffer(par);
         mfxExtCodingOption3 *opt3 = GetExtBuffer(par);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         mfxExtDumpFiles *dumpFiles = GetExtBuffer(par);
+#endif
         mfxExtEncoderROI *roi = GetExtBuffer(par);
         mfxExtAvcTemporalLayers *tlayers = GetExtBuffer(par);
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -1324,7 +1326,7 @@ namespace {
                 wrnIncompatible = true;
             }
         }
-
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         if (dumpFiles) {
             size_t MAXLEN = sizeof(dumpFiles->ReconFilename) / sizeof(dumpFiles->ReconFilename[0]);
             vm_char *pzero = std::find(dumpFiles->ReconFilename, dumpFiles->ReconFilename + MAXLEN, 0);
@@ -1336,7 +1338,7 @@ namespace {
             if (pzero == dumpFiles->InputFramesFilename + MAXLEN)
                 dumpFiles->InputFramesFilename[0] = 0, wrnIncompatible = true; // too long name
         }
-
+#endif
         if      (errInvalidParam) return MFX_ERR_INVALID_VIDEO_PARAM;
         else if (errUnsupported)  return MFX_ERR_UNSUPPORTED;
         else if (wrnIncompatible) return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -1883,6 +1885,14 @@ MFXVideoENCODEAV1::MFXVideoENCODEAV1(MFXCoreInterface1 *core, mfxStatus *sts)
         *sts = MFX_ERR_NONE;
 }
 
+MFXVideoENCODEAV1::MFXVideoENCODEAV1(VideoCORE *core, mfxStatus *sts)
+    : m_mfxCore(core)
+{
+    m_core = &m_mfxCore;
+    Zero(m_mfxParam);
+    if (sts)
+        *sts = MFX_ERR_NONE;
+}
 
 MFXVideoENCODEAV1::~MFXVideoENCODEAV1()
 {
@@ -1950,7 +1960,7 @@ mfxStatus MFXVideoENCODEAV1::Close()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXVideoENCODEAV1::Query(MFXCoreInterface1 *core, mfxVideoParam *in, mfxVideoParam *out)
+mfxStatus MFXVideoENCODEAV1::Query(MFXCoreInterface1 *, mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus st = MFX_ERR_NONE;
     if (out == NULL)
@@ -1995,7 +2005,7 @@ mfxStatus MFXVideoENCODEAV1::Query(MFXCoreInterface1 *core, mfxVideoParam *in, m
 }
 
 
-mfxStatus MFXVideoENCODEAV1::QueryIOSurf(MFXCoreInterface1 *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus MFXVideoENCODEAV1::QueryIOSurf(MFXCoreInterface1 *, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     if (par == 0 || request == 0)
         return MFX_ERR_NULL_PTR;
@@ -2092,6 +2102,7 @@ mfxStatus MFXVideoENCODEAV1::GetVideoParam(mfxVideoParam *par)
 {
     if (m_impl.get() == 0)
         return MFX_ERR_NOT_INITIALIZED;
+
     if (par == 0)
         return MFX_ERR_NULL_PTR;
 
@@ -2189,11 +2200,6 @@ mfxStatus MFXVideoENCODEAV1::EncodeFrameCheck(
                 (ctrl->FrameType & 7) != MFX_FRAMETYPE_P &&
                 (ctrl->FrameType & 7) != MFX_FRAMETYPE_B)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
-            if (m_mfxParam.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) {
-                mfxExtLAFrameStatistics *laStat = GetExtBuffer(*ctrl);
-                if (laStat == NULL)
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-            }
         }
     }
 
@@ -2239,7 +2245,9 @@ ExtBuffers::ExtBuffers()
     size_t count = 0;
     extParamAll[count++] = &extOpaq.Header;
     extParamAll[count++] = &extOptAv1.Header;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     extParamAll[count++] = &extDumpFiles.Header;
+#endif
     extParamAll[count++] = &extTiles.Header;
     extParamAll[count++] = &extRegion.Header;
     extParamAll[count++] = &extHevcParam.Header;
@@ -2261,7 +2269,9 @@ void ExtBuffers::CleanUp()
 {
     InitExtBuffer(extOpaq);
     InitExtBuffer(extOptAv1);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     InitExtBuffer(extDumpFiles);
+#endif
     InitExtBuffer(extTiles);
     InitExtBuffer(extRegion);
     InitExtBuffer(extHevcParam);

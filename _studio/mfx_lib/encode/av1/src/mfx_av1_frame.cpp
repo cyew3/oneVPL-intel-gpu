@@ -551,6 +551,7 @@ namespace AV1Enc {
             }
         }
     }
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     void Dump_src10enc8pak10(AV1VideoParam *par, Frame* frame, FrameList & dpb)
     {
 #if USE_CMODEL_PAK
@@ -621,6 +622,7 @@ namespace AV1Enc {
         file.open(par->reconDumpFileName, mode);
         if (!file.is_open()) return;
 
+
         uint64_t seekPos = (par->picStruct == PROGR)
             ? uint64_t(frame->m_frameOrder)   * (plane_size)
             : uint64_t(frame->m_frameOrder / 2) * (plane_size * 2);
@@ -674,10 +676,13 @@ namespace AV1Enc {
         }
 
         file.close();
+
 #endif
 #endif
     }
+#endif
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     void Dump(AV1VideoParam *par_, Frame* frame, FrameList & dpb)
     {
         if (!par_->doDumpRecon)
@@ -708,6 +713,7 @@ namespace AV1Enc {
             mode = std::ios_base::binary | std::ios_base::out;
         file.open(par->reconDumpFileName, mode);
         if (!file.is_open()) return;
+
 
         uint64_t seekPos = (par->picStruct == PROGR)
             ? uint64_t(frame->m_frameOrder)   * (plane_size)
@@ -766,6 +772,7 @@ namespace AV1Enc {
 
         file.close();
     }
+#endif
 
     TileContexts::TileContexts() {
         tileSb64Cols = 0;

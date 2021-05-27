@@ -26,6 +26,7 @@
 
 #include <memory>
 #include "mfx_ext_buffers.h"
+#include "av1eimplbase.h"
 
 namespace AV1Enc {
     class AV1Encoder;
@@ -35,7 +36,9 @@ namespace AV1Enc {
         void CleanUp();
         mfxExtOpaqueSurfaceAlloc extOpaq;
         mfxExtCodingOptionAV1E   extOptAv1;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         mfxExtDumpFiles          extDumpFiles;
+#endif
         mfxExtHEVCTiles          extTiles;
         mfxExtHEVCRegion         extRegion;
         mfxExtHEVCParam          extHevcParam;
@@ -49,22 +52,44 @@ namespace AV1Enc {
         mfxExtVP9Param           extVP9Param;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         mfxExtAV1Param           extAV1Param;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         mfxExtBuffer            *extParamAll[15];
 #else
         mfxExtBuffer            *extParamAll[14];
 #endif
-
+#else
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+        mfxExtBuffer            *extParamAll[14];
+#else
+        mfxExtBuffer            *extParamAll[13];
+#endif
+#endif
         static const size_t NUM_EXT_PARAM;
     };
 }
 
-class MFXCoreInterface1;
-class MFXVideoENCODEAV1 : public VideoENCODE {
-public:
-    static mfxStatus Query(MFXCoreInterface1 *core, mfxVideoParam *in, mfxVideoParam *out);
-    static mfxStatus QueryIOSurf(MFXCoreInterface1 *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
+#include "mfx_av1_core_iface_wrapper.h"
 
+class MFXVideoENCODEAV1 : public ImplBase {
+public:
+
+    static mfxStatus Query(MFXCoreInterface1 *, mfxVideoParam *in, mfxVideoParam *out);
+    static mfxStatus Query(VideoCORE *, mfxVideoParam *in, mfxVideoParam *out) {
+        return Query((MFXCoreInterface1*)nullptr, in, out);
+    }
+    static mfxStatus QueryIOSurf(MFXCoreInterface1 *, mfxVideoParam *par, mfxFrameAllocRequest *request);
+    static mfxStatus QueryIOSurf(VideoCORE *, mfxVideoParam *par, mfxFrameAllocRequest *request) {
+        return QueryIOSurf((MFXCoreInterface1*)nullptr, par, request);
+    }
+    mfxStatus InternalQuery(VideoCORE& core, mfxVideoParam *in, mfxVideoParam& out) {
+        return Query(&core, in, &out);
+    };
+
+    virtual mfxStatus InternalQueryIOSurf(VideoCORE& core, mfxVideoParam& par, mfxFrameAllocRequest& request) { 
+        return QueryIOSurf(&core, &par, &request);
+    };
     MFXVideoENCODEAV1(MFXCoreInterface1 *core, mfxStatus *sts);
+    MFXVideoENCODEAV1(VideoCORE *core, mfxStatus *sts);
 
     virtual ~MFXVideoENCODEAV1();
 
@@ -99,6 +124,7 @@ protected:
 
 protected:
     MFXCoreInterface1 *m_core;
+    MFXCoreInterface1 m_mfxCore;
     std::unique_ptr<AV1Enc::AV1Encoder> m_impl;
 
     mfxVideoParam       m_mfxParam;

@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+__pragma(warning(disable:4127))
 
 #include "stdio.h"
 #include "assert.h"
