@@ -80,36 +80,6 @@ template <class Base>
 D3D9ON11VideoCORE_T<Base>::~D3D9ON11VideoCORE_T() {}
 
 template <class Base>
-mfxStatus D3D9ON11VideoCORE_T<Base>::CreateVA(mfxVideoParam* param, mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, UMC::FrameAllocator* allocator)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9ON11VideoCORE_T<Base>::CreateVA");
-    mfxStatus sts = MFX_ERR_NONE;
-
-    sts = Base::CreateVA(param, request, response, allocator);
-    MFX_CHECK_STS(sts);
-
-    MFX_CHECK(!(param->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && !(param->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_NONE);
-
-    if (MFX_CODEC_AVC == param->mfx.CodecId ||
-        MFX_CODEC_VC1 == param->mfx.CodecId ||
-        MFX_CODEC_HEVC == param->mfx.CodecId ||
-        MFX_CODEC_JPEG == param->mfx.CodecId ||
-        MFX_CODEC_VP9 == param->mfx.CodecId ||
-        MFX_CODEC_MPEG2 == param->mfx.CodecId)
-        return MFX_ERR_NONE;
-
-    // Need to clear mapping tables to prevent incorrect decode wrap
-    // when application inits decoder second time
-    m_dx9MemIdMap.clear();
-    m_dx9MemIdUsed.clear();
-
-    sts = ConvertUMCStatusToMfx(m_pAccelerator->CreateWrapBuffers(this, request, response));
-    MFX_CHECK_STS(sts);
-
-    return sts;
-}
-
-template <class Base>
 void D3D9ON11VideoCORE_T<Base>::ReleaseHandle()
 {
     if (m_hdl)

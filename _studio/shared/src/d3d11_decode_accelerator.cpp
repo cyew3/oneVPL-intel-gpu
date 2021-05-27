@@ -19,22 +19,15 @@
 // SOFTWARE.
 #if defined  (MFX_D3D11_ENABLED)
 
-#include <d3d11_1.h>
 #include "d3d11_decode_accelerator.h"
-#include "libmfx_core.h"
-#include "mfx_utils.h"
-#include "umc_vc1_dec_va_defs.h"
 
 #include "umc_va_dxva2.h"
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_video_processing.h"
-#include "umc_dynamic_cast.h"
 
 #include "libmfx_core_d3d11.h"
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common_decode_int.h"
-
-#include "libmfx_core_d3d9on11.h"
 
 #if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
@@ -56,8 +49,6 @@ MFXD3D11Accelerator::MFXD3D11Accelerator()
     , m_pVDOView(0)
     , m_DecoderGuid(GUID_NULL)
     , m_numberSurfaces(128)
-    , m_dx9on11response()
-    , m_pDX9ON11Core(nullptr)
     , m_surface_source(nullptr)
 {
 }
@@ -153,42 +144,6 @@ UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* params)
     return UMC_OK;
 
 } // mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator
-
-UMC::Status MFXD3D11Accelerator::CreateWrapBuffers(VideoCORE* core, mfxFrameAllocRequest* req, mfxFrameAllocResponse* res)
-{
-    UMC_CHECK_PTR(core);
-    UMC_CHECK_PTR(req);
-    UMC_CHECK_PTR(res);
-
-    m_pDX9ON11Core = dynamic_cast<D3D9ON11VideoCORE*>(core);
-    UMC_CHECK(m_pDX9ON11Core, UMC_OK);
-
-    mfxFrameAllocRequest request = {};
-    request = *req;
-    request.Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SHARED_RESOURCE;
-    request.NumFrameMin = request.NumFrameSuggested = res->NumFrameActual;
-    Status sts = m_pDX9ON11Core->AllocFrames(&request, &m_dx9on11response);
-    UMC_CHECK_STATUS(sts);
-
-    return UMC_OK;
-}
-
-UMC::Status MFXD3D11Accelerator::UnwrapBuffer(mfxMemId bufferId)
-{
-    if (m_dx9on11response.mids && m_pDX9ON11Core)
-    {
-        mfxMemId dx11MemId = m_pDX9ON11Core->UnWrapSurface(bufferId);
-        MFX_CHECK(dx11MemId, UMC_ERR_FAILED);
-
-        if (dx11MemId != bufferId)
-        {
-            if (UMC_OK != m_pDX9ON11Core->CopyDX11toDX9(dx11MemId, bufferId))
-                return UMC_ERR_FAILED;
-        }
-    }
-
-    return UMC_OK;
-}
 
 UMC::Status MFXD3D11Accelerator::GetSuitVideoDecoderConfig(D3D11_VIDEO_DECODER_DESC* video_desc, D3D11_VIDEO_DECODER_CONFIG* pConfig)
 {
@@ -326,15 +281,6 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "MFXD3D11Accelerator::m_allocator->GetFrameHandle");
         if (UMC_OK != m_allocator->GetFrameHandle(index, &Pair))
-            return UMC_ERR_DEVICE_FAILED;
-    }
-
-    if (m_dx9on11response.mids && m_pDX9ON11Core && m_surface_source)
-    {
-        mfxMemId dx11MemId = m_pDX9ON11Core->WrapSurface(m_surface_source->GetSurfaceByIndex(index)->Data.MemId, m_dx9on11response);
-        UMC_CHECK(dx11MemId, UMC_ERR_FAILED);
-
-        if (UMC_OK != m_pDX9ON11Core->GetFrameHDL(dx11MemId, &Pair.first))
             return UMC_ERR_DEVICE_FAILED;
     }
 
@@ -526,8 +472,6 @@ Status MFXD3D11Accelerator::Close()
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
 #endif
-    if(m_pDX9ON11Core)
-        m_pDX9ON11Core->FreeFrames(&m_dx9on11response);
 
     return DXAccelerator::Close();
 }

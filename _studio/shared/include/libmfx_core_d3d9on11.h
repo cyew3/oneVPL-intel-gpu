@@ -54,7 +54,6 @@ public:
 
     virtual                      ~D3D9ON11VideoCORE_T();
 
-    virtual mfxStatus            CreateVA(mfxVideoParam* param, mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, UMC::FrameAllocator* allocator) override;
     virtual mfxStatus            SetFrameAllocator(mfxFrameAllocator* allocator) override;
     virtual mfxStatus            SetHandle(mfxHandleType type, mfxHDL handle) override;
     virtual mfxStatus            GetHandle(mfxHandleType type, mfxHDL* handle) override;
