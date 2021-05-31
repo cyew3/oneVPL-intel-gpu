@@ -1639,7 +1639,7 @@ namespace MPEG2EncoderHW
             mfxFrameAllocRequest request = {};
             sts = QueryIOSurf(m_pCore, par, &request);
             MFX_CHECK(sts>=0,sts);
-            m_VideoParamsEx.encNumFrameMin = request.NumFrameMin;
+
             sts = m_InputSurfaces.Reset (par, request.NumFrameMin);
             MFX_CHECK(sts != MFX_ERR_INVALID_VIDEO_PARAM, m_bInitialized ? MFX_ERR_INCOMPATIBLE_VIDEO_PARAM: sts);
             MFX_CHECK_STS(sts);
@@ -2566,7 +2566,8 @@ namespace MPEG2EncoderHW
         mfxU32 numref = 0;
         mfxU32 numinput = 0;
         mfxU16 type=0;
-        bool bHWInput = ((InputFrameType & MFX_MEMTYPE_DXVA2_DECODER_TARGET) != 0);
+        m_bUseInternalMem = (InputFrameType & MFX_MEMTYPE_SYSTEM_MEMORY)
+                || (IsD3D9Simulation(*m_pCore) && (InputFrameType & MFX_MEMTYPE_DXVA2_DECODER_TARGET));
 
         m_InputType = InputFrameType;
         m_bHWFrames = bHW;
@@ -2574,7 +2575,7 @@ namespace MPEG2EncoderHW
 
         ReleaseFrames();
 
-        if (bHWInput != bHW)
+        if (m_bUseInternalMem)
         {
             numinput += mTasks;
             if (m_bRawFrame)
@@ -2691,7 +2692,6 @@ namespace MPEG2EncoderHW
     mfxStatus FrameStore::NextFrame(mfxFrameSurface1 *pInputFrame, mfxU32 nFrame, mfxU16 frameType, mfxU32 intFlags, FramesSet *pFrames)
     {
         mfxStatus sts           = MFX_ERR_NONE;
-        bool      bHWInput      = (m_InputType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)? true: false ;
         mfxU16    localFrameType = m_bHWFrames
             ? (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE)
             : (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE);
@@ -2708,7 +2708,7 @@ namespace MPEG2EncoderHW
         {
             m_nLastRef = nFrame;
         }
-        if (bHWInput == m_bHWFrames)
+        if (!m_bUseInternalMem)
         {
             pFrames->m_pInputFrame = pInputFrame;
         }
