@@ -979,7 +979,8 @@ namespace MfxHwH264Encode
         VideoCORE *               core,
         mfxMemId                  dstMid,
         const mfxFrameSurface1&   srcSurf,
-        mfxFrameInfo const&       info);
+        mfxFrameInfo const&       info,
+        const mfxU16&             inMemType);
 
 #if 0 // removed dependency from file operations
     void WriteFrameData(

@@ -39,8 +39,6 @@
 #include <d3d11.h>
 #include "mfx_h264_encode_d3d9.h" // suggest that the same syncop based on cache functionality is used
 
-#include "libmfx_core_d3d9on11.h"
-
 namespace MfxHwH264Encode
 {
     class OutputBitstream;
@@ -115,11 +113,6 @@ namespace MfxHwH264Encode
             mfxU32    fieldId,
             bool useEvent = true) override;
 
-        virtual
-        mfxStatus CreateWrapSurfaces(
-            const mfxU16& numFrameMin,
-            const mfxVideoParam& par) override;
-
     protected:
         // async call
         virtual
@@ -186,8 +179,6 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
         CachedFeedback                              m_feedbackCached;
         HeaderPacker                                m_headerPacker;
-
-        MfxWrapController                           m_dx9on11ctrl;
 
         std::vector<mfxHDLPair>                     m_reconQueue;
         std::vector<mfxHDLPair>                     m_bsQueue;

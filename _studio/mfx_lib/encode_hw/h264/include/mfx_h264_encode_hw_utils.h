@@ -1585,6 +1585,8 @@ namespace MfxHwH264Encode
         UMC::Mutex    m_mutex;
         MfxVideoParam m_video;
 
+        bool          m_isD3D9SimWithVideoMem;
+
         std::vector<DdiTask>     m_tasks;
         std::vector<Surface>     m_raws;
         std::vector<Surface>     m_bitstreams;
@@ -3397,6 +3399,7 @@ private:
         MfxVideoParam       m_video;
         MfxVideoParam       m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
         mfxEncodeStat       m_stat;
+        bool                m_isD3D9SimWithVideoMem;
 
         std::list<std::pair<mfxBitstream *, mfxU32> > m_listOfPairsForFieldOutputMode;
 
@@ -4061,6 +4064,7 @@ private:
         MfxVideoParam       m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
         TaskManagerMvc      m_taskMan;
         MFX_ENCODE_CAPS     m_ddiCaps;
+        bool                m_isD3D9SimWithVideoMem;
 
         std::vector<Hrd>            m_hrd;
 // MVC BD {
@@ -4749,7 +4753,8 @@ private:
         VideoCORE &           core,
         MfxVideoParam const & video,
         DdiTask const &       task,
-        mfxHDLPair &          handle);
+        mfxHDLPair &          handle,
+        bool                  isD3D9SimWithVideoMem);
 
     bool IsFrameToSkip(DdiTask&  task, MfxFrameAllocResponse & poolRec, std::vector<mfxU32> fo, bool bSWBRC);
     mfxStatus CodeAsSkipFrame(  VideoCORE&            core,
@@ -4760,7 +4765,8 @@ private:
     mfxStatus CopyRawSurfaceToVideoMemory(
         VideoCORE &           core,
         MfxVideoParam const & video,
-        DdiTask const &       task);
+        DdiTask const &       task,
+        bool                  isD3D9SimWithVideoMem);
 
     mfxHDL GetNativeHandle(
         VideoCORE & core,

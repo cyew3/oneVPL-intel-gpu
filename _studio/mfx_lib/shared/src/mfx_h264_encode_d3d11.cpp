@@ -36,7 +36,6 @@
 #include "vm_time.h"
 #include "mfx_session.h"
 
-#include "libmfx_core_d3d9on11.h"
 #include "mfx_enc_common.h"
 
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
@@ -73,7 +72,6 @@ D3D11Encoder::D3D11Encoder()
 , m_feedbackUpdate()
 , m_feedbackCached()
 , m_headerPacker()
-, m_dx9on11ctrl()
 , m_reconQueue()
 , m_bsQueue()
 , m_mbqpQueue()
@@ -298,12 +296,6 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
 } // mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 
-mfxStatus D3D11Encoder::CreateWrapSurfaces(const mfxU16& numFrameMin, const mfxVideoParam& par)
-{
-    MFX_CHECK(!m_dx9on11ctrl.Alloc(m_core, numFrameMin, par, MFX_MEMTYPE_FROM_ENCODE), MFX_ERR_MEMORY_ALLOC);
-    return MFX_ERR_NONE;
-}
-
 mfxStatus D3D11Encoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 {
     MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
@@ -434,9 +426,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     m_packedSei = { 0 };
-
-    mfxStatus sts = m_dx9on11ctrl.WrapSurface(task.m_yuv, &pair.first);
-    MFX_CHECK_STS(sts);
 
     ID3D11Resource * pSurface = static_cast<ID3D11Resource *>(pair.first);
     UINT subResourceIndex = (UINT)(UINT_PTR)(pair.second);
@@ -924,7 +913,6 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
         }
 #endif
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
-        MFX_CHECK(!m_dx9on11ctrl.UnwrapSurface(task.m_yuv), MFX_ERR_INVALID_HANDLE);
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:

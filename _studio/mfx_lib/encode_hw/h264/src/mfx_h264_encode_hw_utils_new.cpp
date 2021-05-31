@@ -26,6 +26,7 @@
 #include "mfx_h264_encode_hw_utils.h"
 #include "mfx_common_int.h"
 #include "ippi.h"
+#include "libmfx_core.h"
 
 using namespace MfxHwH264Encode;
 
@@ -2620,7 +2621,8 @@ void MfxHwH264Encode::ConfigureTask(
 mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
     VideoCORE &           core,
     MfxVideoParam const & video,
-    DdiTask const &       task)
+    DdiTask const &       task,
+    bool                  isD3D9SimWithVideoMem)
 {
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
@@ -2628,7 +2630,10 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
 
     mfxFrameSurface1 * surface = task.m_yuv;
 
-    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+    mfxU16 inMemType = static_cast<mfxU16>((video.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET) |
+        MFX_MEMTYPE_EXTERNAL_FRAME);
+
+    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || isD3D9SimWithVideoMem
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
 #endif
@@ -2652,7 +2657,7 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
         mfxStatus sts = MFX_ERR_NONE;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
-            sts = CopyFrameDataBothFields(&core, task.m_midRaw, *surface, video.mfx.FrameInfo);
+            sts = CopyFrameDataBothFields(&core, task.m_midRaw, *surface, video.mfx.FrameInfo, inMemType);
             if (sts != MFX_ERR_NONE)
                 return Error(sts);
         }
@@ -2751,7 +2756,8 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
     VideoCORE &           core,
     MfxVideoParam const & video,
     DdiTask const &       task,
-    mfxHDLPair &          handle)
+    mfxHDLPair &          handle,
+    bool                  isD3D9SimWithVideoMem)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -2759,7 +2765,6 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
     mfxHDL * nativeHandle = &handle.first;
 
     mfxFrameSurface1 * surface = task.m_yuv;
-
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
@@ -2777,7 +2782,7 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
     mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
 #endif
 
-    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || isD3D9SimWithVideoMem
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
 #endif

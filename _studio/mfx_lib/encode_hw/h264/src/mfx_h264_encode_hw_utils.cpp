@@ -1032,6 +1032,7 @@ bool TaskManager::IsSubmitted(DdiTask const & task) const
 
 TaskManager::TaskManager()
 : m_core(NULL)
+, m_isD3D9SimWithVideoMem(false)
 , m_stat()
 , m_frameNum(0)
 , m_frameNumMax(0)
@@ -1088,8 +1089,9 @@ void TaskManager::Init(
     m_recons.resize(CalcNumSurfRecon(m_video));
     m_tasks.resize(CalcNumTasks(m_video));
 
-    // need raw surfaces only when input surfaces are in system memory
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    m_isD3D9SimWithVideoMem = IsD3D9Simulation(*m_core) && (m_video.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY);
+    // need raw surfaces only when input surfaces are in system memory or for DX9ON11
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
         m_raws.resize(CalcNumSurfRaw(m_video));
 
     Zero(m_stat);
@@ -1962,7 +1964,7 @@ mfxStatus TaskManager::AssignTask(
         }
     }
 
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
     {
         toEncode->m_idx = FindFreeSurface(m_raws);
         MFX_CHECK(toEncode->m_idx != NO_INDEX, MFX_WRN_DEVICE_BUSY);
@@ -2440,7 +2442,7 @@ void TaskManager::ConfirmTask(DdiTask & task)
         m_core->IncreaseReference(&task.m_pushed->m_yuv->Data);
     }
 
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY && task.m_idx != NO_INDEX)
+    if ((m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem) && task.m_idx != NO_INDEX)
     {
         m_raws[task.m_idx].SetFree(false);
     }
@@ -2503,7 +2505,7 @@ void TaskManager::CompleteTask(DdiTask & task)
 
             if (IsOn(optDdi->RefRaw))
             {
-                if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+                if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
                     m_raws[iniDpb[i].m_frameIdx].SetFree(true);
                 else
                     m_core->DecreaseReference(&m_recons[iniDpb[i].m_frameIdx].m_yuv->Data);
@@ -2526,12 +2528,12 @@ void TaskManager::CompleteTask(DdiTask & task)
     {
         m_core->DecreaseReference(&task.m_yuv->Data);
 
-        if (task.m_idx != NO_INDEX && m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+        if (task.m_idx != NO_INDEX && (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem))
             m_raws[task.m_idx].SetFree(true);
     }
     else
     {
-        if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+        if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
             // when input surface is in system memory
             // we can release it right after task is completed
             // even if raw surfaces are used as reference
@@ -2540,7 +2542,7 @@ void TaskManager::CompleteTask(DdiTask & task)
         if (!m_recons[task.m_idxRecon].m_reference[0] && !m_recons[task.m_idxRecon].m_reference[1])
         {
             m_core->DecreaseReference(&task.m_yuv->Data);
-            if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+            if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
                 m_raws[task.m_idx].SetFree(true);
         }
     }

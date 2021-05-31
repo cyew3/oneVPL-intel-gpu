@@ -29,6 +29,7 @@
 #include "mfx_h264_encode_hw_utils.h"
 #include "mfx_task.h"
 #include "vm_time.h"
+#include "libmfx_core.h"
 
 #ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
@@ -844,6 +845,7 @@ ImplementationMvc::ImplementationMvc(VideoCORE * core)
     , m_videoInit()
     , m_taskMan()
     , m_ddiCaps()
+    , m_isD3D9SimWithVideoMem(false)
     , m_numEncs(0)
     , m_spsSubsetSpsDiff(0)
     , m_sei()
@@ -949,8 +951,9 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
     request.Info = m_video.mfx.FrameInfo;
 
     // allocate raw surfaces
-    // required only in case of system memory input
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    // required only in case of system memory input or DX9ON11
+    m_isD3D9SimWithVideoMem = IsD3D9Simulation(*m_core) && (m_video.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY);
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
         request.NumFrameMin = mfxU16(CalcNumSurfRaw(m_video) * (m_numEncs > 1 ? 1 : extMvc->NumView));
@@ -2858,7 +2861,11 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
 
 mfxStatus ImplementationMvc::CopyRawSurface(DdiTask const & task)
 {
-    if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+
+    mfxU16 inMemType = static_cast<mfxU16>((m_video.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET) |
+        MFX_MEMTYPE_EXTERNAL_FRAME);
+
+    if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
     {
         mfxU32 numRawSurfPerView = CalcNumSurfRaw(m_video);
 
@@ -2867,7 +2874,7 @@ mfxStatus ImplementationMvc::CopyRawSurface(DdiTask const & task)
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
-            mfxStatus sts = CopyFrameDataBothFields(m_core, mid, *task.m_yuv, m_video.mfx.FrameInfo);
+            mfxStatus sts = CopyFrameDataBothFields(m_core, mid, *task.m_yuv, m_video.mfx.FrameInfo, inMemType);
             MFX_CHECK_STS(sts);
         }
     }
@@ -2878,7 +2885,7 @@ mfxStatus ImplementationMvc::CopyRawSurface(DdiTask const & task)
 mfxMemId ImplementationMvc::GetRawSurfaceMemId(DdiTask const & task)
 {
     mfxU32 encIdx = m_numEncs > 1 ? task.m_viewIdx : 0;
-    return m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY
+    return (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_isD3D9SimWithVideoMem)
         ? m_raw[encIdx].mids[task.m_idx + m_numEncs > 1 ? 0 : task.m_viewIdx * CalcNumSurfRaw(m_video)]
         : task.m_yuv->Data.MemId;
 }
@@ -2887,7 +2894,7 @@ mfxStatus ImplementationMvc::GetRawSurfaceHandle(DdiTask const & task, mfxHDLPai
 {
     mfxMemId mid = GetRawSurfaceMemId(task);
 
-    mfxStatus sts = (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+    mfxStatus sts = (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY && !m_isD3D9SimWithVideoMem)
         ? m_core->GetExternalFrameHDL(mid, (mfxHDL *)&hdl)
         : m_core->GetFrameHDL(mid, (mfxHDL *)&hdl);
 
