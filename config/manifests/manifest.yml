@@ -7,6 +7,13 @@ components:
     asset_name: mediasdk_root
     asset_version: 1
     dest_dir: sources/msdk_root
+  7zip-win64:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-build-assets/build-tools
+    asset_name: 7zip-win64
+    asset_version: '19.00'
+    dest_dir: build_tools/7zip-win64
   msdk_trs_module:
     type: artifactory
     root_url: https://gfx-assets.intel.com/artifactory
