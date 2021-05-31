@@ -238,6 +238,16 @@ void General::SetSupported(ParamSupport& blocks)
             MFX_COPY_FIELD(LongTermRefList[i].FrameOrder);
         }
     });
+
+    // MFX_EXTBUFF_HYPER_MODE_PARAM pass through from HyperEncoder (or directly) with MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_ADAPTIVE
+    // so, no additional logic needed in AV1 encoder, just have mfxExtMultiGpuParam support
+    blocks.m_ebCopySupported[MFX_EXTBUFF_HYPER_MODE_PARAM].emplace_back(
+        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
+    {
+            const auto& buf_src = *(const mfxExtHyperModeParam*)pSrc;
+            auto& buf_dst = *(mfxExtHyperModeParam*)pDst;
+            MFX_COPY_FIELD(Mode);
+    });
 }
 
 void General::SetInherited(ParamInheritance& par)
