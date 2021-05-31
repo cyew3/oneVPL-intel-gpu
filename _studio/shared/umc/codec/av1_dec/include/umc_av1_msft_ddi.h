@@ -25,6 +25,8 @@
 
 #ifdef UMC_VA_DXVA
 
+#if !defined(NTDDI_WIN10_CO) || (WDK_NTDDI_VERSION < NTDDI_WIN10_CO)
+
 typedef struct _DXVA_PicEntry_AV1_MSFT {
 
     UINT width;
@@ -55,8 +57,8 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
 
     UCHAR CurrPicTextureIndex;
     UCHAR superres_denom;
-    UCHAR BitDepth;
-    UCHAR profile;
+    UCHAR bitdepth;
+    UCHAR seq_profile;
 
     // Tiles:
     struct {
@@ -121,7 +123,7 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
     UCHAR order_hint_bits;
 
     DXVA_PicEntry_AV1_MSFT frame_refs[7];
-    UCHAR ref_frame_map_texture_index[8];
+    UCHAR RefFrameMapTextureIndex[8];
 
     // Loop filter parameters
     struct {
@@ -274,11 +276,11 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
 
     UINT   Reserved32Bits;
     UINT   StatusReportFeedbackNumber;
-} DXVA_PicParams_AV1_MSFT, *LPDXVA_PicParams_AV1;
+} DXVA_PicParams_AV1, *LPDXVA_PicParams_AV1;
 
 typedef struct _DXVA_Tile_AV1 {
-    UINT   dataOffset;
-    UINT   dataSize;
+    UINT   DataOffset;
+    UINT   DataSize;
     USHORT row;
     USHORT column;
     USHORT Reserved16Bits;
@@ -290,9 +292,11 @@ typedef struct _DXVA_Status_AV1 {
     UINT  StatusReportFeedbackNumber;
     DXVA_PicEntry_AV1_MSFT CurrPic;
     UCHAR  bBufType;
-    UCHAR  bStatus;
+    UCHAR  Status;
     UCHAR  bReserved8Bits;
     USHORT wNumMbsAffected;
 } DXVA_Status_AV1, *LPDXVA_Status_AV1;
+
+#endif
 #endif
 #endif

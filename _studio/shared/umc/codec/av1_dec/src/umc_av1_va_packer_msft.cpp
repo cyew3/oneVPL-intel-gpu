@@ -53,12 +53,12 @@ namespace UMC_AV1_DECODER
         {
             // it's first submission for current frame - need to fill and submit picture parameters
             UMC::UMCVACompBuffer* compBufPic = NULL;
-            DXVA_PicParams_AV1_MSFT *picParam = (DXVA_PicParams_AV1_MSFT*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBufPic);
-            if (!picParam || !compBufPic || (compBufPic->GetBufferSize() < sizeof(DXVA_PicParams_AV1_MSFT)))
+            DXVA_PicParams_AV1 *picParam = (DXVA_PicParams_AV1*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBufPic);
+            if (!picParam || !compBufPic || (compBufPic->GetBufferSize() < sizeof(DXVA_PicParams_AV1)))
                 throw UMC_VP9_DECODER::vp9_exception(MFX_ERR_MEMORY_ALLOC);
 
-            compBufPic->SetDataSize(sizeof(DXVA_PicParams_AV1_MSFT));
-            *picParam = DXVA_PicParams_AV1_MSFT{};
+            compBufPic->SetDataSize(sizeof(DXVA_PicParams_AV1));
+            *picParam = DXVA_PicParams_AV1{};
 
             PackPicParams(*picParam, info);
         }
@@ -101,7 +101,7 @@ namespace UMC_AV1_DECODER
     }
 
 
-    void PackerMSFT::PackPicParams(DXVA_PicParams_AV1_MSFT& picParam, AV1DecoderFrame const& frame)
+    void PackerMSFT::PackPicParams(DXVA_PicParams_AV1& picParam, AV1DecoderFrame const& frame)
     {
         SequenceHeader const& sh = frame.GetSeqHeader();
 
@@ -114,8 +114,8 @@ namespace UMC_AV1_DECODER
         picParam.max_height = (USHORT)frame.GetFrameHeight();
         picParam.CurrPicTextureIndex = (UCHAR)frame.GetMemID(SURFACE_RECON);
         picParam.superres_denom = (UCHAR)info.SuperresDenom;
-        picParam.BitDepth = (UCHAR)sh.color_config.BitDepth;
-        picParam.profile = (UCHAR)sh.seq_profile;
+        picParam.bitdepth = (UCHAR)sh.color_config.BitDepth;
+        picParam.seq_profile = (UCHAR)sh.seq_profile;
 
         // Tiles:
 
@@ -182,8 +182,7 @@ namespace UMC_AV1_DECODER
 
         for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
         {
-            picParam.ref_frame_map_texture_index[ref] = (UCHAR)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
-
+            picParam.RefFrameMapTextureIndex[ref] = (UCHAR)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
         }
         for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
         {
@@ -368,8 +367,8 @@ namespace UMC_AV1_DECODER
 
     void PackerMSFT::PackTileControlParams(DXVA_Tile_AV1& tileControlParam, TileLocation const& loc)
     {
-        tileControlParam.dataOffset = (UINT)loc.offset;
-        tileControlParam.dataSize = (UINT)loc.size;
+        tileControlParam.DataOffset = (UINT)loc.offset;
+        tileControlParam.DataSize = (UINT)loc.size;
         //tileControlParam.wBadBSBufferChopping = 0;
         tileControlParam.row = (USHORT)loc.row;
         tileControlParam.column = (USHORT)loc.col;

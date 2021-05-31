@@ -95,7 +95,7 @@ namespace UMC_AV1_DECODER
 
     private:
 
-        void PackPicParams(DXVA_PicParams_AV1_MSFT&, AV1DecoderFrame const&);
+        void PackPicParams(DXVA_PicParams_AV1&, AV1DecoderFrame const&);
         void PackTileControlParams(DXVA_Tile_AV1&, TileLocation const&);
     };
 

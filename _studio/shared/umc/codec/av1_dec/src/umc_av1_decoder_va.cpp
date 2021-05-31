@@ -219,7 +219,7 @@ namespace UMC_AV1_DECODER
                     index = pStatusReport[i].CurrPic.Index;
                     if (index == static_cast<uint32_t>(frame.GetMemID())) // report for the frame was found in new reports
                     {
-                        SetError(frame, pStatusReport[i].bStatus);
+                        SetError(frame, pStatusReport[i].Status);
                         frame.CompleteDecoding();
                         wasFound = true;
                         wasCompleted = true;
@@ -230,7 +230,7 @@ namespace UMC_AV1_DECODER
                         if (std::find(reports.begin(), reports.end(), ReportItem(index, 0)) == reports.end()) // discard new reports which duplicate previously cached reports
                         {
                             // push unique new reports to status report cache
-                            reports.push_back(ReportItem(index, pStatusReport[i].bStatus));
+                            reports.push_back(ReportItem(index, pStatusReport[i].Status));
                             // if got at least one unique report - stop getting more status reports from the driver
                             wasCompleted = true;
                         }
@@ -259,7 +259,7 @@ namespace UMC_AV1_DECODER
 #endif
                     if (index == static_cast<uint32_t>(frame.GetMemID())) // report for the frame was found in new reports
                     {
-                        SetError(frame, pStatusReport[i].bStatus);
+                        SetError(frame, pStatusReport[i].Status);
                         frame.CompleteDecoding();
                         wasFound = true;
                         wasCompleted = true;
