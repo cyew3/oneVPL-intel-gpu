@@ -213,8 +213,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     if (D3D11_MEMORY == pParams->memType)
         impl |= MFX_IMPL_VIA_D3D11;
 
-    mfxVersion version;     // real API version with which library is initialized
-
     sts = m_pLoader->ConfigureImplementation(impl);
     MSDK_CHECK_STATUS(sts, "m_mfxSession.ConfigureImplementation failed");
     sts = m_pLoader->ConfigureAccelerationMode(pParams->accelerationMode, impl);
@@ -226,8 +224,7 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     sts = m_mfxSession.CreateSession(m_pLoader.get());
     MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
-    sts = m_pLoader->GetVersion(version); // get real API version of the loaded library
-    MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
+    mfxVersion version = m_pLoader->GetVersion(); // get real API version of the loaded library
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
 #if !defined(MFX_ONEVPL)

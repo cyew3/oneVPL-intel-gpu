@@ -1604,9 +1604,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     sts = m_mfxSession.CreateSession(m_pLoader.get());
     MSDK_CHECK_STATUS(sts, "m_mfxSession.CreateSession failed");
 
-    mfxVersion version;
-    sts = m_pLoader->GetVersion(version); // get real API version of the loaded library
-    MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
+    mfxVersion version = m_pLoader->GetVersion();
 
     if ((pParams->MVC_flags & MVC_ENABLED) != 0 && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
         msdk_printf(MSDK_STRING("error: MVC is not supported in the %d.%d API version\n"),

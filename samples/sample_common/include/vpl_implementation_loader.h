@@ -23,6 +23,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxdispatcher.h"
 #include "mfxvideo++.h"
 #include <vector>
+#include <string>
 
 class VPLImplementationLoader {
     mfxLoader m_Loader;
@@ -44,12 +45,11 @@ public:
     void SetDeviceAndAdapter(mfxU16 deviceID, mfxU32 adapterNum);
     mfxStatus EnumImplementations();
     mfxStatus ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode);
-    mfxLoader GetLoader();
+    mfxLoader GetLoader() const;
     mfxU32 GetImplIndex() const;
-    mfxStatus GetImplName(mfxChar *implName);
-    mfxStatus GetVersion(mfxVersion& version);
-    mfxStatus GetAdapterNum(mfxU32 &adapterNum);
-    mfxStatus GetDeviceID(mfxU16 &deviceID);
+    std::string GetImplName() const;
+    mfxVersion GetVersion() const;
+    std::pair<mfxI16, mfxI32> GetDeviceIDAndAdapter() const;
     void SetMinVersion(mfxVersion const version);
 };
 

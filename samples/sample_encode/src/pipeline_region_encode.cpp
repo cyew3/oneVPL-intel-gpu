@@ -339,8 +339,6 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
     if (pParams->nNumSlice == 0)
         pParams->nNumSlice = 1;
 
-    mfxVersion version;     // real API version with which library is initialized
-
     // Init session
     if (pParams->bUseHWLib)
     {
@@ -364,8 +362,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "m_resources.Init failed");
     }
 
-    sts = m_pLoader->GetVersion(version); // get real API version of the loaded library
-    MSDK_CHECK_STATUS(sts, "m_pLoader->GetVersion failed");
+    mfxVersion version = m_pLoader->GetVersion(); // get real API version of the loaded library
 
     if ((pParams->MVC_flags & MVC_ENABLED) != 0 && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
         msdk_printf(MSDK_STRING("error: MVC is not supported in the %d.%d API version\n"),

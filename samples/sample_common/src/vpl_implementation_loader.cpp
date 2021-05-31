@@ -28,6 +28,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #include <map>
+#include <regex>
 
  const std::map<mfxAccelerationMode, const msdk_tstring> mfxAccelerationModeNames = {
     { MFX_ACCEL_MODE_NA, MSDK_STRING("MFX_ACCEL_MODE_NA") },
@@ -208,85 +209,54 @@ mfxStatus VPLImplementationLoader::ConfigureAndEnumImplementations(mfxIMPL impl,
     return sts;
 }
 
-mfxLoader VPLImplementationLoader::GetLoader() { return m_Loader; }
+mfxLoader VPLImplementationLoader::GetLoader() const { return m_Loader; }
 
 mfxU32 VPLImplementationLoader::GetImplIndex() const
 {
     return m_ImplIndex;
 }
 
-mfxStatus VPLImplementationLoader::GetVersion(mfxVersion& version)
+mfxVersion VPLImplementationLoader::GetVersion() const
 {
-    if (!m_idesc)
-    {
-        EnumImplementations();
-    }
-
-    if (m_idesc)
-    {
-        version = m_idesc->ApiVersion;
-        return MFX_ERR_NONE;
-    }
-
-    return MFX_ERR_UNKNOWN;
+    return m_idesc ? m_idesc->ApiVersion : mfxVersion({{0, 0}});
 }
 
-mfxStatus VPLImplementationLoader::GetImplName(mfxChar *implName)
+std::string VPLImplementationLoader::GetImplName() const
 {
-    if (!m_idesc)
-    {
-        EnumImplementations();
-    }
-
     if (m_idesc)
     {
-        strncpy(implName, m_idesc->ImplName, sizeof(m_idesc->ImplName));
-        return MFX_ERR_NONE;
+        return std::string(m_idesc->ImplName);
     }
-
-    return MFX_ERR_NOT_FOUND;
+    else
+    {
+        return "";
+    }
 }
 
-mfxStatus VPLImplementationLoader::GetAdapterNum(mfxU32 &adapterNum)
+std::pair<mfxI16, mfxI32> VPLImplementationLoader::GetDeviceIDAndAdapter() const
 {
+    auto result = std::make_pair(-1, -1);
     if (!m_idesc)
+        return result;
+
+    std::string deviceAdapterInfo(m_idesc->Dev.DeviceID);
+    std::regex pattern("([0-9a-fA-F]+)(?:/([0-9]|[1-9][0-9]+))?");
+    std::smatch match;
+    if (!std::regex_match(deviceAdapterInfo, match, pattern))
+        return result;
+
+    try
     {
-        EnumImplementations();
+        result.first = std::stoi(match[1].str(), 0, 16);
+        if (match[2].matched)
+            result.second = std::stoi(match[2].str());
+    }
+    catch (std::exception const &)
+    { 
+        return result;
     }
 
-    adapterNum = 0;
-
-    if (m_idesc)
-    {
-        mfxChar deviceAdapterInfo[MFX_STRFIELD_LEN] = {};
-        strncpy(deviceAdapterInfo, m_idesc->Dev.DeviceID, sizeof(m_idesc->Dev.DeviceID));
-        char* adapter  = strtok(deviceAdapterInfo, "/");
-        // will scan deviceAdapterInfo
-        adapter = strtok (NULL, "/");
-        adapterNum = (mfxU32)std::stoi(adapter, nullptr, 10);
-        return MFX_ERR_NONE;
-    }
-
-    return MFX_ERR_NOT_FOUND;
-}
-
-mfxStatus VPLImplementationLoader::GetDeviceID(mfxU16 &deviceID)
-{
-    if (!m_idesc)
-    {
-        EnumImplementations();
-    }
-
-    if (m_idesc)
-    {
-        mfxChar deviceAdapterInfo[MFX_STRFIELD_LEN] = {};
-        strncpy(deviceAdapterInfo, m_idesc->Dev.DeviceID, sizeof(m_idesc->Dev.DeviceID));
-        char* device  = strtok(m_idesc->Dev.DeviceID, "/");
-        deviceID = (mfxU32)std::stoi(device, nullptr, 16);
-        return MFX_ERR_NONE;
-    }
-
-    return MFX_ERR_NOT_FOUND;
+    return result;
 }
 
 void VPLImplementationLoader::SetMinVersion(mfxVersion const version)
@@ -297,13 +267,11 @@ void VPLImplementationLoader::SetMinVersion(mfxVersion const version)
 mfxStatus MainVideoSession::CreateSession(VPLImplementationLoader* Loader)
 {
     mfxStatus sts = MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
-    mfxVersion version;
-    Loader->GetVersion(version);
+    mfxVersion version = Loader->GetVersion();
     msdk_printf(MSDK_STRING("Loaded Library Version: %d.%d \n"), version.Major, version.Minor);
-    mfxChar implName[MFX_IMPL_NAME_LEN] = {};
-    Loader->GetImplName(implName);
+    std::string implName = Loader->GetImplName();
     msdk_tstring strImplName;
-    std::copy(implName, implName + strlen(implName), back_inserter(strImplName));
+    std::copy(std::begin(implName), std::end(implName), back_inserter(strImplName));
     msdk_printf(MSDK_STRING("Loaded Library ImplName: %s \n"),  strImplName.c_str());
 
 #if (defined(LINUX32) || defined(LINUX64))

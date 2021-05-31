@@ -35,19 +35,12 @@ mfxU32 ComponentParams::GetAdapter()
     }
 
     // get from lib, which was found by loader and will be used for creating session
-    // or get ID of first adapter
     if (m_pLoader)
     {
-        mfxU32 adapterNum;
-        mfxU16 deviceID;
-        m_pLoader->GetAdapterNum(adapterNum);
-        m_pLoader->GetDeviceID(deviceID);
-        m_adapterNum = adapterNum;
-        m_deviceID = deviceID;
-
-        return m_adapterNum;
+        std::tie(m_adapterNum, m_deviceID) = m_pLoader->GetDeviceIDAndAdapter();
     }
-    else
+
+    if (m_deviceID == -1 || m_adapterNum == -1)
     {
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
         mfxU32 num_adapters_available;
@@ -65,12 +58,12 @@ mfxU32 ComponentParams::GetAdapter()
 
         m_adapterNum = adapters.Adapters[0].Number;
         m_deviceID = adapters.Adapters[0].Platform.DeviceId;
-
-        return m_adapterNum;
 #else
         return 0;
 #endif
     }
+
+     return m_adapterNum;
 }
 
 mfxU16 ComponentParams::GetIoPatternIn()
