@@ -30,7 +30,6 @@
 #include "ehw_utils_ddi.h"
 #include <array>
 
-#include "libmfx_core_d3d9on11.h"
 
 
 namespace MfxEncodeHW
@@ -150,7 +149,6 @@ protected:
     ENCODE_SET_PICTURE_PARAMETERS_HEVC              m_pps       = {};
     ENCODE_SET_QMATRIX_HEVC                         m_qMatrix   = {};
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC>       m_slices;
-    D3D9ON11VideoCORE*                              m_pDX9ON11Core = nullptr;
 
     D3DFORMAT
           ID_SPSDATA          = D3DDDIFMT_INTELENCODE_SPSDATA
