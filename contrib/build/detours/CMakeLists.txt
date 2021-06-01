@@ -26,23 +26,42 @@ else()
     set (_detours_TARGET_PROCESSOR X86)
 endif()
 
+set (_detours_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
 set (_detours_LIB_DIR lib.${_detours_TARGET_PROCESSOR})
 set (_detours_LIB_PATH
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../detours/${_detours_LIB_DIR}/detours.lib
+    ${CMAKE_CURRENT_BINARY_DIR}/${_detours_LIB_DIR}/detours.lib
 )
+
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../../detours/ DESTINATION .)
+#get_filename_component(_detours_in_contrib_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../detours ABSOLUTE)
+#get_filename_component(_detours_in_buildtree_PATH ${CMAKE_CURRENT_BINARY_DIR} ABSOLUTE)
+
+#add_custom_command(
+#    OUTPUT ${_detours_SRC_DIR}/Makefile
+#    COMMAND xcopy ${_detours_in_contrib_PATH} ${_detours_in_buildtree_PATH} /e /s /t /q /y /l /i
+#    VERBATIM
+#)
 
 add_custom_command (
     OUTPUT ${_detours_LIB_PATH}
     COMMAND nmake DETOURS_TARGET_PROCESSOR=${_detours_TARGET_PROCESSOR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../detours
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     VERBATIM
 )
+
+#add_custom_target (detours-copy
+#    DEPENDS ${_detours_SRC_DIR}/Makefile
+#)
 
 add_custom_target (detours-make
     DEPENDS ${_detours_LIB_PATH}
 )
 add_library (detours STATIC IMPORTED GLOBAL)
 add_dependencies (detours detours-make)
+#add_dependencies (detours-make detours-copy)
+
 
 set_target_properties (detours
     PROPERTIES

@@ -7,6 +7,42 @@ components:
     asset_name: mediasdk_root
     asset_version: 1
     dest_dir: sources/msdk_root
+  ewdk:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-build-assets/build
+    asset_name: ewdk
+    asset_version: '21327'
+    clean_on_sync: true
+    dest_dir: build_tools/ewdk
+  cmake:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-build-assets/build
+    asset_name: cmake
+    asset_version: cmake-3.16.4-dirty
+    dest_dir: build_tools/cmake
+  7zip-win64:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-build-assets/build-tools
+    asset_name: 7zip-win64
+    asset_version: '19.00'
+    dest_dir: build_tools/7zip-win64
+  yasm:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/deployment
+    asset_name: yasm-win64
+    asset_version: '1.3.0'
+    dest_dir: build_tools/yasm-win64
+  ninja:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-media-ci-nn/deployment
+    asset_name: ninja
+    asset_version: '1.10.2'
+    dest_dir: build_tools/ninja
   7zip-win64:
     type: artifactory
     root_url: https://gfx-assets.intel.com/artifactory

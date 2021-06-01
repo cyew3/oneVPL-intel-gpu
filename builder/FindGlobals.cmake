@@ -103,15 +103,17 @@ elseif( Windows )
     set( CMAKE_INSTALL_PREFIX "C:/Program Files/mediasdk/" CACHE PATH "Install Path Prefix" FORCE )
   endif()
 
-#  foreach(var
-#    CMAKE_C_FLAGS CMAKE_CXX_FLAGS
-#    CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELWITHDEBINFO
-#    CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+# Workaround for everpresent D9025 warning
+  foreach(var
+    CMAKE_C_FLAGS CMAKE_CXX_FLAGS
+    CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELWITHDEBINFO
+    CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+
 #    string(REPLACE "/MD" "/MT" ${var} "${${var}}")
 
     # See https://gitlab.kitware.com/cmake/cmake/-/issues/19084 - we control exception-enabling flags manualy
-#    string(REPLACE "/EHsc" "" ${var} "${${var}}")
-#  endforeach()
+    string(REPLACE "/EHsc" "" ${var} "${${var}}")
+  endforeach()
   set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
   set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE})
   set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE})

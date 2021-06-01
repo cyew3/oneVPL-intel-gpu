@@ -9,30 +9,21 @@ qb_variable_map:
   parent_build_id: BUILD_ID
   build_number: BUILD_NUMBER
   component_revision: COMPONENT_REVISION
-env:
-  DOCKER_IMAGE: 'dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-windows-1803:7'
-  DOCKER_WORKSPACE: "C:\\workspace"
-  DOCKER_ENV: "-e MEDIASDK_TRS_MODULE_PATH=C:\\workspace\\sources\\msdk_trs_module \
-    -e MFX_HOME=C:\\workspace\\sources\\mdp_msdk-lib -e MEDIASDK_ROOT=C:\\workspace\\sources\\msdk_root \
-    -e INTELMEDIASDK_FFMPEG_ROOT=C:\\workspace\\sources\\msdk_root\\ffmpeg -e MINIDDK_VERSION=10.0.18362.0"
 steps:
   - name: copy workspace_snapshot.json
-    command: xcopy %WORKSPACE%\\..\workspace_snapshot.json %WORKSPACE% /y /q
+    command: xcopy %WORKSPACE%\..\workspace_snapshot.json %WORKSPACE% /y /q
   - name: copy mediasdk lib repo
-    command: (if exist %WORKSPACE%\\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\\sources\mdp_msdk-lib) &&
-      (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
+    command: (if exist %WORKSPACE%\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\sources\mdp_msdk-lib) &&
+      (xcopy mediasdk %WORKSPACE%\sources\mdp_msdk-lib\ /s /y /q)
   - name: cleanup output directory
     command: (if exist %WORKSPACE%\output rmdir /s /q %WORKSPACE%\output) && (mkdir %WORKSPACE%\output\packages\windows)
-  - name: pull docker image
-    command: docker pull %DOCKER_IMAGE%
   - name: check python version
     command: python3 --version
   - name: update rc files
-    command: python3 %WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\update_version.py --path %WORKSPACE%\\sources\
+    command: python3 %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\update_version.py --path %WORKSPACE%\sources\
       --revision %COMPONENT_REVISION% --build-number %BUILD_NUMBER%
   - name: scroll down (no log here)
-    command: docker run --rm --storage-opt size=80GB -m 64GB %DOCKER_ENV% -v %WORKSPACE%:%DOCKER_WORKSPACE% %DOCKER_IMAGE%
-      call %DOCKER_WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\build\windows_build.bat
+    command: .\sources\mdp_msdk-lib\config\scripts\build\windows_build.bat
   - name: build (log replay)
     command: .\sources\mdp_msdk-lib\config\scripts\windows_logs.bat
     always_execute: true

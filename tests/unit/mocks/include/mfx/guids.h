@@ -143,8 +143,10 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile,
 
 // TEMP: should be defined at MS public API
 // {B8BE4CCB-CF53-46BA-8D59-D6B8A6DA5D2A}
+#if !defined(NTDDI_WIN10_VB) || (WDK_NTDDI_VERSION < NTDDI_WIN10_VB)
 DEFINE_GUID(DXVA_ModeAV1_VLD_Profile0,
     0xb8be4ccb, 0xcf53, 0x46ba, 0x8d, 0x59, 0xd6, 0xb8, 0xa6, 0xda, 0x5d, 0x2a);
+#endif
 
 DEFINE_GUID(DXVA_Intel_ModeAV1_VLD,
     0xca44afc5, 0xe1d0, 0x42e6, 0x91, 0x54, 0xb1, 0x27, 0x18, 0x6d, 0x4d, 0x40);
