@@ -34,22 +34,15 @@ components:
     root_url: https://gfx-assets.intel.com/artifactory
     asset_path: gfx-media-ci-nn/deployment
     asset_name: yasm-win64
-    asset_version: '1.3.0'
+    asset_version: 1.3.0
     dest_dir: build_tools/yasm-win64
   ninja:
     type: artifactory
     root_url: https://gfx-assets.intel.com/artifactory
     asset_path: gfx-media-ci-nn/deployment
     asset_name: ninja
-    asset_version: '1.10.2'
+    asset_version: 1.10.2
     dest_dir: build_tools/ninja
-  7zip-win64:
-    type: artifactory
-    root_url: https://gfx-assets.intel.com/artifactory
-    asset_path: gfx-build-assets/build-tools
-    asset_name: 7zip-win64
-    asset_version: '19.00'
-    dest_dir: build_tools/7zip-win64
   msdk_trs_module:
     type: artifactory
     root_url: https://gfx-assets.intel.com/artifactory
@@ -73,7 +66,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.tests.git
     branch: master
-    revision: ac8bd7c3e32462942451cf427313c4437e3021b6
+    revision: 0b1b0f81ea34101dab8ae51aebcfe4b5680e0d53
     dest_dir: test_system
   windows_pre_built_binaries:
     type: artifactory
