@@ -4772,7 +4772,7 @@ typedef struct mfxSurfaceArray
      MFX_ERR_UNKNOWN           Any internal error.
 
     */
-    mfxStatus (*AddRef)(struct mfxSurfaceArray*  surface_array);
+    mfxStatus (MFX_CDECL *AddRef)(struct mfxSurfaceArray*  surface_array);
     /*! @brief
     Decrements the internal reference counter of the surface. mfxSurfaceArray::Release should be called after
     using the mfxSurfaceArray::AddRef function to add a surface or when allocation logic requires it.
@@ -4786,7 +4786,7 @@ typedef struct mfxSurfaceArray
      MFX_ERR_UNDEFINED_BEHAVIOR If Reference Counter of surface is zero before call. \n
      MFX_ERR_UNKNOWN            Any internal error.
     */
-    mfxStatus (*Release)(struct mfxSurfaceArray*  surface_array);
+    mfxStatus (MFX_CDECL *Release)(struct mfxSurfaceArray*  surface_array);
 
     /*! @brief
     Returns current reference counter of mfxSurfaceArray structure.
@@ -4800,7 +4800,7 @@ typedef struct mfxSurfaceArray
      MFX_ERR_INVALID_HANDLE     If mfxSurfaceArray->Context is invalid (for example NULL). \n
      MFX_ERR_UNKNOWN            Any internal error.
     */
-    mfxStatus (*GetRefCounter)(struct mfxSurfaceArray*  surface_array, mfxU32* counter);
+    mfxStatus (MFX_CDECL *GetRefCounter)(struct mfxSurfaceArray*  surface_array, mfxU32* counter);
 
     mfxFrameSurface1** Surfaces; /*!< The array of pointers to mfxFrameSurface1. mfxFrameSurface1 surfaces are allocated by the same
     agent who allocates mfxSurfaceArray. */
