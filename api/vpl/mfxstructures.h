@@ -397,7 +397,8 @@ typedef struct mfxFrameSurfaceInterface {
     mfxStructVersion    Version; /*!< The version of the structure. */
     mfxU16              reserved1[3];
     /*! @brief
-    Increments the internal reference counter of the surface. The surface is not destroyed until the surface is released using the (*Release) function. (*AddRef) should be used each time a new link to the surface is created (for example, copy structure) for proper surface management.
+    Increments the internal reference counter of the surface. The surface is not destroyed until the surface is released using the mfxFrameSurfaceInterface::Release function.
+    mfxFrameSurfaceInterface::AddRef should be used each time a new link to the surface is created (for example, copy structure) for proper surface management.
 
     @param[in]  surface  Valid surface.
 
@@ -410,7 +411,9 @@ typedef struct mfxFrameSurfaceInterface {
     */
     mfxStatus           (MFX_CDECL *AddRef)(mfxFrameSurface1* surface);
     /*! @brief
-    Decrements the internal reference counter of the surface. (*Release) should be called after using the (*AddRef) function to add a surface or when allocation logic requires it. For example, call (*Release) to release a surface obtained with the GetSurfaceForXXX function.
+    Decrements the internal reference counter of the surface. mfxFrameSurfaceInterface::Release should be called after using the
+    mfxFrameSurfaceInterface::AddRef function to add a surface or when allocation logic requires it. For example, call
+    mfxFrameSurfaceInterface::Release to release a surface obtained with the GetSurfaceForXXX function.
 
     @param[in]  surface  Valid surface.
 
@@ -441,7 +444,7 @@ typedef struct mfxFrameSurfaceInterface {
     Sets pointers of surface->Info.Data to actual pixel data, providing read-write access.
 
     In case of video memory, the surface with data in video memory becomes mapped to system memory.
-    An application can map a surface for read access with any value of mfxFrameSurface1::Data.Locked, but can map a surface for write access only when mfxFrameSurface1::Data.Locked equals to 0.
+    An application can map a surface for read access with any value of mfxFrameSurface1::Data::Locked, but can map a surface for write access only when mfxFrameSurface1::Data::Locked equals to 0.
 
     Note: A surface allows shared read access, but exclusive write access. Consider the following cases:
     @li Map with Write or Read|Write flags. A request during active another read or write access returns MFX_ERR_LOCK_MEMORY error immediately, without waiting.
@@ -490,7 +493,9 @@ typedef struct mfxFrameSurfaceInterface {
     mfxStatus           (MFX_CDECL *Unmap)(mfxFrameSurface1* surface);
 
     /*! @brief
-    Returns a native resource's handle and type. The handle is returned *as-is*, meaning that the reference counter of base resources is not incremented. The native resource is not detached from surface and the library still owns the resource. User must not destroy the native resource or assume that the resource will be alive after (*Release).
+    Returns a native resource's handle and type. The handle is returned *as-is*, meaning that the reference counter of base resources is not incremented.
+    The native resource is not detached from surface and the library still owns the resource. User must not destroy
+    the native resource or assume that the resource will be alive after mfxFrameSurfaceInterface::Release.
 
 
 
@@ -512,7 +517,7 @@ typedef struct mfxFrameSurfaceInterface {
     Returns a device abstraction that was used to create that resource.
     The handle is returned *as-is*, meaning that the reference counter for the device abstraction is not incremented.
     The native resource is not detached from the surface and the library still has a reference to the resource.
-    User must not destroy the device or assume that the device will be alive after (*Release).
+    User must not destroy the device or assume that the device will be alive after mfxFrameSurfaceInterface::Release.
 
 
     @param[in]   surface  Valid surface.
@@ -532,7 +537,7 @@ typedef struct mfxFrameSurfaceInterface {
     /*! @brief
     Guarantees readiness of both the data (pixels) and any frame's meta information (for example corruption flags) after a function completes.
 
-    Instead of MFXVideoCORE_SyncOperation, users may directly call the (*Synchronize) function after the corresponding
+    Instead of MFXVideoCORE_SyncOperation, users may directly call the mfxFrameSurfaceInterface::Synchronize function after the corresponding
     Decode or VPP function calls (MFXVideoDECODE_DecodeFrameAsync or MFXVideoVPP_RunFrameVPPAsync).
     The prerequisites to call the functions are:
 
@@ -4755,7 +4760,8 @@ typedef struct mfxSurfaceArray
     mfxStructVersion    Version; /*!< The version of the structure. */
     mfxU16 reserved[3];
     /*! @brief
-    Increments the internal reference counter of the surface. The surface is not destroyed until the surface is released using the (*Release) function. (*AddRef) should be used each time a new link to the surface is created (for example, copy structure) for proper surface management.
+    Increments the internal reference counter of the surface. The surface is not destroyed until the surface is released using the mfxSurfaceArray::Release function.
+    mfxSurfaceArray::AddRef should be used each time a new link to the surface is created (for example, copy structure) for proper surface management.
 
     @param[in]  surface  Valid mfxSurfaceArray.
 
@@ -4768,8 +4774,8 @@ typedef struct mfxSurfaceArray
     */
     mfxStatus (*AddRef)(struct mfxSurfaceArray*  surface_array);
     /*! @brief
-    Decrements the internal reference counter of the surface. (*Release) should be called after using the (*AddRef) function to add a
-    surface or when allocation logic requires it.
+    Decrements the internal reference counter of the surface. mfxSurfaceArray::Release should be called after
+    using the mfxSurfaceArray::AddRef function to add a surface or when allocation logic requires it.
 
     @param[in]  surface_array  Valid mfxSurfaceArray.
 
