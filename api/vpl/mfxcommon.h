@@ -175,7 +175,7 @@ MFX_PACK_BEGIN_USUAL_STRUCT()
 /*! Specifies options for threads created by this session. Attached to the
     mfxInitParam structure during legacy Intel(r) Media SDK session initialization. */
 typedef struct {
-    mfxExtBuffer Header; /*!< Must be MFX_EXTBUFF_THREADS_PARAM. */
+    mfxExtBuffer Header;         /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_THREADS_PARAM. */
 
     mfxU16       NumThread;      /*!< The number of threads. */
     mfxI32       SchedulingType; /*!< Scheduling policy for all threads. */

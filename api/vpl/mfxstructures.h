@@ -2435,7 +2435,7 @@ MFX_PACK_BEGIN_STRUCT_W_PTR()
    Contains parameters for per-frame based encoding control.
 */
 typedef struct {
-    mfxExtBuffer    Header; /*!< Extension buffer header. */
+    mfxExtBuffer    Header; /*!< This extension buffer doesn't have assigned buffer ID. Ignored. */
     mfxU32  reserved[4];
     mfxU16  reserved1;
     /*!
@@ -4705,7 +4705,7 @@ MFX_PACK_END()
 MFX_PACK_BEGIN_USUAL_STRUCT()
 /*! The structure is used by AV-1 decoder to report film grain parameters for decoded frame. */
 typedef struct {
-    mfxExtBuffer Header;
+    mfxExtBuffer Header;    /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM. */
 
     mfxU16 FilmGrainFlags;  /*!< Bit map with bit-ORed flags from FilmGrainFlags enum. */
     mfxU16 GrainSeed;       /*!< Starting value for pseudo-random numbers used during film grain synthesis. */
