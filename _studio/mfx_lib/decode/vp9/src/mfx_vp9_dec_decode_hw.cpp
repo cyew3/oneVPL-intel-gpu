@@ -25,8 +25,9 @@
 #include "mfx_vp9_dec_decode.h"
 #include "mfx_vp9_dec_decode_hw.h"
 
+#ifdef MFX_VA_WIN
 #include "umc_va_dxva2.h"
-
+#endif
 #include "umc_vp9_utils.h"
 #include "umc_vp9_bitstream.h"
 #include "umc_vp9_va_packer.h"
@@ -39,12 +40,11 @@
 #include <libmfx_core_d3d9.h>
 #endif
 
-#if defined (_WIN32) || defined (_WIN64)
+#if defined (MFX_VA_WIN)
 #pragma warning(disable : 4189)
 #pragma warning(disable : 4101)
 #include <iostream>
 #include <dxva.h>
-//#define VP9_STATUS_REPORTING_ENABLED //need to implement different code for Intel/MSFT guids, disable for now
 #endif
 
 #include "umc_va_video_processing.h"
@@ -1140,7 +1140,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         return MFX_ERR_NONE;
     }
 
-#if defined (MFX_VA_LINUX) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
+#if defined (MFX_VA_LINUX)
 
 #ifndef MFX_VA_LINUX
     if (decoder.m_va->IsGPUSyncEventEnable())
@@ -1189,59 +1189,7 @@ mfxStatus VP9CompleteProc(void *p_state, void * /* pp_param */, mfxStatus)
 
 mfxStatus VideoDECODEVP9_HW::ReportDecodeStatus(mfxFrameSurface1* surface_work)
 {
-#if defined(VP9_STATUS_REPORTING_ENABLED) && defined(MFX_VA_WIN) && defined(NTDDI_WIN10_TH2)
-    DXVA_Status_VPx pStatusReport[NUMBER_OF_STATUS];
-
-    memset(pStatusReport, 0, sizeof(DXVA_Status_VPx) * NUMBER_OF_STATUS);
-
-    for (int i = 0; i < NUMBER_OF_STATUS; i++)
-        pStatusReport[i].bStatus = 3;
-
-    m_Packer->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Status_VPx) * NUMBER_OF_STATUS);
-
-    {
-        UMC::AutomaticUMCMutex guard(m_mGuard);
-
-        for (uint32_t i = 0; i < NUMBER_OF_STATUS; i++)
-        {
-            if (pStatusReport[i].bStatus == 3)
-                return MFX_ERR_DEVICE_FAILED;
-
-            if (!pStatusReport[i].StatusReportFeedbackNumber || pStatusReport[i].CurrPic.Index7Bits == 127 ||
-                (pStatusReport[i].StatusReportFeedbackNumber & 0x80000000))
-                continue;
-
-            mfxFrameSurface1 *surface_to_complete = m_surface_source->GetSurfaceByIndex(pStatusReport[i].CurrPic.Index7Bits);
-            if (!surface_to_complete)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-            switch (pStatusReport[i].bStatus)
-            {
-            case 1:
-                surface_to_complete->Data.Corrupted = MFX_CORRUPTION_MINOR;
-                break;
-            case 2:
-                surface_to_complete->Data.Corrupted = MFX_CORRUPTION_MAJOR;
-                break;
-            case 3:
-            case 4:
-                return MFX_ERR_DEVICE_FAILED;
-            }
-
-            m_completedList.push_back(surface_to_complete);
-        }
-
-        VideoDECODEVP9_HW::StatuReportList::iterator it = std::find(m_completedList.begin(), m_completedList.end(), surface_work);
-        if (it == m_completedList.end())
-        {
-            return MFX_TASK_WORKING;
-        }
-
-        m_completedList.remove(surface_work);
-    }
-#else
     std::ignore = surface_work;
-#endif
 
     return MFX_ERR_NONE;
 }

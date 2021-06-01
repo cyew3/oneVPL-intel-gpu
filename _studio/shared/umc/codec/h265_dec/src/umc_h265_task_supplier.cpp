@@ -2321,9 +2321,6 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
     {
         uint32_t NumShortTermRefs = 0, NumLongTermRefs = 0;
         view.pDPB->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
-
-        if (NumShortTermRefs + NumLongTermRefs == 0)
-            AddFakeReferenceFrame(pSlice);
     }
 
     H265PicParamSet const* pps = pSlice->GetPicParam();
@@ -2339,39 +2336,6 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 }
 
 // Not implemented
-void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
-{
-// need to add absent ref frame logic
-#if 0
-    H265DecoderFrame *pFrame = GetFreeFrame();
-    if (!pFrame)
-        return;
-
-    UMC::Status umcRes = InitFreeFrame(pFrame, pSlice);
-    if (umcRes != UMC::UMC_OK)
-    {
-        return;
-    }
-
-    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pSlice->m_pSeqParamSet, pSlice->m_pPicParamSet);
-    if (umcRes != UMC::UMC_OK)
-    {
-        return;
-    }
-
-    pFrame->SetisShortTermRef(true);
-
-    pFrame->SetisDisplayable(false);
-
-    pFrame->DefaultFill(false);
-
-    H265SliceHeader* sliceHeader = pSlice->GetSliceHeader();
-    ViewItem_H265 &view = *GetView();
-
-    view.pPOCDec->DecodePictureOrderCountFakeFrames(pFrame, sliceHeader);
-#endif
-}
-
 H265DecoderFrame* TaskSupplier_H265::AddSelfReferenceFrame(H265Slice* slice)
 {
     VM_ASSERT(slice);

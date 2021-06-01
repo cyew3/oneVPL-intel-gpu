@@ -336,7 +336,6 @@ mfxStatus UpdateCscOutputFormat(mfxVideoParam *par, mfxFrameAllocRequest *reques
             break;
             // 10 bit
         case MFX_FOURCC_P010:
-#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
             request->Info.BitDepthLuma = 10;
             request->Info.Shift = 1;
@@ -345,16 +344,13 @@ mfxStatus UpdateCscOutputFormat(mfxVideoParam *par, mfxFrameAllocRequest *reques
             request->Info.BitDepthLuma = 10;
             request->Info.Shift = 0;
             break;
-#endif
             // 12 bit
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y416:
         case MFX_FOURCC_Y216:
             request->Info.BitDepthLuma = 12;
             request->Info.Shift = 1;
             break;
-#endif
         case MFX_FOURCC_RGB4:
             request->Info.BitDepthLuma = 0;
             request->Info.Shift = 0;

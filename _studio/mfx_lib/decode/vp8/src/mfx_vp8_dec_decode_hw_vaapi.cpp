@@ -27,7 +27,9 @@
 #include "mfx_enc_common.h"
 
 #include "umc_va_base.h"
+#ifdef MFX_VA_WIN
 #include "umc_va_dxva2.h"
+#endif
 
 #include "vm_sys_info.h"
 

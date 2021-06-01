@@ -32,14 +32,16 @@
 #include "vm_sys_info.h"
 
 #include "umc_h265_va_supplier.h"
-    #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        #include "umc_va_dxva2_protected.h"
-        #include "umc_va_linux_protected.h"
-    #endif
+#if defined(MFX_ENABLE_CP)
+#if defined(MFX_VA_WIN)
+#include "umc_va_dxva2_protected.h"
+#endif
+#include "umc_va_linux_protected.h"
+#endif
 #include "umc_va_video_processing.h"
 
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 #include "libmfx_core_interface.h"
@@ -340,7 +342,8 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     umcVideoParams.pVideoAccelerator = m_va;
     static_cast<VATaskSupplier*>(m_pH265VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE) && defined (MFX_VA_WIN)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if defined (MFX_VA_WIN)
     if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
@@ -348,6 +351,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
             MFX_CHECK(m_va->GetProtectedVA()->SetModes(par) == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
         }
     }
+#endif
 #endif
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
@@ -447,7 +451,7 @@ mfxStatus VideoDECODEH265::QueryImplsDescription(
 
             for (auto fccChroma : SupportedFourCCChromaFormat)
             {
-                par.mfx.FrameInfo.FourCC       = fccChroma[0];
+                par.mfx.FrameInfo.FourCC = fccChroma[0];
                 par.mfx.FrameInfo.ChromaFormat = mfxU16(fccChroma[1]);
 
                 sts = VideoDECODEH265::Query(&core, &par, &par);
@@ -527,7 +531,8 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
 
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
-#if defined (MFX_VA_WIN) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if defined (MFX_VA_WIN)
     if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
@@ -539,6 +544,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
             MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
+#endif
 #endif
 
     m_pH265VideoDecoder->SetVideoParams(&m_vFirstPar);
@@ -1221,7 +1227,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 sts = MFX_ERR_MORE_DATA;
             }
 
-#if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
             if (umcRes == UMC::UMC_ERR_DEVICE_FAILED)
             {
                 sts = MFX_ERR_DEVICE_FAILED;
@@ -1230,7 +1235,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             {
                 sts = MFX_ERR_GPU_HANG;
             }
-#endif
 
             src.Save(bs);
 

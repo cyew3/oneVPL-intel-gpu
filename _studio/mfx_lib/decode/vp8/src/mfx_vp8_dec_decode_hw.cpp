@@ -41,7 +41,9 @@
 #include "libmfx_core_vaapi.h"
 
 #include "umc_va_base.h"
+#ifdef MFX_VA_WIN
 #include "umc_va_dxva2.h"
+#endif
 
 #include "vm_sys_info.h"
 
@@ -665,7 +667,6 @@ mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void * /*pp_param*/, mfxU32 
     VideoDECODEVP8_HW::VP8DECODERoutineData& data = *(VideoDECODEVP8_HW::VP8DECODERoutineData*)p_state;
     VideoDECODEVP8_HW& decoder = *data.decoder;
 
-#if defined (MFX_VA_LINUX) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)
 
 #ifndef MFX_VA_LINUX
     if (decoder.m_p_video_accelerator->IsGPUSyncEventEnable())
@@ -679,7 +680,6 @@ mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void * /*pp_param*/, mfxU32 
         return CriticalErrorStatus;
     }
     }
-#endif
 
     if (decoder.m_video_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY && data.surface_work)
     {
@@ -1527,19 +1527,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 #if defined(MFX_VA_WIN)
     m_frame_info.entropyDecSize = (m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount()) / 8;
     m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - m_frame_info.entropyDecSize;
-#elif !defined(ANDROID) || (MFX_ANDROID_VERSION >= MFX_P)
+#else
     // Header info consumed bits
     m_frame_info.entropyDecSize = m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 3 * 8 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
 
     // Subtract completely consumed bytes + current byte. Current is completely consumed if bitcount is 8.
     m_frame_info.firstPartitionSize = first_partition_size - ((m_frame_info.entropyDecSize + 7) >> 3);
-#else
-    // On Android O we use old version of driver and should use special code for 1st partition size computation (for count == 8)
-    // Header info consumed bits
-    m_frame_info.entropyDecSize = m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
-
-    int fix = (m_boolDecoder[VP8_FIRST_PARTITION].bitcount() & 0x7) ? 1 : 0;
-    m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - (m_boolDecoder[VP8_FIRST_PARTITION].pos() - 3 + fix);
 #endif
 
     return MFX_ERR_NONE;

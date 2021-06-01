@@ -25,7 +25,7 @@
 
 #include "umc_va_base.h"
 #include "umc_mpeg2_decoder_va.h"
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include "umc_mpeg2_dxva_packer.h"
 #else
 #include "umc_mpeg2_va_packer.h"
@@ -90,7 +90,7 @@ namespace UMC_MPEG2_DECODER
     // Check for frame completeness and get decoding errors
     bool MPEG2DecoderVA::QueryFrames(MPEG2DecoderFrame& frame)
     {
-#if defined(LINUX32) || defined(LINUX64)
+#if defined(MFX_VA_LINUX)
         DPBType decode_queue;
 
         {

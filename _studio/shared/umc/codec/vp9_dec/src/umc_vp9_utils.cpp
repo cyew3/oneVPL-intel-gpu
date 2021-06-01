@@ -307,14 +307,6 @@ namespace UMC_VP9_DECODER
             //only 4:4:4 chroma sampling is allowed for SRGB
             return UMC::RGB24;
 
-#if 0
-        switch (info->subsamplingX * info->subsamplingY)
-        {
-            case 0:  return info->subsamplingX ? UMC::YUV422 : UMC::YUV444;
-            case 1:  return UMC::YUV420;
-            default: return UMC::NONE;
-        }
-#else
         if (!info->subsamplingX)
         {
             VM_ASSERT(info->subsamplingY == 0);
@@ -350,7 +342,6 @@ namespace UMC_VP9_DECODER
                 default: return UMC::NONE;
             }
         }
-#endif
 
     }
 

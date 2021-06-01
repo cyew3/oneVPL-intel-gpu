@@ -246,7 +246,7 @@ if (BUILD_EXTRA)
   add_subdirectory(codec/color_space_converter)
   ### UMC codec color_space_converter
 
-  add_subdirectory(codec/mpeg2_dec/hw)
+  add_subdirectory(codec/mpeg2_dec)
 
   add_subdirectory(codec/h264_dec)
 

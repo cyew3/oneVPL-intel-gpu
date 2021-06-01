@@ -33,7 +33,6 @@
 #include "umc_svc_ddi.h"
 #include "umc_va_dxva2_protected.h"
 #endif
-
 #ifdef UMC_VA_LINUX
 #include "umc_va_linux.h"
 #include "umc_va_linux_protected.h"
@@ -2306,7 +2305,6 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
 Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "PackerVA::QueryStreamOut");
-
     return UMC_OK;
 }
 

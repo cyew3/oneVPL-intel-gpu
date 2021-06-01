@@ -30,7 +30,7 @@
 namespace UMC_MPEG2_DECODER
 {
 
-#if defined(LINUX32) || defined(LINUX64)
+#if defined(MFX_VA_LINUX)
 
     Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     {
@@ -302,7 +302,7 @@ namespace UMC_MPEG2_DECODER
                                                                 (seq.load_non_intra_quantiser_matrix ? seq.non_intra_quantiser_matrix : default_non_intra_quantizer_matrix);
         std::copy(chroma_non_intra_quantiser_matrix, chroma_non_intra_quantiser_matrix + 64, qmatrix->chroma_non_intra_quantiser_matrix);
     }
-#endif // defined(LINUX32) || defined(LINUX64)
+#endif // defined(MFX_VA_LINUX)
 }
 
 

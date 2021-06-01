@@ -42,7 +42,6 @@
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
 #endif
-
 #ifdef UMC_VA_LINUX
 #include "umc_va_linux_protected.h"
 #endif

@@ -31,7 +31,7 @@
 #include "umc_svc_ddi.h"
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #pragma warning( disable : 4100 ) // ignore unreferenced parameters in virtual method declaration
 #endif
 
@@ -140,7 +140,6 @@ protected:
 };
 
 #endif // UMC_VA_DXVA
-
 #ifdef UMC_VA_LINUX
 
 class PackerVA

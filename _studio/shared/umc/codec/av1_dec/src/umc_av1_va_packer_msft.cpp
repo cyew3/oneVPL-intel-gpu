@@ -278,7 +278,6 @@ namespace UMC_AV1_DECODER
 
         for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-#if UMC_AV1_DECODER_REV >= 8500
             picParam.cdef.y_strengths[i].primary = info.cdef_params.cdef_y_pri_strength[i];
             picParam.cdef.y_strengths[i].secondary = info.cdef_params.cdef_y_sec_strength[i];
 
@@ -288,10 +287,6 @@ namespace UMC_AV1_DECODER
             picParam.cdef.uv_strengths[i].secondary = info.cdef_params.cdef_uv_sec_strength[i];
 
             //picParam.cdef.uv_strengths[i].combined = (UCHAR)((info.cdef_params.cdef_uv_pri_strength[i] << 2) + info.cdef_params.cdef_uv_sec_strength[i]);
-#else
-            picParam.cdef_y_strengths[i] = (UCHAR)info.cdef_params.cdef_y_strength[i];
-            picParam.cdef_uv_strengths[i] = (UCHAR)info.cdef_params.cdef_uv_strength[i];
-#endif
         }
 
         picParam.interp_filter = (UCHAR)info.interpolation_filter;

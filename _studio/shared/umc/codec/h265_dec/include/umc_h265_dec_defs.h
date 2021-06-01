@@ -31,7 +31,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
   #define H265_FORCEINLINE __forceinline
   #define H265_NONLINE __declspec(noinline)
 #else

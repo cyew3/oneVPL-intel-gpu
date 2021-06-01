@@ -420,4 +420,10 @@
     #endif
 #endif
 
+#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#define MFX_ENABLE_CP
+#endif
+#if defined (_WIN32) && (_DEBUG)
+#define MFX_VC1_VIDEO_DECODE_DEBUG_THREADID
+#endif
 #endif // _MFX_CONFIG_H_

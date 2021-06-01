@@ -31,7 +31,6 @@
 #include "umc_va_base.h"
 #include "umc_va_dxva2_protected.h"
 #endif
-
 using namespace UMC;
 
 namespace UMC_VP9_DECODER

@@ -29,13 +29,12 @@
 #include "mfx_common_decode_int.h"
 
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 
-#include "umc_va_dxva2.h"
-
 #if defined (MFX_VA_WIN)
+#include "umc_va_dxva2.h"
 #include "libmfx_core_hw.h"
 #endif
 
@@ -146,7 +145,8 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
         );
 
     return p != l;
-#elif defined (MFX_VA_LINUX)
+#else
+#if defined (MFX_VA_LINUX)
     if (core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, &vp) != MFX_ERR_NONE)
         return false;
 
@@ -164,6 +164,7 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
     }
 
     return false;
+#endif
 #endif
 }
 
@@ -837,12 +838,14 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
         }
 
         if (in->IOPattern)
+        {
             if (   in->IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY
                 || in->IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY
                 )
                 out->IOPattern = in->IOPattern;
             else
                 sts = MFX_ERR_UNSUPPORTED;
+        }
 
         if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400 ||
             CheckChromaFormat(profile, in->mfx.FrameInfo.ChromaFormat))
@@ -1179,20 +1182,6 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
     if (in->mfx.FrameInfo.Height > 16384 /* || (in->mfx.FrameInfo.Height % in->mfx.FrameInfo.reserved[0]) */)
         return false;
 
-#if 0
-    // ignore Crop parameters at Init/Reset stage
-    if (in->mfx.FrameInfo.CropX > in->mfx.FrameInfo.Width)
-        return false;
-
-    if (in->mfx.FrameInfo.CropY > in->mfx.FrameInfo.Height)
-        return false;
-
-    if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width)
-        return false;
-
-    if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height)
-        return false;
-#endif
 
     if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
@@ -1288,7 +1277,6 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
     if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return false;
 #endif
-
     return true;
 }
 

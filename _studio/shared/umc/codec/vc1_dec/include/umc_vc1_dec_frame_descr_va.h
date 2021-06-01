@@ -36,7 +36,6 @@
 #include "umc_vc1_dec_va_defs.h"
 #include "umc_va_dxva2_protected.h"
 #endif
-
 namespace UMC
 {
 

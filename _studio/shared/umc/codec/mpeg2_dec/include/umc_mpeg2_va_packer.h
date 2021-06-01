@@ -26,7 +26,7 @@
 
 #include "umc_va_base.h"
 
-#if defined(LINUX32) || defined(LINUX64)
+#if defined(MFX_VA_LINUX)
 #include <va/va.h>
 
 
@@ -106,5 +106,5 @@ namespace UMC_MPEG2_DECODER
 
 
 }
-#endif // defined(LINUX32) || defined(LINUX64)
+#endif // defined(MFX_VA_LINUX)
 #endif // MFX_ENABLE_MPEG2_VIDEO_DECODE

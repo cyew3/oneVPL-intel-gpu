@@ -34,7 +34,6 @@
 #include "umc_h265_va_packer_dxva.h"
 #include "umc_va_dxva2_protected.h"
 #endif
-
 #ifdef UMC_VA_LINUX
 #include "umc_h265_va_packer_vaapi.h"
 #include "umc_va_linux_protected.h"

@@ -32,14 +32,16 @@
 #include "vm_sys_info.h"
 
 #include "umc_h264_va_supplier.h"
-    #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        #include "umc_va_dxva2_protected.h"
-        #include "umc_va_linux_protected.h"
-    #endif
+#if defined(MFX_ENABLE_CP)
+#if defined(MFX_VA_WIN)
+#include "umc_va_dxva2_protected.h"
+#endif
+#include "umc_va_linux_protected.h"
+#endif
 #include "umc_va_video_processing.h"
 
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 #include "libmfx_core_interface.h"
@@ -435,9 +437,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 
     umcVideoParams.lpMemoryAllocator = &m_MemoryAllocator;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     umcVideoParams.m_ignore_level_constrain = par->mfx.IgnoreLevelConstrain;
-#endif
 
     umcSts = m_pH264VideoDecoder->Init(&umcVideoParams);
     if (umcSts != UMC::UMC_OK)
@@ -506,11 +506,7 @@ mfxStatus VideoDECODEH264::QueryImplsDescription(
     };
 
     caps.CodecID = MFX_CODEC_AVC;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     caps.MaxcodecLevel = MFX_LEVEL_AVC_62;
-#else
-    caps.MaxcodecLevel = MFX_LEVEL_AVC_52;
-#endif
     mfxVideoParam par;
     memset(&par, 0, sizeof(par));
     par.mfx.CodecId = MFX_CODEC_AVC;
@@ -709,7 +705,6 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
         MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 #endif
-
     m_pH264VideoDecoder->SetVideoParams(&m_vFirstPar);
 
     MFX_CHECK(m_platform == m_core->GetPlatformType(), MFX_ERR_UNSUPPORTED);
@@ -1307,7 +1302,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
-#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if defined(MFX_ENABLE_CP)
     if (bs && IS_PROTECTION_ANY(m_vPar.Protected))
     {
         MFX_CHECK(m_va->GetProtectedVA() && (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME), MFX_ERR_UNDEFINED_BEHAVIOR);

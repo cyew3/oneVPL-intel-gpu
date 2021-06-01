@@ -319,13 +319,8 @@ namespace UMC_AV1_DECODER
 
         for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-#if UMC_AV1_DECODER_REV >= 8500
             picParam.cdef_y_strengths[i]  = (UCHAR)((info.cdef_params.cdef_y_pri_strength[i] << 2) + info.cdef_params.cdef_y_sec_strength[i]);
             picParam.cdef_uv_strengths[i] = (UCHAR)((info.cdef_params.cdef_uv_pri_strength[i] << 2) + info.cdef_params.cdef_uv_sec_strength[i]);
-#else
-            picParam.cdef_y_strengths[i]  = (UCHAR)info.cdef_params.cdef_y_strength[i];
-            picParam.cdef_uv_strengths[i] = (UCHAR)info.cdef_params.cdef_uv_strength[i];
-#endif
         }
 
         auto& ddiQMFlags         = picParam.wQMatrixFlags.fields;
@@ -444,9 +439,7 @@ namespace UMC_AV1_DECODER
         }
 #endif
 
-#if UMC_AV1_DECODER_REV >= 8500
         picParam.context_update_tile_id = (USHORT)info.tile_info.context_update_tile_id;
-#endif
     }
 
     void PackerIntel::PackTileControlParams(DXVA_Intel_Tile_AV1& tileControlParam, TileLocation const& loc)

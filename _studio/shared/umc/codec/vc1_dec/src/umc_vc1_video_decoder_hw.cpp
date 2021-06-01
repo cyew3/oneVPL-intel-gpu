@@ -184,10 +184,8 @@ Status VC1VideoDecoderHW::Close(void)
 
     m_pMemoryAllocator = 0;
 
-#if defined (_WIN32) && (_DEBUG)
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).Release();
-#endif
 #endif
 
     if (m_stCodes_VA)

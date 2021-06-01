@@ -32,8 +32,9 @@
 #include "mfx_thread_task.h"
 #include "mfx_common_decode_int.h"
 
+#ifdef MFX_VA_WIN
 #include "umc_va_dxva2.h"
-
+#endif
 using namespace MFXVC1DecCommon;
 using namespace UMC;
 
@@ -675,7 +676,8 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         MFXSts  = CheckBitstream(bs);
         MFX_CHECK_STS(MFXSts);
 
-#if defined(MFX_VA_WIN) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if defined(MFX_VA_WIN)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (m_par.Protected && bs)
     {
         MFX_CHECK(m_pVC1VideoDecoder->m_va->GetProtectedVA(), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -686,6 +688,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         m_pVC1VideoDecoder->m_va->GetProtectedVA()->SetModes(&m_par);
         m_pVC1VideoDecoder->m_va->GetProtectedVA()->SetBitstream(bs);
     }
+#endif
 #endif
     }
 
@@ -2236,8 +2239,8 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport()
         }
         m_pStatusQueue.pop_front();
     }
-
-#elif defined(MFX_VA_LINUX)
+#else
+#if defined(MFX_VA_LINUX)
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     VideoAccelerator *va;
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
@@ -2271,6 +2274,7 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport()
         MFX_CHECK(sts == UMC_OK, MFX_ERR_DEVICE_FAILED);
     }
 #endif //#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+#endif
 #endif
 
     return MFX_ERR_NONE;

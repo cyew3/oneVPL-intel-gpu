@@ -23,7 +23,7 @@
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <atlbase.h>
 #endif
 
@@ -189,7 +189,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         useInternal = true;
 
     if (useInternal)
-        request.Type |= MFX_MEMTYPE_INTERNAL_FRAME        ;
+        request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
     else
         request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
 
@@ -1354,10 +1354,12 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             out->AsyncDepth = in->AsyncDepth;
 
         if (in->IOPattern)
+        {
             if ((in->IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY))
                 out->IOPattern = in->IOPattern;
             else
                 sts = MFX_STS_TRACE(MFX_ERR_UNSUPPORTED);
+        }
 
         mfxU32 fourCC = in->mfx.FrameInfo.FourCC;
         mfxU16 chromaFormat = in->mfx.FrameInfo.ChromaFormat;
@@ -1621,19 +1623,14 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
         (fourCC != DXGI_FORMAT_AYUV || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
         (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
         return false;
-#elif defined (MFX_VA_LINUX)
+#else
+#if defined (MFX_VA_LINUX)
     if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
         (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
         (fourCC != MFX_FOURCC_RGB4 || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
         (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
            return false;
-#else
-    if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
-        (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
-        (fourCC != MFX_FOURCC_RGB4 || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
-        (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
-        return false;
-
+#endif
 #endif
 
     if (   !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)

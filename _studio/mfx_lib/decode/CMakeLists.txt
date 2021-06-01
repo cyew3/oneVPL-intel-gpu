@@ -2,7 +2,7 @@ list(APPEND vdirs
   h264 h265 mjpeg mpeg2/hw mpeg2/sw vc1 vp8 vp9 av1
   )
 list(APPEND cdirs
-  h265_dec h264_dec mpeg2_dec/hw mpeg2_dec/sw vp9_dec av1_dec vc1_dec jpeg_dec vc1_common color_space_converter jpeg_common
+  h265_dec h264_dec mpeg2_dec vp9_dec av1_dec vc1_dec jpeg_dec vc1_common color_space_converter jpeg_common
   )
 
 set(include_dirs "")
@@ -99,15 +99,15 @@ list(APPEND sources
 list(APPEND sources
     mpeg2/hw/include/mfx_mpeg2_decode.h
     mpeg2/hw/src/mfx_mpeg2_decode.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_bitstream.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_decoder.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_decoder_va.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_frame.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_slice.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_splitter.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_utils.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_va_packer.cpp
-    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_dxva_packer.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_bitstream.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_decoder.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_decoder_va.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_frame.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_slice.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_splitter.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_utils.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_va_packer.cpp
+    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dxva_packer.cpp
   )
 
 
@@ -184,10 +184,6 @@ list(APPEND sources
     )
 
 add_library(decode_hw STATIC ${sources} ${sources_hw})
-target_compile_definitions(decode_hw
-  PRIVATE
-    UMC_AV1_DECODER_REV=8500
-  )
 target_include_directories(decode_hw PUBLIC ${include_dirs})
 
 set(IPP_LIBS "")

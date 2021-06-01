@@ -38,7 +38,9 @@
 #include "umc_av1_utils.h"
 
 #include "libmfx_core_hw.h"
+#if defined (MFX_VA_WIN)
 #include "umc_va_dxva2.h"
+#endif
 
 #include "umc_av1_decoder_va.h"
 
@@ -47,8 +49,10 @@
 #include "vm_sys_info.h"
 
 #include "umc_h265_va_supplier.h"
-#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if defined(MFX_ENABLE_CP)
+#if defined (MFX_VA_WIN)
 #include "umc_va_dxva2_protected.h"
+#endif
 #include "umc_va_linux_protected.h"
 #endif
 
@@ -99,7 +103,8 @@ namespace MFX_VPX_Utility
             );
 
         return p != l;
-#elif defined (MFX_VA_LINUX)
+#endif
+#if defined (MFX_VA_LINUX)
         if (core->IsGuidSupported(DXVA_Intel_ModeAV1_VLD, &vp) != MFX_ERR_NONE)
             return false;
 
@@ -110,9 +115,6 @@ namespace MFX_VPX_Utility
             default:
                 return false;
         }
-#else
-        (void)core;
-        return false;
 #endif
     }
 
@@ -225,15 +227,15 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-    /* There are following conditions for post processing via HW fixed function engine:
-     * (1): Supported from MTL platform and above
-     * (2): Only video memory supported (so, OPAQ memory does not supported!)
-     * */
     if (videoProcessing)
     {
 #if defined(STRIP_EMBARGO)
         MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #else
+    /* There are following conditions for post processing via HW fixed function engine:
+     * (1): Supported from MTL platform and above
+     * (2): Only video memory supported (so, OPAQ memory does not supported!)
+     * */
         MFX_CHECK(m_core->GetHWType() >= MFX_HW_MTL &&
             (m_video_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
             MFX_ERR_UNSUPPORTED);

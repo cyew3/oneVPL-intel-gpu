@@ -38,11 +38,12 @@
 #include "umc_h264_dec_debug.h"
 
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
-
+#if defined(MFX_VA_WIN)
 #include "umc_va_dxva2.h"
+#endif
 
 #include "mfx_enc_common.h"
 
@@ -556,10 +557,8 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     case MFX_HW_CNL:
     case MFX_HW_ICL:
     case MFX_HW_ICL_LP:
-#if (MFX_VERSION >= 1031)
     case MFX_HW_JSL:
     case MFX_HW_EHL:
-#endif
     case MFX_HW_ADL_S:
     case MFX_HW_ADL_P:
 #ifndef STRIP_EMBARGO
@@ -1011,9 +1010,8 @@ UMC::Status MFX_Utility::DecodeHeader(UMC::TaskSupplier * supplier, UMC::H264Vid
     if (!lpInfo->m_pData->GetDataSize())
         return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     lpInfo->m_ignore_level_constrain = out->mfx.IgnoreLevelConstrain;
-#endif
+
     umcRes = supplier->PreInit(lpInfo);
     if (umcRes != UMC::UMC_OK)
         return UMC::UMC_ERR_FAILED;
@@ -1253,9 +1251,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
 #endif
         }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
         out->mfx.IgnoreLevelConstrain = in->mfx.IgnoreLevelConstrain;
-#endif
 
         switch (in->mfx.CodecLevel)
         {
@@ -1277,11 +1273,9 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         case MFX_LEVEL_AVC_5:
         case MFX_LEVEL_AVC_51:
         case MFX_LEVEL_AVC_52:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_LEVEL_AVC_6:
         case MFX_LEVEL_AVC_61:
         case MFX_LEVEL_AVC_62:
-#endif
             out->mfx.CodecLevel = in->mfx.CodecLevel;
             break;
         default:
@@ -1333,12 +1327,14 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         }
 
         if (in->IOPattern)
+        {
             if (   in->IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY
                 || in->IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY
                 )
                 out->IOPattern = in->IOPattern;
             else
                 sts = MFX_STS_TRACE(MFX_ERR_UNSUPPORTED);
+        }
 
         if (in->mfx.FrameInfo.FourCC)
         {
@@ -1581,11 +1577,9 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                     case MFX_LEVEL_AVC_5:
                     case MFX_LEVEL_AVC_51:
                     case MFX_LEVEL_AVC_52:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
                     case MFX_LEVEL_AVC_6:
                     case MFX_LEVEL_AVC_61:
                     case MFX_LEVEL_AVC_62:
-#endif
                         mvcPointsOut->OP[i].LevelIdc = mvcPointsIn->OP[i].LevelIdc;
                         break;
                     default:
@@ -1951,20 +1945,6 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     if (in->mfx.FrameInfo.Height > 16384 || (in->mfx.FrameInfo.Height % 16))
         return false;
 
-#if 0
-    // ignore Crop parameters at Init/Reset stage
-    if (in->mfx.FrameInfo.CropX > in->mfx.FrameInfo.Width)
-        return false;
-
-    if (in->mfx.FrameInfo.CropY > in->mfx.FrameInfo.Height)
-        return false;
-
-    if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width)
-        return false;
-
-    if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height)
-        return false;
-#endif
 
     if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P210)
@@ -2015,7 +1995,6 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return false;
 #endif
-
     return true;
 }
 

@@ -224,10 +224,12 @@ namespace UMC_MPEG2_DECODER
             }
 
             if (in->IOPattern)
+            {
                 if ((in->IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY))
                     out->IOPattern = in->IOPattern;
                 else
                     return MFX_STS_TRACE(MFX_ERR_UNSUPPORTED);
+            }
 
             CHECK_UNSUPPORTED(!IsHWSupported(core, in));
         }

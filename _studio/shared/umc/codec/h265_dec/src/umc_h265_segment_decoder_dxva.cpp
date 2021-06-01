@@ -42,7 +42,6 @@
 #include "umc_va_dxva2_protected.h"
 #endif
 
-
 namespace UMC_HEVC_DECODER
 {
 H265_DXVA_SegmentDecoderCommon::H265_DXVA_SegmentDecoderCommon(TaskSupplier_H265 * pTaskSupplier)

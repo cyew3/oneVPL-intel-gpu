@@ -31,28 +31,10 @@
 //#define ECHO
 //#define ECHO_DEB
 
-#if 0
-
-#undef DEBUG_PRINT
-
-#if defined ECHO
-#define DEBUG_PRINT(x) Trace x
-#else
-#define DEBUG_PRINT(x)
-#endif
-
-#if 0
-#define DEBUG_PRINT1(x) Trace x
-#else
-#define DEBUG_PRINT1(x)
-#endif
-
-#else
 #undef DEBUG_PRINT
 #undef DEBUG_PRINT1
 #define DEBUG_PRINT(x)
 #define DEBUG_PRINT1(x)
-#endif
 
 namespace UMC_HEVC_DECODER
 {

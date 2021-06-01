@@ -336,7 +336,8 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     {
         m_lastCounter = 0;
     }
-#elif defined(UMC_VA_LINUX)
+#else
+#if defined(UMC_VA_LINUX)
     Status sts = UMC_OK;
     for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
@@ -399,6 +400,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     }
 
     SwitchCurrentAU();
+#endif
 #endif
 
     return false;

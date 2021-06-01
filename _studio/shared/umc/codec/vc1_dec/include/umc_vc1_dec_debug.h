@@ -25,7 +25,7 @@
 #ifndef __UMC_VC1_DEC_DEBUG_H__
 #define __UMC_VC1_DEC_DEBUG_H__
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <windows.h>
 #endif
 
@@ -88,7 +88,7 @@ public:
     {
         delete this;
     }
-#if defined (_WIN32) && (_DEBUG)
+#if defined (MFX_VC1_VIDEO_DECODE_DEBUG_THREADID)
     VM_Debug():DebugThreadID(GetCurrentThreadId())
 #else
     VM_Debug()
@@ -113,7 +113,7 @@ public:
         Logthread1 = NULL;
 #endif
     };
-#if defined (_WIN32) && (_DEBUG)
+#if defined (MFX_VC1_VIDEO_DECODE_DEBUG_THREADID)
     void setThreadToDebug(uint32_t threadID)
     {
         DebugThreadID = threadID;
@@ -121,7 +121,7 @@ public:
 #endif
 
 private:
-#if defined (_WIN32) && (_DEBUG)
+#if defined (MFX_VC1_VIDEO_DECODE_DEBUG_THREADID)
     uint32_t DebugThreadID;
 #endif
 
