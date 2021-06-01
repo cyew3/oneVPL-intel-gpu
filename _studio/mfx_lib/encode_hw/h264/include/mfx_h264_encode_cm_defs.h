@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_H264_VIDEO_ENCODE
 
 #ifdef _MSVC_LANG
 #pragma warning(disable: 4505)
@@ -777,4 +777,4 @@ extern "C" void HistogramFields(
 #pragma warning(pop)
 #endif
 
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE

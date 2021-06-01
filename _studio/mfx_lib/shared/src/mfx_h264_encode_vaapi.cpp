@@ -20,7 +20,8 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_VA_LINUX)
+#if defined (MFX_VA_LINUX)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #include <va/va.h>
 #include <va/va_enc_h264.h>
@@ -3217,7 +3218,8 @@ mfxStatus VAAPIEncoder::Destroy()
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Destroy()
 
-#endif // (MFX_ENABLE_H264_VIDEO_ENCODE) && (MFX_VA_LINUX)
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE
+#endif // MFX_VA_LINUX
 /* EOF */
 
 

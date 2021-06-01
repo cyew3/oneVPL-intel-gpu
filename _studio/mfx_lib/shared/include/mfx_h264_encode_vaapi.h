@@ -23,7 +23,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_LINUX)
+#if defined (MFX_VA_LINUX)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #include "umc_mutex.h"
 
@@ -301,6 +302,7 @@ namespace MfxHwH264Encode
 
 }; // namespace
 
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE && (MFX_VA_LINUX)
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE
+#endif // MFX_VA_LINUX
 #endif // __MFX_H264_ENCODE_VAAPI__H
 /* EOF */

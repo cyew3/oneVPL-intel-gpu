@@ -107,9 +107,6 @@ FUNCTION_GET_SURFACE_IMPL_VPP(MFXMemory_GetSurfaceForVPP, Out)
 #undef FUNCTION_GET_SURFACE_IMPL_VPP
 #endif
 
-// no HEVC FEI, always false
-bool CommonCORE::s_bHEVCFEIEnabled = false;
-
 mfxStatus CommonCORE::API_1_19_Adapter::QueryPlatform(mfxPlatform* platform)
 {
     return m_core->QueryPlatform(platform);
@@ -1905,9 +1902,6 @@ void* CommonCORE::QueryCoreInterface(const MFX_GUID &guid)
 
     if (MFXICORE_API_1_19_GUID == guid)
         return &m_API_1_19;
-
-    if (MFXIFEIEnabled_GUID == guid)
-        return const_cast<bool*>(&s_bHEVCFEIEnabled);
 
     if (MFXICORE_API_2_0_GUID == guid)
         return &m_enabled20Interface;

@@ -234,8 +234,6 @@ private:
 
     std::unique_ptr<VAAPIAdapter>               m_pAdapter;
     std::unique_ptr<CMEnabledCoreAdapter>       m_pCmAdapter;
-    //required to WA FEI enabling after move it from plugin to library
-    bool                                        m_bHEVCFEIEnabled;
 };
 
 using VAAPIVideoCORE = VAAPIVideoCORE_T<CommonCORE>;

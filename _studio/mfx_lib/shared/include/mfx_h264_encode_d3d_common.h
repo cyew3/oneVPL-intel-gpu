@@ -23,7 +23,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 
 #include "mfx_interface_scheduler.h"
 
@@ -73,6 +73,6 @@ namespace MfxHwH264Encode
     };
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && (MFX_VA_WIN)
 #endif // __MFX_H264_ENCODE_D3D_COMMON_H
 /* EOF */

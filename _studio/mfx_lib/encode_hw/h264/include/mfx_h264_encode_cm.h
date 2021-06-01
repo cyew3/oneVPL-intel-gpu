@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_H264_VIDEO_ENCODE
 
 #include <vector>
 #include <assert.h>
@@ -433,4 +433,4 @@ protected:
 
 }
 
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE

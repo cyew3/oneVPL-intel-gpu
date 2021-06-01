@@ -62,11 +62,6 @@ target_include_directories(umc_codecs_merged
     ${common_include}
   )
 
-target_compile_definitions(umc_codecs_merged
-  PRIVATE
-    AS_H264LA_PLUGIN
-  )
-
 target_link_libraries(umc_codecs_merged PUBLIC mfx_static_lib media_buffers vc1_common demuxer h264_spl aac_common)
 # ================================ umc_splmux_merged =============================================
 

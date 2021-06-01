@@ -54,7 +54,7 @@
 #include "../../encode_hw/hevc/hevcehw_disp.h"
 #endif
 
-#if defined (MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
+#if defined (MFX_ENABLE_VP9_VIDEO_ENCODE)
 #include "mfx_vp9_encode_hw.h"
 #endif
 
@@ -67,7 +67,6 @@
 #endif
 
 #include "libmfx_core.h"
-#include <libmfx_core_interface.h> // for MFXIFEIEnabled_GUID
 
 struct CodecKey {
     const mfxU32 codecId;
@@ -107,13 +106,12 @@ typedef std::map<CodecKey, EHandlers> CodecId2Handlers;
 
 static const CodecId2Handlers codecId2Handlers =
 {
-#if defined(MFX_ENABLE_H264_VIDEO_ENCODE) && ! defined(AS_H264LA_PLUGIN)
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
     {
         {
             MFX_CODEC_AVC,
         },
         {
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
             // .primary =
             {
                 // .ctor =
@@ -146,46 +144,6 @@ static const CodecId2Handlers codecId2Handlers =
             // .fallback =
             {
             }
-#else // MFX_ENABLE_H264_VIDEO_ENCODE_HW
-            // .primary =
-            {
-                // .ctor =
-                [](VideoCORE* core, mfxU16 codecProfile, mfxStatus *mfxRes)
-                -> VideoENCODE*
-                {
-                    (void)codecProfile;
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-                    if(codecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || codecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                        return new MFXVideoENCODEMVC(core, mfxRes);
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-                    return new MFXVideoENCODEH264(core, mfxRes);
-                },
-                // .query =
-                [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
-                {
-                    mfxStatus mfxRes;
-  #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-                    if(in && (in->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || in->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH))
-                        mfxRes = MFXVideoENCODEMVC::Query(in, out);
-                    else
-  #endif
-                        mfxRes = MFXVideoENCODEH264::Query(in, out);
-                    return mfxRes;
-                },
-                // .queryIOSurf =
-                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
-                {
-                    mfxStatus mfxRes;
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-                    if (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                        mfxRes = MFXVideoENCODEMVC::QueryIOSurf(par, request);
-                    else
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-                        mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
-                    return mfxRes;
-                }
-            }
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW
         }
     },
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE
@@ -303,7 +261,7 @@ static const CodecId2Handlers codecId2Handlers =
     },
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
 
-#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
+#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
     {
         {
             MFX_CODEC_VP9
@@ -340,7 +298,7 @@ static const CodecId2Handlers codecId2Handlers =
             }
         }
     },
-#endif // MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+#endif // MFX_ENABLE_VP9_VIDEO_ENCODE
 
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
     {

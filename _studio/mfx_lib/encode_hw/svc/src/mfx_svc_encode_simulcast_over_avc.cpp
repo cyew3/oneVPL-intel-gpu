@@ -19,8 +19,8 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW)
-#if defined(MFX_ENABLE_SVC_VIDEO_ENCODE_HW)
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_SVC_VIDEO_ENCODE)
 
 #include "mfx_h264_encode_hw_utils.h"
 #include "mfx_svc_encode_simulcast_over_avc.h"
@@ -229,5 +229,5 @@ mfxStatus MultipleAvcEncoder::Destroy()
     return MFX_ERR_NONE;
 }
 
-#endif //defined(MFX_ENABLE_SVC_VIDEO_ENCODE_HW)
-#endif //defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+#endif //defined(MFX_ENABLE_SVC_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_H264_VIDEO_ENCODE)

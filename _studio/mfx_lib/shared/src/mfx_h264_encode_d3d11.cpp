@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
 
 #define CHECK_HRES(hRes) \
         if (FAILED(hRes))\
@@ -1332,7 +1332,7 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::CreateAccelerationService");
     mfxExtSpsHeader *  extSps = GetExtBuffer(par);
     mfxExtPpsHeader *  extPps = GetExtBuffer(par);
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     mfxExtSVCSeqDesc * extSvc = GetExtBuffer(par);
     m_extSvc = *extSvc;
 #endif
@@ -1353,7 +1353,7 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
     Zero(m_packedSpsPps);
     Zero(m_packedPps);
 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     for (mfxU32 d = 0; d < m_numdl; d++)
     {
         //::FillSpsBuffer(par, m_sps[d], d); // BUILD DX11 FIX
@@ -1389,7 +1389,7 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
     for (mfxU32 i = 0; i < par.calcParam.numDependencyLayer; i++)
     {
         copySps.seqParameterSetId         = mfxU8((copySps.seqParameterSetId + 1) % 32);
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
         copySps.picWidthInMbsMinus1       = extSvc->DependencyLayer[par.calcParam.did[i]].Width / 16 - 1;
         copySps.picHeightInMapUnitsMinus1 = extSvc->DependencyLayer[par.calcParam.did[i]].Height / 16 / (2 - copySps.frameMbsOnlyFlag) - 1;
 
@@ -2130,5 +2130,5 @@ void D3D11SvcEncoder::PackSlice(
 }
 #endif // (FIXME: remove, use common PackSlice from mfx_h264_encode_d3d9.h)
 
-#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_D3D11_ENABLED)
+#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
 /* EOF */

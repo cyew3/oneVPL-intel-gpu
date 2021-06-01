@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 
 #include "mfx_h264_encode_d3d9.h"
 #include "libmfx_core_interface.h"
@@ -45,7 +45,7 @@ mfxU8 ConvertProfileMfx2Ddi(mfxU32 profile)
 {
     return IsAvcHighProfile(profile) 
         || IsMvcProfile(profile) 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
         || IsSvcProfile(profile)
 #endif
         ? mfxU8(MFX_PROFILE_AVC_HIGH)
@@ -768,7 +768,7 @@ namespace
     }
 }
 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
 namespace
 {
     mfxU32 PrevDepId(mfxExtSVCSeqDesc const & extSvc, mfxU32 did)
@@ -797,7 +797,7 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
     mfxU32                               tid)
 {
     mfxExtSpsHeader const *  extSps = GetExtBuffer(par);
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
     //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
     mfxExtSVCRateControl const *  extRc  = GetExtBuffer(par);
@@ -812,7 +812,7 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
 
     Zero(sps);
 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     sps.FrameWidth           = extSvc->DependencyLayer[did].Width;
     sps.FrameHeight          = extSvc->DependencyLayer[did].Height;
 #else
@@ -839,7 +839,7 @@ mfxStatus MfxHwH264Encode::FillSpsBuffer(
     //sps.frame_crop_right_offset  = (sps.FrameWidth - cropW - cropX) / cropUnitX;
     //sps.frame_crop_top_offset    = (cropY / cropUnitY);
     //sps.frame_crop_bottom_offset = (sps.FrameHeight - cropH - cropY) / cropUnitY;
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     if (extRc->RateControlMethod != MFX_RATECONTROL_CQP)
     {
         sps.RateControlMethod                 = mfxU8(extRc->RateControlMethod);
@@ -900,7 +900,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     //mfxExtSpsHeader const *       extSps = GetExtBuffer(par);
     mfxExtPpsHeader const *       extPps = GetExtBuffer(par);
     //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     mfxExtSVCSeqDesc const *      extSvc = GetExtBuffer(par);
 #endif
     //mfxExtSVCRateControl const *  extRc  = GetExtBuffer(par);
@@ -909,7 +909,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     //assert(rcIdx != 0xffffffff);
 
     Zero(pps);
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     pps.scaled_ref_layer_left_offset   = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[0];
     pps.scaled_ref_layer_top_offset    = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[1];
     pps.scaled_ref_layer_right_offset  = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[2];
@@ -927,7 +927,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.quality_id    = qid;
     pps.temporal_id   = tid;
 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     if (did > 0 || qid > 0)
     {
         pps.ref_layer_dependency_id = qid > 0 ? did     : PrevDepId(*extSvc, did);
@@ -938,7 +938,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
 #endif
     pps.disable_inter_layer_deblocking_filter_idc = did || qid ? 0 : 1;
 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     pps.next_layer_resolution_change_flag =
         (qid + 1 == extSvc->DependencyLayer[did].QualityNum) &&
         (did != par.calcParam.did[par.calcParam.numDependencyLayer - 1]);
@@ -975,7 +975,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.entropy_coding_mode_flag          = extPps->entropyCodingModeFlag;
     pps.weighted_pred_flag                = extPps->weightedPredFlag;
     pps.weighted_bipred_idc               = extPps->weightedBipredIdc;
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     pps.constrained_intra_pred_flag       = LastLayer(par, did, qid) ? extPps->constrainedIntraPredFlag : 1;
 #else
     pps.constrained_intra_pred_flag       = extPps->constrainedIntraPredFlag;
@@ -994,7 +994,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     //pps.bit_rate_value_minus1             = extSps->vui.nalHrdParameters.bitRateValueMinus1[0];
     //pps.cpb_size_value_minus1             = extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0];
     pps.bEmulationByteInsertion           = 1;
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
     pps.bLastLayerInPicture               = LastLayer(par, did, qid);
 #else
     pps.bLastLayerInPicture               = 1;
@@ -1788,7 +1788,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(
     {
         if (task.m_did == 0 && task.m_qid == 0)
         {
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
             if (task.m_insertSps[fieldId] && m_headerPacker.GetScalabilitySei().DataLength > 0)
             {
                 m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
@@ -2092,7 +2092,7 @@ mfxStatus D3D9Encoder::Destroy()
     return MFX_ERR_NONE;
 }
 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
 namespace
 {
     mfxU32 GetPpsId(MfxVideoParam const & video, mfxU32 did, mfxU32 qid, mfxU32 tid)
@@ -2103,7 +2103,7 @@ namespace
 }
 #endif
 
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
 D3D9SvcEncoder::D3D9SvcEncoder()
 : m_core(0)
 , m_headerPacker()
@@ -3262,7 +3262,7 @@ mfxStatus D3D9SvcEncoder::Execute(
             compBufferDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackAud(task, fieldId));
             bufCnt++;
         }
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
         if (task.m_insertSps[fieldId])
         {
             compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA);
@@ -3442,5 +3442,5 @@ mfxStatus D3D9SvcEncoder::Destroy()
 
 #endif
 
-#endif // (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+#endif // (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 /* EOF */

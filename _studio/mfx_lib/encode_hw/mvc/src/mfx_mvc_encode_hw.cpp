@@ -22,7 +22,7 @@
 
 #include "mfx_common.h"
 
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
 
 #include <algorithm>
 #include <functional>
@@ -2902,4 +2902,4 @@ mfxStatus ImplementationMvc::GetRawSurfaceHandle(DdiTask const & task, mfxHDLPai
 }
 // MVC BD }
 
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE_HW
+#endif // MFX_ENABLE_MVC_VIDEO_ENCODE

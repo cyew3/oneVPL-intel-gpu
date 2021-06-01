@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
 
 #include <algorithm>
 #include <functional>
@@ -1264,4 +1264,4 @@ mfxStatus ImplementationSvc::TaskRoutineDoNothing(
     return MFX_TASK_DONE;
 }
 
-#endif // MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+#endif // MFX_ENABLE_SVC_VIDEO_ENCODE

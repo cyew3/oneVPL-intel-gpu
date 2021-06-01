@@ -59,14 +59,8 @@
     // enable defines
     #include "mfxconfig.h"
 
-    #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
-        #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
-    #endif
     #define MFX_ENABLE_VC1_VIDEO_DECODE
     #define MFX_ENABLE_H265_VIDEO_ENCODE
-    #if defined(AS_H264LA_PLUGIN)
-       #define MFX_ENABLE_LA_H264_VIDEO_HW
-    #endif
 #elif defined(ANDROID)
     #include "mfx_android_defs.h"
 
@@ -75,10 +69,6 @@
     // mfxconfig.h is auto-generated file containing mediasdk per-component
     // enable defines
     #include "mfxconfig.h"
-
-    #if defined(AS_H264LA_PLUGIN)
-        #define MFX_ENABLE_LA_H264_VIDEO_HW
-    #endif
 #endif
 
 #define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
@@ -93,7 +83,6 @@
         #define PRE_SI_GEN 11
     #endif
 
-    #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
     #if (MFX_VERSION >= MFX_VERSION_NEXT)
         #define MFX_ENABLE_AV1_VIDEO_ENCODE
     #endif
@@ -101,23 +90,9 @@
         #define MFX_ENABLE_AV1_VIDEO_DECODE
     #endif
 
-    #if defined(AS_AV1E_PLUGIN)
-        #define MFX_ENABLE_AV1_VIDEO_ENCODE
-    #endif
-
     #if defined(MFX_ENABLE_VPP)
         #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
     #endif //MFX_ENABLE_VPP
-
-    //#define MFX_ENABLE_H264_VIDEO_ENC_HW
-    #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
-    #if defined(AS_H264LA_PLUGIN)
-        #define MFX_ENABLE_LA_H264_VIDEO_HW
-    #endif
-
-    #if defined(MFX_ENABLE_SVC_VIDEO_ENCODE)
-        #define MFX_ENABLE_SVC_VIDEO_ENCODE_HW
-    #endif
 
     #if defined(__linux__)
         // Unsupported on Linux:
@@ -134,44 +109,6 @@
     #if defined (MFX_VA_LINUX)
         #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-    #endif
-
-    #if defined(AS_H264LA_PLUGIN)
-        #undef MFX_ENABLE_H265_VIDEO_DECODE
-        #undef MFX_ENABLE_H265_VIDEO_ENCODE
-        #undef MFX_ENABLE_H264_VIDEO_DECODE
-        #undef MFX_ENABLE_H264_VIDEO_ENCODE
-        #undef MFX_ENABLE_MVC_VIDEO_ENCODE
-        #undef MFX_ENABLE_MPEG2_VIDEO_DECODE
-        #undef MFX_ENABLE_MPEG2_VIDEO_ENCODE
-        #undef MFX_ENABLE_VC1_VIDEO_DECODE
-        #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
-        #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
-        #undef MFX_ENABLE_DENOISE_VIDEO_VPP
-        #undef MFX_ENABLE_IMAGE_STABILIZATION_VPP
-        #undef MFX_ENABLE_VPP
-        #undef MFX_ENABLE_MJPEG_WEAVE_DI_VPP
-        #undef MFX_ENABLE_H264_VIDEO_ENCODE_HW
-        #undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
-        #undef MFX_ENABLE_AV1_VIDEO_DECODE
-        #undef MFX_ENABLE_VP9_VIDEO_DECODE
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE
-        #undef MFX_ENABLE_AV1_VIDEO_ENCODE
-        #if defined(__linux__)
-            #undef MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-        #endif
-    #endif
-
-    #if defined(AS_H264LA_PLUGIN)
-        #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
-        #define MFX_ENABLE_H264_VIDEO_ENCODE
-        #undef MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-        #undef MFX_ENABLE_VP9_VIDEO_ENCODE
-        #if defined(__linux__)
-            #undef MFX_ENABLE_VPP
-        #else
-            #define MFX_ENABLE_VPP
-        #endif
     #endif
 
 #if defined (PRE_SI_GEN)
@@ -258,7 +195,6 @@
 #endif //MFX_ENABLE_MPEG2_VIDEO_DECODE
 
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
-    #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #if MFX_VERSION >= 1023
         #define MFX_ENABLE_H264_REPARTITION_CHECK
         #if defined(MFX_VA_WIN)
@@ -316,10 +252,6 @@
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
     #endif
 
-    #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
-        #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-    #endif
-
     #if defined(MFX_VA_WIN)
         #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
@@ -345,10 +277,6 @@
         #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
     #endif
-
-#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
-    #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-#endif
 
 #if defined(MFX_VA_WIN)
     #define MFX_ENABLE_SINGLE_THREAD
