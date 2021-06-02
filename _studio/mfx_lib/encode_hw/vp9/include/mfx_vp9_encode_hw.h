@@ -49,6 +49,7 @@ public:
         , m_initHeight(0)
         , m_frameOrderInGop(0)
         , m_frameOrderInRefStructure(0)
+        , m_bUseInternalMem(false)
     {
         m_prevSegment.Header.BufferId = MFX_EXTBUFF_VP9_SEGMENTATION;
         m_prevSegment.Header.BufferSz = sizeof(mfxExtVP9Segmentation);
@@ -202,5 +203,7 @@ protected:
 
     mfxExtVP9Segmentation m_prevSegment;
     VP9FrameLevelParam m_prevFrameParam;
+
+    bool m_bUseInternalMem;
 };
 } // MfxHwVP9Encode

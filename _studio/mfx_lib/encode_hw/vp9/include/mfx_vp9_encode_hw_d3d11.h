@@ -26,8 +26,6 @@
 #include "mfx_vp9_encode_hw_d3d_common.h"
 #include <atlbase.h>
 
-#include<libmfx_core_d3d9on11.h>
-
 namespace MfxHwVP9Encode
 {
 #if defined (MFX_VA_WIN)
@@ -85,11 +83,6 @@ public:
         mfxU32 GetReconSurfFourCC() override;
 
     virtual
-        mfxStatus CreateWrapBuffers(
-            const mfxU16& numFrameMin,
-            const mfxVideoParam& par) override;
-
-    virtual
     mfxStatus Destroy() override;
 
     D3D11Encoder(const D3D11Encoder&) = delete;
@@ -112,9 +105,6 @@ private:
     ENCODE_SEGMENT_PARAMETERS          m_seg;
     std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
-
-    mfxFrameAllocResponse                       m_dx9on11response;
-    D3D9ON11VideoCORE*                          m_pDX9ON11Core;
 
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;

@@ -1931,7 +1931,7 @@ mfxStatus CheckSurface(
     // check that surface contains valid data
     MFX_CHECK(CheckFourcc(surface.Info.FourCC, caps), MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (video.m_inMemType == INPUT_SYSTEM_MEMORY)
+    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         MFX_CHECK(!LumaIsNull(&surface) || surface.Data.MemId, MFX_ERR_NULL_PTR);
 #if (MFX_VERSION >= 1027)
