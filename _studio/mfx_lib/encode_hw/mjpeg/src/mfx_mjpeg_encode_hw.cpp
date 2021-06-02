@@ -167,6 +167,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
     : m_checkedJpegQT()
     , m_checkedJpegHT()
+    , m_bUseInternalMem(false)
 {
     m_pCore        = core;
     m_bInitialized = false;
@@ -559,25 +560,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
 
     request->Info              = par->mfx.FrameInfo;
 
-    if (IOPatternIn == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-    {
-        request->NumFrameMin = 1;
-        request->Type =
-            MFX_MEMTYPE_EXTERNAL_FRAME |
-            MFX_MEMTYPE_FROM_ENCODE |
-            MFX_MEMTYPE_SYSTEM_MEMORY;
-    }
-    else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
-    {
-        request->NumFrameMin = 1;
-        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (IOPatternIn == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
-        else
-#endif
-            request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
-    }
+    request->NumFrameMin = 1;
+    request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY;
+    request->Type |= (IOPatternIn == MFX_IOPATTERN_IN_SYSTEM_MEMORY) ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
     request->NumFrameSuggested = std::max(request->NumFrameMin, par->AsyncDepth);
 
     return MFX_ERR_NONE;
@@ -689,14 +674,12 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     // motion JPEG video, we'd better use multiple buffers to support async mode.
     mfxU16 surface_num = JPEG_VIDEO_SURFACE_NUM + m_vParam.AsyncDepth;
 
-    sts = m_ddi->CreateWrapBuffers(surface_num, m_vParam);
-    MFX_CHECK_STS(sts);
+    m_bUseInternalMem = m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || (IsD3D9Simulation(*m_pCore) && (m_vParam.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY));
 
     // WA for RGB swapping issue
     if (m_vParam.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
     {
-        //currently MDF do not support BGR, doesn't matter what format we set for internal frame, result will be the same
-        request.Info.FourCC = (m_pCore->GetVAType() == MFX_HW_VAAPI)?MFX_FOURCC_BGR4:MFX_FOURCC_RGB4;
+        request.Info.FourCC = MFX_FOURCC_BGR4;
         request.Type = MFX_MEMTYPE_VIDEO_INT;
 #ifdef MFX_VA_WIN
         request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
@@ -724,7 +707,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
         }
 #endif //MFX_ENABLE_OPAQUE_MEMORY
     }
-    else if (m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    else if (m_bUseInternalMem)
     {
     // Allocate raw surfaces.
     // This is required only in case of system memory at input
@@ -1173,20 +1156,24 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     // WA for RGB swapping issue
     if (enc.m_vParam.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
     {
-        mfxFrameData dstSurf = {};
+        mfxFrameSurface1 dst{};
+
+        dst.Info = nativeSurf->Info;
+        dst.Info.FourCC = MFX_FOURCC_BGR4;
+        dst.Data.MemId = enc.m_raw.mids[task.m_idx];
+
         bool bExternalFrameLocked = false;
 
-        if(enc.m_pCore->GetVAType() == MFX_HW_VAAPI )
+        if (enc.m_pCore->GetVAType() == MFX_HW_VAAPI || IsD3D9Simulation(*enc.m_pCore))
         {
-            enc.m_pCore->LockFrame(enc.m_raw.mids[task.m_idx], &dstSurf);
-            MFX_CHECK(dstSurf.R != 0, MFX_ERR_LOCK_MEMORY);
+            enc.m_pCore->LockFrame(enc.m_raw.mids[task.m_idx], &dst.Data);
+            MFX_CHECK(dst.Data.R != 0, MFX_ERR_LOCK_MEMORY);
             if (nativeSurf->Data.B == 0)
             {
                 enc.m_pCore->LockExternalFrame(nativeSurf->Data.MemId, &nativeSurf->Data);
                 bExternalFrameLocked = true;
             }
             MFX_CHECK(nativeSurf->Data.B != 0, MFX_ERR_LOCK_MEMORY);
-
 
             const int dstOrder[3] = {2, 1, 0};
             mfxSize roi = {nativeSurf->Info.Width, nativeSurf->Info.Height};
@@ -1195,11 +1182,11 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             mfxU32 srsPitch = nativeSurf->Data.PitchLow + ((mfxU32)nativeSurf->Data.PitchHigh << 16);
-            mfxU32 dstPitch = dstSurf.PitchLow + ((mfxU32)dstSurf.PitchHigh << 16);
-            bool res = setPlaneROI<mfxU8>(0xff, dstSurf.R, dstPitch, setroi);
+            mfxU32 dstPitch = dst.Data.PitchLow + ((mfxU32)dst.Data.PitchHigh << 16);
+            bool res = setPlaneROI<mfxU8>(0xff, dst.Data.R, dstPitch, setroi);
             MFX_CHECK(res, MFX_ERR_UNDEFINED_BEHAVIOR);
             res = swapChannels<mfxU8>(nativeSurf->Data.B, srsPitch,
-                                    dstSurf.R, dstPitch,
+                                    dst.Data.R, dstPitch,
                                     roi, dstOrder);
             MFX_CHECK(res, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -1208,32 +1195,31 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
                 sts = enc.m_pCore->UnlockExternalFrame(nativeSurf->Data.MemId, &nativeSurf->Data);
                 MFX_CHECK_STS(sts);
             }
-            sts = enc.m_pCore->UnlockFrame(enc.m_raw.mids[task.m_idx], &dstSurf);
+            sts = enc.m_pCore->UnlockFrame(enc.m_raw.mids[task.m_idx], &dst.Data);
             MFX_CHECK_STS(sts);
         }
         else
         {
-            mfxFrameSurface1 dst{};
-            mfxU16 src_memtype;
-            dstSurf.MemId = enc.m_raw.mids[task.m_idx];
-            dst.Info = nativeSurf->Info;
-            dst.Info.FourCC = MFX_FOURCC_BGR4;
-            dst.Data = dstSurf;
-            src_memtype = (mfxU16)((nativeSurf->Data.B == 0)?MFX_MEMTYPE_DXVA2_DECODER_TARGET:MFX_MEMTYPE_SYSTEM_MEMORY);
-            src_memtype |= enc.m_isOpaqIn? MFX_MEMTYPE_INTERNAL_FRAME: MFX_MEMTYPE_EXTERNAL_FRAME;
-            sts = enc.m_pCore->DoFastCopyWrapper(&dst,MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_INTERNAL_FRAME,nativeSurf,
-                src_memtype);
+            // In fact this is a CM copy path
+            mfxU16 src_memtype = (mfxU16)((nativeSurf->Data.B == 0) ? MFX_MEMTYPE_DXVA2_DECODER_TARGET : MFX_MEMTYPE_SYSTEM_MEMORY);
+            src_memtype |= enc.m_isOpaqIn ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
+            sts = enc.m_pCore->DoFastCopyWrapper(&dst, MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
+                                                 nativeSurf, src_memtype);
             MFX_CHECK_STS(sts);
         }
         sts = enc.m_pCore->GetFrameHDL(enc.m_raw.mids[task.m_idx], pSurfaceHdl);
     }
-    else if (enc.m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    else if (enc.m_bUseInternalMem)
     {
-        sts = FastCopyFrameBufferSys2Vid(
-            enc.m_pCore,
-            enc.m_raw.mids[task.m_idx],
-            nativeSurf,
-            enc.m_vParam.mfx.FrameInfo);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input");
+        mfxFrameSurface1 surfSrc = MakeSurface(enc.m_vParam.mfx.FrameInfo, *nativeSurf);
+        mfxFrameSurface1 surfDst = MakeSurface(enc.m_vParam.mfx.FrameInfo, enc.m_raw.mids[task.m_idx]);
+
+        mfxU16 inMemType = MFX_MEMTYPE_EXTERNAL_FRAME;
+        inMemType |= enc.m_vParam.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+
+        sts = enc.m_pCore->DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET,
+                                             &surfSrc, inMemType);
         MFX_CHECK_STS(sts);
 
         sts = enc.m_pCore->GetFrameHDL(enc.m_raw.mids[task.m_idx], pSurfaceHdl);
@@ -1246,13 +1232,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
 #endif //MFX_ENABLE_OPAQUE_MEMORY
     else
     {
-        if (MFX_IOPATTERN_IN_VIDEO_MEMORY == enc.m_vParam.IOPattern)
-        {
-            sts = enc.m_pCore->GetExternalFrameHDL(*nativeSurf, surfacePair);
-            surfaceHDL = surfacePair.first;
-        }
-        else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        sts = enc.m_pCore->GetExternalFrameHDL(*nativeSurf, surfacePair);
+        surfaceHDL = surfacePair.first;
     }
     MFX_CHECK_STS(sts);
 

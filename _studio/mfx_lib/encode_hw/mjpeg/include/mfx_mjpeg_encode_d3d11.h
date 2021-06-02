@@ -39,8 +39,6 @@
 
 #include "mfx_mjpeg_encode_d3d9.h" // suggest that the same syncop based on cache functionality is used
 
-#include "libmfx_core_d3d9on11.h"
-
 namespace MfxHwMJpegEncode
 {
     // encoder
@@ -89,11 +87,6 @@ namespace MfxHwMJpegEncode
         D3D11Encoder(D3D11Encoder const &) = delete;
         D3D11Encoder & operator =(D3D11Encoder const &) = delete;
 
-        virtual
-        mfxStatus CreateWrapBuffers(
-            const mfxU16& numFrameMin,
-            const mfxVideoParam& par) override;
-
     protected:
         // async call
         virtual
@@ -123,11 +116,6 @@ namespace MfxHwMJpegEncode
         std::vector<D3DDDIFORMAT>                m_uncompBufInfo;
         std::vector<ENCODE_QUERY_STATUS_PARAMS>  m_feedbackUpdate;
         CachedFeedback                           m_feedbackCached;
-
-
-        mfxFrameAllocResponse                    m_dx9on11response;
-        D3D9ON11VideoCORE*                       m_pDX9ON11Core;
-
         std::vector<mfxHDLPair>                  m_bsQueue;
     };
 

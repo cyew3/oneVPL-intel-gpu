@@ -127,13 +127,6 @@ namespace MfxHwMJpegEncode
         mfxVideoParam     & par,
         JpegEncCaps const & hwCaps);
 
-    mfxStatus FastCopyFrameBufferSys2Vid(
-        VideoCORE*        core,
-        mfxMemId          vidMemId,
-        mfxFrameSurface1* sysSurf,
-        mfxFrameInfo &    frmInfo
-        );
-
     struct ExecuteBuffers
     {
         ExecuteBuffers()

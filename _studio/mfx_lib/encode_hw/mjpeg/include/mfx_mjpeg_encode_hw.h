@@ -150,6 +150,8 @@ protected:
 #endif
 
     mfxExtBuffer*            m_pCheckedExt[3];
+
+    bool                     m_bUseInternalMem;
 };
 
 #endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
