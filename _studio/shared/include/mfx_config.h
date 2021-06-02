@@ -146,15 +146,6 @@
 
 #define MFX_ENABLE_GET_CM_DEVICE
 
-#if defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
-    #undef MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-    #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-
-    #if defined (AS_VPP_SCD_PLUGIN)
-        #define MFX_ENABLE_VPP_SCD_PARALLEL_COPY
-    #endif //defined (AS_VPP_SCD_PLUGIN)
-#endif //defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
-
 #if defined(_WIN32) || defined(_WIN64)
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
