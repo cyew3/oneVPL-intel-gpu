@@ -4114,6 +4114,12 @@ mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *p
             }
         }
 
+        if ((m_inParams.bUseVPP != true) && (m_components[eDEC].m_bufType == MFX_BUF_HW_DX11))
+        {
+            IHWDevice* pHWDevice = m_pHWDevice.get();
+            MFX_CHECK_STS(m_pRender->SetDevice(pHWDevice));
+            MFX_CHECK_STS(m_pRender->SetDecodeD3D11(true));
+        }
         MFX_CHECK_STS(HandleIncompatParamsCode(m_pRender->RenderFrame(pSurface, pControl), IP_ENCASYNC, NULL == pSurface));
     }
 

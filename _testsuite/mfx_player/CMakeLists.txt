@@ -33,6 +33,7 @@ set(common_mfx_pipeline_sources
   src/mfx_factory_default.cpp
   src/mfx_fps_limit_render.cpp
   src/mfx_frame_constructor.cpp
+  src/mfx_frame_locker_utils.cpp
   src/mfx_latency_decoder.cpp
   src/mfx_latency_vpp.cpp
   src/mfx_loop_decoder.cpp

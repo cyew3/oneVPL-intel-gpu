@@ -154,7 +154,34 @@ mfxStatus MFXOutlineRender::RenderFrame(mfxFrameSurface1 * surface, mfxEncodeCtr
         MFX_CHECK_STS(ProcessSequence(m_decoderParams));
     }
 
-    MFX_CHECK_STS(LockFrame(surface));
+#if defined(_WIN32) || defined(_WIN64)
+    mfxHDLPair handle;
+    if (NULL != surface->Data.MemId)
+    {
+        MFX_CHECK_STS(GetFrameHDL(surface->Data.MemId, (mfxHDL*)(&handle)));
+    }
+
+    bool bFrameLocked = false;
+    if (m_bDecodeD3D11)
+    {
+        if (m_pLock == nullptr)
+            m_pLock = new MFXFrameLocker(m_pHWDevice);
+        if (NULL != surface)
+        {
+            if (NULL == surface->Data.Y &&
+                NULL == surface->Data.U &&
+                NULL == surface->Data.V)
+            {
+                MFX_CHECK_STS(m_pLock->MapFrame(&surface->Data, (mfxHDL*)(&handle)));
+                bFrameLocked = true;
+            }
+        }
+    }
+    else
+#endif
+    {
+        MFX_CHECK_STS(LockFrame(surface));
+    }
 
     mfxFrameSurface1 * convertedSurface = surface;
 
@@ -180,7 +207,17 @@ mfxStatus MFXOutlineRender::RenderFrame(mfxFrameSurface1 * surface, mfxEncodeCtr
         return MFX_ERR_UNKNOWN;
     }
 
-    MFX_CHECK_STS(UnlockFrame(surface));
+#if defined(_WIN32) || defined(_WIN64)
+    if (m_bDecodeD3D11)
+    {
+        if (NULL != surface && bFrameLocked)
+            MFX_CHECK_STS(m_pLock->UnmapFrame(&surface->Data));
+    }
+    else
+#endif
+    {
+        MFX_CHECK_STS(UnlockFrame(surface));
+    }
 
     return MFX_ERR_NONE;
 }

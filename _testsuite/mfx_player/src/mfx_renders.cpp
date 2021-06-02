@@ -13,6 +13,7 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_pipeline_utils.h"
 #include "mfx_renders.h"
+#include "mfx_frame_locker_utils.h"
 #include "ippdc.h"
 #include "ippcc.h"
 #include "ippi.h"
@@ -37,6 +38,9 @@ MFXVideoRender::MFXVideoRender( IVideoSession * core
     , m_bAutoView(false)
     , m_nViewId()
     , m_nMemoryModel(GENERAL_ALLOC)
+#if defined(_WIN32) || defined(_WIN64)
+    , m_pLock(nullptr)
+#endif
 {
     if (NULL != status)
         *status = MFX_ERR_NONE;
@@ -94,6 +98,13 @@ mfxStatus MFXVideoRender::Init(mfxVideoParam *par, const vm_char * /*pFilename*/
 
 mfxStatus MFXVideoRender::Close()
 {
+#if defined(_WIN32) || defined(_WIN64)
+    if (m_pLock)
+    {
+        delete m_pLock;
+        m_pLock = nullptr;
+    }
+#endif
     return MFX_ERR_NONE;
 }
 
@@ -168,6 +179,19 @@ mfxStatus MFXVideoRender::UnlockFrame(mfxFrameSurface1 *pSurface)
     return MFX_ERR_NONE;
 }
 
+mfxStatus MFXVideoRender::GetFrameHDL(mfxMemId mid, mfxHDL* handle)
+{
+    if (NULL != mid)
+    {
+        MFX_CHECK_POINTER(m_pSessionWrapper);
+        mfxFrameAllocator* pAlloc = m_pSessionWrapper->GetFrameAllocator();
+        MFX_CHECK_POINTER(pAlloc);
+        MFX_CHECK_STS(pAlloc->GetHDL(pAlloc->pthis, mid, handle));
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus MFXVideoRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pCtrl) 
 { 
     UNREFERENCED_PARAMETER(surface);
@@ -221,6 +245,19 @@ mfxStatus MFXVideoRender::SetDownStream(IFile *pFile)
 mfxStatus MFXVideoRender::GetDevice(IHWDevice **ppDevice)
 {
     MFX_CHECK_POINTER(ppDevice);
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXVideoRender::SetDevice(IHWDevice* pDevice)
+{
+    MFX_CHECK_POINTER(pDevice);
+    m_pHWDevice = pDevice;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXVideoRender::SetDecodeD3D11(bool bDecodeD3D11)
+{
+    m_bDecodeD3D11 = bDecodeD3D11;
     return MFX_ERR_NONE;
 }
 
@@ -402,7 +439,34 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     }
 #endif
 
-    MFX_CHECK_STS(LockFrame(pSurface));
+#if defined(_WIN32) || defined(_WIN64)
+    mfxHDLPair handle;
+    if (NULL != pSurface->Data.MemId)
+    {
+        MFX_CHECK_STS(GetFrameHDL(pSurface->Data.MemId, (mfxHDL*)(&handle)));
+    }
+
+    bool bFrameLocked = false;
+    if (m_bDecodeD3D11)
+    {
+        if (m_pLock == nullptr)
+            m_pLock = new MFXFrameLocker(m_pHWDevice);
+        if (NULL != pSurface)
+        {
+            if (NULL == pSurface->Data.Y &&
+                NULL == pSurface->Data.U &&
+                NULL == pSurface->Data.V)
+            {
+                MFX_CHECK_STS(m_pLock->MapFrame(&pSurface->Data, (mfxHDL*)(&handle)));
+                bFrameLocked = true;
+            }  
+        }
+    }
+    else
+#endif
+    {
+        MFX_CHECK_STS(LockFrame(pSurface));
+    }
 
     mfxFrameSurface1 * pConvertedSurface = pSurface;
 
@@ -442,7 +506,17 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
 
     //MFXTimingDump_StopTimer("CopyFrame", "app", MFX_ERR_NONE);
 
-    MFX_CHECK_STS(UnlockFrame(pSurface));
+#if defined(_WIN32) || defined(_WIN64)
+    if (m_bDecodeD3D11)
+    {
+        if (NULL != pSurface && bFrameLocked)
+            MFX_CHECK_STS(m_pLock->UnmapFrame(&pSurface->Data));
+    }
+    else
+#endif
+    {
+        MFX_CHECK_STS(UnlockFrame(pSurface));
+    }
 
     return MFXVideoRender::RenderFrame(pSurface, pCtrl);
 }
