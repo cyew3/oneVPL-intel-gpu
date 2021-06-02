@@ -732,12 +732,16 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                     sts = VPPDownScaleSurface(&m_mfxSession_SCD, m_pmfxVPP_SCD.get(), &vppSyncpSCD, pFrameData->Surface, &m_IntSurfaces_SCD, true);
                     MFX_CHECK_STS(sts);
                     sts = m_scd.SubmitFrame(&m_IntSurfaces_SCD);
+                    if (sts == MFX_ERR_MORE_DATA)
+                        sts = MFX_ERR_NONE;
                 }
                 else
                 {
                     sts = m_scd.SubmitFrame(pFrameData->Surface);
+                    if (sts == MFX_ERR_MORE_DATA)
+                        sts = MFX_ERR_NONE;
                 }
-                return MFX_ERR_NONE;
+                return sts;
             }
             else if (!isPreEncSCD(m_config, m_ctrl) && isPreEncLA(m_config, m_ctrl)) //LA only case
             {
@@ -779,10 +783,14 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                     sts = VPPDownScaleSurface(&m_mfxSession_SCD, m_pmfxVPP_SCD.get(), &vppSyncpSCD, pFrameData->Surface, &m_IntSurfaces_SCD, false);
                     MFX_CHECK_STS(sts);
                     //----- Sync SCD surface if AdaptiveI is on and submit DS frame to SCD -----//
-                    if (IsOn(m_config.AdaptiveI)) {
+                    if (IsOn(m_config.AdaptiveI))
+                    {
                         sts = VPPSync(&m_mfxSession_SCD, &vppSyncpSCD);
                         MFX_CHECK_STS(sts);
                         sts = m_scd.SubmitFrame(&m_IntSurfaces_SCD);
+                        if (sts == MFX_ERR_MORE_DATA)
+                            sts = MFX_ERR_NONE;
+                        MFX_CHECK_STS(sts);
                         m_scd.GetIntraDecision(par->DisplayOrder, &FrameType);
                         if (FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR))
                             FrameType = (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR); // convert to IREFIDR for Analysis
@@ -800,6 +808,9 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                         sts = VPPSync(&m_mfxSession_SCD, &vppSyncpSCD);
                         MFX_CHECK_STS(sts);
                         sts = m_scd.SubmitFrame(&m_IntSurfaces_SCD);
+                        if (sts == MFX_ERR_MORE_DATA)
+                            sts = MFX_ERR_NONE;
+                        MFX_CHECK_STS(sts);
                         //----- Sync LA Enc -----//
                         sts = VPPSync(m_lpLookAhead.GetEncSession(), &vppSyncpEnc);
                         MFX_CHECK_STS(sts);
@@ -810,14 +821,19 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
                 }
                 else
                 {
-                    sts = m_scd.SubmitFrame(pFrameData->Surface);
+                    sts = VPPDownScaleSurface(&m_mfxSession_LA, m_pmfxVPP_LA.get(), &vppSyncpLA, pFrameData->Surface, m_pIntSurfaces_LA.data(), false);
                     MFX_CHECK_STS(sts);
-                    if (IsOn(m_config.AdaptiveI)) {
+                    sts = m_scd.SubmitFrame(pFrameData->Surface);
+                    if (sts == MFX_ERR_MORE_DATA)
+                        sts = MFX_ERR_NONE;
+                    MFX_CHECK_STS(sts);
+                    if (IsOn(m_config.AdaptiveI))
+                    {
                         m_scd.GetIntraDecision(par->DisplayOrder, &FrameType);
                         if (FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR))
                             FrameType = (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR); // convert to IREFIDR for Analysis
                     }
-                    sts = m_lpLookAhead.Submit(pFrameData->Surface, FrameType);
+                    sts = m_lpLookAhead.Submit(m_pIntSurfaces_LA.data(), FrameType);
                     MFX_CHECK_STS(sts);
                 }
             }
@@ -827,7 +843,12 @@ mfxStatus EncTools::Submit(mfxEncToolsTaskParam const * par)
         else
         {
             if (isPreEncSCD(m_config, m_ctrl))
+            {
                 sts = m_scd.SubmitFrame(pFrameData->Surface);
+                if (sts == MFX_ERR_MORE_DATA)
+                    sts = MFX_ERR_NONE;
+                MFX_CHECK_STS(sts);
+            }
             if (isPreEncLA(m_config, m_ctrl))
             {
                 mfxU16 FrameType = 0;
