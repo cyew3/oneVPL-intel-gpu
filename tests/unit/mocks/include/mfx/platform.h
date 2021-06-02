@@ -49,13 +49,13 @@ namespace mocks { namespace mfx
             case HW_RYF:     return detail::IGFX_RYEFIELD;
             case HW_RKL:     return detail::IGFX_ROCKETLAKE;
             case HW_DG1:     return detail::IGFX_DG1;
-            case HW_ATS:     return detail::IGFX_TIGERLAKE_HP;
             case HW_DG2:     return detail::IGFX_DG2;
             case HW_ADL_S:   return detail::IGFX_ALDERLAKE_S;
-            case HW_ADL_UH:  return detail::IGFX_ALDERLAKE_UH;
+            case HW_ADL_P:   return detail::IGFX_ALDERLAKE_P;
             case HW_PVC:     return detail::IGFX_PVC;
 
             case HW_MTL:     return detail::IGFX_METEORLAKE;
+            case HW_ELG:     return detail::IGFX_ELASTICG;
 
             default:             return detail::IGFX_UNKNOWN;
         }
@@ -88,12 +88,12 @@ namespace mocks { namespace mfx
             case HW_RYF:     return std::forward<F>(f)(std::integral_constant<int, HW_RYF>{},     std::forward<Args>(args)...);
             case HW_RKL:     return std::forward<F>(f)(std::integral_constant<int, HW_RKL>{},     std::forward<Args>(args)...);
             case HW_DG1:     return std::forward<F>(f)(std::integral_constant<int, HW_DG1>{},     std::forward<Args>(args)...);
-            case HW_ATS:     return std::forward<F>(f)(std::integral_constant<int, HW_ATS>{},     std::forward<Args>(args)...);
             case HW_DG2:     return std::forward<F>(f)(std::integral_constant<int, HW_DG2>{},     std::forward<Args>(args)...);
             case HW_ADL_S:   return std::forward<F>(f)(std::integral_constant<int, HW_ADL_S>{},   std::forward<Args>(args)...);
-            case HW_ADL_UH:  return std::forward<F>(f)(std::integral_constant<int, HW_ADL_UH>{},  std::forward<Args>(args)...);
+            case HW_ADL_P:   return std::forward<F>(f)(std::integral_constant<int, HW_ADL_P>{},  std::forward<Args>(args)...);
             case HW_PVC:     return std::forward<F>(f)(std::integral_constant<int, HW_PVC>{},     std::forward<Args>(args)...);
             case HW_MTL:     return std::forward<F>(f)(std::integral_constant<int, HW_MTL>{},     std::forward<Args>(args)...);
+            case HW_ELG:     return std::forward<F>(f)(std::integral_constant<int, HW_ELG>{},     std::forward<Args>(args)...);
 
             default:         return std::forward<F>(f)(std::integral_constant<int, HW_UNKNOWN>{}, std::forward<Args>(args)...);
         }

@@ -388,7 +388,7 @@ namespace test
 
     static std::vector<mfxU32> platforms =
     {
-        mocks::mfx::HW_ATS // MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET
+        mocks::mfx::HW_TGL_LP // MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET
     };
 
     template<typename T>

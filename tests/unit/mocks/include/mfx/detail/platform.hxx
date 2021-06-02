@@ -63,12 +63,17 @@ namespace mocks { namespace mfx
             IGFX_RYEFIELD,
             IGFX_ROCKETLAKE,
             IGFX_ALDERLAKE_S,
-            IGFX_ALDERLAKE_UH,
-            IGFX_DG1          = 1210,
-            IGFX_TIGERLAKE_HP = 1250,
-            IGFX_DG2 = 1270,
-            IGFX_PVC = 1271,
+            IGFX_ALDERLAKE_P,
+
+            IGFX_SOFIA_LTE1 = 1001,
+            IGFX_SOFIA_LTE2 = 1002,
+
+            IGFX_DG1        = 1210,
+            IGFX_XE_HP      = 1250,
+            IGFX_DG2        = 1270,
+            IGFX_PVC        = 1271,
             IGFX_METEORLAKE = 1272,
+            IGFX_ELASTICG   = 1273,
 
             IGFX_GENNEXT               = 0x7ffffffe,
 
@@ -110,18 +115,18 @@ namespace mocks { namespace mfx
         HW_EHL       = 0x1500002,
 
         HW_TGL_LP    = 0x1600000,
-
-        HW_RYF       = HW_TGL_LP + 1,
         HW_RKL       = HW_TGL_LP + 2,
         HW_DG1       = HW_TGL_LP + 3,
-        HW_TGL_HP    = HW_TGL_LP + 4,
-        HW_ATS       = HW_TGL_HP,
-        HW_DG2       = HW_ATS + 1,
-        HW_ADL_S     = HW_ATS + 2,
-        HW_ADL_UH    = HW_ATS + 3,
-        HW_PVC       = HW_ATS + 4,
+        HW_ADL_S     = HW_TGL_LP + 4,
+        HW_ADL_P     = HW_TGL_LP + 5,
 
-        HW_MTL       = 0x1700000
+        HW_RYF       = HW_TGL_LP + 1,
+        HW_XE_HP_SDV = HW_TGL_LP + 6,
+        HW_DG2       = HW_XE_HP_SDV + 1,
+        HW_PVC       = HW_XE_HP_SDV + 2,
+
+        HW_MTL       = 0x1700000,
+        HW_ELG       = HW_MTL + 1
     };
 
 } }
