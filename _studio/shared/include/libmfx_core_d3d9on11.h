@@ -61,8 +61,6 @@ public:
 
     virtual mfxStatus            AllocFrames(mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, bool isNeedCopy = true)  override;
 
-    mfxMemId                     WrapSurface(mfxMemId dx9Surface, const mfxFrameAllocResponse& dx11Surfaces, bool isNeedRewrap = false);
-    mfxMemId                     UnWrapSurface(mfxMemId wrappedSurface, bool isNeedUnwrap = false);
     mfxStatus                    CopyDX11toDX9(const mfxMemId dx11MemId, const mfxMemId dx9MemId);
     mfxStatus                    CopyDX9toDX11(const mfxMemId dx9MemId, const mfxMemId dx11MemId);
 
@@ -82,8 +80,6 @@ private:
     IDirect3DDeviceManager9*     m_pDirect3DDeviceManager;
     bool                         m_hasDX9FrameAllocator;
     mfxFrameAllocator            m_dx9FrameAllocator;
-    std::map<mfxMemId, mfxMemId> m_dx9MemIdMap;
-    std::map<mfxMemId, mfxMemId> m_dx9MemIdUsed; //for lightweight opposite-mapping
     static std::mutex            m_copyMutex;
 
     static bool                  m_IsD3D9On11Core;

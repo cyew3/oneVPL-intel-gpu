@@ -553,54 +553,6 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::SetFrameAllocator(mfxFrameAllocator* alloca
     return MFX_ERR_NONE;
 }
 
-template <class Base>
-mfxMemId D3D9ON11VideoCORE_T<Base>::WrapSurface(mfxMemId dx9Surface, const mfxFrameAllocResponse& dx11Surfaces, bool isNeedRewrap)
-{
-    UMC::AutomaticUMCMutex guard(m_guard);
-    if (!dx11Surfaces.mids) return 0;
-
-    auto it = m_dx9MemIdMap.find(dx9Surface);
-    if (it == m_dx9MemIdMap.end() || isNeedRewrap)
-    {
-        for (int i = 0; i < dx11Surfaces.NumFrameActual; i++)
-        {
-            // Means that we were not map this surface previously.
-            if (m_dx9MemIdUsed.find(dx11Surfaces.mids[i]) == m_dx9MemIdUsed.end())
-            {
-                m_dx9MemIdUsed.insert(std::pair<mfxMemId, mfxMemId>(dx11Surfaces.mids[i], dx9Surface));
-                m_dx9MemIdMap.insert(std::pair<mfxMemId, mfxMemId>(dx9Surface, dx11Surfaces.mids[i]));
-                return dx11Surfaces.mids[i];
-            }
-        }
-
-        return 0;
-    }
-
-    return it->second;
-}
-
-template <class Base>
-mfxMemId D3D9ON11VideoCORE_T<Base>::UnWrapSurface(mfxMemId wrappedSurface, bool isNeedUnwrap)
-{
-    UMC::AutomaticUMCMutex guard(m_guard);
-
-    if (m_dx9MemIdMap.empty()) return wrappedSurface;
-    // We try to find dx11 surface id by dx9 surface id.
-    auto it = m_dx9MemIdMap.find(wrappedSurface);
-    if (it != m_dx9MemIdMap.end())
-    {
-        mfxMemId dx11MemId = it->second;
-        if (!m_session->m_pDECODE || isNeedUnwrap && m_session->m_pVPP)
-        {
-            m_dx9MemIdUsed.erase(dx11MemId);
-            m_dx9MemIdMap.erase(wrappedSurface);
-        }
-        return dx11MemId;
-    }
-    return 0;
-}
-
-
 static mfxU32 DXGItoMFX(DXGI_FORMAT format)
 {
     switch (format)
