@@ -1202,7 +1202,7 @@ SurfaceSource::SurfaceSource(VideoCORE* core, const mfxVideoParam& video_param, 
         output_type |= (video_param.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
 
         // In this case decoder works directly with SFC surfaces and real decoders surfaces are allocated inside driver (DDI limitation)
-        bool SFC_on_windows = dec_postprocessing && m_core->GetVAType() == MFX_HW_D3D11;
+        m_SFC_on_windows = dec_postprocessing && m_core->GetVAType() == MFX_HW_D3D11;
 
         auto msdk20_core = dynamic_cast<CommonCORE20*>(m_core);
         MFX_CHECK_WITH_THROW(msdk20_core, MFX_ERR_UNSUPPORTED, mfx::mfxStatus_exception(MFX_ERR_UNSUPPORTED));
@@ -1212,8 +1212,8 @@ SurfaceSource::SurfaceSource(VideoCORE* core, const mfxVideoParam& video_param, 
             request = request_internal;
         }
 
-        m_surface20_cache_decoder_surfaces.reset(new SurfaceCache(*msdk20_core, SFC_on_windows ? output_type : request.Type,
-            SFC_on_windows ? output_info : request.Info));
+        m_surface20_cache_decoder_surfaces.reset(new SurfaceCache(*msdk20_core, m_SFC_on_windows ? output_type : request.Type,
+            m_SFC_on_windows ? output_info : request.Info));
 
         m_sw_fallback_sys_mem = (MFX_PLATFORM_SOFTWARE == platform) && (video_param.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
@@ -1567,7 +1567,7 @@ mfxFrameSurface1* SurfaceSource::GetDecoderSurface(UMC::FrameMemID index)
 
 UMC::Status SurfaceSource::CheckForRealloc(const UMC::VideoDataInfo & info, const mfxFrameSurface1& surf, bool realloc_allowed) const
 {
-    bool realloc_required = info.GetWidth() > surf.Info.Width || info.GetHeight() > surf.Info.Height;
+    bool realloc_required = !m_SFC_on_windows && (info.GetWidth() > surf.Info.Width || info.GetHeight() > surf.Info.Height);
 
     MFX_CHECK(!realloc_required, realloc_allowed ? UMC::UMC_ERR_NOT_ENOUGH_BUFFER : UMC::UMC_ERR_UNSUPPORTED);
 
@@ -1993,6 +1993,9 @@ mfxI32 SurfaceSource::FindSurface(mfxFrameSurface1 *surf, bool isOpaq)
 
 #if defined(MFX_ONEVPL)
 mfxFrameSurface1* SurfaceSource::GetInternalSurface(mfxFrameSurface1* sfc_surf) {
+    if (m_SFC_on_windows)
+        return sfc_surf;
+
     auto decSurfIt = m_output_work_surface_map.find(sfc_surf->Data.MemId);
     if (decSurfIt == std::end(m_output_work_surface_map))
     {
