@@ -102,15 +102,26 @@ public:
     virtual mfxStatus Close();
 
 protected:
+    struct EncodingTasks
+    {
+        mfxSyncPoint syncp = nullptr;
+        mfxBitstreamWrapperWithLock* internalBst = nullptr;
+        mfxBitstream* appBst = nullptr;
+        mfxSession session = nullptr;
+        mfxI32 firstFrameOfSecondEncoder = -1;
+    };
+
     virtual mfxStatus InitSession(
         mfxSession* appSession, mfxSession* internalSession,
         mfxHandleType type, mfxHDL hdl, mfxAccelerationMode accelMode, mfxMediaAdapterType mediaAdapterType, mfxU32 adapterNum);
-    
+
     mfxStatus CreateEncoder(mfxMediaAdapterType adapterType, mfxEncoderNum encoderNum);
     mfxStatus ConfigureEncodersPool();
 
     virtual mfxStatus CopySurface(mfxFrameSurface1* appSurface, mfxFrameSurface1** surfaceToEncode) = 0;
     mfxBitstreamWrapperWithLock* GetFreeBitstream(mfxEncoderNum adapterType);
+
+    void CorrectFrameIfNeeded(const EncodingTasks* task);
 
 protected:
     mfxSession m_appSession = nullptr;
@@ -118,13 +129,7 @@ protected:
     std::vector<std::unique_ptr<SingleGpuEncode>> m_singleGpuEncoders;
 
     std::map<SingleGpuEncode*, std::vector<mfxBitstreamWrapperWithLock*>> m_bitstreams;
-    struct EncodingTasks
-    {
-        mfxSyncPoint syncp = nullptr;
-        mfxBitstreamWrapperWithLock* internalBst = nullptr;
-        mfxBitstream* appBst = nullptr;
-        mfxSession session = nullptr;
-    };
+
     std::queue<EncodingTasks> m_submittedTasks;
     std::map<mfxSyncPoint, EncodingTasks> m_waitingSyncOpTasks;
 
@@ -140,6 +145,8 @@ protected:
 
     bool m_isEncSupportedOnIntegrated = false;
     bool m_isEncSupportedOnDiscrete = false;
+
+    mfxI32 m_firstFrameOfSecondEncoder = -1;
 };
 
 class HyperEncodeSys : public HyperEncodeBase

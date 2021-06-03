@@ -73,6 +73,9 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
     *appSyncp = nullptr;
 
     const mfxEncoderNum encoderNum = (mfxEncoderNum)((m_surfaceNum / m_mfxEncParams->mfx.GopPicSize) % MFX_ENCODERS_COUNT);
+    if (m_firstFrameOfSecondEncoder == -1 && encoderNum == MFX_ENCODER_NUM2) {
+        m_firstFrameOfSecondEncoder = 1;
+    }
 
     auto encoder = std::find_if(m_singleGpuEncoders.begin(), m_singleGpuEncoders.end(),
         [encoderNum](const std::unique_ptr<SingleGpuEncode>& it) {
@@ -116,7 +119,9 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
         if (syncp) {
             std::unique_lock<std::mutex> lock(m_mutex);
             bst->Locked = true;
-            m_submittedTasks.push({ syncp, bst, nullptr, encoder->m_session });
+            m_submittedTasks.push({ syncp, bst, nullptr, encoder->m_session, m_firstFrameOfSecondEncoder });
+            if (m_firstFrameOfSecondEncoder == 1)
+                m_firstFrameOfSecondEncoder = 0;
         }
 
         if (bLastFrameInGOP)
@@ -136,7 +141,7 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
                 if (syncp) {
                     std::unique_lock<std::mutex> lock(m_mutex);
                     bst->Locked = true;
-                    m_submittedTasks.push({ syncp, bst, nullptr, encoder->m_session });
+                    m_submittedTasks.push({ syncp, bst, nullptr, encoder->m_session, m_firstFrameOfSecondEncoder });
                 }
             } while (sts != MFX_ERR_MORE_DATA);
     } else {
@@ -152,7 +157,7 @@ mfxStatus HyperEncodeBase::EncodeFrameAsync(
             if (syncp) {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 bst->Locked = true;
-                m_submittedTasks.push({ syncp, bst, nullptr, encoder->m_session });
+                m_submittedTasks.push({ syncp, bst, nullptr, encoder->m_session, m_firstFrameOfSecondEncoder });
             }
         } while (sts != MFX_ERR_MORE_DATA);
     }
@@ -205,6 +210,8 @@ mfxStatus HyperEncodeBase::Synchronize(
         if ((task.appBst->MaxLength - (task.appBst->DataOffset + task.appBst->DataLength)) < task.internalBst->DataLength)
             return MFX_ERR_NOT_ENOUGH_BUFFER;
 
+        CorrectFrameIfNeeded(&task);
+
         memcpy(task.appBst->Data + task.appBst->DataOffset + task.appBst->DataLength, task.internalBst->Data + task.internalBst->DataOffset, task.internalBst->DataLength);
         task.appBst->DataLength += task.internalBst->DataLength;
         task.appBst->DecodeTimeStamp = task.internalBst->DecodeTimeStamp;
@@ -230,6 +237,24 @@ mfxStatus HyperEncodeBase::Close()
     }
 
     return MFX_ERR_NONE;
+}
+
+void HyperEncodeBase::CorrectFrameIfNeeded(const EncodingTasks* task)
+{
+    // need to remove IVF sequence header (first 32 bytes) from the first frame of second AV1 encoder
+    // otherwise the stream will be displayed incorrectly
+    if (task->firstFrameOfSecondEncoder == 1) {
+        char sign[4] = "";
+        for (mfxU8 i = 0; i < 4; i++)
+            sign[i] = task->internalBst->Data[task->internalBst->DataOffset + i];
+
+        // bytes 0-3 of IVF sequence header are signature (DKIF)
+        // if signature is found, shift the frame by 32 bytes
+        if (strstr((char const*)(sign), "DKIF")) {
+            task->internalBst->DataOffset += 32;
+            task->internalBst->DataLength -= 32;
+        }
+    }
 }
 
 mfxStatus HyperEncodeBase::InitSession(mfxSession* appSession, mfxSession* internalSession, mfxHandleType, mfxHDL, mfxAccelerationMode accelMode, mfxMediaAdapterType, mfxU32 adapterNum)

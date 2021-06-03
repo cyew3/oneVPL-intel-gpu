@@ -145,7 +145,8 @@ mfxStatus ImplementationGopBased::CheckParams(mfxVideoParam* par)
         return MFX_ERR_UNSUPPORTED;
 
     if (MFX_CODEC_AVC != par->mfx.CodecId &&
-        MFX_CODEC_HEVC != par->mfx.CodecId)
+        MFX_CODEC_HEVC != par->mfx.CodecId &&
+        MFX_CODEC_AV1 != par->mfx.CodecId)
         return MFX_ERR_UNSUPPORTED;
 
     if (!IsOn(par->mfx.LowPower))
