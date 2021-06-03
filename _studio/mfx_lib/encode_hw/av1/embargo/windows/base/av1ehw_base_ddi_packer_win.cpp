@@ -354,6 +354,7 @@ void DDIPacker::FillSpsBuffer(
     sps.CodingToolFlags.fields.enable_warped_motion = bs_sh.enable_warped_motion;
 
     sps.GopPicSize = par.mfx.GopPicSize;
+    sps.GopRefDist = par.mfx.GopRefDist;
     sps.TargetUsage = static_cast<UCHAR>(par.mfx.TargetUsage);
     sps.RateControlMethod = MapRateControlMethodToDDI(par.mfx.RateControlMethod);
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 
 #define tagENCODE_CAPS_AV1 tagENCODE_CAPS_STRUCT
 
+// DDI 0.20
 typedef struct tagENCODE_CAPS_AV1
 {
     union
@@ -48,7 +49,8 @@ typedef struct tagENCODE_CAPS_AV1
             UINT   FrameOBUSupport             : 1;
             UINT   SuperResSupport             : 1;
             UINT   CDEFChannelStrengthSupport  : 1;
-            UINT                               : 12;
+            UINT   RandomAccessSupport         : 1; 
+            UINT                               : 11;
         };
         UINT       CodingLimits;
     };
@@ -153,18 +155,20 @@ typedef struct tagENCODE_CAPS_AV1
 
     union {
         struct {
-            UINT  CQP           : 1;
-            UINT  CBR           : 1;
-            UINT  VBR           : 1;
-            UINT  AVBR          : 1;
-            UINT  ICQ           : 1;
-            UINT  VCM           : 1;
-            UINT  QVBR          : 1;
-            UINT  CQL           : 1;
-            UINT  reserved1     : 8; // [0]
-            UINT  SlidingWindow : 1;
-            UINT  LowDelay      : 1;
-            UINT  reserved2     : 14; // [0]
+            UINT  CQP                      : 1;
+            UINT  CBR                      : 1;
+            UINT  VBR                      : 1;
+            UINT  AVBR                     : 1;
+            UINT  ICQ                      : 1;
+            UINT  VCM                      : 1;
+            UINT  QVBR                     : 1;
+            UINT  CQL                      : 1;
+            UINT  reserved1                : 8; // [0]
+            UINT  SlidingWindow            : 1;
+            UINT  LowDelay                 : 1;
+            UINT  LookaheadBRCSupport      : 1;  
+            UINT  LookaheadAnalysisSupport : 1;  
+            UINT  reserved2                : 12; // [0]
         } fields;
         UINT value;
     } SupportedRateControlMethods;
@@ -200,7 +204,10 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_AV1
 
     UCHAR  TargetUsage;
     UCHAR  RateControlMethod;
-    USHORT reserved16b;
+
+    UCHAR  GopRefDist;
+    UCHAR  GopOptFlag                 : 2;
+    UCHAR  reserved6b                 : 6;
 
     UINT   TargetBitRate[8]; // One per temporal layer
     UINT   MaxBitRate;
@@ -219,7 +226,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_AV1
             UINT bStillPicture        : 1;
             UINT bUseRawReconRef      : 1;
             UINT DisplayFormatSwizzle : 1; // [0]
-            UINT bReserved            : 28;
+            UINT bLookAheadPhase      : 1;
+            UINT HierarchicalFlag     : 1;
+            UINT bReserved            : 26;
         } fields;
         UINT value;
     } SeqFlags;
@@ -254,9 +263,14 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_AV1
         UINT value;
     } CodingToolFlags;
 
-    UCHAR order_hint_bits_minus_1; // [0..7]
+    UCHAR order_hint_bits_minus_1;          // [0..7]
 
-    UCHAR reserved8b1;
+    union
+    {
+        UCHAR LookaheadDepth;               // [0..100]
+        UCHAR TargetFrameSizeConfidence;    // [0..100]
+    };
+
     UCHAR reserved8b2;
     UCHAR reserved8b3;
     UINT  reserved32b[16];
@@ -322,7 +336,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
     UCHAR  CurrReconstructedPic; // [0..11]
     UCHAR  RefFrameList[8];      // [0..11, 0xFF]
     UCHAR  ref_frame_idx[7];     // [0..7]
-    UCHAR  Reserved8b2;
+    UCHAR  HierarchLevelPlus1; 
 
     UCHAR  primary_ref_frame;    // [0..7]
     UCHAR  reserved8b3;
@@ -507,7 +521,10 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
 
     ENCODE_INPUT_TYPE InputType;
 
-    UINT reserved32b[16];
+    UINT TargetFrameSize;
+    UCHAR QpModulationStrength;
+    UCHAR reserved8b5[3];
+    UINT reserved32b[14];
 
 } ENCODE_SET_PICTURE_PARAMETERS_AV1;
 
