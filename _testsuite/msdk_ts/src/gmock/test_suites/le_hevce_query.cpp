@@ -279,7 +279,7 @@ namespace le_hevce_query
         /* Ext Buffers */
         {/*07*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION_SPSPPS, MFX_HYPERMODE_ON, {} },
         {/*08*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VIDEO_SIGNAL_INFO, MFX_HYPERMODE_ON, {} },
-        {/*09*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION, MFX_HYPERMODE_ON, {} },
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION, MFX_HYPERMODE_ON, {} },
         {/*10*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION2, MFX_HYPERMODE_ON, {} },
         {/*11*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, MFX_HYPERMODE_ON, {} },
         {/*12*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, MFX_HYPERMODE_ON, {} },
@@ -290,7 +290,7 @@ namespace le_hevce_query
 
         /* Rate Control Method */
         // single fallback if method is not supported in dual mode
-        {/*17*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
         {/*18*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
         {/*19*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
         {/*20*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },

@@ -95,17 +95,17 @@ namespace le_avce_query
         {/*00*/ MFX_ERR_NONE, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 } },
         {/*01*/ MFX_ERR_NONE, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 2 } },
         {/*02*/ MFX_ERR_NONE, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 3 } },
-        {/*03*/ MFX_ERR_NONE, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 } },
-        {/*04*/ MFX_ERR_NONE, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 5 } },
-        {/*05*/ MFX_ERR_NONE, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 6 } },
-        {/*06*/ MFX_ERR_NONE, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 } },
+        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 } },
+        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 5 } },
+        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 6 } },
+        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, TARGET_USAGE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 } },
 
         /* Rate Control Method */
         // single fallback if method is not supported in dual mode
-        {/*07*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*08*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*09*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
-        {/*10*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
         {/*11*/ MFX_ERR_UNSUPPORTED, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
         {/*12*/ MFX_ERR_UNSUPPORTED, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1 } },
         {/*13*/ MFX_ERR_UNSUPPORTED, RATE_CONTROL, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED2 } },
@@ -122,8 +122,8 @@ namespace le_avce_query
         {/*23*/ MFX_ERR_UNSUPPORTED, RATE_CONTROL, NONE, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
         // forced dual mode
         {/*24*/ MFX_ERR_UNSUPPORTED, RATE_CONTROL, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*25*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*26*/ MFX_ERR_NONE, RATE_CONTROL, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*26*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RATE_CONTROL, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
         {/*27*/ MFX_ERR_UNSUPPORTED, RATE_CONTROL, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
         {/*28*/ MFX_ERR_UNSUPPORTED, RATE_CONTROL, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
 
@@ -133,16 +133,16 @@ namespace le_avce_query
         {/*31*/ MFX_ERR_INVALID_HANDLE, SESSION_NULL, NONE, MFX_HYPERMODE_ON, {} },
 
         /* set alloc handle */
-        {/*32*/ MFX_ERR_NONE, SET_ALLOCK, NONE, MFX_HYPERMODE_ADAPTIVE, { } },
+        {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SET_ALLOCK, NONE, MFX_HYPERMODE_ADAPTIVE, { } },
         {/*33*/ MFX_ERR_NONE, SET_ALLOCK, NONE, MFX_HYPERMODE_OFF, { } },
-        {/*34*/ MFX_ERR_NONE, SET_ALLOCK, NONE, MFX_HYPERMODE_ON, { } },
+        {/*34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SET_ALLOCK, NONE, MFX_HYPERMODE_ON, { } },
 
         /* zero param */
         {/*35*/ MFX_ERR_NONE, IN_PAR_NULL, NONE, MFX_HYPERMODE_ON, {} },
         {/*36*/ MFX_ERR_NULL_PTR, OUT_PAR_NULL, NONE, MFX_HYPERMODE_ON, {} },
 
         /* IOPattern */
-        {/*37*/ MFX_ERR_NONE, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { } },
+        {/*37*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { } },
         {/*38*/ MFX_ERR_UNSUPPORTED, IO_PATTERN, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0x8000 } },
         {/*39*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, IO_PATTERN, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, 0x8000 } },
 
@@ -155,7 +155,7 @@ namespace le_avce_query
         {/*42*/ MFX_ERR_UNSUPPORTED, RESOLUTION, DELTA, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 3 } },
         {/*43*/ MFX_ERR_UNSUPPORTED, RESOLUTION, W_GT_MAX, MFX_HYPERMODE_ON, {} },
         {/*44*/ MFX_ERR_UNSUPPORTED, RESOLUTION, H_GT_MAX, MFX_HYPERMODE_ON, {} },
-        {/*45*/ MFX_ERR_NONE, RESOLUTION, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
+        {/*45*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0 },
                                                                     { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0 },
                                                                     { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
                                                                     { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },}},
@@ -164,7 +164,7 @@ namespace le_avce_query
         // LowPower require Progressive
         {/*46*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
         {/*47*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-        {/*48*/ MFX_ERR_NONE, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE } },
+        {/*48*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE } },
         {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
         {/*50*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
 
@@ -204,18 +204,18 @@ namespace le_avce_query
         {/*62*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 255 } },
 
         /* num thread */
-        {/*63*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 1 } },
-        {/*64*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 4 } },
+        {/*63*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 1 } },
+        {/*64*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumThread, 4 } },
 
         /* gop ref dist */
         {/*65*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 } },
 
         /* got opt flag */
-        {/*66*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
+        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
 
         /* protected */
-        {/*67*/ MFX_ERR_NONE, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
-        {/*68*/ MFX_ERR_NONE, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
+        {/*67*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
+        {/*68*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
         {/*69*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
 };
 
