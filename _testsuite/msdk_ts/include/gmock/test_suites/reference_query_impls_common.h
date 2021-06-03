@@ -52,6 +52,46 @@ namespace query_impls_description
     };
     ReferenceCommon ref_default_common;
 
+    class ReferenceCommonTGL : public ReferenceCommon
+    {
+    public:
+        ReferenceCommonTGL()
+        {
+            m_reference.DeviceList = {
+                0x9A40, 0x9A49, 0x9A59, 0x9A60, 0x9A68, 0x9A70, 0x9A78,
+                0xFF20, 0x9A09, 0x9A39, 0x9A69, 0x9A79,
+                0x4C80, 0x4C8A, 0x4C81, 0x4C8B, 0x4C90, 0x4C9A  // RKL is derivative of TGL
+            };
+        }
+    };
+    static ReferenceCommonTGL ref_TGL_common;
+
+    class ReferenceCommonDG1 : public ReferenceCommon
+    {
+    public:
+        ReferenceCommonDG1()
+        {
+            m_reference.DeviceList = {
+                0x4905, 0x4906, 0x4907, 0x4908
+            };
+        }
+    };
+    static ReferenceCommonDG1 ref_DG1_common;
+
+    class ReferenceCommonADL : public ReferenceCommon
+    {
+    public:
+        ReferenceCommonADL()
+        {
+            m_reference.DeviceList = {
+                0x4600, 0x4680, 0x4681, 0x4683, 0x4690, 0x4691, 0x4693, 0x4698, 0x4699, 0x46A0,
+                0x46A1, 0x46A3, 0x46A6, 0x4626, 0x46B1, 0x46B3, 0x46A8, 0x4628, 0x46C0, 0x46C1,
+                0x46C3, 0x46AA, 0x462A
+            };
+        }
+    };
+    static ReferenceCommonADL ref_ADL_common;
+
     class ReferenceCommonATS : public ReferenceCommon
     {
     public:

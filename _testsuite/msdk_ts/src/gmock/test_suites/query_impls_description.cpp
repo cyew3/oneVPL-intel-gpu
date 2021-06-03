@@ -58,6 +58,14 @@ private:
             return isEncode ? ref_ATS_enc.GetReference() : ref_ATS_dec.GetReference();
         case MFX_HW_DG2:
             return isEncode ? ref_DG2_enc.GetReference() : ref_DG2_dec.GetReference();
+        case MFX_HW_TGL:
+        case MFX_HW_RKL:
+            return isEncode ? ref_TGL_enc.GetReference() : ref_TGL_dec.GetReference();
+        case MFX_HW_DG1:
+            return isEncode ? ref_DG1_enc.GetReference() : ref_DG1_dec.GetReference();
+        case MFX_HW_ADL_S:
+        case MFX_HW_ADL_P:
+            return isEncode ? ref_ADL_enc.GetReference() : ref_ADL_dec.GetReference();
         default:
             break;
         }
@@ -131,6 +139,14 @@ private:
             return ref_ATS_vpp.GetReference();
         case MFX_HW_DG2:
             return ref_DG2_vpp.GetReference();
+        case MFX_HW_TGL:
+        case MFX_HW_RKL:
+            return ref_TGL_vpp.GetReference();
+        case MFX_HW_DG1:
+            return ref_DG1_vpp.GetReference();
+        case MFX_HW_ADL_S:
+        case MFX_HW_ADL_P:
+            return ref_ADL_vpp.GetReference();
         default:
             break;
         }
@@ -175,6 +191,14 @@ private:
             return ref_ATS_common.GetReference();
         case MFX_HW_DG2:
             return ref_DG2_common.GetReference();
+        case MFX_HW_TGL:
+        case MFX_HW_RKL:
+            return ref_TGL_common.GetReference();
+        case MFX_HW_DG1:
+            return ref_DG1_common.GetReference();
+        case MFX_HW_ADL_S:
+        case MFX_HW_ADL_P:
+            return ref_ADL_common.GetReference();
         default:
             break;
         }

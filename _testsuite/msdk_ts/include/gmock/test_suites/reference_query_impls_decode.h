@@ -316,6 +316,17 @@ namespace query_impls_description
     };
     static ReferenceDecodeDefault ref_default_dec;
 
+    class ReferenceDecodeTGL : public ReferenceDecode
+    {};
+    static ReferenceDecodeTGL ref_TGL_dec;
+
+    class ReferenceDecodeDG1 : public ReferenceDecode
+    {};
+    static ReferenceDecodeDG1 ref_DG1_dec;
+
+    typedef ReferenceDecodeTGL ReferenceDecodeADL;
+    static ReferenceDecodeADL ref_ADL_dec;
+
     class ReferenceDecodeATS : public ReferenceDecode
     {};
     static ReferenceDecodeATS ref_ATS_dec;

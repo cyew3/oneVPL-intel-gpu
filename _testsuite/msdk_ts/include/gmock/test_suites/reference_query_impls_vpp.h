@@ -165,6 +165,27 @@ END_FILTER
     };
     static ReferenceVppDefault ref_default_vpp;
 
+    class ReferenceVppTGL : public ReferenceVpp
+    {
+    public:
+        ReferenceVppTGL()
+        {
+        }
+    };
+    static ReferenceVppTGL ref_TGL_vpp;
+
+    class ReferenceVppDG1 : public ReferenceVpp
+    {
+    public:
+        ReferenceVppDG1()
+        {
+        }
+    };
+    static ReferenceVppDG1 ref_DG1_vpp;
+
+    typedef ReferenceVppTGL ReferenceVppADL;
+    static ReferenceVppADL ref_ADL_vpp;
+
     class ReferenceVppATS : public ReferenceVpp
     {
     public:

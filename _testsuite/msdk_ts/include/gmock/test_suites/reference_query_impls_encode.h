@@ -369,4 +369,11 @@ namespace query_impls_description
         }
     };
     static ReferenceEncodeDG2 ref_DG2_enc;
+
+    typedef ReferenceEncodeATS ReferenceEncodeTGL;
+    static ReferenceEncodeTGL ref_TGL_enc;
+    typedef ReferenceEncodeATS ReferenceEncodeDG1;
+    static ReferenceEncodeDG1 ref_DG1_enc;
+    typedef ReferenceEncodeTGL ReferenceEncodeADL;
+    static ReferenceEncodeADL ref_ADL_enc;
 }
