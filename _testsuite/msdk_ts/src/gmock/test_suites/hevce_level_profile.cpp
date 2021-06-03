@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2021 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -94,6 +94,7 @@ namespace hevce_level_profile
             PROFILE_ERR,
             NULL_GOPREFDIST,
             NULL_FR,
+            TILE,
             NONE
         };
 
@@ -102,7 +103,9 @@ namespace hevce_level_profile
             BIG_H = 1,
             BIG_W,
             BIG_WH,
-            NOT_ALLIGNED
+            NOT_ALIGNED,
+            TILE_C,
+            TILE_R
         };
 
     private:
@@ -182,7 +185,7 @@ namespace hevce_level_profile
                     m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                     m_par.mfx.FrameInfo.FrameRateExtD = 1;
                 }
-                else if (tc.sub_type == NOT_ALLIGNED)
+                else if (tc.sub_type == NOT_ALIGNED)
                 {
                     m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096) - 15;
                     m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
@@ -226,6 +229,29 @@ namespace hevce_level_profile
                     m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                     m_par.mfx.FrameInfo.FrameRateExtD = 1;
                     m_par.mfx.NumSlice = TS_MIN( TS_MIN( MaxSSPP, 68 ), CeilDiv(m_par.mfx.FrameInfo.Height, 64) );
+                }
+                break;
+            }
+            case  TILE:
+            {
+                mfxExtHEVCTiles* extHEVCTiles;
+                m_par.AddExtBuffer(MFX_EXTBUFF_HEVC_TILES, sizeof(mfxExtHEVCTiles));
+                extHEVCTiles = (mfxExtHEVCTiles*)m_par.GetExtBuffer(MFX_EXTBUFF_HEVC_TILES);
+
+                m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrtf((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192);
+                m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
+                m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN((MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
+                m_par.mfx.FrameInfo.FrameRateExtD = 1;
+
+                extHEVCTiles->NumTileColumns = MaxTileCols;
+                extHEVCTiles->NumTileRows = MaxTileRows;
+
+                if (tc.sts != MFX_ERR_NONE)
+                {
+                    if (tc.sub_type == TILE_R)
+                        extHEVCTiles->NumTileRows += 1;
+                    else if (tc.sub_type == TILE_C)
+                        extHEVCTiles->NumTileColumns += 1;
                 }
                 break;
             }
@@ -624,7 +650,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, RESOLUTION, NOT_ALLIGNED, {
+        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, RESOLUTION, NOT_ALIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_5},
 
            },
@@ -661,7 +687,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*63*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_51, RESOLUTION, NOT_ALLIGNED, {
+        {/*63*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_51, RESOLUTION, NOT_ALIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_51},
 
            },
@@ -698,7 +724,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_52, RESOLUTION, NOT_ALLIGNED, {
+        {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_52, RESOLUTION, NOT_ALIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_52},
 
            },
@@ -729,7 +755,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, RESOLUTION, NOT_ALLIGNED, {
+        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, RESOLUTION, NOT_ALIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
 
            },
@@ -760,7 +786,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*79*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_61, RESOLUTION, NOT_ALLIGNED, {
+        {/*79*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_61, RESOLUTION, NOT_ALIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
 
            },
@@ -791,7 +817,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*84*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_62, RESOLUTION, NOT_ALLIGNED, {
+        {/*84*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_62, RESOLUTION, NOT_ALIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
 
            },
@@ -849,6 +875,241 @@ namespace hevce_level_profile
 
            },
         },
+        //------- check tiles  -------//
+        // ok tiles
+        {/*92*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_1, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1},
+
+           },
+        },
+        // wrong tile rows
+        {/*93*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_1, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1},
+
+           },
+        },
+        // wrong tile columns
+        {/*94*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_3, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1},
+
+            },
+        },
+        // ok tiles
+        {/*95*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_2, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_2},
+
+            },
+        },
+        // wrong tile rows
+        {/*96*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_3, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_2},
+
+            },
+        },
+        // wrong tile columns
+        {/*97*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_3, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_2},
+
+            },
+        },
+        // ok tiles
+        {/*98*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_21, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_21},
+
+            },
+        },
+        // wrong tile rows
+        {/*99*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_3, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_21},
+
+            },
+        },
+        // wrong tile columns
+        {/*100*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_3, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_21},
+
+            },
+        },
+        // ok tiles
+        {/*101*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_3, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_3},
+
+            },
+        },
+        // wrong tile rows
+        {/*102*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_31, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_3},
+
+            },
+        },
+        // wrong tile columns
+        {/*103*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_31, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_3},
+
+            },
+        },
+        // ok tiles
+        {/*104*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_31, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_31},
+
+            },
+        },
+        // wrong tile rows
+        {/*105*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_4, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_31},
+
+            },
+        },
+        // wrong tile columns
+        {/*106*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_4, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_31},
+
+            },
+        },
+        // ok tiles
+        {/*107*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_4, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_4},
+
+            },
+        },
+        // wrong tile rows
+        {/*108*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_4},
+
+            },
+        },
+        // wrong tile columns
+        {/*109*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_4},
+
+            },
+        },
+        // ok tiles
+        {/*110*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_41, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_41},
+
+            },
+        },
+        // wrong tile rows
+        {/*111*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_41},
+
+            },
+        },
+        // wrong tile columns
+        {/*112*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_41},
+
+            },
+        },
+        // ok tiles
+        {/*113*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_5, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_5},
+
+            },
+        },
+        // wrong tile rows
+        {/*114*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_5},
+
+            },
+        },
+        // wrong tile columns
+        {/*115*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_5},
+
+            },
+        },
+        // ok tiles
+        {/*116*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_51, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_51},
+
+            },
+        },
+        // wrong tile rows
+        {/*117*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_51},
+
+            },
+        },
+        // wrong tile columns
+        {/*118*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_51},
+
+            },
+        },
+        // ok tiles
+        {/*119*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_52, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_52},
+
+            },
+        },
+        // wrong tile rows
+        {/*120*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_52},
+
+            },
+        },
+        // wrong tile columns
+        {/*121*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_52},
+
+            },
+        },
+        // ok tiles
+        {/*122*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_6, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
+
+           },
+        },
+        // wrong tile rows
+        {/*123*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_6, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
+
+           },
+        },
+        // wrong tile columns
+        {/*124*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_6, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
+
+            },
+        },
+        // ok tiles
+        {/*125*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_61, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
+
+            },
+        },
+        // wrong tile rows
+        {/*126*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_61, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
+
+            },
+        },
+        // wrong tile columns
+        {/*127*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_61, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
+
+            },
+        },
+        // ok tiles
+        {/*128*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_62, TILE, NONE, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
+
+            },
+        },
+        // wrong tile rows
+        {/*129*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, TILE, TILE_R, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
+
+            },
+        },
+        // wrong tile columns
+        {/*130*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, TILE, TILE_C, {
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
+
+            },
+        }
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);
@@ -863,9 +1124,6 @@ namespace hevce_level_profile
     int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
-
-        mfxVideoParam tmp = m_par;
-        m_pParOut = &tmp;
 
         if (fourcc_id == MFX_FOURCC_NV12)
         {
@@ -944,6 +1202,30 @@ namespace hevce_level_profile
 
         SETPARS(m_pPar, MFXPAR);
 
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+        g_tsStatus.check(GetCaps(&caps, &capSize));
+
+        if (tc.type == TILE)
+        {
+            if (caps.TileSupport == 0)
+            {
+                g_tsLog << "\n\nWARNING: Tiles are not supported!\n\n\n";
+                throw tsSKIP;
+            }
+
+            // For VDENC tile cases should be reworked according to caps.NumScalablePipesMinus1
+            if (caps.NumScalablePipesMinus1 > 0 && g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
+                g_tsLog << "\n\nWARNING: Tile cases are enabled for VME only!\n\n\n";
+                throw tsSKIP;
+
+            if (m_par.mfx.CodecLevel >= MFX_LEVEL_HEVC_6 && caps.MaxPicWidth < 5120)
+            {
+                g_tsLog << "\n\nWARNING: Max frame width supported " << caps.MaxPicWidth << " is not enough to encode 20 tile columns!\n\n\n";
+                throw tsSKIP;
+            }
+        }
+
         PreparePar(tc, fourcc_id);
 
         if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
@@ -961,6 +1243,9 @@ namespace hevce_level_profile
         g_tsStatus.expect(tc.sts);
         bool skip = false;
         bool skip_check_level = false;
+
+        mfxVideoParam tmp = m_par;
+        m_pParOut = &tmp;
 
         if (m_loaded)
         {
@@ -1008,11 +1293,11 @@ namespace hevce_level_profile
                 }
                 if (g_tsStatus.m_expected != MFX_ERR_UNSUPPORTED)
                 {
-                    if ((m_par.mfx.FrameInfo.Width > 4096) || (m_par.mfx.FrameInfo.Height > 2176))
+                    if ((m_par.mfx.FrameInfo.Width > caps.MaxPicWidth) || (m_par.mfx.FrameInfo.Height > caps.MaxPicHeight))
                     {
                         g_tsStatus.expect(MFX_ERR_NONE);
                         skip = true;
-                        g_tsLog << "Case skipped. HEVCE HW doesn't support width > 4096 and height > 2176 \n";
+                        g_tsLog << "Case skipped. HEVCE HW doesn't support width > " << caps.MaxPicWidth << " and height > " << caps.MaxPicHeight << "\n";
                     }
 
                 }
