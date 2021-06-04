@@ -26,6 +26,8 @@
 #include "av1ehw_base_alloc.h"
 #include "av1ehw_base_superres.h"
 
+#include "libmfx_core_factory.h"
+
 #include <cstdlib>
 
 using namespace AV1EHW;
@@ -40,7 +42,7 @@ namespace av1e {
             FeatureBlocks   blocks{};
             Superres        superres;
             StorageRW       storage;
-            MFXVideoSession session;
+            VideoCORE*      core = nullptr;
 
             FeatureBlocksSuperres()
                 : superres(FEATURE_SUPERRES)
@@ -49,16 +51,14 @@ namespace av1e {
             void SetUp() override
             {
                 srand(time(nullptr));
-
-                ASSERT_EQ(
-                    session.InitEx(
-                        mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
-                    ),
-                    MFX_ERR_NONE
-                );
-
-                auto s = static_cast<_mfxSession*>(session);
-                storage.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+                eMFXVAType type;
+#if defined(MFX_VA_WIN)
+                type = MFX_HW_D3D11;
+#else
+                type = MFX_HW_VAAPI;
+#endif
+                core = FactoryCORE::CreateCORE(type, 0, 0, nullptr);
+                storage.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*core));
 
                 superres.Init(INIT | RUNTIME, blocks);
 

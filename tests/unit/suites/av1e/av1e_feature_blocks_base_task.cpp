@@ -28,6 +28,8 @@
 #include "av1ehw_base_general.h"
 #include "av1ehw_base_task.h"
 
+#include "libmfx_core_factory.h"
+
 namespace AV1EHW
 {
 namespace Base
@@ -35,8 +37,7 @@ namespace Base
     struct FeatureBlocksTask
         : testing::Test
     {
-        MFXVideoSession                       session;
-
+        VideoCORE*                            core = nullptr;
         FeatureBlocks                         blocks{};
         General                               general;
         TaskManager                           taskMgr;
@@ -52,15 +53,14 @@ namespace Base
 
         void SetUp() override
         {
-            ASSERT_EQ(
-                session.InitEx(
-                    mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
-                ),
-                MFX_ERR_NONE
-            );
-
-            auto s = static_cast<_mfxSession*>(session);
-            strg.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+            eMFXVAType type;
+#if defined(MFX_VA_WIN)
+            type = MFX_HW_D3D11;
+#else
+            type = MFX_HW_VAAPI;
+#endif
+            core = FactoryCORE::CreateCORE(type, 0, 0, nullptr);
+            strg.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*core));
 
             auto& vp = Glob::VideoParam::GetOrConstruct(strg);
             vp.AsyncDepth = 1;
@@ -229,7 +229,7 @@ namespace Base
     struct FeatureBlocksTaskStatic
         : testing::Test
     {
-        static MFXVideoSession           session;
+        static VideoCORE*                core;
 
         static FeatureBlocks             blocks;
         static General                   general;
@@ -253,15 +253,14 @@ namespace Base
 
         static void SetUpTestCase()
         {
-            ASSERT_EQ(
-                session.InitEx(
-                    mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
-                ),
-                MFX_ERR_NONE
-            );
-
-            auto s = static_cast<_mfxSession*>(session);
-            strg.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+            eMFXVAType type;
+#if defined(MFX_VA_WIN)
+            type = MFX_HW_D3D11;
+#else
+            type = MFX_HW_VAAPI;
+#endif
+            core = FactoryCORE::CreateCORE(type, 0, 0, nullptr);
+            strg.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*core));
 
             auto& vp = Glob::VideoParam::GetOrConstruct(strg);
             vp.AsyncDepth = 1;
@@ -288,8 +287,7 @@ namespace Base
             fake.Clear();
         }
     };
-
-    MFXVideoSession FeatureBlocksTaskStatic::session{};
+    VideoCORE* FeatureBlocksTaskStatic::core = nullptr;
     FeatureBlocks FeatureBlocksTaskStatic::blocks{};
     General FeatureBlocksTaskStatic::general(FEATURE_GENERAL);
     TaskManager FeatureBlocksTaskStatic::taskMgr(FEATURE_TASK_MANAGER);

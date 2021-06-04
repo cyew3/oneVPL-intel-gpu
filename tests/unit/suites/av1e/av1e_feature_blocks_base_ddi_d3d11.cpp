@@ -34,7 +34,7 @@
 #define ENABLE_MFX_INTEL_GUID_PRIVATE
 
 #include <initguid.h>
-#include "mocks/include/guid.h"
+#include "mocks/include/mfx/guids.h"
 
 #include "mocks/include/dxgi/format.h"
 #include "mocks/include/dxgi/device/factory.h"
@@ -44,6 +44,9 @@
 #include "mocks/include/mfx/dispatch.h"
 #include "mocks/include/mfx/dx11/encoder.h"
 #include "mocks/include/mfx/dx11/decoder.h"
+
+#include "libmfx_core_factory.h"
+
 
 namespace AV1EHW
 {
@@ -63,7 +66,7 @@ namespace Base
         std::unique_ptr<mocks::dx11::context> context;
         std::unique_ptr<mocks::dx11::device>  device;
 
-        MFXVideoSession                       session;
+        VideoCORE*                            core = nullptr;
 
         FeatureBlocks                         blocks{};
         General                               general;
@@ -103,15 +106,9 @@ namespace Base
                 std::make_tuple(mocks::guid<&::DXVA2_Intel_LowpowerEncode_AV1_420_8b>{}, vp)
             );
 
-            EXPECT_EQ(
-                session.InitEx(
-                    mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
-                ),
-                MFX_ERR_NONE
-            );
+            core = FactoryCORE::CreateCORE(MFX_HW_D3D11, 0, 0, nullptr);
 
-            auto s = static_cast<_mfxSession*>(session);
-            storage.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+            storage.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*core));
 
             //select proper GUID for encoder
             general.Init(AV1EHW::INIT, blocks);

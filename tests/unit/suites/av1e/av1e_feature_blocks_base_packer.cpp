@@ -63,8 +63,8 @@ namespace av1e {
         };
 
         TEST_F(FeatureBlocksPacker, InitAlloc)
-            {
-            auto& block = FeatureBlocks::Get(
+        {
+            auto const& block = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks),
                 { FEATURE_PACKER, Packer::BLK_Init });
 
@@ -72,9 +72,9 @@ namespace av1e {
                 EXPECT_EQ(
                 block->Call(global, global),
                 MFX_ERR_NONE
-                );
+            );
             EXPECT_TRUE(global.Contains(Glob::PackedHeaders::Key));
-            }
+        }
 
         TEST_F(FeatureBlocksPacker, SubmitTask)
         {
@@ -109,7 +109,7 @@ namespace av1e {
             av1Par.TileWidthInSB[0]   = mfx::CeilDiv(mfxU16(TEST_WIDTH), mfxU16(SB_SIZE));
             av1Par.TileHeightInSB[0]  = mfx::CeilDiv(mfxU16(TEST_HEIGHT), mfxU16(SB_SIZE));
 
-            auto& setTileInfo = FeatureBlocks::Get(
+            auto const& setTileInfo = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks),
                 { FEATURE_TILE, Tile::BLK_SetTileInfo });
             EXPECT_EQ(
@@ -121,7 +121,7 @@ namespace av1e {
             taskFH       = fh;
 
             // calling Packer's SubmitTack routing
-            auto& block = FeatureBlocks::Get(
+            auto const& block = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks),
                 { FEATURE_PACKER, Packer::BLK_SubmitTask });
             EXPECT_EQ(

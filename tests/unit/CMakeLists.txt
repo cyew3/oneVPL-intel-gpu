@@ -38,6 +38,7 @@ add_subdirectory(suites/allocator)
 
 add_subdirectory(suites/utils)
 add_subdirectory(suites/hevce)
+add_subdirectory(suites/av1e)
 
 #TEMP
 if(NOT CMAKE_SYSTEM_NAME MATCHES Windows)

@@ -26,8 +26,14 @@
 #include "av1ehw_base_alloc.h"
 #include "av1ehw_base_general.h"
 
+#include "libmfx_core_factory.h"
+
 using namespace AV1EHW;
 using namespace AV1EHW::Base;
+
+mfxStatus APIImpl_MFXQueryVersion(_mfxSession*, mfxVersion*) {
+    return MFX_ERR_NONE;
+}
 
 namespace av1e {
     namespace tests
@@ -39,7 +45,8 @@ namespace av1e {
             General         general;
             StorageRW       global;
             StorageRW       local;
-            MFXVideoSession session;
+            VideoCORE*      core = nullptr;
+            _mfxSession     session{0};
 
             FeatureBlocksGeneral()
                 : general(FEATURE_GENERAL)
@@ -47,15 +54,16 @@ namespace av1e {
 
             void SetUp() override
             {
-                EXPECT_EQ(
-                    session.InitEx(
-                        mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
-                    ),
-                    MFX_ERR_NONE
-                );
+                eMFXVAType type;
+#if defined(MFX_VA_WIN)
+                type = MFX_HW_D3D11;
+#else
+                type = MFX_HW_VAAPI;
+#endif
+                core = FactoryCORE::CreateCORE(type, 0, 0, &session);
+                session.m_pOperatorCore = new OperatorCORE(core);
 
-                auto s = static_cast<_mfxSession*>(session);
-                global.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+                global.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(*core));
 
                 general.Init(INIT | RUNTIME, blocks);
 
@@ -82,7 +90,7 @@ namespace av1e {
         TEST_F(FeatureBlocksGeneral, InitTask)
         {
             auto& queueAT = FeatureBlocks::BQ<FeatureBlocks::BQ_AllocTask>::Get(blocks);
-            auto& allocTask = FeatureBlocks::Get(queueAT, { FEATURE_GENERAL, General::BLK_AllocTask });
+            auto const& allocTask = FeatureBlocks::Get(queueAT, { FEATURE_GENERAL, General::BLK_AllocTask });
 
             auto& vp = Glob::VideoParam::GetOrConstruct(global);
             const mfxU16 numRefFrame = 2;
@@ -94,10 +102,10 @@ namespace av1e {
 
             // calling General's InitTask routing
             auto& queueIT = FeatureBlocks::BQ<FeatureBlocks::BQ_InitTask>::Get(blocks);
-            auto& block = FeatureBlocks::Get(queueIT, { FEATURE_GENERAL, General::BLK_InitTask });
+            auto const& block = FeatureBlocks::Get(queueIT, { FEATURE_GENERAL, General::BLK_InitTask });
 
             mfxEncodeCtrl* pCtrl = nullptr;
-            mfxFrameSurface1 surf;
+            mfxFrameSurface1 surf{};
             surf.Data.Locked = 0;
             mfxBitstream bs;
             EXPECT_EQ(
