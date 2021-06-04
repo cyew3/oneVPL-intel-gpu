@@ -1214,10 +1214,12 @@ namespace hevce_level_profile
                 throw tsSKIP;
             }
 
-            // For VDENC tile cases should be reworked according to caps.NumScalablePipesMinus1
-            if (caps.NumScalablePipesMinus1 > 0 && g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
+            // For VDENC tile cases should be reworked
+            if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
+            {
                 g_tsLog << "\n\nWARNING: Tile cases are enabled for VME only!\n\n\n";
                 throw tsSKIP;
+            }
 
             if (m_par.mfx.CodecLevel >= MFX_LEVEL_HEVC_6 && caps.MaxPicWidth < 5120)
             {
