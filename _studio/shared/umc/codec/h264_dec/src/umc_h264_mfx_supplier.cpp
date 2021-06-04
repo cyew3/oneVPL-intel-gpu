@@ -1734,7 +1734,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         if (GetPlatform(core, out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
         {
             VM_ASSERT(GetPlatform(core, out) == MFX_PLATFORM_SOFTWARE);
-            sts = MFX_ERR_UNSUPPORTED;
+            sts = MFX_WRN_PARTIAL_ACCELERATION;
         }
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         /*SFC*/

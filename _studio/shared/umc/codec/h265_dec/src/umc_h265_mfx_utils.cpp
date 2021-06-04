@@ -172,7 +172,7 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
 eMFXPlatform GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
 {
     if (!par)
-        return MFX_PLATFORM_HARDWARE;
+        return MFX_PLATFORM_SOFTWARE;
 
     eMFXPlatform platform = core->GetPlatformType();
     eMFXHWType typeHW = MFX_HW_UNKNOWN;

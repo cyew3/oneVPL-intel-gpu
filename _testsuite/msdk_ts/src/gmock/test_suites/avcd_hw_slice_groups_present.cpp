@@ -118,7 +118,7 @@ namespace avcd_hw_slice_groups_present{
  
         if (tc.function_name == QUERY){
             SETPARS(&m_par, MFX_PAR);
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
         }
         Query(m_session, m_pPar, m_pParOut);
 
