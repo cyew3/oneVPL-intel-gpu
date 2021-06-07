@@ -1536,23 +1536,23 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest* request, mfxFrame
     m_Width = request->Info.Width;
     m_Height = request->Info.Height;
 
-    if (m_bAdaptivePlayback)
-    {
-        for (i = 0; i < surfaces_num; ++i)
-        {
-            vaapi_mid = &(vaapi_mids[i]);
-            vaapi_mid->m_fourcc = fourcc;
-            surfaces[i] = (VASurfaceID)VA_INVALID_ID;
-            vaapi_mid->m_surface = &surfaces[i];
-            mids[i] = vaapi_mid;
-        }
-        response->mids = mids;
-        response->NumFrameActual = surfaces_num;
-        return MFX_ERR_NONE;
-    }
-
     if (MFX_ERR_NONE == mfx_res)
     {
+        if (m_bAdaptivePlayback)
+        {
+            for (i = 0; i < surfaces_num; ++i)
+            {
+                vaapi_mid = &(vaapi_mids[i]);
+                vaapi_mid->m_fourcc = fourcc;
+                surfaces[i] = (VASurfaceID)VA_INVALID_ID;
+                vaapi_mid->m_surface = &surfaces[i];
+                mids[i] = vaapi_mid;
+            }
+            response->mids = mids;
+            response->NumFrameActual = surfaces_num;
+            return MFX_ERR_NONE;
+        }
+
         if (VA_FOURCC_P208 != va_fourcc)
         {
             unsigned int format;
@@ -1725,6 +1725,9 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData* ptr)
     mfxStatus mfx_res = MFX_ERR_NONE;
     VAStatus  va_res = VA_STATUS_SUCCESS;
     vaapiMemId* vaapi_mid = (vaapiMemId*)mid;
+
+    if (!vaapi_mid || !(vaapi_mid->m_surface)) return MFX_ERR_INVALID_HANDLE;
+
     mfxU8* pBuffer = 0;
     mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mid->m_fourcc);
 
@@ -1803,8 +1806,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData* ptr)
         }
         return MFX_ERR_NONE;
     }
-
-    if (!vaapi_mid || !(vaapi_mid->m_surface)) return MFX_ERR_INVALID_HANDLE;
 
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {
