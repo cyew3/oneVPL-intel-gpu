@@ -209,14 +209,29 @@ namespace le_avce_query
 
         /* gop ref dist */
         {/*65*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 } },
+        {/*66*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                                                              { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },} },
+        {/*67*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+                                                              { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },} },
+        {/*68*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+                                                              { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },} },
+        {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 } },
+        {/*70*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                                                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },} },
+        {/*71*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ADAPTIVE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 } },
+        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ADAPTIVE, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                                                                                        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },} },
+        {/*73*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_OFF, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 } },
+        {/*74*/ MFX_ERR_NONE, NONE, NONE, MFX_HYPERMODE_OFF, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                                                               { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },} },
 
-        /* got opt flag */
-        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
+        /* gop opt flag */
+        {/*75*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
 
         /* protected */
-        {/*67*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
-        {/*68*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
-        {/*69*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
+        {/*76*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
+        {/*77*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
+        {/*78*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
 };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(tc_struct);
