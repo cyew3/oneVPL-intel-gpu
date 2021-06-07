@@ -114,7 +114,16 @@ mfxStatus MFXVideoDECODE_VPP_Init(mfxSession session, mfxVideoParam* decode_par,
                 if (channelPar->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_SCALING) {
                     switch (reinterpret_cast<mfxExtVPPScaling*>(channelPar->ExtParam[i])->ScalingMode) {
                     case MFX_SCALING_MODE_INTEL_GEN_VDBOX:
-                        session->m_pDVP->sfcChannelID = sfcChannelID = id;
+                        if (session->m_pCORE->GetVAType() == MFX_HW_D3D11)
+                        {
+                            // Decoded output can't be return on windows in case of VDBOX + SFC.
+                            // For such scenarios redirect to VEBOX + SFC
+                            vppScalingModeMap[id] = MFX_SCALING_MODE_LOWPOWER;
+                        }
+                        else
+                        {
+                            session->m_pDVP->sfcChannelID = sfcChannelID = id;
+                        }
                         break;
                     case MFX_SCALING_MODE_INTEL_GEN_VEBOX:
                         vppScalingModeMap[id] = MFX_SCALING_MODE_LOWPOWER;
@@ -355,7 +364,7 @@ mfxStatus MFXVideoDECODE_VPP_DecodeFrameAsync(mfxSession session, mfxBitstream* 
         }
         else
         {
-            MFX_SAFE_CALL(decChannelSurf->FrameInterface->Release(decChannelSurf));
+            MFX_SAFE_CALL(ReleaseSurface(*decChannelSurf));
         }
 
 
