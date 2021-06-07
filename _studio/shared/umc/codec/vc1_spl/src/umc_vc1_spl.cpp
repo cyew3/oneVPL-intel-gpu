@@ -137,7 +137,7 @@ namespace UMC
             Close();
             return UMC_ERR_ALLOC;
         }
-        memset(m_stCodes, 0, (START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(MediaDataEx::_MediaDataEx)));
+        memset(reinterpret_cast<void*>(m_stCodes), 0, (START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(MediaDataEx::_MediaDataEx)));
         m_stCodes->count      = 0;
         m_stCodes->index      = 0;
         m_stCodes->bstrm_pos  = 0;

@@ -124,12 +124,14 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
             }
 
             if (in->IOPattern)
+            {
                 if ((in->IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY)
                     || (in->IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
                     )
                     out->IOPattern = in->IOPattern;
                 else
                     sts = MFX_STS_TRACE(MFX_ERR_UNSUPPORTED);
+            }
 
             if (in->Protected)
             {

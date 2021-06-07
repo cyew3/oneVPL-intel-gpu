@@ -257,7 +257,8 @@ if (BUILD_EXTRA)
   
   add_subdirectory(codec/h265_dec)
 
-  add_subdirectory(test_suite/outline_diff/)
+  # temporary disable outline build
+  # add_subdirectory(test_suite/outline_diff/)
 endif()
 
 add_subdirectory(codec/h264_spl)
@@ -272,4 +273,5 @@ add_subdirectory(io/media_buffers)
 
 add_subdirectory(codec)
 
-add_subdirectory(test_suite/spy_test_component/)
+# temporary disable outline build
+# add_subdirectory(test_suite/spy_test_component/)

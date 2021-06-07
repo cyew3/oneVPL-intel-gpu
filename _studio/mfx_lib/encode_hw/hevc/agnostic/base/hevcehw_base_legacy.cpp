@@ -1807,11 +1807,7 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 
         bool bInternalFrame =
             par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-            IsD3D9Simulation(Glob::VideoCore::Get(global)) && (par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            || (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
-                && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-#endif //MFX_ENABLE_OPAQUE_MEMORY
+            (IsD3D9Simulation(Glob::VideoCore::Get(global)) && (par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY))
             || task.bSkip;
 
         mfxFrameSurface1* surface = task.pSurfReal;

@@ -289,13 +289,13 @@ namespace UMC
     struct AviTrack
     {
         AviTrack(void)
+          : m_StreamHeader()
         {
             m_uiMaxSampleSize = 0;
             m_pStreamFormat = NULL;
             m_uiStreamFormatSize = 0;
             m_pIndex = NULL;
             m_uiIndexSize = 0;
-            memset(&m_StreamHeader, 0, sizeof(m_StreamHeader));
         }
 
         Ipp32u m_uiMaxSampleSize;

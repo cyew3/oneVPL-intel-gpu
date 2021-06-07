@@ -560,7 +560,7 @@ namespace TranscodingSample
 
     struct ExtendedSurface
     {
-        mfxU32 TargetID = 0;
+        mfxU32 TargetID;
 
         mfxFrameSurface1 *pSurface;
         PreEncAuxBuffer  *pAuxCtrl;

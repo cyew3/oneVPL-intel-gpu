@@ -166,7 +166,7 @@ mfxStatus VPLImplementationLoader::EnumImplementations()
     mfxStatus sts = MFX_ERR_NONE;
 
     int impl = 0;
-    m_ImplIndex = -1;
+    m_ImplIndex = (mfxU32)-1;
     while (sts == MFX_ERR_NONE)
     {
         sts = MFXEnumImplementations(m_Loader, impl, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc);
@@ -186,7 +186,7 @@ mfxStatus VPLImplementationLoader::EnumImplementations()
         impl++;
     }
 
-    if (m_ImplIndex == -1)
+    if (m_ImplIndex == (mfxU32)-1)
     {
         msdk_printf(MSDK_STRING("Library was not found with required deviceIDAndAdapter, use implemetation: 0 \n"));
         m_ImplIndex = 0;

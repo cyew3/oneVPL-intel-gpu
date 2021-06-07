@@ -41,6 +41,7 @@ target_link_libraries (mfx_memory_test
 target_compile_definitions (mfx_memory_test
     PRIVATE
         MFX_ENABLE_UNIT_TEST_MEMORY
+        MFX_DEPRECATED_OFF
 )
 
 set_target_properties (mfx_memory_test

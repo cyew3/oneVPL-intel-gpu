@@ -798,7 +798,6 @@ Status ASFSplitter::ReadHeaderExtObject()
   UMC_CHECK_STATUS(umcRes)
   if (pHeadExtObj->headerExtDataSize) {
     pHeadExtObj->pHeaderExtData = new asf_HeaderExtData;
-    memset(pHeadExtObj->pHeaderExtData, 0, sizeof(asf_HeaderExtData));
     umcRes = ReadHeaderExtData(pHeadExtObj->headerExtDataSize);
     UMC_CHECK_STATUS(umcRes)
   }

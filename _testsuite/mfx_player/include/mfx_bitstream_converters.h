@@ -443,7 +443,7 @@ public:
 
         if (roi.width % 2 != 0 || roi.height % 2 != 0)
         {
-            const mfxU8 *(pYVU[3]);
+            const mfxU8 *pYVU[3];
             pYVU[0] = bs->Data + bs->DataOffset;
             pYVU[1] = pYVU[0] + roi.width * roi.height;
             pYVU[2] = pYVU[1] + (roi.width + 1) / 2 * (roi.height + 1) / 2;
@@ -481,7 +481,7 @@ public:
         else
         {
             Ipp32s pYVUStep[3] = { roi.width, roi.width / 2, roi.width / 2 };
-            const Ipp8u *(pYVU[3]);
+            const Ipp8u *pYVU[3];
             pYVU[0] = bs->Data + bs->DataOffset;
             pYVU[1] = pYVU[0] + roi.width * roi.height;
             pYVU[2] = pYVU[1] + roi.width * roi.height / 4;

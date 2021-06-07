@@ -30,6 +30,8 @@ steps:
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
   - name: config and build vpl
     command: docker exec $BUILD_ID /bin/bash -c './sources/mdp_msdk-lib/config/scripts/build/build-linux-ubuntu.sh'
+  - name: unit tests
+    command: docker exec $BUILD_ID /bin/bash -c 'cd ./sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/ctest -j $(nproc)'
   - name: pack vpl binaries
     command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Packages && cd sources/mdp_msdk-lib/output/Packages
       && tar cvfz ubuntu_vpl_linux.tgz -C /opt/src/sources/mdp_msdk-lib/build ."
@@ -57,6 +59,7 @@ steps:
       -n $BUILD_NUMBER"
   - name: remove container
     command: docker kill $BUILD_ID
+    always_execute: true
   - name: mock command on host
     command: docker ps -a
 types:

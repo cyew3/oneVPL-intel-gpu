@@ -1077,7 +1077,8 @@ Status AVISplitter::InitIndexUsingStandardIndex(
     if (NULL == frag.pEntryArray)
         return UMC_ERR_ALLOC;
 
-    memset(frag.pEntryArray, 0, nEntriesInUse * sizeof(IndexEntry));
+    // default constructor of IndexEntry provide enough initialization
+    //memset(frag.pEntryArray, 0, nEntriesInUse * sizeof(IndexEntry));
 
     bool bIsAudioTrack = (AVI_FOURCC_auds == m_pTrack[nTrackNum].m_StreamHeader.fccType);
     Ipp32s nBlockAlign = !bIsAudioTrack ? 0 : ((WaveFormatEx *)m_pTrack[nTrackNum].m_pStreamFormat)->nBlockAlign;

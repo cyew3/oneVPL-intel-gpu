@@ -8062,13 +8062,13 @@ MfxVideoParam::MfxVideoParam()
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
     , m_po()
 #endif
-    , calcParam()
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
     , m_extGameStreaming()
 #endif
 #if defined(MFX_ONEVPL)
     , m_HyperMode()
 #endif
+    , calcParam()
 {
     memset(m_extParam, 0, sizeof(m_extParam));
 }

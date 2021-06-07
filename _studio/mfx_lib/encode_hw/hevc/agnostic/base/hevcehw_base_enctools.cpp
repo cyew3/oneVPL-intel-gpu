@@ -645,6 +645,8 @@ inline mfxHandleType GetHandleType(eMFXVAType vaType)
     {
     case MFX_HW_D3D9:  return MFX_HANDLE_D3D9_DEVICE_MANAGER;
     case MFX_HW_VAAPI: return MFX_HANDLE_VA_DISPLAY;
+    default:
+      break;
     }
     return MFX_HANDLE_D3D11_DEVICE;
 }

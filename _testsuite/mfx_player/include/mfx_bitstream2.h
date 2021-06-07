@@ -22,7 +22,7 @@ File Name: mfxstructures.h
 #include "mfxpcp.h"
 #endif
 
-#define mfxBitstream2_ZERO_MEM(bs2) {memset(&(bs2), 0, (size_t)(((mfxU8*)&((bs2).m_enryptedData)) - ((mfxU8*)&(bs2)))); (bs2).m_enryptedData.clear(); (bs2).m_enryptedDataBuffer.clear();}
+#define mfxBitstream2_ZERO_MEM(bs2) {memset(reinterpret_cast<void*>(&(bs2)), 0, (size_t)(((mfxU8*)&((bs2).m_enryptedData)) - ((mfxU8*)&(bs2)))); (bs2).m_enryptedData.clear(); (bs2).m_enryptedDataBuffer.clear();}
 
 //extension to mediasdk bitstream, that silently can be casted 
 struct mfxBitstream2 : mfxBitstream

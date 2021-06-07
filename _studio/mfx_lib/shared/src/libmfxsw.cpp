@@ -599,10 +599,10 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
                 if (!file)
                     break;
 
-                fscanf(file, "%x", &vendorId);
+                int nread = fscanf(file, "%x", &vendorId);
                 fclose(file);
 
-                if (vendorId != 0x8086)
+                if (nread != 1 || vendorId != 0x8086)
                     continue;
             }
 
@@ -614,8 +614,11 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
                 if (!file)
                     break;
 
-                fscanf(file, "%x", &deviceId);
+                int nread = fscanf(file, "%x", &deviceId);
                 fclose(file);
+
+                if (nread != 1)
+                    break;
             }
 
             path = std::string("/dev/dri/renderD") + std::to_string(128 + i);
