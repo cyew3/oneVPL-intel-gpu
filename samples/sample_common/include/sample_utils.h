@@ -422,6 +422,9 @@ template<>struct mfx_ext_buffer_id<mfxExtPartialBitstreamParam> {
 template<>struct mfx_ext_buffer_id<mfxExtVPPDenoise> {
     enum {id = MFX_EXTBUFF_VPP_DENOISE};
 };
+template<>struct mfx_ext_buffer_id<mfxExtVPPDenoise2> {
+    enum { id = MFX_EXTBUFF_VPP_DENOISE2 };
+};
 template<>struct mfx_ext_buffer_id<mfxExtVPPProcAmp> {
     enum {id = MFX_EXTBUFF_VPP_PROCAMP};
 };

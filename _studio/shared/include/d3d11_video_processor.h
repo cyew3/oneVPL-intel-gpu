@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 Intel Corporation
+// Copyright (c) 2011-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -122,7 +122,8 @@ typedef struct tagPREPROC_QUERYCAPS
     UINT bFieldWeavingControl: 1;
     UINT bScalingMode        : 1;
     UINT bChromaSitingControl: 1;
-    UINT Reserved            : 24;
+    UINT bHVSDenoise         : 1;
+    UINT Reserved            : 23;
 
 } PREPROC_QUERYCAPS;
 
@@ -236,6 +237,7 @@ enum
     VPE_FN_VPREP_YUV_RANGE_PARAM     = 0x36,
     VPE_FN_VPREP_SCALING_MODE_PARAM  = 0x37,
     VPE_FN_VPREP_CHROMA_SITING_MODE_PARAM = 0x38,
+    VPE_FN_VPREP_HVSDENOISE_PARAM         = 0x39,
 
     VPE_FN_CP_QUERY_CAPS                     = 0x100,
     VPE_FN_CP_ACTIVATE_CAMERA_PIPE           = 0x101,
@@ -402,7 +404,8 @@ typedef struct _VPE_VPREP_CAPS
     UINT    bVariances              :  1;
     UINT    bScalingMode            :  1;
     UINT    bChromaSitingControl    :  1;
-    UINT    Reserved                : 26;
+    UINT    bHVSDenoise             :  1;
+    UINT    Reserved                : 25;
 } VPE_VPREP_CAPS;
 
 
@@ -483,6 +486,23 @@ typedef struct _VPE_VPREP_SCALING_MODE_PARAM
     USHORT                      InterpolationMethod;                       // [in], Interpolation method is one of VPE_INTERPOLATION_METHOD
     USHORT                      Reserved[3];
 } VPE_VPREP_SCALING_MODE_PARAM;
+
+typedef enum _VPE_HVSDENOISE_MODE
+{
+    VPE_HVSDENOISE_DEFAULT = 0,                      // Default is decided in driver to an appropriate mode
+    VPE_HVSDENOISE_AUTO_BDRATE,                      // Auto BD rate mode
+    VPE_HVSDENOISE_AUTO_SUBJECTIVE,                  // Auto Subjective mode
+    VPE_HVSDENOISE_MANUAL,                           // Manual mode
+    VPE_HVSDENOISE_AUTO_ADJUST,                      // Auto Adjust
+} VPE_HVSDENOISE_MODE;
+
+typedef struct _VPE_VPREP_HVSDENOISE_PARAM
+{
+    USHORT  QP;               // [in], QP for encoding
+    USHORT  Strength;         // [in], Denoise Strength which controls Denoise strength in manual mode
+    USHORT  Mode;             // [in], HVS Denoise Mode which is one of VPE_HVSDENOISE_MODE
+    USHORT  Reserved[13];     // [in], Future usage
+} VPE_VPREP_HVSDENOISE_PARAM, * PVPE_VPREP_HVSDENOISE_PARAM;
 
 typedef enum _VPE_SCALING_MODE
 {
@@ -723,6 +743,7 @@ typedef struct _VPE_FUNCTION
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
         HANDLE                                  gpuSyncEvent;
 #endif
+        VPE_VPREP_HVSDENOISE_PARAM              *pHVSDenoiseParam;
     };
 } VPE_FUNCTION;
 
@@ -817,6 +838,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);
         mfxStatus SetStreamScalingMode(UINT StreamIndex, VPE_VPREP_SCALING_MODE_PARAM param);
+        mfxStatus SetStreamDenoise(UINT StreamIndex, mfxExecuteParams* pParams);
 #if (MFX_VERSION >= 1025)
         mfxStatus SetStreamChromaSiting(UINT StreamIndex, VPE_VPREP_CHROMASITING_PARAM param);
 #endif
@@ -947,6 +969,7 @@ namespace MfxHwVideoProcessing
             bool m_simpleDIEnable;
             bool m_advancedDIEnable;
             bool m_denoiseEnable;
+            bool m_denoise2Enable;
             bool m_detailEnable;
             bool m_rotation;
             std::map <DXGI_FORMAT, UINT> m_formatSupport;
@@ -956,6 +979,7 @@ namespace MfxHwVideoProcessing
                 , m_simpleDIEnable(false)
                 , m_advancedDIEnable(false)
                 , m_denoiseEnable(false)
+                , m_denoise2Enable(false)
                 , m_detailEnable(false)
                 , m_rotation(false)
                 , m_formatSupport()

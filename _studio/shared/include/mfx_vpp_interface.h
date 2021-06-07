@@ -324,6 +324,7 @@ namespace MfxHwVideoProcessing
         mfxU32 uFieldProcessing;
 
         mfxU32 u3DLut;
+        mfxU32 uDenoise2Filter;   // mfxExtVPPDenoise2
 
         mfxVppCaps()
             : uAdvancedDI(0)
@@ -356,6 +357,7 @@ namespace MfxHwVideoProcessing
             , uMirroring(0)
             , uFieldProcessing(0)
             , u3DLut(0)
+            , uDenoise2Filter(0)
         {
 #ifndef MFX_CAMERA_FEATURE_DISABLE
             memset(&cameraCaps, 0, sizeof(CameraCaps));
@@ -583,7 +585,9 @@ namespace MfxHwVideoProcessing
 
         bool           bDenoiseAutoAdjust;
         mfxU16         denoiseFactor;
-        mfxU16         denoiseFactorOriginal; // Original denoise factor provided by app.
+        mfxU16         denoiseFactorOriginal;       // Original denoise factor or strength provided by app.
+        mfxDenoiseMode denoiseMode;                 // Denoise mode
+        bool           bdenoiseAdvanced;            // Indicate MFX_EXTBUFF_VPP_DENOISE2
 
         bool           bDetailAutoAdjust;
         mfxU16         detailFactor;

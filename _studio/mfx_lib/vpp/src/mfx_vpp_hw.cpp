@@ -2009,6 +2009,13 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             MFX_CHECK_NULL_PTR1(bufDN);
             bufDN->DenoiseFactor = m_executeParams.denoiseFactorOriginal;
         }
+        else if (MFX_EXTBUFF_VPP_DENOISE2 == bufferId)
+        {
+            mfxExtVPPDenoise2 *bufDN = reinterpret_cast<mfxExtVPPDenoise2 *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufDN);
+            bufDN->Strength = m_executeParams.denoiseFactorOriginal;
+            bufDN->Mode     = m_executeParams.denoiseMode;
+        }
 #ifdef MFX_ENABLE_MCTF
         else if (MFX_EXTBUFF_VPP_MCTF == bufferId)
         {
@@ -2291,6 +2298,7 @@ mfxStatus VideoVPPHW::CheckFormatLimitation(mfxU32 filter, mfxU32 format, mfxU32
         case MFX_EXTBUFF_VPP_PROCAMP:
         case MFX_EXTBUFF_VPP_DETAIL:
         case MFX_EXTBUFF_VPP_DENOISE:
+        case MFX_EXTBUFF_VPP_DENOISE2:
         case MFX_EXTBUFF_VPP_FIELD_WEAVING:
         case MFX_EXTBUFF_VPP_FIELD_SPLITTING:
             if (format == MFX_FOURCC_NV12 ||
@@ -5347,6 +5355,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     if( par->vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
         if(IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_DENOISE)            ||
+           IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_DENOISE2)           ||
            IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_DETAIL)             ||
            IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_PROCAMP)            ||
            IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_SCENE_CHANGE)       ||
@@ -5876,6 +5885,32 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.denoiseFactor = MapDNFactor(extDenoise->DenoiseFactor );
                             executeParams.denoiseFactorOriginal = extDenoise->DenoiseFactor;
                             executeParams.bDenoiseAutoAdjust = FALSE;
+                        }
+                    }
+                }
+                else
+                {
+                    bIsFilterSkipped = true;
+                }
+
+                break;
+            }
+            case MFX_EXTBUFF_VPP_DENOISE2:
+            {
+                if (caps.uDenoise2Filter)
+                {
+                    // set denoise settings
+                    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                    {
+                        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DENOISE2)
+                        {
+                            mfxExtVPPDenoise2 *extDenoise= (mfxExtVPPDenoise2*) videoParam.ExtParam[i];
+
+                            executeParams.denoiseMode = extDenoise->Mode;
+                            executeParams.denoiseFactor = MapDNFactor(extDenoise->Strength);
+                            executeParams.denoiseFactorOriginal = extDenoise->Strength;
+                            executeParams.bDenoiseAutoAdjust = (extDenoise->Mode == MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST) ? true : false;
+                            executeParams.bdenoiseAdvanced = true;
                         }
                     }
                 }
@@ -6533,6 +6568,14 @@ mfxStatus ConfigureExecuteParams(
                     executeParams.bDenoiseAutoAdjust    = false;
                     executeParams.denoiseFactor         = 0;
                     executeParams.denoiseFactorOriginal = 0;
+                }
+                if (MFX_EXTBUFF_VPP_DENOISE2 == bufferId)
+                {
+                    executeParams.bDenoiseAutoAdjust    = false;
+                    executeParams.denoiseFactor         = 0;
+                    executeParams.denoiseFactorOriginal = 0;
+                    executeParams.denoiseMode           = MFX_DENOISE_MODE_DEFAULT;
+                    executeParams.bdenoiseAdvanced      = true;
                 }
                 else if (MFX_EXTBUFF_VPP_SCENE_ANALYSIS == bufferId)
                 {
