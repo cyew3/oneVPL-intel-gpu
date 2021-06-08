@@ -139,7 +139,6 @@ if (CMAKE_SYSTEM_NAME MATCHES Windows)
   )
 endif()
 
-include(sources_ext.cmake OPTIONAL)
 
 target_sources(${mfxlibname} PRIVATE ${sources_hw})
 
@@ -203,3 +202,4 @@ if (CMAKE_SYSTEM_NAME MATCHES Linux)
   install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
 endif()
 
+include(sources_ext.cmake OPTIONAL)
