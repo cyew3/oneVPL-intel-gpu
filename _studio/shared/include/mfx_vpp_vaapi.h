@@ -158,8 +158,8 @@ namespace MfxHwVideoProcessing
 
         UMC::Mutex m_guard;
 
-        VAProcFilterCap3DLUT  *m_3dlutCaps;
-        VABufferID            m_3dlutFilterID;
+        std::vector<VAProcFilterCap3DLUT> m_3dlutCaps;
+        VABufferID m_3dlutFilterID;
 
         mfxStatus Init( _mfxPlatformAccelerationService* pVADisplay, mfxVideoParam *pParams);
 
