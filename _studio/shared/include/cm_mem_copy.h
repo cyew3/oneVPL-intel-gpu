@@ -24,17 +24,13 @@
 #include "mfxdefs.h"
 #include "mfxstructures.h"
 #include "ippi.h"
-#include "skl_copy_kernel_genx_isa.h"
-#include "cnl_copy_kernel_genx_isa.h"
-#include "icl_copy_kernel_genx_isa.h"
-#include "icllp_copy_kernel_genx_isa.h"
 #ifndef STRIP_EMBARGO
-#include "tgl_copy_kernel_genx_isa.h"
+#include "genx_copy_kernel_xehp_sdv_isa.h"
 #if defined(_WIN32) || defined(_WIN64)
-#include "dg2_copy_kernel_genx_isa.h"
+#include "genx_copy_kernel_dg2_isa.h"
 #endif
 #endif
-#include "tgllp_copy_kernel_genx_isa.h"
+#include "genx_copy_kernel_gen12lp_isa.h"
 
 #ifdef _MSVC_LANG
 #pragma warning(disable: 4505)

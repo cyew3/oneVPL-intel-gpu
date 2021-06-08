@@ -21,30 +21,15 @@
 #include "mctf_common.h"
 #include "asc.h"
 #include "asc_defs.h"
-#include "mctf_me_gen8_isa.h"
-#include "mctf_mc_gen8_isa.h"
-#include "mctf_sd_gen8_isa.h"
-
-#include "mctf_me_gen9_isa.h"
-#include "mctf_mc_gen9_isa.h"
-#include "mctf_sd_gen9_isa.h"
-
-#include "mctf_me_gen11_isa.h"
-#include "mctf_mc_gen11_isa.h"
-#include "mctf_sd_gen11_isa.h"
-
-#include "mctf_me_gen11lp_isa.h"
-#include "mctf_mc_gen11lp_isa.h"
-#include "mctf_sd_gen11lp_isa.h"
 #ifndef STRIP_EMBARGO
-#include "mctf_me_gen12_isa.h"
-#include "mctf_mc_gen12_isa.h"
-#include "mctf_sd_gen12_isa.h"
+#include "genx_me_xehp_sdv_isa.h"
+#include "genx_mc_xehp_sdv_isa.h"
+#include "genx_sd_xehp_sdv_isa.h"
 #endif
 
-#include "mctf_me_gen12lp_isa.h"
-#include "mctf_mc_gen12lp_isa.h"
-#include "mctf_sd_gen12lp_isa.h"
+#include "genx_me_gen12lp_isa.h"
+#include "genx_mc_gen12lp_isa.h"
+#include "genx_sd_gen12lp_isa.h"
 
 #include <algorithm>
 #include <climits>
@@ -932,14 +917,15 @@ mfxStatus CMC::MCTF_SET_ENV(
     {
 #ifdef MFX_ENABLE_KERNELS
     case PLATFORM_INTEL_BDW:
-        res = device->LoadProgram((void *)mctf_me_gen8_isa, sizeof(mctf_me_gen8_isa), programMe, "nojitter");
-        break;
     case PLATFORM_INTEL_ICL:
-        res = device->LoadProgram((void *)mctf_me_gen11_isa, sizeof(mctf_me_gen11_isa), programMe, "nojitter");
-        break;
     case PLATFORM_INTEL_ICLLP:
-        res = device->LoadProgram((void *)mctf_me_gen11lp_isa, sizeof(mctf_me_gen11lp_isa), programMe, "nojitter");
-        break;
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_BXT:
+    case PLATFORM_INTEL_CNL:
+    case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_GLK:
+        return MFX_ERR_DEVICE_FAILED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_me_gen12_isa, sizeof(mctf_me_gen12_isa), programMe, "nojitter");
@@ -948,15 +934,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_TGLLP:
     case PLATFORM_INTEL_RKL:
     case PLATFORM_INTEL_DG1:
-        res = device->LoadProgram((void *)mctf_me_gen12lp_isa, sizeof(mctf_me_gen12lp_isa), programMe, "nojitter");
-        break;
-    case PLATFORM_INTEL_SKL:
-    case PLATFORM_INTEL_BXT:
-    case PLATFORM_INTEL_CNL:
-    case PLATFORM_INTEL_KBL:
-    case PLATFORM_INTEL_CFL:
-    case PLATFORM_INTEL_GLK:
-        res = device->LoadProgram((void *)mctf_me_gen9_isa, sizeof(mctf_me_gen9_isa), programMe, "nojitter");
+        res = device->LoadProgram((void *)genx_me_gen12lp, sizeof(genx_me_gen12lp), programMe, "nojitter");
         break;
 #endif
     default:
@@ -997,14 +975,15 @@ mfxStatus CMC::MCTF_SET_ENV(
     {
 #ifdef MFX_ENABLE_KERNELS
     case PLATFORM_INTEL_BDW:
-        res = device->LoadProgram((void *)mctf_mc_gen8_isa, sizeof(mctf_mc_gen8_isa), programMc, "nojitter");
-        break;
     case PLATFORM_INTEL_ICL:
-        res = device->LoadProgram((void *)mctf_mc_gen11_isa, sizeof(mctf_mc_gen11_isa), programMc, "nojitter");
-        break;
     case PLATFORM_INTEL_ICLLP:
-        res = device->LoadProgram((void *)mctf_mc_gen11lp_isa, sizeof(mctf_mc_gen11lp_isa), programMc, "nojitter");
-        break;
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_BXT:
+    case PLATFORM_INTEL_CNL:
+    case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_GLK:
+        return MFX_ERR_DEVICE_FAILED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_mc_gen12_isa, sizeof(mctf_mc_gen12_isa), programMc, "nojitter");
@@ -1013,15 +992,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_TGLLP:
     case PLATFORM_INTEL_RKL:
     case PLATFORM_INTEL_DG1:
-        res = device->LoadProgram((void *)mctf_mc_gen12lp_isa, sizeof(mctf_mc_gen12lp_isa), programMc, "nojitter");
-        break;
-    case PLATFORM_INTEL_SKL:
-    case PLATFORM_INTEL_BXT:
-    case PLATFORM_INTEL_CNL:
-    case PLATFORM_INTEL_KBL:
-    case PLATFORM_INTEL_CFL:
-    case PLATFORM_INTEL_GLK:
-        res = device->LoadProgram((void *)mctf_mc_gen9_isa, sizeof(mctf_mc_gen9_isa), programMc, "nojitter");
+        res = device->LoadProgram((void *)genx_mc_gen12lp, sizeof(genx_mc_gen12lp), programMc, "nojitter");
         break;
 #endif
     default:
@@ -1033,14 +1004,15 @@ mfxStatus CMC::MCTF_SET_ENV(
     {
 #ifdef MFX_ENABLE_KERNELS
     case PLATFORM_INTEL_BDW:
-        res = device->LoadProgram((void *)mctf_sd_gen8_isa, sizeof(mctf_sd_gen8_isa), programDe, "nojitter");
-        break;
     case PLATFORM_INTEL_ICL:
-        res = device->LoadProgram((void *)mctf_sd_gen11_isa, sizeof(mctf_sd_gen11_isa), programDe, "nojitter");
-        break;
     case PLATFORM_INTEL_ICLLP:
-        res = device->LoadProgram((void *)mctf_sd_gen11lp_isa, sizeof(mctf_sd_gen11lp_isa), programDe, "nojitter");
-        break;
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_BXT:
+    case PLATFORM_INTEL_CNL:
+    case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_GLK:
+        return MFX_ERR_DEVICE_FAILED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_sd_gen12_isa, sizeof(mctf_sd_gen12_isa), programDe, "nojitter");
@@ -1049,15 +1021,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_TGLLP:
     case PLATFORM_INTEL_RKL:
     case PLATFORM_INTEL_DG1:
-        res = device->LoadProgram((void *)mctf_sd_gen12lp_isa, sizeof(mctf_sd_gen12lp_isa), programDe, "nojitter");
-        break;
-    case PLATFORM_INTEL_SKL:
-    case PLATFORM_INTEL_BXT:
-    case PLATFORM_INTEL_CNL:
-    case PLATFORM_INTEL_KBL:
-    case PLATFORM_INTEL_CFL:
-    case PLATFORM_INTEL_GLK:
-        res = device->LoadProgram((void *)mctf_sd_gen9_isa, sizeof(mctf_sd_gen9_isa), programDe, "nojitter");
+        res = device->LoadProgram((void *)genx_sd_gen12lp, sizeof(genx_sd_gen12lp), programDe, "nojitter");
         break;
 #endif
     default:

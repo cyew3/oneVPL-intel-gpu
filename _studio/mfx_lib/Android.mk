@@ -211,12 +211,7 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_encode_factory.cpp)
 
 GENX_FILES := $(addprefix mfx_lib/genx/asc/isa/, \
-    asc_gen8_isa.cpp \
-    asc_gen9_isa.cpp \
-    asc_gen11_isa.cpp \
-    asc_gen11lp_isa.cpp \
-    asc_gen12_isa.cpp \
-    asc_gen12lp_isa.cpp)
+    genx_scd_gen12lp_isa.cpp)
 
 GENX_FILES += $(addprefix mfx_lib/genx/copy_kernels/src/, \
     embed_isa.c \
@@ -229,12 +224,6 @@ GENX_FILES += $(addprefix mfx_lib/genx/copy_kernels/src/, \
     genx_tgllp_copy_isa.cpp)
 
 GENX_FILES += $(addprefix mfx_lib/genx/field_copy/src/, \
-    genx_fcopy_gen7_5_isa.cpp \
-    genx_fcopy_gen8_isa.cpp \
-    genx_fcopy_gen9_isa.cpp \
-    genx_fcopy_gen10_isa.cpp \
-    genx_fcopy_gen11_isa.cpp \
-    genx_fcopy_gen11lp_isa.cpp \
     genx_fcopy_gen12_isa.cpp)
 
 GENX_FILES += $(addprefix mfx_lib/genx/mctf/isa/, \

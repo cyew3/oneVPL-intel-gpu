@@ -35,8 +35,8 @@
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_hw_utils.h"
 
-#include "genx_tgllp_simple_me_isa.h"
-#include "genx_tgllp_histogram_isa.h"
+#include "genx_simple_me_gen12lp_isa.h"
+#include "genx_histogram_gen12lp_isa.h"
 
 
 namespace MfxHwH264EncodeHW
@@ -900,8 +900,8 @@ void CmContext::Setup(
     case MFX_HW_RKL:
     case MFX_HW_ADL_S:
     case MFX_HW_ADL_P:
-        m_program = ReadProgram(m_device, genx_tgllp_simple_me, SizeOf(genx_tgllp_simple_me));
-        m_programHist = ReadProgram(m_device, genx_tgllp_histogram, SizeOf(genx_tgllp_histogram));
+        m_program = ReadProgram(m_device, genx_simple_me_gen12lp, SizeOf(genx_simple_me_gen12lp));
+        m_programHist = ReadProgram(m_device, genx_histogram_gen12lp, SizeOf(genx_histogram_gen12lp));
         break;
 #endif // #ifdef MFX_ENABLE_KERNELS
     default:

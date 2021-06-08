@@ -45,13 +45,8 @@
   #include "asc.h"        // Scene change detection
  #endif
  #include "cm_mem_copy.h"         // Needed for mirroring kernels
- #include "genx_fcopy_gen8_isa.h" // Field copy kernels
- #include "genx_fcopy_gen9_isa.h"
- #include "genx_fcopy_gen10_isa.h"
- #include "genx_fcopy_gen11_isa.h"
- #include "genx_fcopy_gen11lp_isa.h"
  #ifndef STRIP_EMBARGO
-  #include "genx_fcopy_gen12_isa.h"
+  #include "genx_fcopy_xehp_sdv_isa.h"
  #endif
  #include "genx_fcopy_gen12lp_isa.h"
 

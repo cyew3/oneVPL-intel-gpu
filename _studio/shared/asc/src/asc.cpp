@@ -22,14 +22,10 @@
 #include "asc_defs.h"
 #include "asc_cpu_dispatcher.h"
 #include "libmfx_core_interface.h"
-#include "asc_gen8_isa.h"
-#include "asc_gen9_isa.h"
-#include "asc_gen11_isa.h"
-#include "asc_gen11lp_isa.h"
 #ifndef STRIP_EMBARGO
-#include "asc_gen12_isa.h"
+#include "genx_scd_xehp_sdv_isa.h"
 #endif
-#include "asc_gen12lp_isa.h"
+#include "genx_scd_gen12lp_isa.cpp"
 #include "tree.h"
 #include "iofunctions.h"
 #include "motion_estimation_engine.h"
@@ -332,25 +328,18 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     switch (hwType)
     {
     case PLATFORM_INTEL_BDW:
-        res = m_device->LoadProgram((void *)asc_gen8_isa, sizeof(asc_gen8_isa), m_program, "nojitter");
-        break;
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_KBL:
     case PLATFORM_INTEL_GLK:
     case PLATFORM_INTEL_CFL:
     case PLATFORM_INTEL_CNL:
     case PLATFORM_INTEL_BXT:
-        res = m_device->LoadProgram((void *)asc_gen9_isa, sizeof(asc_gen9_isa), m_program, "nojitter");
-        break;
     case PLATFORM_INTEL_ICL:
-        res = m_device->LoadProgram((void *)asc_gen11_isa, sizeof(asc_gen11_isa), m_program, "nojitter");
-        break;
     case PLATFORM_INTEL_ICLLP:
-        res = m_device->LoadProgram((void *)asc_gen11lp_isa, sizeof(asc_gen11lp_isa), m_program, "nojitter");
-        break;
+        return MFX_ERR_DEVICE_FAILED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
-        res = m_device->LoadProgram((void *)asc_gen12_isa, sizeof(asc_gen12_isa), m_program, "nojitter");
+        res = m_device->LoadProgram((void *)genx_scd_xehp_sdv, sizeof(genx_scd_xehp_sdv), m_program, "nojitter");
         break;
 #endif
 #ifndef STRIP_EMBARGO
@@ -359,7 +348,7 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     case PLATFORM_INTEL_TGLLP:
     case PLATFORM_INTEL_RKL:
     case PLATFORM_INTEL_DG1:
-        res = m_device->LoadProgram((void *)asc_gen12lp_isa, sizeof(asc_gen12lp_isa), m_program, "nojitter");
+        res = m_device->LoadProgram((void *)genx_scd_gen12lp, sizeof(genx_scd_gen12lp), m_program, "nojitter");
         break;
     default:
         res = CM_NOT_IMPLEMENTED;

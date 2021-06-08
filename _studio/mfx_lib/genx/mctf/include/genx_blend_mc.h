@@ -370,16 +370,6 @@ matrix<uchar, 8, 8> Genx_OMC_8x8Block(
     uchar
         q_val = 0;
 
-#if 0
-    if (rc0)
-        r0 = BlockSPel(SURF_REF, x, y, mv.row(0).select<2, 1>(0));
-    if (rc1)
-        r1 = BlockSPel(SURF_REF, x, y, mv.row(0).select<2, 1>(2));
-    if (rc2)
-        r2 = BlockSPel(SURF_REF, x, y, mv.row(1).select<2, 1>(0));
-    if (rc3)
-        r3 = BlockSPel(SURF_REF, x, y, mv.row(1).select<2, 1>(2));
-#else
     mv = mv / 4;
     if (rc0)
         read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, x + mv.row(0).select<2, 1>(0)[0], y + mv.row(0).select<2, 1>(0)[1], r0);
@@ -389,7 +379,6 @@ matrix<uchar, 8, 8> Genx_OMC_8x8Block(
         read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, x + mv.row(1).select<2, 1>(0)[0], y + mv.row(1).select<2, 1>(0)[1], r2);
     if (rc3)
         read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, x + mv.row(1).select<2, 1>(2)[0], y + mv.row(1).select<2, 1>(2)[1], r3);
-#endif
 
 
     q_val = rc0 + rc1 + rc2 + rc3;

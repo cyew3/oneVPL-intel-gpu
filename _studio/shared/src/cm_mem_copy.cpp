@@ -2744,14 +2744,8 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
     case MFX_HW_KBL:
     case MFX_HW_GLK:
     case MFX_HW_CFL:
-        cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
-        break;
     case MFX_HW_CNL:
-        cmSts = m_pCmDevice->LoadProgram((void*)cnl_copy_kernel_genx,sizeof(cnl_copy_kernel_genx),m_pCmProgram,"nojitter");
-        break;
     case MFX_HW_ICL:
-        cmSts = m_pCmDevice->LoadProgram((void*)icl_copy_kernel_genx,sizeof(icl_copy_kernel_genx),m_pCmProgram,"nojitter");
-        break;
     case MFX_HW_ICL_LP:
 #ifndef STRIP_EMBARGO
     case MFX_HW_LKF:
@@ -2760,7 +2754,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
     case MFX_HW_JSL:
     case MFX_HW_EHL:
 #endif
-        cmSts = m_pCmDevice->LoadProgram((void*)icllp_copy_kernel_genx,sizeof(icllp_copy_kernel_genx),m_pCmProgram,"nojitter");
+        return MFX_ERR_DEVICE_FAILED;
         break;
 #if (MFX_VERSION >= 1031)
     case MFX_HW_TGL_LP:
@@ -2768,16 +2762,16 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
     case MFX_HW_RKL:
     case MFX_HW_ADL_S:
     case MFX_HW_ADL_P:
-        cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx,sizeof(tgllp_copy_kernel_genx),m_pCmProgram,"nojitter");
+        cmSts = m_pCmDevice->LoadProgram((void*)genx_copy_kernel_gen12lp,sizeof(genx_copy_kernel_gen12lp),m_pCmProgram,"nojitter");
         break;
 #endif
 #ifndef STRIP_EMBARGO
     case MFX_HW_XE_HP_SDV:
-        cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
+        cmSts = m_pCmDevice->LoadProgram((void*)genx_copy_kernel_xehp_sdv,sizeof(genx_copy_kernel_xehp_sdv),m_pCmProgram,"nojitter");
         break;
 #if defined(_WIN32) || defined(_WIN64)
     case MFX_HW_DG2:
-        cmSts = m_pCmDevice->LoadProgram((void*)dg2_copy_kernel_genx,sizeof(dg2_copy_kernel_genx),m_pCmProgram,"nojitter");
+        cmSts = m_pCmDevice->LoadProgram((void*)genx_copy_kernel_dg2,sizeof(genx_copy_kernel_dg2),m_pCmProgram,"nojitter");
         break;
 #endif
 #endif

@@ -2566,7 +2566,7 @@ mfxStatus  VideoVPPHW::Init(
                 break;
         #ifndef STRIP_EMBARGO
             case MFX_HW_XE_HP_SDV:
-                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12, sizeof(genx_fcopy_gen12), m_pCmProgram, "nojitter");
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_xehp_sdv, sizeof(genx_fcopy_xehp_sdv), m_pCmProgram, "nojitter");
                 break;
         #endif
 #endif
@@ -2627,7 +2627,6 @@ mfxStatus  VideoVPPHW::Init(
             return MFX_ERR_DEVICE_FAILED;
         }
     }
-
 
 #ifdef MFX_ENABLE_MCTF
     {
@@ -2887,11 +2886,12 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
 
     caps.uFrameRateConversion = 1;
     caps.uFieldProcessing = 1;
+#ifndef STRIP_EMBARGO
     if (core->GetHWType() == MFX_HW_DG2)
     {   
         caps.uFieldProcessing = 0;
     }
-
+#endif
     return sts;
 
 } // mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCaps& caps)
@@ -3172,7 +3172,6 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 } // mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
-
 
 mfxStatus VideoVPPHW::Close()
 {

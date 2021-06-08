@@ -78,11 +78,7 @@ if(MFX_ENABLE_KERNELS)
 
   set( prefix ${MSDK_GENX_ROOT}/asc/isa )
   list( APPEND sources
-      ${prefix}/asc_gen8_isa.cpp
-      ${prefix}/asc_gen9_isa.cpp
-      ${prefix}/asc_gen11_isa.cpp
-      ${prefix}/asc_gen11lp_isa.cpp
-      ${prefix}/asc_gen12lp_isa.cpp
+      ${prefix}/genx_scd_gen12lp_isa.cpp
   )
 
   set( prefix ${MSDK_GENX_ROOT}/copy_kernels/src )
