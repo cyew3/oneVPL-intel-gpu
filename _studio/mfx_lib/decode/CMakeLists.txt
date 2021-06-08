@@ -69,7 +69,6 @@ list(APPEND sources
     ${UMC_CODECS}/h265_dec/src/umc_h265_task_supplier.cpp
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer.cpp
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_vaapi.cpp
-    ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_dxva.cpp
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_ms.cpp
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_intel.cpp
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_supplier.cpp
@@ -107,7 +106,6 @@ list(APPEND sources
     ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_splitter.cpp
     ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_utils.cpp
     ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_va_packer.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dxva_packer.cpp
   )
 
 
@@ -145,7 +143,6 @@ list(APPEND sources
 
 list(APPEND sources_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/vp8/src/mfx_vp8_dec_decode_hw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/vp8/src/mfx_vp8_dec_decode_hw_dxva.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vp8/src/mfx_vp8_dec_decode_hw_vaapi.cpp
 )
 
@@ -178,20 +175,14 @@ list(APPEND sources
     ${UMC_CODECS}/av1_dec/src/umc_av1_frame.cpp
     ${UMC_CODECS}/av1_dec/src/umc_av1_utils.cpp
     ${UMC_CODECS}/av1_dec/src/umc_av1_va_packer_vaapi.cpp
-    ${UMC_CODECS}/av1_dec/src/umc_av1_va_packer_dxva.cpp
-    ${UMC_CODECS}/av1_dec/src/umc_av1_va_packer_msft.cpp
-    ${MSDK_UMC_ROOT}/core/umc/src/umc_default_frame_allocator.cpp
     )
+
+set(IPP_LIBS ipp)
+
+include(sources_ext.cmake OPTIONAL)
 
 add_library(decode_hw STATIC ${sources} ${sources_hw})
 target_include_directories(decode_hw PUBLIC ${include_dirs})
-
-set(IPP_LIBS "")
-if (MFX_BUNDLED_IPP)
-  set(IPP_LIBS ipp)
-else()
-  set(IPP_LIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
-endif()
 
 target_link_libraries(decode_hw
   PUBLIC
@@ -202,4 +193,3 @@ target_link_libraries(decode_hw
     ${IPP_LIBS}
   )
 
-include(sources_ext.cmake OPTIONAL)

@@ -34,33 +34,18 @@ add_subdirectory(core/umc)
 add_library(umc_va_hw STATIC)
 set_property(TARGET umc_va_hw PROPERTY FOLDER "umc")
 
+include(sources_ext.cmake OPTIONAL)
+
 target_sources(umc_va_hw
   PRIVATE
-    io/umc_va/include/umc_av1_ddi.h
-    io/umc_va/include/umc_hevc_ddi.h
-    io/umc_va/include/umc_jpeg_ddi.h
-    io/umc_va/include/umc_mf_decl.h
-    io/umc_va/include/umc_mvc_ddi.h
-    io/umc_va/include/umc_profile_level.h
-    io/umc_va/include/umc_svc_ddi.h
-    io/umc_va/include/umc_va_dxva2.h
-    io/umc_va/include/umc_va_dxva2_protected.h
     io/umc_va/include/umc_va.h
     io/umc_va/include/umc_va_linux.h
     io/umc_va/include/umc_va_linux_protected.h
     io/umc_va/include/umc_va_video_processing.h
-    io/umc_va/include/umc_vp8_ddi.h
-    io/umc_va/include/umc_vp9_ddi.h
-    io/umc_va/include/umc_win_event_cache.h
-
-    io/umc_va/src/umc_profile_level.cpp
     io/umc_va/src/umc_va.cpp
-    io/umc_va/src/umc_va_dxva2.cpp
-    io/umc_va/src/umc_va_dxva2_protected.cpp
     io/umc_va/src/umc_va_linux.cpp
     io/umc_va/src/umc_va_linux_protected.cpp
     io/umc_va/src/umc_va_video_processing.cpp
-    io/umc_va/src/umc_win_event_cache.cpp
   )
 
 target_compile_definitions(umc_va_hw
@@ -110,4 +95,4 @@ target_link_libraries(bitrate_control PUBLIC umc)
 
 ### UMC codec brc
 
-include(sources_ext.cmake OPTIONAL)
+include(sources_tool_ext.cmake OPTIONAL)
