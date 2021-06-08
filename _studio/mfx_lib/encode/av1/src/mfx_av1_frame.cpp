@@ -31,17 +31,6 @@
 #include "mfx_av1_deblocking.h"
 #include "mfx_av1_superres.h"
 
-#ifndef MFX_VA
-#define H265FEI_AllocateSurfaceUp(...) (MFX_ERR_NONE)
-#define H265FEI_AllocateInputSurface(...) (MFX_ERR_NONE)
-#define H265FEI_AllocateReconSurface(...) (MFX_ERR_NONE)
-#define H265FEI_AllocateOutputSurface(...) (MFX_ERR_NONE)
-#define H265FEI_AllocateOutputBuffer(...) (MFX_ERR_NONE)
-#define H265FEI_FreeSurface(...) (MFX_ERR_NONE)
-#define CM_ALIGNED_MALLOC(...) ((void *)NULL)
-#define CM_ALIGNED_FREE(...)
-#endif
-
 namespace AV1Enc {
 
     using namespace MfxEnumShortAliases;

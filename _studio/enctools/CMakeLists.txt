@@ -35,7 +35,6 @@ add_library(enctools_hw STATIC ${sources})
 
 target_compile_definitions(enctools_hw
   PRIVATE
-    MFX_VA
     $<$<BOOL:${MFX_ENABLE_AENC}>:MFX_ENABLE_AENC>
   )
 

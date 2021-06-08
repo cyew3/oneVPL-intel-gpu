@@ -569,13 +569,8 @@ namespace AV1Enc {
 
     namespace CodecLimits {
         using namespace MfxEnumShortAliases;
-#ifdef MFX_VA
         const int32_t MAX_GOP_REF_DIST = 8;
         const int32_t SUP_ENABLE_CM[]  = { OFF, ON };
-#else
-        const int32_t MAX_GOP_REF_DIST = 16;
-        const int32_t SUP_ENABLE_CM[]  = { OFF };
-#endif
 
         const int32_t MIN_TARGET_USAGE       = 7;
         const int32_t MAX_TARGET_USAGE       = 7;

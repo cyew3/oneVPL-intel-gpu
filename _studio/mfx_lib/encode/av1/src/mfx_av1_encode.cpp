@@ -66,16 +66,6 @@
 #include "mfx_av1_gpu_mode_decision.h"
 #endif // PROTOTYPE_GPU_MODE_DECISION
 
-#ifndef MFX_VA
-#define H265FEI_Close(...) (MFX_ERR_NONE)
-#define H265FEI_GetSurfaceDimensions(...) (MFX_ERR_NONE)
-#define H265FEI_GetSurfaceDimensions_new(...) (MFX_ERR_NONE)
-#define H265FEI_Init(...) (MFX_ERR_NONE)
-#define H265FEI_ProcessFrameAsync(...) (MFX_ERR_NONE)
-#define H265FEI_SyncOperation(...) (MFX_ERR_NONE)
-#define H265FEI_DestroySavedSyncPoint(...) (MFX_ERR_NONE)
-#endif
-
 using namespace AV1Enc;
 using namespace AV1Enc::MfxEnumShortAliases;
 

@@ -27,7 +27,7 @@
 
 #ifdef AS_AV1E_FEI_PLUGIN
 
-#ifdef MFX_VA
+
 
 VideoENC_H265FEI::VideoENC_H265FEI(VideoCORE *core,  mfxStatus * sts) :
     m_feiH265(),
@@ -715,7 +715,7 @@ mfxStatus VideoENC_H265FEI::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFram
 
 #endif  // AS_H265FEI_PLUGIN
 
-#endif  // MFX_VA
+
 
 /* EOF */
 

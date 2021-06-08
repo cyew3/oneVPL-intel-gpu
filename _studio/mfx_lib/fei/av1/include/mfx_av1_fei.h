@@ -183,14 +183,7 @@ struct mfxExtFEIH265Alloc
 
 
 
-#ifdef MFX_VA
 #include "cmrt_cross_platform.h"
-#else //MFX_VA
-class CmSurface2D;
-class CmSurface2DUP;
-class CmBuffer;
-class CmBufferUP;
-#endif //MFX_VA
 
 //#define SAVE_FEI_STATE      /* enabling will save FEI parameters and output to txt files for unit testing with sample app */
 

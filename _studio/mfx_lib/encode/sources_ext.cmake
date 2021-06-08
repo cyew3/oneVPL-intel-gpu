@@ -77,7 +77,6 @@ set_property(TARGET av1e_core_hwa PROPERTY FOLDER "av1e_hwa")
 
 target_compile_definitions(av1e_core_hwa
   PRIVATE
-    MFX_VA
     $<$<PLATFORM_ID:Windows>:MFX_VA_WIN> # w/a for missed config inclusion in hevc/av1
 )
   

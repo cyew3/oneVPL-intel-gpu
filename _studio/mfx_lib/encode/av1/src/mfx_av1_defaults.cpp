@@ -402,11 +402,7 @@ namespace AV1Enc {
         TAB_TU(gacc, 3), TAB_TU(gacc, 0), TAB_TU(gacc, 1), TAB_TU(gacc, 2), TAB_TU(gacc, 3), TAB_TU(gacc, 4), TAB_TU(gacc, 5), TAB_TU(gacc, 6)
     };
 
-#ifdef MFX_VA
     const uint8_t DEFAULT_ENABLE_CM = ON;
-#else
-    const uint8_t DEFAULT_ENABLE_CM = OFF;
-#endif
 };
 
 
