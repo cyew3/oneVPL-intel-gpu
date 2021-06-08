@@ -97,7 +97,6 @@ public:
         }
 
         mfxRes = MFXVideoENCODE_Query(dummy_session, in, out);
-        MFX_CHECK_STS(mfxRes);
 
         DummySession::Close(dummy_session);
 
@@ -149,7 +148,6 @@ public:
         }
 
         mfxRes = MFXVideoENCODE_QueryIOSurf(dummy_session, par, request);
-        MFX_CHECK_STS(mfxRes);
 
         DummySession::Close(dummy_session);
 

@@ -58,11 +58,17 @@ mfxStatus GetDdiVersions(
     MFX_CHECK_STS(sts);
 
     sts = SingleGpuEncode::Query(dummy_session->m_pCORE.get(), &in_internal, &out_internal, 0);
-    MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
+    if (sts != MFX_ERR_NONE && sts != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
+        DummySession::Close(dummy_session);
+        return sts;
+    }
 
     EncodeDdiVersion* encodeDdiVersion2 = QueryCoreInterface<EncodeDdiVersion>(dummy_session->m_pCORE.get());
     sts = encodeDdiVersion2->GetDdiVersion(in_internal.mfx.CodecId, ddiVersion2);
-    MFX_CHECK_STS(sts);
+    if (sts != MFX_ERR_NONE) {
+        DummySession::Close(dummy_session);
+        return sts;
+    }
 
     sts = DummySession::Close(dummy_session);
     MFX_CHECK_STS(sts);
