@@ -3,12 +3,11 @@ resource: DOCKER_LINUX_DRIVER
 manifest: manifest.yml
 working_dir: '..'
 env:
-  DOCKER_ENV_VARS: "-e SYSTEM=Ubuntu18.04 -e LINUX_DISTRO=ubuntu -e CCACHE_DIR=/opt/ccache \
+  DOCKER_ENV_VARS: "-e CCACHE_DIR=/opt/ccache \
     -e MEDIASDK_ROOT=/opt/src/msdk_root -e MFX_HOME=/opt/src/sources/mdp_msdk-lib \
     -e MFX_MDF_PATH=/opt/src/msdk_root/cmrt_linux \
     -e PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig \
     -e CMAKE_VTUNE_HOME=/opt/src/sources/mdp_msdk-contrib/itt"
-  DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-ubuntu18.04:1
 qb_variable_map:
   build_version: BUILD_VERSION
   component_name: COMPONENT_NAME
@@ -16,9 +15,9 @@ qb_variable_map:
   parent_build_id: BUILD_ID
   build_number: BUILD_NUMBER
 steps:
-  - name: clean mediasdk lib repo
+  - name: clean vpl lib repo
     command: rm -rf $WORKSPACE/sources/mdp_msdk-lib
-  - name: copy lib repo (mediasdk or product)
+  - name: copy lib repo
     command: cp -R $WORKSPACE/mediasdk $WORKSPACE/sources/mdp_msdk-lib
   - name: create container
     command: docker run --name $BUILD_ID --rm -d -w /opt/src $DOCKER_ENV_VARS -e BUILD_NUMBER=$BUILD_NUMBER --init -v $WORKSPACE:/opt/src
@@ -26,6 +25,12 @@ steps:
       /bin/bash -c "sleep 1800"
   - name: config_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu"
+    conditions:
+      params.type: [ubuntu18.04]
+  - name: config_libva
+    command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib64"
+    conditions:
+      params.type: [rhel8.2]
   - name: build_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
   - name: config and build vpl
@@ -33,29 +38,29 @@ steps:
   - name: unit tests
     command: docker exec $BUILD_ID /bin/bash -c 'cd ./sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/ctest -j $(nproc)'
   - name: pack vpl binaries
-    command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Packages && cd sources/mdp_msdk-lib/output/Packages
-      && tar cvfz ubuntu_vpl_linux.tgz -C /opt/src/sources/mdp_msdk-lib/build ."
+    command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Linux && cd sources/mdp_msdk-lib/output/Linux
+      && tar cvfz $LINUX_DISTRIBUTIVE_msdk.tgz -C /opt/src/sources/mdp_msdk-lib/build ."
   - name: create integration lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
-      -m /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/runtime/l_MSDK_p*.tgz
-      -p /opt/src/sources/mdp_msdk-lib/output/Ubuntu/integration/runtime
+      -m /opt/src/mediasdk_1x_binaries/$LINUX_DISTRIBUTIVE/msdk/runtime/l_MSDK_p*.tgz
+      -p /opt/src/sources/mdp_msdk-lib/output/Linux/integration/runtime
       -n $BUILD_NUMBER"
   - name: copy integration tools drop
-    command: docker exec $BUILD_ID /bin/bash -c 'mkdir /opt/src/sources/mdp_msdk-lib/output/Ubuntu/integration/tools &&
-      cp /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/tools/tools_drop*.zip /opt/src/sources/mdp_msdk-lib/output/Ubuntu/integration/tools'
+    command: docker exec $BUILD_ID /bin/bash -c "mkdir /opt/src/sources/mdp_msdk-lib/output/Linux/integration/tools &&
+      cp /opt/src/mediasdk_1x_binaries/$LINUX_DISTRIBUTIVE/msdk/tools/tools_drop*.zip /opt/src/sources/mdp_msdk-lib/output/Linux/integration/tools"
   - name: create vpl lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/vpl_drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
       -h /opt/src/sources/mdp_msdk-lib/api
-      -m /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/runtime/l_MSDK_p*.tgz
-      -p /opt/src/sources/mdp_msdk-lib/output/Ubuntu/vpl/runtime
+      -m /opt/src/mediasdk_1x_binaries/$LINUX_DISTRIBUTIVE/msdk/runtime/l_MSDK_p*.tgz
+      -p /opt/src/sources/mdp_msdk-lib/output/Linux/vpl/runtime
       -n $BUILD_NUMBER"
   - name: create vpl tools drop package
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/vpl_drop_linux_tools.sh
       -b /opt/src/sources/mdp_msdk-lib/build/__bin/release
-      -m /opt/src/mediasdk_1x_binaries/Ubuntu/msdk/tools/tools_drop*.zip
-      -p /opt/src/sources/mdp_msdk-lib/output/Ubuntu/vpl/tools
+      -m /opt/src/mediasdk_1x_binaries/$LINUX_DISTRIBUTIVE/msdk/tools/tools_drop*.zip
+      -p /opt/src/sources/mdp_msdk-lib/output/Linux/vpl/tools
       -n $BUILD_NUMBER"
   - name: remove container
     command: docker kill $BUILD_ID
@@ -65,20 +70,41 @@ steps:
 types:
   ubuntu18.04:
     env:
-      BUILD_TYPE: Release
+      DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-ubuntu18.04:1
+      LINUX_DISTRIBUTIVE: "Ubuntu"
     output:
     - file_patterns: "*.tgz"
-      source_dir: "../sources/mdp_msdk-lib/output/Packages"
-      destination_dir: Packages/ubuntu
+      source_dir: "../sources/mdp_msdk-lib/output/Linux"
+      destination_dir: Packages/Ubuntu
     - file_patterns: "*.tgz"
-      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/integration/runtime"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/runtime"
       destination_dir: Ubuntu/integration/runtime
     - file_patterns: "*.zip"
-      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/integration/tools"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/tools"
       destination_dir: Ubuntu/integration/tools
     - file_patterns: "*.tgz"
-      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/vpl/runtime"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
       destination_dir: Ubuntu/vpl/runtime
     - file_patterns: "*.zip"
-      source_dir: "../sources/mdp_msdk-lib/output/Ubuntu/vpl/tools"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/tools"
       destination_dir: Ubuntu/vpl/tools
+  rhel8.2:
+    env:
+      DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-rhel-8.2:0
+      LINUX_DISTRIBUTIVE: "RHEL"
+    output:
+    - file_patterns: "*.tgz"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux"
+      destination_dir: Packages/RHEL
+    - file_patterns: "*.tgz"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/runtime"
+      destination_dir: RHEL/integration/runtime
+    - file_patterns: "*.zip"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/tools"
+      destination_dir: RHEL/integration/tools
+    - file_patterns: "*.tgz"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
+      destination_dir: RHEL/vpl/runtime
+    - file_patterns: "*.zip"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/tools"
+      destination_dir: RHEL/vpl/tools
