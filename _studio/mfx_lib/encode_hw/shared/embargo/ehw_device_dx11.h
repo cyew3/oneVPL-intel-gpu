@@ -18,10 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
+#include "mfx_common.h"
 
 #if defined (MFX_VA_WIN)
 
-#pragma once
 #include "ehw_device.h"
 #include "encoding_ddi.h"
 #include <vector>

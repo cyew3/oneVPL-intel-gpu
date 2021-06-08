@@ -30,7 +30,9 @@
 #include <algorithm>
 #include "mfxstructures.h"
 #include "mfx_enc_common.h"
+#if defined (MFX_VA_WIN)
 #include "encoding_ddi.h"
+#endif
 #include "assert.h"
 
 static inline bool operator==(mfxVP9SegmentParam const& l, mfxVP9SegmentParam const& r)

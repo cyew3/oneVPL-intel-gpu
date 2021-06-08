@@ -4,6 +4,9 @@ if (OPEN_SOURCE)
 endif()
 
 target_include_directories(encode_hw PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/mvc/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/svc/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/svc/src
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/base
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf
@@ -39,10 +42,29 @@ target_include_directories(encode_hw PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/include
 )
 
 target_sources(encode_hw
   PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/mjpeg/include/mfx_mjpeg_encode_d3d11.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/mjpeg/include/mfx_mjpeg_encode_d3d9.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/mjpeg/include/mfx_mjpeg_encode_d3d_common.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/mvc/src/mfx_mvc_encode_hw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/svc/include/mfx_svc_encode_simulcast_over_avc.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/svc/src/mfx_svc_encode_hw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/svc/src/mfx_svc_encode_simulcast_over_avc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mjpeg/src/mfx_mjpeg_encode_d3d11.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mjpeg/src/mfx_mjpeg_encode_d3d9.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mjpeg/src/mfx_mjpeg_encode_d3d_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vp9/include/mfx_vp9_encode_hw_d3d11.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/vp9/include/mfx_vp9_encode_hw_d3d9.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/vp9/include/mfx_vp9_encode_hw_d3d_common.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/vp9/include/mfx_vp9_encode_hw_ddi.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/vp9/src/mfx_vp9_encode_hw_d3d11.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vp9/src/mfx_vp9_encode_hw_d3d9.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vp9/src/mfx_vp9_encode_hw_d3d_common.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12/hevcehw_g12_scc_mode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g12/hevcehw_g12_scc_mode.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf_caps.cpp
@@ -170,6 +192,7 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_utils_ddi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/embargo/ehw_resources_pool_dx11.cpp
 
+
     $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/shared/src/mfx_win_event_cache.cpp>
 
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/av1ehw_disp.h
@@ -255,10 +278,31 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_tile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_encoded_frame_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/agnostic/base/av1ehw_base_encoded_frame_info.h
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/include/mfx_hyper_encode_hw.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/include/mfx_hyper_encode_hw_adapter.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/include/mfx_hyper_encode_hw_dev_mngr.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/include/mfx_hyper_encode_hw_multi_enc.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/include/mfx_hyper_encode_hw_single_enc.h
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/src/mfx_hyper_encode_hw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/src/mfx_hyper_encode_hw_adapter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/src/mfx_hyper_encode_hw_dev_mngr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hyper_encode/src/mfx_hyper_encode_hw_multi_enc.cpp
+
+    ${MSDK_LIB_ROOT}/shared/include/encoder_ddi.hpp
+    ${MSDK_LIB_ROOT}/shared/include/encoding_ddi.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d11.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d9.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d_common.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d11.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d9.h
+    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d_common.h
     )
 
 target_link_libraries(encode_hw
   PUBLIC
+    mfx_trace
     $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:lpla>
 )
 

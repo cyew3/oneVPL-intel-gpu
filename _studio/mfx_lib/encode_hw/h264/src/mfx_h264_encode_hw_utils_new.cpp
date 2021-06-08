@@ -26,7 +26,6 @@
 #include "mfx_h264_encode_hw_utils.h"
 #include "mfx_common_int.h"
 #include "ippi.h"
-#include "libmfx_core.h"
 
 using namespace MfxHwH264Encode;
 

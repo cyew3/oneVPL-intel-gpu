@@ -9,17 +9,11 @@ set( sources
     h264/src/mfx_h264_encode_hw_utils.cpp
     h264/src/mfx_h264_encode_hw_utils_new.cpp
 
-    mjpeg/include/mfx_mjpeg_encode_d3d11.h
-    mjpeg/include/mfx_mjpeg_encode_d3d9.h
-    mjpeg/include/mfx_mjpeg_encode_d3d_common.h
     mjpeg/include/mfx_mjpeg_encode_hw.h
     mjpeg/include/mfx_mjpeg_encode_hw_utils.h
     mjpeg/include/mfx_mjpeg_encode_interface.h
     mjpeg/include/mfx_mjpeg_encode_vaapi.h
 
-    mjpeg/src/mfx_mjpeg_encode_d3d11.cpp
-    mjpeg/src/mfx_mjpeg_encode_d3d9.cpp
-    mjpeg/src/mfx_mjpeg_encode_d3d_common.cpp
     mjpeg/src/mfx_mjpeg_encode_factory.cpp
     mjpeg/src/mfx_mjpeg_encode_hw.cpp
     mjpeg/src/mfx_mjpeg_encode_hw_utils.cpp
@@ -35,26 +29,13 @@ set( sources
     mpeg2/src/mfx_mpeg2_encode_hw.cpp
     mpeg2/src/mfx_mpeg2_encode_utils_hw.cpp
 
-    mvc/src/mfx_mvc_encode_hw.cpp
-
-    svc/include/mfx_svc_encode_simulcast_over_avc.h
-    svc/src/mfx_svc_encode_hw.cpp
-    svc/src/mfx_svc_encode_simulcast_over_avc.cpp
-
     vp9/include/mfx_platform_defs.h
-    vp9/include/mfx_vp9_encode_hw_d3d11.h
-    vp9/include/mfx_vp9_encode_hw_d3d9.h
-    vp9/include/mfx_vp9_encode_hw_d3d_common.h
-    vp9/include/mfx_vp9_encode_hw_ddi.h
     vp9/include/mfx_vp9_encode_hw.h
     vp9/include/mfx_vp9_encode_hw_par.h
     vp9/include/mfx_vp9_encode_hw_utils.h
     vp9/include/mfx_vp9_encode_hw_vaapi.h
 
     vp9/src/mfx_vp9_encode_hw.cpp
-    vp9/src/mfx_vp9_encode_hw_d3d11.cpp
-    vp9/src/mfx_vp9_encode_hw_d3d9.cpp
-    vp9/src/mfx_vp9_encode_hw_d3d_common.cpp
     vp9/src/mfx_vp9_encode_hw_ddi.cpp
     vp9/src/mfx_vp9_encode_hw_par.cpp
     vp9/src/mfx_vp9_encode_hw_utils.cpp
@@ -90,9 +71,6 @@ set( sources
     hevc/agnostic/base/hevcehw_base_constraints.h
     hevc/agnostic/g12/hevcehw_g12_scc.h
 
-    hevc/linux/g12/hevcehw_g12_caps_lin.h
-    hevc/linux/g12/hevcehw_g12_lin.h
-    hevc/linux/g12/hevcehw_g12_rext_lin.h
     hevc/linux/base/hevcehw_base_encoded_frame_info_lin.h
     hevc/linux/base/hevcehw_base_interlace_lin.h
     hevc/linux/base/hevcehw_base_lin.h
@@ -102,9 +80,11 @@ set( sources
     hevc/linux/base/hevcehw_base_weighted_prediction_lin.h
     hevc/linux/base/hevcehw_base_max_frame_size_lin.h
     hevc/linux/base/hevcehw_base_dirty_rect_lin.h
+    hevc/linux/g12/hevcehw_g12_caps_lin.h
+    hevc/linux/g12/hevcehw_g12_lin.h
+    hevc/linux/g12/hevcehw_g12_rext_lin.h
     hevc/linux/g12/hevcehw_g12_scc_lin.h
     hevc/linux/g12/hevcehw_g12_qp_modulation_lin.h
-
 
     hevc/hevcehw_disp.cpp
     hevc/agnostic/hevcehw_base.cpp
@@ -138,11 +118,11 @@ set( sources
     hevc/linux/base/hevcehw_base_va_lin.cpp
     hevc/linux/base/hevcehw_base_va_packer_lin.cpp
     hevc/linux/base/hevcehw_base_weighted_prediction_lin.cpp
-    hevc/linux/g12/hevcehw_g12_lin.cpp
-    hevc/linux/g12/hevcehw_g12_rext_lin.cpp
     hevc/linux/base/hevcehw_base_max_frame_size_lin.cpp
     hevc/linux/base/hevcehw_base_dirty_rect_lin.cpp
+    hevc/linux/g12/hevcehw_g12_lin.cpp
     hevc/linux/g12/hevcehw_g12_qp_modulation_lin.cpp
+    hevc/linux/g12/hevcehw_g12_rext_lin.cpp
 
     shared/ehw_resources_pool.h
     shared/ehw_task_manager.h
@@ -152,20 +132,12 @@ set( sources
     shared/ehw_device_vaapi.cpp
     shared/ehw_utils_vaapi.cpp
 
-    ${MSDK_LIB_ROOT}/shared/include/encoder_ddi.hpp
-    ${MSDK_LIB_ROOT}/shared/include/encoding_ddi.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_h264_enc_common_hw.h
-    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d11.h
-    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d9.h
-    ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_d3d_common.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_interface.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_struct_vaapi.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_h264_encode_vaapi.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_enc_common.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_enc_common_hw.h
-    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d11.h
-    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d9.h
-    ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_d3d_common.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_interface.h
     ${MSDK_LIB_ROOT}/shared/include/mfx_mpeg2_encode_vaapi.h
 
@@ -175,25 +147,10 @@ set( sources
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_enc_common_hw.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_encode_factory.cpp
     ${MSDK_LIB_ROOT}/shared/src/mfx_mpeg2_encode_vaapi.cpp
-
-    hyper_encode/include/mfx_hyper_encode_hw.h
-    hyper_encode/include/mfx_hyper_encode_hw_adapter.h
-    hyper_encode/include/mfx_hyper_encode_hw_dev_mngr.h
-    hyper_encode/include/mfx_hyper_encode_hw_multi_enc.h
-    hyper_encode/include/mfx_hyper_encode_hw_single_enc.h
-
-    hyper_encode/src/mfx_hyper_encode_hw.cpp
-    hyper_encode/src/mfx_hyper_encode_hw_adapter.cpp
-    hyper_encode/src/mfx_hyper_encode_hw_dev_mngr.cpp
-    hyper_encode/src/mfx_hyper_encode_hw_multi_enc.cpp
   )
+
 
 add_library(encode_hw STATIC ${sources})
-
-target_compile_definitions(encode_hw
-  PRIVATE
-    $<$<PLATFORM_ID:Windows>:MFX_VA_WIN> # w/a for missed config inclusion in hevc/av1
-  )
 
 target_include_directories(encode_hw
   PUBLIC
@@ -208,37 +165,21 @@ target_include_directories(encode_hw
 
     ${MSDK_LIB_ROOT}/encode_hw/shared
 
-    ${MSDK_LIB_ROOT}/pak/mpeg2/include
-    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:
-      ${MSDK_LIB_ROOT}/fei/h264_common
-      ${MSDK_LIB_ROOT}/fei/h264_preenc
-      ${MSDK_LIB_ROOT}/fei/h264_enc
-      ${MSDK_LIB_ROOT}/fei/h264_pak
-      ${MSDK_STUDIO_ROOT}/hevc_fei/h265_fei/include
-    >
-
     ${MSDK_STUDIO_ROOT}/shared/include
 
     h264/include
     mjpeg/include
     mpeg2/include
-    mvc/include
-    svc/include
     vp9/include
-    hyper_encode/include
 
     ${MSDK_UMC_ROOT}/codec/mpeg2_enc/include
     ${MSDK_UMC_ROOT}/codec/jpeg_common/include
     ${MSDK_UMC_ROOT}/codec/brc/include
     ${MSDK_UMC_ROOT}/codec/color_space_converter/include
-    $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:
-      ${MSDK_LIB_ROOT}/lpla
-    >
 )
 
 target_link_libraries(encode_hw
   PUBLIC
-    mfx_trace
     mfx_static_lib
     umc_va_hw
     asc

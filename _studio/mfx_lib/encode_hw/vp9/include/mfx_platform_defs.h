@@ -21,7 +21,7 @@
 #ifndef __MFX_PLATFORM_DEFS_H__
 #define __MFX_PLATFORM_DEFS_H__
 
-#if !(defined (_WIN32) || defined (_WIN64))
+#if !defined(MFX_VA_WIN)
 
 static const GUID GUID_NULL =
 { 0x00000000, 0x0000, 0x0000,{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
