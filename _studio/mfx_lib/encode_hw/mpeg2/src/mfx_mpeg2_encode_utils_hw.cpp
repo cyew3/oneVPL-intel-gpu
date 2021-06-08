@@ -487,7 +487,6 @@ namespace MPEG2EncoderHW
         return sts;
     }
 
-#if defined(MFX_ONEVPL)
     mfxStatus ControllerBase::QueryImplsDescription(
         VideoCORE& core
         , mfxEncoderDescription::encoder& caps
@@ -539,7 +538,6 @@ namespace MPEG2EncoderHW
 
         return MFX_ERR_NONE;
     }
-#endif //defined(MFX_ONEVPL)
 
     mfxStatus ControllerBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out, bool bAVBR_WA)
     {
@@ -1002,9 +1000,6 @@ namespace MPEG2EncoderHW
                 || out->mfx.RateControlMethod == MFX_RATECONTROL_QVBR
                 || out->mfx.RateControlMethod == MFX_RATECONTROL_LA
                 || out->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ
-#if !defined(MFX_ONEVPL)
-                || out->mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
                 || out->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
                 || out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED1
                 || out->mfx.RateControlMethod == MFX_RATECONTROL_RESERVED2
@@ -1472,9 +1467,6 @@ namespace MPEG2EncoderHW
             || RateControl == MFX_RATECONTROL_QVBR
             || RateControl == MFX_RATECONTROL_LA
             || RateControl == MFX_RATECONTROL_LA_ICQ
-#if !defined(MFX_ONEVPL)
-            || RateControl == MFX_RATECONTROL_LA_EXT
-#endif
             || RateControl == MFX_RATECONTROL_LA_HRD
             || RateControl == MFX_RATECONTROL_RESERVED1
             || RateControl == MFX_RATECONTROL_RESERVED2

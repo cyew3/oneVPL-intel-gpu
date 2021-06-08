@@ -1279,8 +1279,6 @@ bool D3D11VideoCORE_T<Base>::IsCompatibleForOpaq()
     return true;
 }
 
-#if defined(MFX_ONEVPL)
-
 D3D11VideoCORE20::D3D11VideoCORE20(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
     : D3D11VideoCORE20_base(adapterNum, numThreadsAvailable, session)
 {
@@ -1723,11 +1721,8 @@ mfxStatus D3D11VideoCORE20::CreateSurface(mfxU16 type, const mfxFrameInfo& info,
     return m_frame_allocator_wrapper.CreateSurface(type, info, surf);
 }
 
-#endif
 
 template class D3D11VideoCORE_T<CommonCORE  >;
-#if defined(MFX_ONEVPL)
 template class D3D11VideoCORE_T<CommonCORE20>;
-#endif
 
 #endif

@@ -82,9 +82,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1' \n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
 #endif	#endif
-#if defined(MFX_ONEVPL)
     msdk_printf(MSDK_STRING("   [-dual_gfx::<on,off,adaptive>] - prefer processing on both iGfx and dGfx simultaneously\n"));
-#endif
 #endif
 #ifdef MOD_ENC
     MOD_ENC_PRINT_HELP;
@@ -472,7 +470,7 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
         }
     }
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && defined(MFX_ONEVPL)
+#if (defined(_WIN64) || defined(_WIN32))
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dual_gfx::on")))
     {
         pParams->isDualMode = true;

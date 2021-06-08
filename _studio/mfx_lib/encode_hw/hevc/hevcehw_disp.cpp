@@ -199,7 +199,6 @@ mfxStatus Query(
     return impl->InternalQuery(*core, in, *out);
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus QueryImplsDescription(
     VideoCORE& core
     , mfxEncoderDescription::encoder& caps
@@ -218,7 +217,6 @@ mfxStatus QueryImplsDescription(
 
     return impl->QueryImplsDescription(core, caps, ah);
 }
-#endif //defined(MFX_ONEVPL)
 
 } //namespace HEVCEHW
 

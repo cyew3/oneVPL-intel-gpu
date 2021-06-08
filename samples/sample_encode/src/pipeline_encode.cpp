@@ -642,24 +642,6 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         codingOption->VuiNalHrdParameters = pInParams->nVuiNalHrdParameters;
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(MFX_ONEVPL)
-
-    if (pInParams->bEncTools)
-    {
-        auto et_config = m_mfxEncParams.AddExtBuffer<mfxExtEncToolsConfig>();
-        et_config->AdaptiveI             = pInParams->etAdaptiveI;
-        et_config->AdaptiveB             = pInParams->etAdaptiveB;
-        et_config->AdaptiveRefP          = pInParams->etArefP;
-        et_config->AdaptiveRefB          = pInParams->etArefB;
-        et_config->SceneChange           = pInParams->etSceneChange;
-        et_config->AdaptiveLTR           = pInParams->etALTR;
-        et_config->AdaptivePyramidQuantB = pInParams->etApyrQB;
-        et_config->AdaptivePyramidQuantP = pInParams->etApyrQP;
-        et_config->BRCBufferHints        = pInParams->etBRCHints;
-        et_config->BRC                   = pInParams->etBRC;
-    }
-#endif
-
     // configure the depth of the look ahead BRC if specified in command line
     if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType ||
         (pInParams->BitrateLimit && pInParams->CodecId == MFX_CODEC_AVC) ||
@@ -803,7 +785,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
     m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
 
-#if (defined(_WIN64) || defined(_WIN32)) && defined(MFX_ONEVPL)
+#if (defined(_WIN64) || defined(_WIN32))
     if (pInParams->isDualMode)
     {
         auto hyperEncodeParam = m_mfxEncParams.AddExtBuffer<mfxExtHyperModeParam>();
@@ -1629,45 +1611,6 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
-#if !defined(MFX_ONEVPL)
-        /* Here we actually define the following codec initialization scheme:
-        *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
-        *  2. If plugin path not specified:
-        *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-        *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-        */
-        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath, sizeof(pParams->pluginParams.strPluginPath)))
-        {
-            m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath, sizeof(pParams->pluginParams.strPluginPath))));
-            if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-        }
-        else
-        {
-            bool isDefaultPlugin = false;
-            if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-            {
-                mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
-                pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VENCODE, pParams->CodecId);
-                isDefaultPlugin = true;
-            }
-            if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-            {
-                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
-                if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-            }
-            if (sts == MFX_ERR_UNSUPPORTED)
-            {
-                msdk_printf(MSDK_STRING("%s"), isDefaultPlugin ?
-                    MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n")
-                    : MSDK_STRING("Explicitly specified plugin cannot be loaded.\n"));
-            }
-        }
-        MSDK_CHECK_STATUS(sts, "LoadPlugin failed");
-#endif
-    }
-
     // create encoder
     m_pmfxENC = new MFXVideoENCODE(m_mfxSession);
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
@@ -1922,10 +1865,6 @@ void CEncodingPipeline::Close()
     FreeVppFilters();
 
     DeleteFrames();
-
-#if !defined(MFX_ONEVPL)
-    m_pPlugin.reset();
-#endif
 
     m_TaskPool.Close();
     m_mfxSession.Close();

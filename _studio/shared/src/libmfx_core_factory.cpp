@@ -49,10 +49,8 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
     switch (va_type)
     {
     case MFX_HW_NO:
-#if defined(MFX_ONEVPL)
         if (create_msdk20_core)
             return new CommonCORE20(numThreadsAvailable, session);
-#endif
 
         return new CommonCORE(numThreadsAvailable, session);
 
@@ -63,10 +61,8 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
 #endif
 #if defined (MFX_D3D11_ENABLED)
     case MFX_HW_D3D11:
-#if defined(MFX_ONEVPL)
         if (create_msdk20_core)
             return new D3D11VideoCORE20(adapterNum, numThreadsAvailable, session);
-#endif
 
         return new D3D11VideoCORE(adapterNum, numThreadsAvailable, session);
 #if defined (MFX_DX9ON11)
@@ -76,10 +72,8 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
 #endif
 #else
     case MFX_HW_VAAPI:
-#if defined(MFX_ONEVPL)
         if (create_msdk20_core)
             return new VAAPIVideoCORE20(adapterNum, numThreadsAvailable, session);
-#endif
 
         return new VAAPIVideoCORE(adapterNum, numThreadsAvailable, session);
 #endif

@@ -25,17 +25,8 @@
 
 #include "mfxvideo.h"
 
-#if !defined(MFX_ONEVPL)
-#include "mfxla.h"
-#endif //!MFX_ONEVPL
-
 #include "mfxbrc.h"
 #include "mfx_ext_buffers.h"
-
-#if !defined(MFX_VA_LINUX) && !defined(MFX_ONEVPL)
-#include "mfxpcp.h"
-#include "mfxwidi.h"
-#endif //!MFX_VA_LINUX && !MFX_ONEVPL
 
 #include "mfxvideo++int.h"
 
@@ -129,7 +120,6 @@ protected:
     virtual const BlockTracer::TFeatureTrace* GetTrace() { return nullptr; }
     virtual void SetTraceName(std::string&& /*name*/) {}
 };
-
 
 }; //namespace AV1EHW
 

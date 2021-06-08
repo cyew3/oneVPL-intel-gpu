@@ -34,9 +34,7 @@
 #include "av1ehw_base_dirty_rect_win.h"
 #include "av1ehw_base_encoded_frame_info_win.h"
 #include "av1ehw_base_blocking_sync_win.h"
-#if defined (MFX_ONEVPL)
 #include "av1ehw_base_query_impl_desc.h"
-#endif
 
 using namespace AV1EHW;
 
@@ -72,9 +70,7 @@ Windows::Base::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
     m_features.emplace_back(new Tile(FEATURE_TILE));
     m_features.emplace_back(new DirtyRect(FEATURE_DIRTY_RECT));
     m_features.emplace_back(new EncodedFrameInfo(FEATURE_ENCODED_FRAME_INFO));
-#if defined (MFX_ONEVPL)
     m_features.emplace_back(new QueryImplDesc(FEATURE_QUERY_IMPL_DESC));
-#endif
 
     InternalInitFeatures(status, mode);
 

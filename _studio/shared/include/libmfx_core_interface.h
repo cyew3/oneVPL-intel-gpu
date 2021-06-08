@@ -92,12 +92,10 @@ static const MFX_GUID MFXICORE_GT_CONFIG_GUID =
 static const MFX_GUID MFXIHWDDI_GUID =
 { 0x6ce480a6, 0xe881, 0x44da, { 0x90, 0x3c, 0xad, 0x4b, 0x54, 0x17, 0x7e, 0xf0 } };
 
-#if defined(MFX_ONEVPL)
 // {2C3163A0-B061-4931-AF0D-2301AC99DA77}
 static const
 MFX_GUID MFXAllocatorWrapper_GUID =
 { 0x2c3163a0, 0xb061, 0x4931, {0xaf, 0x0d, 0x23, 0x01, 0xac, 0x99, 0xda, 0x77} };
-#endif
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 // {D1CF0B87-6D92-45E1-AA6D-85DAEB15183D}

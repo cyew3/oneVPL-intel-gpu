@@ -25,7 +25,7 @@
 #ifdef UMC_VA_DXVA
 
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 

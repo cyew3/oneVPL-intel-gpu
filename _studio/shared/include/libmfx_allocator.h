@@ -25,9 +25,7 @@
 #include "mfx_common_int.h"
 
 // It is only needed for Synchronize
-#if defined(MFX_ONEVPL)
 #include "mfx_session.h"
-#endif
 
 #include "vm_interlocked.h"
 
@@ -100,8 +98,6 @@ inline void clear_frame_data(mfxFrameData& frame_data) noexcept
 
     frame_data.U = frame_data.V = frame_data.Y = frame_data.A = nullptr;
 }
-
-#if defined(MFX_ONEVPL)
 
 class FrameAllocatorBase
 {
@@ -1075,7 +1071,6 @@ public:
 
 using FlexibleFrameAllocatorSW = FlexibleFrameAllocator<mfxFrameSurface1_sw, staging_adapter_stub>;
 
-#endif
 
 #endif
 

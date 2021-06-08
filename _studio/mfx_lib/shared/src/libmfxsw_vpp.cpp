@@ -32,9 +32,7 @@
 #ifdef MFX_ENABLE_VPP
 // VPP include files here
 #include "mfx_vpp_main.h"       // this VideoVPP class builds VPP pipeline and run the VPP pipeline
-#ifdef MFX_ONEVPL
 #include "mfx_vpp_hw.h"
-#endif
 #endif
 
 template<>
@@ -377,13 +375,11 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
                 syncPoint = NULL;
             }
 
-#if defined(MFX_ONEVPL)
             if (syncPoint && out && out->FrameInterface)
             {
                 MFX_CHECK_HDL(out->FrameInterface->Context);
                 static_cast<mfxFrameSurfaceBaseInterface*>(out->FrameInterface->Context)->SetSyncPoint(syncPoint);
             }
-#endif
         }
 
         // return pointer to synchronization point
@@ -445,7 +441,6 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 
 } // mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task);
 
-#if defined(MFX_ONEVPL)
 mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 **out)
 {
     MFX_CHECK_NULL_PTR1(out);
@@ -465,7 +460,6 @@ mfxStatus MFXVideoVPP_ProcessFrameAsync(mfxSession session, mfxFrameSurface1 *in
     *out = surf_out.release();
     return mfxRes;
 }
-#endif
 //
 // THE OTHER VPP FUNCTIONS HAVE IMPLICIT IMPLEMENTATION
 //
@@ -475,9 +469,7 @@ FUNCTION_RESET_IMPL(VPP, Reset, (mfxSession session, mfxVideoParam *par), (par))
 FUNCTION_IMPL(VPP, GetVideoParam, (mfxSession session, mfxVideoParam *par), (par))
 FUNCTION_IMPL(VPP, GetVPPStat, (mfxSession session, mfxVPPStat *stat), (stat))
 
-#if defined(MFX_ONEVPL)
 mfxStatus QueryImplsDescription(VideoCORE& core, mfxVPPDescription& caps, mfx::PODArraysHolder& arrayHolder)
 {
     return MfxHwVideoProcessing::VideoVPPHW::QueryImplsDescription(&core, caps, arrayHolder);
 }
-#endif //defined(MFX_ONEVPL)

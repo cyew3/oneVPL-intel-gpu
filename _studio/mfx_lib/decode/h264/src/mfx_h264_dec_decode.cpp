@@ -471,7 +471,6 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEH264::QueryImplsDescription(
     VideoCORE& core,
     mfxDecoderDescription::decoder& caps,
@@ -559,7 +558,6 @@ mfxFrameSurface1* VideoDECODEH264::GetSurface()
 
     return m_surface_source->GetSurface();
 }
-#endif
 
 mfxU16 VideoDECODEH264::GetChangedProfile(mfxVideoParam *par)
 {
@@ -2110,11 +2108,9 @@ mfxFrameSurface1 *VideoDECODEH264::GetOriginalSurface(mfxFrameSurface1 *surface)
     return surface;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1 *VideoDECODEH264::GetInternalSurface(mfxFrameSurface1 *surface)
 {
     return m_surface_source->GetInternalSurface(surface);
 }
-#endif
 
 #endif // MFX_ENABLE_H264_VIDEO_DECODE

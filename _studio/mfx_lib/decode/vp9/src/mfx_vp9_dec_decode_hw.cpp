@@ -637,7 +637,6 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEVP9_HW::QueryImplsDescription(
     VideoCORE&,
     mfxDecoderDescription::decoder& caps,
@@ -697,7 +696,6 @@ mfxStatus VideoDECODEVP9_HW::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
 {
@@ -1221,16 +1219,11 @@ mfxStatus VideoDECODEVP9_HW::PrepareInternalSurface(UMC::FrameMemID &mid)
                 // Legacy MSDK 1.x case
                 return d3d11_core_10->ReallocFrame(surf);
             }
-
-#if defined(MFX_ONEVPL)
             // MSDK 2.0 case
             D3D11VideoCORE20* d3d11_core_20 = dynamic_cast<D3D11VideoCORE20*>(m_core);
             MFX_CHECK_NULL_PTR1(d3d11_core_20);
 
             return d3d11_core_20->ReallocFrame(surf);
-#else
-            MFX_RETURN(MFX_ERR_NULL_PTR);
-#endif
         }
         else
         {
@@ -1256,15 +1249,11 @@ mfxStatus VideoDECODEVP9_HW::PrepareInternalSurface(UMC::FrameMemID &mid)
             return vaapi_core_10->ReallocFrame(surf);
         }
 
-#if defined(MFX_ONEVPL)
         // MSDK 2.0 case
         VAAPIVideoCORE20* vaapi_core_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
         MFX_CHECK_NULL_PTR1(vaapi_core_20);
 
         return vaapi_core_20->ReallocFrame(surf);
-#else
-        MFX_RETURN(MFX_ERR_NULL_PTR);
-#endif
         }
     else
 #endif
@@ -1940,7 +1929,6 @@ mfxFrameSurface1 * VideoDECODEVP9_HW::GetOriginalSurface(mfxFrameSurface1 *p_sur
     return p_surface;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoDECODEVP9_HW::GetSurface()
 {
     if (!m_surface_source)
@@ -1951,6 +1939,5 @@ mfxFrameSurface1* VideoDECODEVP9_HW::GetSurface()
 
     return m_surface_source->GetSurface();
 }
-#endif
 
 #endif //MFX_ENABLE_VP9_VIDEO_DECODE

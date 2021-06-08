@@ -323,7 +323,6 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     return MFXSts;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus MFXVideoDECODEVC1::QueryImplsDescription(
     VideoCORE& core,
     mfxDecoderDescription::decoder& caps,
@@ -394,7 +393,6 @@ mfxStatus MFXVideoDECODEVC1::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
 {
@@ -2303,7 +2301,6 @@ bool MFXVideoDECODEVC1::FrameStartCodePresence()
     return false;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* MFXVideoDECODEVC1::GetSurface()
 {
     if (!m_surface_source)
@@ -2314,7 +2311,6 @@ mfxFrameSurface1* MFXVideoDECODEVC1::GetSurface()
 
     return m_surface_source->GetSurface();
 }
-#endif
 
 mfxStatus __CDECL VC1DECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 )
 {

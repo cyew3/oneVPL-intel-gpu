@@ -36,9 +36,7 @@
     #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         #define PAVP_SUPPORT
         #include "mfxpcp.h"
-        #if defined(MFX_ONEVPL)
         #include "mfxpavp.h"
-        #endif
     #endif
 #else
     #include "mfx_h264_encode_struct_vaapi.h"

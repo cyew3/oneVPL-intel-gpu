@@ -29,7 +29,7 @@
 #include "mfx_utils.h"
 #include "mfx_common.h"
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 
@@ -269,7 +269,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
         {
             Desc.MiscFlags |= D3D11_RESOURCE_MISC_HW_PROTECTED;
         }
-#endif //!OPEN_SOURCE && !MFX_ONEVPL
+#endif //!OPEN_SOURCE
 
         // d3d11 wo
         if( DXGI_FORMAT_P8 == Desc.Format )
@@ -310,7 +310,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
         {
             Desc.MiscFlags &= ~D3D11_RESOURCE_MISC_HW_PROTECTED;
         }
-#endif //!OPEN_SOURCE && !MFX_ONEVPL
+#endif //!OPEN_SOURCE
 
         // Create Staging buffers for fast coping (do not need for 420 opaque)
         if(Desc.Format != DXGI_FORMAT_420_OPAQUE)
@@ -661,8 +661,6 @@ mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator::mfxWideHWFrameAllocator(mfxU1
     frameAllocator.Unlock = &mfxDefaultAllocatorD3D11::UnlockFrameHW;
     frameAllocator.Free =   &mfxDefaultAllocatorD3D11::FreeFramesHW;
 }
-
-#if defined(MFX_ONEVPL)
 
 staging_texture* staging_adapter_d3d11_texture::get_staging_texture(d3d11_texture_wrapper* main_texture, const D3D11_TEXTURE2D_DESC& descr)
 {
@@ -1074,7 +1072,6 @@ std::pair<mfxHDL, mfxHandleType> mfxFrameSurface1_hw_d3d11::GetDeviceHandle() co
     return { m_pD11Device, MFX_HANDLE_D3D11_DEVICE };
 }
 
-#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 #endif
 

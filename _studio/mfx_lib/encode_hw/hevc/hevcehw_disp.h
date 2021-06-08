@@ -44,12 +44,10 @@ namespace HEVCEHW
         , mfxVideoParam *out
         , bool bFEI = false);
 
-#if defined(MFX_ONEVPL)
     mfxStatus QueryImplsDescription(
         VideoCORE& core
         , mfxEncoderDescription::encoder& caps
         , mfx::PODArraysHolder& ah);
-#endif //defined(MFX_ONEVPL)
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

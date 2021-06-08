@@ -36,463 +36,6 @@
 #include <libmfx_core_vaapi.h>
 #endif
 
-// static section of the file
-namespace
-{
-
-#if !defined(MFX_ONEVPL)
-mfxStatus mfxCOREGetCoreParam(mfxHDL pthis, mfxCoreParam *par)
-{
-    mfxSession session = (mfxSession) pthis;
-    mfxStatus mfxRes;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK(par, MFX_ERR_NULL_PTR);
-
-    try
-    {
-        MFX_SCHEDULER_PARAM param;
-
-        // reset the parameters
-        memset(par, 0, sizeof(mfxCoreParam));
-
-        // get the parameters of the current scheduler
-        mfxRes = session->m_pScheduler->GetParam(&param);
-        if (MFX_ERR_NONE != mfxRes)
-        {
-            return mfxRes;
-        }
-
-        // fill the structure
-        mfxRes = MFXQueryIMPL(session, &(par->Impl));
-        if (MFX_ERR_NONE != mfxRes)
-        {
-            return mfxRes;
-        }
-        par->Version = session->m_version;
-        par->NumWorkingThread = param.numberOfThreads;
-    }
-    // handle error(s)
-    catch(...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
-
-} // mfxStatus mfxCOREGetCoreParam(mfxHDL pthis, mfxCoreParam *par)
-
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
-{
-    mfxSession session = (mfxSession) pthis;
-    mfxStatus mfxRes;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-
-    CommonCORE *pCore = (CommonCORE *)session->m_pCORE->QueryCoreInterface(MFXIVideoCORE_GUID);
-    if (!pCore)
-        return MFX_ERR_INVALID_HANDLE;
-
-    try
-    {
-        if (!op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        if (!*op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        mfxFrameAllocRequest  request;
-        mfxFrameAllocResponse response;
-
-        request.Type =        (mfxU16)type;
-        request.NumFrameMin = request.NumFrameSuggested = (mfxU16)num;
-        request.Info = op_surf[0]->Info;
-
-        mfxRes = pCore->AllocFrames(&request, &response, op_surf, num);
-        MFX_CHECK_STS(mfxRes);
-
-        pCore->AddPluginAllocResponse(response);
-
-        return mfxRes;
-
-    }
-    // handle error(s)
-    catch(...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pScheduler)
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-    }
-
-    return mfxRes;
-
-} // mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
-
-mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  , mfxFrameSurface1 **op_surf)
-{
-    mfxSession session = (mfxSession) pthis;
-    mfxStatus mfxRes;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-
-    CommonCORE *pCore = (CommonCORE *)session->m_pCORE->QueryCoreInterface(MFXIVideoCORE_GUID);
-    if (!pCore)
-        return MFX_ERR_INVALID_HANDLE;
-
-    try
-    {
-        if (!op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        if (!*op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        mfxFrameAllocResponse response;
-        mfxFrameSurface1 *pSurf = NULL;
-
-        std::vector<mfxMemId> mids(num);
-        response.mids = &mids[0];
-        response.NumFrameActual = (mfxU16) num;
-        for (mfxU32 i=0; i < num; i++)
-        {
-            pSurf = pCore->GetNativeSurface(op_surf[i]);
-            if (!pSurf)
-                return MFX_ERR_INVALID_HANDLE;
-
-            response.mids[i] = pSurf->Data.MemId;
-        }
-
-        if (!pCore->GetPluginAllocResponse(response))
-            return MFX_ERR_INVALID_HANDLE;
-
-        mfxRes = session->m_pCORE->FreeFrames(&response);
-        return mfxRes;
-
-    }
-    // handle error(s)
-    catch(...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session->m_pScheduler)
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-    }
-
-    return mfxRes;
-
-} // mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
-
-mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf)
-{
-    mfxSession session = (mfxSession) pthis;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-
-    try
-    {
-        *op_surf = session->m_pCORE->GetOpaqSurface(surf->Data.MemId);
-        if (!*op_surf)
-            return MFX_ERR_INVALID_HANDLE;
-
-        return mfxRes;
-    }
-    // handle error(s)
-    catch(...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session->m_pScheduler)
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-    }
-
-    return mfxRes;
-}// mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
-mfxStatus mfxCOREGetRealSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
-{
-    mfxSession session = (mfxSession) pthis;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-
-    try
-    {
-        *surf = session->m_pCORE->GetNativeSurface(op_surf);
-        if (!*surf)
-            return MFX_ERR_INVALID_HANDLE;
-
-        return mfxRes;
-    }
-    // handle error(s)
-    catch(...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session->m_pScheduler)
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-    }
-
-    return mfxRes;
-} // mfxStatus mfxCOREGetRealSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
-
-mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxHDL *handle)
-{
-    mfxSession session = (mfxSession) pthis;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK_NULL_PTR1(handle);
-    try
-    {
-        mfxRes = session->m_pCORE.get()->GetHandle(type, handle);
-
-        if (mfxRes == MFX_ERR_NOT_FOUND)
-        {
-#if defined(MFX_VA_WIN)
-            if (type == MFX_HANDLE_D3D9_DEVICE_MANAGER)
-            {
-                D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(session->m_pCORE.get(), MFXICORED3D_GUID);
-                if(pID3D == 0)
-                    mfxRes = MFX_ERR_UNSUPPORTED;
-                else
-                {
-                    IDirectXVideoDecoderService *service = 0;
-                    mfxRes = pID3D->GetD3DService(1920, 1088, &service);
-
-                    *handle = (mfxHDL)pID3D->GetD3D9DeviceManager();
-                }
-            }
-            else if (type == MFX_HANDLE_D3D11_DEVICE)
-            {
-                D3D11Interface* pID3D = QueryCoreInterface<D3D11Interface>(session->m_pCORE.get());
-                if(pID3D == 0)
-                    mfxRes = MFX_ERR_UNSUPPORTED;
-                else
-                {
-                    *handle = (mfxHDL)pID3D->GetD3D11Device();
-                    if (*handle)
-                        mfxRes = MFX_ERR_NONE;
-                }
-            }
-            else
-#endif
-            {
-                mfxRes = MFX_ERR_UNSUPPORTED;
-            }
-        }
-    }
-    /* handle error(s) */
-    catch(...)
-    {
-        mfxRes = MFX_ERR_NULL_PTR;
-    }
-    return mfxRes;
-}// mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxHDL *handle)
-
-mfxStatus mfxCOREGetFrameHDL(mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle)
-{
-    mfxSession session = (mfxSession)pthis;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK_NULL_PTR1(handle);
-    VideoCORE *pCore = session->m_pCORE.get();
-
-    try
-    {
-        if (   pCore->IsExternalFrameAllocator()
-            && !(fd->MemType & MFX_MEMTYPE_OPAQUE_FRAME))
-        {
-            mfxRes = pCore->GetExternalFrameHDL(fd->MemId, handle);
-        }
-        else
-        {
-            mfxRes = pCore->GetFrameHDL(fd->MemId, handle);
-        }
-    }
-    catch (...)
-    {
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
-} // mfxStatus mfxCOREGetFrameHDL(mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle)
-
-mfxStatus mfxCOREQueryPlatform(mfxHDL pthis, mfxPlatform *platform)
-{
-    mfxSession session = (mfxSession)pthis;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK_NULL_PTR1(platform);
-    VideoCORE *pCore = session->m_pCORE.get();
-
-    try
-    {
-        IVideoCore_API_1_19 * pInt = QueryCoreInterface<IVideoCore_API_1_19>(pCore, MFXICORE_API_1_19_GUID);
-        if (pInt)
-        {
-            mfxRes = pInt->QueryPlatform(platform);
-        }
-        else
-        {
-            mfxRes = MFX_ERR_UNSUPPORTED;
-            memset(platform, 0, sizeof(mfxPlatform));
-        }
-    }
-    catch (...)
-    {
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
-} // mfxCOREQueryPlatform(mfxHDL pthis, mfxPlatform *platform)
-
-#define CORE_FUNC_IMPL(func_name, formal_param_list, actual_param_list) \
-mfxStatus mfxCORE##func_name formal_param_list \
-{ \
-    mfxSession session = (mfxSession) pthis; \
-    mfxStatus mfxRes; \
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE); \
-    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED); \
-    try \
-    { \
-        /* call the method */ \
-        mfxRes = session->m_pCORE->func_name actual_param_list; \
-    } \
-    /* handle error(s) */ \
-    catch(...) \
-    { \
-        mfxRes = MFX_ERR_NULL_PTR; \
-    } \
-    return mfxRes; \
-} /* mfxStatus mfxCORE##func_name formal_param_list */
-
-CORE_FUNC_IMPL(GetHandle, (mfxHDL pthis, mfxHandleType type, mfxHDL *handle), (type, handle))
-CORE_FUNC_IMPL(IncreaseReference, (mfxHDL pthis, mfxFrameData *fd), (fd))
-CORE_FUNC_IMPL(DecreaseReference, (mfxHDL pthis, mfxFrameData *fd), (fd))
-CORE_FUNC_IMPL(CopyFrame, (mfxHDL pthis, mfxFrameSurface1 *dst, mfxFrameSurface1 *src), (dst, src))
-CORE_FUNC_IMPL(CopyBuffer, (mfxHDL pthis, mfxU8 *dst, mfxU32 dst_size, mfxFrameSurface1 *src), (dst, dst_size, src))
-
-#undef CORE_FUNC_IMPL
-
-// exposed default allocator
-mfxStatus mfxDefAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
-{
-    MFX_CHECK_NULL_PTR1(pthis);
-    VideoCORE *pCore = (VideoCORE*)pthis;
-    mfxFrameAllocator* pExtAlloc = (mfxFrameAllocator*)pCore->QueryCoreInterface(MFXIEXTERNALLOC_GUID);
-    return pExtAlloc?pExtAlloc->Alloc(pExtAlloc->pthis,request,response):pCore->AllocFrames(request,response);
-
-} // mfxStatus mfxDefAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
-mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
-{
-    MFX_CHECK_NULL_PTR1(pthis);
-    VideoCORE *pCore = (VideoCORE*)pthis;
-
-    if (pCore->IsExternalFrameAllocator())
-    {
-        return pCore->LockExternalFrame(mid,ptr);
-    }
-
-    return pCore->LockFrame(mid,ptr);
-
-
-} // mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
-mfxStatus mfxDefGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
-{
-    MFX_CHECK_NULL_PTR1(pthis);
-    VideoCORE *pCore = (VideoCORE*)pthis;
-    if (pCore->IsExternalFrameAllocator())
-    {
-        return pCore->GetExternalFrameHDL(mid, handle);
-    }
-    return pCore->GetFrameHDL(mid, handle);
-
-} // mfxStatus mfxDefGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
-mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
-{
-    MFX_CHECK_NULL_PTR1(pthis);
-    VideoCORE *pCore = (VideoCORE*)pthis;
-
-    if (pCore->IsExternalFrameAllocator())
-    {
-        return pCore->UnlockExternalFrame(mid, ptr);
-    }
-
-    return pCore->UnlockFrame(mid, ptr);
-
-} // mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
-mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
-{
-    MFX_CHECK_NULL_PTR1(pthis);
-    VideoCORE *pCore = (VideoCORE*)pthis;
-    mfxFrameAllocator* pExtAlloc = (mfxFrameAllocator*)pCore->QueryCoreInterface(MFXIEXTERNALLOC_GUID);
-    return pExtAlloc?pExtAlloc->Free(pExtAlloc->pthis,response):pCore->FreeFrames(response);
-
-} // mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
-
-void InitCoreInterface(mfxCoreInterface *pCoreInterface,
-                       const mfxSession session)
-{
-    // reset the structure
-    memset(pCoreInterface, 0, sizeof(mfxCoreInterface));
-
-
-     // fill external allocator
-    pCoreInterface->FrameAllocator.pthis = session->m_pCORE.get();
-    pCoreInterface->FrameAllocator.Alloc = &mfxDefAllocFrames;
-    pCoreInterface->FrameAllocator.Lock = &mfxDefLockFrame;
-    pCoreInterface->FrameAllocator.GetHDL = &mfxDefGetHDL;
-    pCoreInterface->FrameAllocator.Unlock = &mfxDefUnlockFrame;
-    pCoreInterface->FrameAllocator.Free = &mfxDefFreeFrames;
-
-    // fill the methods
-    pCoreInterface->pthis = (mfxHDL) session;
-    pCoreInterface->GetCoreParam = &mfxCOREGetCoreParam;
-    pCoreInterface->GetHandle = &mfxCOREGetHandle;
-    pCoreInterface->GetFrameHandle = &mfxCOREGetFrameHDL;
-    pCoreInterface->IncreaseReference = &mfxCOREIncreaseReference;
-    pCoreInterface->DecreaseReference = &mfxCOREDecreaseReference;
-    pCoreInterface->CopyFrame = &mfxCORECopyFrame;
-    pCoreInterface->CopyBuffer = &mfxCORECopyBuffer;
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-    pCoreInterface->MapOpaqueSurface = &mfxCOREMapOpaqueSurface;
-    pCoreInterface->UnmapOpaqueSurface = &mfxCOREUnmapOpaqueSurface;
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-    pCoreInterface->GetRealSurface = &mfxCOREGetRealSurface;
-    pCoreInterface->GetOpaqueSurface = &mfxCOREGetOpaqueSurface;
-    pCoreInterface->CreateAccelerationDevice = &mfxCORECreateAccelerationDevice;
-    pCoreInterface->QueryPlatform = &mfxCOREQueryPlatform;
-
-} // void InitCoreInterface(mfxCoreInterface *pCoreInterface,
-#endif //!MFX_ONEVPL
-
-} // namespace
-
-
 #define TRY_GET_SESSION(verMax,verMin) MFXIPtr<MFXISession_##verMax##_##verMin> TryGetSession_##verMax##_##verMin(mfxSession session) \
 { \
     if (session == NULL)\
@@ -509,31 +52,22 @@ TRY_GET_SESSION(2,1)
 //  _mfxSession members
 //////////////////////////////////////////////////////////////////////////
 
-_mfxSession::_mfxSession(const mfxU32 adapterNum)
-#if !defined(MFX_ONEVPL)
-    : m_coreInt() ,
-#else
-    :
-#endif
+_mfxSession::_mfxSession(const mfxU32 adapterNum):
       m_currentPlatform()
     , m_adapterNum(adapterNum)
     , m_implInterface()
     , m_pScheduler()
     , m_priority()
     , m_version()
-#if defined(MFX_ONEVPL)
     , m_versionToReport()
-#endif
     , m_pOperatorCore()
     , m_bIsHWENCSupport()
     , m_bIsHWDECSupport()
 {
     m_currentPlatform = MFX_PLATFORM_HARDWARE;
 
-#if defined(MFX_ONEVPL)
     m_versionToReport.Major = MFX_VERSION_MAJOR;
     m_versionToReport.Minor = MFX_VERSION_MINOR;
-#endif
 
     Clear();
 } // _mfxSession::_mfxSession(const mfxU32 adapterNum) :
@@ -565,29 +99,16 @@ void _mfxSession::Cleanup(void)
             m_pScheduler->WaitForAllTasksCompletion(m_pVPP.get());
         if (m_pENCODE.get())
             m_pScheduler->WaitForAllTasksCompletion(m_pENCODE.get());
-
-#if !defined(MFX_ONEVPL)
-        if (m_pENC.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_pENC.get());
-        if (m_pPAK.get())
-            m_pScheduler->WaitForAllTasksCompletion(m_pPAK.get());
-#endif //!MFX_ONEVPL
     }
 
     // release the components the excplicit way.
     // do not relay on default deallocation order,
     // somebody could change it.
-#if !defined(MFX_ONEVPL)
-    m_pPAK.reset();
-    m_pENC.reset();
-#endif //!MFX_ONEVPL
+
     m_pVPP.reset();
     m_pDECODE.reset();
     m_pENCODE.reset();
-
-#if defined(MFX_ONEVPL)
-        m_pDVP.reset();
-#endif
+    m_pDVP.reset();
 
     // release m_pScheduler and m_pSchedulerAllocated
     ReleaseScheduler();
@@ -686,11 +207,6 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
         m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VAAPI, m_adapterNum, maxNumThreads, this));
     }
 
-#endif
-
-#if !defined(MFX_ONEVPL)
-    // initialize the core interface
-    InitCoreInterface(&m_coreInt, this);
 #endif
 
     // query the scheduler interface
@@ -963,11 +479,6 @@ mfxStatus _mfxVersionedSessionImpl::InitEx(mfxInitParam& par)
     {
         m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VAAPI, m_adapterNum, maxNumThreads, this));
     }
-#endif
-
-#if !defined(MFX_ONEVPL)
-    // initialize the core interface
-    InitCoreInterface(&m_coreInt, this);
 #endif
 
     // query the scheduler interface

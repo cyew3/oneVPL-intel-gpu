@@ -26,7 +26,6 @@ target_sources(${loader_dll_name}
     ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_dispatch/windows/src/mfx_dispatcher_log.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_dispatch/windows/src/mfx_load_dll.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_dispatch/windows/src/mfx_dxva2_device.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../_studio/mfx_lib/libmfx.def
 )
 
 target_link_libraries(${loader_dll_name}
@@ -40,9 +39,4 @@ target_link_libraries(${loader_dll_name}
 target_compile_definitions(${loader_dll_name}
   PRIVATE
     $<$<CONFIG:Debug>:MFX_DISPATCHER_LOG>
-)
-
-target_link_options(${loader_dll_name}
-  PRIVATE
-    $<$<PLATFORM_ID:Windows>:LINKER:/DEF:${CMAKE_CURRENT_SOURCE_DIR}/../../_studio/mfx_lib/libmfx.def>
 )

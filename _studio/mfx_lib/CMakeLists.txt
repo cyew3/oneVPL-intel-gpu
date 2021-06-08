@@ -21,9 +21,6 @@ set(sources_common
     shared/src/libmfxsw_enc.cpp
     shared/src/libmfxsw_pak.cpp
     shared/src/libmfxsw_plugin.cpp
-    $<$<NOT:$<BOOL:${API_USE_VPL}>>:
-      shared/src/mfx_user_plugin.cpp
-    >
     shared/src/libmfxsw_query.cpp
     shared/src/libmfxsw_session.cpp
     shared/src/libmfxsw_vpp.cpp
@@ -75,10 +72,8 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_mjpeg_vpp.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_timing.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_static_assert_structs.cpp
-
-    $<$<PLATFORM_ID:Windows>:$<IF:$<BOOL:${API_USE_VPL}>,libvpl.def,libmfx.def>>
-    $<$<PLATFORM_ID:Windows>:$<IF:$<BOOL:${API_USE_VPL}>,libmfx-gen.rc,libmfxhw.rc>>
-
+    $<$<PLATFORM_ID:Windows>:libvpl.def>
+    $<$<PLATFORM_ID:Windows>:libmfx-gen.rc>
     $<TARGET_OBJECTS:fast_copy_sse4>
   )
 

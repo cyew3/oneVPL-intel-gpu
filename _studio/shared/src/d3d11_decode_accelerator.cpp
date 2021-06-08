@@ -29,7 +29,7 @@
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common_decode_int.h"
 
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 

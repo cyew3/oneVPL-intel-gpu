@@ -385,7 +385,6 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEH265::QueryImplsDescription(
     VideoCORE& core,
     mfxDecoderDescription::decoder& caps,
@@ -467,7 +466,6 @@ mfxStatus VideoDECODEH265::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 // Reset decoder with new parameters
 mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
@@ -1799,7 +1797,6 @@ mfxFrameSurface1 *VideoDECODEH265::GetOriginalSurface(mfxFrameSurface1 *surface)
     return surface;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoDECODEH265::GetSurface()
 {
     if (!m_surface_source)
@@ -1810,6 +1807,5 @@ mfxFrameSurface1* VideoDECODEH265::GetSurface()
 
     return m_surface_source->GetSurface();
 }
-#endif
 
 #endif // MFX_ENABLE_H265_VIDEO_DECODE

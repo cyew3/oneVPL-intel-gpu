@@ -1860,9 +1860,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
         || id == MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM
 #endif
-#if defined(MFX_ONEVPL)
         || id == MFX_EXTBUFF_HYPER_MODE_PARAM
-#endif
        );
 }
 
@@ -4351,7 +4349,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #endif // (MFX_VERSION >= 1026)
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
-#if defined(MFX_ONEVPL)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (!CheckTriStateOption(extOpt3->AdaptiveCQM)) changed = true;
     if (IsOn(extOpt3->AdaptiveCQM) && !isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
@@ -4359,7 +4356,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt3->AdaptiveCQM = MFX_CODINGOPTION_OFF;
         changed = true;
     }
-#endif
 #endif
 #endif
 
@@ -4792,9 +4788,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     bool slidingWindowSupported  =
             par.mfx.RateControlMethod == MFX_RATECONTROL_LA
         ||  par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if !defined(MFX_ONEVPL)
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
         || (mfxRateControlHwSupport && !IsOn(extOpt2->ExtBRC));
 
      if (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize)
@@ -5924,20 +5917,10 @@ void MfxHwH264Encode::SetDefaults(
             if (par.mfx.GopPicSize > 0 && par.mfx.GopPicSize <= par.mfx.GopRefDist)
                 par.mfx.GopRefDist = par.mfx.GopPicSize;
         }
-
-#if !defined(MFX_ONEVPL)
-        if (par.mfx.RateControlMethod & MFX_RATECONTROL_LA_EXT)
-        {
-            par.mfx.GopRefDist = 3;
-        }
-#endif //!MFX_ONEVPL
     }
     if (  (par.mfx.RateControlMethod == MFX_RATECONTROL_LA
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if !defined(MFX_ONEVPL)
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
-        ) && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
+        && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
     {
         if (!extOpt3->WinBRCMaxAvgKbps)
         {
@@ -6363,7 +6346,6 @@ void MfxHwH264Encode::SetDefaults(
 #endif //(MFX_VERSION >= 1026)
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
-#if defined(MFX_ONEVPL)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
     {
@@ -6372,7 +6354,6 @@ void MfxHwH264Encode::SetDefaults(
     }
     else
         extOpt3->AdaptiveCQM = MFX_CODINGOPTION_OFF;
-#endif
 #endif
 #endif
 
@@ -6690,10 +6671,6 @@ void MfxHwH264Encode::SetDefaults(
         case MFX_RATECONTROL_ICQ:
         case MFX_RATECONTROL_LA_ICQ:
             break;
-#if !defined(MFX_ONEVPL)
-        case MFX_RATECONTROL_LA_EXT:
-            break;
-#endif //MFX_ONEVPL
         default:
             assert(0);
             break;
@@ -6899,10 +6876,8 @@ void MfxHwH264Encode::SetDefaults(
 
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
 
-#if defined(MFX_ONEVPL)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (IsOn(extOpt3->AdaptiveCQM))
-#endif
 #endif
         if (isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
         {
@@ -8065,9 +8040,7 @@ MfxVideoParam::MfxVideoParam()
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
     , m_extGameStreaming()
 #endif
-#if defined(MFX_ONEVPL)
     , m_HyperMode()
-#endif
     , calcParam()
 {
     memset(m_extParam, 0, sizeof(m_extParam));
@@ -8140,11 +8113,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         calcParam.bufferSizeInKB = calcParam.initialDelayInKB = calcParam.maxKbps = 0;
     }
     if (   mfx.RateControlMethod == MFX_RATECONTROL_LA
-        || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if !defined(MFX_ONEVPL)
-        || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
-        )
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
         calcParam.WinBRCMaxAvgKbps = m_extOpt3.WinBRCMaxAvgKbps * multiplier;
 
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
@@ -8278,11 +8247,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
         }
     }
     if (   mfx.RateControlMethod == MFX_RATECONTROL_LA
-        || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if !defined(MFX_ONEVPL)
-        || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
-        )
+        || mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
         m_extOpt3.WinBRCMaxAvgKbps = mfxU16(calcParam.WinBRCMaxAvgKbps / mfx.BRCParamMultiplier);
 }
 
@@ -8404,9 +8369,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtPartialBitstreamParam , m_po);
 #endif
 
-#if defined(MFX_ONEVPL)
     CONSTRUCT_EXT_BUFFER(mfxExtHyperModeParam, m_HyperMode);
-#endif
 
 #undef CONSTRUCT_EXT_BUFFER
 #undef CONSTRUCT_EXT_BUFFER_EX
@@ -9761,11 +9724,9 @@ void HeaderPacker::Init(
 #endif
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
-#if defined(MFX_ONEVPL)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     const mfxExtCodingOption3 &extOpt3 = GetExtBufferRef(par);
     if (IsOn(extOpt3.AdaptiveCQM))
-#endif
 #endif
     {
         const std::vector<mfxExtPpsHeader> &extCqmPps = par.GetCqmPps();

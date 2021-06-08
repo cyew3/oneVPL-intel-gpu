@@ -48,7 +48,6 @@ void SetDefaultForLowpower(mfxU16 & lowpower, eMFXHWType platform)
     }
 }
 
-#if defined(MFX_ONEVPL)
 bool CheckFourcc(mfxU32 fourcc, ENCODE_CAPS_VP9 const& caps);
 
 mfxStatus MFXVideoENCODEVP9_HW::QueryImplsDescription(
@@ -138,7 +137,6 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 mfxStatus MFXVideoENCODEVP9_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {

@@ -26,7 +26,7 @@
 #include "umc_vc1_common.h"
 #include "mfxpcp.h"
 
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 

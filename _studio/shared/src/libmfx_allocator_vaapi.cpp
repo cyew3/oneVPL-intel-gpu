@@ -739,9 +739,6 @@ mfxDefaultAllocatorVAAPI::mfxWideHWFrameAllocator::mfxWideHWFrameAllocator(
     frameAllocator.Free   = &mfxDefaultAllocatorVAAPI::FreeFramesHW;
 }
 
-
-#if defined(MFX_ONEVPL)
-
 vaapi_buffer_wrapper::vaapi_buffer_wrapper(const mfxFrameInfo &info, mfxHDL display, mfxU32 context)
     : vaapi_resource_wrapper(reinterpret_cast<VADisplay>(display))
     , m_bIsSegmap(info.FourCC == MFX_FOURCC_VP8_SEGMAP)
@@ -998,8 +995,6 @@ mfxStatus mfxFrameSurface1_hw_vaapi::Realloc(const mfxFrameInfo & info)
 
     return MFX_ERR_NONE;
 }
-
-#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 #endif // (MFX_VA_LINUX)
 /* EOF */

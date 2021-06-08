@@ -133,15 +133,11 @@ mfxStatus VAAPIVideoProcessing::CreateDevice(VideoCORE * core, mfxVideoParam* pP
     }
     else
     {
-#if defined(MFX_ONEVPL)
         // MSDK 2.0 case
         VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(core);
         MFX_CHECK_NULL_PTR1(hwCore_20);
 
         MFX_SAFE_CALL(hwCore_20->GetVAService(&m_vaDisplay));
-#else
-        MFX_RETURN(MFX_ERR_NULL_PTR);
-#endif
     }
 
     MFX_SAFE_CALL(Init(&m_vaDisplay, pParams));
@@ -602,15 +598,11 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
     else
     {
-#if defined(MFX_ONEVPL)
         // MSDK 2.0 case
         VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
         MFX_CHECK_NULL_PTR1(hwCore_20);
 
         hwType = hwCore_20->GetHWType();
-#else
-        MFX_RETURN(MFX_ERR_NULL_PTR);
-#endif
     }
 
     // NOTE the following variables should be visible till vaRenderPicture/vaEndPicture,

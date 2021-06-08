@@ -252,10 +252,8 @@ public:
     mfxFrameSurface1 * GetSurface(UMC::FrameMemID index, mfxFrameSurface1 *surface, const mfxVideoParam * videoPar);
     mfxFrameSurface1 * GetInternalSurface(UMC::FrameMemID index);
 
-#if defined(MFX_ONEVPL)
     mfxFrameSurface1 * GetSurface();
     mfxFrameSurface1 * GetInternalSurface(mfxFrameSurface1 *sfc_surf);
-#endif
 
     mfxFrameSurface1 * GetSurfaceByIndex(UMC::FrameMemID index);
 
@@ -268,29 +266,24 @@ public:
 protected:
     VideoCORE*                                m_core;
 
-#if defined(MFX_ONEVPL)
     // Decoder works with these surfaces
     std::shared_ptr<SurfaceCache>             m_surface20_cache_decoder_surfaces;
     // These surfaces are outputted to user (different with previous pool
     // in case of IO pattern and decoder impl mismatch or SFC on Linux)
     std::shared_ptr<SurfaceCache>             m_surface20_cache_output_surfaces;
-#endif
 
     bool                                      m_redirect_to_msdk20 = false;
 
     std::unique_ptr<mfx_UMC_FrameAllocator>   m_umc_allocator_adapter;
 
-#if defined(MFX_ONEVPL)
     // Parameters required for proper conversion of mfx <-> UMC params
     std::map<mfxMemId, UMC::FrameMemID>       m_mfx2umc_memid;
     std::map<UMC::FrameMemID, mfxMemId>       m_umc2mfx_memid;
-#endif
 
 private:
 
     void CreateUMCAllocator(const mfxVideoParam & video_param, eMFXPlatform platform, bool needVppJPEG);
 
-#if defined(MFX_ONEVPL)
     bool CreateCorrespondence(mfxFrameSurface1& surface_work, mfxFrameSurface1& surface_out);
     void RemoveCorrespondence(mfxFrameSurface1& surface_work);
 
@@ -331,7 +324,6 @@ private:
     // MSDK 2.0 memory model 2 (GetSurfaceForDecode + DecodeFrameAsync)
     bool                                      m_memory_model2        = false;
     mfxFrameSurface1*                         m_current_work_surface = nullptr;
-#endif
 
     // Parameters for proper work with mfx_UMC_FrameAllocator (i.e. support of MSDK 1.x path)
     mfxFrameAllocResponse&                    m_response;

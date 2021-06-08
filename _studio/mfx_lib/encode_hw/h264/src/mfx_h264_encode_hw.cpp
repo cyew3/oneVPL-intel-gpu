@@ -229,7 +229,6 @@ mfxStatus MFXHWVideoENCODEH264::Init(mfxVideoParam * par)
     return sts;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus MFXHWVideoENCODEH264::QueryImplsDescription(
     VideoCORE& core
     , mfxEncoderDescription::encoder& caps
@@ -306,7 +305,6 @@ mfxStatus MFXHWVideoENCODEH264::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 mfxStatus MFXHWVideoENCODEH264::Query(
     VideoCORE *     core,
@@ -1824,11 +1822,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     auto const LARateControl =
            m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA
-        || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD
-#if !defined(MFX_ONEVPL)
-        || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
-        ;
+        || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD;
 
     MFX_CHECK(!(LARateControl && !IsOn(m_video.mfx.LowPower) && extOpt2New.MaxSliceSize == 0),
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -3821,11 +3815,9 @@ void SetupAdaptiveCQM(const MfxVideoParam &par, DdiTask &task, const QpHistory q
 {
 
     task.m_adaptiveCQMHint = CQM_HINT_INVALID;
-#if defined(MFX_ONEVPL)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     const mfxExtCodingOption3 &opt3 = GetExtBufferRef(par);
     if (IsOn(opt3.AdaptiveCQM))
-#endif
 #endif
     {
         const mfxExtSpsHeader& extSps = GetExtBufferRef(par);
@@ -3925,22 +3917,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             m_resetBRC          = false;
         }
 #endif
-
-#if !defined(MFX_ONEVPL)
-       if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
-       {
-            const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(newTask.m_ctrl);
-            MFX_CHECK_NULL_PTR1(vmeData);
-            mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];
-
-
-            newTask.m_ctrl.FrameType =  (pInfo->FrameDisplayOrder == 0) ? (mfxU8)( pInfo->FrameType |MFX_FRAMETYPE_IDR): (mfxU8) pInfo->FrameType;
-            newTask.m_type = ExtendFrameType(newTask.m_ctrl.FrameType);
-            newTask.m_frameOrder   = pInfo->FrameDisplayOrder;
-
-            MFX_CHECK(newTask.m_ctrl.FrameType, MFX_ERR_UNDEFINED_BEHAVIOR);
-       }
-#endif //!MFX_ONEVPL
 
         if (!m_video.mfx.EncodedOrder)
         {
@@ -4474,16 +4450,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
                 if (bIntRateControlLA(m_video.mfx.RateControlMethod))
                     BrcPreEnc(*task);
-#if !defined(MFX_ONEVPL)
-                else if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
-                {
-                    const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(task->m_ctrl);
-                    MFX_CHECK_NULL_PTR1(vmeData);
-                    mfxStatus sts = m_brc.SetFrameVMEData(vmeData, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
-                    if (sts != MFX_ERR_NONE)
-                        return Error(sts);
-                }
-#endif //!MFX_ONEVPL
 
                 if (IsExtBrcSceneChangeSupported(m_video, m_core->GetHWType())
                     && (task->GetFrameType() & MFX_FRAMETYPE_I) && (task->m_encOrder == 0 || m_video.mfx.GopPicSize != 1))

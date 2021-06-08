@@ -104,34 +104,12 @@ mfxStatus CResourcesPool::CreateEncoders()
     return MFX_ERR_NONE;
 }
 
-#if !defined(MFX_ONEVPL)
-mfxStatus CResourcesPool::CreatePlugins(mfxPluginUID pluginGUID, mfxChar* pluginPath)
-{
-    for (int i = 0; i < m_size; i++)
-    {
-        MFXPlugin* pPlugin = pluginPath ?
-            LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1, pluginPath, (mfxU32)msdk_strnlen(pluginPath,1024)):
-            LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1);
-
-        if (pPlugin == NULL)
-        {
-            return MFX_ERR_UNSUPPORTED;
-        }
-        m_resources[i].pPlugin=pPlugin;
-    }
-    return MFX_ERR_NONE;
-}
-#endif
-
 void CResourcesPool::CloseAndDeleteEverything()
 {
     for(int i = 0; i < m_size; i++)
     {
         m_resources[i].TaskPool.Close();
         MSDK_SAFE_DELETE(m_resources[i].pEncoder);
-#if !defined(MFX_ONEVPL)
-        MSDK_SAFE_DELETE(m_resources[i].pPlugin);
-#endif
         m_resources[i].Session.Close();
     }
 }
@@ -385,38 +363,6 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
         msdk_printf(MSDK_STRING("error: Look ahead is not supported in the %d.%d API version\n"),
             version.Major, version.Minor);
         return MFX_ERR_UNSUPPORTED;
-    }
-
-    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
-#if !defined(MFX_ONEVPL)
-        /* Here we actually define the following codec initialization scheme:
-        *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
-        *  2. If plugin path not specified:
-        *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-        *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-        */
-        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath)))
-        {
-            m_pUserModule.reset(new MFXVideoUSER(m_resources[0].Session));
-            sts = m_resources.CreatePlugins(pParams->pluginParams.pluginGuid,pParams->pluginParams.strPluginPath);
-            MSDK_CHECK_STATUS(sts, "m_resources.CreatePlugins failed");
-        }
-        else
-        {
-            bool isDefaultPlugin = false;
-            if (AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-            {
-                mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
-                pParams->pluginParams.pluginGuid = msdkGetPluginUID(impl, MSDK_VENCODE, pParams->CodecId);
-                isDefaultPlugin = true;
-            }
-            if (!AreGuidsEqual(pParams->pluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-            {
-                sts = m_resources.CreatePlugins(pParams->pluginParams.pluginGuid,NULL);
-                MSDK_CHECK_STATUS(sts, "m_resources.CreatePlugins failed");
-            }
-        }
-#endif
     }
 
     // set memory type

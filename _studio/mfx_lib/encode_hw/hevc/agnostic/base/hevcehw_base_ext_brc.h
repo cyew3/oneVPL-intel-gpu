@@ -71,9 +71,6 @@ protected:
     mfxExtBRC m_brc = {};
     OnExit    m_destroy;
     bool      m_bUseLevel = true;
-#if !defined(MFX_ONEVPL)
-    NotNull<mfxExtLAFrameStatistics*> m_pLAStat;
-#endif
 };
 
 } //Base

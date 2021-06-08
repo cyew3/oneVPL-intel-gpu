@@ -58,9 +58,7 @@ public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
-#if defined(MFX_ONEVPL)
     static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
-#endif
 
     VideoDECODEH264(VideoCORE *core, mfxStatus * sts);
     virtual ~VideoDECODEH264(void);
@@ -81,9 +79,7 @@ public:
 
     mfxStatus RunThread(ThreadTaskInfo*, mfxU32 /*threadNumber*/);
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurface() override;
-#endif
 protected:
     static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
@@ -112,9 +108,7 @@ protected:
 #endif
 
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
-#if defined(MFX_ONEVPL)
     mfxFrameSurface1 * GetInternalSurface(mfxFrameSurface1 *surface);
-#endif
     std::unique_ptr<UMC::MFXTaskSupplier>  m_pH264VideoDecoder;
     mfx_UMC_MemAllocator                   m_MemoryAllocator;
 

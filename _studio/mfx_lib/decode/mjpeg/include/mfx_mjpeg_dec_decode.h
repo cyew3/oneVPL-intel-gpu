@@ -172,9 +172,7 @@ public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
-#if defined(MFX_ONEVPL)
     static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
-#endif
 
     VideoDECODEMJPEG(VideoCORE *core, mfxStatus * sts);
     virtual ~VideoDECODEMJPEG(void);
@@ -192,10 +190,7 @@ public:
     virtual mfxStatus GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts);
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
-
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurface() override;
-#endif
 
 protected:
     static mfxStatus QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);

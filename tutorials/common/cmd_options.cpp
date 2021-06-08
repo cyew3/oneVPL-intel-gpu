@@ -166,14 +166,12 @@ void ParseOptions(int argc, char* argv[], CmdOptions* cmd_options)
                 printf("error: param file name is too long\n");
                 exit(-1);
             }
-#if defined(MFX_ONEVPL)
         } else if ((cmd_options->ctx.options & OPTION_IMPL) && !strcmp(argv[i], "-hwpath:EUs")) {
             cmd_options->values.VppHwPath = MFX_SCALING_MODE_INTEL_GEN_COMPUTE;
         } else if ((cmd_options->ctx.options & OPTION_IMPL) && !strcmp(argv[i], "-hwpath:VDBOX")) {
             cmd_options->values.VppHwPath = MFX_SCALING_MODE_INTEL_GEN_VDBOX;
         } else if ((cmd_options->ctx.options & OPTION_IMPL) && !strcmp(argv[i], "-hwpath:VEBOX")) {
             cmd_options->values.VppHwPath = MFX_SCALING_MODE_INTEL_GEN_VEBOX;
-#endif
         } else if (argv[i][0] == '-') {
             printf("error: unsupported option '%s'\n", argv[i]);
             exit(-1);

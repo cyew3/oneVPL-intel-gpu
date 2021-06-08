@@ -39,7 +39,6 @@ static void usage(CmdOptionsCtx* ctx)
 
 int main(int argc, char** argv)
 {
-#if defined(MFX_ONEVPL)
     mfxStatus sts = MFX_ERR_NONE;
     bool bEnableOutput; // if true, removes all YUV file writing
     CmdOptions options;
@@ -347,7 +346,4 @@ int main(int argc, char** argv)
     Release();
 
     return 0;
-#else
-    return -1;
-#endif
 }

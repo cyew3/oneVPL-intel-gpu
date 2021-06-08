@@ -1215,7 +1215,6 @@ bool IsHwMvcEncSupported()
     return false;
 }
 
-#if defined(MFX_ONEVPL)
 VAAPIVideoCORE20::VAAPIVideoCORE20(
     const mfxU32 adapterNum,
     const mfxU32 numThreadsAvailable,
@@ -1536,12 +1535,8 @@ mfxStatus VAAPIVideoCORE20::CreateSurface(mfxU16 type, const mfxFrameInfo& info,
     return m_frame_allocator_wrapper.CreateSurface(type, info, surf);
 }
 
-#endif
-
 template class VAAPIVideoCORE_T<CommonCORE  >;
-#if defined(MFX_ONEVPL)
 template class VAAPIVideoCORE_T<CommonCORE20>;
-#endif
 
 #endif
 /* EOF */

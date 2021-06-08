@@ -27,10 +27,7 @@ Algorithm:
 */
 #include "ts_vpp.h"
 #include "ts_struct.h"
-
-#if defined(MFX_ONEVPL)
 #include "mfxpavp.h"
-#endif
 
 /*! \brief Main test name space */
 namespace vpp_query

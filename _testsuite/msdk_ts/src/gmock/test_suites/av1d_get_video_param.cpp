@@ -326,8 +326,6 @@ void TestSuite::ReadStream()
     m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
 }
 
-
-
 TS_REG_TEST_SUITE_CLASS_ROUTINE(av1d_8b_420_nv12_get_video_param,  RunTest_fourcc<MFX_FOURCC_NV12>, n_cases);
 TS_REG_TEST_SUITE_CLASS_ROUTINE(av1d_10b_420_p010_get_video_param,  RunTest_fourcc<MFX_FOURCC_P010>, n_cases);
 }

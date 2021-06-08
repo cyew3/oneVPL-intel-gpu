@@ -73,15 +73,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     else
     {
-#if defined(MFX_ONEVPL)
         // MSDK 2.0 case
         VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
         MFX_CHECK_WITH_ASSERT(hwCore_20, MFX_ERR_DEVICE_FAILED);
 
         MFX_SAFE_CALL(hwCore_20->GetVAService(&m_vaDisplay));
-#else
-        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
-#endif
     }
 
     MFX_CHECK(m_vaDisplay, MFX_ERR_DEVICE_FAILED);
@@ -212,15 +208,11 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(JpegEncCaps & caps)
     }
     else
     {
-#if defined(MFX_ONEVPL)
         // MSDK 2.0 case
         VAAPIVideoCORE20* hwCore_20 = dynamic_cast<VAAPIVideoCORE20*>(m_core);
         MFX_CHECK_WITH_ASSERT(hwCore_20, MFX_ERR_DEVICE_FAILED);
 
         MFX_SAFE_CALL(hwCore_20->GetVAService(&m_vaDisplay));
-#else
-        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
-#endif
     }
 
     memset(&caps, 0, sizeof(caps));

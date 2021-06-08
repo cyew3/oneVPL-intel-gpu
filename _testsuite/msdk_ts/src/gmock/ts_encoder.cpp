@@ -72,61 +72,6 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         }
     }
 
-#if !defined(MFX_ONEVPL)
-    if ( (par.mfx.CodecId == MFX_CODEC_HEVC) &&
-         (uid.Data) && (0 == memcmp(uid.Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) )
-    {
-        // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
-        if (g_tsHWtype < MFX_HW_SKL)
-        {
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-            g_tsLog << "WARNING: Unsupported HW Platform!\n";
-        }
-
-        if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON && g_tsHWtype < MFX_HW_CNL) {
-            g_tsLog << "\n\nWARNING: Lowpower is supported starting from Gen10!\n\n\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
-        }
-
-        // skip all HEVCe tests with unsupported fourcc
-        mfxU32 fourcc_id = par.mfx.FrameInfo.FourCC;
-        if ((fourcc_id == MFX_FOURCC_P010) && (g_tsHWtype < MFX_HW_KBL))
-        {
-            g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
-        }
-        if ((fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_YUY2 ||
-            fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410)
-            && (g_tsHWtype < MFX_HW_ICL))
-        {
-            g_tsLog << "\n\nWARNING: RExt formats are only supported starting from ICL!\n\n\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
-        }
-        if ((fourcc_id == MFX_FOURCC_P016 || fourcc_id == MFX_FOURCC_Y216 || fourcc_id == MFX_FOURCC_Y416)
-            && (g_tsHWtype < MFX_HW_TGL))
-        {
-            g_tsLog << "\n\nWARNING: 12b formats are only supported starting from TGL!\n\n\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
-        }
-        if (fourcc_id == MFX_FOURCC_Y216 && g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
-        {
-            g_tsLog << "\n\nWARNING: Y216 format is NOT supported on VDENC!\n\n\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
-        }
-        if ((fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == MFX_FOURCC_Y416)
-            && (g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
-        {
-            g_tsLog << "\n\nWARNING: 4:4:4 formats are only supported on VDENC!\n\n\n";
-            g_tsStatus.disable();
-            throw tsSKIP;
-        }
-    }
-#endif //!MFX_ONEVPL
     if ( par.mfx.CodecId == MFX_CODEC_MPEG2 )
     {
         if ( g_tsImpl != MFX_IMPL_SOFTWARE && g_tsHWtype == MFX_HW_APL )
@@ -234,58 +179,6 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults, MsdkPluginType 
     m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENCODE, CodecId, type);
     m_loaded = !m_uid;
 }
-
-#if !defined(MFX_ONEVPL)
-tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
-    : m_default(useDefaults)
-    , m_initialized(false)
-    , m_loaded(false)
-    , m_par()
-    , m_bitstream()
-    , m_request()
-    , m_pPar(&m_par)
-    , m_pParOut(&m_par)
-    , m_pBitstream(&m_bitstream)
-    , m_pRequest(&m_request)
-    , m_pSyncPoint(&m_syncpoint)
-    , m_pSurf(0)
-    , m_pCtrl(&m_ctrl)
-    , m_filler(0)
-    , m_bs_processor(0)
-    , m_frames_buffered(0)
-    , m_uid(0)
-    , m_single_field_processing(false)
-    , m_field_processed(0)
-    , m_bUseDefaultFrameType(false)
-{
-    m_par.mfx.CodecId = CodecId;
-    if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
-    {
-        m_par.mfx.LowPower = g_tsConfig.lowpower;
-    }
-
-    if(m_default)
-    {
-        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-        m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
-        m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 26;
-        m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-
-        m_par.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
-        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
-        m_par.mfx.FrameInfo.FrameRateExtN = 30;
-        m_par.mfx.FrameInfo.FrameRateExtD = 1;
-    }
-
-
-    mfxExtFeiParam& extbuffer = m_par;
-    extbuffer.Func = func;
-
-    m_loaded = true;
-}
-#endif //!MFX_ONEVPL
 
 tsVideoEncoder::~tsVideoEncoder()
 {
@@ -897,24 +790,6 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
     static const GUID DXVA_NoEncrypt = { 0x1b81beD0, 0xa0c7, 0x11d3, { 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
 
     HRESULT hr;
-
-#if !defined(MFX_ONEVPL)
-    const mfxPluginUID * pluginId;
-    if (m_par.mfx.CodecId == MFX_CODEC_HEVC)
-        pluginId = &MFX_PLUGINID_HEVCE_HW;
-    else if (m_par.mfx.CodecId == MFX_CODEC_VP9)
-        pluginId = &MFX_PLUGINID_VP9E_HW;
-    else
-        return MFX_ERR_UNSUPPORTED;
-
-    if ((0 != memcmp(m_uid->Data, pluginId->Data, sizeof(pluginId->Data)))) {
-        if (pCapsSize) {
-            memset(pCaps, 0, *pCapsSize);
-            pCapsSize[0] = 0;
-        }
-        return MFX_ERR_UNSUPPORTED;
-    }
-#endif //!MFX_ONEVPL
 
     GUID guid;
     sts = GetGuid(guid);

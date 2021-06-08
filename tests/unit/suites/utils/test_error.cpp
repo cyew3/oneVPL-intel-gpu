@@ -62,16 +62,9 @@ namespace utils { namespace tests
         , MFX_ERR_UNDEFINED_BEHAVIOR
         , MFX_ERR_DEVICE_FAILED
         , MFX_ERR_MORE_BITSTREAM
-#if !defined(MFX_ONEVPL)
-        , MFX_ERR_INCOMPATIBLE_AUDIO_PARAM
-        , MFX_ERR_INVALID_AUDIO_PARAM
-#endif
         , MFX_ERR_GPU_HANG
         , MFX_ERR_REALLOC_SURFACE
-#if defined(MFX_ONEVPL)
         , MFX_ERR_RESOURCE_MAPPED
-#endif
-
         , MFX_WRN_IN_EXECUTION
         , MFX_WRN_DEVICE_BUSY
         , MFX_WRN_VIDEO_PARAM_CHANGED
@@ -80,9 +73,6 @@ namespace utils { namespace tests
         , MFX_WRN_VALUE_NOT_CHANGED
         , MFX_WRN_OUT_OF_RANGE
         , MFX_WRN_FILTER_SKIPPED
-#if !defined(MFX_ONEVPL)
-        , MFX_WRN_INCOMPATIBLE_AUDIO_PARAM
-#endif
         , MFX_ERR_NONE_PARTIAL_OUTPUT
     );
 
@@ -124,16 +114,10 @@ namespace utils { namespace tests
         std::make_pair(MFX_ERR_ABORTED,                  std::errc::operation_canceled),
         std::make_pair(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, std::errc::invalid_argument),
         std::make_pair(MFX_ERR_INVALID_VIDEO_PARAM,      std::errc::invalid_argument),
-#if !defined(MFX_ONEVPL)
-        std::make_pair(MFX_ERR_INCOMPATIBLE_AUDIO_PARAM, std::errc::invalid_argument),
-        std::make_pair(MFX_ERR_INVALID_AUDIO_PARAM,      std::errc::invalid_argument),
-#endif //!MFX_ONEVPL
         std::make_pair(MFX_ERR_UNDEFINED_BEHAVIOR,       std::errc::state_not_recoverable),
         std::make_pair(MFX_ERR_DEVICE_FAILED,            std::errc::state_not_recoverable),
         std::make_pair(MFX_ERR_REALLOC_SURFACE,          std::errc::message_size),
-#if defined(MFX_ONEVPL)
         std::make_pair(MFX_ERR_RESOURCE_MAPPED,          std::errc::resource_deadlock_would_occur),
-#endif
         std::make_pair(MFX_ERR_GPU_HANG,                 std::errc::device_or_resource_busy)
     );
 

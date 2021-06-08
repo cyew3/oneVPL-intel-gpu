@@ -305,7 +305,6 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEMJPEG::QueryImplsDescription(
     VideoCORE&,
     mfxDecoderDescription::decoder& caps,
@@ -361,7 +360,6 @@ mfxStatus VideoDECODEMJPEG::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 mfxStatus VideoDECODEMJPEG::Reset(mfxVideoParam *par)
 {
@@ -1706,7 +1704,6 @@ mfxFrameSurface1 *VideoDECODEMJPEG::GetOriginalSurface(mfxFrameSurface1 *surface
     return surface;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoDECODEMJPEG::GetSurface()
 {
     if (!decoder->m_surface_source)
@@ -1717,7 +1714,6 @@ mfxFrameSurface1* VideoDECODEMJPEG::GetSurface()
 
     return decoder->m_surface_source->GetSurface();
 }
-#endif
 
 VideoDECODEMJPEGBase::VideoDECODEMJPEGBase()
 {

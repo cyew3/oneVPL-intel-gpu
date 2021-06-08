@@ -187,8 +187,6 @@ MFXVideoENCODEMJPEG_HW::~MFXVideoENCODEMJPEG_HW()
     Close();
 }
 
-
-#if defined(MFX_ONEVPL)
 mfxStatus MFXVideoENCODEMJPEG_HW::QueryImplsDescription(
     VideoCORE& core
     , mfxEncoderDescription::encoder& caps
@@ -226,7 +224,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out)
 {

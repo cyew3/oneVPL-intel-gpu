@@ -66,8 +66,6 @@ namespace mfxDefaultAllocatorVAAPI
 
 } //  namespace mfxDefaultAllocatorVAAPI
 
-#if defined(MFX_ONEVPL)
-
 class SurfaceScopedLock
 {
 public:
@@ -233,7 +231,6 @@ private:
 
 using FlexibleFrameAllocatorHW_VAAPI = FlexibleFrameAllocator<mfxFrameSurface1_hw_vaapi, staging_adapter_stub>;
 
-#endif
 
 #endif // LIBMFX_ALLOCATOR_VAAPI_H_
 #endif // (MFX_VA_LINUX)

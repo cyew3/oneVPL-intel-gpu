@@ -149,7 +149,6 @@ void LoadParFile(char *ParFile, std::vector<std::vector<mfxU32>> &skipChannelPre
 
 int main(int argc, char* argv[])
 {
-#if defined(MFX_ONEVPL)
     mfxStatus sts = MFX_ERR_NONE;
 
     // =====================================================================
@@ -427,8 +426,5 @@ int main(int argc, char* argv[])
     }
 
     return 0;
-#else
-    return -1;
-#endif
 }
 

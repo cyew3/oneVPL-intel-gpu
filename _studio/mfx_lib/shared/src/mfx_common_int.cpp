@@ -22,7 +22,7 @@
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
 
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 
@@ -365,53 +365,6 @@ mfxStatus UpdateCscOutputFormat(mfxVideoParam *par, mfxFrameAllocRequest *reques
 
     return MFX_ERR_NONE;
 }
-
-#if !defined(MFX_ONEVPL)
-mfxStatus CheckAudioParamCommon(mfxAudioParam *in)
-{
-//    mfxStatus sts;
-
-    switch (in->mfx.CodecId)
-    {
-        case MFX_CODEC_AAC:
-        case MFX_CODEC_MP3:
-            break;
-        default:
-            return MFX_ERR_INVALID_AUDIO_PARAM;
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus CheckAudioParamDecoders(mfxAudioParam *in)
-{
-    mfxStatus sts = CheckAudioParamCommon(in);
-    if (sts < MFX_ERR_NONE)
-        return sts;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus CheckAudioParamEncoders(mfxAudioParam *in)
-{
-    mfxStatus sts = CheckAudioParamCommon(in);
-    if (sts < MFX_ERR_NONE)
-        return sts;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame)
-{
-    if (!aFrame || !aFrame->Data)
-        return MFX_ERR_NULL_PTR;
-
-    if (aFrame->DataLength > aFrame->MaxLength)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    return MFX_ERR_NONE;
-}
-#endif //!MFX_ONEVPL
 
 static mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 {
@@ -1294,10 +1247,8 @@ mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, const mfxFrameSurface1& sur
     mfxFrameSurface1 tmpSrf{};
     tmpSrf.Info = fi;
     tmpSrf.Data = surface.Data;
-#if defined(MFX_ONEVPL)
     tmpSrf.FrameInterface = surface.FrameInterface;
     tmpSrf.Version = surface.Version;
-#endif
 
     return tmpSrf;
 }

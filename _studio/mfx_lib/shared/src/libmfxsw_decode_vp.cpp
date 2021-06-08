@@ -24,7 +24,6 @@
 #include <mfx_task.h>
 #include <libmfx_core.h>
 
-#if defined(MFX_ONEVPL)
 #include<set>
 
 constexpr mfxU16 decoderChannelID = 0;
@@ -652,4 +651,3 @@ mfxStatus MFXVideoDECODE_VPP_GetChannelParam(mfxSession session, mfxVideoChannel
     return MFX_ERR_NONE;
 }
 
-#endif //#if MFX_ONEVPL

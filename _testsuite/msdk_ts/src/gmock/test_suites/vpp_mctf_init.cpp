@@ -295,28 +295,6 @@ namespace vpp_mctf_init
             },
         },
 
-#if !defined(MFX_ONEVPL)
-        // any FRC-like algorithm is bad for MCTF with delays
-        {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_2REF },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
-
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
-            },
-        },
-
-        // any FRC-like algorithm is bad for MCTF with delays
-        {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_2REF },
-                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
-            },
-        },
-#endif //!MFX_ONEVPL
-
         // by default, 2-ref case is used; its incompatible with FRC
         {/*31*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
             {
@@ -328,16 +306,6 @@ namespace vpp_mctf_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
             },
         },
-
-#if !defined(MFX_ONEVPL)
-        // any FRC-like algorithm is bad for MCTF with delays
-        {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_EXTBUFF_VPP_MCTF },
-                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
-            },
-        },
-#endif //!MFX_ONEVPL
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && defined(MFX_ONEVPL)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
 #include "av1ehw_base_query_impl_desc.h"
 
@@ -181,4 +181,4 @@ void QueryImplDesc::QueryImplsDescription(const FeatureBlocks& blocks, TPushQID 
     Push(BLK_Query, Query);
 }
 
-#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && defined(MFX_ONEVPL)
+#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

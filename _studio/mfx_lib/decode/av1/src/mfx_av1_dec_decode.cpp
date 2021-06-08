@@ -336,7 +336,6 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     return MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEAV1::QueryImplsDescription(
     VideoCORE&,
     mfxDecoderDescription::decoder& caps,
@@ -390,7 +389,6 @@ mfxStatus VideoDECODEAV1::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 
 // Check if new parameters are compatible with old parameters
@@ -1434,19 +1432,9 @@ mfxStatus VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1** surf_out, mfxFram
     surface_out->Info.FrameRateExtD = isShouldUpdate ? m_init_par.mfx.FrameInfo.FrameRateExtD : m_first_par.mfx.FrameInfo.FrameRateExtD;
     surface_out->Info.FrameRateExtN = isShouldUpdate ? m_init_par.mfx.FrameInfo.FrameRateExtN : m_first_par.mfx.FrameInfo.FrameRateExtN;
 
-#if !defined(MFX_ONEVPL)
-    mfxExtAV1FilmGrainParam* extFilmGrain = (mfxExtAV1FilmGrainParam*)GetExtendedBuffer(surface_out->Data.ExtParam, surface_out->Data.NumExtParam, MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM);
-    if (extFilmGrain)
-    {
-        UMC_AV1_DECODER::FrameHeader const& fh = pFrame->GetFrameHeader();
-        CopyFilmGrainParam(*extFilmGrain, fh.film_grain_params);
-    }
-#endif //!MFX_ONEVPL
-
     return MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoDECODEAV1::GetSurface()
 {
     if (!m_surface_source)
@@ -1457,6 +1445,5 @@ mfxFrameSurface1* VideoDECODEAV1::GetSurface()
 
     return m_surface_source->GetSurface();
 }
-#endif
 
 #endif

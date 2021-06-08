@@ -36,31 +36,16 @@
 #include "mfxenctools.h"
 #endif
 
-#if !defined(MFX_ONEVPL)
-#include "mfxcamera.h"
-#include "mfxplugin.h"
-
-#if !defined(OPEN_SOURCE)
-#include "mfxfeih265.h"
-#endif // !OPEN_SOURCE
-
-#include "mfxla.h"
-#endif // !MFX_ONEVPL
-
 #if (MFX_VERSION >= 1026)
 #include "mfxbrc.h"
 #endif
 
-#if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h"
-#endif
 
 #if (MFX_VERSION >= 1025)
 #include "ts_typedef.h"
 
-#if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h"
-#endif
 
 #include <memory>
 

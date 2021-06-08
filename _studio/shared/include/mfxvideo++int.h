@@ -32,10 +32,6 @@
 #include "mfxvp8.h"
 #include "mfxvp9.h"
 
-#if !defined(MFX_ONEVPL)
-#include "mfxplugin.h"
-#endif
-
 #include "mfxprivate.h"
 #include <memory>
 #include <functional>
@@ -334,7 +330,6 @@ public:
     {
         handle = {};
 
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             mfxResourceType rt = mfxResourceType(0);
@@ -351,13 +346,11 @@ public:
 
             return bValidType ? MFX_ERR_NONE : MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-#endif
         return GetFrameHDL(surf.Data.MemId, &handle.first, ExtendedSearch);
     }
 
     mfxStatus IncreaseReference(mfxFrameSurface1& surf)
     {
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             mfxStatus sts = surf.FrameInterface->AddRef ? surf.FrameInterface->AddRef(&surf) : MFX_ERR_NULL_PTR;
@@ -365,7 +358,6 @@ public:
             if (sts != MFX_ERR_NONE)
                 return sts;
         }
-#endif
         return IncreaseReference(&surf.Data);
     }
 
@@ -375,7 +367,6 @@ public:
         if (sts != MFX_ERR_NONE)
             return sts;
 
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             sts = surf.FrameInterface->Release ? surf.FrameInterface->Release(&surf) : MFX_ERR_NULL_PTR;
@@ -383,31 +374,24 @@ public:
             if (sts != MFX_ERR_NONE)
                 return sts;
         }
-#endif
         return MFX_ERR_NONE;
     }
 
     mfxStatus LockFrame(mfxFrameSurface1& surf, mfxU32 flags = 3u /*MFX_MAP_READ_WRITE*/)
     {
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             return surf.FrameInterface->Map ? surf.FrameInterface->Map(&surf, flags) : MFX_ERR_NULL_PTR;
         }
-#else
-        std::ignore = flags;
-#endif
         return LockFrame(surf.Data.MemId, &surf.Data);
     }
 
     mfxStatus UnlockFrame(mfxFrameSurface1& surf)
     {
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             return surf.FrameInterface->Unmap ? surf.FrameInterface->Unmap(&surf) : MFX_ERR_NULL_PTR;
         }
-#endif
         return UnlockFrame(surf.Data.MemId, &surf.Data);
     }
 
@@ -415,34 +399,28 @@ public:
     {
         handle = {};
 
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             return GetFrameHDL(surf, handle, ExtendedSearch);
         }
-#endif
         return GetExternalFrameHDL(surf.Data.MemId, &handle.first, ExtendedSearch);
     }
 
     mfxStatus LockExternalFrame(mfxFrameSurface1& surf, bool ExtendedSearch = true)
     {
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             return LockFrame(surf);
         }
-#endif
         return LockExternalFrame(surf.Data.MemId, &surf.Data, ExtendedSearch);
     }
 
     mfxStatus UnlockExternalFrame(mfxFrameSurface1& surf, bool ExtendedSearch = true)
     {
-#if defined(MFX_ONEVPL)
         if (surf.FrameInterface)
         {
             return UnlockFrame(surf);
         }
-#endif
         return UnlockExternalFrame(surf.Data.MemId, &surf.Data, ExtendedSearch);
     }
 };
@@ -577,9 +555,7 @@ public:
     virtual
     mfxStatus CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) = 0;
 
-#if defined(MFX_ONEVPL)
     std::unique_ptr<SurfaceCache, std::function<void(SurfaceCache*)>> m_pSurfaceCache;
-#endif
 };
 
 class VideoDECODE
@@ -613,10 +589,8 @@ public:
     }
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) = 0;
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurface() { return nullptr; }
     virtual mfxFrameSurface1* GetInternalSurface(mfxFrameSurface1 * /*surface*/) { return nullptr; };
-#endif
 };
 
 class VideoVPP
@@ -671,64 +645,9 @@ public:
     virtual
     mfxStatus RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux) = 0;
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurfaceIn() { return nullptr; }
     virtual mfxFrameSurface1* GetSurfaceOut() { return nullptr; }
-#endif
 };
-
-#if !defined(MFX_ONEVPL)
-// forward declaration of used types
-struct mfxPlugin;
-struct mfxCoreInterface;
-
-class VideoUSER
-{
-public:
-    virtual
-    ~VideoUSER(void) {};
-
-    // Initialize the user's plugin
-    virtual
-    mfxStatus PluginInit(const mfxPlugin *pParam,
-                   mfxSession session,
-                   mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL) = 0;
-    // Release the user's plugin
-    virtual
-    mfxStatus PluginClose(void) = 0;
-    // Get the plugin's threading policy
-    virtual
-    mfxTaskThreadingPolicy GetThreadingPolicy(void) {return MFX_TASK_THREADING_DEFAULT;}
-
-    // Check the parameters to start a new task
-    virtual
-    mfxStatus Check(const mfxHDL *in, mfxU32 in_num,
-                    const mfxHDL *out, mfxU32 out_num,
-                    MFX_ENTRY_POINT *pEntryPoint) = 0;
-
-};
-
-class VideoCodecUSER
-    : public VideoUSER
-{
-public:
-    //statically exposed for mediasdk components but are plugin dependent
-    virtual mfxStatus Init(mfxVideoParam *par) = 0;
-    virtual mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out) = 0;
-    virtual mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out) = 0;
-    virtual mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par) = 0;
-    virtual mfxStatus VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, MFX_ENTRY_POINT *ep) = 0;
-    virtual mfxStatus VPPFrameCheckEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, MFX_ENTRY_POINT *ep) = 0;
-
-    //expose new encoder/decoder view
-    virtual VideoENCODE* GetEncodePtr() = 0;
-    virtual VideoDECODE* GetDecodePtr() = 0;
-    virtual VideoVPP* GetVPPPtr() = 0;
-    virtual VideoENC* GetEncPtr() = 0;
-
-    virtual void GetPlugin(mfxPlugin& plugin) = 0;
-};
-#endif //!MFX_ONEVPL
 
 #ifdef _MSVC_LANG
 #pragma warning(pop)

@@ -228,9 +228,6 @@ static void SetDefaultConfig(mfxVideoParam &video, mfxExtEncToolsConfig &config)
     if (!pExtConfig || !IsEncToolsOptOn(*pExtConfig, bGameStreaming))
     {
         if (IsEncToolsImplicit(video)
-#if !defined(MFX_ONEVPL)
-            && video.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT
-#endif
             && !(pExtOpt3 && pExtOpt3->ScenarioInfo != MFX_SCENARIO_UNKNOWN))
         {
             config.AdaptiveI             = mfxU16((pExtConfig && IsOff(pExtConfig->AdaptiveI))             ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_UNKNOWN);

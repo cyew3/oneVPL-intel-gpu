@@ -117,12 +117,10 @@ namespace Base
             , mfxVideoParam& par
             , mfxFrameAllocRequest& request);
 
-#if defined(MFX_ONEVPL)
         virtual mfxStatus QueryImplsDescription(
             VideoCORE&
             , mfxEncoderDescription::encoder&
             , mfx::PODArraysHolder&) override;
-#endif //defined(MFX_ONEVPL)
 
     protected:
         using TFeatureList = std::list<std::unique_ptr<FeatureBase>>;

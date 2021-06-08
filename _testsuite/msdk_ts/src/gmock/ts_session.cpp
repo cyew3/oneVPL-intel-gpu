@@ -249,24 +249,13 @@ mfxStatus tsSession::SetFrameAllocator(mfxSession session, mfxFrameAllocator *al
 
 mfxStatus tsSession::Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version)
 {
-#if !defined(MFX_ONEVPL)
-    TRACE_FUNC3(MFXVideoUSER_Load, session, uid, version);
-    g_tsStatus.check( MFXVideoUSER_Load(session, uid, version) );
-#endif //!MFX_ONEVPL
-
     return g_tsStatus.get();
 }
 
 mfxStatus tsSession::UnLoad(mfxSession session, const mfxPluginUID *uid)
 {
-#if !defined(MFX_ONEVPL)
-    TRACE_FUNC2(MFXVideoUSER_UnLoad, session, uid);
-    g_tsStatus.check( MFXVideoUSER_UnLoad(session, uid) );
-#else
     g_tsLog << "Plugins are not supported by VPL\n";
     throw tsFAIL;
-#endif //!MFX_ONEVPL
-
     return g_tsStatus.get();
 }
 
@@ -280,13 +269,8 @@ mfxStatus tsSession::SetHandle(mfxSession session, mfxHandleType type, mfxHDL ha
 
 mfxStatus tsSession::GetPlugin(mfxSession session, mfxU32 type, mfxPlugin *plugin)
 {
-#if !defined(MFX_ONEVPL)
-    TRACE_FUNC3(MFXVideoUSER_GetPlugin, session, type, plugin);
-    g_tsStatus.check(MFXVideoUSER_GetPlugin(session, type, plugin));
-#else
     g_tsLog << "Plugins are not supported by VPL\n";
     throw tsFAIL;
-#endif //!MFX_ONEVPL
     return g_tsStatus.get();
 }
 
@@ -340,15 +324,6 @@ mfxStatus tsSession::MFXInitEx(mfxInitParam par, mfxSession* session)
 
     return g_tsStatus.get();
 }
-
-#if !defined(MFX_ONEVPL)
-mfxStatus tsSession::MFXDoWork(mfxSession session)
-{
-    TRACE_FUNC1(MFXDoWork, session);
-    g_tsStatus.check( ::MFXDoWork(session) );
-    return g_tsStatus.get();
-}
-#endif
 
 mfxStatus tsSession::MFXJoinSession(mfxSession session)
 {

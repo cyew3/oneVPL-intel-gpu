@@ -20,9 +20,7 @@
 
 #include "mfx_common.h"
 #include <algorithm>
-
 #include <mfxdeprecated.h>
-
 
 const mfxPluginUID NativePlugins[] =
 {

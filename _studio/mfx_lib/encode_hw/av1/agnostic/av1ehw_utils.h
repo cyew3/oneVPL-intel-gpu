@@ -492,9 +492,6 @@ inline void UpdateMultiplier(mfxInfoMFX& mfx, mfxU16 MN)
             || mfx.RateControlMethod == MFX_RATECONTROL_VBR
             || mfx.RateControlMethod == MFX_RATECONTROL_VCM
             || mfx.RateControlMethod == MFX_RATECONTROL_QVBR
-#if !defined(MFX_ONEVPL)
-            || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
             )
         {
             mfx.TargetKbps       = (mfxU16)mfx::CeilDiv<mfxU32>(mfx.TargetKbps * MO, MN);

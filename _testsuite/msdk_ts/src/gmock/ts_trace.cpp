@@ -316,14 +316,6 @@ std::ostream &operator << (std::ostream &os, rawdata p){
     return os;
 }
 
-#if !defined(MFX_ONEVPL)
-tsTrace& tsTrace::operator<<(const mfxPluginUID& p)
-{
-    *this << hexstr(p.Data, sizeof(p.Data));
-    return *this;
-}
-#endif //!MFX_ONEVPL
-
 tsTrace& tsTrace::operator<<(const mfxFrameData& p)
 {
     STRUCT_BODY(mfxFrameData,
@@ -422,71 +414,6 @@ tsTrace& tsTrace::operator<<(const mfxExtMoveRect& p)
     return *this;
 }
 
-#if !defined(MFX_ONEVPL)
-tsTrace& tsTrace::operator<<(const mfxExtCamGammaCorrection& p)
-{
-    STRUCT_BODY(mfxExtCamGammaCorrection,
-        FIELD_S(mfxExtBuffer, Header     )
-        FIELD_T(mfxU16      , Mode       )
-        FIELD_T(mfxU16      , reserved1  )
-        FIELD_T(mfxF64      , GammaValue )
-        FIELD_T(mfxU16      , NumPoints  )
-        for(mfxU32 i = 0; i < p.NumPoints; ++i)
-        {
-            FIELD_T(mfxU16, GammaPoint[i])
-            FIELD_T(mfxU16, GammaCorrected[i])
-        }
-    )
-
-    return *this;
-}
-tsTrace& tsTrace::operator<<(const mfxExtCamVignetteCorrection& p)
-{
-    STRUCT_BODY(mfxExtCamVignetteCorrection,
-        FIELD_T(mfxU32,                       Width        )
-        FIELD_T(mfxU32,                       Height       )
-        FIELD_T(mfxU32,                       Pitch        )
-        if(p.CorrectionMap)
-        {
-            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->R )
-            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->G0)
-            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->B )
-            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->G1)
-        }
-    )
-
-    return *this;
-}
-
-tsTrace& tsTrace::operator<<(const mfxExtCamTotalColorControl& p)
-{
-	STRUCT_BODY(mfxExtCamTotalColorControl,
-		FIELD_T(mfxU32, Header)
-		FIELD_S(mfxU8, R)
-		FIELD_S(mfxU8, G)
-		FIELD_S(mfxU8, B)
-		FIELD_S(mfxU8, Y)
-		FIELD_S(mfxU8, C)
-		FIELD_S(mfxU8, M)
-		)
-
-		return *this;
-}
-
-tsTrace& tsTrace::operator<<(const mfxExtCamCscYuvRgb& p)
-{
-	STRUCT_BODY(mfxExtCamCscYuvRgb,
-		FIELD_T(mfxU32, Header)
-		FIELD_S(mfxF32, PreOffset)
-		FIELD_S(mfxF32, Matrix)
-		FIELD_S(mfxF32, PostOffset)
-		FIELD_S(mfxU16, reserved)
-	)
-
-	return *this;
-}
-#endif //!MFX_ONEVPL
-
 tsTrace& tsTrace::operator<<(const mfxEncodeCtrl& p)
 {
     STRUCT_BODY(mfxEncodeCtrl,
@@ -528,51 +455,6 @@ tsTrace& tsTrace::operator<<(const mfxExtFeiEncMV& p)
 }
 #endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
-#if !defined(MFX_ONEVPL)
-tsTrace& tsTrace::operator << (const mfxExtAVCScalingMatrix& p)
-{
-    const char matrices[][10] = {
-        "Intra Y", "Intra Cb", "Intra Cr",
-        "Inter Y", "Inter Cb", "Inter Cr",
-        "Intra Y", "Inter Y",
-        "Intra Cb", "Inter Cb",
-        "Intra Cr", "Inter Cr",
-    };
-    STRUCT_BODY(mfxExtAVCScalingMatrix,
-        for (mfxU32 i = 0; i < sizeof(p.ScalingListPresent)/ sizeof(p.ScalingListPresent[0]); ++i)
-        {
-            FIELD_T(mfxU8, ScalingListPresent[i])
-        }
-        for (mfxU32 i = 0; i < sizeof(p.ScalingList4x4) / sizeof(p.ScalingList4x4[0]); ++i)
-        {
-            *this << "Scaling matrix "<< matrices[i] << " " << (p.ScalingListPresent[i] ? "is":"isn't") << " present, plane view\n";
-            for (mfxU8 y = 0; y < 4; ++y)
-            {
-                for (mfxU8 x = 0; x < 4; ++x)
-                {
-                    *this << static_cast<unsigned int>(p.ScalingList4x4[i][y * 4 + x]) << "\t";
-                }
-                *this << "\n";
-            }
-        }
-        for (mfxU32 i = 0; i < sizeof(p.ScalingList8x8) / sizeof(p.ScalingList8x8[0]); ++i)
-        {
-            *this << "Scaling matrix " << matrices[i+6] << " " << (p.ScalingListPresent[i] ? "is" : "isn't") << " present, plane view\n";
-            for (mfxU8 y = 0; y < 8; ++y)
-            {
-                for (mfxU8 x = 0; x < 8; ++x)
-                {
-                    *this << static_cast<unsigned int>(p.ScalingList8x8[i][y * 4 + x]) << "\t";
-                }
-                *this << "\n";
-            }
-        }
-    )
-
-        return *this;
-}
-#endif //!MFX_ONEVPL
-
 tsTrace& tsTrace::operator<<(const mfxExtPartialBitstreamParam& p)
 {
     STRUCT_BODY(mfxExtPartialBitstreamParam,
@@ -582,25 +464,3 @@ tsTrace& tsTrace::operator<<(const mfxExtPartialBitstreamParam& p)
     )
         return *this;
 }
-
-#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT)
-tsTrace& tsTrace::operator<<(const mfxExtEncToolsConfig& p)
-{
-    STRUCT_BODY(mfxExtEncToolsConfig,
-        FIELD_S(mfxExtBuffer, Header)
-        FIELD_T(mfxU16, AdaptiveI)
-        FIELD_T(mfxU16, AdaptiveB)
-        FIELD_T(mfxU16, AdaptiveRefP)
-        FIELD_T(mfxU16, AdaptiveRefB)
-        FIELD_T(mfxU16, SceneChange)
-        FIELD_T(mfxU16, AdaptiveLTR)
-        FIELD_T(mfxU16, AdaptivePyramidQuantP)
-        FIELD_T(mfxU16, AdaptivePyramidQuantB)
-        FIELD_T(mfxU16, AdaptiveQuantMatrices)
-        FIELD_T(mfxU16, BRCBufferHints)
-        FIELD_T(mfxU16, BRC)
-        FIELD_T(mfxU16, reserved) /* Fixed size array */
-    )
-        return *this;
-}
-#endif

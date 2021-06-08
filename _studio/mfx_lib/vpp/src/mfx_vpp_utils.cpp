@@ -2573,13 +2573,6 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
         list.push_back(MFX_EXTBUFF_VPP_IMAGE_STABILIZATION);
     }
 
-#if !defined(MFX_ONEVPL)
-    if(caps.uVariance)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);
-    }
-#endif
-
     if(caps.uRotation)
     {
         list.push_back(MFX_EXTBUFF_VPP_ROTATION);

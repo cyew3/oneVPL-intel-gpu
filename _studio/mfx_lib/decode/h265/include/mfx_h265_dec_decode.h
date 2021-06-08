@@ -62,9 +62,7 @@ public:
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     // Decode bitstream header and exctract parameters from it
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
-#if defined(MFX_ONEVPL)
     static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
-#endif
 
     VideoDECODEH265(VideoCORE *core, mfxStatus * sts);
     virtual ~VideoDECODEH265(void);
@@ -95,9 +93,7 @@ public:
 
     // Decoder instance threads entry point. Do async tasks here
     mfxStatus RunThread(void * params, mfxU32 threadNumber);
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurface() override;
-#endif
 
 protected:
     // Actually calculate needed frames number

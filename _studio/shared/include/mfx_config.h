@@ -235,9 +235,6 @@
     #endif
 #endif
 
-#if !defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64))
-    #define MFX_PROTECTED_FEATURE_DISABLE
-#endif
 
     #if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
@@ -327,7 +324,7 @@
 #define MFX_ENV_CFG_ENABLE
 #endif
 
-#if defined(MFX_ONEVPL) && (defined(_WIN32) || defined(_WIN64)) && !defined(STRIP_EMBARGO)
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(STRIP_EMBARGO)
     #define MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
 #endif
 

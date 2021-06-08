@@ -21,7 +21,7 @@
 #include <assert.h>
 
 #include "mfxpcp.h"
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpavp.h"
 #endif
 
@@ -74,8 +74,6 @@ mfxStatus MFXVideoCORE_QueryPlatform(mfxSession session, mfxPlatform* platform)
     }
 }
 
-#if defined(MFX_ONEVPL)
-
 mfxStatus MFXMemory_GetSurfaceForDecode(mfxSession session, mfxFrameSurface1** output_surf)
 {
     MFX_CHECK_NULL_PTR1(output_surf);
@@ -105,7 +103,6 @@ FUNCTION_GET_SURFACE_IMPL_VPP(MFXMemory_GetSurfaceForVPP, In)
 FUNCTION_GET_SURFACE_IMPL_VPP(MFXMemory_GetSurfaceForVPP, Out)
 
 #undef FUNCTION_GET_SURFACE_IMPL_VPP
-#endif
 
 mfxStatus CommonCORE::API_1_19_Adapter::QueryPlatform(mfxPlatform* platform)
 {
@@ -867,10 +864,6 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
     case MFX_HW_EHL    : platform.CodeName = MFX_PLATFORM_ELKHARTLAKE;   break;
     case MFX_HW_JSL    : platform.CodeName = MFX_PLATFORM_JASPERLAKE;    break;
 #endif
-#if !defined(STRIP_EMBARGO) && !defined(MFX_ONEVPL)
-    case MFX_HW_LKF    : platform.CodeName = MFX_PLATFORM_LAKEFIELD;     break;
-    case MFX_HW_RYF    :
-#endif //!STRIP_EMBARGO && !MFX_ONEVPL
 #if (MFX_VERSION >= 1031)
     case MFX_HW_RKL    :
     case MFX_HW_TGL_LP : platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
@@ -996,9 +989,6 @@ mfxStatus CommonCORE::SetFrameAllocator(mfxFrameAllocator *allocator)
     {
         m_FrameAllocator.frameAllocator = *allocator;
         m_bSetExtFrameAlloc = true;
-#if !defined(MFX_ONEVPL)
-        m_session->m_coreInt.FrameAllocator = *allocator;
-#endif
         return MFX_ERR_NONE;
     }
     else
@@ -1946,8 +1936,6 @@ mfxFrameAllocResponse *CommonCORE::GetPluginAllocResponse(mfxFrameAllocResponse&
 
 }
 
-#if defined(MFX_ONEVPL)
-
 mfxStatus CommonCORE20::AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, bool)
 {
     if (!m_enabled20Interface)
@@ -2333,5 +2321,4 @@ mfxStatus CommonCORE20::CreateSurface(mfxU16 type, const mfxFrameInfo& info, mfx
     return m_frame_allocator_wrapper.CreateSurface(type, info, surf);
 }
 
-#endif
 

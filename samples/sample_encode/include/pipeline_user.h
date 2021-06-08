@@ -22,10 +22,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "vm/so_defs.h"
 #include "pipeline_encode.h"
-#if !defined(MFX_ONEVPL)
-#include "mfx_plugin_base.h"
-#include "mfx_plugin_module.h"
-#endif
 #include "rotate_plugin_api.h"
 
 #ifndef MFX_VERSION
@@ -49,9 +45,6 @@ public:
 
 protected:
     msdk_so_handle          m_PluginModule;
-#if !defined(MFX_ONEVPL)
-    MFXGenericPlugin*       m_pusrPlugin;
-#endif
     mfxFrameSurface1*       m_pPluginSurfaces; // frames array for rotate input
     mfxFrameAllocResponse   m_PluginResponse;  // memory allocation response for rotate plugin
 

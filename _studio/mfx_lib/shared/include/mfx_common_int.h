@@ -26,10 +26,6 @@
 #include <errno.h>
 #include "mfx_common.h"
 
-#if !defined(MFX_ONEVPL)
-#include "mfxaudio.h"
-#endif
-
 mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 codecId);
 mfxStatus CheckFrameInfoEncoders(mfxFrameInfo  *info);
 mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId = MFX_CODEC_AVC, bool isHW = false);
@@ -38,14 +34,6 @@ mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type, bool IsCompatibleForOpaq);
 
 mfxStatus UpdateCscOutputFormat(mfxVideoParam *par, mfxFrameAllocRequest *request);
-
-#if !defined(MFX_ONEVPL)
-mfxStatus CheckAudioParamEncoders(mfxAudioParam *in);
-mfxStatus CheckAudioParamCommon(mfxAudioParam *in);
-mfxStatus CheckAudioParamDecoders(mfxAudioParam *in);
-
-mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame);
-#endif //!MFX_ONEVPL
 
 mfxStatus CheckBitstream(const mfxBitstream *bs);
 mfxStatus CheckFrameData(const mfxFrameSurface1 *surface);

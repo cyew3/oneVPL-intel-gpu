@@ -22,7 +22,6 @@ static void usage(CmdOptionsCtx* ctx)
 
 int main(int argc, char** argv)
 {
-#if defined(MFX_ONEVPL)
     mfxStatus sts = MFX_ERR_NONE;
     bool bEnableInput;  // if true, removes all YUV file reading (which is replaced by pre-initialized surface data). Workload runs for 1000 frames.
     bool bEnableOutput; // if true, removes all output bitsteam file writing and printing the progress
@@ -308,7 +307,4 @@ int main(int argc, char** argv)
     Release();
 
     return 0;
-#else
-    return -1;
-#endif
 }

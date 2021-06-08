@@ -72,12 +72,6 @@ mfxStatus CheckPlatform(mfxPlatform platform)
             {
                 return ((g_tsHWtype == MFX_HW_ICL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
             }
-#if !defined(MFX_ONEVPL)
-        case MFX_PLATFORM_LAKEFIELD:
-            {
-                return ((g_tsHWtype == MFX_HW_LKF) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
-            }
-#endif //!MFX_ONEVPL
         case MFX_PLATFORM_JASPERLAKE:
             {
                 return ((g_tsHWtype == MFX_HW_JSL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
@@ -88,24 +82,6 @@ mfxStatus CheckPlatform(mfxPlatform platform)
                     || (g_tsHWtype == MFX_HW_DG1)
                     || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
             }
-#if !defined(MFX_ONEVPL)
-        case MFX_PLATFORM_ALDERLAKE_S:
-            {
-                return ((g_tsHWtype == MFX_HW_ADL_S) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
-            }
-        case MFX_PLATFORM_ALDERLAKE_P:
-            {
-                return ((g_tsHWtype == MFX_HW_ADL_P) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
-            }
-        case MFX_PLATFORM_METEORLAKE:
-            {
-                return ((g_tsHWtype == MFX_HW_MTL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
-            }
-        case MFX_PLATFORM_ELASTICG:
-        {
-            return ((g_tsHWtype == MFX_HW_ELG) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
-        }
-#endif //!MFX_ONEVPL
 #endif
         default:
             {

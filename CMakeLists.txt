@@ -119,35 +119,25 @@ endif()
 
 # should prepend others to define target mfx
 if (BUILD_DISPATCHER)
-  if (${API_USE_VPL})
-    set(API_VERSION_MAJOR ${MFX_VERSION_MAJOR})
-    set(API_VERSION_MINOR ${MFX_VERSION_MINOR})
+  set(API_VERSION_MAJOR ${MFX_VERSION_MAJOR})
+  set(API_VERSION_MINOR ${MFX_VERSION_MINOR})
 
-    get_filename_component(ONEVPL_API_HEADER_DIRECTORY ${MFX_API_HOME} DIRECTORY)
-    add_library(vpl-api INTERFACE)
-    target_include_directories(vpl-api
-      INTERFACE ${ONEVPL_API_HEADER_DIRECTORY}
-    )
+  get_filename_component(ONEVPL_API_HEADER_DIRECTORY ${MFX_API_HOME} DIRECTORY)
+  add_library(vpl-api INTERFACE)
+  target_include_directories(vpl-api
+    INTERFACE ${ONEVPL_API_HEADER_DIRECTORY}
+  )
 
-    if(CMAKE_SYSTEM_NAME MATCHES Windows AND (ENABLE_ITT OR ENABLE_TEXTLOG OR ENABLE_STAT))
-        target_compile_definitions(vpl-api
-          INTERFACE
-            MFX_DISPATCHER_LOG
-        )
-    endif()
-
-    add_subdirectory(api/mfx_dispatch/vpl)
-
-    set(MFX_DISPATCHER VPL)
-  else()
-    if (CMAKE_SYSTEM_NAME MATCHES Linux)
-      add_subdirectory(api/mfx_dispatch/linux)
-    else()
-      add_subdirectory(api/mfx_dispatch/windows)
-    endif()
-
-    set(MFX_DISPATCHER mfx)
+  if(CMAKE_SYSTEM_NAME MATCHES Windows AND (ENABLE_ITT OR ENABLE_TEXTLOG OR ENABLE_STAT))
+      target_compile_definitions(vpl-api
+        INTERFACE
+          MFX_DISPATCHER_LOG
+      )
   endif()
+
+  add_subdirectory(api/mfx_dispatch/vpl)
+
+  set(MFX_DISPATCHER VPL)
 endif()
 
 if (BUILD_TOOLS)

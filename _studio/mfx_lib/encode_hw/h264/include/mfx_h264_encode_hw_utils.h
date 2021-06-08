@@ -78,9 +78,6 @@ inline constexpr
 bool bRateControlLA(mfxU16 mode)
 {
     return bIntRateControlLA(mode)
-#if !defined(MFX_ONEVPL)
-        || (mode == MFX_RATECONTROL_LA_EXT)
-#endif
         ;
 }
 
@@ -1660,9 +1657,6 @@ namespace MfxHwH264Encode
         virtual mfxU32 Report(const BRCFrameParams& par, mfxU32 userDataLength, mfxU32 maxFrameSize, mfxBRCFrameCtrl &frameCtrl) = 0;
         virtual mfxU32 GetMinFrameSize() = 0;
 
-#if !defined(MFX_ONEVPL)
-        virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;}
-#endif
     };
 
     BrcIface * CreateBrc(MfxVideoParam const & video, MFX_ENCODE_CAPS const & hwCaps);
@@ -1721,13 +1715,6 @@ namespace MfxHwH264Encode
         {
             return m_impl->GetMinFrameSize();
         }
-
-#if !defined(MFX_ONEVPL)
-        mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics * pLAOutput, mfxU32 width, mfxU32 height)
-        {
-            return m_impl->SetFrameVMEData(pLAOutput,width,height);
-        }
-#endif
 
     private:
         std::unique_ptr<BrcIface> m_impl;
@@ -1877,75 +1864,6 @@ namespace MfxHwH264Encode
         void SaveStat(mfxU32 frameOrder);
     };
 
-#if !defined(MFX_ONEVPL)
-    class VMEBrc : public BrcIface
-    {
-    public:
-        ~VMEBrc() { Close(); }
-
-        mfxStatus Init(MfxVideoParam  & video);
-        mfxStatus Reset(MfxVideoParam  & ) { return MFX_ERR_NONE; }
-        void Close();
-
-        void GetQp(const BRCFrameParams& par, mfxBRCFrameCtrl &frameCtrl);
-        void GetQpForRecode(const BRCFrameParams& par, mfxBRCFrameCtrl &frameCtrl);
-
-        mfxF32 GetFractionalQp(const BRCFrameParams& ) { assert(0); return 26.0f; }
-
-        void SetQp(const BRCFrameParams& , mfxBRCFrameCtrl &) { assert(0); }
-
-        void PreEnc(const BRCFrameParams& par, std::vector<VmeData *> const & vmeData);
-
-        mfxU32 Report(const BRCFrameParams& par, mfxU32 userDataLength, mfxU32 maxFrameSize, mfxBRCFrameCtrl &frameCtrl);
-
-        mfxU32 GetMinFrameSize() { return 0; }
-
-
-        mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics *, mfxU32 widthMB, mfxU32 heightMB );
-
-    public:
-        struct LaFrameData
-        {
-            mfxU32  encOrder;
-            mfxU32  dispOrder;
-            mfxI32  poc;
-            mfxI32  deltaQp;
-            mfxF64  estRate[52];
-            mfxF64  estRateTotal[52];
-            mfxU32  interCost;
-            mfxU32  intraCost;
-            mfxU32  propCost;
-            mfxU32  bframe;
-            bool    bNotUsed;
-        };
-
-    protected:
-        mfxU32  m_lookAhead;
-        mfxU16  m_LaScaleFactor;
-        mfxU32  m_strength;
-        mfxU32  m_totNumMb;
-        mfxF64  m_initTargetRate;
-        mfxF64  m_targetRateMin;
-        mfxF64  m_targetRateMax;
-        mfxU32  m_framesBehind;
-        mfxF64  m_bitsBehind;
-        mfxI32  m_curBaseQp;
-        mfxI32  m_curQp;
-        mfxU16  m_qpUpdateRange;
-        mfxF64  m_fr;
-        mfxU16  m_skipped;
-        mfxU8   m_QPMin[3]; // for I, P and B
-        mfxU8   m_QPMax[3]; // for I, P and B
-        mfxU32  m_maxFrameSize;
-
-
-        AVGBitrate* m_AvgBitrate;
-
-        std::list <LaFrameData>     m_laData;
-        Regression<20>              m_rateCoeffHistory[52];
-    };
-#endif //!MFX_ONEVPL
-
     class LookAheadCrfBrc : public BrcIface
     {
     public:
@@ -2069,13 +1987,6 @@ namespace MfxHwH264Encode
         mfxF32 GetFractionalQp(const BRCFrameParams& /*par*/) { assert(0); return 26.0f; }
 
         virtual void        PreEnc(const BRCFrameParams& /*par*/, std::vector<VmeData *> const & /* vmeData */) {}
-
-#if !defined(MFX_ONEVPL)
-        virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 )
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
-#endif
 
         virtual bool IsVMEBRC()  {return false;}
 

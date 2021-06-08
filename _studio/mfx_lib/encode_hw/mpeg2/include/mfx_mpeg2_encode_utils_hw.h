@@ -193,10 +193,8 @@ namespace MPEG2EncoderHW
             Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, bool bAVBR_WA = false);
         static mfxStatus  
             QueryIOSurf  (VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
-#if defined(MFX_ONEVPL)
         static mfxStatus
             QueryImplsDescription(VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah);
-#endif //defined(MFX_ONEVPL)
 
         mfxStatus ReorderFrame(mfxEncodeInternalParams *pInInternalParams, mfxFrameSurface1 *in,
             mfxEncodeInternalParams *pOutInternalParams, mfxFrameSurface1 **out);

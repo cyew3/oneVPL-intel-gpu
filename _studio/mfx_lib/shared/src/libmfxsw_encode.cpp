@@ -93,9 +93,7 @@ struct EHandlers {
         CtorType ctor;
         std::function<mfxStatus(mfxSession s, mfxVideoParam *in, mfxVideoParam *out)> query;
         std::function<mfxStatus(mfxSession s, mfxVideoParam *par, mfxFrameAllocRequest *request)> queryIOSurf;
-#if defined(MFX_ONEVPL)
         std::function<mfxStatus(VideoCORE&, mfxEncoderDescription::encoder&, mfx::PODArraysHolder&)> QueryImplsDescription;
-#endif //defined(MFX_ONEVPL)
     };
 
     Funcs primary;
@@ -133,13 +131,11 @@ static const CodecId2Handlers codecId2Handlers =
                 {
                     return MFXHWVideoENCODEH264::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
-#if defined(MFX_ONEVPL)
                 // .QueryImplsDescription =
                 , [](VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
                 {
                     return MFXHWVideoENCODEH264::QueryImplsDescription(core, caps, ah);
                 }
-#endif //defined(MFX_ONEVPL)
             },
             // .fallback =
             {
@@ -172,13 +168,11 @@ static const CodecId2Handlers codecId2Handlers =
                 {
                     return MFXVideoENCODEMPEG2_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
-#if defined(MFX_ONEVPL)
                 // .QueryImplsDescription =
                 , [](VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
                 {
                     return MFXVideoENCODEMPEG2_HW::QueryImplsDescription(core, caps, ah);
                 }
-#endif //defined(MFX_ONEVPL)
             },
             // .fallback =
             {
@@ -211,13 +205,11 @@ static const CodecId2Handlers codecId2Handlers =
                 {
                     return MFXVideoENCODEMJPEG_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
-#if defined(MFX_ONEVPL)
                 // .QueryImplsDescription =
                 , [](VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
                 {
                     return MFXVideoENCODEMJPEG_HW::QueryImplsDescription(core, caps, ah);
                 }
-#endif //defined(MFX_ONEVPL)
             },
             // .fallback =
             {
@@ -248,11 +240,9 @@ static const CodecId2Handlers codecId2Handlers =
                 // .queryIOSurf =
                 [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
                 { return HEVCEHW::QueryIOSurf(session->m_pCORE.get(), par, request); }
-#if defined(MFX_ONEVPL)
                 // .QueryImplsDescription =
                 , [](VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
                 { return HEVCEHW::QueryImplsDescription(core, caps, ah); }
-#endif //defined(MFX_ONEVPL)
             },
             // .fallback =
             {
@@ -285,13 +275,11 @@ static const CodecId2Handlers codecId2Handlers =
                 {
                     return MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
-#if defined(MFX_ONEVPL)
                 // .QueryImplsDescription =
                 , [](VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
                 {
                     return MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryImplsDescription(core, caps, ah);
                 }
-#endif //defined(MFX_ONEVPL)
             },
             // .fallback =
             {
@@ -322,11 +310,9 @@ static const CodecId2Handlers codecId2Handlers =
                 // .queryIOSurf =
                 [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
                 { return AV1EHW::QueryIOSurf(session->m_pCORE.get(), par, request); }
-#if defined(MFX_ONEVPL)
                 // .QueryImplsDescription =
                 , [](VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah)
                 { return AV1EHW::QueryImplsDescription(core, caps, ah); }
-#endif //defined(MFX_ONEVPL)
             },
             // .fallback =
             {
@@ -336,7 +322,6 @@ static const CodecId2Handlers codecId2Handlers =
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE
 }; // codecId2Handlers
 
-#if defined(MFX_ONEVPL)
 static inline bool isHyperEncodeRequired(mfxVideoParam* par)
 {
     MFX_CHECK(par, false);
@@ -355,7 +340,6 @@ static inline bool isHyperEncodeModeAdapt(mfxVideoParam* par)
     MFX_CHECK(hyperModeParam, false);
     return IsHyperModeAdapt(hyperModeParam->Mode);
 }
-#endif
 
 template<>
 VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
@@ -367,7 +351,6 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 
     bool bIsHyperEncodeSingleFallbackMode = false;
 
-#if defined(MFX_ONEVPL)
     if (isHyperEncodeRequired(&par))
     {
 #if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
@@ -382,8 +365,8 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 #endif
     }
 
+
     if (!isHyperEncodeRequired(&par) || bIsHyperEncodeSingleFallbackMode)
-#endif
     {
         // create a codec instance
         auto handler = codecId2Handlers.find(CodecKey(CodecId));
@@ -437,7 +420,6 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
     try
     {
-#if defined(MFX_ONEVPL)
         if(isHyperEncodeRequired(in))
         {
 #if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
@@ -454,7 +436,6 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         }
 
         if (!isHyperEncodeRequired(in) || bIsHyperEncodeSingleFallbackMode)
-#endif
         {
             CodecId2Handlers::const_iterator handler;
             handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId));
@@ -540,7 +521,6 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
     try
     {
-#if defined(MFX_ONEVPL)
         if(isHyperEncodeRequired(par))
         {
 #if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
@@ -556,8 +536,9 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
                 bIsHWENCSupport = true;
         }
 
+
         if (!isHyperEncodeRequired(par) || bIsHyperEncodeSingleFallbackMode)
-#endif
+
         {
             CodecId2Handlers::const_iterator handler;
             handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId));
@@ -903,7 +884,6 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 
 } // mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)
 
-#if defined(MFX_ONEVPL)
 mfxStatus MFXMemory_GetSurfaceForEncode(mfxSession session, mfxFrameSurface1** output_surf)
 {
     MFX_CHECK_NULL_PTR1(output_surf);
@@ -962,8 +942,6 @@ mfxStatus QueryImplsDescription(VideoCORE& core, mfxEncoderDescription& caps, mf
 
     return MFX_ERR_NONE;
 }
-
-#endif //defined(MFX_ONEVPL)
 
 //
 // THE OTHER ENCODE FUNCTIONS HAVE IMPLICIT IMPLEMENTATION

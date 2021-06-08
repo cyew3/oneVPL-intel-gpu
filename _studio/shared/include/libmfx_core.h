@@ -300,7 +300,6 @@ protected:
 
 mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src, int copyFlag);
 
-#if defined(MFX_ONEVPL)
 // Refactored MSDK 2.0 core
 
 template<class Base>
@@ -696,8 +695,6 @@ private:
 
     std::list<SurfaceHolder> m_cached_surfaces;
 };
-
-#endif // MFX_ONEVPL
 
 inline bool Supports20FeatureSet(VideoCORE& core)
 {

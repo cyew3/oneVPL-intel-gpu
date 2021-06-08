@@ -11,7 +11,6 @@ set(common_mfx_pipeline_sources
   src/mfx_advance_decoder.cpp
   src/mfx_anchors_decoder.cpp
   src/mfx_base_allocator.cpp
-  src/mfx_bayer_reader.cpp
   src/mfx_bitrate_limited_reader.cpp
   src/mfx_bitstream_buffer.cpp
   src/mfx_bitstream_decoder.cpp
@@ -71,7 +70,7 @@ set(common_mfx_pipeline_sources
   src/vaapi_utils_x11.cpp
   src/video_window.cpp
   src/xvideo_window.cpp
-   $<$<BOOL:${API_USE_VPL}>:${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp>
+  ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
 )
 
 set(common_linux_defs
@@ -80,14 +79,10 @@ set(common_linux_defs
 )
 
 set(mfx_dispatch_include "")
-if (API_USE_VPL)
-  set(mfx_dispatch_include
-    ${MFX_API_HOME}/../mfx_dispatch/vpl/$<IF:$<PLATFORM_ID:Linux>,linux,windows>
-    ${MFX_API_HOME}/../mfx_dispatch/vpl
-  )
-else()
-  set(mfx_dispatch_include ${MFX_API_HOME}/../mfx_dispatch/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include)
-endif()
+set(mfx_dispatch_include
+  ${MFX_API_HOME}/../mfx_dispatch/vpl/$<IF:$<PLATFORM_ID:Linux>,linux,windows>
+  ${MFX_API_HOME}/../mfx_dispatch/vpl
+)
 
 # ============================= mfx_pipeline ================================================
 
@@ -188,7 +183,6 @@ target_compile_definitions(mfx_pipeline_lucas
     MFX_VERSION_USE_LATEST
     LUCAS_DLL
     $<$<PLATFORM_ID:Linux>:${common_linux_defs}>
-    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 set_property(TARGET mfx_pipeline mfx_pipeline_lucas PROPERTY FOLDER "testsuite")

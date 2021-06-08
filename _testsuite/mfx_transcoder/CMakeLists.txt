@@ -62,7 +62,6 @@ target_compile_definitions(mfx_trans_pipeline
   PRIVATE
     MFX_VERSION_USE_LATEST
     MFX_DEPRECATED_OFF
-    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 add_library(mfx_trans_pipeline_lucas STATIC ${common_sources})
@@ -91,7 +90,6 @@ target_compile_definitions(mfx_trans_pipeline_lucas
   PRIVATE
     MFX_VERSION_USE_LATES
     LUCAS_DLL
-    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 set_property(TARGET mfx_trans_pipeline mfx_trans_pipeline_lucas PROPERTY FOLDER "testsuite")
@@ -121,7 +119,6 @@ target_link_libraries(mfx_transcoder
 target_compile_definitions(mfx_transcoder
   PRIVATE
     MFX_VERSION_USE_LATEST
-    $<$<BOOL:${API_USE_VPL}>:MFX_ONEVPL>
 )
 
 

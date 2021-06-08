@@ -31,7 +31,7 @@
 #include "mfxenctools-int.h"
 #endif
 
-#if defined(MFX_ONEVPL) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "mfxpcp.h"
 #include "private/mfxpavp.h"
 #include "private/mfxwidi.h"

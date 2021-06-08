@@ -328,20 +328,14 @@ SurfaceSourceJPEG::SurfaceSourceJPEG(VideoCORE* core, const mfxVideoParam & vide
 
 void SurfaceSourceJPEG::SetJPEGInfo(JPEG_Info * jpegInfo)
 {
-#if defined(MFX_ONEVPL)
     MFX_CHECK_WITH_THROW(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED, std::exception());
-#endif
     MFX_CHECK_WITH_THROW(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED, std::exception());
 
     if (m_redirect_to_msdk20)
     {
-#if defined(MFX_ONEVPL)
         UMC::AutomaticUMCMutex guard(m_guard);
 
         m_jpegInfo = *jpegInfo;
-#else
-        MFX_CHECK_WITH_THROW(false, MFX_ERR_UNSUPPORTED, std::exception());
-#endif
     }
     else
     {
@@ -351,21 +345,15 @@ void SurfaceSourceJPEG::SetJPEGInfo(JPEG_Info * jpegInfo)
 
 UMC::Status SurfaceSourceJPEG::Reset()
 {
-#if defined(MFX_ONEVPL)
     MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, UMC::UMC_ERR_NOT_INITIALIZED);
-#endif
     MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, UMC::UMC_ERR_NOT_INITIALIZED);
 
     if (m_redirect_to_msdk20)
     {
-#if defined(MFX_ONEVPL)
         UMC::AutomaticUMCMutex guard(m_guard);
 
         m_pCc.reset();
         return SurfaceSource::Reset();
-#else
-        MFX_RETURN(UMC::UMC_ERR_UNSUPPORTED);
-#endif
     }
     else
     {
@@ -375,14 +363,11 @@ UMC::Status SurfaceSourceJPEG::Reset()
 
 mfxStatus SurfaceSourceJPEG::InitVideoVppJpegD3D(const mfxVideoParam *params)
 {
-#if defined(MFX_ONEVPL)
     MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
-#endif
     MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
 
     if (m_redirect_to_msdk20)
     {
-#if defined(MFX_ONEVPL)
         UMC::AutomaticUMCMutex guard(m_guard);
 
         bool isD3DToSys = params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
@@ -402,9 +387,6 @@ mfxStatus SurfaceSourceJPEG::InitVideoVppJpegD3D(const mfxVideoParam *params)
         }
 
         return m_pCc->Init(params);
-#else
-        MFX_RETURN(MFX_ERR_UNSUPPORTED);
-#endif
     }
     else
     {
@@ -416,14 +398,11 @@ mfxStatus SurfaceSourceJPEG::FindSurfaceByMemId(const UMC::FrameData* in, bool i
     const mfxHDLPair &hdlPair,
     mfxFrameSurface1 &out_surface)
 {
-#if defined(MFX_ONEVPL)
     MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
-#endif
     MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
 
     if (m_redirect_to_msdk20)
     {
-#if defined(MFX_ONEVPL)
         MFX_CHECK_NULL_PTR1(in);
 
         UMC::AutomaticUMCMutex guard(m_guard);
@@ -441,9 +420,6 @@ mfxStatus SurfaceSourceJPEG::FindSurfaceByMemId(const UMC::FrameData* in, bool i
 
         out_surface = *pSurf;
         return MFX_ERR_NONE;
-#else
-        MFX_RETURN(MFX_ERR_UNSUPPORTED);
-#endif
     }
     else
     {
@@ -457,14 +433,11 @@ mfxStatus SurfaceSourceJPEG::StartPreparingToOutput(mfxFrameSurface1 *surface_wo
     mfxU16 *taskId,
     bool isOpaq)
 {
-#if defined(MFX_ONEVPL)
     MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
-#endif
     MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
 
     if (m_redirect_to_msdk20)
     {
-#if defined(MFX_ONEVPL)
         UMC::AutomaticUMCMutex guard(m_guard);
 
         mfxStatus sts = MFX_ERR_NONE;
@@ -520,9 +493,6 @@ mfxStatus SurfaceSourceJPEG::StartPreparingToOutput(mfxFrameSurface1 *surface_wo
         return par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ?
             m_pCc->BeginHwJpegProcessing(&srcSurface[0], surface_work, taskId) :
             m_pCc->BeginHwJpegProcessing(&srcSurface[0], &srcSurface[1], surface_work, taskId);
-#else
-        MFX_RETURN(MFX_ERR_UNSUPPORTED);
-#endif
     }
     else
     {
@@ -535,14 +505,11 @@ mfxStatus SurfaceSourceJPEG::CheckPreparingToOutput(mfxFrameSurface1 *surface_wo
     const mfxVideoParam * par,
     mfxU16 taskId)
 {
-#if defined(MFX_ONEVPL)
     MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
-#endif
     MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
 
     if (m_redirect_to_msdk20)
     {
-#if defined(MFX_ONEVPL)
         UMC::AutomaticUMCMutex guard(m_guard);
 
         MFX_CHECK_NULL_PTR1(m_pCc);
@@ -594,9 +561,6 @@ mfxStatus SurfaceSourceJPEG::CheckPreparingToOutput(mfxFrameSurface1 *surface_wo
         }
 
         return MFX_ERR_NONE;
-#else
-        MFX_RETURN(MFX_ERR_UNSUPPORTED);
-#endif
     }
     else
     {

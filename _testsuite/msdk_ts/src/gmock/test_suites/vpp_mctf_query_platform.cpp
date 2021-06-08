@@ -71,9 +71,6 @@ namespace mctf_query_platform
                 MFX_PLATFORM_COFFEELAKE,
                 MFX_PLATFORM_CANNONLAKE,
                 MFX_PLATFORM_ICELAKE,
-#if !defined(MFX_ONEVPL)
-                MFX_PLATFORM_LAKEFIELD,
-#endif
                 MFX_PLATFORM_JASPERLAKE,
                 MFX_PLATFORM_TIGERLAKE,
                 0xFF
@@ -94,9 +91,6 @@ namespace mctf_query_platform
                 MFX_PLATFORM_COFFEELAKE,
                 MFX_PLATFORM_CANNONLAKE,
                 MFX_PLATFORM_ICELAKE,
-#if !defined(MFX_ONEVPL)
-                MFX_PLATFORM_LAKEFIELD,
-#endif
                 MFX_PLATFORM_JASPERLAKE,
                 MFX_PLATFORM_TIGERLAKE,
                 0xFF

@@ -41,12 +41,10 @@ namespace AV1EHW
         , mfxVideoParam *in
         , mfxVideoParam *out);
 
-#if defined(MFX_ONEVPL)
     mfxStatus QueryImplsDescription(
         VideoCORE& core
         , mfxEncoderDescription::encoder& caps
         , mfx::PODArraysHolder& ah);
-#endif //defined(MFX_ONEVPL)
 }
 
 #endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

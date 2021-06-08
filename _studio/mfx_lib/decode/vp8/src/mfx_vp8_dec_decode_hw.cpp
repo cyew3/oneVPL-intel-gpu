@@ -259,7 +259,6 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
 } // mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEVP8_HW::QueryImplsDescription(
     VideoCORE&,
     mfxDecoderDescription::decoder& caps,
@@ -314,7 +313,6 @@ mfxStatus VideoDECODEVP8_HW::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
 {
@@ -1619,7 +1617,6 @@ mfxStatus VideoDECODEVP8_HW::SetSkipMode(mfxSkipMode /*mode*/)
     return MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoDECODEVP8_HW::GetSurface()
 {
     if (!m_surface_source)
@@ -1630,7 +1627,6 @@ mfxFrameSurface1* VideoDECODEVP8_HW::GetSurface()
 
     return m_surface_source->GetSurface();
 }
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // MFX_VP8_BoolDecoder

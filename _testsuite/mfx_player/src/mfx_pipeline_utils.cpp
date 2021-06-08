@@ -59,26 +59,6 @@ mfxStatus myMFXCreateSession(mfxLoader loader, mfxU32 implIndex, mfxSession *ses
     return res;
 }
 
-#if !defined(MFX_ONEVPl)
-mfxStatus MFXInitAndPrintLibMFXPath(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
-{
-    mfxStatus res = MFXInit(impl, pVer, session);
-#if (defined(LINUX32) || defined(LINUX64))
-    dl_iterate_phdr(PrintLibMFXPath, NULL);
-#endif
-    return res;
-}
-
-mfxStatus MFXInitExAndPrintLibMFXPath(mfxInitParam par, mfxSession *session)
-{
-    mfxStatus res = MFXInitEx(par, session);
-#if (defined(LINUX32) || defined(LINUX64))
-    dl_iterate_phdr(PrintLibMFXPath, NULL);
-#endif
-    return res;
-}
-#endif // #if !defined(MFX_ONEVPl)
-
 #include "mfxvp8.h"
 #include "mfxvp9.h"
 

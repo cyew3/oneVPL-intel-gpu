@@ -23,9 +23,7 @@
 #include "mfxstructures.h"
 #include "mfx_config.h"
 
-#if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(MFX_ONEVPL)
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
@@ -140,4 +139,3 @@ namespace dvp { namespace tests
 } }
 
 #endif //MFX_ENABLE_UNIT_TEST_DVP
-#endif

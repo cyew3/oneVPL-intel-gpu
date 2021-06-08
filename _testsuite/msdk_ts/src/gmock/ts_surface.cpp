@@ -1112,11 +1112,7 @@ static mfxStatus ProcessSurfaceRowByRow(mfxFrameSurface1& s, std::function<size_
 
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
-#if !defined(MFX_ONEVPL)
-            if (processRow(s.Data.Y416 + pitch * i + cropX, 8, count) != count)
-#else
             if (processRow(reinterpret_cast<mfxY416*>(s.Data.U) + pitch * i + cropX, 8, count) != count)
-#endif
                 return MFX_ERR_UNKNOWN;
         }
     }

@@ -283,19 +283,6 @@ void Legacy::SetSupported(ParamSupport& blocks)
         auto& buf_dst = *(mfxExtVideoSignalInfo*)pDst;
         buf_dst = buf_src;
     });
-#if !defined(MFX_ONEVPL)
-    blocks.m_ebCopySupported[MFX_EXTBUFF_LOOKAHEAD_STAT].emplace_back(
-        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
-    {
-        const auto& buf_src = *(const mfxExtLAFrameStatistics*)pSrc;
-        auto& buf_dst = *(mfxExtLAFrameStatistics*)pDst;
-        MFX_COPY_FIELD(NumAlloc);
-        MFX_COPY_FIELD(NumStream);
-        MFX_COPY_FIELD(NumFrame);
-        MFX_COPY_FIELD(FrameStat);
-        MFX_COPY_FIELD(OutSurface);
-    });
-#endif //!MFX_ONEVPL
     blocks.m_ebCopySupported[MFX_EXTBUFF_MBQP].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -304,7 +291,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(NumQPAlloc);
         MFX_COPY_FIELD(QP);
     });
-#if defined(MFX_ONEVPL)
+
     // MFX_EXTBUFF_HYPER_MODE_PARAM pass through from HyperEncoder (or directly) with MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_ADAPTIVE
     // so, no additional logic needed in HEVC encoder, just have mfxExtMultiGpuParam support
     blocks.m_ebCopySupported[MFX_EXTBUFF_HYPER_MODE_PARAM].emplace_back(
@@ -314,7 +301,6 @@ void Legacy::SetSupported(ParamSupport& blocks)
         auto& buf_dst = *(mfxExtHyperModeParam*)pDst;
         MFX_COPY_FIELD(Mode);
     });
-#endif
 }
 
 bool Legacy::IsTCBRC(const mfxVideoParam& par, mfxU16 tcbrcSupport)
@@ -2273,12 +2259,7 @@ static void SetTaskQpY(
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
-#if !defined(MFX_ONEVPL)
-        task.QpY &= 0xff * (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT);
-#else
         task.QpY = 0;
-#endif //!MFX_ONEVPL
-
         return;
     }
 
@@ -3432,11 +3413,7 @@ void SetDefaultBRC(
     bool bSetRCPar = (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
         || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
         || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM
-#if !defined(MFX_ONEVPL)
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
-        );
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM);
     bool bSetICQ  = (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ);
     bool bSetQVBR = (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && pCO3);
 
@@ -4029,11 +4006,7 @@ bool Legacy::IsSWBRC(const ExtBuffer::Param<mfxVideoParam>& par)
 #endif
             )
             && (   par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
-                || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR))
-#if !defined(MFX_ONEVPL)
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
-        ;
+                || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
 }
 
 bool Legacy::IsEnctoolsLABRC(const ExtBuffer::Param<mfxVideoParam>&par)
@@ -4130,9 +4103,6 @@ mfxStatus Legacy::CheckBRC(
         , !!defPar.caps.msdk.CBRSupport * MFX_RATECONTROL_CBR
         , !!defPar.caps.msdk.VBRSupport * MFX_RATECONTROL_VBR
         , !!defPar.caps.msdk.CQPSupport * MFX_RATECONTROL_CQP
-#if !defined(MFX_ONEVPL)
-        , MFX_RATECONTROL_LA_EXT
-#endif
         , !!defPar.caps.msdk.ICQSupport * MFX_RATECONTROL_ICQ
         , !!defPar.caps.VCMBitRateControl * MFX_RATECONTROL_VCM
         , !!defPar.caps.QVBRBRCSupport * MFX_RATECONTROL_QVBR
@@ -4817,13 +4787,7 @@ mfxStatus Legacy::GetSliceHeader(
         s.five_minus_max_num_merge_cand = 0;
     }
 
-    bool bSetQPd =
-        par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
-#if !defined(MFX_ONEVPL)
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-#endif
-        ;
-
+    bool bSetQPd         = par.mfx.RateControlMethod == MFX_RATECONTROL_CQP;
     s.slice_qp_delta     = mfxI8((task.QpY - (pps.init_qp_minus26 + 26)) * bSetQPd);
     s.slice_cb_qp_offset = 0;
     s.slice_cr_qp_offset = 0;

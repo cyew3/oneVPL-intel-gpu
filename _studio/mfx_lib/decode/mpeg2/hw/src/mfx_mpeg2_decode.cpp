@@ -293,7 +293,6 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam* par)
     return isNeedChangeVideoParamWarning ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus VideoDECODEMPEG2::QueryImplsDescription(
     VideoCORE& core,
     mfxDecoderDescription::decoder& caps,
@@ -363,7 +362,6 @@ mfxStatus VideoDECODEMPEG2::QueryImplsDescription(
 
     return MFX_ERR_NONE;
 }
-#endif //defined(MFX_ONEVPL)
 
 // Reset decoder
 mfxStatus VideoDECODEMPEG2::Reset(mfxVideoParam *par)
@@ -1213,7 +1211,6 @@ MPEG2DecoderFrame* VideoDECODEMPEG2::GetFrameToDisplay()
     return frame;
 }
 
-#if defined(MFX_ONEVPL)
 mfxFrameSurface1* VideoDECODEMPEG2::GetSurface()
 {
     if (!m_surface_source)
@@ -1224,6 +1221,5 @@ mfxFrameSurface1* VideoDECODEMPEG2::GetSurface()
 
     return m_surface_source->GetSurface();
 }
-#endif
 
 #endif

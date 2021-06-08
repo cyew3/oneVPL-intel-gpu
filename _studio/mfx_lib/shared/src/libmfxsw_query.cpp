@@ -65,12 +65,7 @@ mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *pVersion)
     }
 
     // set the library's version
-#if defined(MFX_ONEVPL)
     *pVersion = session->m_versionToReport;
-#else
-    pVersion->Major = MFX_VERSION_MAJOR;
-    pVersion->Minor = MFX_VERSION_MINOR;
-#endif
 
     return MFX_ERR_NONE;
 

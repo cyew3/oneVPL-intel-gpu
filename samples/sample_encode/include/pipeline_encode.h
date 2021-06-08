@@ -37,10 +37,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxplugin.h"
 
 #include "mfxdispatcher.h"
-#if !defined(MFX_ONEVPL)
-#include "mfxplugin++.h"
-#include "plugin_loader.h"
-#endif
 
 #include "plugin_utils.h"
 
@@ -129,10 +125,8 @@ struct sInputParams
     std::string strDevicePath;
 #endif
 #if (defined(_WIN64) || defined(_WIN32))
-#if defined(MFX_ONEVPL)
     bool isDualMode;
     mfxHyperMode hyperMode;
-#endif
 #if (MFX_VERSION >= 1031)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
@@ -362,10 +356,6 @@ protected:
 
     mfxU32 m_InputFourCC;
 
-#if !defined(MFX_ONEVPL)
-    std::unique_ptr<MFXVideoUSER> m_pUserModule;
-    std::unique_ptr<MFXPlugin> m_pPlugin;
-#endif
 
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;

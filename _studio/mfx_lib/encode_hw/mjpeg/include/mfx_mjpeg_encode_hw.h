@@ -57,9 +57,7 @@ class MFXVideoENCODEMJPEG_HW : public VideoENCODE {
 public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
-#if defined(MFX_ONEVPL)
     static mfxStatus QueryImplsDescription(VideoCORE& core, mfxEncoderDescription::encoder& caps, mfx::PODArraysHolder& ah);
-#endif //defined(MFX_ONEVPL)
 
     MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts);
     virtual ~MFXVideoENCODEMJPEG_HW();

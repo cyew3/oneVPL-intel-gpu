@@ -28,11 +28,6 @@
 #include <mfxstructures.h>
 #include <mfxvideo++int.h>
 
-#if !defined(MFX_ONEVPL)
-#include <mfxaudio++int.h>
-#include <mfxplugin.h>
-#endif
-
 #include "mfx_common.h"
 
 // private headers
@@ -83,9 +78,7 @@ protected:
     T*   m_ptr;
 };
 
-#if defined(MFX_ONEVPL)
 class SurfaceCache;
-#endif
 
 struct _mfxSession
 {
@@ -107,26 +100,10 @@ struct _mfxSession
 
     // Declare session's components
     mfx_core_ptr<VideoCORE> m_pCORE;
-#if !defined(MFX_ONEVPL)
-    std::unique_ptr<AudioCORE> m_pAudioCORE;
-#endif
 
     std::unique_ptr<VideoENCODE> m_pENCODE;
     std::unique_ptr<VideoDECODE> m_pDECODE;
-
-#if !defined(MFX_ONEVPL)
-    std::unique_ptr<AudioENCODE> m_pAudioENCODE;
-    std::unique_ptr<AudioDECODE> m_pAudioDECODE;
-#endif
-
     std::unique_ptr<VideoVPP> m_pVPP;
-
-#if !defined(MFX_ONEVPL)
-    std::unique_ptr<VideoENC> m_pENC;
-    std::unique_ptr<VideoPAK> m_pPAK;
-#endif
-
-#if defined(MFX_ONEVPL)
 
     struct DVP
     {
@@ -144,14 +121,6 @@ struct _mfxSession
         mfxU16 sfcChannelID;
     };
     std::unique_ptr<DVP>   m_pDVP;
-#else
-    std::unique_ptr<void*>   m_reserved;
-#endif
-
-#if !defined(MFX_ONEVPL)
-    // Wrapper of interface for core object
-    mfxCoreInterface m_coreInt;
-#endif //!MFX_ONEVPL
 
     // Current implementation platform ID
     eMFXPlatform m_currentPlatform;
@@ -166,10 +135,8 @@ struct _mfxSession
     mfxPriority m_priority;
     // API version requested by application
     mfxVersion  m_version;
-#if defined(MFX_ONEVPL)
     // API version to report from MFXQueryVersion
     mfxVersion  m_versionToReport;
-#endif
 
     MFXIPtr<OperatorCORE> m_pOperatorCore;
 
@@ -216,15 +183,6 @@ private:
     // Assignment operator is forbidden
     _mfxSession & operator = (const _mfxSession &);
 };
-
-#if !defined(MFX_ONEVPL)
-    #if defined(_WIN64) || defined(LINUX64)
-        static_assert(sizeof(_mfxSession) == 440, "size_of_session_is_fixed");
-    #elif defined(_WIN32) || defined(LINUX32)
-        static_assert(sizeof(_mfxSession) == 244, "size_of_session_is_fixed");
-    #endif
-#endif
-
 
 // {90567606-C57A-447F-8941-1F14597DA475}
 static const 
@@ -309,7 +267,6 @@ protected:
 //
 
 #undef FUNCTION_IMPL
-#if defined(MFX_ONEVPL)
 #define FUNCTION_IMPL(component, func_name, formal_param_list, actual_param_list) \
 mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
 { \
@@ -322,20 +279,6 @@ mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
         return MFX_ERR_NULL_PTR; \
     } \
 }
-#else
-#define FUNCTION_IMPL(component, func_name, formal_param_list, actual_param_list) \
-mfxStatus MFXVideo##component##_##func_name formal_param_list \
-{ \
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE); \
-    MFX_CHECK(session->m_p##component.get(), MFX_ERR_NOT_INITIALIZED); \
-    try { \
-        /* call the codec's method */ \
-        return session->m_p##component->func_name actual_param_list; \
-    } catch(...) { \
-        return MFX_ERR_NULL_PTR; \
-    } \
-}
-#endif
 
 #undef FUNCTION_AUDIO_IMPL
 #define FUNCTION_AUDIO_IMPL(component, func_name, formal_param_list, actual_param_list) \
@@ -353,7 +296,6 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
 
 
 #undef FUNCTION_RESET_IMPL
-#if defined(MFX_ONEVPL)
 #define FUNCTION_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \
 mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
 { \
@@ -368,22 +310,6 @@ mfxStatus APIImpl_MFXVideo##component##_##func_name formal_param_list \
         return MFX_ERR_NULL_PTR; \
     } \
 }
-#else
-#define FUNCTION_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \
-mfxStatus MFXVideo##component##_##func_name formal_param_list \
-{ \
-    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE); \
-    MFX_CHECK(session->m_p##component.get(), MFX_ERR_NOT_INITIALIZED); \
-    try { \
-        /* wait until all tasks are processed */ \
-        session->m_pScheduler->WaitForAllTasksCompletion(session->m_p##component.get()); \
-        /* call the codec's method */ \
-        return session->m_p##component->func_name actual_param_list; \
-    } catch(...) { \
-        return MFX_ERR_NULL_PTR; \
-    } \
-}
-#endif
 
 #undef FUNCTION_AUDIO_RESET_IMPL
 #define FUNCTION_AUDIO_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \

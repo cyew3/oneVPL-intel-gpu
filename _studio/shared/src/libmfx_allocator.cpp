@@ -538,8 +538,6 @@ mfxWideSWFrameAllocator::mfxWideSWFrameAllocator(mfxU16 type):mfxBaseWideFrameAl
     frameAllocator.Free = &mfxDefaultAllocator::FreeFrames;
 }
 
-#if defined(MFX_ONEVPL)
-
 std::atomic<uint32_t> FrameAllocatorBase::m_allocator_num(0u);
 
 mfxStatus FrameAllocatorBase::Synchronize(mfxSyncPoint sp, mfxU32 timeout)
@@ -673,5 +671,4 @@ mfxStatus mfxFrameSurface1_sw::Realloc(const mfxFrameInfo & info)
 
     return SetPointers(m_internal_surface.Data, m_internal_surface.Info, m_data.get());
 }
-#endif
 

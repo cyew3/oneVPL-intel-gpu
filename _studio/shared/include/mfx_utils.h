@@ -25,9 +25,7 @@
 
 #include "mfxstructures.h"
 
-#if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h"
-#endif
 #include "mfxplugin.h"
 
 #include "umc_structures.h"
@@ -708,7 +706,6 @@ inline mfxStatus CheckAndDestroyVAbuffer(VADisplay display, VABufferID & buffer_
 }
 #endif
 
-#if defined(MFX_ONEVPL)
 inline mfxStatus AddRefSurface(mfxFrameSurface1 & surf, bool allow_legacy_surface = false)
 {
     if (allow_legacy_surface && !surf.FrameInterface) { return MFX_ERR_NONE; }
@@ -737,7 +734,6 @@ struct surface_refcount_scoped_lock : public std::unique_ptr<mfxFrameSurface1, v
     })
     {}
 };
-#endif
 
 #define MFX_EQ_FIELD(Field) l.Field == r.Field
 #define MFX_EQ_ARRAY(Array, Num) std::equal(l.Array, l.Array + Num, r.Array)
@@ -770,7 +766,6 @@ inline bool IsAdapt(mfxU32 opt)
     return opt == MFX_CODINGOPTION_ADAPTIVE;
 }
 
-#if defined(MFX_ONEVPL)
 inline bool IsHyperModeOn(mfxHyperMode opt)
 {
     return opt == MFX_HYPERMODE_ON;
@@ -785,6 +780,5 @@ inline bool IsHyperModeAdapt(mfxHyperMode opt)
 {
     return opt == MFX_HYPERMODE_ADAPTIVE;
 }
-#endif
 
 #endif // __MFXUTILS_H__

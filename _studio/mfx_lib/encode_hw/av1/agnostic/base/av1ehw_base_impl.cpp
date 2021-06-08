@@ -118,7 +118,6 @@ mfxStatus MFXVideoENCODEAV1_HW::InternalQueryIOSurf(
     return RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, BQ<BQ_QueryIOSurf>::Get(*this), par, request, strg);
 }
 
-#if defined(MFX_ONEVPL)
 mfxStatus MFXVideoENCODEAV1_HW::QueryImplsDescription(
     VideoCORE& core
     , mfxEncoderDescription::encoder& caps
@@ -128,7 +127,6 @@ mfxStatus MFXVideoENCODEAV1_HW::QueryImplsDescription(
     MFX_CHECK(!queue.empty(), MFX_ERR_UNSUPPORTED);
     return RunBlocks(Check<mfxStatus, MFX_ERR_NONE>, queue, core, caps, ah, m_storage);
 }
-#endif //defined(MFX_ONEVPL)
 
 mfxStatus MFXVideoENCODEAV1_HW::Init(mfxVideoParam *par)
 {

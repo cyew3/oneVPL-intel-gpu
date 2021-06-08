@@ -23,10 +23,6 @@
 
 #include "mfx_common.h"
 
-#if !defined(MFX_ONEVPL)
-#include "mfxla.h"
-#endif
-
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #include <vector>
@@ -57,9 +53,7 @@
 #include "mfxpcp.h"
 #include "mfxwidi.h"
 #include "mfxhdcp.h"
-#if defined(MFX_ONEVPL)
 #include "mfxpavp.h"
-#endif
 #endif //!defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #include "mfxmvc.h"
@@ -229,9 +223,6 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderResetOption,   MFX_EXTBUFF_ENCODER_RESET_OPTION     );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderCapability,    MFX_EXTBUFF_ENCODER_CAPABILITY       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
-#if !defined(MFX_ONEVPL)
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtLAFrameStatistics,    MFX_EXTBUFF_LOOKAHEAD_STAT           );
-#endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3,        MFX_EXTBUFF_CODING_OPTION3           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBQP,                 MFX_EXTBUFF_MBQP                     );
@@ -280,11 +271,9 @@ namespace MfxHwH264Encode
 
 #endif
 
-#if defined(MFX_ONEVPL)
-    // MFX_EXTBUFF_HYPER_MODE_PARAM pass through from HyperEncoder (or directly) with MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_ADAPTIVE
+    // MFX_EXTBUFF_MULTI_GPU_PARAM pass through from MultiGpuEncoder (or directly) with MFX_CODINGOPTION_OFF
     // so, no additional logic needed in H264 encoder, just have mfxExtMultiGpuParam support
     BIND_EXTBUF_TYPE_TO_ID(mfxExtHyperModeParam, MFX_EXTBUFF_HYPER_MODE_PARAM);
-#endif
 
 #undef BIND_EXTBUF_TYPE_TO_ID
 
@@ -721,9 +710,7 @@ namespace MfxHwH264Encode
         mfxExtPartialBitstreamParam m_po;
 #endif
 
-#if defined(MFX_ONEVPL)
         mfxExtHyperModeParam m_HyperMode;
-#endif
 
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;

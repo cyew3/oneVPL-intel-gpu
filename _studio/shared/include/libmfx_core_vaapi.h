@@ -118,10 +118,8 @@ class VAAPIVideoCORE_T : public Base
 {
 public:
     friend class FactoryCORE;
-#if defined(MFX_ONEVPL)
     friend class VAAPIVideoCORE20;
     friend class VAAPIVideoCORE_T<CommonCORE20>;
-#endif
     class VAAPIAdapter : public VAAPIInterface
     {
     public:
@@ -249,7 +247,6 @@ inline bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
 }
 #endif
 
-#if defined(MFX_ONEVPL)
 // Refactored MSDK 2.0 core
 
 using VAAPIVideoCORE20_base = deprecate_from_base < VAAPIVideoCORE_T<CommonCORE20> >;
@@ -275,7 +272,6 @@ protected:
     VAAPIVideoCORE20(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session = nullptr);
 };
 
-#endif
 
 #endif // __LIBMFX_CORE__VAAPI_H__
 #endif // MFX_VA_LINUX

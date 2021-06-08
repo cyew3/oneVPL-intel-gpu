@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(MFX_ONEVPL)
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "libmfx_allocator.h"
@@ -153,4 +152,3 @@ TEST_F(SurfArrayImplTest, AddSurfaceInSequence)
     EXPECT_EQ(m_surfArray->Surfaces[1], &srf2);
     EXPECT_EQ(m_surfArray->NumSurfaces, 2);
 }
-#endif

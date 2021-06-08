@@ -68,43 +68,6 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
         m_par.vpp.Out = m_par.vpp.In;
         m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
-#if !defined(MFX_ONEVPL)
-    if(plugin_id)
-    {
-        m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, plugin_id);
-        m_loaded = !m_uid;
-        if(m_default && (plugin_id == MFX_MAKEFOURCC('C','A','M','R')))
-        {
-            m_par.vpp.In.FourCC        = MFX_FOURCC_R16;
-            m_par.vpp.Out.FourCC       = MFX_FOURCC_RGB4;
-            m_par.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_MONOCHROME;
-            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            mfxExtCamPipeControl& cam_ctrl = m_par; //accordingly to ashapore, this filter is mandatory
-            cam_ctrl.RawFormat         = MFX_CAM_BAYER_BGGR;
-
-            if(g_tsImpl == MFX_IMPL_HARDWARE)
-            {
-                if(g_tsHWtype < MFX_HW_HSW)
-                    m_sw_fallback = true;
-            }
-        }
-        if(m_default && (plugin_id == MFX_MAKEFOURCC('P','T','I','R')))
-        {
-            // configure for MFX_DEINTERLACING_AUTO_SINGLE
-            m_par.vpp.In.PicStruct = MFX_PICSTRUCT_UNKNOWN;
-            m_par.vpp.In.FrameRateExtN = 0;
-            m_par.vpp.In.FrameRateExtD = 1;
-            m_par.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-            m_par.vpp.Out.FrameRateExtN = 30;
-            m_par.vpp.Out.FrameRateExtD = 1;
-            if(g_tsImpl == MFX_IMPL_HARDWARE)
-            {
-                if(g_tsHWtype < MFX_HW_IVB)
-                    m_sw_fallback = true;
-            }
-        }
-    }
-#endif //!MFX_ONEVPL
 }
 
 tsVideoVPP::~tsVideoVPP()
@@ -514,19 +477,8 @@ mfxStatus tsVideoVPP::RunFrameVPPAsyncEx(
     mfxFrameSurface1 **surface_out,
     mfxSyncPoint *syncp)
 {
-#if defined(MFX_ONEVPL)
     g_tsLog << "MFXVideoVPP_RunFrameVPPAsyncEx is not supported by VPL\n";
     throw tsFAIL;
-#else
-    TRACE_FUNC5(MFXVideoVPP_RunFrameVPPAsyncEx, session, in, surface_work, surface_out, syncp);
-    mfxStatus mfxRes = MFXVideoVPP_RunFrameVPPAsyncEx(session, in, surface_work, surface_out, syncp);
-    TS_TRACE(mfxRes);
-    TS_TRACE(surface_work);
-    TS_TRACE(surface_out);
-    TS_TRACE(syncp);
-
-    return g_tsStatus.m_status = mfxRes;
-#endif //MFX_ONEVPL
 }
 
 mfxStatus tsVideoVPP::RunFrameVPPAsyncEx()

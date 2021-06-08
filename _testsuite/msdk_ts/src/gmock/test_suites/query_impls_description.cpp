@@ -12,7 +12,6 @@ File Name: query_impls_description.cpp
 #include "ts_session.h"
 #include "ts_struct.h"
 
-#if defined(MFX_ONEVPL)
 #include "gmock/test_suites/reference_query_impls_common.h"
 #include "gmock/test_suites/reference_query_impls_decode.h"
 #include "gmock/test_suites/reference_query_impls_encode.h"
@@ -521,4 +520,3 @@ int TestSuite::RunTest(unsigned int id)
 TS_REG_TEST_SUITE_CLASS(query_impls_description);
 
 }
-#endif

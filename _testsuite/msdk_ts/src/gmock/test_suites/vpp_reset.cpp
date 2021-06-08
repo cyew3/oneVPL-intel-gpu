@@ -526,11 +526,7 @@ int TestSuite::RunTest(unsigned int id)
         MFX_OS_FAMILY_WINDOWS == g_tsOSFamily) ||
         MFX_FOURCC_UYVY == m_par.vpp.Out.FourCC)
     {
-#if defined(MFX_ONEVPL)
         expected = MFX_ERR_UNSUPPORTED;
-#else
-        expected = MFX_ERR_INVALID_VIDEO_PARAM;
-#endif
     }
 
     // YV12 I/O is not supported on DX11 and YV12 output is not on DX9

@@ -80,11 +80,7 @@ void InitSPS(
     sps.ip_period           = par.mfx.GopRefDist;
 
     if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
-#if !defined(MFX_ONEVPL)
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT
-#endif
-        )
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
     {
         sps.bits_per_second = TargetKbps(par.mfx) * 1000;
     }
@@ -240,11 +236,7 @@ void AddVaMiscRC(
 
     uint32_t bNeedRateParam =
            par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
-#if !defined(MFX_ONEVPL)
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT
-#endif
-        ;
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ;
 
     rc.bits_per_second = bNeedRateParam * MaxKbps(par.mfx) * 1000;
 

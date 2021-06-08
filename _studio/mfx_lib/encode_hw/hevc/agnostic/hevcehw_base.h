@@ -24,11 +24,6 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfxvideo.h"
-
-#if !defined(MFX_ONEVPL)
-#include "mfxla.h"
-#endif //!MFX_ONEVPL
-
 #include "mfxbrc.h"
 #include "mfx_ext_buffers.h"
 
@@ -36,9 +31,7 @@
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     #include "mfxpcp.h"
     #include "mfxwidi.h"
-    #if defined(MFX_ONEVPL)
-        #include "mfxpavp.h"
-    #endif
+    #include "mfxpavp.h"
 #endif //!defined(MFX_PROTECTED_FEATURE_DISABLE)
 #endif //defined(MFX_VA_WIN)
 
@@ -145,7 +138,6 @@ public:
         return this;
     }
 
-#if defined(MFX_ONEVPL)
     virtual mfxStatus QueryImplsDescription(
         VideoCORE&
         , mfxEncoderDescription::encoder&
@@ -153,7 +145,6 @@ public:
     {
         return MFX_ERR_UNSUPPORTED;
     }
-#endif //defined(MFX_ONEVPL)
 };
 
 }; //namespace HEVCEHW

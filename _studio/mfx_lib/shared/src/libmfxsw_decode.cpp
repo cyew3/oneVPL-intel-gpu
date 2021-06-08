@@ -511,13 +511,11 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             mfxAddRes = session->m_pScheduler->AddTask(task, &syncPoint);
             MFX_CHECK_STS(mfxAddRes);
 
-#if defined(MFX_ONEVPL)
             if (syncPoint && *surface_out && (*surface_out)->FrameInterface)
             {
                 MFX_CHECK_HDL((*surface_out)->FrameInterface->Context);
                 static_cast<mfxFrameSurfaceBaseInterface*>((*surface_out)->FrameInterface->Context)->SetSyncPoint(syncPoint);
             }
-#endif
         }
 
         if (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes))
@@ -559,7 +557,6 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 } // mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_dec, mfxFrameSurface1 **surface_disp, mfxSyncPoint *syncp)
 
 
-#if defined(MFX_ONEVPL)
 struct DHandlers {
     std::function<mfxStatus(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&)> QueryImplsDescription;
 };
@@ -682,7 +679,6 @@ mfxStatus QueryImplsDescription(VideoCORE& core, mfxDecoderDescription& caps, mf
     return MFX_ERR_NONE;
 }
 
-#endif //defined(MFX_ONEVPL)
 
 //
 // THE OTHER DECODE FUNCTIONS HAVE IMPLICIT IMPLEMENTATION

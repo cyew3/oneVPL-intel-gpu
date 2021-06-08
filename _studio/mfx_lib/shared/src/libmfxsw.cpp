@@ -21,9 +21,7 @@
 #include <mfxvideo.h>
 
 #include <mfx_session.h>
-#if defined(MFX_ONEVPL)
 #include <mfximplcaps.h>
-#endif
 
 #include <mfx_trace.h>
 
@@ -64,13 +62,8 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
     }
     else
     {
-#if defined(MFX_ONEVPL)
         par.Version.Major = 1;
         par.Version.Minor = 255;
-#else
-        par.Version.Major = MFX_VERSION_MAJOR;
-        par.Version.Minor = MFX_VERSION_MINOR;
-#endif
     }
     par.ExternalThreads = 0;
 
@@ -124,9 +117,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         implInterface = MFX_IMPL_VIA_ANY;
 
     if (
-#if !defined(MFX_ONEVPL)
-        !(implInterface & MFX_IMPL_AUDIO) &&
-#endif
 #if defined(MFX_VA_WIN)
     #if defined(MFX_ENABLE_SINGLE_THREAD)
         !(implInterface & MFX_IMPL_EXTERNAL_THREADING) &&
@@ -161,7 +151,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         break;
     }
 
-#if defined(MFX_ONEVPL)
     // MFXInit / MFXInitEx in oneVPL is for work in legacy (1.x) mode only
     // app. must use MFXInitialize for 2.x features
     if (par.Version.Major > 1)
@@ -179,9 +168,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     }
 
     return sts;
-#else
-    return MFXInit_Internal(par, session, implInterface, adapterNum);
-#endif
 
 } // mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
@@ -307,7 +293,6 @@ mfxStatus MFXClose(mfxSession session)
 
 } // mfxStatus MFXClose(mfxHDL session)
 
-#if defined(MFX_ONEVPL)
 mfxStatus MFX_CDECL MFXInitialize(mfxInitializationParam param, mfxSession* session)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
@@ -682,7 +667,6 @@ mfxStatus MFX_CDECL MFXReleaseImplDescription(mfxHDL hdl)
 
     return MFX_ERR_NONE;
 }
-#endif //MFX_ONEVPL
 
 #if defined(_WIN32) || defined(_WIN64)
 BOOL APIENTRY DllMain(HMODULE hModule,

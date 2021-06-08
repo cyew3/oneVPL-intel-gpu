@@ -27,9 +27,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <memory>
 #include <mutex>
 
-#if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h" //mfxBufferAllocator
-#endif
 
 struct mfxAllocatorParams
 {
