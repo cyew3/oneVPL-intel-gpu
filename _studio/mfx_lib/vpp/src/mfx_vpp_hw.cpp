@@ -6568,7 +6568,7 @@ mfxStatus ConfigureExecuteParams(
                     executeParams.denoiseFactor         = 0;
                     executeParams.denoiseFactorOriginal = 0;
                 }
-                if (MFX_EXTBUFF_VPP_DENOISE2 == bufferId)
+                else if (MFX_EXTBUFF_VPP_DENOISE2 == bufferId)
                 {
                     executeParams.bDenoiseAutoAdjust    = false;
                     executeParams.denoiseFactor         = 0;
