@@ -605,7 +605,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         m_vpreCaps.bVariance            = vpeCaps.bVariances;
         m_vpreCaps.bScalingMode         = vpeCaps.bScalingMode;
         m_vpreCaps.bChromaSitingControl         = vpeCaps.bChromaSitingControl;
-        m_vpreCaps.bHVSDenoise                  = vpeCaps.bHVSDenoise;
 
 #ifdef DEBUG_DETAIL_INFO
         printf("Success: VPE VPREP CAPS\n");
@@ -2030,55 +2029,6 @@ mfxStatus D3D11VideoProcessor::SetStreamScalingMode(UINT streamIndex, VPE_VPREP_
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11VideoProcessor::SetStreamDenoise(UINT streamIndex, mfxExecuteParams* pParams)
-{
-    HRESULT hRes                        = MFX_ERR_NONE;
-    VPE_FUNCTION iFunc                  = { 0 };
-    VPE_VPREP_HVSDENOISE_PARAM param    = { 0 };
-
-    // Set VPE HVS Denoise Parameters
-    if (pParams != nullptr)
-    {
-        // Only need to handle denoise mode
-        switch (pParams->denoiseMode)
-        {
-        case MFX_DENOISE_MODE_INTEL_HVS_AUTO_BDRATE:
-            param.Mode = VPE_HVSDENOISE_AUTO_BDRATE;
-            break;
-        case MFX_DENOISE_MODE_INTEL_HVS_AUTO_SUBJECTIVE:
-            param.Mode = VPE_HVSDENOISE_AUTO_SUBJECTIVE;
-            break;
-        case MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST:
-            param.Mode = VPE_HVSDENOISE_AUTO_ADJUST;
-            break;
-        case MFX_DENOISE_MODE_DEFAULT:
-            param.Mode = VPE_HVSDENOISE_DEFAULT;
-            break;
-        case MFX_DENOISE_MODE_INTEL_HVS_PRE_MANUAL:
-        case MFX_DENOISE_MODE_INTEL_HVS_POST_MANUAL:
-            param.Mode = VPE_HVSDENOISE_MANUAL;
-            break;
-        default:
-            break;
-        }
-    }
-    param.Strength = pParams->denoiseFactor;
-    param.QP       = 0;
-
-    iFunc.Function               = VPE_FN_VPREP_HVSDENOISE_PARAM;
-    iFunc.pHVSDenoiseParam       = &param;
-
-    streamIndex = 0;
-    hRes = SetStreamExtension(
-        streamIndex,
-        &(m_iface.guid),
-        sizeof(VPE_FUNCTION),
-        &iFunc);
-    CHECK_HRES(hRes);
-
-    return MFX_ERR_NONE;
-}
-
 #if (MFX_VERSION >= 1025)
 mfxStatus D3D11VideoProcessor::SetStreamChromaSiting(UINT streamIndex, VPE_VPREP_CHROMASITING_PARAM param)
 {
@@ -2490,44 +2440,11 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     // [6] Denoise
-    // MFX_EXTBUFF_VPP_DENOISE2 and MFX_EXTBUFF_VPP_DENOISE
-    // MFX_EXTBUFF_VPP_DENOISE keeps the original logic
-    if (!pParams->bdenoiseAdvanced)
+    if (pParams->denoiseFactor > 0 || pParams->bDenoiseAutoAdjust)
     {
-        if (pParams->denoiseFactor > 0 || pParams->bDenoiseAutoAdjust)
-        {
-            const mfxU16 DEFAULT_NOISE_LEVEL_D3D11 = 0; // 0 is signal to driver use Auto Mode
-            mfxU16 noiseLevel = (pParams->bDenoiseAutoAdjust) ? DEFAULT_NOISE_LEVEL_D3D11 : pParams->denoiseFactor;
-            SetStreamFilter(0, D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION, TRUE, noiseLevel);
-        }
-    }
-    else
-    {
-        // MFX_EXTBUFF_VPP_DENOISE2: Default, Auto BDRate, Auto Subjective, Auto Adjust, Pre/Post-Manual
-        // Default to Auto BDRate mode
-        // Auto BDRate, Auto Subjective, Auto Adjust go to VPE call
-        // Pre/Post-Manual go to MSFT standard API
-        switch (pParams->denoiseMode)
-        {
-            case MFX_DENOISE_MODE_INTEL_HVS_PRE_MANUAL:
-            case MFX_DENOISE_MODE_INTEL_HVS_POST_MANUAL:
-            {
-                // pParams->denoiseFactor should be in [0,100]
-                mfxU16 denoiseFactor = (pParams->denoiseFactor > 100) ? 100 : pParams->denoiseFactor;
-                SetStreamFilter(0, D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION, TRUE, denoiseFactor);
-                break;
-            }
-            case MFX_DENOISE_MODE_INTEL_HVS_AUTO_BDRATE:
-            case MFX_DENOISE_MODE_INTEL_HVS_AUTO_SUBJECTIVE:
-            case MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST:
-            case MFX_DENOISE_MODE_DEFAULT:
-            default:
-            {
-                sts = SetStreamDenoise(0, pParams);
-                MFX_CHECK_STS(sts);
-                break;
-            }
-        }
+        const mfxU16 DEFAULT_NOISE_LEVEL_D3D11 = 0; // 0 is signal to driver use Auto Mode
+        mfxU16 noiseLevel = (pParams->bDenoiseAutoAdjust) ? DEFAULT_NOISE_LEVEL_D3D11 : pParams->denoiseFactor;
+        SetStreamFilter(0, D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION, TRUE, noiseLevel);
     }
 
     HRESULT hRes;
@@ -3293,8 +3210,6 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     caps.uVariance      = m_vpreCaps.bVariance;
     caps.uScaling       = m_vpreCaps.bScalingMode;
     caps.uChromaSiting  = m_vpreCaps.bChromaSitingControl;
-    // mfxExtVPPDenoise2: HVS denoise and MSFT standard denoise
-    caps.uDenoise2Filter = m_caps.m_denoiseEnable & m_vpreCaps.bHVSDenoise;
     if(caps.uVariance)
     {
         caps.iNumBackwardSamples = 1; // from the spec 1.8
