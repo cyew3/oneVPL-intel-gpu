@@ -41,6 +41,7 @@
 #include "mediasdk_version.h"
 #include "libmfx_core_factory.h"
 #include "mfx_interface_scheduler.h"
+#include "libmfx_core_interface.h"
 
 
 // static section of the file
@@ -535,6 +536,16 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
             // use adapterNum as VendorImplID, app. supposed just to copy it from mfxImplDescription to mfxInitializationParam
             impl.VendorImplID     = adapterNum;
             impl.AccelerationMode = core.GetVAType() == MFX_HW_VAAPI ? MFX_ACCEL_MODE_VIA_VAAPI : MFX_ACCEL_MODE_VIA_D3D11;
+
+            impl.Dev.Version.Version  = MFX_STRUCT_VERSION(1, 1);
+            impl.Dev.MediaAdapterType = MFX_MEDIA_UNKNOWN;
+
+            if (auto pCore1_19 = QueryCoreInterface<IVideoCore_API_1_19>(&core, MFXICORE_API_1_19_GUID))
+            {
+                mfxPlatform platform = {};
+                if (MFX_ERR_NONE == pCore1_19->QueryPlatform(&platform))
+                    impl.Dev.MediaAdapterType = platform.MediaAdapterType;
+            }
 
             snprintf(impl.Dev.DeviceID, sizeof(impl.Dev.DeviceID), "%x/%d", deviceId, adapterNum);
             snprintf(impl.ImplName, sizeof(impl.ImplName), "mfx-gen");

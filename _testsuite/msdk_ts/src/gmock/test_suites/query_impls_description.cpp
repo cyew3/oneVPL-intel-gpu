@@ -503,6 +503,9 @@ int TestSuite::RunTest(unsigned int id)
                 EXPECT_EQ(ref.VendorImplID, impl.VendorImplID);
 
                 mfxU32 DeviceID = 0;
+                EXPECT_EQ(mfxU8(1), impl.Dev.Version.Major);
+                EXPECT_GE(mfxU8(1), impl.Dev.Version.Minor);
+                EXPECT_EQ(ref.MediaAdapterType, impl.Dev.MediaAdapterType);
                 EXPECT_EQ(1, sscanf(impl.Dev.DeviceID, "%x", &DeviceID));
                 EXPECT_TRUE(std::find(ref.DeviceList.begin(), ref.DeviceList.end(), DeviceID) != ref.DeviceList.end());
             }

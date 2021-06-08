@@ -24,6 +24,7 @@ namespace query_impls_description
         mfxChar                Keywords[MFX_STRFIELD_LEN];
         mfxU32                 VendorID;
         mfxU32                 VendorImplID;
+        mfxU16                 MediaAdapterType;
         std::vector<mfxU32>    DeviceList;
     };
 
@@ -47,7 +48,7 @@ namespace query_impls_description
 #endif
             {0, 2},
             {}, {}, {},
-            0x8086, 0, {}
+            0x8086, 0, MFX_MEDIA_INTEGRATED, {}
         };
     };
     ReferenceCommon ref_default_common;
@@ -71,6 +72,7 @@ namespace query_impls_description
     public:
         ReferenceCommonDG1()
         {
+            m_reference.MediaAdapterType = MFX_MEDIA_DISCRETE;
             m_reference.DeviceList = {
                 0x4905, 0x4906, 0x4907, 0x4908
             };
@@ -97,6 +99,7 @@ namespace query_impls_description
     public:
         ReferenceCommonATS()
         {
+            m_reference.MediaAdapterType = MFX_MEDIA_DISCRETE;
             m_reference.DeviceList = {
                 0x0201, 0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x0209, 0x020A,
                 0x020B, 0x020C, 0x020D, 0x020E, 0x020F, 0x0210
@@ -110,6 +113,7 @@ namespace query_impls_description
     public:
         ReferenceCommonDG2()
         {
+            m_reference.MediaAdapterType = MFX_MEDIA_DISCRETE;
             m_reference.DeviceList = {
                 0x4F80, 0x4F81, 0x4F82, 0x4F83, 0x4F84, 0x4F85, 0x4F86, 0x4F87, 0x4F88, 0x5690,
                 0x5691, 0x5692, 0x5693, 0x5694, 0x5695, 0x5696, 0x5697, 0x5698, 0x56A0, 0x56A1,
