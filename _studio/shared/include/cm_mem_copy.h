@@ -103,6 +103,7 @@ public:
         if (m_pCmDevice)
             return m_pCmDevice;
 
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CreateCmDevice");
         cmSts = ::CreateCmDevice(m_pCmDevice, version, pD3D, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
         if (cmSts != CM_SUCCESS)
             return NULL;

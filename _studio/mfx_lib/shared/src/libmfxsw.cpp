@@ -91,7 +91,8 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "ThreadName=MSDK app");
     }
-    MFX_AUTO_TRACE("MFXInitEx");
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInitEx");
     ETW_NEW_EVENT(MFX_TRACE_API_MFX_INIT_EX_TASK, 0, make_event_data((mfxU32) par.Implementation, par.GPUCopy), [&](){ return make_event_data(mfxRes, session ? *session : nullptr);});
     MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
 
@@ -216,7 +217,7 @@ static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession *session, mfxIMPL
 mfxStatus MFXDoWork(mfxSession session)
 {
     mfxStatus res;
-    MFX_AUTO_TRACE("MFXDoWork");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXDoWork");
     ETW_NEW_EVENT(MFX_TRACE_API_DO_WORK_TASK, 0, make_event_data(session), [&](){ return make_event_data(res);});
 
     // check error(s)
@@ -256,7 +257,7 @@ mfxStatus MFXClose(mfxSession session)
         // used after it. special care should be taken with MFX_AUTO_TRACE macro
         // since it inserts class variable on stack which calls to trace library in the
         // destructor.
-        MFX_AUTO_TRACE("MFXClose");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXClose");
         ETW_NEW_EVENT(MFX_TRACE_API_MFX_CLOSE_TASK, 0, make_event_data(session), [&](){ return make_event_data(mfxRes);});
 
         // parent session can't be closed,

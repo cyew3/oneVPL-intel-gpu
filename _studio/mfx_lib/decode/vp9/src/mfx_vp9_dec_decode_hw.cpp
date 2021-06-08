@@ -1429,6 +1429,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
         if (!m_frameInfo.show_existing_frame)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VP9 decode DDISubmitTask");
             UMC::Status umcSts = m_va->BeginFrame(m_frameInfo.currFrame, 0);
             MFX_CHECK(UMC::UMC_OK == umcSts, MFX_ERR_DEVICE_FAILED);
 

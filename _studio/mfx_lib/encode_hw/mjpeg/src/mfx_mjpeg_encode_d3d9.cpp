@@ -416,7 +416,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
 
 mfxStatus D3D9Encoder::QueryStatusAsync(DdiTask & task)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatusAsync");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "JPEG encode DDIQueryTask");
     MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
@@ -485,6 +485,7 @@ mfxStatus D3D9Encoder::UpdateBitstream(
     mfxMemId       MemId,
     DdiTask      & task)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "JPEG encode CopyBitstream");
     mfxU8      * bsData    = task.bs->Data + task.bs->DataOffset + task.bs->DataLength;
     mfxSize     roi       = {(int)(task.m_bsDataLength), 1};
     mfxFrameData bitstream = {0};

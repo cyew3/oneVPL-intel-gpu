@@ -2089,7 +2089,7 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU32          fieldId,
     PreAllocatedVector const & sei)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDISubmitTask");
 
     mfxHDL surface = pair.first;
     VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
@@ -2910,8 +2910,9 @@ mfxStatus VAAPIEncoder::QueryStatus(
     mfxU32    fieldId,
     bool      /*useEvent*/)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::QueryStatus");
     mfxStatus sts = MFX_ERR_NONE;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDIWaitTaskSync");
+
     bool isFound = false;
     VASurfaceID waitSurface;
     mfxU32 waitIdxBs;

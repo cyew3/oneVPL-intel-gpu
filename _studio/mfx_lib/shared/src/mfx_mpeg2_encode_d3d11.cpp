@@ -1270,7 +1270,7 @@ mfxStatus D3D11Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
 
 mfxStatus D3D11Encoder::QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSize)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "D3D11Encoder::QueryStatusAsync");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2 encode DDIQueryTask");
     ENCODE_QUERY_STATUS_PARAMS queryStatus = { 0 };
     if (m_feedback.isUpdateNeeded())
     {
@@ -1312,8 +1312,6 @@ mfxStatus D3D11Encoder::QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSize
 
 mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::FillBSBuffer");
-    MFX::AutoTimer timer("CopyBS");
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameData Frame = { 0 };
     mfxU32 bitstreamSize = 0;
@@ -1325,6 +1323,7 @@ mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBit
     if (sts != MFX_ERR_NONE)
         return sts;
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2 encode CopyBitstream");
     Frame.MemId = m_allocResponseBS.mids[nBitstream];
     sts = m_core->LockFrame(Frame.MemId, &Frame);
     MFX_CHECK_STS(sts);

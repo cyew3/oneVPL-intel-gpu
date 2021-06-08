@@ -245,8 +245,6 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         if (!skip)
         {
             m_mGuard.Unlock();
-
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
             waitSts = dxva_sd->GetPacker()->SyncTask(au->m_pFrame, NULL);
             m_mGuard.Lock();
         }

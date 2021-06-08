@@ -5148,7 +5148,6 @@ mfxStatus ImplementationAvc::QueryStatus(
     mfxU32    fid,
     bool      useEvent)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::QueryStatus");
     if (task.m_bsDataLength[fid] == 0)
     {
         mfxStatus sts = MFX_TASK_BUSY;

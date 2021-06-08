@@ -204,8 +204,9 @@ mfxStatus BlockingSync::WaitTaskSync(
     , mfxU32 reportID
     , mfxU32 timeOutMs)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "BlockingSync::WaitTaskSync");
-    mfxStatus sts     = MFX_ERR_NONE;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H265 encode DDIWaitTaskSync");
+    mfxStatus sts = MFX_ERR_NONE;
+
     HRESULT   waitRes = WaitForSingleObject(gpuSyncEvent, timeOutMs);
 
     if (WAIT_OBJECT_0 != waitRes)

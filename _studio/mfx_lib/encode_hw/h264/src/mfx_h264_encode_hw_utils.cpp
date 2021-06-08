@@ -6070,6 +6070,7 @@ mfxStatus  MfxHwH264Encode::CopyBitstream(VideoCORE           & core,
                                           mfxU8 *             bsData,
                                           mfxU32              bsSizeAvail)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode CopyBitstream");
     mfxFrameData bitstream = {};
 
     FrameLocker lock(&core, bitstream, task.m_midBit[fieldId]);

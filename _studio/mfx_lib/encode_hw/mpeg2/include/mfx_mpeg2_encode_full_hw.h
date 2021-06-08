@@ -242,6 +242,8 @@ namespace MPEG2EncoderHW
               m_pExecuteBuffers->m_pSurface = pFrames->m_pInputFrame;
               sts = m_pDdiEncoder->SetFrames(m_pExecuteBuffers);
               MFX_CHECK_STS(sts);
+
+              MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2 encode DDISubmitTask");
               sts = m_pDdiEncoder->Execute(m_pExecuteBuffers, pUserData,userDataLen);
               MFX_CHECK_STS(sts);
               m_bStage2Ready = true;

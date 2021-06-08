@@ -372,7 +372,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
 
 mfxStatus D3D11Encoder::QueryStatusAsync(DdiTask & task)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatusAsync");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "JPEG encode DDIQueryTask");
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
@@ -446,6 +446,7 @@ mfxStatus D3D11Encoder::UpdateBitstream(
     mfxMemId       MemId,
     DdiTask      & task)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "JPEG encode CopyBitstream");
     mfxU8      * bsData    = task.bs->Data + task.bs->DataOffset + task.bs->DataLength;
     mfxSize     roi       = {(int)(task.m_bsDataLength), 1};
     mfxFrameData bitstream = {0};

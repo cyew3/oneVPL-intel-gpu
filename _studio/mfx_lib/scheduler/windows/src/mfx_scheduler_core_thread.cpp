@@ -98,6 +98,7 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
 {
     mfxTaskHandle previousTaskHandle = {};
     const uint32_t threadNum = pContext->threadNum;
+    mfxU64 start, stop;
 
     {
         char thread_name[30] = {};
@@ -112,51 +113,48 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
     // main working cycle for threads
     while (false == m_bQuit)
     {
-        MFX_CALL_INFO call = {};
-        mfxStatus mfxRes;
-
-        mfxRes = GetTask(call, previousTaskHandle, threadNum);
-        if (MFX_ERR_NONE == mfxRes)
         {
-            // perform asynchronous operation
-            call_pRoutine(call);
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "SchedulerRoutine");
+            MFX_CALL_INFO call = {};
 
-            pContext->workTime += call.timeSpend;
-            // save the previous task's handle
-            previousTaskHandle = call.taskHandle;
+            if (MFX_ERR_NONE == GetTask(call, previousTaskHandle, threadNum))
+            {
+                // perform asynchronous operation
+                call_pRoutine(call);
 
-            // mark the task completed,
-            // set the sync point into the high state if any.
-            MarkTaskCompleted(&call, threadNum);
-            //timer1.Stop(0);
+                pContext->workTime += call.timeSpend;
+                // save the previous task's handle
+                previousTaskHandle = call.taskHandle;
+
+                // mark the task completed,
+                // set the sync point into the high state if any.
+                MarkTaskCompleted(&call, threadNum);
+                continue;
+            }
         }
-        else
-        {
-            mfxU64 start, stop;
 
 #if defined(MFX_SCHEDULER_LOG)
-            mfxLogWriteA(m_hLog,
-                         "[% 4u] thread's sleeping\n", threadNum);
+        mfxLogWriteA(m_hLog,
+                        "[% 4u] thread's sleeping\n", threadNum);
 #endif // defined(MFX_SCHEDULER_LOG)
 
-            // mark beginning of sleep period
-            start = GetHighPerformanceCounter();
+        // mark beginning of sleep period
+        start = GetHighPerformanceCounter();
 
-            // there is no any task.
-            // sleep for a while until the event is signaled.
-            Wait(threadNum);
+        // there is no any task.
+        // sleep for a while until the event is signaled.
+        Wait(threadNum);
 
-            // mark end of sleep period
-            stop = GetHighPerformanceCounter();
+        // mark end of sleep period
+        stop = GetHighPerformanceCounter();
 
-            // update thread statistic
-            pContext->sleepTime += (stop - start);
+        // update thread statistic
+        pContext->sleepTime += (stop - start);
 
 #if defined(MFX_SCHEDULER_LOG)
-            mfxLogWriteA(m_hLog,
-                         "[% 4u] thread woke up\n", threadNum);
+        mfxLogWriteA(m_hLog,
+                        "[% 4u] thread woke up\n", threadNum);
 #endif // defined(MFX_SCHEDULER_LOG)
-        }
     }
 }
 

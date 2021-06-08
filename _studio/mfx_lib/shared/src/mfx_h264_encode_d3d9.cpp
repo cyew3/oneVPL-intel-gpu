@@ -1992,7 +1992,6 @@ mfxStatus D3D9Encoder::QueryStatusAsync(
     DdiTask & task,
     mfxU32    fieldId)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     mfxU32 curTime = vm_time_get_current_time();

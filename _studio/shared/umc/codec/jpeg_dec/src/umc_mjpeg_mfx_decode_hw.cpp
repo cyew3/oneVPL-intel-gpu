@@ -394,6 +394,8 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     if (m_statusReportFeedbackCounter >= UINT_MAX)
         m_statusReportFeedbackCounter = 1;
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "JPEG decode DDISubmitTask");
+
     sts = m_va->BeginFrame(m_frameData.GetFrameMID(), 0);
     if (sts != UMC_OK)
         return sts;

@@ -653,6 +653,7 @@ enum QueryStatus
 
 mfxStatus FastCompositingDDI::QueryTaskStatus(SynchronizedTask* pSyncTask)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VPP DDIWaitTaskSync");
     HRESULT hRes;
 
     const mfxU32 numStructures = 6 * 2;
@@ -1145,6 +1146,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
 
 mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VPP DDISubmitTask");
     FASTCOMP_BLT_PARAMS bltParams = {0};
 
     mfxStatus sts = ConvertExecute2BltParams( pParams, &bltParams );

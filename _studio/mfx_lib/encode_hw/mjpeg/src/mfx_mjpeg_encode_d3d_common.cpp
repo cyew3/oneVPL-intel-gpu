@@ -61,9 +61,7 @@ mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
 mfxStatus D3DXCommonEncoder::WaitTaskSync(DdiTask & task, mfxU32 timeOutMs)
 {
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::WaitTaskSync");
-
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "JPEG encode DDIWaitTaskSync");
     HRESULT waitRes = WaitForSingleObject(task.m_GpuEvent.gpuSyncEvent, timeOutMs);
 
     if (WAIT_OBJECT_0 != waitRes)
@@ -79,30 +77,27 @@ mfxStatus D3DXCommonEncoder::WaitTaskSync(DdiTask & task, mfxU32 timeOutMs)
 
 mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task)
 {
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::QueryStatus");
-        mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
 
-        // use GPUTaskSync call to wait task completion.
+    // use GPUTaskSync call to wait task completion.
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
 
-        sts = WaitTaskSync(task, DEFAULT_WAIT_HW_TIMEOUT_MS);
-        MFX_CHECK_STS(sts);
+    sts = WaitTaskSync(task, DEFAULT_WAIT_HW_TIMEOUT_MS);
+    MFX_CHECK_STS(sts);
 
-        m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);
-        task.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
+    m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);
+    task.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
 
-        sts = QueryStatusAsync(task);
-        if (sts == MFX_WRN_DEVICE_BUSY)
-        {
-            MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "ERROR !!! QueryStatus", "(ReportNumber==%d) => sts == MFX_WRN_DEVICE_BUSY", task.m_statusReportNumber);
-            sts = MFX_ERR_DEVICE_FAILED;
-        }
-#else
-        sts = QueryStatusAsync(task);
-#endif
-        return sts;
+    sts = QueryStatusAsync(task);
+    if (sts == MFX_WRN_DEVICE_BUSY)
+    {
+        MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "ERROR !!! QueryStatus", "(ReportNumber==%d) => sts == MFX_WRN_DEVICE_BUSY", task.m_statusReportNumber);
+        sts = MFX_ERR_DEVICE_FAILED;
     }
+#else
+    sts = QueryStatusAsync(task);
+#endif
+    return sts;
 }
 
 mfxStatus D3DXCommonEncoder::Execute(DdiTask &task, mfxHDL surface)

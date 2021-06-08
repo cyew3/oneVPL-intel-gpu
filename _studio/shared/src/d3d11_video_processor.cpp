@@ -1373,7 +1373,8 @@ enum QueryStatus
 
 
 mfxStatus D3D11VideoProcessor::QueryTaskStatus(SynchronizedTask* pSyncTask)
-{
+{ 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VPP DDIWaitTaskSync");
     UMC::AutomaticUMCMutex guard(m_mutex);
 
     HRESULT hRes;
@@ -2246,7 +2247,7 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
 mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoProcessor::Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VPP DDISubmitTask");
 #ifdef DEBUG_DETAIL_INFO
     printf("\n\n---------- \n Submit Task::StatusID = %i \n----------\n\n", pParams->statusReportID);fflush(stderr);
 #endif
@@ -3050,7 +3051,6 @@ mfxStatus D3D11VideoProcessor::ExecuteBlt(
     D3D11_VIDEO_PROCESSOR_STREAM *pStreams,
     mfxU32 statusReportID)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoProcessor::ExecuteBlt");
     statusReportID;
 
     HRESULT hRes = S_OK;

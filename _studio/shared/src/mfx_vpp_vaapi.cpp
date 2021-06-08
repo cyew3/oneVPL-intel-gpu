@@ -576,7 +576,7 @@ mfxStatus VAAPIVideoProcessing::QueryVariance(
  */
 mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VPP DDISubmitTask");
 
     bool bIsFirstField = true;
     bool bUseReference = false;
@@ -2644,6 +2644,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(SynchronizedTask* pSyncTask)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VPP DDIWaitTaskSync");
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     VASurfaceID waitSurface = VA_INVALID_SURFACE;
     mfxU32 indxSurf = 0;

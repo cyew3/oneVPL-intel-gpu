@@ -639,6 +639,8 @@ mfxStatus VideoDECODEH264::SetTargetViewList(mfxVideoParam *par)
 
 mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::Reset");
+
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
     MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
@@ -981,6 +983,7 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
 
 mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::QueryIOSurf");
     MFX_CHECK_NULL_PTR2(par, request);
 
     eMFXPlatform platform = MFX_Utility::GetPlatform(core, par);
@@ -1055,7 +1058,6 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 
 mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEH264::QueryIOSurfInternal");
     request->Info = par->mfx.FrameInfo;
 
     mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
@@ -1127,8 +1129,6 @@ mfxStatus VideoDECODEH264::GetDecodeStat(mfxDecodeStat *stat)
 
 static mfxStatus AVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "AVCDECODERoutine");
-
     auto decoder = reinterpret_cast<VideoDECODEH264*>(pState);
     MFX_CHECK(decoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -1225,6 +1225,8 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs,
                                               mfxFrameSurface1 **surface_out,
                                               MFX_ENTRY_POINT *pEntryPoint)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::DecodeFrameCheck");
+
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);

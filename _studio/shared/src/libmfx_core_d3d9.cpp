@@ -305,9 +305,10 @@ eMFXHWType D3D9VideoCORE::GetHWType()
 
 mfxStatus D3D9VideoCORE::InternalInit()
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::InternalInit");
     if (m_HWType != MFX_HW_UNKNOWN)
         return MFX_ERR_NONE;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::InternalInit");
 
     mfxU32 platformFromDriver = 0;
 
@@ -500,7 +501,6 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "GetCmDevice");
             m_pCmCopy.reset(new CmCopyWrapper);
             if (!m_pCmCopy->GetCmDevice<IDirect3DDeviceManager9>(m_pDirect3DDeviceManager)){
                 //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
@@ -680,7 +680,6 @@ mfxStatus D3D9VideoCORE::ProcessRenderTargets(mfxFrameAllocRequest *request, mfx
 
 mfxStatus D3D9VideoCORE::InitializeService(bool isTemporalCall)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::InitializeService");
     HRESULT hr = S_OK;
 
     if (!m_hdl && m_pDirect3DDeviceManager && !isTemporalCall)
@@ -693,6 +692,8 @@ mfxStatus D3D9VideoCORE::InitializeService(bool isTemporalCall)
     {
         return MFX_ERR_NONE;
     }
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::InitializeService");
 
     if (!m_pDirect3DDeviceManager)
     {
@@ -725,7 +726,6 @@ mfxStatus D3D9VideoCORE::InitializeService(bool isTemporalCall)
 
 mfxStatus D3D9VideoCORE::GetD3DService(mfxU16 , mfxU16 , IDirectXVideoDecoderService **ppVideoService, bool isTemporal)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::GetD3DService");
     mfxStatus sts = InternalInit();
     if (sts != MFX_ERR_NONE)
         return sts;
@@ -742,7 +742,7 @@ mfxStatus D3D9VideoCORE::GetD3DService(mfxU16 , mfxU16 , IDirectXVideoDecoderSer
 
 mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOfRenderTarget, IDirect3DSurface9 **RenderTargets, UMC::FrameAllocator *allocator)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::CreateVA");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::CreateVideoAccelerator");
     mfxStatus sts = MFX_ERR_NONE;
     m_pVA.reset(new DXVA2Accelerator);
 

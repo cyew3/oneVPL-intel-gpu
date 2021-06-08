@@ -837,8 +837,6 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
     DdiTask & task,
     mfxU32    fieldId)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
-
     mfxU32 curTime = vm_time_get_current_time();
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.

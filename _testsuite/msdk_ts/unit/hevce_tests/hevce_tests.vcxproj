@@ -109,8 +109,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;$(ICPP_COMPILER17)\compiler\lib\ia32</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;$(ICPP_COMPILER17)\compiler\lib\ia32;..\..\..\..\..\mdp_msdk-contrib\itt\windows\lib32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
@@ -128,8 +128,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;$(ICPP_COMPILER17)\compiler\lib\intel64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;$(ICPP_COMPILER17)\compiler\lib\intel64;..\..\..\..\..\mdp_msdk-contrib\itt\windows\lib64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkStatus>false</LinkStatus>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
@@ -154,8 +154,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;$(ICPP_COMPILER17)\compiler\lib\ia32</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;$(ICPP_COMPILER17)\compiler\lib\ia32;..\..\..\..\..\mdp_msdk-contrib\itt\windows\lib32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ShowProgress>NotSet</ShowProgress>
       <InterproceduralOptimization>false</InterproceduralOptimization>
     </Link>
@@ -179,8 +179,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;$(ICPP_COMPILER17)\compiler\lib\intel64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;$(ICPP_COMPILER17)\compiler\lib\intel64;..\..\..\..\..\mdp_msdk-contrib\itt\windows\lib64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;libircmt.lib;libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <InterproceduralOptimization>false</InterproceduralOptimization>
     </Link>
   </ItemDefinitionGroup>

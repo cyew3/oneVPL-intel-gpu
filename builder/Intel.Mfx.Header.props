@@ -45,7 +45,7 @@
 <!-- To use ITT Traces set UseITT to true -->
   <PropertyGroup>
     <TraceIttPropsImported>true</TraceIttPropsImported>
-    <UseITT>false</UseITT>
+    <UseITT>true</UseITT>
   </PropertyGroup>
   <!-- End of default settings, please if you need exclude something - do it in Intel.Mfx.Targets.props -->
 

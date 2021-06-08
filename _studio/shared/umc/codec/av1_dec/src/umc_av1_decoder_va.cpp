@@ -66,6 +66,7 @@ namespace UMC_AV1_DECODER
 
     UMC::Status AV1DecoderVA::SubmitTiles(AV1DecoderFrame& frame, bool firstSubmission)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "AV1 decode DDISubmitTask");
         VM_ASSERT(va);
         UMC::Status sts = UMC::UMC_OK;
 

@@ -54,7 +54,7 @@ mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
 
 mfxStatus D3DXCommonEncoder::WaitTaskSync(mfxU32 timeOutMs, GPU_SYNC_EVENT_HANDLE *pEvent)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::WaitTaskSync");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2 encode DDIWaitTaskSync");
 
     HRESULT waitRes = WaitForSingleObject(pEvent->gpuSyncEvent, timeOutMs);
     if (WAIT_OBJECT_0 != waitRes)
@@ -70,8 +70,6 @@ mfxStatus D3DXCommonEncoder::WaitTaskSync(mfxU32 timeOutMs, GPU_SYNC_EVENT_HANDL
 
 mfxStatus D3DXCommonEncoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt, GPU_SYNC_EVENT_HANDLE *pEvent)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::FillBSBuffer");
-
     mfxStatus sts = MFX_ERR_NONE;
     if (m_bIsBlockingTaskSyncEnabled)
     {

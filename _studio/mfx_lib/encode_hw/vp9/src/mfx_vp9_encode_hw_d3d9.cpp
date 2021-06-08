@@ -841,7 +841,7 @@ mfxStatus D3D9Encoder::Execute(
 mfxStatus D3D9Encoder::QueryStatusAsync(
     Task & task)
 {
-    MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus, Frame: ", "%d", task.m_frameOrder);
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VP9 encode DDIQueryTask");
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_taskIdForDriver); // TODO: fix to unique status report number

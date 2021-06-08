@@ -96,7 +96,7 @@ mfxStatus D3DXCommonEncoder::Execute(mfxHDLPair pair, DdiTask const & task, mfxU
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    MFX_AUTO_TRACE("AVC ExecuteD3DX");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDISubmitTask");
 
     ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK, 0, make_event_data(this), [&](){ return make_event_data(sts);});
 
@@ -119,8 +119,9 @@ mfxStatus D3DXCommonEncoder::WaitTaskSync(
     mfxU32    timeOutMs)
 {
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::WaitTaskSync");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDIWaitTaskSync");
     mfxStatus sts = MFX_ERR_NONE;
+
     HRESULT waitRes = WaitForSingleObject(task.m_GpuEvent[fieldId].gpuSyncEvent, timeOutMs);
 
     if (WAIT_OBJECT_0 != waitRes)
@@ -145,8 +146,6 @@ mfxStatus D3DXCommonEncoder::WaitTaskSync(
 
 mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEvent)
 {
-    MFX_AUTO_TRACE("AVC QueryStatusD3DX");
-
     mfxStatus sts = MFX_ERR_NONE;
     ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK, 0, make_event_data(this), [&](){ return make_event_data(sts);});
 
@@ -182,16 +181,21 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId, bool us
             m_EventCache->ReturnEvent(task.m_GpuEvent[fieldId].gpuSyncEvent);
             task.m_GpuEvent[fieldId].gpuSyncEvent = INVALID_HANDLE_VALUE;
         }
+
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDIQueryTask");
         // If the task was skipped or blocking sync call is succeded try to get the current task status
         sts = QueryStatusAsync(task, fieldId);
         if(sts == MFX_WRN_DEVICE_BUSY)
             sts = MFX_ERR_GPU_HANG;
     }
     else {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDIQueryTask");
         sts = QueryStatusAsync(task, fieldId);
     }
 
 #else
+
+    MFX_AUTO_LTR ACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDIQueryTask");
     sts = QueryStatusAsync(task, fieldId);
 #endif
 

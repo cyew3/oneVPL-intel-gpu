@@ -91,6 +91,7 @@ Status DXAccelerator::BeginFrame(int32_t  index, uint32_t fieldId)
 
 Status DXAccelerator::SyncTask(int32_t index, void * error)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Decode DDIWaitTaskSync");
     (void)index;
     (void)error;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
@@ -334,7 +335,7 @@ Status DXVA2Accelerator::EndFrame(void * handle)
 
     HRESULT hr;
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "BeginFrame");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "EndFrame");
         hr = m_pDXVAVideoDecoder->EndFrame(reinterpret_cast<HANDLE*>(handle));
     }
 

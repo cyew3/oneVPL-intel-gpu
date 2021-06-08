@@ -77,9 +77,10 @@ D3D11VideoCORE_T<Base>::~D3D11VideoCORE_T()
 template <class Base>
 mfxStatus D3D11VideoCORE_T<Base>::InternalInit()
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::InternalInit");
     if (m_HWType != MFX_HW_UNKNOWN)
         return MFX_ERR_NONE;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::InternalInit");
 
     mfxU32 platformFromDriver = 0;
 
@@ -274,9 +275,10 @@ mfxStatus D3D11VideoCORE_T<Base>::InitializeDevice(bool isTemporal)
 template <class Base>
 mfxStatus D3D11VideoCORE_T<Base>::InternalCreateDevice()
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::InternalCreateDevice");
     if (m_pD11Device)
         return MFX_ERR_NONE;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE_T<Base>::InternalCreateDevice");
 
     HRESULT hres = S_OK;
     static D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0};

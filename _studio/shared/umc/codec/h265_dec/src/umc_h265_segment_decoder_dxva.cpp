@@ -87,7 +87,6 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 
 UMC::Status H265_DXVA_SegmentDecoder::ProcessSegment(void)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H265_DXVA_SegmentDecoder::ProcessSegment");
     try
     {
         if (!m_pTaskBroker->GetNextTask(0))
@@ -147,7 +146,6 @@ enum
 
 bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskBrokerSingleThreadDXVA::GetNextTaskInternal");
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
     // check error(s)

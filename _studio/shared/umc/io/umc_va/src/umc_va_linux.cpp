@@ -1076,6 +1076,8 @@ Status LinuxVideoAccelerator::QueryTaskStatus(int32_t FrameBufIndex, void * stat
 
 Status LinuxVideoAccelerator::SyncTask(int32_t FrameBufIndex, void *surfCorruption)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Decode DDIWaitTaskSync");
+
     if (FrameBufIndex < 0)
         return UMC_ERR_INVALID_PARAMS;
 

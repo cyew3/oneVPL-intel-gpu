@@ -103,7 +103,7 @@ namespace MfxHwVP9Encode
         Task & task,
         mfxU32 timeOutMs)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::WaitTaskSync");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VP9 encode DDIWaitTaskSync");
         mfxStatus sts = MFX_ERR_NONE;
         HRESULT waitRes = WaitForSingleObject(task.m_GpuEvent.gpuSyncEvent, timeOutMs);
         if (WAIT_OBJECT_0 != waitRes)
@@ -123,7 +123,6 @@ namespace MfxHwVP9Encode
     mfxStatus D3DXCommonEncoder::QueryStatus(
         Task & task)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::QueryStatus");
         mfxStatus sts = MFX_ERR_NONE;
 
         // use GPUTaskSync call to wait task completion.
