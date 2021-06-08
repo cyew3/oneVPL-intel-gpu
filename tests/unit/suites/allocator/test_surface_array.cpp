@@ -124,17 +124,18 @@ protected:
     }
 
     mfxSurfaceArrayImpl* m_surfArray;
+
+    mfxFrameSurface1 m_tmpSurface1 = {}, m_tmpSurface2 = {};
 };
 
 TEST_F(SurfArrayImplTest, AddSurface)
 {
     ASSERT_EQ(m_surfArray->NumSurfaces, 0U);
 
-    mfxFrameSurface1 srf;
-    m_surfArray->AddSurface(&srf);
+    m_surfArray->AddSurface(&m_tmpSurface1);
 
     ASSERT_NE(m_surfArray->Surfaces, nullptr);
-    EXPECT_EQ(m_surfArray->Surfaces[0], &srf);
+    EXPECT_EQ(m_surfArray->Surfaces[0], &m_tmpSurface1);
     EXPECT_EQ(m_surfArray->NumSurfaces, 1);
 }
 
@@ -142,13 +143,11 @@ TEST_F(SurfArrayImplTest, AddSurfaceInSequence)
 {
     ASSERT_EQ(m_surfArray->NumSurfaces, 0);
 
-    mfxFrameSurface1 srf;
-    m_surfArray->AddSurface(&srf);
-    mfxFrameSurface1 srf2;
-    m_surfArray->AddSurface(&srf2);
+    m_surfArray->AddSurface(&m_tmpSurface1);
+    m_surfArray->AddSurface(&m_tmpSurface2);
 
     ASSERT_NE(m_surfArray->Surfaces, nullptr);
-    EXPECT_EQ(m_surfArray->Surfaces[0], &srf);
-    EXPECT_EQ(m_surfArray->Surfaces[1], &srf2);
+    EXPECT_EQ(m_surfArray->Surfaces[0], &m_tmpSurface1);
+    EXPECT_EQ(m_surfArray->Surfaces[1], &m_tmpSurface2);
     EXPECT_EQ(m_surfArray->NumSurfaces, 2);
 }

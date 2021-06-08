@@ -964,6 +964,9 @@ public:
 
         m_surfaces.push_back(surface);
 
+        if (surface)
+            std::ignore = MFX_STS_TRACE(AddRefSurface(*surface));
+
         Surfaces    =         m_surfaces.data();
         NumSurfaces = (mfxU32)m_surfaces.size();
     }
@@ -971,6 +974,12 @@ public:
 protected:
     void Close() override
     {
+        for (auto surface : m_surfaces)
+        {
+            if (surface)
+                std::ignore = MFX_STS_TRACE(ReleaseSurface(*surface));
+        }
+
         delete this;
     }
 
