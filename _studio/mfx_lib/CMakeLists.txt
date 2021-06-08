@@ -25,7 +25,6 @@ set(sources_common
     shared/src/libmfxsw_session.cpp
     shared/src/libmfxsw_vpp.cpp
     shared/src/libmfxsw_decode_vp.cpp
-    shared/src/mfx_check_hardware_support.cpp
     shared/src/mfx_session.cpp
 
     shared/include/feature_blocks/mfx_feature_blocks_base.h
@@ -70,10 +69,7 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_factory.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_alloc_wrapper.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_mjpeg_vpp.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/mfx_timing.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_static_assert_structs.cpp
-    $<$<PLATFORM_ID:Windows>:libvpl.def>
-    $<$<PLATFORM_ID:Windows>:libmfx-gen.rc>
     $<TARGET_OBJECTS:fast_copy_sse4>
   )
 
@@ -81,26 +77,16 @@ set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_allocator_vaapi.h
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_core_hw.h
     ${MSDK_STUDIO_ROOT}/shared/include/libmfx_core_vaapi.h
-    ${MSDK_STUDIO_ROOT}/shared/include/mfx_ext_ddi.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_vpp_vaapi.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_vpp_helper.h
 
-    ${MSDK_STUDIO_ROOT}/shared/src/auxiliary_device.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/cm_mem_copy.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/fast_compositing_ddi.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_vpp_vaapi.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_vpp_helper.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_vaapi.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d9.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d11.cpp
+    
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_hw.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_vaapi.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d11.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9on11.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
   )
 
 get_mfx_version(mfx_version_major mfx_version_minor)
@@ -152,6 +138,8 @@ if (CMAKE_SYSTEM_NAME MATCHES Windows)
       ${CMAKE_BINARY_DIR}/media_sdk_etw.rc
   )
 endif()
+
+include(sources_ext.cmake OPTIONAL)
 
 target_sources(${mfxlibname} PRIVATE ${sources_hw})
 
@@ -215,4 +203,3 @@ if (CMAKE_SYSTEM_NAME MATCHES Linux)
   install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
 endif()
 
-include(sources_ext.cmake OPTIONAL)

@@ -6,9 +6,26 @@ if (CMAKE_SYSTEM_NAME MATCHES Windows)
   )
 endif()
 
-if (MFX_DISABLE_SW_FALLBACK)
-  return()
-endif()
+list(APPEND sources_common
+    shared/src/mfx_check_hardware_support.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/mfx_timing.cpp
+    $<$<PLATFORM_ID:Windows>:libvpl.def>
+    $<$<PLATFORM_ID:Windows>:libmfx-gen.rc>
+)
+
+list(APPEND sources_hw
+    ${MSDK_STUDIO_ROOT}/shared/src/fast_compositing_ddi.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d9.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d11.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d11.cpp
+    ${MSDK_STUDIO_ROOT}/shared/include/mfx_ext_ddi.h
+    ${MSDK_STUDIO_ROOT}/shared/src/auxiliary_device.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9on11.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp
+    ${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp
+  )
 
 return()
 

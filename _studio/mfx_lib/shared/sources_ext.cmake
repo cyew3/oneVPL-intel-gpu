@@ -1,59 +1,26 @@
-if (MFX_DISABLE_SW_FALLBACK)
-  return()
-endif()
+# Copyright (c) 2017-2021 Intel Corporation
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-# ====================================== mfx_common_sw ======================================
 
-add_library(mfx_common_sw STATIC)
-set_property(TARGET mfx_common_sw PROPERTY FOLDER "sw_fallback")
-
-target_sources(mfx_common_sw
+target_sources(mfx_common_hw
   PRIVATE
-    include/mfx_brc_common.h
-    include/mfx_common_decode_int.h
-    include/mfx_common_int.h
-    include/mfx_critical_error_handler.h
-    include/mfx_enc_common.h
-    include/mfx_interface.h
-    include/mfx_mpeg2_dec_common.h
-    include/mfx_mpeg2_enc_common.h
-    include/mfx_session.h
-    include/mfx_user_plugin.h
-    include/mfx_vc1_dec_common.h
-    include/mfx_vpx_dec_common.h
-
-    src/mfx_brc_common.cpp
-    src/mfx_common_decode_int.cpp
-    src/mfx_common_int.cpp
-    src/mfx_enc_common.cpp
-    src/mfx_mpeg2_dec_common.cpp
-    src/mfx_vc1_dec_common.cpp
-    src/mfx_critical_error_handler.cpp
-    src/mfx_vpx_dec_common.cpp
+    src/mfx_check_hardware_support.cpp
   )
 
-target_compile_definitions(mfx_common_sw PRIVATE MFX_NO_VA)
-
-target_include_directories(mfx_common_sw
-  PUBLIC
-    include
-    ${MSDK_UMC_ROOT}/codec/brc/include
-    ${MSDK_UMC_ROOT}/codec/h264_enc/include
-    ${MSDK_UMC_ROOT}/codec/vc1_common/include
-    ${MSDK_UMC_ROOT}/codec/vc1_dec/include
-)
-
-target_link_libraries(mfx_common_sw
-  PUBLIC
-    mfx_static_lib
-    umc_io
-    umc
-  PRIVATE
-    mfx_sdl_properties
-  )
-
-# ====================================== mfx_common_hw ======================================
-
-target_link_libraries(mfx_common_hw PUBLIC mfx_common_sw lpla)
-
-target_compile_definitions(mfx_common_hw PRIVATE $<$<PLATFORM_ID:Windows>:MFX_DX9ON11>)
