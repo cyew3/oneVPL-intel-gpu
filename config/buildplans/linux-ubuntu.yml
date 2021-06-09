@@ -36,7 +36,7 @@ steps:
   - name: config and build vpl
     command: docker exec $BUILD_ID /bin/bash -c './sources/mdp_msdk-lib/config/scripts/build/build-linux-ubuntu.sh'
   - name: unit tests
-    command: docker exec $BUILD_ID /bin/bash -c 'cd ./sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/ctest -j $(nproc)'
+    command: docker exec $BUILD_ID /bin/bash -c 'cd ./sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/ctest -j $(nproc) --output-on-failure'
   - name: pack vpl binaries
     command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Linux && cd sources/mdp_msdk-lib/output/Linux
       && tar cvfz $LINUX_DISTRIBUTIVE_msdk.tgz -C /opt/src/sources/mdp_msdk-lib/build ."

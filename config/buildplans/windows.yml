@@ -28,10 +28,10 @@ steps:
     command: .\sources\mdp_msdk-lib\config\scripts\windows_logs.bat
     always_execute: true
   - name: unit tests x64
-    command: ..\..\..\build_tools\cmake\bin\ctest -j %NUMBER_OF_PROCESSORS%
+    command: ..\..\..\build_tools\cmake\bin\ctest -j %NUMBER_OF_PROCESSORS% --output-on-failure
     working_dir: "../Build/vpl/x64"
   - name: unit tests x32
-    command: ..\..\..\build_tools\cmake\bin\ctest -j %NUMBER_OF_PROCESSORS%
+    command: ..\..\..\build_tools\cmake\bin\ctest -j %NUMBER_OF_PROCESSORS% --output-on-failure
     working_dir: "../Build/vpl/x32"
   - name: create integration lib drop
     command: powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
