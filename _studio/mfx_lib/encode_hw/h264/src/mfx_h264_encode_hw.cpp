@@ -788,10 +788,6 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 
     SetDefaults(tmp, hwCaps, true, core->GetHWType(), core->GetVAType(), *pMFXGTConfig);
 
-#ifdef MFX_VA_WIN
-    mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(tmp);
-#endif
-
     if (tmp.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request->Type =
@@ -808,11 +804,6 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         else
 #endif
             request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
-
-        //if MDF is in pipeline need to allocate shared resource to avoid performance issues due to decompression when MMCD is enabled
-#ifdef MFX_VA_WIN
-        request->Type|= (bIntRateControlLA(par->mfx.RateControlMethod) || IsOn(extOpt3.FadeDetection))? MFX_MEMTYPE_SHARED_RESOURCE:0;
-#endif
     }
 
     request->NumFrameMin = CalcNumFrameMin(tmp, hwCaps, core->GetHWType());

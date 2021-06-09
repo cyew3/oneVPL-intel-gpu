@@ -678,9 +678,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     {
         request.Info.FourCC = MFX_FOURCC_BGR4;
         request.Type = MFX_MEMTYPE_VIDEO_INT;
-#ifdef MFX_VA_WIN
-        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
 #if defined(LINUX)
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
 #endif
