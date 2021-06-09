@@ -93,6 +93,7 @@ public:
     virtual ~LPLA_EncTool () { Close(); }
 
     virtual mfxStatus Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
+    virtual mfxStatus Reset(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig);
     virtual mfxStatus Close();
     virtual mfxStatus DisjoinSession();
     virtual MFXVideoSession* GetEncSession();

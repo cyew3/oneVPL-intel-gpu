@@ -669,10 +669,10 @@ mfxStatus EncTools::Reset(mfxExtEncToolsConfig const * config, mfxEncToolsCtrl c
 
      if (isPreEncLA(*config, *ctrl))
      {
-         // to add check if Close/Init is real needed
          if (isPreEncLA(m_config, m_ctrl))
-            m_lpLookAhead.Close();
-         sts = m_lpLookAhead.Init(*ctrl, *config);
+            sts = m_lpLookAhead.Reset(*ctrl, *config);
+         else
+            sts = m_lpLookAhead.Init(*ctrl, *config);
      }
 
     return sts;

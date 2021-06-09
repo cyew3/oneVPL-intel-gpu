@@ -604,13 +604,24 @@ void HevcEncTools::ResetState(const FeatureBlocks& /*blocks*/, TPushRS Push)
 
         if (m_pEncTools && m_pEncTools->Reset)
         {
+            m_EncToolCtrl = {};
+            mfxExtBuffer* ExtParam;
+            mfxExtEncoderResetOption rOpt = {};
+
             if (Glob::ResetHint::Get(global).Flags & RF_IDR_REQUIRED)
             {
-                mfxExtEncoderResetOption& rOpt = ExtBuffer::Get(par);
+                rOpt.Header.BufferId = MFX_EXTBUFF_ENCODER_RESET_OPTION;
+                rOpt.Header.BufferSz = sizeof(rOpt);
                 rOpt.StartNewSequence = MFX_CODINGOPTION_ON;
+                ExtParam = &rOpt.Header;
+                m_EncToolCtrl.NumExtParam = 1;
+                m_EncToolCtrl.ExtParam = &ExtParam;
             }
 
-            mfxStatus sts = m_pEncTools->Reset(m_pEncTools->Context, &m_EncToolConfig, &m_EncToolCtrl);
+            auto sts = InitEncToolsCtrl(par, &m_EncToolCtrl);
+            MFX_CHECK_STS(sts);
+
+            sts = m_pEncTools->Reset(m_pEncTools->Context, &m_EncToolConfig, &m_EncToolCtrl);
             MFX_CHECK_STS(sts);
         }
 
@@ -945,6 +956,7 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             IsEncToolsOptOn(*pConfig, pCO3 && pCO3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) :
             false;
         MFX_CHECK(bEncTools, MFX_ERR_NONE);
+        MFX_CHECK(!m_pEncTools, MFX_ERR_NONE);
 
         mfxEncTools*                encTools = GetEncTools(par);
         mfxEncToolsCtrlExtDevice    extBufDevice = {};
@@ -1006,7 +1018,6 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
             S_ET_SUBMIT = tm.AddStage(tm.S_NEW);
             S_ET_QUERY = tm.AddStage(S_ET_SUBMIT);
-
 
             m_pEncTools = encTools;
         }

@@ -78,6 +78,50 @@ mfxStatus LPLA_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig 
     return sts;
 }
 
+
+mfxStatus LPLA_EncTool::Reset(mfxEncToolsCtrl const& ctrl, mfxExtEncToolsConfig const& config)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    m_curDispOrder = -1;
+
+    m_GopPicSize = ctrl.MaxGopSize;
+    if (m_GopPicSize)
+        m_IdrInterval = ctrl.MaxIDRDist / m_GopPicSize;
+
+    m_GopRefDist = ctrl.MaxGopRefDist;
+
+    sts = InitEncParams(ctrl, config);
+    MFX_CHECK_STS(sts);
+    if (config.AdaptiveI && ctrl.ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) m_encParams.mfx.GopPicSize = 0xffff;
+
+    mfxU32 bufferSize = std::max((mfxU32)m_encParams.mfx.FrameInfo.Width * m_encParams.mfx.FrameInfo.Height * 3 / 2, ctrl.BufferSizeInKB * 1000);
+    if (!m_bitstream.Data || bufferSize > m_bitstream.MaxLength)
+    {
+        if (m_bitstream.Data)
+            delete[] m_bitstream.Data;
+        memset(&m_bitstream, 0, sizeof(mfxBitstream));
+        m_bitstream.Data = new mfxU8[bufferSize];
+        m_bitstream.MaxLength = bufferSize;
+    }
+
+    sts = ConfigureExtBuffs(ctrl, config);
+    MFX_CHECK_STS(sts);
+
+    m_pmfxENC->Close();
+    sts = m_pmfxENC->Init(&m_encParams);
+
+    if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)
+    {
+        sts = MFX_ERR_NONE;
+    }
+    MFX_CHECK_STS(sts);
+    m_config = config;
+
+    return sts;
+
+}
+
 mfxStatus LPLA_EncTool::InitSession()
 {
     MFX_CHECK_NULL_PTR2(m_device, m_pAllocator);
@@ -283,7 +327,7 @@ mfxStatus LPLA_EncTool::StoreLAResults(mfxFrameSurface1* surface, mfxU16 FrameTy
     {
         if (lplaHints->CqmHint != CQM_HINT_INVALID)
         {
-            //printf("Submit %d: CQM %d FrmSize %d BufferFullness %d \n", surface->Data.FrameOrder, lplaHints->CqmHint, lplaHints->TargetFrameSize, lplaHints->TargetBufferFullnessInBit);
+            //printf("Submit %d: CQM %d Intra %d FrmSize %d MiniGop %d QpModStrength %d \n", surface->Data.FrameOrder, lplaHints->CqmHint, lplaHints->IntraHint, lplaHints->TargetFrameSize, lplaHints->MiniGopSize, lplaHints->QpModulationStrength);
             m_encodeHints.push_back({
                 lplaHints->StatusReportFeedbackNumber,
                 lplaHints->CqmHint,
@@ -528,7 +572,7 @@ mfxStatus LPLA_EncTool::Close()
     {
         if(m_bitstream.Data)
         {
-            delete [] m_bitstream.Data;
+            delete[] m_bitstream.Data;
             m_bitstream.Data = nullptr;
         }
 
@@ -543,8 +587,12 @@ mfxStatus LPLA_EncTool::Close()
             delete[] m_encParams.ExtParam;
             m_encParams.ExtParam = nullptr;
         }
-        if(m_pmfxENC)
+        if (m_pmfxENC)
+        {
             delete m_pmfxENC;
+            m_pmfxENC = nullptr;
+        }
+
         sts = m_mfxSession.Close();
         MFX_CHECK_STS(sts);
         m_bInit = false;
