@@ -41,12 +41,6 @@ typedef const mfxU8 mfxUC8;
             return NULL;                        \
         }
 
-#define CHECK_CM_STATUS_RET_NULL_PAIR(_sts, _ret)              \
-        if (CM_SUCCESS != _sts)                  \
-        {                                           \
-            return std::make_pair(nullptr, nullptr);                        \
-        }
-
 #define CHECK_CM_NULL_PTR(_ptr, _ret)              \
         if (NULL == _ptr)                  \
         {                                           \
@@ -72,20 +66,10 @@ CmCopyWrapper::CmCopyWrapper()
 
     m_pThreadSpace = NULL;
 
-
-    m_cachedObjects.clear();
-
     m_tableCmRelations.clear();
     m_tableSysRelations.clear();
 
-    m_tableCmIndex.clear();
     m_tableSysIndex.clear();
-
-    m_tableCmRelations2.clear();
-    m_tableSysRelations2.clear();
-
-    m_tableCmIndex2.clear();
-    m_tableSysIndex2.clear();
 
     m_surfacesInCreationOrder.clear();
     m_buffersInCreationOrder.clear();
@@ -224,8 +208,8 @@ bool CmCopyWrapper::isNeedShift(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
     }
     return false;
 }
-std::pair<SurfaceIndex *, CmBufferUP*> CmCopyWrapper::CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize,
-                                           std::map<mfxU8 *, CmBufferUP *> & tableSysRelations,
+SurfaceIndex * CmCopyWrapper::CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize, mfxU32 width, mfxU32 height,
+                                           std::map<std::tuple<mfxU8*, mfxU32, mfxU32>, CmBufferUP*>& tableSysRelations,
                                            std::map<CmBufferUP *,  SurfaceIndex *> & tableSysIndex)
 {
     cmStatus cmSts = 0;
@@ -233,38 +217,25 @@ std::pair<SurfaceIndex *, CmBufferUP*> CmCopyWrapper::CreateUpBuffer(mfxU8 *pDst
     CmBufferUP *pCmUserBuffer;
     SurfaceIndex *pCmDstIndex;
 
-    std::map<mfxU8 *, CmBufferUP *>::iterator it;
-    it = tableSysRelations.find(pDst);
+    auto it = tableSysRelations.find(std::tie(pDst, width, height));
 
-    if (tableSysRelations.end() == it)
-    {
-        UMC::AutomaticUMCMutex guard(m_guard);
-        cmSts = m_pCmDevice->CreateBufferUP(memSize, pDst, pCmUserBuffer);
-        CHECK_CM_STATUS_RET_NULL_PAIR(cmSts, MFX_ERR_DEVICE_FAILED);
+    if (tableSysRelations.end() != it)
+        return tableSysIndex.find(it->second)->second;
 
-        if (m_bUseCacheTables)
-            tableSysRelations.insert(std::pair<mfxU8 *, CmBufferUP *>(pDst, pCmUserBuffer));
+    UMC::AutomaticUMCMutex guard(m_guard);
 
-        cmSts = pCmUserBuffer->GetIndex(pCmDstIndex);
-        CHECK_CM_STATUS_RET_NULL_PAIR(cmSts, MFX_ERR_DEVICE_FAILED);
+    cmSts = m_pCmDevice->CreateBufferUP(memSize, pDst, pCmUserBuffer);
+    CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
 
-        if (m_bUseCacheTables)
-        {
-            tableSysIndex.insert(std::pair<CmBufferUP *, SurfaceIndex *>(pCmUserBuffer, pCmDstIndex));
+    tableSysRelations.insert(std::make_pair(std::tie(pDst, width, height), pCmUserBuffer));
 
-            m_buffersInCreationOrder.push_back(pCmUserBuffer);
-        }
-    }
-    else
-    {
-        std::map<CmBufferUP *,  SurfaceIndex *>::iterator itInd;
-        itInd = tableSysIndex.find((CmBufferUP *)(it->second));
-        pCmDstIndex = itInd->second;
-        pCmUserBuffer = itInd->first;
-    }
+    cmSts = pCmUserBuffer->GetIndex(pCmDstIndex);
+    CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
 
-    return std::make_pair(pCmDstIndex, pCmUserBuffer);
+    tableSysIndex.insert(std::make_pair(pCmUserBuffer, pCmDstIndex));
+    m_buffersInCreationOrder.push_back(pCmUserBuffer);
 
+    return pCmDstIndex;
 } // CmBufferUP * CmCopyWrapper::CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize)
 
 mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
@@ -371,7 +342,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize, width, height, m_tableSysRelations,m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_readswap_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -443,9 +414,6 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if(!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -559,7 +527,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyGPUtoCPU(   CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_read_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -631,9 +599,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyGPUtoCPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -744,7 +709,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftGPUtoCPU(CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned, sliceCopyBufferUPSize, m_tableSysRelations2, m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned, sliceCopyBufferUPSize, width, height, m_tableSysRelations, m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_read_shift_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -816,9 +781,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftGPUtoCPU(CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -929,7 +891,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_writeswap_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -1003,9 +965,6 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -1119,7 +1078,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyCPUtoGPU(   CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_write_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -1194,9 +1153,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyCPUtoGPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -1307,7 +1263,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftCPUtoGPU(CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned, sliceCopyBufferUPSize, m_tableSysRelations2, m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned, sliceCopyBufferUPSize, width, height, m_tableSysRelations, m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_write_shift_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -1382,9 +1338,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftCPUtoGPU(CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -1665,7 +1618,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
             slice_copy_height_row = copy_height_row;
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceMirror_read_NV12), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -1737,9 +1690,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -1858,7 +1808,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
         //map CmBufferUP instead of map/unmap each time each time for better performance and CPU utilization.
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         //hr = m_pCmDevice->CreateBufferUP(  sliceCopyBufferUPSize, ( void * )pLinearAddressAligned, pCMBufferUP );
         MFX_CHECK_NULL_PTR1(pBufferIndexCM);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_read_NV12), m_pCmKernel);
@@ -1927,9 +1877,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -2040,7 +1987,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceMirror_write_NV12), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -2113,9 +2060,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -2232,7 +2176,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
         //map CmBufferUP instead of map/unmap each time for better performance and CPU utilization.
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         MFX_CHECK_NULL_PTR1(pBufferIndexCM);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_write_NV12), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -2309,9 +2253,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -2424,7 +2365,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010GPUtoCPU(   CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_read_P010_shift), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -2499,9 +2440,6 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010GPUtoCPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
@@ -2613,7 +2551,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010CPUtoGPU(   CmSurface2D* pSurface,
             sliceCopyBufferUPSize = totalBufferUPSize;
         }
 
-        std::tie(pBufferIndexCM, pCMBufferUP) = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,m_tableSysRelations2,m_tableSysIndex2);
+        pBufferIndexCM = CreateUpBuffer((mfxU8*)pLinearAddressAligned,sliceCopyBufferUPSize,width,height,m_tableSysRelations,m_tableSysIndex);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_write_P010_shift), m_pCmKernel);
         CHECK_CM_HR(hr);
 
@@ -2685,16 +2623,13 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010CPUtoGPU(   CmSurface2D* pSurface,
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
         }
         CHECK_CM_HR(hr);
-
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     }
 
     return MFX_ERR_NONE;
 }
 
 
-mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype, bool bUseCacheTables)
+mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
 {
     cmStatus cmSts = CM_SUCCESS;
 
@@ -2720,11 +2655,10 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype, bool bUseCacheTables)
 #endif
     cmSts = m_pCmDevice->CreateQueue(m_pCmQueue);
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-    m_tableCmRelations2.clear();
-    m_tableCmIndex2.clear();
-    m_tableSysRelations2.clear();
-    m_tableSysIndex2.clear();
-    m_bUseCacheTables = bUseCacheTables;
+    m_tableCmRelations.clear();
+
+    m_tableSysRelations.clear();
+    m_tableSysIndex.clear();
 
     return MFX_ERR_NONE;
 
@@ -2802,11 +2736,10 @@ mfxStatus CmCopyWrapper::ReleaseCmSurfaces(void)
     m_buffersInCreationOrder.clear();
     m_surfacesInCreationOrder.clear();
 
-    m_tableCmRelations2.clear();
-    m_tableSysRelations2.clear();
+    m_tableCmRelations.clear();
+    m_tableSysRelations.clear();
 
-    m_tableCmIndex2.clear();
-    m_tableSysIndex2.clear();
+    m_tableSysIndex.clear();
 
     return MFX_ERR_NONE;
 }
@@ -2855,45 +2788,27 @@ mfxStatus CmCopyWrapper::Release(void)
 
 } // mfxStatus CmCopyWrapper::Release(void)
 
-CmSurface2D * CmCopyWrapper::CreateCmSurface2D(mfxHDLPair surfaceIdPair, mfxU32, mfxU32, bool,
-                                               std::map<mfxHDLPair, CmSurface2D *> & tableCmRelations,
-                                               std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex)
+CmSurface2D * CmCopyWrapper::CreateCmSurface2D(mfxHDLPair surfaceIdPair, mfxU32 width, mfxU32 height, bool,
+                                               std::map<std::tuple<mfxHDLPair, mfxU32, mfxU32>, CmSurface2D*> & tableCmRelations)
 {
     cmStatus cmSts = 0;
 
     CmSurface2D *pCmSurface2D = nullptr;
-    SurfaceIndex *pCmSrcIndex = nullptr;
 
-    std::map<mfxHDLPair, CmSurface2D *>::iterator it;
+    auto it = tableCmRelations.find(std::tie(surfaceIdPair, width, height));
+    if (tableCmRelations.end() != it)
+        return it->second;
 
-    it = tableCmRelations.find(surfaceIdPair);
+    UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (tableCmRelations.end() == it)
-    {
-        UMC::AutomaticUMCMutex guard(m_guard);
+    cmSts = m_pCmDevice->CreateSurface2D(surfaceIdPair, pCmSurface2D);
+    CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
 
-        cmSts = m_pCmDevice->CreateSurface2D(surfaceIdPair, pCmSurface2D);
+    tableCmRelations.insert(std::make_pair(std::tie(surfaceIdPair, width, height), pCmSurface2D));
 
-        CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
+    m_surfacesInCreationOrder.push_back(pCmSurface2D);
 
-        if (m_bUseCacheTables)
-            tableCmRelations.insert(std::pair<mfxHDLPair, CmSurface2D *>(surfaceIdPair, pCmSurface2D));
-
-        cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
-        CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
-
-        if (m_bUseCacheTables)
-        {
-            tableCmIndex.insert(std::pair<CmSurface2D *, SurfaceIndex *>(pCmSurface2D, pCmSrcIndex));
-            m_surfacesInCreationOrder.push_back(pCmSurface2D);
-        }
-    }
-    else
-    {
-        pCmSurface2D = it->second;
-    }
     return pCmSurface2D;
-
 } // CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode)
 
 mfxStatus CmCopyWrapper::IsCmCopySupported(mfxFrameSurface1 *pSurface, IppiSize roi)
@@ -2933,7 +2848,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(mfxHDLPair dst, mfxU32 dstPi
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
-    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     cmSts = m_pCmQueue->EnqueueCopyCPUToGPUFullStride(pCmSurface2D, pSrc, srcPitch, srcUVOffset, CM_FASTCOPY_OPTION_NONBLOCKING, e);
@@ -2951,9 +2866,6 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(mfxHDLPair dst, mfxU32 dstPi
         status = MFX_ERR_DEVICE_FAILED;
     }
     m_pCmQueue->DestroyEvent(e);
-
-    if(!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return status;
 }
@@ -2974,7 +2886,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(mfxHDLPair dst, mfxU32 dstPitch
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
-    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     if(isSinglePlainFormat(format))
         status = EnqueueCopyCPUtoGPU(pCmSurface2D, pSrc, roi.width, roi.height, srcPitch, srcUVOffset, format, CM_FASTCOPY_OPTION_BLOCKING, e);
@@ -2983,8 +2895,6 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(mfxHDLPair dst, mfxU32 dstPitch
 
     if (status == MFX_ERR_GPU_HANG || status == MFX_ERR_NONE)
     {
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroySurface(pCmSurface2D);
         return status;
     }
     else
@@ -3005,8 +2915,6 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(mfxHDLPair dst, mfxU32 dstPitch
         }
     }
 
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
     return status;
 }
 
@@ -3021,14 +2929,11 @@ mfxStatus CmCopyWrapper::CopySwapSystemToVideoMemory(mfxHDLPair dst, mfxU32 dstP
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
-    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     mfxStatus sts = EnqueueCopySwapRBCPUtoGPU( pCmSurface2D, pSrc,roi.width,roi.height, srcPitch, srcUVOffset,format, CM_FASTCOPY_OPTION_BLOCKING, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return MFX_ERR_NONE;
 }
@@ -3045,16 +2950,13 @@ mfxStatus CmCopyWrapper::CopyShiftSystemToVideoMemory(mfxHDLPair dst, mfxU32 dst
 
      // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
-    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex);
+    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     if (isSinglePlainFormat(format))
         sts = EnqueueCopyShiftCPUtoGPU(pCmSurface2D, pSrc, roi.width, roi.height, srcPitch, srcUVOffset, format, CM_FASTCOPY_OPTION_BLOCKING, bitshift, e);
     else
         sts = EnqueueCopyShiftP010CPUtoGPU(pCmSurface2D, pSrc, roi.width, roi.height, srcPitch, srcUVOffset, 0, CM_FASTCOPY_OPTION_BLOCKING, bitshift, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return MFX_ERR_NONE;
 }
@@ -3071,16 +2973,13 @@ mfxStatus CmCopyWrapper::CopyShiftVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPit
 
     // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
-    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     if(isSinglePlainFormat(format))
         sts = EnqueueCopyShiftGPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, format, CM_FASTCOPY_OPTION_BLOCKING, bitshift, e);
     else
         sts = EnqueueCopyShiftP010GPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, 0, CM_FASTCOPY_OPTION_BLOCKING, bitshift, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return MFX_ERR_NONE;
 }
@@ -3097,7 +2996,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     mfxU32 height = roi.height;
     CmSurface2D *pCmSurface2D = nullptr;
 
-    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     cmSts = m_pCmQueue->EnqueueCopyGPUToCPUFullStride(pCmSurface2D, pDst, dstPitch, dstUVOffset, CM_FASTCOPY_OPTION_NONBLOCKING, e);
@@ -3116,9 +3015,6 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     }
     m_pCmQueue->DestroyEvent(e);
 
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
-
     return status;
 }
 
@@ -3134,7 +3030,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, m
     mfxU32 height = roi.height;
     CmSurface2D *pCmSurface2D = nullptr;
 
-    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     if(isSinglePlainFormat(format))
         status = EnqueueCopyGPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, format, CM_FASTCOPY_OPTION_BLOCKING, e);
@@ -3143,9 +3039,6 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, m
 
     if (status == MFX_ERR_GPU_HANG || status == MFX_ERR_NONE)
     {
-        if (!m_bUseCacheTables)
-            m_pCmDevice->DestroySurface(pCmSurface2D);
-
         return status;
     }
     else
@@ -3166,9 +3059,6 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, m
         }
     }
 
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
-
     return status;
 }
 
@@ -3184,13 +3074,10 @@ mfxStatus CmCopyWrapper::CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitc
     // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
 
-    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     mfxStatus sts = EnqueueCopySwapRBGPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, format, CM_FASTCOPY_OPTION_BLOCKING, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return MFX_ERR_NONE;
 }
@@ -3207,13 +3094,10 @@ mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPi
     // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
 
-    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     mfxStatus sts = EnqueueCopyMirrorNV12GPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, format, CM_FASTCOPY_OPTION_BLOCKING, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return MFX_ERR_NONE;
 }
@@ -3230,13 +3114,10 @@ mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(mfxHDLPair dst, mfxU32 ds
     // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D = nullptr;
 
-    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
     mfxStatus sts = EnqueueCopyMirrorNV12CPUtoGPU(pCmSurface2D, pSrc, roi.width, roi.height, srcPitch, srcUVOffset, format, CM_FASTCOPY_OPTION_BLOCKING, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-        m_pCmDevice->DestroySurface(pCmSurface2D);
 
     return MFX_ERR_NONE;
 }
@@ -3254,11 +3135,11 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(mfxHDLPair dst, mfxHDLPair sr
 
     // create or find already associated cm surface 2d
     CmSurface2D *pDstCmSurface2D = nullptr;
-    pDstCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pDstCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pDstCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     CmSurface2D *pSrcCmSurface2D = nullptr;
-    pSrcCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pSrcCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pSrcCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
 #ifdef CMAPIUPDATE
@@ -3281,12 +3162,6 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(mfxHDLPair dst, mfxHDLPair sr
     }
     m_pCmQueue->DestroyEvent(e);
 
-    if (!m_bUseCacheTables)
-    {
-        m_pCmDevice->DestroySurface(pDstCmSurface2D);
-        m_pCmDevice->DestroySurface(pSrcCmSurface2D);
-    }
-
     return status;
 }
 
@@ -3300,21 +3175,15 @@ mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(mfxHDLPair dst, mfxHDLPair s
 
     // create or find already associated cm surface 2d
     CmSurface2D *pDstCmSurface2D = nullptr;
-    pDstCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pDstCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pDstCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     CmSurface2D *pSrcCmSurface2D;
-    pSrcCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pSrcCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pSrcCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     mfxStatus sts = EnqueueCopySwapRBGPUtoGPU(pSrcCmSurface2D, pDstCmSurface2D, width, height, format, CM_FASTCOPY_OPTION_BLOCKING, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-    {
-        m_pCmDevice->DestroySurface(pDstCmSurface2D);
-        m_pCmDevice->DestroySurface(pSrcCmSurface2D);
-    }
 
     return MFX_ERR_NONE;
 }
@@ -3329,21 +3198,15 @@ mfxStatus CmCopyWrapper::CopyMirrorVideoToVideoMemory(mfxHDLPair dst, mfxHDLPair
 
     // create or find already associated cm surface 2d
     CmSurface2D *pDstCmSurface2D = nullptr;
-    pDstCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pDstCmSurface2D = CreateCmSurface2D(dst, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pDstCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     CmSurface2D *pSrcCmSurface2D;
-    pSrcCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pSrcCmSurface2D = CreateCmSurface2D(src, width, height, false, m_tableCmRelations);
     CHECK_CM_NULL_PTR(pSrcCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     mfxStatus sts = EnqueueCopyMirrorGPUtoGPU(pSrcCmSurface2D, pDstCmSurface2D, width, height, format, CM_FASTCOPY_OPTION_BLOCKING, e);
     MFX_CHECK_STS(sts);
-
-    if (!m_bUseCacheTables)
-    {
-        m_pCmDevice->DestroySurface(pDstCmSurface2D);
-        m_pCmDevice->DestroySurface(pSrcCmSurface2D);
-    }
 
     return MFX_ERR_NONE;
 }

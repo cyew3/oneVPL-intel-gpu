@@ -54,7 +54,6 @@ D3D11VideoCORE_T<Base>::D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 n
     ,   m_bCmCopy(false)
     ,   m_bCmCopySwap(false)
     ,   m_bCmCopyAllowed(true)
-    ,   m_bCmUseCache(true)
     ,   m_VideoDecoderConfigCount(0)
     ,   m_Configs()
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
@@ -411,7 +410,7 @@ mfxStatus D3D11VideoCORE_T<Base>::AllocFrames(mfxFrameAllocRequest *request,
             }
             else
             {
-                sts = m_pCmCopy->Initialize(GetHWType(), m_bCmUseCache);
+                sts = m_pCmCopy->Initialize(GetHWType());
                 MFX_CHECK_STS(sts);
                 m_bCmCopy = true;
             }
@@ -673,7 +672,7 @@ void* D3D11VideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
                 return nullptr;
             }
 
-            mfxStatus sts = m_pCmCopy->Initialize(GetHWType(), m_bCmUseCache);
+            mfxStatus sts = m_pCmCopy->Initialize(GetHWType());
             if (MFX_ERR_NONE != MFX_STS_TRACE(sts))
                 return nullptr;
 
@@ -705,7 +704,7 @@ void* D3D11VideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
                 return nullptr;
             }
 
-            mfxStatus sts = m_pCmCopy->Initialize(GetHWType(), m_bCmUseCache);
+            mfxStatus sts = m_pCmCopy->Initialize(GetHWType());
             if (MFX_ERR_NONE != MFX_STS_TRACE(sts))
                 return nullptr;
 

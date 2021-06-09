@@ -201,7 +201,6 @@ protected:
     bool                                    m_bCmCopyAllowed;
     std::unique_ptr<CmCopyWrapper>          m_pCmCopy;
     std::unique_ptr<CMEnabledCoreAdapter>   m_pCmAdapter;
-    bool                                    m_bCmUseCache;
     mfxU32                                  m_VideoDecoderConfigCount;
     std::vector<D3D11_VIDEO_DECODER_CONFIG> m_Configs;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
