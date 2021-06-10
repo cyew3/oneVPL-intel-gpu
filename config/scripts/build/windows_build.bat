@@ -1,12 +1,10 @@
-REM These environment variables shoul be set: MFX_HOME MEDIASDK_ROOT INTELMEDIASDK_FFMPEG_ROOT MEDIASDK_TRS_MODULE_PATH MINIDDK_VERSION
+REM These environment variables should be set: WORKSPACE
 @echo off 
-rem set WORKSPACE="C:\workspace"
-REM set COMMON_VPL_TARGETS=mfx_player mfx_transcoder msdk_gmock sample_multi_transcode
 set NO_COLOR=1
 set CLICOLOR_FORCE=0
 
 if exist %WORKSPACE%\Build rmdir %WORKSPACE%\Build /S /Q
-mkdir %WORKSPACE%\Build\vpl\x32 %WORKSPACE%\Build\vpl\x64
+mkdir %WORKSPACE%\Build\vpl\x32 %WORKSPACE%\Build\vpl\x64 %WORKSPACE%\Build\dispatcher\x32 %WORKSPACE%\Build\dispatcher\x64
 
 set MFX_HOME=%WORKSPACE%\sources\mdp_msdk-lib
 set MEDIASDK_ROOT=%WORKSPACE%\sources\msdk_root
@@ -39,7 +37,6 @@ set UM_IncludePath=%WDKContentRoot%Include\%Version_Number%\um
 set INCLUDE_ORIG=%INCLUDE%
 set INCLUDE=%VCToolsInstallDir%include;%UM_IncludePath%;%UCRT_IncludePath%;%KIT_SHARED_IncludePath%;%INCLUDE_ORIG%
 
-rem set KM_LibPath=%WDKContentRoot%Lib\%Version_Number%\km\x64
 set UCRT_LibPath=%WDKContentRoot%Lib\%Version_Number%\ucrt\x64
 set UM_LibPath=%WDKContentRoot%Lib\%Version_Number%\um\x64
 
@@ -55,15 +52,30 @@ set CMAKE_WINDOWS_KITS_10_DIR=%WDKContentRoot%
 set UseMultiToolTask=true
 
 
-rem call  "%WORKSPACE%\build_tools\ewdk\Program Files\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64 %Version_Number% -vcvars_spectre_libs=spectre
+set BUILDTREE=%WORKSPACE%\Build\dispatcher\x64
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=%Version_Number% ^
+      -B%BUILDTREE% -H%WORKSPACE%\sources\oneVPL-disp -DCMAKE_INSTALL_PREFIX="%BUILDTREE%/install" ^
+      -DCMAKE_MAKE_PROGRAM="%WORKSPACE%\build_tools\ninja\ninja.exe" ^
+      -DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /W3 /GR /EHsc /Qspectre" ^
+      -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/CGTHREADS:8" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/CGTHREADS:8 /DEBUG /PDB:libvpl_full.pdb /PDBSTRIPPED:libvpl.pdb" > %BUILDTREE%\build.log 2>&1
+if "%ERRORLEVEL%" neq "0" (
+  echo --- Dispatcher x64: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
+cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release >> %BUILDTREE%\build.log 2>&1
+if "%ERRORLEVEL%" neq "0" (
+  echo --- Dispatcher x64: build failed with %ERRORLEVEL%. & exit /B 1)
 
-rem Check Env vars difference
-
-rem cmd.exe
-rem -A x64 -T host=x64  -DCMAKE_CXX_FLAGS="/MP8" -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/CGTHREADS:8" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/CGTHREADS:8"
+%WORKSPACE%\build_tools\ninja\ninja.exe -C %BUILDTREE% install >> %BUILDTREE%\build.log 2>&1
+if "%ERRORLEVEL%" neq "0" (
+  echo --- Dispatcher x64: local install failed with %ERRORLEVEL%. & exit /B 1)
 
 set BUILDTREE=%WORKSPACE%\Build\vpl\x64
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=%Version_Number% -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -DCMAKE_MAKE_PROGRAM="%WORKSPACE%\build_tools\ninja\ninja.exe" -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/CGTHREADS:8" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/CGTHREADS:8" > %BUILDTREE%\build.log 2>&1
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=%Version_Number% ^
+      -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DMFX_DISABLE_SW_FALLBACK=OFF ^
+      -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib ^
+      -DCMAKE_MAKE_PROGRAM="%WORKSPACE%\build_tools\ninja\ninja.exe" ^
+      -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/CGTHREADS:8" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/CGTHREADS:8" ^
+      -DCMAKE_PREFIX_PATH="%WORKSPACE%\Build\dispatcher\x64\install\lib\cmake" ^
+      -DUSE_EXTERNAL_DISPATCHER=ON > %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x64: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
 cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release >> %BUILDTREE%\build.log 2>&1
@@ -83,13 +95,40 @@ SET PATH=%PATH:Hostx64\x64=Hostx64\x86%
 
 set
 
+set BUILDTREE=%WORKSPACE%\Build\dispatcher\x32
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=%Version_Number% ^
+      -B%BUILDTREE% -H%WORKSPACE%\sources\oneVPL-disp -DCMAKE_INSTALL_PREFIX="%BUILDTREE%/install" ^
+      -DCMAKE_MAKE_PROGRAM="%WORKSPACE%\build_tools\ninja\ninja.exe" ^
+      -DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /W3 /GR /EHsc /Qspectre" ^
+      -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/CGTHREADS:8" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/CGTHREADS:8 /DEBUG /PDB:libvpl_full.pdb /PDBSTRIPPED:libvpl.pdb" > %BUILDTREE%\build.log 2>&1
+if "%ERRORLEVEL%" neq "0" (
+  echo --- Dispatcher x32: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
+cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release >> %BUILDTREE%\build.log 2>&1
+if "%ERRORLEVEL%" neq "0" (
+  echo --- Dispatcher x32: build failed with %ERRORLEVEL%. & exit /B 1)
+
+%WORKSPACE%\build_tools\ninja\ninja.exe -C %BUILDTREE% install >> %BUILDTREE%\build.log 2>&1
+if "%ERRORLEVEL%" neq "0" (
+  echo --- Dispatcher x32: local install failed with %ERRORLEVEL%. & exit /B 1)
+
+
 set BUILDTREE=%WORKSPACE%\Build\vpl\x32
-cmake  -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=%Version_Number% -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DENABLE_OPENCL=OFF -DMFX_DISABLE_SW_FALLBACK=OFF -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib -DCMAKE_MAKE_PROGRAM="%WORKSPACE%\build_tools\ninja\ninja.exe" -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/CGTHREADS:8" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/CGTHREADS:8" > %BUILDTREE%\build.log 2>&1
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=%Version_Number% ^
+      -DENABLE_TEXTLOG=ON -DENABLE_STAT=ON -DBUILD_VAL_TOOLS=ON -DBUILD_ALL=ON -DMFX_DISABLE_SW_FALLBACK=OFF ^
+      -B%BUILDTREE% -H%WORKSPACE%\sources\mdp_msdk-lib ^
+      -DCMAKE_MAKE_PROGRAM="%WORKSPACE%\build_tools\ninja\ninja.exe" ^
+      -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/CGTHREADS:8" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/CGTHREADS:8" ^
+      -DCMAKE_PREFIX_PATH="%WORKSPACE%\Build\dispatcher\x32\install\lib\x86\cmake" ^
+      -DUSE_EXTERNAL_DISPATCHER=ON  > %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x32: cmake build tree generation failed with %ERRORLEVEL%. & exit /B 1)
 cmake --build %BUILDTREE% -j %NUMBER_OF_PROCESSORS% --config Release >> %BUILDTREE%\build.log 2>&1
 if "%ERRORLEVEL%" neq "0" (
   echo --- VPL x32: build failed with %ERRORLEVEL%. & exit /B 1)
 
-cd %WORKSPACE% 
+cd %WORKSPACE%
+ 
+xcopy Build\dispatcher\x64\libvpl*.* Build\vpl\x64\__bin\Release /q /y
+xcopy Build\dispatcher\x32\libvpl*.* Build\vpl\x32\__bin\Release /q /y
+
 .\build_tools\7zip-win64\7z.exe a -tzip -bt -bd -slp -mx=3 -mmt output\packages\windows\vpl.zip "Build\vpl\x??\__???" -xr"!*.ilk"

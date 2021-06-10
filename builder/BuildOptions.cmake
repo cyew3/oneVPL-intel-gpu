@@ -70,8 +70,10 @@ option( BUILD_ALL "Build all the targets?" OFF )
 
 option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
 option( BUILD_DISPATCHER "Build dispatcher?" ON )
+option( USE_EXTERNAL_DISPATCHER "Find dispatcher as external dependency?" OFF )
+
 cmake_dependent_option( BUILD_SAMPLES "Build samples?" ON "${BUILD_DISPATCHER}" OFF )
-cmake_dependent_option(BUILD_TUTORIALS "Build tutorials?" ON "BUILD_DISPATCHER" OFF )
+cmake_dependent_option( BUILD_TUTORIALS "Build tutorials?" ON "BUILD_DISPATCHER" OFF )
 # Tools depend on samples (sample_common) and can't be built without it. The
 # following BUILD_TOOLS option declaration assures that.
 cmake_dependent_option( BUILD_TOOLS "Build tools?" ON "${BUILD_ALL};${BUILD_SAMPLES}" OFF)

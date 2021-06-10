@@ -135,9 +135,14 @@ if (BUILD_DISPATCHER)
       )
   endif()
 
-  add_subdirectory(api/mfx_dispatch/vpl)
+  if (USE_EXTERNAL_DISPATCHER)
+    find_package(VPL REQUIRED)
+    set(MFX_DISPATCHER VPL::dispatcher)
+  else()
+    add_subdirectory(api/mfx_dispatch/vpl)
+    set(MFX_DISPATCHER VPL)
+  endif()
 
-  set(MFX_DISPATCHER VPL)
 endif()
 
 if (BUILD_TOOLS)

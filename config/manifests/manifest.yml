@@ -68,6 +68,13 @@ components:
     branch: master
     revision: ca65359a4396a95ebc0c314abc02cb662f5ba0a3
     dest_dir: test_system
+  dispatcher:
+    type: git
+    repository: https://github.com/intel-innersource/frameworks.media.onevpl.dispatcher
+    branch: main
+    revision: v2021.4.0_RC2
+    clone_depth: 1
+    dest_dir: sources/oneVPL-disp
   windows_pre_built_binaries:
     type: artifactory
     root_url: https://gfx-assets.fm.intel.com/artifactory
