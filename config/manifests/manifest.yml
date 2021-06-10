@@ -66,7 +66,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.tests.git
     branch: master
-    revision: fc7b0e1f395bac2d9bc23c2e004e1e396a85b212
+    revision: ca65359a4396a95ebc0c314abc02cb662f5ba0a3
     dest_dir: test_system
   windows_pre_built_binaries:
     type: artifactory
