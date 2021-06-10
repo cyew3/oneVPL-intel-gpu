@@ -19,47 +19,20 @@
 // SOFTWARE.
 
 #if defined  (MFX_D3D11_ENABLED) && defined (MFX_DX9ON11)
-#include <windows.h>
-#include <initguid.h>
-#include <DXGI.h>
 
-#include "mfxpcp.h"
 #include <libmfx_core_d3d9on11.h>
 #include <libmfx_core_d3d11.h>
 #include <libmfx_core_d3d9.h>
-#include "mfx_utils.h"
-#include "mfx_session.h"
-#include "libmfx_core_interface.h"
-#include "umc_va_dxva2_protected.h"
-#include "ippi.h"
 
-#include "mfx_umc_alloc_wrapper.h"
-#include "mfx_common_decode_int.h"
-#include "libmfx_core_hw.h"
-
-#include "cm_mem_copy.h"
-
-#define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
-#define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
-#define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
-#define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
-
-#define D3DFMT_YUV400   (D3DFORMAT)MAKEFOURCC('4','0','0','P')
-#define D3DFMT_YUV411   (D3DFORMAT)MAKEFOURCC('4','1','1','P')
-#define D3DFMT_YUV422H  (D3DFORMAT)MAKEFOURCC('4','2','2','H')
-#define D3DFMT_YUV422V  (D3DFORMAT)MAKEFOURCC('4','2','2','V')
-#define D3DFMT_YUV444   (D3DFORMAT)MAKEFOURCC('4','4','4','P')
-
-#define MFX_FOURCC_P8_MBDATA  (D3DFORMAT)MFX_MAKEFOURCC('P','8','M','B')
-
-#define DXGI_FORMAT_BGGR MAKEFOURCC('I','R','W','0')
-#define DXGI_FORMAT_RGGB MAKEFOURCC('I','R','W','1')
-#define DXGI_FORMAT_GRBG MAKEFOURCC('I','R','W','2')
-#define DXGI_FORMAT_GBRG MAKEFOURCC('I','R','W','3')
+#pragma warning(disable : 4456)
+static const GUID Subresource_GUID = { 0x423c3acf, 0x752d, 0x4cd7, { 0x84, 0x10, 0x72, 0xf5, 0x36, 0xb8, 0xc4, 0x9d } };
+// {79F852D7-41B4-4ED7-9D6E-5EAF3D8D0B55}
+static const GUID IsUnkownSubresource_GUID =
+{ 0x79f852d7, 0x41b4, 0x4ed7, { 0x9d, 0x6e, 0x5e, 0xaf, 0x3d, 0x8d, 0xb, 0x55 } };
 
 template class D3D9ON11VideoCORE_T<D3D11VideoCORE>;
 
-std::mutex D3D9ON11VideoCORE_T<D3D11VideoCORE>::m_copyMutex;
+std::mutex D3D9ON11VideoCORE_T<D3D11VideoCORE>::m_copyMutexD3d9;
 
 template <class Base>
 D3D9ON11VideoCORE_T<Base>::D3D9ON11VideoCORE_T(
@@ -70,13 +43,15 @@ D3D9ON11VideoCORE_T<Base>::D3D9ON11VideoCORE_T(
     : D3D11VideoCORE(adapterNum, numThreadsAvailable, session)
     , m_hDirectXHandle(INVALID_HANDLE_VALUE)
     , m_pDirect3DDeviceManager(nullptr)
-    , m_hasDX9FrameAllocator(false)
-    , m_dx9FrameAllocator()
 {
 }
 
 template <class Base>
-D3D9ON11VideoCORE_T<Base>::~D3D9ON11VideoCORE_T() {}
+D3D9ON11VideoCORE_T<Base>::~D3D9ON11VideoCORE_T()
+{
+    CloseHandle(m_FenceEvent);
+    m_FenceEvent = nullptr;
+}
 
 template <class Base>
 void D3D9ON11VideoCORE_T<Base>::ReleaseHandle()
@@ -87,6 +62,40 @@ void D3D9ON11VideoCORE_T<Base>::ReleaseHandle()
         m_bUseExtManager = false;
         m_hdl = 0;
     }
+}
+
+template <class Base>
+mfxStatus D3D9ON11VideoCORE_T<Base>::CreateVA(mfxVideoParam* param, mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, UMC::FrameAllocator* allocator)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = Base::CreateVA(param, request, response, allocator);
+    MFX_CHECK_STS(sts);
+
+    if (param->IOPattern & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
+    {
+        // Getting access to external suraces
+        mfxFrameAllocRequest r = {};
+        r.Info = request->Info;
+        r.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+        r.NumFrameSuggested = r.NumFrameMin = 1;
+
+        mfxFrameAllocResponse externalResponse = {};
+
+        sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &r, &externalResponse);
+        MFX_CHECK_STS(sts);
+
+        std::vector<IDirect3DSurface9*> renderTargets(externalResponse.NumFrameActual);
+        for (mfxU32 i = 0; i < externalResponse.NumFrameActual; i++)
+        {
+            MFX_SAFE_CALL((*m_FrameAllocator.frameAllocator.GetHDL)(m_FrameAllocator.frameAllocator.pthis, externalResponse.mids[i], (mfxHDL*)(&renderTargets[i])));
+            UINT subresourceIdx = i;
+            MFX_CHECK(MFX_SUCCEEDED(renderTargets[i]->SetPrivateData(Subresource_GUID, &subresourceIdx, sizeof(subresourceIdx), 0)), MFX_ERR_DEVICE_LOST);
+        }
+        sts = (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, &externalResponse);
+        MFX_CHECK_STS(sts);
+    }
+    return MFX_ERR_NONE;
 }
 
 template <class Base>
@@ -153,6 +162,22 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::SetHandle(mfxHandleType type, mfxHDL handle
 
             m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, true);
             m_pDirect3DDeviceManager->CloseDeviceHandle(m_hDirectXHandle);
+
+            //  It works since Windows 20H2
+            hr = pD3DDevice->QueryInterface(IID_PPV_ARGS(&m_d3dOn12));
+            if (SUCCEEDED(hr))
+            {
+                MFX_CHECK(SUCCEEDED(m_d3dOn12->GetD3D12Device(IID_PPV_ARGS(&m_d3d12))), MFX_ERR_DEVICE_FAILED);
+
+                D3D12_COMMAND_QUEUE_DESC queueDesc = { D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE, 0 };
+                MFX_CHECK(SUCCEEDED(m_d3d12->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue))), MFX_ERR_DEVICE_FAILED);
+                MFX_CHECK(SUCCEEDED(m_d3d12->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_commandAllocator))), MFX_ERR_DEVICE_FAILED);
+                MFX_CHECK(SUCCEEDED(m_d3d12->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence))), MFX_ERR_DEVICE_FAILED);
+                m_FenceEvent = CreateEvent(nullptr, false, false, nullptr);
+                MFX_CHECK(m_FenceEvent, MFX_ERR_DEVICE_FAILED);
+                MFX_CHECK(SUCCEEDED(m_d3d12->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_commandAllocator, nullptr, IID_PPV_ARGS(&m_commandList))), MFX_ERR_DEVICE_FAILED);
+                MFX_CHECK(SUCCEEDED(m_commandList->Close()), MFX_ERR_DEVICE_FAILED);
+            }
             pD3DDevice->Release();
         }
         catch (...)
@@ -178,7 +203,6 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::SetHandle(mfxHandleType type, mfxHDL handle
 
     return MFX_ERR_NONE;
 }
-
 
 template <class Base>
 mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyWrapper(mfxFrameSurface1* pDst, mfxU16 dstMemType, mfxFrameSurface1* pSrc, mfxU16 srcMemType)
@@ -319,9 +343,9 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::DoFastCopyWrapper(mfxFrameSurface1* pDst, m
         else if ((srcMemType & MFX_MEMTYPE_INTERNAL_FRAME) && (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME))
             fcSts = Base::DoFastCopyExtended(&dstTempSurface, &srcTempSurface); // d3d11
         else if ((srcMemType & MFX_MEMTYPE_EXTERNAL_FRAME) && (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME))
-            fcSts = CopyDX9toDX11(pSrc->Data.MemId, pDst->Data.MemId);
+            fcSts = CopyDX9toDX11(pDst->Data.MemId, pSrc->Data.MemId);
         else
-            fcSts = CopyDX11toDX9(pSrc->Data.MemId, pDst->Data.MemId);
+            fcSts = CopyDX11toDX9(pDst->Data.MemId, pSrc->Data.MemId);
     }
     else if (sys2sys)
     {
@@ -534,24 +558,6 @@ mfxStatus D3D9ON11VideoCORE_T<Base>::GetHandle(mfxHandleType type, mfxHDL *handl
     }
 }
 
-template <class Base>
-mfxStatus D3D9ON11VideoCORE_T<Base>::SetFrameAllocator(mfxFrameAllocator* allocator)
-{
-    MFX_CHECK(allocator, MFX_ERR_NONE);
-
-    UMC::AutomaticUMCMutex guard(m_guard);
-
-    MFX_CHECK(!m_hasDX9FrameAllocator && !m_bSetExtFrameAlloc, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    m_dx9FrameAllocator = *allocator;
-    m_hasDX9FrameAllocator = true;
-
-    mfxStatus sts = Base::SetFrameAllocator(allocator);
-    MFX_CHECK_STS(sts);
-
-    return MFX_ERR_NONE;
-}
-
 static mfxU32 DXGItoMFX(DXGI_FORMAT format)
 {
     switch (format)
@@ -597,108 +603,251 @@ static mfxU32 DXGItoMFX(DXGI_FORMAT format)
 
 } // mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 
-template <class Base>
-mfxStatus D3D9ON11VideoCORE_T<Base>::CopyDX11toDX9(const mfxMemId dx11MemId, const mfxMemId dx9MemId)
+
+UINT8 inline D3D12GetFormatPlaneCount(ID3D12Device* d, DXGI_FORMAT f)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CopyDX11toDX9");
-    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_COPY_DX11_TO_DX9, 0, make_event_data(), [&]() { return make_event_data();});
+    D3D12_FEATURE_DATA_FORMAT_INFO i = { f, 0 };
+    if (FAILED(d->CheckFeatureSupport(D3D12_FEATURE_FORMAT_INFO, &i, sizeof(i))))
+        return 0;
+    return i.PlaneCount;
+};
 
-    // We need to get right allocator to lock DX11 surfaces
-    mfxMemId internalDX11Mid = dx11MemId;
-    mfxFrameAllocator* pAlloc = GetAllocatorAndMid(internalDX11Mid);
-    MFX_CHECK(pAlloc, MFX_ERR_INVALID_HANDLE);
+UINT inline D3D12CalcSubresource(UINT mipSlice, UINT arraySlice, UINT planeSlice, UINT mipLevels, UINT arraySize)
+{
+    return mipSlice + arraySlice * mipLevels + planeSlice * mipLevels * arraySize;
+};
 
-    mfxHDL dstHandle = 0;
-    mfxStatus sts = m_dx9FrameAllocator.GetHDL(m_dx9FrameAllocator.pthis, dx9MemId, &dstHandle);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
-    CComPtr<IDirect3DSurface9> dstFrame = reinterpret_cast<IDirect3DSurface9*>(dstHandle);
 
-    D3DSURFACE_DESC dstDesc = {};
-    HRESULT hr = dstFrame->GetDesc(&dstDesc);
+bool CanUseD3D9on12Interop(CComPtr<IDirect3DDevice9On12>& device, CComPtr<ID3D12CommandQueue> & queue, IDirect3DSurface9* frame, CComPtr<ID3D12Resource>& resource, UINT& subresourceIdx)
+{
+    if (nullptr == device)
+        return false;
+
+    bool IsUnkownSubresourceIdx = false;
+    DWORD size = sizeof(IsUnkownSubresourceIdx);
+    if (SUCCEEDED(frame->GetPrivateData(IsUnkownSubresource_GUID, &IsUnkownSubresourceIdx, &size)) && IsUnkownSubresourceIdx)
+    {
+        return false;
+    }
+
+    MFX_CHECK_WITH_THROW(SUCCEEDED(device->UnwrapUnderlyingResource(frame, queue, IID_PPV_ARGS(&resource))), MFX_ERR_DEVICE_FAILED, mfx::mfxStatus_exception(MFX_ERR_DEVICE_FAILED));
+    auto desc = resource->GetDesc();
+    if (desc.DepthOrArraySize > 1)
+    {
+        DWORD size = sizeof(subresourceIdx);
+        if (FAILED(frame->GetPrivateData(Subresource_GUID, &subresourceIdx, &size)))
+        {
+            const bool IsUnkownSubresourceIdx = true;
+            MFX_CHECK_WITH_THROW(SUCCEEDED(frame->SetPrivateData(IsUnkownSubresource_GUID, &IsUnkownSubresourceIdx, sizeof(IsUnkownSubresourceIdx), 0)), MFX_ERR_DEVICE_FAILED, mfx::mfxStatus_exception(MFX_ERR_DEVICE_FAILED));
+            MFX_CHECK_WITH_THROW(SUCCEEDED(device->ReturnUnderlyingResource(frame, 0, nullptr, nullptr)), MFX_ERR_DEVICE_FAILED, mfx::mfxStatus_exception(MFX_ERR_DEVICE_FAILED));
+            return false;
+        }
+    }
+
+    return true;
+}
+
+mfxStatus GetD3D12Resource(CComPtr<ID3D12Device>& device, ID3D11Texture2D* frame, CComPtr<ID3D12Resource>& resource)
+{
+    UINT dataSize = sizeof(resource);
+    HRESULT hr = frame->GetPrivateData(__uuidof(resource), &dataSize, &resource);
+    if (DXGI_ERROR_NOT_FOUND == hr)
+    {
+        CComPtr<IDXGIResource1> dxgiResource;
+        MFX_CHECK(SUCCEEDED(frame->QueryInterface(IID_PPV_ARGS(&dxgiResource))), MFX_ERR_DEVICE_FAILED);
+
+        HANDLE h;
+        MFX_CHECK(SUCCEEDED(dxgiResource->CreateSharedHandle(nullptr, DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE, nullptr, &h)), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(SUCCEEDED(device->OpenSharedHandle(h, IID_PPV_ARGS(&resource))), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(CloseHandle(h), MFX_ERR_DEVICE_FAILED);
+
+        // Cache a retrieved d3d12 resource not to create it again
+        hr = frame->SetPrivateDataInterface(__uuidof(resource), resource);
+    }
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+    return MFX_ERR_NONE;
+}
 
-    D3DLOCKED_RECT lockRect;
-    hr = dstFrame->LockRect(&lockRect, NULL, NULL);
-    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_LOCK_MEMORY);
+template <class Base>
+mfxStatus D3D9ON11VideoCORE_T<Base>::CopyD3D12(CComPtr<ID3D12Resource>& dst, UINT dstSubresourceIdx, CComPtr<ID3D12Resource>& src, UINT srcSubresourceIdx)
+{
+    {
+        std::lock_guard<std::mutex> guard(m_copyMutexD3d12);
+        ID3D12Pageable* p[] = { dst, src };
+        MFX_CHECK(SUCCEEDED(m_d3d12->MakeResident(2, p)), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(SUCCEEDED(m_commandAllocator->Reset()), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(SUCCEEDED(m_commandList->Reset(m_commandAllocator, nullptr)), MFX_ERR_DEVICE_FAILED);
 
-    mfxFrameData dstData = {};
-    sts = mfxDefaultAllocatorD3D9::SetFrameData(dstDesc, lockRect, &dstData);
-    MFX_CHECK_STS(sts);
+        const auto srcDesc = src->GetDesc();
+        const auto dstDesc = dst->GetDesc();
+        const auto planeCount = D3D12GetFormatPlaneCount(m_d3d12, srcDesc.Format);
+        for (auto i = 0; i < planeCount; ++i)
+        {
+            D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+            D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
 
-    mfxHDLPair srcHandle = {};
-    sts = pAlloc->GetHDL(pAlloc->pthis, internalDX11Mid, &srcHandle.first);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
+            srcLocation.pResource = src;
+            srcLocation.SubresourceIndex = D3D12CalcSubresource(0, srcSubresourceIdx, i, srcDesc.MipLevels, srcDesc.DepthOrArraySize);
+            srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 
-    mfxFrameSurface1 srcTmpSurf = {};
-    srcTmpSurf.Data.MemId = &srcHandle;
+            dstLocation.pResource = dst;
+            dstLocation.SubresourceIndex = D3D12CalcSubresource(0, dstSubresourceIdx, i, dstDesc.MipLevels, dstDesc.DepthOrArraySize);
+            dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 
-    mfxFrameSurface1 dstTmpSurf = {};
-    dstTmpSurf.Data = dstData;
-    dstTmpSurf.Info.Width  = srcTmpSurf.Info.Width  = static_cast<mfxU16>(dstDesc.Width);
-    dstTmpSurf.Info.Height = srcTmpSurf.Info.Height = static_cast<mfxU16>(dstDesc.Height);
-    dstTmpSurf.Info.FourCC = srcTmpSurf.Info.FourCC = dstDesc.Format;
+            m_commandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+        }
+        MFX_CHECK(SUCCEEDED(m_commandList->Close()), MFX_ERR_DEVICE_FAILED);
 
-    sts = Base::DoFastCopyExtended(&dstTmpSurf, &srcTmpSurf);
-    MFX_CHECK_STS(sts);
+        ID3D12CommandList* cmdLists[] = { m_commandList };
+        m_commandQueue->ExecuteCommandLists(1, cmdLists);
+        MFX_CHECK(SUCCEEDED(m_commandQueue->Signal(m_fence, m_signalValue)), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(SUCCEEDED(m_fence->SetEventOnCompletion(m_signalValue, m_FenceEvent)), MFX_ERR_DEVICE_FAILED);
 
-    hr = dstFrame->UnlockRect();
-    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        ++m_signalValue;
+    }
+
+    auto dw = WaitForSingleObject(m_FenceEvent, 1000);
+    MFX_CHECK(dw == WAIT_OBJECT_0, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
 
 template <class Base>
-mfxStatus D3D9ON11VideoCORE_T<Base>::CopyDX9toDX11(const mfxMemId dx9MemId, const mfxMemId dx11MemId)
+mfxStatus D3D9ON11VideoCORE_T<Base>::CopyDX11toDX9(mfxMemId dx9MemId, mfxMemId dx11MemId)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CopyDX11toDX9");
+    ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_COPY_DX11_TO_DX9, 0, make_event_data(), [&]() { return make_event_data();});
+
+    auto allocator = GetAllocatorAndMid(dx11MemId);
+    MFX_CHECK(allocator, MFX_ERR_INVALID_HANDLE);
+
+    mfxHDLPair srcHandle = {};
+    MFX_SAFE_CALL(allocator->GetHDL(allocator->pthis, dx11MemId, &srcHandle.first));
+
+    mfxHDL dstHandle = nullptr;
+    MFX_SAFE_CALL((*m_FrameAllocator.frameAllocator.GetHDL)(m_FrameAllocator.frameAllocator.pthis, dx9MemId, &dstHandle));
+    auto dstFrame = reinterpret_cast<IDirect3DSurface9*>(dstHandle);
+    CComPtr<ID3D12Resource> dstd3d12;
+    UINT dstSubresourceIdx = 0;
+
+    bool useD3D9on12Interop = false;
+    try
+    {
+        useD3D9on12Interop = CanUseD3D9on12Interop(m_d3dOn12, m_commandQueue, dstFrame, dstd3d12, dstSubresourceIdx);
+    }
+    catch (const mfx::mfxStatus_exception& ex)
+    {
+        MFX_CHECK_STS(ex.sts);
+    }
+
+    if (!useD3D9on12Interop)
+    {
+        // Slow copy path
+        D3DSURFACE_DESC desc = {};
+        MFX_CHECK(SUCCEEDED(dstFrame->GetDesc(&desc)), MFX_ERR_DEVICE_FAILED);
+
+        D3DLOCKED_RECT rect;
+        MFX_CHECK(SUCCEEDED(dstFrame->LockRect(&rect, NULL, NULL)), MFX_ERR_LOCK_MEMORY);
+
+        mfxFrameData dstData = {};
+        MFX_SAFE_CALL(mfxDefaultAllocatorD3D9::SetFrameData(desc, rect, &dstData));
+
+        mfxFrameSurface1 srcTmpSurf = {};
+        srcTmpSurf.Data.MemId = &srcHandle;
+
+        mfxFrameSurface1 dstTmpSurf = {};
+        dstTmpSurf.Data = dstData;
+        dstTmpSurf.Info.Width = srcTmpSurf.Info.Width = static_cast<mfxU16>(desc.Width);
+        dstTmpSurf.Info.Height = srcTmpSurf.Info.Height = static_cast<mfxU16>(desc.Height);
+        dstTmpSurf.Info.FourCC = srcTmpSurf.Info.FourCC = desc.Format;
+
+        MFX_SAFE_CALL(Base::DoFastCopyExtended(&dstTmpSurf, &srcTmpSurf));
+        MFX_CHECK(SUCCEEDED(dstFrame->UnlockRect()), MFX_ERR_DEVICE_FAILED);
+
+        return MFX_ERR_NONE;
+    }
+
+    // Fast copy path
+    auto srcd3d11 = reinterpret_cast<ID3D11Texture2D*>(srcHandle.first);
+    const auto srcSubresourceIdx = (UINT)(size_t)srcHandle.second;
+
+    CComPtr<ID3D12Resource> srcd3d12;
+    MFX_SAFE_CALL(GetD3D12Resource(m_d3d12, srcd3d11, srcd3d12));
+    
+    MFX_SAFE_CALL(CopyD3D12(dstd3d12, dstSubresourceIdx, srcd3d12, srcSubresourceIdx));
+
+    MFX_CHECK(SUCCEEDED(m_d3dOn12->ReturnUnderlyingResource(dstFrame, 0, nullptr, nullptr)), MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
+template <class Base>
+mfxStatus D3D9ON11VideoCORE_T<Base>::CopyDX9toDX11(mfxMemId dx11MemId, mfxMemId dx9MemId)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CopyDX9toDX11");
     ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_COPY_DX9_TO_DX11, 0, make_event_data(), [&]() { return make_event_data();});
 
-    // We need to get right allocator to lock DX11 surfaces
-    mfxMemId internalDX11Mid = dx11MemId;
-    mfxFrameAllocator* pAlloc = GetAllocatorAndMid(internalDX11Mid);
-    MFX_CHECK(pAlloc, MFX_ERR_INVALID_HANDLE);
+    auto allocator = GetAllocatorAndMid(dx11MemId);
+    MFX_CHECK(allocator, MFX_ERR_INVALID_HANDLE);
 
     mfxHDLPair dstHandle = {};
-    mfxStatus sts = pAlloc->GetHDL(pAlloc->pthis, internalDX11Mid, &dstHandle.first);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
-    CComPtr<ID3D11Texture2D> dstFrame = reinterpret_cast<ID3D11Texture2D*>(dstHandle.first);
+    MFX_SAFE_CALL(allocator->GetHDL(allocator->pthis, dx11MemId, &dstHandle.first));
 
-    D3D11_TEXTURE2D_DESC dstDesc = {};
-    dstFrame->GetDesc(&dstDesc);
+    mfxHDL srcHandle = {};
+    MFX_SAFE_CALL((*m_FrameAllocator.frameAllocator.GetHDL)(m_FrameAllocator.frameAllocator.pthis, dx9MemId, &srcHandle));
+    auto srcFrame = reinterpret_cast<IDirect3DSurface9*>(srcHandle);
+    CComPtr<ID3D12Resource> srcd3d12;
+    UINT srcSubresourceIdx = 0;
 
+    bool useD3D9on12Interop = false;
+    try
     {
-        std::lock_guard<std::mutex> guard(m_copyMutex);
-        mfxHDL srcHandle = {};
-        sts = m_dx9FrameAllocator.GetHDL(m_dx9FrameAllocator.pthis, dx9MemId, &srcHandle);
-        MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_LOCK_MEMORY);
-        CComPtr<IDirect3DSurface9> srcFrame = reinterpret_cast<IDirect3DSurface9*>(srcHandle);
+        useD3D9on12Interop = CanUseD3D9on12Interop(m_d3dOn12, m_commandQueue, srcFrame, srcd3d12, srcSubresourceIdx);
+    }
+    catch (const mfx::mfxStatus_exception& ex)
+    {
+        MFX_CHECK_STS(ex.sts);
+    }
 
-        D3DSURFACE_DESC srcDesc = {};
-        HRESULT hr = srcFrame->GetDesc(&srcDesc);
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+    if (!useD3D9on12Interop)
+    {
+        // Slow copy path
+        std::lock_guard<std::mutex> guard(m_copyMutexD3d9);
 
-        D3DLOCKED_RECT  lockRect;
-        hr = srcFrame->LockRect(&lockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_LOCK_MEMORY);
+        D3DSURFACE_DESC desc = {};
+        MFX_CHECK(SUCCEEDED(srcFrame->GetDesc(&desc)), MFX_ERR_DEVICE_FAILED);
+
+        D3DLOCKED_RECT rect;
+        MFX_CHECK(SUCCEEDED(srcFrame->LockRect(&rect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY)), MFX_ERR_LOCK_MEMORY);
+
         mfxFrameData srcData = {};
-        sts = mfxDefaultAllocatorD3D9::SetFrameData(srcDesc, lockRect, &srcData);
-        MFX_CHECK_STS(sts);
+        MFX_SAFE_CALL(mfxDefaultAllocatorD3D9::SetFrameData(desc, rect, &srcData));
 
         mfxFrameSurface1 srcTmpSurf = {};
         srcTmpSurf.Data = srcData;
 
         mfxFrameSurface1 dstTmpSurf = {};
         dstTmpSurf.Data.MemId = &dstHandle;
-        dstTmpSurf.Info.Width = srcTmpSurf.Info.Width = static_cast<mfxU16>(dstDesc.Width);
-        dstTmpSurf.Info.Height = srcTmpSurf.Info.Height = static_cast<mfxU16>(dstDesc.Height);
-        dstTmpSurf.Info.FourCC = srcTmpSurf.Info.FourCC = DXGItoMFX(dstDesc.Format);
+        dstTmpSurf.Info.Width = srcTmpSurf.Info.Width = static_cast<mfxU16>(desc.Width);
+        dstTmpSurf.Info.Height = srcTmpSurf.Info.Height = static_cast<mfxU16>(desc.Height);
+        dstTmpSurf.Info.FourCC = srcTmpSurf.Info.FourCC = desc.Format;
 
-        sts = Base::DoFastCopyExtended(&dstTmpSurf, &srcTmpSurf);
-        MFX_CHECK_STS(sts);
+        MFX_SAFE_CALL(Base::DoFastCopyExtended(&dstTmpSurf, &srcTmpSurf));
+        MFX_CHECK(SUCCEEDED(srcFrame->UnlockRect()), MFX_ERR_DEVICE_FAILED);
 
-        hr = srcFrame->UnlockRect();
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        return MFX_ERR_NONE;
     }
+
+    // Fast copy path
+    auto dstd3d11 = reinterpret_cast<ID3D11Texture2D*>(dstHandle.first);
+    CComPtr<ID3D12Resource> dstd3d12;
+    const auto dstSubresourceIdx = (UINT)(size_t)dstHandle.second;
+
+    MFX_SAFE_CALL(GetD3D12Resource(m_d3d12, dstd3d11, dstd3d12));
+
+    MFX_SAFE_CALL(CopyD3D12(dstd3d12, dstSubresourceIdx, srcd3d12, srcSubresourceIdx));
+
+    MFX_CHECK(SUCCEEDED(m_d3dOn12->ReturnUnderlyingResource(srcFrame, 0, nullptr, nullptr)), MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }

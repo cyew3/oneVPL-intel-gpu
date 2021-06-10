@@ -21,28 +21,11 @@
 #if defined  (MFX_D3D11_ENABLED) && defined (MFX_DX9ON11)
 #ifndef __LIBMFX_CORE__D3D9ON11_H__
 #define __LIBMFX_CORE__D3D9ON11_H__
-#include <libmfx_core_d3d11.h>
 
-#include "d3d11_decode_accelerator.h"
-#include "mfx_check_hardware_support.h"
-
-#include "libmfx_core.h"
-#include "encoding_ddi.h"
-#include "libmfx_allocator_d3d11.h"
-
-#include <d3d11.h>
 #include <d3d9.h>
-#include <atlbase.h>
-
-#include <memory>
-
-#if defined (MFX_ENABLE_VPP)
-#include "d3d11_video_processor.h"
-#endif
-// disable the "conditional expression is constant" warning
-#pragma warning(disable: 4127)
-
-class CmCopyWrapper;
+#include <d3d11.h>
+#include <d3d9on12.h>
+#include <libmfx_core_d3d11.h>
 
 // DX9ON11 wrapper
 template <class Base>
@@ -53,16 +36,13 @@ class D3D9ON11VideoCORE_T : public Base
 public:
 
     virtual                      ~D3D9ON11VideoCORE_T();
+    virtual mfxStatus            CreateVA(mfxVideoParam* param, mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, UMC::FrameAllocator* allocator) override;
 
-    virtual mfxStatus            SetFrameAllocator(mfxFrameAllocator* allocator) override;
     virtual mfxStatus            SetHandle(mfxHandleType type, mfxHDL handle) override;
     virtual mfxStatus            GetHandle(mfxHandleType type, mfxHDL* handle) override;
     virtual void*                QueryCoreInterface(const MFX_GUID& guid)     override;
 
     virtual mfxStatus            AllocFrames(mfxFrameAllocRequest* request, mfxFrameAllocResponse* response, bool isNeedCopy = true)  override;
-
-    mfxStatus                    CopyDX11toDX9(const mfxMemId dx11MemId, const mfxMemId dx9MemId);
-    mfxStatus                    CopyDX9toDX11(const mfxMemId dx9MemId, const mfxMemId dx11MemId);
 
 private:
     D3D9ON11VideoCORE_T(
@@ -76,13 +56,27 @@ private:
 
     void                         ReleaseHandle();
 
+    mfxStatus                    CopyDX11toDX9(mfxMemId dx9MemId, mfxMemId dx11MemId);
+    mfxStatus                    CopyDX9toDX11(mfxMemId dx11MemId, mfxMemId dx9MemId);
+
+    mfxStatus                    CopyD3D12(CComPtr<ID3D12Resource>& dst, UINT dstSubresourceIdx, CComPtr<ID3D12Resource>& src, UINT srcSubresourceIdx);
+
     HANDLE                       m_hDirectXHandle; // if m_pDirect3DDeviceManager was used
     IDirect3DDeviceManager9*     m_pDirect3DDeviceManager;
-    bool                         m_hasDX9FrameAllocator;
-    mfxFrameAllocator            m_dx9FrameAllocator;
-    static std::mutex            m_copyMutex;
 
     static bool                  m_IsD3D9On11Core;
+
+    CComPtr<IDirect3DDevice9On12>       m_d3dOn12;
+    CComPtr<ID3D12Device>               m_d3d12;
+    CComPtr<ID3D12CommandAllocator>     m_commandAllocator;
+    CComPtr<ID3D12GraphicsCommandList>  m_commandList;
+    CComPtr<ID3D12CommandQueue>         m_commandQueue;
+    CComPtr<ID3D12Fence>                m_fence;
+    UINT64                              m_signalValue = 1;
+    HANDLE                              m_FenceEvent;
+
+    static std::mutex            m_copyMutexD3d9;
+    std::mutex                   m_copyMutexD3d12;
 };
 
 using D3D9ON11VideoCORE = D3D9ON11VideoCORE_T<D3D11VideoCORE>;
