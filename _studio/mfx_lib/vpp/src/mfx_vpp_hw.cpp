@@ -2277,7 +2277,8 @@ mfxStatus VideoVPPHW::CheckFormatLimitation(mfxU32 filter, mfxU32 format, mfxU32
                 format == MFX_FOURCC_Y416   ||
                 format == MFX_FOURCC_AYUV   ||
                 format == MFX_FOURCC_RGB565 ||
-                format == MFX_FOURCC_RGB4)
+                format == MFX_FOURCC_RGB4   ||
+                format == MFX_FOURCC_BGR4)
             {
                 formatSupport = MFX_FORMAT_SUPPORT_INPUT | MFX_FORMAT_SUPPORT_OUTPUT;
             }

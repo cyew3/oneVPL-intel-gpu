@@ -750,6 +750,20 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+        case MFX_FOURCC_BGR4:
+        {
+            m_Current.m_comp = VM_STRING('R');
+            m_Current.m_pixX = 0;
+            mfxU8* plane = pData->R + pInfo->CropX * 4;
+
+            for (i = 0; i <pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
+                plane += pitch;
+            }
+            break;
+        }
         case MFX_FOURCC_A2RGB10:
         {
             m_Current.m_comp = VM_STRING('R');

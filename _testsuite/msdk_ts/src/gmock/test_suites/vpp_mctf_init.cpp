@@ -195,6 +195,7 @@ namespace vpp_mctf_init
         },
         {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
             {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
                 { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_BGR4 },
             },
         },
