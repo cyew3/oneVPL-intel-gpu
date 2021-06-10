@@ -170,11 +170,13 @@ END_FILTER
     public:
         ReferenceVppTGL()
         {
+            m_reference.Filters.insert(DEFAULT_FILTER(MFX_EXTBUFF_VPP_MCTF,             0, MCTF_IN_FORMAT_LIST,             MCTF_OUT_FORMAT_LIST));
+            m_reference.Filters.insert(DEFAULT_FILTER(MFX_EXTBUFF_VPP_FIELD_PROCESSING, 0, FIELD_PROCESSING_IN_FORMAT_LIST, FIELD_PROCESSING_OUT_FORMAT_LIST));
         }
     };
     static ReferenceVppTGL ref_TGL_vpp;
 
-    class ReferenceVppDG1 : public ReferenceVpp
+    class ReferenceVppDG1 : public ReferenceVppTGL
     {
     public:
         ReferenceVppDG1()
