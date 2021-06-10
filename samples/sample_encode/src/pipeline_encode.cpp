@@ -62,6 +62,38 @@ msdk_tick time_get_frequency(void)
     return msdk_time_get_frequency();
 }
 
+mfxU16 FourCcBitDepth(mfxU32 fourCC)
+{
+    switch (fourCC)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_NV16:
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_AYUV:
+        return 8;
+        break;
+
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_P210:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y410:
+#endif
+        return 10;
+        break;
+
+#if (MFX_VERSION >= 1031)
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+        return 12;
+        break;
+#endif
+    default:
+        return 0;
+    }
+}
+
 CEncTaskPool::CEncTaskPool()
     : firstOut_total(0)
     , firstOut_start(0)
@@ -516,10 +548,13 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // frame info parameters
-    m_mfxEncParams.mfx.FrameInfo.FourCC       = pInParams->EncodeFourCC;
-    m_mfxEncParams.mfx.FrameInfo.ChromaFormat = FourCCToChroma(pInParams->EncodeFourCC);
-    m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
-    m_mfxEncParams.mfx.FrameInfo.Shift        = pInParams->shouldUseShifted10BitEnc;
+    mfxU16 BitDepth = FourCcBitDepth(pInParams->EncodeFourCC);
+    m_mfxEncParams.mfx.FrameInfo.BitDepthLuma   = BitDepth;
+    m_mfxEncParams.mfx.FrameInfo.BitDepthChroma = BitDepth;
+    m_mfxEncParams.mfx.FrameInfo.FourCC         = pInParams->EncodeFourCC;
+    m_mfxEncParams.mfx.FrameInfo.ChromaFormat   = FourCCToChroma(pInParams->EncodeFourCC);
+    m_mfxEncParams.mfx.FrameInfo.PicStruct      = pInParams->nPicStruct;
+    m_mfxEncParams.mfx.FrameInfo.Shift          = pInParams->shouldUseShifted10BitEnc;
 
     // width must be a multiple of 16
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
@@ -1356,40 +1391,6 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
 
     return sts;
 }
-
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
-mfxU16 FourCcBitDepth(mfxU32 fourCC)
-{
-    switch (fourCC)
-    {
-    case MFX_FOURCC_NV12:
-    case MFX_FOURCC_NV16:
-    case MFX_FOURCC_YUY2:
-    case MFX_FOURCC_AYUV:
-        return 8;
-        break;
-
-    case MFX_FOURCC_P010:
-    case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y210:
-    case MFX_FOURCC_Y410:
-#endif
-        return 10;
-        break;
-
-#if (MFX_VERSION >= 1031)
-    case MFX_FOURCC_P016:
-    case MFX_FOURCC_Y216:
-    case MFX_FOURCC_Y416:
-        return 12;
-        break;
-#endif
-    default:
-        return 0;
-    }
-}
-#endif
 
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
 mfxU32 CEncodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params) const
