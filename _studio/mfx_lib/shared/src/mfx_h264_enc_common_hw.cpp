@@ -6079,9 +6079,6 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt->SingleSeiNalUnit == MFX_CODINGOPTION_UNKNOWN)
         extOpt->SingleSeiNalUnit = MFX_CODINGOPTION_ON;
 
-    if (extOpt->NalHrdConformance == MFX_CODINGOPTION_UNKNOWN)
-        extOpt->NalHrdConformance = MFX_CODINGOPTION_ON;
-
     if (extDdi->MEInterpolationMethod == ENC_INTERPOLATION_TYPE_NONE)
         extDdi->MEInterpolationMethod = ENC_INTERPOLATION_TYPE_AVC6TAP;
 
