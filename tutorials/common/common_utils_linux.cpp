@@ -30,16 +30,12 @@
  * Linux implementation of OS-specific utility functions
  */
 
-mfxStatus Initialize(mfxIMPL impl, mfxU16  adapterType, mfxU32 adapterNum, MainLoader* pLoader, MainVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles)
+mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles)
 {
-    mfxAccelerationMode accelMode = MFX_ACCEL_MODE_VIA_VAAPI;
     mfxStatus sts = MFX_ERR_NONE;
 
-    sts = pLoader->ConfigureLoader(impl, accelMode, adapterType, adapterNum);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
     // Initialize Intel Media SDK Session
-    sts = pSession->CreateSession(pLoader);
+    sts = pSession->Init(impl, &ver);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Create VA display
