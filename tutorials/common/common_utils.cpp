@@ -26,11 +26,130 @@
 #include <intrin.h>
 #include <array>
 #include <vector>
+#include <string>
 #endif
 
 // =================================================================
 // Utility functions, not directly tied to Intel Media SDK functionality
 //
+
+static mfxU32 MakeVersion(const mfxU16 major, const mfxU16 minor)
+{
+    return major * 1000 + minor;
+}
+
+static mfxU32 GetAdapterNumber(const mfxChar* cDeviceID) {
+    std::string strDevID(cDeviceID);
+    size_t idx = strDevID.rfind('/');
+    mfxU32 adapterIdx = -1;
+
+    if (idx != std::string::npos)
+        adapterIdx = std::stoi(strDevID.substr(idx + 1));
+
+    return adapterIdx;
+}
+
+MainLoader::MainLoader()
+{
+    m_Loader = MFXLoad();
+    m_idesc = nullptr;
+    m_ImplIndex = -1;
+    m_MinVersion = MakeVersion(2, 0);
+}
+
+MainLoader::~MainLoader()
+{
+    if (m_idesc)
+    {
+        MFXDispReleaseImplDescription(m_Loader, m_idesc);
+    }
+    MFXUnload(m_Loader);
+}
+
+mfxLoader MainLoader::GetLoader()
+{
+    return m_Loader;
+}
+
+mfxU32 MainLoader::GetImplIndex() const
+{
+    return m_ImplIndex;
+}
+
+mfxStatus MainLoader::ConfigureLoader(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxU16 adapterType, mfxU32 adapterNum)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxConfig cfgImpl1 = MFXCreateConfig(m_Loader);
+
+    mfxVariant ImplVariant;
+    ImplVariant.Type = MFX_VARIANT_TYPE_U32;
+
+    if (MSDK_IMPL_BASETYPE(impl) == MFX_IMPL_SOFTWARE)
+        ImplVariant.Data.U32 = MFX_IMPL_TYPE_SOFTWARE;
+    else
+    {
+        mfxU32 const hwImpls[] = { MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE_ANY, MFX_IMPL_HARDWARE2,
+            MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4, MFX_IMPL_VIA_D3D9, MFX_IMPL_VIA_D3D11 };
+
+        if(std::end(hwImpls) == std::find_if(std::begin(hwImpls), std::end(hwImpls),
+            [impl](const mfxU32 val)
+            {
+                return (val == MSDK_IMPL_VIA_MASK(impl) || val == MSDK_IMPL_BASETYPE(impl));
+            })) 
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        ImplVariant.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
+    }
+
+    sts = MFXSetConfigFilterProperty(cfgImpl1, (mfxU8*)"mfxImplDescription.Impl", ImplVariant);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    m_Configs.push_back(cfgImpl1);
+
+    // configure accelerationMode, except when required implementation is MFX_IMPL_TYPE_HARDWARE, but m_accelerationMode not set
+    if (accelerationMode != MFX_ACCEL_MODE_NA || (MFX_IMPL_BASETYPE(impl) == MFX_IMPL_SOFTWARE))
+    {
+        mfxConfig cfgImpl2 = MFXCreateConfig(m_Loader);
+        mfxVariant AccelModeVariant;
+        AccelModeVariant.Type = MFX_VARIANT_TYPE_U32;
+        AccelModeVariant.Data.U32 = accelerationMode;
+        sts = MFXSetConfigFilterProperty(cfgImpl2, (mfxU8*)"mfxImplDescription.AccelerationMode", AccelModeVariant);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_Configs.push_back(cfgImpl2);
+    }
+
+    mfxImplDescription * idesc;
+    int ImplIndex = 0;
+    m_ImplIndex = -1;
+    while (sts == MFX_ERR_NONE)
+    {
+        sts = MFXEnumImplementations(m_Loader, ImplIndex, MFX_IMPLCAPS_IMPLDESCSTRUCTURE, (mfxHDL*)&idesc);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        if (!idesc)
+        {
+            sts = MFX_ERR_NULL_PTR;
+            break;
+        }
+        else if (((idesc->Dev.MediaAdapterType == adapterType && GetAdapterNumber(idesc->Dev.DeviceID) == adapterNum)
+            || mfxMediaAdapterType::MFX_MEDIA_UNKNOWN == adapterType)
+            && MakeVersion(idesc->ApiVersion.Major, idesc->ApiVersion.Minor) >= m_MinVersion)
+        {
+            printf("CONFIGURE LOADER: loaded deviceID/adapterNum: %s\n", idesc->Dev.DeviceID);
+            m_idesc = idesc;
+            m_ImplIndex = ImplIndex;
+            break;
+        }
+        ImplIndex++;
+    }
+
+    return sts;
+}
+
+mfxStatus MainVideoSession::CreateSession(MainLoader* Loader)
+{
+    return MFXCreateSession(Loader->GetLoader(), Loader->GetImplIndex(), &m_session);
+}
 
 void PrintErrString(int err,const char* filestr,int line)
 {

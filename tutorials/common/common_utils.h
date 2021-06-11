@@ -27,6 +27,7 @@
 #include "mfxvideo++.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
+#include "mfxdispatcher.h"
 
 #if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h"
@@ -59,6 +60,8 @@
 #define MSDK_ALIGN16(value)             (((value + 15) >> 4) << 4)
 #define MSDK_SAFE_RELEASE(X)            {if (X) { X->Release(); X = NULL; }}
 #define MSDK_MAX(A, B)                  (((A) > (B)) ? (A) : (B))
+#define MSDK_IMPL_BASETYPE(x)           (0x00ff & (x))
+#define MSDK_IMPL_VIA_MASK(x)           (0x0f00 & (x))
 
 // Usage of the following two macros are only required for certain Windows DirectX11 use cases
 #define WILL_READ  0x1000
@@ -134,8 +137,29 @@ typedef struct {
 // Get free task
 int GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize);
 
+class MainLoader {
+    mfxLoader m_Loader;
+    std::vector<mfxConfig> m_Configs;
+    mfxImplDescription* m_idesc;
+    mfxU32 m_ImplIndex;
+    mfxU32 m_MinVersion;
+
+public:
+    MainLoader();
+    ~MainLoader();
+
+    mfxLoader GetLoader();
+    mfxU32 GetImplIndex() const;
+    mfxStatus ConfigureLoader(mfxIMPL impl, mfxAccelerationMode accelerationMode, mfxU16 adapterType, mfxU32 adapterNum);
+};
+
+class MainVideoSession : public MFXVideoSession {
+public:
+    mfxStatus CreateSession(MainLoader* Loader);
+};
+
 // Initialize Intel Media SDK Session, device/display and memory manager
-mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles = false);
+mfxStatus Initialize(mfxIMPL impl, mfxU16  adapterType, mfxU32 adapterNum, MainLoader* pLoader, MainVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles = false);
 
 // Release resources (device/display)
 void Release();
