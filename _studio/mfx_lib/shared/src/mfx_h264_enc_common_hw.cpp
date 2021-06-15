@@ -6577,14 +6577,6 @@ void MfxHwH264Encode::SetDefaults(
             ? mfxU16(MFX_CODINGOPTION_ON) : mfxU16(MFX_CODINGOPTION_OFF);
 #endif
 
-    if (extOpt3->BRCPanicMode == MFX_CODINGOPTION_UNKNOWN)
-      extOpt3->BRCPanicMode =
-          extOpt->NalHrdConformance == MFX_CODINGOPTION_ON ||
-                  ((extOpt2->MaxFrameSize != 0 || extOpt3->WinBRCSize != 0) &&
-                   isSWBRC(par))
-              ? mfxU16(MFX_CODINGOPTION_ON)
-              : mfxU16(MFX_CODINGOPTION_OFF);
-
     par.ApplyDefaultsToMvcSeqDesc();
 
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE
