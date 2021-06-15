@@ -556,6 +556,26 @@ void General::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
     });
 }
 
+inline mfxStatus CheckPicStruct(mfxVideoParam & par)
+{
+    mfxU32 invalid = 0;
+    invalid += CheckOrZero(par.mfx.FrameInfo.PicStruct, mfxU16(MFX_PICSTRUCT_PROGRESSIVE), mfxU16(0));
+
+    MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
+
+    return MFX_ERR_NONE;
+}
+
+inline mfxStatus CheckProtected(mfxVideoParam& par)
+{
+    mfxU32 invalid = 0;
+    invalid += CheckOrZero(par.Protected, mfxU16(0));
+
+    MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
+
+    return MFX_ERR_NONE;
+}
+
 void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckFormat
@@ -583,6 +603,12 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
         return m_pQWCDefaults->base.CheckLevel(*m_pQWCDefaults, out);
+    });
+
+    Push(BLK_CheckPicStruct
+        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
+    {
+        return CheckPicStruct(out);
     });
 
     Push(BLK_CheckSurfSize
@@ -670,6 +696,12 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
         return CheckIOPattern(out);
+    });
+
+    Push(BLK_CheckProtected
+        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
+    {
+        return CheckProtected(out);
     });
 
     Push(BLK_CheckRateControl

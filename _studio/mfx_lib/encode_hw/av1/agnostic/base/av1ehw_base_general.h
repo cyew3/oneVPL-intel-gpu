@@ -48,6 +48,7 @@ namespace Base
     DECL_BLOCK(SetGUID              )\
     DECL_BLOCK(CheckFormat          )\
     DECL_BLOCK(CheckLevel           )\
+    DECL_BLOCK(CheckPicStruct       )\
     DECL_BLOCK(CheckSurfSize        )\
     DECL_BLOCK(CheckCodedPicSize    )\
     DECL_BLOCK(CheckTU              )\
@@ -62,6 +63,7 @@ namespace Base
     DECL_BLOCK(CheckGPB             )\
     DECL_BLOCK(CheckNumRefFrame     )\
     DECL_BLOCK(CheckIOPattern       )\
+    DECL_BLOCK(CheckProtected       )\
     DECL_BLOCK(CheckRateControl     )\
     DECL_BLOCK(CheckCrops           )\
     DECL_BLOCK(CheckShift           )\
@@ -94,7 +96,7 @@ namespace Base
     DECL_BLOCK(SetRecInfo           )\
     DECL_BLOCK(FreeTask             )\
     DECL_BLOCK(Close                )
-#define DECL_FEATURE_NAME "G12_General"
+#define DECL_FEATURE_NAME "Base_General"
 #include "av1ehw_decl_blocks.h"
 
         General(mfxU32 id)
