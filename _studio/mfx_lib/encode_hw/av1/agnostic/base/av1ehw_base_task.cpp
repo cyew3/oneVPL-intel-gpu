@@ -66,12 +66,63 @@ bool TaskManager::IsReorderBypass() const
     return !!m_pPar->mfx.EncodedOrder;
 }
 
+template<class T>
+static T GetFirstFrameToDisplay(
+    T begin
+    , T end
+    , T cur)
+{
+    // TODO: consider implementation of this logic in post-reordering stage
+    //       in this case removal of current frame from reorder list will not be required
+    const size_t framesInBuffer = std::distance(begin, end);
+    if (framesInBuffer < 2)
+        return end;
+
+    std::list<T> exceptCur;
+    T top = begin;
+
+    std::generate_n(
+        std::back_inserter(exceptCur)
+        , framesInBuffer
+        , [&]() { return top++; });
+
+    exceptCur.remove(cur);
+
+    const auto firstToDisplay = std::min_element(
+        exceptCur.begin(),
+        exceptCur.end(),
+        [](T& a, T& b) { return a->DisplayOrderInGOP < b->DisplayOrderInGOP; });
+
+    return *firstToDisplay;
+}
+
 TTaskIt TaskManager::GetNextTaskToEncode(TTaskIt begin, TTaskIt end, bool bFlush)
 {
+    typedef TaskItWrap<FrameBaseInfo, Task::Common::Key> TItWrap;
+
     auto IsIdrTask = [](const StorageR& rTask) { return IsIdr(Task::Common::Get(rTask).FrameType); };
-    auto it = std::find_if(begin, end, IsIdrTask);
-    bFlush |= (it != end);
-    return (*m_pReorder)(begin, it, bFlush);
+    auto stopIt = std::find_if(begin, end, IsIdrTask);
+    bFlush |= (stopIt != end);
+
+    // taskIt returned from m_pReorder might be equal to stopIt, which might be both valid or invalid iterator
+    // In the former case, stopIt points to IDR frame. In the latter case, stopIt points to end iterator in the original container
+    auto taskIt = (*m_pReorder)(begin, stopIt, bFlush);
+    if (taskIt == end)
+        return taskIt;
+
+    TItWrap task(taskIt);
+    auto firstToDisplay = GetFirstFrameToDisplay(TItWrap(begin), TItWrap(stopIt), task);
+    if (firstToDisplay != stopIt)
+    {
+        task->NextBufferedDisplayOrder = firstToDisplay->DisplayOrderInGOP;
+    }
+    else if (bFlush)
+    {
+        // need to show all hidden frames before end of GOP or end of sequence
+        task->NextBufferedDisplayOrder = std::numeric_limits<mfxI32>::max();
+    }
+
+    return taskIt;
 }
 
 bool TaskManager::IsForceSync(const StorageR& task) const

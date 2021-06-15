@@ -2421,38 +2421,6 @@ static bool HaveL1(DpbType const & dpb, mfxI32 displayOrderInGOP)
         });
 }
 
-template<class T>
-static T GetFirstFrameToDisplay(
-    T begin
-    , T end
-    , T cur)
-{
-    // TODO: consider implementation of this logic in post-reordering stage
-    //       in this case removal of current frame from reorder list will not be required
-
-    const size_t framesInBuffer = std::distance(begin, end);
-
-    if (framesInBuffer < 2)
-        return end;
-
-    std::list<T> exceptCur;
-    T top = begin;
-
-    std::generate_n(
-        std::back_inserter(exceptCur)
-        , framesInBuffer
-        , [&]() { return top++; });
-
-    exceptCur.remove(cur);
-
-    const auto firstToDisplay = std::min_element(
-        exceptCur.begin(),
-        exceptCur.end(),
-        [](T& a, T& b) { return a->DisplayOrderInGOP < b->DisplayOrderInGOP; });
-
-    return *firstToDisplay;
-}
-
 static mfxU32 GetEncodingOrder(
     mfxU32 displayOrder
     , mfxU32 begin
@@ -2568,18 +2536,6 @@ static T Reorder(
         reorderOut = top;
     }
 
-    if(reorderOut == end)
-        return reorderOut;
-
-    T firstToDisplay = GetFirstFrameToDisplay(begin, end, reorderOut);
-    if (firstToDisplay != end)
-        reorderOut->NextBufferedDisplayOrder = firstToDisplay->DisplayOrderInGOP;
-    else if (flush)
-    {
-        // need to show all hidden frames before end of GOP or end of sequence
-        reorderOut->NextBufferedDisplayOrder = std::numeric_limits<mfxI32>::max();
-    }
-
     return reorderOut;
 }
 
@@ -2590,19 +2546,7 @@ TTaskIt General::ReorderWrap(
     , bool flush)
 {
     typedef TaskItWrap<FrameBaseInfo, Task::Common::Key> TItWrap;
-    TItWrap newEnd(begin);
-
-    while (newEnd != end)
-    {
-        if (newEnd != begin && IsIdr(newEnd->FrameType))
-        {
-            flush = true;
-            break;
-        }
-        newEnd++;
-    }
-
-    return Reorder(par, m_prevTask.DPB, TItWrap(begin), newEnd, flush).it;
+    return Reorder(par, m_prevTask.DPB, TItWrap(begin), TItWrap(end), flush).it;
 }
 
 mfxU32 General::GetMinBsSize(
