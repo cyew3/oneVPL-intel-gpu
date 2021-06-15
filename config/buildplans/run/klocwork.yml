@@ -1,0 +1,9 @@
+version: 2
+systems:
+- name: Linux/Ubuntu
+  buildplan: klocwork_linux.yml
+  version: V1
+- name: Windows
+  buildplan: klocwork_windows.yml
+  version: V1
+

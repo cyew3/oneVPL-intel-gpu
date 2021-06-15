@@ -1,0 +1,90 @@
+---
+resource: DOCKER_LINUX_DRIVER
+manifest: manifest.yml
+working_dir: '..'
+env:
+  JOBS: '20'
+  DOCKER_ENV_VARS: "-e SYSTEM=Ubuntu18.04 -e LINUX_DISTRO=ubuntu -e CCACHE_DIR=/opt/ccache \
+    -e MEDIASDK_ROOT=/opt/src/msdk_root -e MFX_HOME=/opt/src/sources/mdp_msdk-lib \
+    -e MFX_MDF_PATH=/opt/src/msdk_root/cmrt_linux \
+    -e PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig \
+    -e CMAKE_VTUNE_HOME=/opt/src/sources/mdp_msdk-contrib/itt"
+  DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-ubuntu18.04:1
+qb_variable_map:
+  build_version: BUILD_VERSION
+  component_name: COMPONENT_NAME
+  irepo_workspace: WORKSPACE
+  parent_build_id: BUILD_ID
+  build_number: BUILD_NUMBER
+  kw_configuration_name: KW_PROJECT_BRANCH
+  kw_server_url: KW_URL
+  kw_server_license_host: KW_LIC_HOST
+  kw_server_license_port: KW_LIC_PORT
+  component_branch: COMPONENT_BRANCH
+  component_project: COMPONENT_PROJECT
+  component_revision: GIT_REVISION
+  system: SYSTEM
+steps:
+  - name: clean_build_directory
+    command: rm -rf $WORKSPACE/build/ $WORKSPACE/kwbuildspec $WORKSPACE/kwtables $WORKSPACE/klocwork/report
+  - name: create_build_directory
+    command: mkdir $WORKSPACE/build/ $WORKSPACE/kwbuildspec $WORKSPACE/kwtables $WORKSPACE/klocwork/report
+  - name: clean mediasdk lib repo
+    command: rm -rf $WORKSPACE/sources/mdp_msdk-lib
+  - name: copy lib repo (mediasdk or product)
+    command: cp -R $WORKSPACE/mediasdk $WORKSPACE/sources/mdp_msdk-lib
+  - name: create container
+    command: docker run --name $BUILD_ID --rm -d -w /opt/src $DOCKER_ENV_VARS -e BUILD_NUMBER=$BUILD_NUMBER --init -v $WORKSPACE:/opt/src
+      -v /ccache:/opt/ccache -v $WORKSPACE/klocwork:/kw -v $HOME/.klocwork:/home/ubit/.klocwork -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` $DOCKER_IMAGE
+      /bin/bash -c "sleep 180000"
+  - name: config_libva
+    command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu"
+  - name: build_libva
+    command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
+  - name: kwinject
+    command: docker exec $BUILD_ID /bin/bash -c 
+      "/kw/agent/bin/kwinject --ignore-files '*/CMakeFiles/CMakeTmp/*,*/usr/*' --output /opt/src/kwbuildspec/all_vars.out 
+      /bin/bash -c '/opt/src/sources/mdp_msdk-lib/config/scripts/build/build-linux-ubuntu.sh'"
+  - name: kw-buildproject
+    command: docker exec -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` -e KLOCWORK_LTOKEN=/home/ubit/.klocwork/ltoken
+      $BUILD_ID /bin/bash -c "python3 /kw/scripts/SupportScripts/kw_wrapper.py /kw/agent/bin/kwbuildproject
+      --jobs-num auto --verbose --url $KW_URL/$KW_PROJECT_BRANCH\_Linux_Docker --license-host $KW_LIC_HOST
+      --license-port $KW_LIC_PORT /opt/src/kwbuildspec/all_vars.out --tables-directory /opt/src/kwtables
+      --replace-path /opt/src/=/"
+  - name: kw-admin
+    command: docker exec -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` -e KLOCWORK_LTOKEN=/home/ubit/.klocwork/ltoken
+      $BUILD_ID /bin/bash -c "/kw/agent/bin/kwadmin --ssl --url $KW_URL load $KW_PROJECT_BRANCH\_Linux_Docker
+      /opt/src/kwtables --name $BUILD_VERSION"
+  - name: generate-report
+    command: python3 $WORKSPACE/klocwork/scripts/ReportScripts/generate_report.py
+      --klocworkApiUrl $KW_URL/review/api --klocworkBaseUrl $KW_URL/review/insight-review.html
+      --jsonFilePath $WORKSPACE/klocwork/scripts/config/$COMPONENT_PROJECT/master/kw_linux_projects.json
+      --outputHtmlFileName $WORKSPACE/klocwork/report/klocwork_report --reportArchitecture 64-bit
+      --outputDetailsJsonFile $WORKSPACE/klocwork/report/projectData.json
+      --outputSummaryJsonFile $WORKSPACE/klocwork/report/summaryData.json
+      --changes $GIT_REVISION --buildVersion $BUILD_VERSION --system $SYSTEM
+    output:
+    - destination_dir: Linux/Ubuntu
+      file_patterns: '*.html,*.json'
+      source_dir: ../klocwork/report   
+  - name: Archiving klocwork logs
+    command: docker exec -e LOCAL_USER_ID=`id -u` -e LOCAL_GROUP_ID=`id -g` -w /opt/src
+      $BUILD_ID /bin/bash -c "zip /kw/scripts/ReportScripts/$KW_PROJECT_BRANCH\_Linux_Docker.zip 
+      /opt/src/kwtables/build.log
+      /opt/src/kwtables/kwloaddb.log"
+    always_execute: true
+    output:
+    - destination_dir: "Linux/Ubuntu/"
+      file_patterns: '*.zip'
+      source_dir: "../klocwork/scripts/ReportScripts"
+  - name: remove container
+    command: docker kill $BUILD_ID
+  - name: mock command on host
+    command: docker ps -a
+types:
+  release:
+    env:
+      CMAKE_BUILD_TYPE: Release
+      BUILD_TYPE: Release
+    qb_filter:
+      build_type: Release

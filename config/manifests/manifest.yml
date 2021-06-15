@@ -172,3 +172,24 @@ components:
     - RHEL/msdk/runtime/l_MSDK_p*.tgz
     - RHEL/msdk/tools/tools_drop*.zip
     dest_dir: mediasdk_1x_binaries
+  linux_kw_security_scan:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-security-fm/klocwork/linux
+    asset_name: '19.2'
+    asset_version: '1'
+    dest_dir: klocwork/agent
+  windows_kw_security_scan:
+    type: artifactory
+    root_url: https://gfx-assets.intel.com/artifactory
+    asset_path: gfx-security-fm/klocwork/windows
+    asset_name: '19.2'
+    asset_version: '2'
+    dest_dir: klocwork/win_agent
+  kw_scripts:
+    branch: master
+    clean_on_sync: true
+    dest_dir: klocwork/scripts
+    repository: https://github.com/intel-innersource/drivers.gpu.devops.klocwork
+    type: git
+

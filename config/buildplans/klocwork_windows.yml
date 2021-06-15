@@ -1,0 +1,80 @@
+---
+resource: windows2016v2
+working_dir: '..'
+manifest: manifest.yml
+qb_variable_map:
+  build_version: BUILD_VERSION
+  irepo_workspace: WORKSPACE
+  parent_build_id: BUILD_ID
+  build_number: BUILD_NUMBER
+  component_branch: COMPONENT_BRANCH
+  component_project: COMPONENT_PROJECT
+  component_revision: GIT_REVISION
+  kw_server_url: KW_URL
+  kw_server_license_host: KW_LIC_HOST
+  kw_server_license_port: KW_LIC_PORT
+  kw_configuration_name: KW_PROJECT_BRANCH
+  system: SYSTEM
+env:
+  JSON_PATH: '%WORKSPACE%\\klocwork\\scripts\\config\\%COMPONENT_PROJECT%\\master\\kw_win_projects.json'
+steps:
+  - name: copy workspace_snapshot.json
+    command: xcopy %WORKSPACE%\\..\workspace_snapshot.json %WORKSPACE% /y /q
+  - name: copy mediasdk lib repo
+    command: (if exist %WORKSPACE%\\sources\mdp_msdk-lib rmdir /s /q %WORKSPACE%\\sources\mdp_msdk-lib) &&
+      (xcopy mediasdk %WORKSPACE%\\sources\mdp_msdk-lib\ /s /y /q)
+  - name: cleanup output directory
+    command: (if exist %WORKSPACE%\output rmdir /s /q %WORKSPACE%\output) && (mkdir %WORKSPACE%\output\packages\windows)
+  - name: check python version
+    command: python3 --version
+  - name: update rc files
+    command: python3 %WORKSPACE%\\sources\mdp_msdk-lib\config\scripts\update_version.py --path %WORKSPACE%\\sources\
+      --revision %COMPONENT_REVISION% --build-number %BUILD_NUMBER%
+  - name: kw_remove_build-dirs
+    command: if exist %WORKSPACE%\\klocwork\\kwbuildspec (
+      rmdir /s /q %WORKSPACE%\\klocwork\\kwtables &&
+      rmdir /s /q %WORKSPACE%\\klocwork\\kwbuildspec &&
+      rmdir /s /q %WORKSPACE%\\klocwork\\report)
+  - name: kw_create_build-dirs
+    command: mkdir %WORKSPACE%\\klocwork\\kwtables && mkdir %WORKSPACE%\\klocwork\\kwbuildspec && mkdir %WORKSPACE%\\klocwork\\report
+  - name: kw-inject
+    command: "%WORKSPACE%\\klocwork\\win_agent\\bin\\kwinject
+      --ignore-files \"*/CMakeFiles/CMakeTmp/*,*/build/cmake/*,*/build/ewdk/*,*/Program Files (x86)/*,*/gtest/*,*/gmock/*\"
+      --output %WORKSPACE%\\klocwork\\kwbuildspec\\all_vars.out
+      cmd.exe /c %WORKSPACE%\\sources\\mdp_msdk-lib\\config\\scripts\\build\\windows_build.bat"
+  - name: kw-build
+    command: cmd.exe /v:on /c "python3 %WORKSPACE%\\klocwork\\scripts\\SupportScripts\\kw_wrapper.py 
+      %WORKSPACE%\\klocwork\\win_agent\\bin\\kwbuildproject.exe --jobs-num auto --verbose
+      --url %KW_URL%/%KW_PROJECT_BRANCH%_Windows --license-host %KW_LIC_HOST%
+      --license-port %KW_LIC_PORT% %WORKSPACE%\\klocwork\\kwbuildspec\\all_vars.out
+      --tables-directory %WORKSPACE%\\klocwork\\kwtables --replace-path %WORKSPACE%=\\ "
+  - name: kw-admin
+    command: cmd.exe /v:on /c "python3 %WORKSPACE%\\klocwork\\scripts\\SupportScripts\\kw_wrapper.py
+      %WORKSPACE%\\klocwork\\win_agent\\bin\\kwadmin.exe --ssl --url %KW_URL% 
+      load %KW_PROJECT_BRANCH%_Windows %WORKSPACE%\\klocwork\\kwtables --name %BUILD_VERSION%"
+  - name: generate-report
+    command: cmd.exe /v:on /c "python3 %WORKSPACE%\\klocwork\\scripts\\ReportScripts\\generate_report.py
+      --klocworkApiUrl %KW_URL%/review/api --klocworkBaseUrl %KW_URL%/review/insight-review.html
+      --jsonFilePath %JSON_PATH% --changes %GIT_REVISION% --buildVersion %BUILD_VERSION% --system %SYSTEM%
+      --outputHtmlFileName %WORKSPACE%\\klocwork\\report\\klocwork_report --reportArchitecture 64-bit
+      --outputDetailsJsonFile %WORKSPACE%/klocwork/report/projectData.json
+      --outputSummaryJsonFile %WORKSPACE%/klocwork/report/summaryData.json
+    output:
+    - destination_dir: "Windows"
+      file_patterns: '*.html,*.json'
+      source_dir: "..\\klocwork\\report"
+  - name: Archiving cpp klocwork logs   
+    command: cmd.exe /v:on /c "
+      %WORKSPACE%\\build_tools\\7zip-win64\\7z.exe a 
+      %WORKSPACE%\\klocwork\\report\\%KW_PROJECT_BRANCH%_all.7zip 
+      %WORKSPACE%\\klocwork\\kwtables\\build.log 
+      %WORKSPACE%\\klocwork\\kwtables\\kwloaddb.log"
+    always_execute: true
+    output:
+    - destination_dir: "Windows"
+      file_patterns: '*.7zip'
+      source_dir: "..\\klocwork\\report"
+types:
+  release:
+    env:
+      BUILD_TYPE: Release
