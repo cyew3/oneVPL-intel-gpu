@@ -62,7 +62,7 @@ namespace Base
     DECL_BLOCK(CheckGPB             )\
     DECL_BLOCK(CheckNumRefFrame     )\
     DECL_BLOCK(CheckIOPattern       )\
-    DECL_BLOCK(CheckBRC             )\
+    DECL_BLOCK(CheckRateControl     )\
     DECL_BLOCK(CheckCrops           )\
     DECL_BLOCK(CheckShift           )\
     DECL_BLOCK(CheckFrameRate       )\
@@ -165,7 +165,7 @@ namespace Base
         mfxStatus CheckGopRefDist(mfxVideoParam & par);
         mfxStatus CheckGPB(mfxVideoParam & par);
         mfxStatus CheckIOPattern(mfxVideoParam & par);
-        mfxStatus CheckBRC(
+        mfxStatus CheckRateControl(
             mfxVideoParam & par
             , const Defaults::Param& defPar);
         mfxStatus CheckCrops(

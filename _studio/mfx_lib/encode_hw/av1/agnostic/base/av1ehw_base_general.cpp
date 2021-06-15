@@ -666,10 +666,10 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         return CheckIOPattern(out);
     });
 
-    Push(BLK_CheckBRC
+    Push(BLK_CheckRateControl
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
-        return CheckBRC(out, *m_pQWCDefaults);
+        return CheckRateControl(out, *m_pQWCDefaults);
     });
 
     Push(BLK_CheckCrops
@@ -3127,14 +3127,24 @@ bool CheckBufferSizeInKB(
     return !!changed;
 }
 
-mfxStatus General::CheckBRC(
+inline mfxU32 CheckAndFixQP(mfxU16& qp, const mfxU16 minQP, const mfxU16 maxQP)
+{
+    mfxU32 changed = 0;
+
+    if (qp)
+    {
+        changed += CheckMinOrClip<mfxU16>(qp, minQP);
+        changed += CheckMaxOrClip<mfxU16>(qp, maxQP);
+    }
+
+    return changed;
+}
+
+mfxStatus General::CheckRateControl(
     mfxVideoParam & par
     , const Defaults::Param& defPar)
 {
     mfxU32 changed = 0;
-    mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
-    mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
-
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
         par.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
@@ -3143,32 +3153,40 @@ mfxStatus General::CheckBRC(
         changed++;
     }
 
-    MFX_CHECK(par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
-        || !CheckMaxOrZero(par.mfx.ICQQuality, 51), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+        , MFX_ERR_UNSUPPORTED);
 
-    changed += ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    changed += ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
         && par.mfx.MaxKbps != 0
         && par.mfx.TargetKbps != 0)
         && CheckMinOrClip(par.mfx.MaxKbps, par.mfx.TargetKbps);
 
-    auto bd = defPar.base.GetTargetBitDepthLuma(defPar);
-    auto minQP = defPar.base.GetMinQPMFX(defPar);
-    auto maxQP = defPar.base.GetMaxQPMFX(defPar);
-
+    const auto minQP = defPar.base.GetMinQPMFX(defPar);
+    const auto maxQP = defPar.base.GetMaxQPMFX(defPar);
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        changed += CheckMinOrClip<mfxU16>(par.mfx.QPI, minQP);
-        changed += CheckMaxOrClip<mfxU16>(par.mfx.QPI, maxQP);
-        changed += CheckMinOrClip<mfxU16>(par.mfx.QPP, minQP);
-        changed += CheckMaxOrClip<mfxU16>(par.mfx.QPP, maxQP);
-        changed += CheckMinOrClip<mfxU16>(par.mfx.QPB, minQP);
-        changed += CheckMaxOrClip<mfxU16>(par.mfx.QPB, maxQP);
+        changed += CheckAndFixQP(par.mfx.QPI, minQP, maxQP);
+        changed += CheckAndFixQP(par.mfx.QPP, minQP, maxQP);
+        changed += CheckAndFixQP(par.mfx.QPB, minQP, maxQP);
     }
 
+    const auto bd = defPar.base.GetTargetBitDepthLuma(defPar);
     changed += par.mfx.BufferSizeInKB && CheckBufferSizeInKB(par, defPar, bd);
 
+    mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
+    if (pCO2)
+    {
+        changed += CheckOrZero<mfxU8>(pCO2->MinQPI, 0, minQP);
+        changed += CheckOrZero<mfxU8>(pCO2->MaxQPI, 0, maxQP);
+        changed += CheckOrZero<mfxU8>(pCO2->MinQPP, 0, minQP);
+        changed += CheckOrZero<mfxU8>(pCO2->MaxQPP, 0, maxQP);
+        changed += CheckOrZero<mfxU8>(pCO2->MinQPB, 0, minQP);
+        changed += CheckOrZero<mfxU8>(pCO2->MaxQPB, 0, maxQP);
+    }
+
+    mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
     if (pCO3)
     {
         const bool   bCQP           = defPar.base.GetRateControlMethod(defPar) == MFX_RATECONTROL_CQP;
@@ -3186,8 +3204,8 @@ mfxStatus General::CheckBRC(
         if (IsOn(pCO3->EnableQPOffset))
         {
             const mfxI16 QPX = std::get<2>(defPar.base.GetQPMFX(defPar));
-            minQPOffset      = mfxI16(AV1_MIN_Q_INDEX - QPX);
-            maxQPOffset      = mfxI16(AV1_MAX_Q_INDEX - QPX);
+            minQPOffset      = mfxI16(minQP - QPX);
+            maxQPOffset      = mfxI16(maxQP - QPX);
         }
 
         auto CheckQPOffset = [&](mfxI16& QPO)
@@ -3196,16 +3214,6 @@ mfxStatus General::CheckBRC(
         };
 
         changed += !!std::count_if(std::begin(pCO3->QPOffset), std::end(pCO3->QPOffset), CheckQPOffset);
-    }
-
-    if (pCO2)
-    {
-        changed += CheckOrZero<mfxU8>(pCO2->MinQPI, 0, minQP);
-        changed += CheckOrZero<mfxU8>(pCO2->MaxQPI, 0, maxQP);
-        changed += CheckOrZero<mfxU8>(pCO2->MinQPP, 0, minQP);
-        changed += CheckOrZero<mfxU8>(pCO2->MaxQPP, 0, maxQP);
-        changed += CheckOrZero<mfxU8>(pCO2->MinQPB, 0, minQP);
-        changed += CheckOrZero<mfxU8>(pCO2->MaxQPB, 0, maxQP);
     }
 
     mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
@@ -3220,8 +3228,8 @@ mfxStatus General::CheckBRC(
         {
             if (pAuxPar->QP.MinBaseQIndex || pAuxPar->QP.MaxBaseQIndex)
             {
-                changed += CheckRangeOrClip(pAuxPar->QP.MinBaseQIndex, AV1_MIN_Q_INDEX, AV1_MAX_Q_INDEX);
-                changed += CheckRangeOrClip(pAuxPar->QP.MaxBaseQIndex, AV1_MIN_Q_INDEX, AV1_MAX_Q_INDEX);
+                changed += CheckRangeOrClip(pAuxPar->QP.MinBaseQIndex, minQP, maxQP);
+                changed += CheckRangeOrClip(pAuxPar->QP.MaxBaseQIndex, minQP, maxQP);
                 changed += CheckMaxOrClip(pAuxPar->QP.MinBaseQIndex, pAuxPar->QP.MaxBaseQIndex);
             }
         }

@@ -464,7 +464,7 @@ public:
         Defaults::TChain< mfxU16>::TExt
         , const Defaults::Param& /*par*/)
     {
-        return mfxU8(0);
+        return mfxU8(AV1_MIN_Q_INDEX);
     }
 
     static mfxU8 MaxQPMFX(
@@ -493,9 +493,9 @@ public:
             if (bValid)
                 return std::make_tuple(QPI, QPP, QPB);
 
-            auto maxQP = par.base.GetMaxQPMFX(par);
-
-            SetDefault(QPI, std::max<mfxU16>(par.base.GetMinQPMFX(par), (maxQP + 1) / 2));
+            const auto minQP = par.base.GetMinQPMFX(par);
+            const auto maxQP = par.base.GetMaxQPMFX(par);
+            SetDefault(QPI, std::max<mfxU16>(minQP, (maxQP + 1) / 2));
             SetDefault(QPP, std::min<mfxU16>(QPI + 5, maxQP));
             SetDefault(QPB, std::min<mfxU16>(QPP + 5, maxQP));
 
