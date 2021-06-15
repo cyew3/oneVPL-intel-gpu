@@ -304,7 +304,7 @@ MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_SYSTEM_MEMORY;
     public:
         template <typename T> operator T()
         {
-            mfxExtBuffer * p = GetExtBuffer(
+            mfxExtBuffer * p = mfx::GetExtBuffer(
                 m_extParam,
                 m_numExtParam,
                 ExtBufTypeToId<typename GetPointedType<T>::Type>::id);
@@ -334,7 +334,7 @@ struct mfxExtBufferRefProxy{
 public:
     template <typename T> operator T&()
     {
-        mfxExtBuffer * p = GetExtBuffer(
+        mfxExtBuffer * p = mfx::GetExtBuffer(
             m_extParam,
             m_numExtParam,
             ExtBufTypeToId<typename GetPointedType<T*>::Type>::id);
@@ -366,7 +366,7 @@ struct ActualExtBufferExtractor {
 public:
     template <typename T> operator T&()
     {
-        mfxExtBuffer * p = GetExtBuffer(
+        mfxExtBuffer * p = mfx::GetExtBuffer(
             m_newParam,
             m_newNum,
             ExtBufTypeToId<typename GetPointedType<T*>::Type>::id);
@@ -376,7 +376,7 @@ public:
         }
         else
         {
-            p = GetExtBuffer(
+            p = mfx::GetExtBuffer(
                 m_basicParam,
                 m_basicNum,
                 ExtBufTypeToId<typename GetPointedType<T*>::Type>::id);

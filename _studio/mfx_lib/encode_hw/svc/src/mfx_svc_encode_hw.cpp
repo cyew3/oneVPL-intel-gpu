@@ -670,7 +670,7 @@ mfxStatus ImplementationSvc::GetVideoParam(mfxVideoParam *par)
 
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
     {
-        if (mfxExtBuffer * buf = GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId))
+        if (mfxExtBuffer * buf = mfx::GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId))
         {
             if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS)
             {

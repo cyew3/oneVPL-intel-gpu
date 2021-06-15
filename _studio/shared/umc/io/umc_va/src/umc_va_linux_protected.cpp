@@ -25,23 +25,9 @@
 #include "umc_va_linux_protected.h"
 #include "umc_va_linux.h"
 
+#include "mfx_utils.h"
+
 using namespace UMC;
-
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-static mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
-{
-    if (extBuf != 0)
-    {
-        for (mfxU16 i = 0; i < numExtBuf; i++)
-        {
-            if (extBuf[i] != 0 && extBuf[i]->BufferId == id) // assuming aligned buffers
-                return (extBuf[i]);
-        }
-    }
-
-    return 0;
-}
-#endif
 
 /////////////////////////////////////////////////
 ProtectedVA::ProtectedVA(mfxU16 p)
@@ -71,7 +57,7 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
 {
     if (IS_PROTECTION_PAVP_ANY(m_protected))
     {
-        mfxExtPAVPOption const * extPAVP = (mfxExtPAVPOption*)GetExtBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
+        mfxExtPAVPOption const * extPAVP = (mfxExtPAVPOption*)mfx::GetExtBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
 
         if (!extPAVP)
             return UMC_ERR_FAILED;

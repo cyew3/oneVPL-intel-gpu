@@ -984,12 +984,6 @@ namespace MfxHwH264Encode
         mfxFrameInfo const & info);
 #endif // removed dependency from file operations
 
-    mfxExtBuffer * GetExtBuffer(
-        mfxExtBuffer ** extBuf,
-        mfxU32          numExtBuf,
-        mfxU32          id,
-        mfxU32          offset = 0);
-
     bool IsLpLookaheadSupported(
         mfxU16 scenario,
         mfxU16 lookaheadDepth,
@@ -1006,7 +1000,7 @@ namespace MfxHwH264Encode
     public:
         template <typename T> operator T()
         {
-            mfxExtBuffer * p = MfxHwH264Encode::GetExtBuffer(
+            mfxExtBuffer * p = mfx::GetExtBuffer(
                 m_extParam,
                 m_numExtParam,
                 ExtBufTypeToId<typename GetPointedType<T>::Type>::id,
@@ -1043,7 +1037,7 @@ namespace MfxHwH264Encode
     public:
         template <typename T> operator T&()
         {
-            mfxExtBuffer * p = MfxHwH264Encode::GetExtBuffer(
+            mfxExtBuffer * p = mfx::GetExtBuffer(
                 m_extParam,
                 m_numExtParam,
                 ExtBufTypeToId<typename GetPointedType<T*>::Type>::id,
@@ -1054,7 +1048,7 @@ namespace MfxHwH264Encode
 
         // Intention of GetExtBufferRef is to get ext buffers
         // from MfxVideoParam structure which always has full set
-        // of extension buffers ("MfxHwH264Encode::GetExtBuffer" can't return zero).
+        // of extension buffers ("mfx::GetExtBuffer" can't return zero).
         //
         // So, for MfxVideoParam it's better to use function GetExtBufferRef()
         // instead GetExtBuffer(), we can wrap issues from static code analyze

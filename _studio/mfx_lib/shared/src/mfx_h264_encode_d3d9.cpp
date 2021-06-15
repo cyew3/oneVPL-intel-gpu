@@ -369,7 +369,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     pps.InputType = eType_DRM_NONE;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (GetExtBuffer(task.m_ctrl.ExtParam, task.m_ctrl.NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
+    if (mfx::GetExtBuffer(task.m_ctrl.ExtParam, task.m_ctrl.NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
         pps.InputType = eType_DRM_SECURE;
 #endif
 

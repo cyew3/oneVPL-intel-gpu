@@ -1540,7 +1540,7 @@ mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, MFX_ENCODE_CAPS & hwCaps
         return Error(MFX_ERR_DEVICE_FAILED);
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (MfxHwH264Encode::GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
+    if (mfx::GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
         ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
 #endif
 
@@ -1579,7 +1579,7 @@ mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const 
         return Error(MFX_ERR_DEVICE_FAILED);
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (MfxHwH264Encode::GetExtBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
+    if (mfx::GetExtBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
         ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
 #endif
 
@@ -1876,7 +1876,7 @@ mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
 
         // check if buffer presents twice in video param
         {
-            if (MfxHwH264Encode::GetExtBuffer(
+            if (mfx::GetExtBuffer(
                 par.ExtParam + i + 1,
                 par.NumExtParam - i - 1,
                 par.ExtParam[i]->BufferId) != 0)
@@ -7069,12 +7069,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         if (!IsRunTimeExtBufferIdSupported(video, ctrl->ExtParam[i]->BufferId))
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
 
-        bool buffer_pair = MfxHwH264Encode::GetExtBuffer(
+        bool buffer_pair = mfx::GetExtBuffer(
                             ctrl->ExtParam + i + 1,
                             ctrl->NumExtParam - i - 1,
                             ctrl->ExtParam[i]->BufferId)
                             ||
-                           MfxHwH264Encode::GetExtBuffer(
+                           mfx::GetExtBuffer(
                             ctrl->ExtParam,
                             i,
                             ctrl->ExtParam[i]->BufferId);
@@ -7131,7 +7131,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     for (mfxU16 fieldId = 0; fieldId < NumFields; fieldId++)
     {
         mfxExtAVCRoundingOffset* extRoundingOffset =
-                reinterpret_cast<mfxExtAVCRoundingOffset*>(MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_AVC_ROUNDING_OFFSET, fieldId));
+                reinterpret_cast<mfxExtAVCRoundingOffset*>(mfx::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_AVC_ROUNDING_OFFSET, fieldId));
         if (extRoundingOffset)
         {
             if (IsOn(extRoundingOffset->EnableRoundingIntra))
@@ -7497,23 +7497,6 @@ mfxStatus MfxHwH264Encode::ReadFrameData(
     return MFX_ERR_NONE;
 }
 #endif // removed dependency from file operations
-
-mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id, mfxU32 offset)
-{
-    if (extBuf != 0)
-    {
-        mfxU32 count = 0;
-        for (mfxU32 i = 0; i < numExtBuf; ++i)
-        {
-            if (extBuf[i] != 0 && extBuf[i]->BufferId == id && count++ == offset) // assuming aligned buffers
-            {
-                return (extBuf[i]);
-            }
-        }
-    }
-
-    return 0;
-}
 
 bool MfxHwH264Encode::IsLpLookaheadSupported(mfxU16 scenario, mfxU16 lookaheadDepth, mfxU16 rateContrlMethod)
 {

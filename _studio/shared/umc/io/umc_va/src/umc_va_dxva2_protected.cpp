@@ -25,6 +25,7 @@
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_dxva2.h"
 //#include "intel_pavp_api.h"
+#include "mfx_utils.h"
 
 using namespace UMC;
 
@@ -36,19 +37,6 @@ const GUID DXVA2_Intel_Pavp =
 const GUID D3D11_CRYPTO_TYPE_AES128_CTR =
 {0x9b6bd711, 0x4f74, 0x41c9, {0x9e, 0x7b, 0xb, 0xe2, 0xd7, 0xd9, 0x3b, 0x4f }};
 
-static mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
-{
-    if (extBuf != 0)
-    {
-        for (mfxU16 i = 0; i < numExtBuf; i++)
-        {
-            if (extBuf[i] != 0 && extBuf[i]->BufferId == id) // assuming aligned buffers
-                return (extBuf[i]);
-        }
-    }
-
-    return 0;
-}
 #endif // MFX_PROTECTED_FEATURE_DISABLE
 
 /////////////////////////////////////////////////
@@ -79,7 +67,7 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (IS_PROTECTION_PAVP_ANY(m_protected))
     {
-        mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
+        mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)mfx::GetExtBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
 
         if (!pavpOpt)
             return UMC_ERR_FAILED;
