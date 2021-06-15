@@ -2491,7 +2491,7 @@ mfxStatus  VideoVPPHW::Init(
     if (SYS_TO_SYS == m_ioMode || SYS_TO_D3D == m_ioMode || m_isD3D9SimWithVideoMemIn) // [IN == SYSTEM_MEMORY]
     {
         memTypeIn           = MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
-        memTypeOut         |= m_isD3D9SimWithVideoMemIn ? MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET : MFX_MEMTYPE_SYSTEM_MEMORY;
+        memTypeIn          |= m_isD3D9SimWithVideoMemIn ? MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET : MFX_MEMTYPE_SYSTEM_MEMORY;
 
         request.Info        = par->vpp.In;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
