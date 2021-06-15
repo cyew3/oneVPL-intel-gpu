@@ -723,10 +723,11 @@ namespace Base
     {
         INSERT_IVF_SEQ          = (1 << 0)
         , INSERT_IVF_FRM        = (1 << 1)
-        , INSERT_SPS            = (1 << 2)
-        , INSERT_PPS            = (1 << 3)
-        , INSERT_REPEATED       = (1 << 4)
-        , INSERT_FRM_OBU        = (1 << 5)
+        , INSERT_TD             = (1 << 2)
+        , INSERT_SPS            = (1 << 3)
+        , INSERT_PPS            = (1 << 4)
+        , INSERT_REPEATED       = (1 << 5)
+        , INSERT_FRM_OBU        = (1 << 6)
     };
 
     using DpbType = std::vector<std::shared_ptr<DpbFrame>>;
@@ -876,6 +877,7 @@ namespace Base
         PackedData IVF;
         PackedData SPS;
         PackedData PPS;
+        PackedData TD;
     };
 
     using DDIExecParam     = MfxEncodeHW::DDIExecParam;

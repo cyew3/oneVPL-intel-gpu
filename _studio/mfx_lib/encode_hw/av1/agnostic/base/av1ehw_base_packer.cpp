@@ -419,12 +419,6 @@ void Packer::PackSPS(BitstreamWriter& bs, SH const& sh, FH const& fh, ObuExtensi
 
     tmpBitstream.PutTrailingBits();
 
-    if (sh.operating_points_cnt_minus_1)
-    {
-        PackOBUHeader(bs, OBU_TEMPORAL_DELIMITER, 0, oeh);
-        PackOBUHeaderSize(bs, 0);
-    }
-
     const mfxU32 obu_extension_flag = sh.operating_points_cnt_minus_1 ? 1 : 0;
     PackOBUHeader(bs, OBU_SEQUENCE_HEADER, obu_extension_flag, oeh);
 
@@ -991,11 +985,6 @@ void Packer::PackPPS(
     else
         PackFrameHeader(tmpBitstream, tmp_offsets, sh, fh);
 
-    if (sh.operating_points_cnt_minus_1 && !(insertHeaders & INSERT_SPS)) {
-        PackOBUHeader(bs, OBU_TEMPORAL_DELIMITER, 1, oeh);
-        PackOBUHeaderSize(bs, 0);
-    }
-
     const mfxU32 obu_extension_flag = sh.operating_points_cnt_minus_1 ? 1 : 0;
     const mfxU32 obu_header_offset  = bs.GetOffset();
     if (insertHeaders & INSERT_FRM_OBU)
@@ -1063,7 +1052,6 @@ mfxStatus Packer::Reset(
     , const FH& /*fh*/
     , PackedHeaders& /*ph*/)
 {
-
     return MFX_ERR_NONE;
 }
 
@@ -1074,8 +1062,6 @@ void Packer::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
-        mfxStatus sts = MFX_ERR_NONE;
-
         BitstreamWriter bitstream(m_bitstream.data(), (mfxU32)m_bitstream.size());
         PackedHeaders& ph = Glob::PackedHeaders::Get(global);
         mfxVideoParam& videoParam = Glob::VideoParam::Get(global);
@@ -1084,28 +1070,39 @@ void Packer::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         auto& task = Task::Common::Get(s_task);
         ObuExtensionHeader oeh = {task.TemporalID, 0};
 
+        mfxU8* start        = bitstream.GetStart();
+        mfxU32 headerOffset = bitstream.GetOffset();
+
         PackIVF(bitstream, fh, task.InsertHeaders, videoParam);
-        MFX_CHECK_STS(sts);
-        ph.IVF.pData = bitstream.GetStart();
-        ph.IVF.BitLen = bitstream.GetOffset();
+        ph.IVF.pData  = start + headerOffset / 8;
+        ph.IVF.BitLen = bitstream.GetOffset() - headerOffset;
         assert(ph.IVF.BitLen % 8 == 0);
 
+        headerOffset = bitstream.GetOffset();
+        if (task.InsertHeaders & INSERT_TD)
+        {
+            mfxU32 ext   = sh.operating_points_cnt_minus_1 ? 1 : 0;
+            PackOBUHeader(bitstream, OBU_TEMPORAL_DELIMITER, ext, oeh);
+            PackOBUHeaderSize(bitstream, 0);
+        }
+        ph.TD.pData  = start + headerOffset / 8;
+        ph.TD.BitLen = bitstream.GetOffset() - headerOffset;
+        assert(ph.TD.BitLen % 8 == 0);
+
+        headerOffset = bitstream.GetOffset();
         if (IsI(task.FrameType))
         {
             PackSPS(bitstream, sh, fh, oeh);
-            MFX_CHECK_STS(sts);
         }
-
-        ph.SPS.pData = bitstream.GetStart() + (ph.IVF.BitLen / 8);
-        ph.SPS.BitLen = bitstream.GetOffset() - ph.IVF.BitLen;
+        ph.SPS.pData  = start + headerOffset / 8;
+        ph.SPS.BitLen = bitstream.GetOffset() - headerOffset;
         assert(ph.SPS.BitLen % 8 == 0);
 
-        task.Offsets.UncompressedHeaderByteOffset = (bitstream.GetOffset() / 8);
-
+        headerOffset = bitstream.GetOffset();
+        task.Offsets.UncompressedHeaderByteOffset = headerOffset / 8;
         PackPPS(bitstream, task.Offsets, sh, fh, oeh, task.InsertHeaders);
-        MFX_CHECK_STS(sts);
-        ph.PPS.pData = bitstream.GetStart() + (ph.IVF.BitLen + ph.SPS.BitLen)/8;
-        ph.PPS.BitLen = bitstream.GetOffset() - (ph.IVF.BitLen + ph.SPS.BitLen);
+        ph.PPS.pData = bitstream.GetStart() + headerOffset / 8;
+        ph.PPS.BitLen = bitstream.GetOffset() - headerOffset;
         assert(ph.PPS.BitLen % 8 == 0);
 
         return MFX_ERR_NONE;
@@ -1137,7 +1134,6 @@ void Packer::QueryTask(const FeatureBlocks&, TPushQT Push)
         //NB: currently this block is being called after all General Feature blocks, it means
         //that only bits overwritten are possible, bit shifting and deleting will break the stream!
         auto& task = Task::Common::Get(s_task);
-
         PatchIVFFrameInfo(task.pBsData, task.BsDataLength, task.DisplayOrder, task.InsertHeaders);
 
         return MFX_ERR_NONE;

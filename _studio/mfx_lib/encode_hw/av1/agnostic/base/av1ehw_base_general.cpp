@@ -2297,6 +2297,23 @@ inline void SetTaskIVFHeaderInsert(
     task.InsertHeaders |= INSERT_IVF_FRM;
 }
 
+inline void SetTaskTDHeaderInsert(
+    TaskCommonPar& task
+    , const mfxVideoParam& par)
+{
+    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
+    if (IsOn(av1Par.InsertTemporalDelimiter))
+    {
+        task.InsertHeaders |= INSERT_TD;
+        return;
+    }
+
+    const mfxExtAvcTemporalLayers& TL = ExtBuffer::Get(par);
+    const mfxU16 operPointCntMinus1   = CountTL(TL) - 1;
+    if (operPointCntMinus1)
+        task.InsertHeaders |= INSERT_TD;
+}
+
 inline void SetTaskInsertHeaders(
     TaskCommonPar& task
     , const mfxVideoParam& par
@@ -2305,6 +2322,8 @@ inline void SetTaskInsertHeaders(
     const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
     if (IsOn(av1Par.WriteIVFHeaders))
         SetTaskIVFHeaderInsert(task, insertIVFSeq);
+
+    SetTaskTDHeaderInsert(task, par);
 
     if (IsI(task.FrameType))
         task.InsertHeaders |= INSERT_SPS;

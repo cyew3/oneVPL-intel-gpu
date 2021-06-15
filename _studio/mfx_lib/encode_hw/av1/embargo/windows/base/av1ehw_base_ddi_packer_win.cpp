@@ -271,6 +271,9 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         nCBD += (insertIVF)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.IVF, true));
 
+        nCBD += (task.InsertHeaders & INSERT_TD)
+            && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.TD, true));
+
         nCBD += (task.InsertHeaders & INSERT_SPS)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.SPS, true));
 
