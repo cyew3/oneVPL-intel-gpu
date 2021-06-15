@@ -49,6 +49,7 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(IOPattern);
         MFX_COPY_FIELD(Protected);
         MFX_COPY_FIELD(AsyncDepth);
+        MFX_COPY_FIELD(mfx.LowPower);
         MFX_COPY_FIELD(mfx.CodecId);
         MFX_COPY_FIELD(mfx.CodecLevel);
         MFX_COPY_FIELD(mfx.CodecProfile);
@@ -515,12 +516,15 @@ void General::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
         return CopyConfigurable(blocks, in, out);
     });
 
-    Push(BLK_SetLowPowerDefault
+    Push(BLK_CheckAndFixLowPower
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW& /*strg*/) -> mfxStatus
     {
-        bool bChanged = out.mfx.LowPower && out.mfx.LowPower != MFX_CODINGOPTION_ON;
+        mfxU32 invalid = 0;
+        invalid += CheckOrZero<mfxU16>(out.mfx.LowPower, MFX_CODINGOPTION_ON, 0);
+        MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
+
         out.mfx.LowPower = MFX_CODINGOPTION_ON;
-        MFX_CHECK(!bChanged, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+
         return MFX_ERR_NONE;
     });
 
