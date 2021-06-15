@@ -27,13 +27,18 @@
 
 mfxStatus HyperEncodeBase::GetVideoParam(mfxVideoParam* par)
 {
-    auto encoder = std::find_if(m_singleGpuEncoders.begin(), m_singleGpuEncoders.end(),
-        [this](const std::unique_ptr<SingleGpuEncode>& it) {
-            return it->m_adapterType == m_devMngr->m_appSessionPlatform.MediaAdapterType;
-        })->get();
+    std::map<mfxEncoderNum, mfxVideoParam> encParams;
 
-    MFX_CHECK(encoder, MFX_ERR_UNDEFINED_BEHAVIOR);
-    return encoder->GetVideoParam(par);
+    for (auto& encoder : m_singleGpuEncoders) {
+        encParams[encoder->m_encoderNum] = {};
+        mfxStatus sts = encoder->GetVideoParam(&encParams[encoder->m_encoderNum]);
+        MFX_CHECK_STS(sts);
+    }
+
+    MFX_CHECK(MFX_ENCODERS_COUNT == 2, MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(encParams[MFX_ENCODER_NUM1].mfx.GopRefDist == encParams[MFX_ENCODER_NUM2].mfx.GopRefDist, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    return m_singleGpuEncoders[0]->GetVideoParam(par);
 }
 
 mfxStatus HyperEncodeBase::Reset(mfxVideoParam* par)

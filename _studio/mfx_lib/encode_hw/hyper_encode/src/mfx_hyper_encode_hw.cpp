@@ -257,18 +257,14 @@ mfxStatus ImplementationGopBased::QueryOnAllAdapters(VideoCORE* core, mfxVideoPa
     isEncSupportedOnDiscrete = (mfxResDiscrete == MFX_ERR_NONE || mfxResDiscrete == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) ? true : false;
     MFX_CHECK(isEncSupportedOnIntegrated || isEncSupportedOnDiscrete, MFX_ERR_UNSUPPORTED);
 
-    if (par->mfx.CodecId == MFX_CODEC_AVC)
-        if (par->mfx.GopRefDist)
-        {
-            if (isEncSupportedOnIntegrated)
-                isEncSupportedOnIntegrated = (inInternalIntegrated.mfx.GopRefDist == outInternalIntegrated.mfx.GopRefDist) ? true : false;
-            if (isEncSupportedOnDiscrete)
-                isEncSupportedOnDiscrete = (inInternalDiscrete.mfx.GopRefDist == outInternalDiscrete.mfx.GopRefDist) ? true : false;
-        }
-        else {
-            if (isEncSupportedOnIntegrated && isEncSupportedOnDiscrete)
-                MFX_CHECK(outInternalIntegrated.mfx.GopRefDist == outInternalDiscrete.mfx.GopRefDist, MFX_ERR_UNSUPPORTED);
-        }
+    if (par->mfx.GopRefDist)
+    {
+        if (isEncSupportedOnIntegrated)
+            isEncSupportedOnIntegrated = (inInternalIntegrated.mfx.GopRefDist == outInternalIntegrated.mfx.GopRefDist) ? true : false;
+        if (isEncSupportedOnDiscrete)
+            isEncSupportedOnDiscrete = (inInternalDiscrete.mfx.GopRefDist == outInternalDiscrete.mfx.GopRefDist) ? true : false;
+    }
+
     MFX_CHECK(isEncSupportedOnIntegrated || isEncSupportedOnDiscrete, MFX_ERR_UNSUPPORTED);
 
     return MFX_ERR_NONE;
@@ -368,6 +364,10 @@ mfxStatus ImplementationGopBased::Init(mfxVideoParam* /*par*/)
 
     sts = m_HyperEncode->Init();
     MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, sts);
+
+    mfxVideoParam par = {};
+    sts = m_HyperEncode->GetVideoParam(&par);
+    MFX_CHECK_STS(sts);
 
     return (sts >= m_stsInitEncParams) ? sts : m_stsInitEncParams;
 }
