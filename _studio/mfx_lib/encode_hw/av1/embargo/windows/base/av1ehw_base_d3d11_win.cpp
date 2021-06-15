@@ -178,10 +178,12 @@ inline mfxU16 GetTuIdx(mfxVideoParam& par)
 void DDI_D3D11::Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push)
 {
     Push(BLK_QueryCaps
-        , [this](const mfxVideoParam&, mfxVideoParam& par, StorageRW& strg) -> mfxStatus
+        , [this](const mfxVideoParam&, mfxVideoParam& par, StorageRW& global) -> mfxStatus
     {
-        auto& caps = Glob::EncodeCaps::GetOrConstruct(strg);
-        return QueryEncodeCaps(par, strg, caps);
+        MFX_CHECK(global.Contains(Glob::GUID::Key), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        auto& caps = Glob::EncodeCaps::GetOrConstruct(global);
+        return QueryEncodeCaps(par, global, caps);
     });
 
     Push(BLK_QueryCORE

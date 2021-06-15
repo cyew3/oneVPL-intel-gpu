@@ -547,7 +547,9 @@ void General::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
         EncodeCapsAv1 fakeCaps;
         Defaults::Param defPar(out, fakeCaps, core.GetHWType(), defaults);
 
-        MFX_CHECK(defaults.GetGUID(defPar, *pGUID), MFX_ERR_NONE);
+        bool supported = defaults.GetGUID(defPar, *pGUID);
+        MFX_CHECK(supported, MFX_ERR_UNSUPPORTED);
+
         strg.Insert(Glob::GUID::Key, std::move(pGUID));
 
         return MFX_ERR_NONE;
