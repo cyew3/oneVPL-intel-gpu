@@ -52,6 +52,7 @@ public:
             m_submittedTasks.pop();
 
         m_waitingSyncOpTasks.clear();
+        m_timeStamps.clear();
     }
 
     virtual mfxStatus AllocateSurfacePool() = 0;
@@ -108,7 +109,7 @@ protected:
         mfxBitstreamWrapperWithLock* internalBst = nullptr;
         mfxBitstream* appBst = nullptr;
         mfxSession session = nullptr;
-        mfxI32 firstFrameOfSecondEncoder = -1;
+        bool isFirstFrameOfAnyEncoder = false;
     };
 
     virtual mfxStatus InitSession(
@@ -146,7 +147,11 @@ protected:
     bool m_isEncSupportedOnIntegrated = false;
     bool m_isEncSupportedOnDiscrete = false;
 
-    mfxI32 m_firstFrameOfSecondEncoder = -1;
+    bool m_isFirstFrameOfAnyEncoder = false;
+    bool m_isIVFSeqHeaderFound = false;
+
+    std::vector<mfxU64> m_timeStamps;
+    mfxU64 m_lastProcessedFrame = 0;
 };
 
 class HyperEncodeSys : public HyperEncodeBase
