@@ -164,7 +164,7 @@ namespace Base
         mfxStatus CheckCDEF(mfxVideoParam& par, const ENCODE_CAPS_AV1& caps);
         mfxStatus CheckTemporalLayers(mfxVideoParam & par);
         mfxStatus CheckStillPicture(mfxVideoParam & par);
-        mfxStatus CheckGopRefDist(mfxVideoParam & par);
+        mfxStatus CheckGopRefDist(mfxVideoParam& par, const Defaults::Param& defPar);
         mfxStatus CheckGPB(mfxVideoParam & par);
         mfxStatus CheckIOPattern(mfxVideoParam & par);
         mfxStatus CheckRateControl(

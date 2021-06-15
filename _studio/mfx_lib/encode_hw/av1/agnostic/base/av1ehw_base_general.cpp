@@ -677,7 +677,7 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     Push(BLK_CheckGopRefDist
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
-        return CheckGopRefDist(out);
+        return CheckGopRefDist(out, *m_pQWCDefaults);
     });
 
     Push(BLK_CheckGPB
@@ -3366,11 +3366,12 @@ mfxStatus General::CheckStillPicture(mfxVideoParam & par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus General::CheckGopRefDist(mfxVideoParam & par)
+mfxStatus General::CheckGopRefDist(mfxVideoParam & par, const Defaults::Param& defPar)
 {
     MFX_CHECK(par.mfx.GopRefDist, MFX_ERR_NONE);
 
-    const mfxU16 maxRefDist = std::max<mfxU16>(1, par.mfx.GopPicSize - 1);
+    const mfxU16 GopPicSize = defPar.base.GetGopPicSize(defPar);
+    const mfxU16 maxRefDist = std::max<mfxU16>(1, GopPicSize - 1);
     MFX_CHECK(!CheckMaxOrClip(par.mfx.GopRefDist, maxRefDist), MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
