@@ -66,7 +66,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.tests.git
     branch: master
-    revision: 663367f3435ddc6b400509821982e6cd1facde60
+    revision: 09dc92457fa94fdb0acec2773d113087ea5f451d
     dest_dir: test_system
   dispatcher:
     type: git
@@ -192,4 +192,3 @@ components:
     dest_dir: klocwork/scripts
     repository: https://github.com/intel-innersource/drivers.gpu.devops.klocwork
     type: git
-
