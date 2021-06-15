@@ -966,16 +966,13 @@ public:
         , const Defaults::Param& dpar
         , mfxVideoParam& par)
     {
-        auto&  W        = par.mfx.FrameInfo.Width;
-        auto&  H        = par.mfx.FrameInfo.Height;
+        const mfxU16 MaxW = mfxU16(dpar.caps.MaxPicWidth);
+        const mfxU16 MaxH = mfxU16(dpar.caps.MaxPicHeight);
+        const mfxU16 MinW = mfxU16(SB_SIZE);
+        const mfxU16 MinH = mfxU16(SB_SIZE);
 
-        mfxU16 MaxW     = mfxU16(dpar.caps.MaxPicWidth);
-        mfxU16 MaxH     = mfxU16(dpar.caps.MaxPicHeight);
-        mfxU16 MinW     = mfxU16(SB_SIZE);
-        mfxU16 MinH     = mfxU16(SB_SIZE);
-
-        MFX_CHECK(W, MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(H, MFX_ERR_INVALID_VIDEO_PARAM);
+        auto& W           = par.mfx.FrameInfo.Width;
+        auto& H           = par.mfx.FrameInfo.Height;
 
         MFX_CHECK(!CheckRangeOrSetDefault<mfxU16>(W, MinW, MaxW, 0), MFX_ERR_UNSUPPORTED);
         MFX_CHECK(!CheckRangeOrSetDefault<mfxU16>(H, MinH, MaxH, 0), MFX_ERR_UNSUPPORTED);
