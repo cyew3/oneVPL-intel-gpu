@@ -26,65 +26,31 @@ if( ENABLE_ITT )
     set( arch "32" )
   endif()
 
-  if( Linux )
-    # VTune is a source of ITT library
-    if( NOT CMAKE_VTUNE_HOME )
-      set( CMAKE_VTUNE_HOME /opt/intel/vtune_amplifier )
-    endif()
-
-    find_path( ITT_INCLUDE_DIRS ittnotify.h
-      PATHS ${CMAKE_ITT_HOME} ${CMAKE_VTUNE_HOME}
-      PATH_SUFFIXES include )
-
-    # Unfortunately SEAPI and VTune uses different names for itt library:
-    #  * SEAPI uses libittnotify${arch}.a
-    #  * VTune uses libittnotify.a
-    # We are trying to check both giving preference to SEAPI name.
-    find_path( ITT_LIBRARY_DIRS libittnotify${arch}.a
-      PATHS ${CMAKE_ITT_HOME} ${CMAKE_VTUNE_HOME}
-      PATH_SUFFIXES lib64 )
-    if( NOT ITT_LIBRARY_DIRS MATCHES NOTFOUND )
-      set( ITT_LIBRARIES "ittnotify${arch}" )
+  if( NOT CMAKE_ITT_HOME )
+    if( Linux )
+      set( CMAKE_ITT_HOME "${MFX_HOME}/../mdp_msdk-contrib/itt/linux" )
+      set( libname "libittnotify.a" )
     else()
-      find_path( ITT_LIBRARY_DIRS libittnotify.a
-        PATHS ${CMAKE_ITT_HOME} ${CMAKE_VTUNE_HOME}
-        PATH_SUFFIXES lib64 )
-      if( NOT ITT_LIBRARY_PATH MATCHES NOTFOUND )
-        set( ITT_LIBRARIES "ittnotify" )
-      endif()
-    endif()
-
-    if(NOT ITT_INCLUDE_DIRS MATCHES NOTFOUND AND
-       NOT ITT_LIBRARY_DIRS MATCHES NOTFOUND)
-
-      message( STATUS "itt header is in ${ITT_INCLUDE_DIRS}" )
-      message( STATUS "itt lib is in ${ITT_LIBRARY_DIRS}" )
-      message( STATUS "itt lib name is ${ITT_LIBRARIES}" )
-
-      set( ITT_FOUND TRUE )
-    endif()
-  else()
-
-    if( NOT CMAKE_ITT_HOME )
       set( CMAKE_ITT_HOME "${MFX_HOME}/../mdp_msdk-contrib/itt/windows" )
+      set( libname "libittnotify.lib" )
     endif()
+  endif()
 
-    find_path( ITT_INCLUDE_DIRS ittnotify.h
-      PATHS ${CMAKE_ITT_HOME}
-      PATH_SUFFIXES include )
+  find_path( ITT_INCLUDE_DIRS ittnotify.h
+    PATHS ${CMAKE_ITT_HOME}
+    PATH_SUFFIXES include )
 
-    find_path( ITT_LIBRARY_DIRS libittnotify.lib
-      PATHS ${CMAKE_ITT_HOME}
-      PATH_SUFFIXES lib${arch} )
-    if( NOT ITT_LIBRARY_PATH MATCHES NOTFOUND )
-      set( ITT_LIBRARIES "libittnotify.lib" )
-    endif()
+  find_path( ITT_LIBRARY_DIRS ${libname}
+    PATHS ${CMAKE_ITT_HOME}
+    PATH_SUFFIXES lib${arch} )
+  if( NOT ITT_LIBRARY_PATH MATCHES NOTFOUND )
+    set( ITT_LIBRARIES ${libname} )
+  endif()
 
-    if(NOT ITT_INCLUDE_DIRS MATCHES NOTFOUND AND
-       NOT ITT_LIBRARY_DIRS MATCHES NOTFOUND)
+  if(NOT ITT_INCLUDE_DIRS MATCHES NOTFOUND AND
+    NOT ITT_LIBRARY_DIRS MATCHES NOTFOUND)
 
-      set( ITT_FOUND TRUE )
-    endif()
+    set( ITT_FOUND TRUE )
   endif()
   
   if (ITT_FOUND)

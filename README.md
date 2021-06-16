@@ -48,7 +48,7 @@ To enable the Instrumentation and Tracing Technology (ITT) API you need to:
 
 and configure Media SDK with the -DENABLE_ITT=ON. In case of VTune it will be searched in the default location (/opt/intel/vtune_amplifier). You can adjust ITT search path with  CMAKE_ITT_HOME.
 
-Once Media SDK was built with ITT support, enable it in a runtime creating per-user configuration file ($HOME/.mfx_trace) or a system wide configuration file (/etc/mfx_trace) with the following content:
+Once Media SDK was built with ITT support, enable it in a runtime creating per-user configuration file ($HOME/.mfx_trace) with the following content:
 ```sh
 Output=0x10
 ```
