@@ -2119,6 +2119,21 @@ enum {
     MFX_EXTBUFF_CROPS = MFX_MAKEFOURCC('C', 'R', 'O', 'P'),
 
     /*!
+        See the mfxExtAV1BitstreamParam structure for more details.
+    */
+    MFX_EXTBUFF_AV1_BITSTREAM_PARAM             = MFX_MAKEFOURCC('A', '1', 'B', 'S'),
+
+    /*!
+        See the mfxExtAV1ResolutionParam structure for more details.
+    */
+    MFX_EXTBUFF_AV1_RESOLUTION_PARAM            = MFX_MAKEFOURCC('A', '1', 'R', 'S'),
+
+    /*!
+        See the mfxExtAV1TileParam structure for more details.
+    */
+    MFX_EXTBUFF_AV1_TILE_PARAM                  = MFX_MAKEFOURCC('A', '1', 'T', 'L'),
+
+    /*!
        See the mfxExtAV1FilmGrainParam structure for more details.
     */
     MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM = MFX_MAKEFOURCC('A','1','F','G'),
@@ -4686,6 +4701,42 @@ typedef struct {
     mfxU8           *Mask;
     mfxU32           reserved[4]; /*! Reserved for future use. */
 } mfxExtDeviceAffinityMask;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+/*! The structure is used by AV1 encoder with more parameter control to encode frame. */
+typedef struct {
+    mfxExtBuffer Header;   /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_AV1_BITSTREAM_PARAM. */
+
+    mfxU16 WriteIVFHeaders; /*!< Tri-state option to control IVF headers insertion, default is ON. */
+
+    mfxU16 reserved[31];
+} mfxExtAV1BitstreamParam;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+/*! The structure is used by AV1 encoder with more parameter control to encode frame. */
+typedef struct {
+    mfxExtBuffer Header; /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_AV1_RESOLUTION_PARAM. */
+
+    mfxU32 FrameWidth;   /*!< Width of the coded frame in pixels, default value is from mfxFrameInfo. */
+    mfxU32 FrameHeight;  /*!< Height of the coded frame in pixels, default value is from mfxFrameInfo. */
+
+    mfxU32 reserved[6];
+} mfxExtAV1ResolutionParam;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+  /*! The structure is used by AV1 encoder with more parameter control to encode frame. */
+typedef struct {
+    mfxExtBuffer Header;   /*!< Extension buffer header. Header.BufferId must be equal to MFX_EXTBUFF_AV1_TILE_PARAM. */
+
+    mfxU16 NumTileRows;    /*!< Number of tile rows, default value is 1. */
+    mfxU16 NumTileColumns; /*!< Number of tile columns, default value is 1. */
+    mfxU16 NumTileGroups;  /*!< Number of tile groups, it will be ingored if the tile groups num is invalid, default value is 1. */
+
+    mfxU16 reserved[5];
+} mfxExtAV1TileParam;
 MFX_PACK_END()
 
 /*! The FilmGrainFlags enumerator itemizes flags in AV1 film grain parameters.
