@@ -36,10 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <va/va.h>
 #endif
 
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-#include "mfxfeihevc.h"
-#endif
-
 template<class T> struct tsExtBufTypeToId { enum { id = 0 }; };
 
 #define EXTBUF(TYPE, ID) template<> struct tsExtBufTypeToId<TYPE> { enum { id = ID }; };
@@ -143,21 +139,6 @@ public:
                 memset(&eb, 0, size);
                 eb.BufferId = id;
                 eb.BufferSz = size;
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-                // HEVC FEI buffers uses direct exposure. 0 is correct libva buffer id, so id should be explicitly set to invalid
-                switch (eb.BufferId)
-                {
-                case MFX_EXTBUFF_HEVCFEI_ENC_QP:
-                    (reinterpret_cast<mfxExtFeiHevcEncQP*>(&eb))->VaBufferID = VA_INVALID_ID;
-                    break;
-                case MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL:
-                    (reinterpret_cast<mfxExtFeiHevcEncCtuCtrl*>(&eb))->VaBufferID = VA_INVALID_ID;
-                    break;
-                // TODO: Add more HEVC FEI buffers
-                default:
-                    break;
-                }
-#endif
             }
         }
 

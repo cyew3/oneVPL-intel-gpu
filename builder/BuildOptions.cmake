@@ -136,8 +136,6 @@ cmake_dependent_option(
 cmake_dependent_option( MFX_ENABLE_MVC_VIDEO_ENCODE "Enable MVC encoder?" ON
   "${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF)
 
-cmake_dependent_option( MFX_ENABLE_MFE               "Enable MFE?"            ON "${API_VERSION} VERSION_GREATER_EQUAL 1.25" OFF )
-cmake_dependent_option( MFX_ENABLE_OPAQUE_MEMORY     "Enable opaque memory?"  ON "NOT ${API_USE_VPL}" OFF )
 cmake_dependent_option( MFX_ENABLE_USER_ENCTOOLS     "Enable encoding tools?" ON "${MFX_NEXT_OPTIONS_ALLOWED}" OFF )
 
 cmake_dependent_option(

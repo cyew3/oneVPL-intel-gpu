@@ -174,9 +174,6 @@ target_link_options(${mfxlibname}
 target_link_libraries(${mfxlibname}
   PRIVATE
     ${LIBS}
-    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_preenc>
-    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_enc>
-    $<$<BOOL:${MFX_ENABLE_H264_VIDEO_FEI_ENCODE}>:h264_pak>
     $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>
   )
 

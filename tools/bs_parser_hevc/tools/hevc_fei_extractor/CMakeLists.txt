@@ -1,6 +1,4 @@
-if (NOT MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-  return()
-endif()
+return()
 
 find_path( FEI_INCLUDE mfxfeihevc.h PATHS ${MFX_INCLUDE} )
 

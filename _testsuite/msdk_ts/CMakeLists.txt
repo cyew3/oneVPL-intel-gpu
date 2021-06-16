@@ -356,54 +356,6 @@ if (MFX_ENABLE_VPP)
   source_group("vpp" FILES ${VPP_SRC})
 endif()
 
-if (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-  set(H264_VIDEO_FEI_ENCODE_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_enc_memory_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_enc_query_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_advanced_ref_lists.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_bp_sei.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_close.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_default_ref_lists.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_direct_bias.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_disable_deblocking.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_enablembqp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_encode_frame_async.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_ext_coding_option.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_field_coding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_gpu_hang.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_mbqp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_memory_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_num_active_ref.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_oversized_surfaces.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_pi_field_pair.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_ref_list_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_sei_payload.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_timestamp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encode_weighted_prediction.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_aud.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_mmco.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_pps.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_sei_payload.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_encpak_sps.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_multi_pak.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_gpu_hang.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_memory_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_query_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_queryiosurf.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_pak_reset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_downsample.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_enable8x8stat_check.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_gpu_hang.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_memory_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_mvmb_valid_buffer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_process_frame_async.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/fei_preenc_query_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/lookahead_1N.cpp
-  )
-  source_group("fei" FILES ${H264_VIDEO_FEI_ENCODE_SRC})
-endif()
-
 if (MFX_ENABLE_VC1_VIDEO_DECODE)
   set(VC1_VIDEO_DECODE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vc1_sethandle_16.cpp
@@ -498,30 +450,6 @@ target_sources(msdk_gmock
       ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/vpp_fieldweaving_robustness.cpp
     >
 )
-
-if(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-  target_include_directories(msdk_gmock PRIVATE ${MSDK_SAMPLES_ROOT}/sample_hevc_fei/include)
-  target_sources(msdk_gmock
-    PRIVATE
-      ${MSDK_SAMPLES_ROOT}/sample_hevc_fei/src/fei_buffer_allocator.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_avc_intra_modes.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_ctu_force_flags.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_ctuqp.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_ctuqp_invalid_params.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_ctuqp_quality.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_default_ref_lists.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_fast_intra_mode_inter_pred.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_force_ctu_split.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_frame_qp.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_frame_qp_ipb.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_idr_insertion.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_invalid_runtime_parameters.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_nummbperslice.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_numslice.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_numslice_ipb.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/hevce_fei_payload.cpp
-  )
-endif()
 
 target_compile_definitions(msdk_gmock
   PRIVATE

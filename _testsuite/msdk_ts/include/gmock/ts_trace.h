@@ -143,9 +143,6 @@ public:
     tsTrace& operator << (const BSErr& p){
         return operator<<(const_cast<BSErr&>(p));
     }
-#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    tsTrace& operator << (const mfxExtFeiEncMV& p);
-#endif
 
     template<typename T> tsTrace& operator << (T& p) { (tsAutoTrace&)*this << p; return *this; }
     template<typename T> tsTrace& operator << (T* p) { (tsAutoTrace&)*this << p; return *this; }

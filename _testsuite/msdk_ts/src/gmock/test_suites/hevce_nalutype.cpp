@@ -22,21 +22,6 @@ namespace hevce_nalutype
 {
     using namespace BS_HEVC;
 
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-    void SetDefaultsToCtrl(mfxExtFeiHevcEncFrameCtrl& ctrl)
-    {
-        memset(&ctrl, 0, sizeof(ctrl));
-
-        ctrl.Header.BufferId = MFX_EXTBUFF_HEVCFEI_ENC_CTRL;
-        ctrl.Header.BufferSz = sizeof(mfxExtFeiHevcEncFrameCtrl);
-        ctrl.SubPelMode = 3; // quarter-pixel motion estimation
-        ctrl.SearchWindow = 5; // 48 SUs 48x40 window full search
-        ctrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
-                                     // enable internal L0/L1 predictors: 1 - spatial predictors
-        ctrl.MultiPred[0] = ctrl.MultiPred[1] = 1;
-    }
-#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
-
     enum
     {
         DEFAULT  = 0,  /* default nalu type setting */
@@ -938,12 +923,7 @@ namespace hevce_nalutype
 
     mfxI32 TestSuite::RunTest_FEI(const mfxU32 id)
     {
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-         g_tsLog << "FEI is removed in OneVPL\n";
-         throw tsSKIP;
-#else
         return RunTest(id, true);
-#endif
     }
 
     mfxI32 TestSuite::RunTest(mfxU32 id, bool is_HEVCeFEI)
@@ -982,18 +962,6 @@ namespace hevce_nalutype
         m_par.mfx.IdrInterval = tc.IdrInterval;
         m_par.AsyncDepth = 1;
         m_par.mfx.GopPicSize = 15;
-
-#if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-        if (is_HEVCeFEI) {
-            g_tsPlugin.Reg(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC, MFX_PLUGINID_HEVC_FEI_ENCODE);
-            m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC);
-            m_loaded = false;
-            Load();
-
-            mfxExtFeiHevcEncFrameCtrl& control = m_ctrl;
-            SetDefaultsToCtrl(m_ctrl);
-        }
-#endif //MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
 
         Init();
         GetVideoParam();

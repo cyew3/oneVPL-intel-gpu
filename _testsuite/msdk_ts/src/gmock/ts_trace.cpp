@@ -439,22 +439,6 @@ tsTrace& tsTrace::operator<<(const mfxExtAVCRefLists& p)
     return *this;
 }
 
-#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-tsTrace& tsTrace::operator<<(const mfxExtFeiEncMV& p)
-{
-    STRUCT_BODY(mfxExtFeiEncMV,
-        FIELD_S(mfxExtBuffer, Header)
-        FIELD_A_T(mfxU32, NumMBAlloc, MB)
-        /*for(mfxU32 i = 0; p.MB && i < p.NumMBAlloc; ++i)
-        {
-            FIELD_S(mfxExtFeiEncMV_Entry, MB[i])
-        }*/
-    )
-
-    return *this;
-}
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-
 tsTrace& tsTrace::operator<<(const mfxExtPartialBitstreamParam& p)
 {
     STRUCT_BODY(mfxExtPartialBitstreamParam,

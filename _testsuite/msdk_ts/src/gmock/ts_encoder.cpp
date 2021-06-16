@@ -224,13 +224,6 @@ mfxStatus tsVideoEncoder::Init()
 #endif //MFX_ENABLE_OPAQUE_MEMORY
     }
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    // Set single field processing flag
-    mfxExtFeiParam* fei_ext = (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);
-    if (fei_ext)
-        m_single_field_processing = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-
     return Init(m_session, m_pPar);
 }
 
@@ -1305,12 +1298,6 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
     mfxU32 submitted = 0;
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
     mfxSyncPoint sp = nullptr;
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
-    mfxExtFeiParam* fei_ext= (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);
-    if (fei_ext)
-        m_single_field_processing = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
-#endif //MFX_ENABLE_H264_VIDEO_FEI_ENCODE
 
     async = TS_MIN(n, async - 1);
 
