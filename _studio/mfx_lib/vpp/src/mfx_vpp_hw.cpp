@@ -5900,7 +5900,7 @@ mfxStatus ConfigureExecuteParams(
                 if (caps.uDenoise2Filter)
                 {
                     // set denoise settings
-                    mfxExtVPPDenoise2* extDenoise = reinterpret_cast<mfxExtVPPDenoise2*>(GetExtBuffer(videoParam.ExtParam, videoParam.NumExtParam, MFX_EXTBUFF_VPP_DENOISE2));
+                    mfxExtVPPDenoise2* extDenoise = reinterpret_cast<mfxExtVPPDenoise2*>(mfx::GetExtBuffer(videoParam.ExtParam, videoParam.NumExtParam, MFX_EXTBUFF_VPP_DENOISE2));
                     if (extDenoise)
                     {
                         executeParams.denoiseMode = extDenoise->Mode;
