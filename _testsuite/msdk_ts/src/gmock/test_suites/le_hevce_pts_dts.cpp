@@ -230,12 +230,12 @@ namespace le_hevce_pts_dts
         }
 
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
-        mfxU32 GetFrameOreder(mfxU32 _pts);
+        mfxU32 GetFrameOrder(mfxU32 _pts);
     };
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        int frame_order = GetFrameOreder(bs.TimeStamp);
+        int frame_order = GetFrameOrder(bs.TimeStamp);
         delay = H265_CeilLog2(num_BFrames + 1) + frame_order - frame_number;
         int dts_expected = (bs.TimeStamp - (delay * 90000 * frD) / frN);
         if (frame_order == -1)
@@ -251,7 +251,7 @@ namespace le_hevce_pts_dts
         return MFX_ERR_NONE;
     }
 
-    mfxU32 BitstreamChecker::GetFrameOreder(mfxU32 _pts)
+    mfxU32 BitstreamChecker::GetFrameOrder(mfxU32 _pts)
     {
         if (_pts != (mfxU32)-1)
         {
@@ -539,6 +539,8 @@ namespace le_hevce_pts_dts
 
         g_tsStatus.expect(enc_sts);
         EncodeFrames(MAX_PTS);
+
+        DrainEncodedBitstream();
 
         TS_END;
         return 0;

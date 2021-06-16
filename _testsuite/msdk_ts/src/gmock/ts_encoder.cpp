@@ -1296,14 +1296,18 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
 {
     mfxU32 encoded = 0;
     mfxU32 submitted = 0;
+    mfxU32 surfaces_submitted = 0;
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
     mfxSyncPoint sp = nullptr;
 
     async = TS_MIN(n, async - 1);
 
-    while(encoded < n)
+    while(surfaces_submitted < n)
     {
         mfxStatus sts = EncodeFrameAsync();
+
+        if (sts == MFX_ERR_NONE || sts == MFX_ERR_MORE_DATA)
+            surfaces_submitted++;
 
         if (sts == MFX_ERR_MORE_DATA)
         {
@@ -1346,7 +1350,7 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
         }
     }
 
-    g_tsLog << encoded << " FRAMES ENCODED\n";
+    g_tsLog << surfaces_submitted << " FRAMES ENCODED\n";
 
     if (check && (encoded != n))
         return MFX_ERR_UNKNOWN;
