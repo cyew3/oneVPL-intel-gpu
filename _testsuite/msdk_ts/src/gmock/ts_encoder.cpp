@@ -318,14 +318,6 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
         { MFX_PROFILE_VP9_3,{ 0x353aca91, 0xd945, 0x4c13,{ 0xae, 0x7e, 0x46, 0x90, 0x60, 0xfa, 0xc8, 0xd8 } } }, ///Profile 3 (10 bit)
     };
 
-    static TableGuid DXVA2_Intel_Encode_AVC_Profile = {
-        { 0, { 0x97688186, 0x56a8, 0x4094, { 0xb5, 0x43, 0xfc, 0x9d, 0xaa, 0xa4, 0x9f, 0x4b } } },  ///Profile 0
-    };
-
-    static TableGuid DXVA2_Intel_LowPowerEncode_AVC_Profile = {
-       { 0, {  0x1424d4dc, 0x7cf5, 0x4bb1, { 0x9c, 0xd7, 0xb6, 0x37, 0x17, 0xa7, 0x2a, 0x6b } } },  ///Profile 0
-    };
-
     mfxExtCodingOption3* CO3 = GetExtBufferPtr(m_par);
     switch (m_par.mfx.CodecId)
     {
@@ -426,29 +418,6 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
             catch (std::out_of_range)
             {
                 guid = DXVA2_Intel_LowpowerEncode_VP9_Profile[MFX_PROFILE_VP9_0]; ///Default profile
-            }
-        }
-        break;
-    case MFX_CODEC_AVC:
-        if (g_tsConfig.lowpower != MFX_CODINGOPTION_ON) {
-            try
-            {
-                guid = DXVA2_Intel_Encode_AVC_Profile.at(m_par.mfx.CodecProfile);
-            }
-            catch (std::out_of_range)
-            {
-                guid = DXVA2_Intel_Encode_AVC_Profile[0]; ///Default profile
-            }
-        }
-        else
-        {
-            try
-            {
-                guid = DXVA2_Intel_LowPowerEncode_AVC_Profile.at(m_par.mfx.CodecProfile);
-            }
-            catch (std::out_of_range)
-            {
-                guid = DXVA2_Intel_LowPowerEncode_AVC_Profile[0]; ///Default profile
             }
         }
         break;
@@ -938,7 +907,6 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
 
         sts = auxDevice->IsAccelerationServiceExist(guid);
         MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
-
         sts = auxDevice->QueryAccelCaps(&guid, pCaps, pCapsSize);
         MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
     }
