@@ -191,8 +191,15 @@ msdk_printf(MSDK_STRING("                                      2 - bilinear\n"))
 msdk_printf(MSDK_STRING("                                      3 - advanced\n\n"));
 #endif
 
-msdk_printf(MSDK_STRING("   [-denoise (level)]  - enable denoise algorithm. Level is optional \n"));
-msdk_printf(MSDK_STRING("                         range of  noise level is [0, 100]\n"));
+msdk_printf(MSDK_STRING("   [-denoise (level) (mode)]  - enable denoise.\n"));
+msdk_printf(MSDK_STRING("           mode  - denoise mode\n"));
+msdk_printf(MSDK_STRING("               0    - default\n"));
+msdk_printf(MSDK_STRING("               1001 - auto BD rate\n"));
+msdk_printf(MSDK_STRING("               1002 - auto subjective\n"));
+msdk_printf(MSDK_STRING("               1003 - auto adjust\n"));
+msdk_printf(MSDK_STRING("               1004 - manual mode for pre-processing, need level\n"));
+msdk_printf(MSDK_STRING("               1005 - manual mode for post-processing, need level\n"));
+msdk_printf(MSDK_STRING("           level - range of noise level is [0, 100]\n"));
 #if MFX_VERSION >= 1025
 msdk_printf(MSDK_STRING("   [-chroma_siting (vmode hmode)] - specify chroma siting mode for VPP color conversion, allowed values: vtop|vcen|vbot hleft|hcen\n"));
 #endif
@@ -777,6 +784,13 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                         pParams->denoiseParam[paramID].mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
+                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&readData));
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->denoiseParam[paramID].config = (mfxU16)readData;
+                        pParams->denoiseParam[paramID].mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+                    }
                 }
             }
 #ifdef ENABLE_MCTF
@@ -1282,6 +1296,13 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                     if ( ioStatus > 0 )
                     {
                         pParams->denoiseParam[0].factor = (mfxU16)readData;
+                        pParams->denoiseParam[0].mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+                    }
+                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&readData));
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->denoiseParam[0].config = (mfxU16)readData;
                         pParams->denoiseParam[0].mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
