@@ -249,8 +249,9 @@ void HyperEncodeBase::CorrectFrameIfNeeded(const EncodingTasks* task)
     // otherwise the stream will be displayed incorrectly
     if (task->isFirstFrameOfAnyEncoder) {
         // bytes 0-3 of IVF sequence header are signature (DKIF)
-        char sign[4] = "";
+        char sign[5] = "";
         memcpy(sign, task->internalBst->Data + task->internalBst->DataOffset, 4);
+        sign[4] = '\0';
 
         // if signature is found and this is the second frame with it, shift the frame by 32 bytes
         if (strstr(sign, "DKIF")) {
