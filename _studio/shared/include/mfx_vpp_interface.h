@@ -85,7 +85,6 @@ namespace MfxHwVideoProcessing
         MFX_FOURCC_P8_TEXTURE,
         MFX_FOURCC_P010      ,
         MFX_FOURCC_P210      ,
-        MFX_FOURCC_BGR4      ,
         MFX_FOURCC_A2RGB10   ,
         MFX_FOURCC_ARGB16    ,
         MFX_FOURCC_R16       ,

@@ -80,6 +80,7 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_YV16,               VM_STRING("YV16") },
     { MFX_FOURCC_RGB3,               VM_STRING("RGB3") },
     { MFX_FOURCC_RGB4,               VM_STRING("RGB4") },
+    { MFX_FOURCC_BGR4,               VM_STRING("BGR4") },
     { MFX_FOURCC_P8,                 VM_STRING("P8")   },
     { MFX_CODEC_HEVC,                VM_STRING("HEVC") },
     { MFX_FOURCC_P010,               VM_STRING("P010") },
