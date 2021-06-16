@@ -44,14 +44,17 @@ void createBitstream2(char const *fName) {
 namespace dvp_status { namespace tests
 {
     // Initialize Intel Media SDK session
-    MFXVideoSession session;
+    MainLoader loader;
+    MainVideoSession session;
     //CORE20 doesn't support DX9 and auto chooses DX9, so choose DX11 explicitly
 #if defined(_WIN32) || defined(_WIN64)
     mfxIMPL impl = MFX_IMPL_VIA_D3D11;
 #else
     mfxIMPL impl = MFX_IMPL_VIA_VAAPI;
 #endif
-    mfxVersion ver = { {0, 1} };
+    mfxVersion minVer = { {0, 2} };
+    mfxU16 adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
+    mfxU32 adapterNum = 0;
 
     TEST(DVP, Status_check_2_compatible_SPS)
     {
@@ -70,7 +73,7 @@ namespace dvp_status { namespace tests
         sts = ReadBitStreamData(&mfxBS, fSource);
 
         // Create Media SDK decoder+vp
-        Initialize(impl, ver, &session, NULL); //already checked in previous test
+        Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL); //already checked in previous test
         MFXVideoDECODE_VPP mfxDecVP(session);
 
         // Set required video parameters for decode (1st output)
@@ -162,7 +165,7 @@ namespace dvp_status { namespace tests
         sts = ReadBitStreamData(&mfxBS, fSource);
 
         // Create Media SDK decoder+vp
-        Initialize(impl, ver, &session, NULL); //already checked in previous test
+        Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL); //already checked in previous test
         MFXVideoDECODE_VPP mfxDecVP(session);
 
         // Set required video parameters for decode (1st output)

@@ -53,20 +53,23 @@ namespace dvp { namespace tests
 {
 
     // Initialize Intel Media SDK session
-    MFXVideoSession session;
+    MainLoader loader;
+    MainVideoSession session;
     //CORE20 doesn't support DX9 and auto chooses DX9, so choose DX11 explicitly
 #if defined(_WIN32) || defined(_WIN64)
     mfxIMPL impl = MFX_IMPL_VIA_D3D11;
 #else
     mfxIMPL impl = MFX_IMPL_VIA_VAAPI;
 #endif
-    mfxVersion ver = { {0, 1} };
+    mfxVersion minVer = { {0, 2} };
+    mfxU16 adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
+    mfxU32 adapterNum = 0;
 
     // Try to initialize session
     TEST(DVP, Init)
     {
         ASSERT_EQ(
-            Initialize(impl, ver, &session, NULL),
+            Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL),
             MFX_ERR_NONE
         );
     }
@@ -83,7 +86,7 @@ namespace dvp { namespace tests
         decPar.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
         vppPar.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
         channelsPar[0] = &vppPar;
-        Initialize(impl, ver, &session, NULL);
+        Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL);
         MFXVideoDECODE_VPP mfxDecVP(session);
         EXPECT_EQ(
             mfxDecVP.Init(&decPar, &channelsPar[0], 1),
@@ -98,7 +101,7 @@ namespace dvp { namespace tests
         decPar.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
         vppPar.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
         channelsPar[0] = &vppPar;
-        Initialize(impl, ver, &session, NULL);
+        Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL);
         MFXVideoDECODE_VPP mfxDecVP(session);
         EXPECT_EQ(
             mfxDecVP.Init(&decPar, &channelsPar[0], 1),
@@ -113,7 +116,7 @@ namespace dvp { namespace tests
         decPar.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
         vppPar.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
         channelsPar[0] = &vppPar;
-        Initialize(impl, ver, &session, NULL);
+        Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL);
         MFXVideoDECODE_VPP mfxDecVP(session);
         EXPECT_EQ(
             mfxDecVP.Init(&decPar, &channelsPar[0], 1),
@@ -128,7 +131,7 @@ namespace dvp { namespace tests
         decPar.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
         vppPar.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
         channelsPar[0] = &vppPar;
-        Initialize(impl, ver, &session, NULL);
+        Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL);
         MFXVideoDECODE_VPP mfxDecVP(session);
         EXPECT_EQ(
             mfxDecVP.Init(&decPar, &channelsPar[0], 1),

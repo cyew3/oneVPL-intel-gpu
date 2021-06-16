@@ -51,6 +51,11 @@ void PrintHelp(CmdOptions* cmd_options)
         printf("  -sw           Load SW Media SDK Library implementation\n");
         printf("  -hw           Load HW Media SDK Library implementation\n");
     }
+    if (cmd_options->ctx.options & OPTION_ADAPTER) {
+        printf("  -iGfx         Preffer processing on iGfx (by default system decides)\n");
+        printf("  -dGfx         Preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1'\n");
+        printf("                If not specified will be pick first available.\n");
+    }
     if (cmd_options->ctx.options & OPTION_GEOMETRY) {
         printf("  -g WxHx10        Mandatory. Set input video geometry, i.e. width and height, '10' means 10bit color(optional).\n");
     }
@@ -104,6 +109,18 @@ void ParseOptions(int argc, char* argv[], CmdOptions* cmd_options)
             cmd_options->values.impl = MFX_IMPL_HARDWARE;
         } else if ((cmd_options->ctx.options & OPTION_IMPL) && !strcmp(argv[i], "-auto")) {
             cmd_options->values.impl = MFX_IMPL_AUTO;
+        } else if ((cmd_options->ctx.options & OPTION_ADAPTER) && !strcmp(argv[i], "-iGfx")) {
+            cmd_options->values.adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+        } else if ((cmd_options->ctx.options & OPTION_ADAPTER) && !strcmp(argv[i], "-dGfx")) {
+            cmd_options->values.adapterType = mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
+            int adapterNum = 0;
+            if (++i < argc && 1 == msdk_sscanf(argv[i], "%d ", &adapterNum)) {
+                if (adapterNum < 0) {
+                    printf("error: incorrect argument for -dGfx option given\n");
+                    exit(-1);
+                }
+            }
+            cmd_options->values.adapterNum = adapterNum;
         } else if ((cmd_options->ctx.options & OPTION_GEOMETRY) && !strcmp(argv[i], "-g")) {
             int width = 0, height = 0, bits = 0 , r = 0;
             if (++i >= argc) {

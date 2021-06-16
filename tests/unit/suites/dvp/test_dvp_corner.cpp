@@ -31,14 +31,17 @@ namespace dvp_corner { namespace tests
 {
 
     // Initialize Intel Media SDK session
-    MFXVideoSession session;
+    MainLoader loader;
+    MainVideoSession session;
     //CORE20 doesn't support DX9 and auto chooses DX9, so choose DX11 explicitly
 #if defined(_WIN32) || defined(_WIN64)
     mfxIMPL impl = MFX_IMPL_VIA_D3D11;
 #else
     mfxIMPL impl = MFX_IMPL_VIA_VAAPI;
 #endif
-    mfxVersion ver = { {0, 1} };
+    mfxVersion minVer = { {0, 2} };
+    mfxU16 adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
+    mfxU32 adapterNum = 0;
 
     class DVP_F : public ::testing::TestWithParam<mfxU32> {
 
@@ -58,7 +61,7 @@ namespace dvp_corner { namespace tests
             sts = MFX_ERR_NONE;
 
             // Initialize session impl version
-            sts = Initialize(impl, ver, &session, NULL);
+            sts = Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL);
             ASSERT_EQ(sts, MFX_ERR_NONE);
 
             // Create Media SDK decoder+vp

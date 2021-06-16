@@ -32,16 +32,20 @@
  * Windows implementation of OS-specific utility functions
  */
 
-mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles)
+mfxStatus Initialize(mfxIMPL impl, mfxVersion minVersion, mfxU16 adapterType, mfxU32 adapterNum, MainLoader* pLoader, MainVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    mfxAccelerationMode accelMode = MFX_ACCEL_MODE_VIA_D3D11;
 
 #ifdef DX11_D3D
     impl |= MFX_IMPL_VIA_D3D11;
 #endif
 
+    sts = pLoader->ConfigureLoader(impl, minVersion, accelMode, adapterType, adapterNum);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
     // Initialize Intel Media SDK Session
-    sts = pSession->Init(impl, &ver);
+    sts = pSession->CreateSession(pLoader);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #if defined(DX9_D3D) || defined(DX11_D3D)

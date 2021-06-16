@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
     options.ctx.options = OPTIONS_DECODE | OPTIONS_VPP;
     options.ctx.usage = usage;
     options.values.impl = MFX_IMPL_AUTO_ANY;
+    options.values.adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
 
     // here we parse options
     ParseOptions(argc, argv, &options);
@@ -69,10 +70,13 @@ int main(int argc, char* argv[])
     // Initialize Intel Media SDK session
     // - MFX_IMPL_AUTO_ANY selects HW acceleration if available (on any adapter)
 
+    mfxVersion minVer = { {2, 2} };
     mfxIMPL impl = options.values.impl;
-    mfxVersion ver = { {2, 2} };
-    MFXVideoSession session;
-    sts = Initialize(impl, ver, &session, NULL);
+    mfxU16  adapterType = options.values.adapterType;
+    mfxU32  adapterNum = options.values.adapterNum;
+    MainLoader loader;
+    MainVideoSession session;
+    sts = Initialize(impl, minVer, adapterType, adapterNum, &loader, &session, NULL);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Prepare Media SDK bit stream buffer
