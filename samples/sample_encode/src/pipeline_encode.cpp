@@ -1494,6 +1494,7 @@ mfxStatus CEncodingPipeline::GetAdapterNum(const sInputParams & params, mfxU32 &
     interface_request.Requirements.mfx.CodecId                  = params.CodecId;
     interface_request.Requirements.mfx.CodecProfile             = params.CodecProfile;
     interface_request.Requirements.mfx.CodecLevel               = params.CodecLevel;
+    interface_request.Requirements.mfx.RateControlMethod        = params.nRateControlMethod;
     interface_request.Requirements.mfx.FrameInfo.BitDepthLuma   = BitDepth;
     interface_request.Requirements.mfx.FrameInfo.BitDepthChroma = BitDepth;
     interface_request.Requirements.mfx.FrameInfo.Shift          = Shift;
