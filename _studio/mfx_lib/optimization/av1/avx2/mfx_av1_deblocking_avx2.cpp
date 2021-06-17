@@ -18,8 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4309))
 
 #include "assert.h"
 #include "immintrin.h"
@@ -80,7 +78,7 @@ void lpf_horizontal_edge_8_8u_avx2(unsigned char *s, int p,
         abs_p1p0 =
             _mm_or_si128(_mm_subs_epu8(q1p1, q0p0), _mm_subs_epu8(q0p0, q1p1));
         abs_q1q0 = _mm_srli_si128(abs_p1p0, 8);
-        fe = _mm_set1_epi8(0xfe);
+        fe = _mm_set1_epi8((uint8_t)0xfe);
         ff = _mm_cmpeq_epi8(abs_p1p0, abs_p1p0);
         abs_p0q0 =
             _mm_or_si128(_mm_subs_epu8(q0p0, p0q0), _mm_subs_epu8(p0q0, q0p0));
@@ -112,7 +110,7 @@ void lpf_horizontal_edge_8_8u_avx2(unsigned char *s, int p,
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
         const __m128i t1 = _mm_set1_epi16(0x1);
         __m128i qs1ps1 = _mm_xor_si128(q1p1, t80);
         __m128i qs0ps0 = _mm_xor_si128(q0p0, t80);
@@ -452,7 +450,7 @@ void lpf_horizontal_edge_16_8u_avx2(unsigned char *s, int p,
             _mm_or_si128(_mm_subs_epu8(p1, p0), _mm_subs_epu8(p0, p1));
         const __m128i abs_q1q0 =
             _mm_or_si128(_mm_subs_epu8(q1, q0), _mm_subs_epu8(q0, q1));
-        const __m128i fe = _mm_set1_epi8(0xfe);
+        const __m128i fe = _mm_set1_epi8((uint8_t)0xfe);
         const __m128i ff = _mm_cmpeq_epi8(abs_p1p0, abs_p1p0);
         __m128i abs_p0q0 =
             _mm_or_si128(_mm_subs_epu8(p0, q0), _mm_subs_epu8(q0, p0));
@@ -487,8 +485,8 @@ void lpf_horizontal_edge_16_8u_avx2(unsigned char *s, int p,
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
-        const __m128i te0 = _mm_set1_epi8(0xe0);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
+        const __m128i te0 = _mm_set1_epi8((uint8_t)0xe0);
         const __m128i t1f = _mm_set1_epi8(0x1f);
         const __m128i t1 = _mm_set1_epi8(0x1);
         const __m128i t7f = _mm_set1_epi8(0x7f);
@@ -1039,7 +1037,7 @@ void lpf_horizontal_14_8u_av1_sse2_avx2(__m256i src[4], const uint8_t *_blimit, 
         __m128i abs_p1q1, abs_p0q0, abs_q1q0, fe, ff, work;
         abs_p1p0 = abs_diff(q1p1, q0p0);
         abs_q1q0 = _mm_srli_si128(abs_p1p0, 8);
-        fe = _mm_set1_epi8(0xfe);
+        fe = _mm_set1_epi8((uint8_t)0xfe);
         ff = _mm_cmpeq_epi8(abs_p1p0, abs_p1p0);
         abs_p0q0 = abs_diff(q0p0, p0q0);
         abs_p1q1 = abs_diff(q1p1, p1q1);
@@ -1067,7 +1065,7 @@ void lpf_horizontal_14_8u_av1_sse2_avx2(__m256i src[4], const uint8_t *_blimit, 
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
         const __m128i t1 = _mm_set1_epi16(0x1);
         __m128i qs1ps1 = _mm_xor_si128(q1p1, t80);
         __m128i qs0ps0 = _mm_xor_si128(q0p0, t80);

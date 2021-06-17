@@ -20,8 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
 
 #include "stdio.h"
 #include "assert.h"
@@ -506,7 +504,7 @@ namespace AV1PP
             storea_si128(by32Buf + 0, _mm_add_epi16(_mm_slli_epi16(a0, 5), _mm_set1_epi16(16)));
             storea_si128(by32Buf + 8, _mm_broadcastw_epi16(_mm_cvtsi32_si128(by32Buf[2 * width - 1])));
 
-            const __m128i inc1 = _mm_set1_epi16(dx << 10);         // dx
+            const __m128i inc1 = _mm_set1_epi16((short)(dx << 10)); // dx
             const __m128i inc2 = _mm_slli_epi16(inc1, 1);          // 2dx
             const __m128i inc12 = _mm_unpacklo_epi64(inc1, inc2);  // dx dx dx dx 2dx 2dx 2dx 2dx
             const __m128i inc34 = _mm_add_epi16(inc12, inc2);      // 3dx 3dx 3dx 3dx 4dx 4dx 4dx 4dx
@@ -544,7 +542,7 @@ namespace AV1PP
             storea_si256(by32Buf + 0, _mm256_add_epi16(_mm256_slli_epi16(a0, 5), _mm256_set1_epi16(16)));
             storea_si256(by32Buf + 16, _mm256_broadcastw_epi16(_mm_cvtsi32_si128(by32Buf[2 * width - 1])));
 
-            __m256i inc = _mm256_set1_epi16(dx << 10);
+            __m256i inc = _mm256_set1_epi16((short)(dx << 10));
             __m256i inc2 = _mm256_slli_epi16(inc, 1); // 2 increments
             __m256i shift = _mm256_setr_m128i(si128_lo(inc), si128_lo(inc2));
 
@@ -579,7 +577,7 @@ namespace AV1PP
             storea_si256(by32Buf + 16, _mm256_add_epi16(_mm256_slli_epi16(a1, 5), _mm256_set1_epi16(16)));
             storea_si256(by32Buf + 32, _mm256_broadcastw_epi16(_mm_cvtsi32_si128(by32Buf[2 * width - 1])));
 
-            const __m256i inc = _mm256_set1_epi16(dx << 10);
+            const __m256i inc = _mm256_set1_epi16((short)(dx << 10));
             __m256i shift = _mm256_setzero_si256();
             for (int r = 0, x = dx; r < width; ++r, dst += pitch, x += dx) {
                 shift = _mm256_add_epi16(shift, inc);
@@ -616,7 +614,7 @@ namespace AV1PP
             storea_si256(by32Buf + 48, _mm256_add_epi16(_mm256_slli_epi16(a3, 5), _mm256_set1_epi16(16)));
             storea_si256(by32Buf + 64, _mm256_broadcastw_epi16(_mm_cvtsi32_si128(by32Buf[2 * width - 1])));
 
-            const __m256i inc = _mm256_set1_epi16(dx << 10);
+            const __m256i inc = _mm256_set1_epi16((short)(dx << 10));
             __m256i shift = _mm256_setzero_si256();
             for (int r = 0, x = dx; r < width; ++r, dst += pitch, x += dx) {
                 shift = _mm256_add_epi16(shift, inc);
@@ -654,7 +652,7 @@ namespace AV1PP
             const int16_t *pdiff = diffBuf + width;
             const int16_t *pby32 = by32Buf + width;
 
-            const __m128i inc1 = _mm_set1_epi16(-dx << 10);        // dx
+            const __m128i inc1 = _mm_set1_epi16((short)(-dx << 10)); // dx
             const __m128i inc2 = _mm_add_epi16(inc1, inc1);        // 2dx
             const __m128i inc12 = _mm_unpacklo_epi64(inc1, inc2);  // dx dx dx dx 2dx 2dx 2dx 2dx
             const __m128i inc34 = _mm_add_epi16(inc12, inc2);      // 3dx 3dx 3dx 3dx 4dx 4dx 4dx 4dx
@@ -715,7 +713,7 @@ namespace AV1PP
             const int16_t *pdiff = diffBuf + width;
             const int16_t *pby32 = by32Buf + width;
 
-            const __m256i inc = _mm256_set1_epi16(-dx << 10);
+            const __m256i inc = _mm256_set1_epi16((short)(-dx << 10));
             __m256i inc2 = _mm256_add_epi16(inc, inc); // 2 increments
             __m256i shift = _mm256_setr_m128i(si128_lo(inc), si128_lo(inc2));
 
@@ -763,7 +761,7 @@ namespace AV1PP
             const int16_t *pdiff = diffBuf + width;
             const int16_t *pby32 = by32Buf + width;
 
-            const __m256i dec = _mm256_set1_epi16(dx << 10);
+            const __m256i dec = _mm256_set1_epi16((short)(dx << 10));
 
             __m256i shift = _mm256_setzero_si256();
             for (int r = 0, x = -dx; r < width; ++r, dst += pitch, x -= dx) {
@@ -810,7 +808,7 @@ namespace AV1PP
             const int16_t *pdiff = diffBuf + width;
             const int16_t *pby32 = by32Buf + width;
 
-            const __m256i dec = _mm256_set1_epi16(dx << 10);
+            const __m256i dec = _mm256_set1_epi16((short)(dx << 10));
 
             __m256i shift = _mm256_setzero_si256();
             int r = 0;

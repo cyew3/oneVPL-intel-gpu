@@ -20,10 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4456))
-__pragma(warning(disable:4457))
-
 #include "assert.h"
 #include "immintrin.h"
 #include "mfx_av1_opts_intrin.h"
@@ -358,9 +354,9 @@ namespace details {
             // Work on next four results
             {
                 // Interleave to do the multiply by constants which gets us into 32bits
-                const __m256i tmp0 = _mm256_permute4x64_epi64(q76, PERM4x64(2,2,3,3));
-                const __m256i tmp1 = _mm256_permute4x64_epi64(q45, PERM4x64(2,2,3,3));
-                const __m256i d0 = _mm256_unpacklo_epi16(tmp0, tmp1);
+                const __m256i tmp00 = _mm256_permute4x64_epi64(q76, PERM4x64(2,2,3,3));
+                const __m256i tmp10 = _mm256_permute4x64_epi64(q45, PERM4x64(2,2,3,3));
+                const __m256i d0 = _mm256_unpacklo_epi16(tmp00, tmp10);
                 const __m256i e01 = _mm256_madd_epi16(d0, k__cospi_p16_m16);
                 const __m256i e23 = _mm256_madd_epi16(d0, k__cospi_p16_p16);
                 // dct_const_round_shift

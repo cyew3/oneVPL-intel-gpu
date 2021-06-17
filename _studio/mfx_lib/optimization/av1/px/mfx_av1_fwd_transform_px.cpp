@@ -2148,7 +2148,7 @@ namespace AV1PP {
         const int txw = tx_size_wide[size];
         for (int i = 0; i < txh; i++)
             for (int j = 0; j < txw; j++)
-                dst[i * txw + j] = dst32[i * txw + j];
+                dst[i * txw + j] = (TCoeffType) dst32[i * txw + j];
     }
 
     template void ftransform_av1_px<TX_4X4,      DCT_DCT, short>(const short*,short*,int);

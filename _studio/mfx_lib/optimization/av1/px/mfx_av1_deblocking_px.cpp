@@ -19,8 +19,6 @@
 // SOFTWARE.
 
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
 
 #include "assert.h"
 #include "string.h"
@@ -123,8 +121,8 @@ template <typename PixType> void filter4(int8_t mask, uint8_t thresh, PixType *o
     // save bottom 3 bits so that we round one side +4 and the other +3
     // if it equals 4 we'll set to adjust by -1 to account for the fact
     // we'd round 3 the other way
-    filter1 = signed_char_clamp_high(filter + 4, bd) >> 3;
-    filter2 = signed_char_clamp_high(filter + 3, bd) >> 3;
+    filter1 = (int8_t) signed_char_clamp_high(filter + 4, bd) >> 3;
+    filter2 = (int8_t) signed_char_clamp_high(filter + 3, bd) >> 3;
 
     *oq0 = (PixType)(signed_char_clamp_high(qs0 - filter1, bd) + (0x80 << shift));
     *op0 = (PixType)(signed_char_clamp_high(ps0 + filter2, bd) + (0x80 << shift));
@@ -328,7 +326,7 @@ template <typename PixType> void filter4(int8_t mask, uint8_t thresh, PixType *o
             const int8_t mask = filter_mask(*limit, *blimit, p3, p2, p1, p0, q0, q1, q2, q3, bd);
             const int8_t flat = flat_mask4(1, p3, p2, p1, p0, q0, q1, q2, q3, bd);
 
-            const int32_t flat2 = flat_mask4(1, p6, p5, p4, p0, q0, q4, q5, q6, bd);
+            const int8_t flat2 = flat_mask4(1, p6, p5, p4, p0, q0, q4, q5, q6, bd);
             filter14(mask, *thresh, flat, flat2, s - 7, s - 6, s - 5, s - 4, s - 3, s - 2, s - 1, s, s + 1, s + 2, s + 3, s + 4, s + 5, s + 6, bd);
 
             s += p;
@@ -423,7 +421,7 @@ template <typename PixType> void filter4(int8_t mask, uint8_t thresh, PixType *o
 
             (void)p7;
             (void)q7;
-            const int32_t flat2 = flat_mask4(1, p6, p5, p4, p0, q0, q4, q5, q6, bd);
+            const int8_t flat2 = flat_mask4(1, p6, p5, p4, p0, q0, q4, q5, q6, bd);
 
             filter14(mask, *thresh, flat, flat2, s - 7 * p, s - 6 * p, s - 5 * p,
                      s - 4 * p, s - 3 * p, s - 2 * p, s - 1 * p, s, s + 1 * p,

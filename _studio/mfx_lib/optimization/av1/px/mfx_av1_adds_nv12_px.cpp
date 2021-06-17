@@ -18,8 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
 
 namespace AV1PP
 {
@@ -32,8 +30,8 @@ namespace AV1PP
         const int MAXVAL = 255;
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                dst[2*j]   = Saturate(0, MAXVAL, src1[2*j]   + src2u[j]);
-                dst[2*j+1] = Saturate(0, MAXVAL, src1[2*j+1] + src2v[j]);
+                dst[2*j]   = (unsigned char) Saturate(0, MAXVAL, src1[2*j]   + src2u[j]);
+                dst[2*j+1] = (unsigned char) Saturate(0, MAXVAL, src1[2*j+1] + src2v[j]);
             }
             src1  += pitch1;
             src2u += pitch2;

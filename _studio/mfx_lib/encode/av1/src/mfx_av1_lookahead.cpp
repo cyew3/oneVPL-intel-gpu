@@ -2800,9 +2800,13 @@ Lookahead::Lookahead(AV1Encoder & enc)
     //if (m_videoParam.EnableALTR)
     {
         m_sceneStatsLtr = (SceneStats*)malloc(sizeof(SceneStats));
-        m_sceneStatsLtr->Create();
+        ThrowIf(!m_sceneStatsLtr, std::bad_alloc());
+        if(m_sceneStatsLtr)
+            m_sceneStatsLtr->Create();
         m_sceneStatsTmp = (SceneStats*)malloc(sizeof(SceneStats));
-        m_sceneStatsTmp->Create();
+        ThrowIf(!m_sceneStatsTmp, std::bad_alloc());
+        if(m_sceneStatsTmp)
+            m_sceneStatsTmp->Create();
         m_avgMV0 = 0;
         m_numFramesAvg = 0;
         m_sceneTransFlag = 0;
@@ -2821,7 +2825,9 @@ Lookahead::Lookahead(AV1Encoder & enc)
 #endif
     m_frameOrderPrev = MFX_FRAMEORDER_UNKNOWN;
     m_sceneStatsPrev = (SceneStats*)malloc(sizeof(SceneStats));
-    m_sceneStatsPrev->Create();
+    ThrowIf(!m_sceneStatsPrev, std::bad_alloc());
+    if(m_sceneStatsPrev)
+        m_sceneStatsPrev->Create();
 
     int32_t numTasks;
     GetLookaheadGranularity(m_videoParam, m_regionCount, m_lowresRowsInRegion, m_originRowsInRegion, numTasks);
@@ -3679,7 +3685,6 @@ enum {
     int32_t HME_Low8x8fast(uint8_t *src, uint8_t *ref, AV1MV *srcMv, int32_t fPos, int32_t first, uint32_t accuracy, uint32_t* SAD)
     {
         AV1MV
-            lineMV[2],
             tMV,
             ttMV,
             preMV = ZERO_MV,
@@ -3731,8 +3736,6 @@ enum {
         range.distance = INT_MAX;
 
         direction[0] = 0;
-        lineMV[0].mvx = 0;
-        lineMV[0].mvy = 0;
         {
             uint8_t *ps = objFrame;
             uint8_t *pr = refFrame + (limitYup * LOWRES_PITCH) + limitXleft;

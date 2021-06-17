@@ -18,8 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4309))
 
 #pragma once
 
@@ -48,7 +46,7 @@ namespace AV1PP { namespace details {
     static inline int check_epi16_overflow_x2(const __m128i *preg0,
         const __m128i *preg1) {
             const __m128i max_overflow = _mm_set1_epi16(0x7fff);
-            const __m128i min_overflow = _mm_set1_epi16(0x8000);
+            const __m128i min_overflow = _mm_set1_epi16((uint16_t)0x8000);
             __m128i cmp0 = _mm_or_si128(_mm_cmpeq_epi16(*preg0, max_overflow),
                 _mm_cmpeq_epi16(*preg0, min_overflow));
             __m128i cmp1 = _mm_or_si128(_mm_cmpeq_epi16(*preg1, max_overflow),
@@ -62,7 +60,7 @@ namespace AV1PP { namespace details {
         const __m128i *preg2,
         const __m128i *preg3) {
             const __m128i max_overflow = _mm_set1_epi16(0x7fff);
-            const __m128i min_overflow = _mm_set1_epi16(0x8000);
+            const __m128i min_overflow = _mm_set1_epi16((uint16_t)0x8000);
             __m128i cmp0 = _mm_or_si128(_mm_cmpeq_epi16(*preg0, max_overflow),
                 _mm_cmpeq_epi16(*preg0, min_overflow));
             __m128i cmp1 = _mm_or_si128(_mm_cmpeq_epi16(*preg1, max_overflow),

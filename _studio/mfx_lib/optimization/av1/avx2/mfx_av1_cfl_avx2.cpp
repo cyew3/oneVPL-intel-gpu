@@ -18,8 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
+// Disable uninitialized local variable warning casued due to templatized opts
 __pragma(warning(disable:4701))
 
 #include <stdint.h>
@@ -441,7 +440,7 @@ static inline __m256i predict_unclipped(const __m256i *input, __m256i alpha_q12,
 
 static void cfl_predict_nv12_u8_avx2_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int /*bd*/, int width, int height) {
     (void)width; //=32
-    const __m256i alpha_sign = _mm256_set1_epi16(alpha_q3);
+    const __m256i alpha_sign = _mm256_set1_epi16((short)alpha_q3);
     const __m256i alpha_q12 = _mm256_slli_epi16(_mm256_abs_epi16(alpha_sign), 9);
     const __m256i dc_q0 = _mm256_set1_epi16(dcU | (dcV << 16));
     __m256i *row = (__m256i *)pred_buf_q3;
@@ -461,7 +460,7 @@ static void cfl_predict_nv12_u8_avx2_impl(const int16_t *pred_buf_q3, uint8_t *d
 
 static void cfl_predict_nv12_u8_16_avx2_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int /*bd*/, int width, int height) {
     (void)width; //=16
-    const __m256i alpha_sign = _mm256_set1_epi16(alpha_q3);
+    const __m256i alpha_sign = _mm256_set1_epi16((short)alpha_q3);
     const __m256i alpha_q12 = _mm256_slli_epi16(_mm256_abs_epi16(alpha_sign), 9);
     //const __m256i dc_q0 = _mm256_set1_epi16(dcU | (dcV << 16));
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV << 16));

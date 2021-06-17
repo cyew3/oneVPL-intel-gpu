@@ -2103,7 +2103,6 @@ mfxStatus AV1Encoder::Init(const mfxVideoParam &par)
 
         mfxExtFEIH265Alloc feiAlloc = {};
         sts = H265FEI_GetSurfaceDimensions_new(&m_core, &feiParams, &feiAlloc);
-        printf("\n Using OneVPL RT\n");
 
         if (sts != MFX_ERR_NONE)
             return sts;

@@ -8,16 +8,16 @@ if(CMAKE_SYSTEM_NAME MATCHES Windows)
 
   target_sources(genx_av1_encode_embeded
     PRIVATE
-      av1_encode/src/genx_av1_hme_and_me_p32_4mv_tgllp_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_single_tgllp_isa.cpp
-      av1_encode/src/genx_av1_interpolate_decision_tgllp_isa.cpp
-      av1_encode/src/genx_av1_intra_tgllp_isa.cpp
-      av1_encode/src/genx_av1_mepu_tgllp_isa.cpp
-      av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_tgllp_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_pass2_tgllp_isa.cpp
-      av1_encode/src/genx_av1_mode_decision_tgllp_isa.cpp
-      av1_encode/src/genx_av1_prepare_src_tgllp_isa.cpp
-      av1_encode/src/genx_av1_refine_me_p_64x64_tgllp_isa.cpp
+      av1_encode/src/genx_av1_hme_and_me_p32_4mv_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_interpolate_decision_single_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_interpolate_decision_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_intra_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_mepu_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_me_p16_4mv_and_refine_32x32_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_mode_decision_pass2_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_mode_decision_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_prepare_src_gen12lp_isa.cpp
+      av1_encode/src/genx_av1_refine_me_p_64x64_gen12lp_isa.cpp
   )
 
   target_link_libraries(genx_av1_encode_embeded

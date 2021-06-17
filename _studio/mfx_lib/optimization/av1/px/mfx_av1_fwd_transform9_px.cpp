@@ -20,9 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4457))
-
 
 #include "assert.h"
 #include "stdlib.h"
@@ -672,7 +669,7 @@ static void fht8x8_px(const int16_t *input, int16_t *output, int stride, int tx_
 }
 
 // looks like a bug with separated DCT_DCT. use specail function
-static void fdct16x16_px(const int16_t *input, int16_t *output, int stride)
+static void fdct16x16_px(const int16_t *inputp, int16_t *output, int stride)
 {
     // The 2D transform is done with two passes which are actually pretty
     // similar. In the first one, we transform the columns and transpose
@@ -683,7 +680,7 @@ static void fdct16x16_px(const int16_t *input, int16_t *output, int stride)
     int pass;
     // We need an intermediate buffer between passes.
     int16_t intermediate[256];
-    const int16_t *in_pass0 = input;
+    const int16_t *in_pass0 = inputp;
     const int16_t *in = NULL;
     int16_t *out = intermediate;
     // Do the two transform/transpose passes

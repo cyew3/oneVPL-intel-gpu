@@ -18,12 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// for warning that conditional expression is constant caused by templatized opts
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4309))
-__pragma(warning(disable:4244))
-__pragma(warning(disable:4456))
+// Disable warning that structure was padded due to __declspec(align())
 __pragma(warning(disable:4324))
 
 
@@ -90,7 +88,7 @@ namespace AV1PP
     template <> void predict_intra_dc_av1_avx2<TX_16X16, 0, 0, uint8_t>(const uint8_t *topPels, const uint8_t *leftPels, uint8_t *dst, int pitch, int, int, int) {
         topPels; leftPels;
         int p = pitch, p2 = pitch*2, p3 = pitch*3, p4 = pitch*4;
-        __m256i dc = _mm256_set1_epi8(128);
+        __m256i dc = _mm256_set1_epi8((uint8_t)128);
         storeu2_m128i(dst, dst+p, dc); storeu2_m128i(dst+p2, dst+p3, dc); dst += p4;
         storeu2_m128i(dst, dst+p, dc); storeu2_m128i(dst+p2, dst+p3, dc); dst += p4;
         storeu2_m128i(dst, dst+p, dc); storeu2_m128i(dst+p2, dst+p3, dc); dst += p4;
@@ -99,7 +97,7 @@ namespace AV1PP
     template <> void predict_intra_dc_av1_avx2<TX_32X32, 0, 0, uint8_t>(const uint8_t *topPels, const uint8_t *leftPels, uint8_t *dst, int pitch, int, int, int) {
         topPels; leftPels;
         int p = pitch, p2 = pitch*2, p3 = pitch*3, p4 = pitch*4;
-        __m256i dc = _mm256_set1_epi8(128);
+        __m256i dc = _mm256_set1_epi8((uint8_t)128);
         storea_si256(dst, dc); storea_si256(dst+p, dc); storea_si256(dst+p2, dc); storea_si256(dst+p3, dc); dst += p4;
         storea_si256(dst, dc); storea_si256(dst+p, dc); storea_si256(dst+p2, dc); storea_si256(dst+p3, dc); dst += p4;
         storea_si256(dst, dc); storea_si256(dst+p, dc); storea_si256(dst+p2, dc); storea_si256(dst+p3, dc); dst += p4;
@@ -236,7 +234,7 @@ namespace AV1PP
 
     namespace details {
         #define ROUND_POWER_OF_TWO(value, n) (((value) + (1 << ((n) - 1))) >> (n))
-        uint8_t clip_pixel(int val) { return (val > 255) ? 255 : (val < 0) ? 0 : val; }
+        uint8_t clip_pixel(int val) { return (uint8_t) ((val > 255) ? 255 : (val < 0) ? 0 : val); }
 
         template <int size> void predict_intra_ver_av1_avx2(const uint8_t *topPels, uint8_t *dst, int pitch);
         template <> void predict_intra_ver_av1_avx2<TX_4X4>(const uint8_t *topPels, uint8_t *dst, int pitch) {
@@ -910,8 +908,8 @@ namespace AV1PP
             const __m256i r_by256_plus128 = _mm256_set1_epi16((topPels[15] << 8) + 128);
 
             const __m256i l = _mm256_cvtepu8_epi16(loada_si128(leftPels));
-            const __m256i r = _mm256_set1_epi16(topPels[15]);
-            __m256i l_minus_r = _mm256_sub_epi16(l, r);
+            const __m256i rt = _mm256_set1_epi16(topPels[15]);
+            __m256i l_minus_r = _mm256_sub_epi16(l, rt);
             __m256i l0_minus_r, l1_minus_r;
 
             ALIGN_DECL(32) short buf_l_minus_r[16];
@@ -940,9 +938,9 @@ namespace AV1PP
 
             const __m256i l_lo = _mm256_cvtepu8_epi16(loada_si128(leftPels+0));
             const __m256i l_hi = _mm256_cvtepu8_epi16(loada_si128(leftPels+16));
-            const __m256i r = _mm256_set1_epi16(topPels[31]);
-            __m256i l_lo_minus_r = _mm256_sub_epi16(l_lo, r);
-            __m256i l_hi_minus_r = _mm256_sub_epi16(l_hi, r);
+            const __m256i rt = _mm256_set1_epi16(topPels[31]);
+            __m256i l_lo_minus_r = _mm256_sub_epi16(l_lo, rt);
+            __m256i l_hi_minus_r = _mm256_sub_epi16(l_hi, rt);
             __m256i l_minus_r;
 
             ALIGN_DECL(32) short buf_l_minus_r[32];
@@ -1237,7 +1235,7 @@ namespace AV1PP
             storea_si128(aboveDiff + 8, diff);
 
             int x = dx;
-            __m256i inc = _mm256_set1_epi16(dx);                                    // 16w: dx dx dx dx dx dx dx dx | dx dx dx dx dx dx dx dx
+            __m256i inc = _mm256_set1_epi16((short)dx);                             // 16w: dx dx dx dx dx dx dx dx | dx dx dx dx dx dx dx dx
             __m256i inc2 = _mm256_add_epi16(inc, inc);                              // 16w: 2dx 2dx 2dx 2dx 2dx 2dx 2dx 2dx | 2dx 2dx 2dx 2dx 2dx 2dx 2dx 2dx
             inc = _mm256_unpacklo_epi64(inc, inc2);                                 // 16w: dx dx dx dx 2dx 2dx 2dx 2dx | dx dx dx dx 2dx 2dx 2dx 2dx
             __m256i tmp = _mm256_add_epi16(inc, inc2);                              // 16w: 3dx 3dx 3dx 3dx 4dx 4dx 4dx 4dx | 3dx 3dx 3dx 3dx 4dx 4dx 4dx 4dx
@@ -1305,7 +1303,7 @@ namespace AV1PP
             storea_si256(aboveDiff + 16, diff);
 
             int x = dx;
-            __m256i inc = _mm256_set1_epi16(dx);                                    // 16w: dx dx dx dx dx dx dx dx | dx dx dx dx dx dx dx dx
+            __m256i inc = _mm256_set1_epi16((short)dx);                             // 16w: dx dx dx dx dx dx dx dx | dx dx dx dx dx dx dx dx
             __m256i inc2 = _mm256_add_epi16(inc, inc);                              // 16w: 2dx 2dx 2dx 2dx 2dx 2dx 2dx 2dx | 2dx 2dx 2dx 2dx 2dx 2dx 2dx 2dx
             __m256i shift = _mm256_permute2x128_si256(inc, inc2, PERM2x128(0,2));   // 16w: dx dx dx dx dx dx dx dx | 2dx 2dx 2dx 2dx 2dx 2dx 2dx 2dx
             for (int r = 0; r < width; r += 4, dst += 4 * pitch) {
@@ -1389,7 +1387,7 @@ namespace AV1PP
             storea_si256(aboveDiff + 32, diff);
 
             int x = dx;
-            __m256i inc = _mm256_set1_epi16(dx);
+            __m256i inc = _mm256_set1_epi16((short)dx);
             __m256i shift = _mm256_and_si256(inc, _mm256_set1_epi16(0x3f));
             for (int r = 0; r < width; r += 2, dst += 2 * pitch) {
                 __m256i a, b, res1, res2, res;
@@ -1480,7 +1478,7 @@ namespace AV1PP
             storea_si256(aboveDiff + 64, diff);
 
             int x = dx;
-            __m256i inc = _mm256_set1_epi16(dx);
+            __m256i inc = _mm256_set1_epi16((short)dx);
             __m256i shift = _mm256_and_si256(inc, _mm256_set1_epi16(0x3f));
             for (int r = 0; r < width; r++, dst += pitch) {
                 __m256i a, b, res1, res2, res;
@@ -1527,7 +1525,7 @@ namespace AV1PP
             const int16_t *pdiff = diffBuf + width;
             const int16_t *pby32 = by32Buf + width;
 
-            __m128i shift_inc = _mm_set1_epi16(-dx);
+            __m128i shift_inc = _mm_set1_epi16((short)(-dx));
             __m128i shift_inc2 = _mm_add_epi16(shift_inc, shift_inc);
             __m128i shift01 = _mm_add_epi16(shift_inc, _mm_slli_si128(shift_inc, 8));
             __m128i shift23 = _mm_add_epi16(shift01, shift_inc2);
@@ -1587,7 +1585,7 @@ namespace AV1PP
 
             int x = -dx;
             int dx2 = dx * 2;
-            __m128i shift_inc = _mm_set1_epi16(-dx);
+            __m128i shift_inc = _mm_set1_epi16((short)(-dx));
             __m128i shift_mask = _mm_set1_epi16(0x3F);
             __m128i shift = _mm_setzero_si128();
             for (int r = 0; r < width; r += 2, x -= dx2, dst += 2 * pitch) {
@@ -1646,7 +1644,7 @@ namespace AV1PP
             const int16_t *pby32 = by32Buf + width;
 
             const int dx2 = dx * 2;
-            const __m256i shift_inc = _mm256_set1_epi16(-dx);
+            const __m256i shift_inc = _mm256_set1_epi16((short)(-dx));
             const __m256i shift_mask = _mm256_set1_epi16(0x3F);
             __m256i shift = _mm256_setzero_si256();
             for (int r = 0, x = -dx; r < width; r += 2, x -= dx2, dst += 2 * pitch) {
@@ -1715,7 +1713,7 @@ namespace AV1PP
             const int16_t *pby32 = by32Buf + width;
 
             int x = -dx;
-            __m256i shift_inc = _mm256_set1_epi16(-dx);
+            __m256i shift_inc = _mm256_set1_epi16((short)(-dx));
             __m256i shift_mask = _mm256_set1_epi16(0x3F);
             __m256i shift = _mm256_setzero_si256();
             for (int r = 0; r < width; r++, x -= dx, dst += pitch) {

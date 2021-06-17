@@ -1365,7 +1365,7 @@ static inline void inv_txfm2d_add_c(const int *input, uint16_t *output, int stri
                         assert(!"invalid bit depth");
 
                 else
-                    output[r * stride + c] = temp_out[txfm_size_row - r - 1];
+                    output[r * stride + c] = (uint16_t) temp_out[txfm_size_row - r - 1];
             }
         }
     }

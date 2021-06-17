@@ -20,10 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
-__pragma(warning(disable:4068))
-__pragma(warning(disable:4456))
 
 #include "assert.h"
 #include "string.h"
@@ -77,7 +73,7 @@ namespace AV1PP
                 tmp = abs_coeff + round[0];
             }
             tmp = ((((tmp * quant_ptr[0]) >> 16) + tmp) * quant_shift[0]) >> 16;  // quantization
-            qcoeff_ptr[0]  = clamp((tmp ^ coeff_sign) - coeff_sign, INT16_MIN, INT16_MAX);
+            qcoeff_ptr[0]  = (int16_t) clamp((tmp ^ coeff_sign) - coeff_sign, INT16_MIN, INT16_MAX);
             eob = tmp!=0;
         }
 
@@ -95,7 +91,7 @@ namespace AV1PP
                     tmp = abs_coeff + round[1];
                 }
                 tmp = ((((tmp * quant_ptr[1]) >> 16) + tmp) * quant_shift[1]) >> 16;  // quantization
-                qcoeff_ptr[i]  = clamp((tmp ^ coeff_sign) - coeff_sign, INT16_MIN, INT16_MAX);
+                qcoeff_ptr[i]  = (int16_t) clamp((tmp ^ coeff_sign) - coeff_sign, INT16_MIN, INT16_MAX);
                 if (tmp)
                     eob++;
             }
@@ -120,20 +116,22 @@ namespace AV1PP
         if (sizeof(TCoeffType) > 2) bd = 10;
         const int32_t max_value = (1 << (7 + bd)) - 1;
         const int32_t min_value = -(1 << (7 + bd));
-
-        int aval = abs((int)src[0]);        // remove sign
-        int sign = src[0] >> 15;
-        int coeffQ = (((aval * scales[0]) >> shift) ^ sign) - sign;
-        // clipped when decoded ???
-        dst[0] = Saturate(min_value, max_value, coeffQ);
-
+        {
+            int aval = abs((int)src[0]);        // remove sign
+            int sign = src[0] >> 15;
+            int coeffQ = (((aval * scales[0]) >> shift) ^ sign) - sign;
+            // clipped when decoded ???
+            dst[0] = (TCoeffType)Saturate(min_value, max_value, coeffQ);
+        }
+#if defined(__ICL)
 #pragma ivdep
 #pragma vector always
+#endif
         for (int i = 1; i < len; i++) {
             int aval = abs((int)src[i]);        // remove sign
             int sign = src[i] >> 15;
             int coeffQ = (((aval * scales[1]) >> shift) ^ sign) - sign;
-            dst[i] = Saturate(min_value, max_value, coeffQ);
+            dst[i] = (TCoeffType) Saturate(min_value, max_value, coeffQ);
         }
     }
     template void dequant_px<0, int16_t>(const int16_t*,int16_t*,const int16_t*, int);

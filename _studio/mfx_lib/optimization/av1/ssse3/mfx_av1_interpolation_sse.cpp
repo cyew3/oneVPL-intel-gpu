@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
+// Disable conditional expression is constant warning caused by templatized opts
 __pragma(warning(disable:4127))
 
 #include "tmmintrin.h"

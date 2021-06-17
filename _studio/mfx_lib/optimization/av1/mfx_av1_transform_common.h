@@ -211,7 +211,7 @@ namespace AV1PP {
 
     static inline void set_flip_cfg(int tx_type, TXFM_2D_FLIP_CFG *cfg)
     {
-        get_flip_cfg(tx_type, &cfg->ud_flip, &cfg->lr_flip);
+        get_flip_cfg((TxType)tx_type, &cfg->ud_flip, &cfg->lr_flip);
     }
 
 

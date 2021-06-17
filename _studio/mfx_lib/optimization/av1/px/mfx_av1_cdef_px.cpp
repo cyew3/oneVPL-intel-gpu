@@ -18,8 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
 
 #include "assert.h"
 #include "stdlib.h"
@@ -189,8 +187,8 @@ namespace AV1PP
                 {
                     short p0 = in[i * s + j + cdef_directions[dir][k]];
                     short p1 = in[i * s + j - cdef_directions[dir][k]];
-                    sum += pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping);
-                    sum += pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping);
+                    sum += (short)(pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping));
+                    sum += (short)(pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping));
                     if (p0 != CDEF_VERY_LARGE) max = std::max((int)p0, max);
                     if (p1 != CDEF_VERY_LARGE) max = std::max((int)p1, max);
                     min = std::min((int)p0, min);
@@ -207,12 +205,12 @@ namespace AV1PP
                     min = std::min((int)s1, min);
                     min = std::min((int)s2, min);
                     min = std::min((int)s3, min);
-                    sum += sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping);
+                    sum += (short)(sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping));
                 }
-                y = clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
+                y = (short) clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
                 dst[i * dstride + j] = (uint8_t)y;
             }
         }
@@ -240,8 +238,8 @@ namespace AV1PP
                     {
                         short p0 = in[i * s + j + cdef_directions_nv12[dir][k]];
                         short p1 = in[i * s + j - cdef_directions_nv12[dir][k]];
-                        sum += pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping);
-                        sum += pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping);
+                        sum += (short) (pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping));
+                        sum += (short) (pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping));
                         if (p0 != CDEF_VERY_LARGE) max = std::max((int)p0, max);
                         if (p1 != CDEF_VERY_LARGE) max = std::max((int)p1, max);
                         min = std::min((int)p0, min);
@@ -258,12 +256,12 @@ namespace AV1PP
                         min = std::min((int)s1, min);
                         min = std::min((int)s2, min);
                         min = std::min((int)s3, min);
-                        sum += sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping);
-                        sum += sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping);
-                        sum += sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping);
-                        sum += sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping);
+                        sum += (short) (sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping));
+                        sum += (short) (sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping));
+                        sum += (short) (sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping));
+                        sum += (short) (sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping));
                     }
-                    y = clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
+                    y = (short) clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
                     dst[i * dstride + j] = (uint8_t)y;
                 }
             }
@@ -291,8 +289,8 @@ namespace AV1PP
                 {
                     short p0 = in[i * s + j + cdef_directions[dir][k]];
                     short p1 = in[i * s + j - cdef_directions[dir][k]];
-                    sum += pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping);
-                    sum += pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping);
+                    sum += (short) (pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping));
+                    sum += (short) (pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping));
                     if (p0 != CDEF_VERY_LARGE) max = std::max((int)p0, max);
                     if (p1 != CDEF_VERY_LARGE) max = std::max((int)p1, max);
                     min = std::min((int)p0, min);
@@ -309,12 +307,12 @@ namespace AV1PP
                     min = std::min((int)s1, min);
                     min = std::min((int)s2, min);
                     min = std::min((int)s3, min);
-                    sum += sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping);
+                    sum += (short) (sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping));
+                    sum += (short) (sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping));
+                    sum += (short) (sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping));
+                    sum += (short) (sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping));
                 }
-                y = clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
+                y = (short) clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
                 dst[i * dstride + j] = (uint8_t)y;
             }
         }
@@ -341,8 +339,8 @@ namespace AV1PP
                 {
                     short p0 = in[i * s + j + cdef_directions[dir][k]];
                     short p1 = in[i * s + j - cdef_directions[dir][k]];
-                    sum += pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping);
-                    sum += pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping);
+                    sum += (short) (pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping));
+                    sum += (short) (pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping));
                     if (p0 != CDEF_VERY_LARGE) max = std::max((int)p0, max);
                     if (p1 != CDEF_VERY_LARGE) max = std::max((int)p1, max);
                     min = std::min((int)p0, min);
@@ -359,12 +357,12 @@ namespace AV1PP
                     min = std::min((int)s1, min);
                     min = std::min((int)s2, min);
                     min = std::min((int)s3, min);
-                    sum += sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping);
+                    sum += (short)(sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping));
                 }
-                y = clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
+                y = (short) clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
 
                     int16_t diff = org[i * ostride + j] - y;
                     err += diff * diff;
@@ -396,8 +394,8 @@ namespace AV1PP
                     {
                         short p0 = in[i * s + j + cdef_directions_nv12[dir][k]];
                         short p1 = in[i * s + j - cdef_directions_nv12[dir][k]];
-                        sum += pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping);
-                        sum += pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping);
+                        sum += (short)(pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping));
+                        sum += (short)(pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping));
                         if (p0 != CDEF_VERY_LARGE) max = std::max((int)p0, max);
                         if (p1 != CDEF_VERY_LARGE) max = std::max((int)p1, max);
                         min = std::min((int)p0, min);
@@ -414,12 +412,12 @@ namespace AV1PP
                         min = std::min((int)s1, min);
                         min = std::min((int)s2, min);
                         min = std::min((int)s3, min);
-                        sum += sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping);
-                        sum += sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping);
-                        sum += sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping);
-                        sum += sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping);
+                        sum += (short) (sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping));
+                        sum += (short) (sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping));
+                        sum += (short) (sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping));
+                        sum += (short) (sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping));
                     }
-                    y = clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
+                    y = (short) clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
 
                     int16_t diff = org[i * ostride + j] - y;
                     err += diff * diff;
@@ -472,8 +470,8 @@ namespace AV1PP
                 {
                     short p0 = in[i * s + j + cdef_directions[dir][k]];
                     short p1 = in[i * s + j - cdef_directions[dir][k]];
-                    sum += pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping);
-                    sum += pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping);
+                    sum += (short)(pri_taps[k] * constrain(p0 - x, pri_strength, pri_damping));
+                    sum += (short)(pri_taps[k] * constrain(p1 - x, pri_strength, pri_damping));
                     if (p0 != CDEF_VERY_LARGE) max = std::max((int)p0, max);
                     if (p1 != CDEF_VERY_LARGE) max = std::max((int)p1, max);
                     min = std::min((int)p0, min);
@@ -490,12 +488,12 @@ namespace AV1PP
                     min = std::min((int)s1, min);
                     min = std::min((int)s2, min);
                     min = std::min((int)s3, min);
-                    sum += sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping);
-                    sum += sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping);
+                    sum += (short)(sec_taps[k] * constrain(s0 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s1 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s2 - x, sec_strength, sec_damping));
+                    sum += (short)(sec_taps[k] * constrain(s3 - x, sec_strength, sec_damping));
                 }
-                y = clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
+                y = (short) clamp((short)x + ((8 + sum - (sum < 0)) >> 4), min, max);
 
                 int16_t diff = org[i * ostride + j] - y;
                 err += diff * diff;

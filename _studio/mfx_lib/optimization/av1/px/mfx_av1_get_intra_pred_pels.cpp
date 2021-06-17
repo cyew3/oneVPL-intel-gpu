@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
+// Disable cast truncate const warning caused by templatized code
 __pragma(warning(disable:4310))
 
 #include "stdio.h"

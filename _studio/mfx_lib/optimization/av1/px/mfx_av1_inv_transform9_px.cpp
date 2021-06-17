@@ -30,7 +30,7 @@ __pragma(warning(disable:4127))
 using namespace AV1PP;
 
 static inline uint8_t clip_pixel(int val) {
-    return (val > 255) ? 255 : (val < 0) ? 0 : val;
+    return (uint8_t) ((val > 255) ? 255 : (val < 0) ? 0 : val);
 }
 
 /* Shift down with rounding */

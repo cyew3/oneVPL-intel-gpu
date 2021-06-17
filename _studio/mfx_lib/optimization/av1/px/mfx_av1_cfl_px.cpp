@@ -18,8 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
 
 #include <stdint.h>
 #include <assert.h>
@@ -45,7 +43,7 @@ static void subtract_average_px_impl(const uint16_t *src, int16_t *dst, int widt
     const int avg = sum >> num_pel_log2;
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
-            dst[i] = src[i] - avg;
+            dst[i] = (int16_t) (src[i] - avg);
         }
         src += CFL_BUF_LINE;
         dst += CFL_BUF_LINE;

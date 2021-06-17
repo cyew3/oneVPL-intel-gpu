@@ -18,8 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4309))
 
 #include "tmmintrin.h"
 #include "assert.h"
@@ -92,7 +90,7 @@ static inline __m128i abs_diff(__m128i a, __m128i b) {
   do {                                                                      \
     const __m128i t3t4 =                                                    \
         _mm_set_epi8(3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4);       \
-    const __m128i t80 = _mm_set1_epi8(0x80);                                \
+    const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);                       \
     __m128i filter, filter2filter1, work;                                   \
                                                                             \
     ps1ps0 = _mm_xor_si128(p1p0, t80); /* ^ 0x80 */                         \
@@ -299,7 +297,7 @@ void lpf_horizontal_edge_8_8u_sse2(unsigned char *s, int p,
         __m128i abs_p1q1, abs_p0q0, abs_q1q0, fe, ff, work;
         abs_p1p0 = abs_diff(q1p1, q0p0);
         abs_q1q0 = _mm_srli_si128(abs_p1p0, 8);
-        fe = _mm_set1_epi8(0xfe);
+        fe = _mm_set1_epi8((uint8_t)0xfe);
         ff = _mm_cmpeq_epi8(abs_p1p0, abs_p1p0);
         abs_p0q0 = abs_diff(q0p0, p0q0);
         abs_p1q1 = abs_diff(q1p1, p1q1);
@@ -327,7 +325,7 @@ void lpf_horizontal_edge_8_8u_sse2(unsigned char *s, int p,
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
         const __m128i t1 = _mm_set1_epi16(0x1);
         __m128i qs1ps1 = _mm_xor_si128(q1p1, t80);
         __m128i qs0ps0 = _mm_xor_si128(q0p0, t80);
@@ -668,7 +666,7 @@ void lpf_horizontal_edge_16_8u_sse2(unsigned char *s, int p,
     {
         const __m128i abs_p1p0 = abs_diff(p1, p0);
         const __m128i abs_q1q0 = abs_diff(q1, q0);
-        const __m128i fe = _mm_set1_epi8(0xfe);
+        const __m128i fe = _mm_set1_epi8((uint8_t)0xfe);
         const __m128i ff = _mm_cmpeq_epi8(zero, zero);
         __m128i abs_p0q0 = abs_diff(p0, q0);
         __m128i abs_p1q1 = abs_diff(p1, q1);
@@ -717,8 +715,8 @@ void lpf_horizontal_edge_16_8u_sse2(unsigned char *s, int p,
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
-        const __m128i te0 = _mm_set1_epi8(0xe0);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
+        const __m128i te0 = _mm_set1_epi8((uint8_t)0xe0);
         const __m128i t1f = _mm_set1_epi8(0x1f);
         const __m128i t1 = _mm_set1_epi8(0x1);
         const __m128i t7f = _mm_set1_epi8(0x7f);
@@ -995,7 +993,7 @@ void lpf_horizontal_8_8u_sse2(unsigned char *s, int p,
     {
         // filter_mask and hev_mask
         const __m128i one = _mm_set1_epi8(1);
-        const __m128i fe = _mm_set1_epi8(0xfe);
+        const __m128i fe = _mm_set1_epi8((uint8_t)0xfe);
         const __m128i ff = _mm_cmpeq_epi8(fe, fe);
         __m128i abs_p1q1, abs_p0q0, abs_q1q0, abs_p1p0, work;
         abs_p1p0 = abs_diff(q1p1, q0p0);
@@ -1087,7 +1085,7 @@ void lpf_horizontal_8_8u_sse2(unsigned char *s, int p,
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
         const __m128i t1 = _mm_set1_epi8(0x1);
         const __m128i ps1 =
             _mm_xor_si128(_mm_loadl_epi64((__m128i *)(s - 2 * p)), t80);
@@ -1216,7 +1214,7 @@ void lpf_horizontal_8_dual_8u_sse2(uint8_t *s, int p, const uint8_t *_blimit0,
         const __m128i abs_q1q0 =
             _mm_or_si128(_mm_subs_epu8(q1, q0), _mm_subs_epu8(q0, q1));
         const __m128i one = _mm_set1_epi8(1);
-        const __m128i fe = _mm_set1_epi8(0xfe);
+        const __m128i fe = _mm_set1_epi8((uint8_t)0xfe);
         const __m128i ff = _mm_cmpeq_epi8(abs_p1p0, abs_p1p0);
         __m128i abs_p0q0 =
             _mm_or_si128(_mm_subs_epu8(p0, q0), _mm_subs_epu8(q0, p0));
@@ -1320,8 +1318,8 @@ void lpf_horizontal_8_dual_8u_sse2(uint8_t *s, int p, const uint8_t *_blimit0,
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
-        const __m128i te0 = _mm_set1_epi8(0xe0);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
+        const __m128i te0 = _mm_set1_epi8((uint8_t)0xe0);
         const __m128i t1f = _mm_set1_epi8(0x1f);
         const __m128i t1 = _mm_set1_epi8(0x1);
         const __m128i t7f = _mm_set1_epi8(0x7f);
@@ -1454,7 +1452,7 @@ void lpf_horizontal_4_dual_8u_sse2(unsigned char *s, int p,
             _mm_or_si128(_mm_subs_epu8(p1, p0), _mm_subs_epu8(p0, p1));
         const __m128i abs_q1q0 =
             _mm_or_si128(_mm_subs_epu8(q1, q0), _mm_subs_epu8(q0, q1));
-        const __m128i fe = _mm_set1_epi8(0xfe);
+        const __m128i fe = _mm_set1_epi8((uint8_t)0xfe);
         const __m128i ff = _mm_cmpeq_epi8(abs_p1p0, abs_p1p0);
         __m128i abs_p0q0 =
             _mm_or_si128(_mm_subs_epu8(p0, q0), _mm_subs_epu8(q0, p0));
@@ -1490,8 +1488,8 @@ void lpf_horizontal_4_dual_8u_sse2(unsigned char *s, int p,
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
-        const __m128i te0 = _mm_set1_epi8(0xe0);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
+        const __m128i te0 = _mm_set1_epi8((uint8_t)0xe0);
         const __m128i t1f = _mm_set1_epi8(0x1f);
         const __m128i t1 = _mm_set1_epi8(0x1);
         const __m128i t7f = _mm_set1_epi8(0x7f);
@@ -1826,7 +1824,7 @@ void filter4_sse2(__m128i *p1p0, __m128i *q1q0, __m128i *hev, __m128i *mask, __m
 {
     const __m128i t3t4 =
         _mm_set_epi8(3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4);
-    const __m128i t80 = _mm_set1_epi8(0x80);
+    const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
     __m128i filter, filter2filter1, work;
     __m128i ps1ps0_work, qs1qs0_work;
     const __m128i ff = _mm_cmpeq_epi8(t80, t80);
@@ -1891,7 +1889,7 @@ void lpf_internal_6_sse2(__m128i *p2, __m128i *q2, __m128i *p1, __m128i *q1, __m
     p0q0 = _mm_shuffle_epi32(q0p0, 78);
 
     const __m128i one = _mm_set1_epi8(1);
-    const __m128i fe = _mm_set1_epi8(0xfe);
+    const __m128i fe = _mm_set1_epi8((uint8_t)0xfe);
     const __m128i ff = _mm_cmpeq_epi8(fe, fe);
     {
         // filter_mask and hev_mask
@@ -2231,7 +2229,7 @@ void lpf_horizontal_8_8u_av1_sse2(uint8_t *s, int p, const uint8_t *_blimit, con
         // otherwise - not
 
         const __m128i one = _mm_set1_epi8(1);
-        const __m128i fe = _mm_set1_epi8(0xfe);
+        const __m128i fe = _mm_set1_epi8((uint8_t)0xfe);
         const __m128i ff = _mm_cmpeq_epi8(fe, fe);
         __m128i abs_p1q1, abs_p0q0, abs_q1q0, abs_p1p0, work;
 
@@ -2419,7 +2417,7 @@ void lpf_horizontal_14_8u_av1_sse2(uint8_t *s, int p, const uint8_t *_blimit, co
         __m128i abs_p1q1, abs_p0q0, abs_q1q0, fe, ff, work;
         abs_p1p0 = abs_diff(q1p1, q0p0);
         abs_q1q0 = _mm_srli_si128(abs_p1p0, 8);
-        fe = _mm_set1_epi8(0xfe);
+        fe = _mm_set1_epi8((uint8_t)0xfe);
         ff = _mm_cmpeq_epi8(abs_p1p0, abs_p1p0);
         abs_p0q0 = abs_diff(q0p0, p0q0);
         abs_p1q1 = abs_diff(q1p1, p1q1);
@@ -2447,7 +2445,7 @@ void lpf_horizontal_14_8u_av1_sse2(uint8_t *s, int p, const uint8_t *_blimit, co
     {
         const __m128i t4 = _mm_set1_epi8(4);
         const __m128i t3 = _mm_set1_epi8(3);
-        const __m128i t80 = _mm_set1_epi8(0x80);
+        const __m128i t80 = _mm_set1_epi8((uint8_t)0x80);
         const __m128i t1 = _mm_set1_epi16(0x1);
         __m128i qs1ps1 = _mm_xor_si128(q1p1, t80);
         __m128i qs0ps0 = _mm_xor_si128(q0p0, t80);

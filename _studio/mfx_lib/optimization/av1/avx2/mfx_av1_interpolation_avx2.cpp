@@ -20,9 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4456))
-
 #include "stdio.h"
 #include "assert.h"
 #include "immintrin.h"
@@ -1994,7 +1991,7 @@ namespace AV1PP
             //static_assert(std::is_same<TDst, uint8_t>::value || std::is_same<TDst, int32_t>::value && avg == no_avg, "avg is only for TDst = uint8_t");
 
             const __m128i offset1 = _mm_set1_epi32(OFFSET_STAGE0);
-            const __m128i offset = _mm_set1_epi16((1 << (FILTER_BITS - 1)) + OFFSET_STAGE0);
+            const __m128i offset0 = _mm_set1_epi16((1 << (FILTER_BITS - 1)) + OFFSET_STAGE0);
 
             __m128i filt = loada_si128(fx);     // 8w: 0 1 2 3 4 5 6 7
             filt = _mm_packs_epi16(filt, filt); // 16b: 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
@@ -2025,7 +2022,7 @@ namespace AV1PP
                 if (std::is_same<TDst, uint8_t>::value) {
                     if (avg == no_avg) {
                         res1 = _mm_adds_epi16(a, b); // order of addition matters to avoid overflow
-                        res1 = _mm_adds_epi16(res1, offset);
+                        res1 = _mm_adds_epi16(res1, offset0);
                         res1 = _mm_srai_epi16(res1, FILTER_BITS);   // 8w: A0 A1 A2 A3 B0 B1 B2 B3
                     }
                     else {

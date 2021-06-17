@@ -18,10 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// Disable conditional expression warning for Templatized opts
 __pragma(warning(disable:4127))
-
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
+// Disable stucture padded due to alignment specifier warning
 __pragma(warning(disable:4324))
 
 
@@ -48,10 +47,10 @@ namespace AV1PP
         typedef int16_t tran_low_t;
 
         static inline uint8_t clip_pixel(int val) {
-            return (val > 255) ? 255 : (val < 0) ? 0 : val;
+            return (uint8_t) ((val > 255) ? 255 : (val < 0) ? 0 : val);
         }
         static inline uint16_t clip_pixel_10bit(int val) {
-            return (val > 1023) ? 1023 : (val < 0) ? 0 : val;
+            return (uint16_t) ((val > 1023) ? 1023 : (val < 0) ? 0 : val);
         }
 
         static const int8_t h265_log2m2[257] = {
@@ -104,7 +103,7 @@ namespace AV1PP
         for (int r = 0; r < width; r++) {
             //memset(dst, sum, width);
             for (int c = 0; c < width; c++)
-                dst[c] = sum;
+                dst[c] = (PixType) sum;
             dst += pitch;
         }
     }
@@ -201,7 +200,7 @@ namespace AV1PP
                         if (sizeof(PixType) == 1)
                             dst[c] = clip_pixel(val);
                         else
-                            dst[c] = clip_pixel_10bit(val);
+                            dst[c] = (PixType) clip_pixel_10bit(val);
                     }
                     else {
                         dst[c] = above[max_base_x];
@@ -247,7 +246,7 @@ namespace AV1PP
                     if (sizeof(PixType) == 1)
                         dst[c] = clip_pixel(val);
                     else
-                        dst[c] = clip_pixel_10bit(val);
+                        dst[c] = (PixType) clip_pixel_10bit(val);
                 }
             }
         }
@@ -279,7 +278,7 @@ namespace AV1PP
                         if (sizeof(PixType) == 1)
                             dst[r * stride + c] = clip_pixel(val);
                         else
-                            dst[r * stride + c] = clip_pixel_10bit(val);
+                            dst[r * stride + c] = (PixType) clip_pixel_10bit(val);
                     } else {
                         for (; r < bs; ++r) dst[r * stride + c] = left[max_base_y];
                         break;
@@ -335,7 +334,7 @@ namespace AV1PP
                     if (sizeof(PixType) == 1)
                         dst[c] = details::clip_pixel(ROUND_POWER_OF_TWO(this_pred, log2_scale));
                     else
-                        dst[c] = details::clip_pixel_10bit(ROUND_POWER_OF_TWO(this_pred, log2_scale));
+                        dst[c] = (PixType) details::clip_pixel_10bit(ROUND_POWER_OF_TWO(this_pred, log2_scale));
                 }
                 dst += pitch;
             }
@@ -396,7 +395,7 @@ namespace AV1PP
                     if (sizeof(PixType) == 1)
                         dst[c] = details::clip_pixel(ROUND_POWER_OF_TWO(this_pred, log2_scale));
                     else
-                        dst[c] = details::clip_pixel_10bit(ROUND_POWER_OF_TWO(this_pred, log2_scale));
+                        dst[c] = (PixType) details::clip_pixel_10bit(ROUND_POWER_OF_TWO(this_pred, log2_scale));
                 }
                 dst += pitch;
             }
@@ -432,7 +431,7 @@ namespace AV1PP
                     if (sizeof(PixType) == 1)
                         dst[c] = details::clip_pixel(ROUND_POWER_OF_TWO(this_pred, log2_scale));
                     else
-                        dst[c] = details::clip_pixel_10bit(ROUND_POWER_OF_TWO(this_pred, log2_scale));
+                        dst[c] = (PixType) details::clip_pixel_10bit(ROUND_POWER_OF_TWO(this_pred, log2_scale));
                 }
                 dst += pitch;
             }
@@ -462,7 +461,7 @@ namespace AV1PP
 
             for (int r = 0; r < width; r++, dst += pitch)
                 for (int c = 0; c < width; c++)
-                    dst[c] = details::predict_intra_paeth_single_pel(left[r], above[c], above_left);
+                    dst[c] = (PixType) details::predict_intra_paeth_single_pel(left[r], above[c], above_left);
         }
 
         template <typename PixType> void predict_intra_nv12_dc_av1_px(const PixType* topPels, const PixType* leftPels, PixType* dst, int pitch, int width,
@@ -485,22 +484,22 @@ namespace AV1PP
                     sum[0]   += above[i] + left[i];
                     sum[0+1] += above[i+1] + left[i+1];
                 }
-                expected_dc[0] = (sum[0] + width) >> (log2Width + 1);
-                expected_dc[1] = (sum[1] + width) >> (log2Width + 1);
+                expected_dc[0] = (PixType) ((sum[0] + width) >> (log2Width + 1));
+                expected_dc[1] = (PixType) ((sum[1] + width) >> (log2Width + 1));
             } else if (leftAvailable) {
                 for (i = 0; i < width2; i += 2) {
                     sum[0]   += left[i];
                     sum[0+1] += left[i+1];
                 }
-                expected_dc[0] = (sum[0] + (1 << (log2Width - 1))) >> log2Width;
-                expected_dc[1] = (sum[1] + (1 << (log2Width - 1))) >> log2Width;
+                expected_dc[0] = (PixType) ((sum[0] + (1 << (log2Width - 1))) >> log2Width);
+                expected_dc[1] = (PixType) ((sum[1] + (1 << (log2Width - 1))) >> log2Width);
             } else if (topAvailable) {
                 for (i = 0; i < width2; i += 2) {
                     sum[0] += above[i];
                     sum[1] += above[i+1];
                 }
-                expected_dc[0] = (sum[0] + (1 << (log2Width - 1))) >> log2Width;
-                expected_dc[1] = (sum[1] + (1 << (log2Width - 1))) >> log2Width;
+                expected_dc[0] = (PixType) ((sum[0] + (1 << (log2Width - 1))) >> log2Width);
+                expected_dc[1] = (PixType) ((sum[1] + (1 << (log2Width - 1))) >> log2Width);
             }
 
             for (int r = 0; r < width; r++) {

@@ -20,10 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
-__pragma(warning(disable:4456))
-
 #include "assert.h"
 #ifdef _WIN32
 #include "intrin.h"
@@ -294,7 +290,7 @@ namespace AV1PP
     {
         __m256i diff = _mm256_subs_epi16(a, b);
         const __m256i abs_diff = _mm256_abs_epi16(diff);
-        const __m256i s = _mm256_subs_epu16(_mm256_set1_epi16(strength), _mm256_srl_epi16(abs_diff, _mm_cvtsi32_si128(adjdamp)));
+        const __m256i s = _mm256_subs_epu16(_mm256_set1_epi16((short)strength), _mm256_srl_epi16(abs_diff, _mm_cvtsi32_si128(adjdamp)));
         return _mm256_sign_epi16(_mm256_min_epi16(abs_diff, s), diff);
     }
 
@@ -316,8 +312,8 @@ namespace AV1PP
         if (sec_strength)
             sec_damping = std::max(0, sec_damping - get_msb(sec_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
-        const __m256i sec_str = _mm256_set1_epi16(sec_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
+        const __m256i sec_str = _mm256_set1_epi16((short)sec_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         const __m128i sec_dmp = _mm_cvtsi32_si128(sec_damping);
 
@@ -372,8 +368,8 @@ namespace AV1PP
         s0 = _mm256_add_epi16(_mm256_add_epi16(s0, s1), _mm256_add_epi16(s2, s3));
         s4 = _mm256_add_epi16(_mm256_add_epi16(s4, s5), _mm256_add_epi16(s6, s7));
 
-        sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-        sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+        sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+        sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
         sum = _mm256_add_epi16(sum, _mm256_add_epi16(s0, s0));
         sum = _mm256_add_epi16(sum, s4);
 
@@ -413,8 +409,8 @@ namespace AV1PP
         if (sec_strength)
             sec_damping = std::max(0, sec_damping - get_msb(sec_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
-        const __m256i sec_str = _mm256_set1_epi16(sec_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
+        const __m256i sec_str = _mm256_set1_epi16((short)sec_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         const __m128i sec_dmp = _mm_cvtsi32_si128(sec_damping);
 
@@ -470,8 +466,8 @@ namespace AV1PP
             s0 = _mm256_add_epi16(_mm256_add_epi16(s0, s1), _mm256_add_epi16(s2, s3));
             s4 = _mm256_add_epi16(_mm256_add_epi16(s4, s5), _mm256_add_epi16(s6, s7));
 
-            sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+            sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
             sum = _mm256_add_epi16(sum, _mm256_add_epi16(s0, s0));
             sum = _mm256_add_epi16(sum, s4);
 
@@ -510,8 +506,8 @@ namespace AV1PP
         if (sec_strength)
             sec_damping = std::max(0, sec_damping - get_msb(sec_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
-        const __m256i sec_str = _mm256_set1_epi16(sec_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
+        const __m256i sec_str = _mm256_set1_epi16((short)sec_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         const __m128i sec_dmp = _mm_cvtsi32_si128(sec_damping);
 
@@ -567,8 +563,8 @@ namespace AV1PP
             s0 = _mm256_add_epi16(_mm256_add_epi16(s0, s1), _mm256_add_epi16(s2, s3));
             s4 = _mm256_add_epi16(_mm256_add_epi16(s4, s5), _mm256_add_epi16(s6, s7));
 
-            sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+            sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
             sum = _mm256_add_epi16(sum, _mm256_add_epi16(s0, s0));
             sum = _mm256_add_epi16(sum, s4);
 
@@ -606,8 +602,8 @@ namespace AV1PP
         if (sec_strength)
             sec_damping = std::max(0, sec_damping - get_msb(sec_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
-        const __m256i sec_str = _mm256_set1_epi16(sec_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
+        const __m256i sec_str = _mm256_set1_epi16((short)sec_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         const __m128i sec_dmp = _mm_cvtsi32_si128(sec_damping);
         __m256i err = _mm256_setzero_si256();
@@ -663,8 +659,8 @@ namespace AV1PP
         s0 = _mm256_add_epi16(_mm256_add_epi16(s0, s1), _mm256_add_epi16(s2, s3));
         s4 = _mm256_add_epi16(_mm256_add_epi16(s4, s5), _mm256_add_epi16(s6, s7));
 
-        sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-        sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+        sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+        sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
         sum = _mm256_add_epi16(sum, _mm256_add_epi16(s0, s0));
         sum = _mm256_add_epi16(sum, s4);
 
@@ -696,8 +692,8 @@ namespace AV1PP
         if (sec_strength)
             sec_damping = std::max(0, sec_damping - get_msb(sec_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
-        const __m256i sec_str = _mm256_set1_epi16(sec_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
+        const __m256i sec_str = _mm256_set1_epi16((short)sec_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         const __m128i sec_dmp = _mm_cvtsi32_si128(sec_damping);
         __m256i err = _mm256_setzero_si256();
@@ -754,8 +750,8 @@ namespace AV1PP
             s0 = _mm256_add_epi16(_mm256_add_epi16(s0, s1), _mm256_add_epi16(s2, s3));
             s4 = _mm256_add_epi16(_mm256_add_epi16(s4, s5), _mm256_add_epi16(s6, s7));
 
-            sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+            sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
             sum = _mm256_add_epi16(sum, _mm256_add_epi16(s0, s0));
             sum = _mm256_add_epi16(sum, s4);
 
@@ -792,7 +788,7 @@ namespace AV1PP
         if (pri_strength)
             pri_damping = std::max(0, pri_damping - get_msb(pri_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         __m256i err = _mm256_setzero_si256();
 
@@ -820,8 +816,8 @@ namespace AV1PP
             p0 = _mm256_add_epi16(p0, p1);
             p2 = _mm256_add_epi16(p2, p3);
 
-            sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+            sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
 
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
@@ -863,8 +859,8 @@ namespace AV1PP
         if (sec_strength)
             sec_damping = std::max(0, sec_damping - get_msb(sec_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
-        const __m256i sec_str = _mm256_set1_epi16(sec_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
+        const __m256i sec_str = _mm256_set1_epi16((short)sec_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         const __m128i sec_dmp = _mm_cvtsi32_si128(sec_damping);
         __m256i err = _mm256_setzero_si256();
@@ -921,8 +917,8 @@ namespace AV1PP
             s0 = _mm256_add_epi16(_mm256_add_epi16(s0, s1), _mm256_add_epi16(s2, s3));
             s4 = _mm256_add_epi16(_mm256_add_epi16(s4, s5), _mm256_add_epi16(s6, s7));
 
-            sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+            sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
             sum = _mm256_add_epi16(sum, _mm256_add_epi16(s0, s0));
             sum = _mm256_add_epi16(sum, s4);
 
@@ -959,7 +955,7 @@ namespace AV1PP
         if (pri_strength)
             pri_damping = std::max(0, pri_damping - get_msb(pri_strength));
 
-        const __m256i pri_str = _mm256_set1_epi16(pri_strength);
+        const __m256i pri_str = _mm256_set1_epi16((short)pri_strength);
         const __m128i pri_dmp = _mm_cvtsi32_si128(pri_damping);
         __m256i err = _mm256_setzero_si256();
 
@@ -987,8 +983,8 @@ namespace AV1PP
             p0 = _mm256_add_epi16(p0, p1);
             p2 = _mm256_add_epi16(p2, p3);
 
-            sum = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), p0);
-            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), p2));
+            sum = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), p0);
+            sum = _mm256_add_epi16(sum, _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), p2));
 
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
@@ -1324,7 +1320,7 @@ namespace AV1PP
 
         for (int y = 0; y < 4; y += 2) {
             __m256i min, max, sum, pri_sum, filtx, diff;
-            __m256i x = loada2_m128i(in, in + CDEF_BSTRIDE);
+            __m256i x0 = loada2_m128i(in, in + CDEF_BSTRIDE);
             __m256i o = _mm256_cvtepu8_epi16(loadu2_epi64(org, org + ostride));
 
             __m256i p0 = loadu2_m128i(in + pri_dirs[0], in + CDEF_BSTRIDE + pri_dirs[0]);
@@ -1340,11 +1336,11 @@ namespace AV1PP
             __m256i s6 = loadu2_m128i(in + sec1_dirs[1], in + CDEF_BSTRIDE + sec1_dirs[1]);
             __m256i s7 = loadu2_m128i(in - sec1_dirs[1], in + CDEF_BSTRIDE - sec1_dirs[1]);
 
-            min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(x,   p0), p1), p2), p3);
+            min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(x0,   p0), p1), p2), p3);
             min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(min, s0), s1), s2), s3);
             min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(min, s4), s5), s6), s7);
 
-            max = _mm256_max_epi16(x,   mask_large(p0));
+            max = _mm256_max_epi16(x0,   mask_large(p0));
             max = _mm256_max_epi16(max, mask_large(p1));
             max = _mm256_max_epi16(max, mask_large(p2));
             max = _mm256_max_epi16(max, mask_large(p3));
@@ -1358,19 +1354,19 @@ namespace AV1PP
             max = _mm256_max_epi16(max, mask_large(s7));
 
             // filter for sec_strength = 0
-            __m256i cp0 = constrain(p0, x, pri_strength, pri_damping);
-            __m256i cp1 = constrain(p1, x, pri_strength, pri_damping);
-            __m256i cp2 = constrain(p2, x, pri_strength, pri_damping);
-            __m256i cp3 = constrain(p3, x, pri_strength, pri_damping);
+            __m256i cp0 = constrain(p0, x0, pri_strength, pri_damping);
+            __m256i cp1 = constrain(p1, x0, pri_strength, pri_damping);
+            __m256i cp2 = constrain(p2, x0, pri_strength, pri_damping);
+            __m256i cp3 = constrain(p3, x0, pri_strength, pri_damping);
             cp0 = _mm256_add_epi16(cp0, cp1);
             cp2 = _mm256_add_epi16(cp2, cp3);
-            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), cp0);
-            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), cp2);
+            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), cp0);
+            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), cp2);
             pri_sum = _mm256_add_epi16(cp0, cp2);
             sum = _mm256_add_epi16(pri_sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), pri_sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1384,14 +1380,14 @@ namespace AV1PP
                 dst[0] += dstride * 2;
             }
             // filter for sec_strength = 1
-            __m256i cs0 = constrain(s0, x, 1, sec_damping);
-            __m256i cs1 = constrain(s1, x, 1, sec_damping);
-            __m256i cs2 = constrain(s2, x, 1, sec_damping);
-            __m256i cs3 = constrain(s3, x, 1, sec_damping);
-            __m256i cs4 = constrain(s4, x, 1, sec_damping);
-            __m256i cs5 = constrain(s5, x, 1, sec_damping);
-            __m256i cs6 = constrain(s6, x, 1, sec_damping);
-            __m256i cs7 = constrain(s7, x, 1, sec_damping);
+            __m256i cs0 = constrain(s0, x0, 1, sec_damping);
+            __m256i cs1 = constrain(s1, x0, 1, sec_damping);
+            __m256i cs2 = constrain(s2, x0, 1, sec_damping);
+            __m256i cs3 = constrain(s3, x0, 1, sec_damping);
+            __m256i cs4 = constrain(s4, x0, 1, sec_damping);
+            __m256i cs5 = constrain(s5, x0, 1, sec_damping);
+            __m256i cs6 = constrain(s6, x0, 1, sec_damping);
+            __m256i cs7 = constrain(s7, x0, 1, sec_damping);
 
             cs0 = _mm256_add_epi16(_mm256_add_epi16(cs0, cs1), _mm256_add_epi16(cs2, cs3));
             cs4 = _mm256_add_epi16(_mm256_add_epi16(cs4, cs5), _mm256_add_epi16(cs6, cs7));
@@ -1400,7 +1396,7 @@ namespace AV1PP
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1415,14 +1411,14 @@ namespace AV1PP
             }
             // filter for sec_strength = 2
             if (dst[2]) {
-            cs0 = constrain(s0, x, 2, sec_damping - 1);
-            cs1 = constrain(s1, x, 2, sec_damping - 1);
-            cs2 = constrain(s2, x, 2, sec_damping - 1);
-            cs3 = constrain(s3, x, 2, sec_damping - 1);
-            cs4 = constrain(s4, x, 2, sec_damping - 1);
-            cs5 = constrain(s5, x, 2, sec_damping - 1);
-            cs6 = constrain(s6, x, 2, sec_damping - 1);
-            cs7 = constrain(s7, x, 2, sec_damping - 1);
+            cs0 = constrain(s0, x0, 2, sec_damping - 1);
+            cs1 = constrain(s1, x0, 2, sec_damping - 1);
+            cs2 = constrain(s2, x0, 2, sec_damping - 1);
+            cs3 = constrain(s3, x0, 2, sec_damping - 1);
+            cs4 = constrain(s4, x0, 2, sec_damping - 1);
+            cs5 = constrain(s5, x0, 2, sec_damping - 1);
+            cs6 = constrain(s6, x0, 2, sec_damping - 1);
+            cs7 = constrain(s7, x0, 2, sec_damping - 1);
 
             cs0 = _mm256_add_epi16(_mm256_add_epi16(cs0, cs1), _mm256_add_epi16(cs2, cs3));
             cs4 = _mm256_add_epi16(_mm256_add_epi16(cs4, cs5), _mm256_add_epi16(cs6, cs7));
@@ -1431,7 +1427,7 @@ namespace AV1PP
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1447,14 +1443,14 @@ namespace AV1PP
             }
             // filter for sec_strength = 4
             if (dst[3]) {
-            cs0 = constrain(s0, x, 4, sec_damping - 2);
-            cs1 = constrain(s1, x, 4, sec_damping - 2);
-            cs2 = constrain(s2, x, 4, sec_damping - 2);
-            cs3 = constrain(s3, x, 4, sec_damping - 2);
-            cs4 = constrain(s4, x, 4, sec_damping - 2);
-            cs5 = constrain(s5, x, 4, sec_damping - 2);
-            cs6 = constrain(s6, x, 4, sec_damping - 2);
-            cs7 = constrain(s7, x, 4, sec_damping - 2);
+            cs0 = constrain(s0, x0, 4, sec_damping - 2);
+            cs1 = constrain(s1, x0, 4, sec_damping - 2);
+            cs2 = constrain(s2, x0, 4, sec_damping - 2);
+            cs3 = constrain(s3, x0, 4, sec_damping - 2);
+            cs4 = constrain(s4, x0, 4, sec_damping - 2);
+            cs5 = constrain(s5, x0, 4, sec_damping - 2);
+            cs6 = constrain(s6, x0, 4, sec_damping - 2);
+            cs7 = constrain(s7, x0, 4, sec_damping - 2);
 
             cs0 = _mm256_add_epi16(_mm256_add_epi16(cs0, cs1), _mm256_add_epi16(cs2, cs3));
             cs4 = _mm256_add_epi16(_mm256_add_epi16(cs4, cs5), _mm256_add_epi16(cs6, cs7));
@@ -1463,7 +1459,7 @@ namespace AV1PP
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1521,7 +1517,7 @@ namespace AV1PP
 
         for (int y = 0; y < 8; y += 2) {
             __m256i min, max, sum, pri_sum, filtx, diff;
-            __m256i x = loada2_m128i(in, in + CDEF_BSTRIDE);
+            __m256i x0 = loada2_m128i(in, in + CDEF_BSTRIDE);
             __m256i o = _mm256_cvtepu8_epi16(loadu2_epi64(org, org + ostride));
 
             __m256i p0 = loadu2_m128i(in + pri_dirs[0], in + CDEF_BSTRIDE + pri_dirs[0]);
@@ -1537,11 +1533,11 @@ namespace AV1PP
             __m256i s6 = loadu2_m128i(in + sec1_dirs[1], in + CDEF_BSTRIDE + sec1_dirs[1]);
             __m256i s7 = loadu2_m128i(in - sec1_dirs[1], in + CDEF_BSTRIDE - sec1_dirs[1]);
 
-            min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(x,   p0), p1), p2), p3);
+            min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(x0,  p0), p1), p2), p3);
             min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(min, s0), s1), s2), s3);
             min = _mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(_mm256_min_epi16(min, s4), s5), s6), s7);
 
-            max = _mm256_max_epi16(x,   mask_large(p0));
+            max = _mm256_max_epi16(x0,  mask_large(p0));
             max = _mm256_max_epi16(max, mask_large(p1));
             max = _mm256_max_epi16(max, mask_large(p2));
             max = _mm256_max_epi16(max, mask_large(p3));
@@ -1555,19 +1551,19 @@ namespace AV1PP
             max = _mm256_max_epi16(max, mask_large(s7));
 
             // filter for sec_strength = 0
-            __m256i cp0 = constrain(p0, x, pri_strength, pri_damping);
-            __m256i cp1 = constrain(p1, x, pri_strength, pri_damping);
-            __m256i cp2 = constrain(p2, x, pri_strength, pri_damping);
-            __m256i cp3 = constrain(p3, x, pri_strength, pri_damping);
+            __m256i cp0 = constrain(p0, x0, pri_strength, pri_damping);
+            __m256i cp1 = constrain(p1, x0, pri_strength, pri_damping);
+            __m256i cp2 = constrain(p2, x0, pri_strength, pri_damping);
+            __m256i cp3 = constrain(p3, x0, pri_strength, pri_damping);
             cp0 = _mm256_add_epi16(cp0, cp1);
             cp2 = _mm256_add_epi16(cp2, cp3);
-            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[0]), cp0);
-            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16(pri_taps[1]), cp2);
+            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[0]), cp0);
+            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri_taps[1]), cp2);
             pri_sum = _mm256_add_epi16(cp0, cp2);
             sum = _mm256_add_epi16(pri_sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), pri_sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1581,14 +1577,14 @@ namespace AV1PP
                 dst[0] += dstride * 2;
             }
             // filter for sec_strength = 1
-            __m256i cs0 = constrain(s0, x, 1, sec_damping);
-            __m256i cs1 = constrain(s1, x, 1, sec_damping);
-            __m256i cs2 = constrain(s2, x, 1, sec_damping);
-            __m256i cs3 = constrain(s3, x, 1, sec_damping);
-            __m256i cs4 = constrain(s4, x, 1, sec_damping);
-            __m256i cs5 = constrain(s5, x, 1, sec_damping);
-            __m256i cs6 = constrain(s6, x, 1, sec_damping);
-            __m256i cs7 = constrain(s7, x, 1, sec_damping);
+            __m256i cs0 = constrain(s0, x0, 1, sec_damping);
+            __m256i cs1 = constrain(s1, x0, 1, sec_damping);
+            __m256i cs2 = constrain(s2, x0, 1, sec_damping);
+            __m256i cs3 = constrain(s3, x0, 1, sec_damping);
+            __m256i cs4 = constrain(s4, x0, 1, sec_damping);
+            __m256i cs5 = constrain(s5, x0, 1, sec_damping);
+            __m256i cs6 = constrain(s6, x0, 1, sec_damping);
+            __m256i cs7 = constrain(s7, x0, 1, sec_damping);
 
             cs0 = _mm256_add_epi16(_mm256_add_epi16(cs0, cs1), _mm256_add_epi16(cs2, cs3));
             cs4 = _mm256_add_epi16(_mm256_add_epi16(cs4, cs5), _mm256_add_epi16(cs6, cs7));
@@ -1597,7 +1593,7 @@ namespace AV1PP
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1612,14 +1608,14 @@ namespace AV1PP
             }
             if (dst[2]) {
             // filter for sec_strength = 2
-            cs0 = constrain(s0, x, 2, sec_damping - 1);
-            cs1 = constrain(s1, x, 2, sec_damping - 1);
-            cs2 = constrain(s2, x, 2, sec_damping - 1);
-            cs3 = constrain(s3, x, 2, sec_damping - 1);
-            cs4 = constrain(s4, x, 2, sec_damping - 1);
-            cs5 = constrain(s5, x, 2, sec_damping - 1);
-            cs6 = constrain(s6, x, 2, sec_damping - 1);
-            cs7 = constrain(s7, x, 2, sec_damping - 1);
+            cs0 = constrain(s0, x0, 2, sec_damping - 1);
+            cs1 = constrain(s1, x0, 2, sec_damping - 1);
+            cs2 = constrain(s2, x0, 2, sec_damping - 1);
+            cs3 = constrain(s3, x0, 2, sec_damping - 1);
+            cs4 = constrain(s4, x0, 2, sec_damping - 1);
+            cs5 = constrain(s5, x0, 2, sec_damping - 1);
+            cs6 = constrain(s6, x0, 2, sec_damping - 1);
+            cs7 = constrain(s7, x0, 2, sec_damping - 1);
 
             cs0 = _mm256_add_epi16(_mm256_add_epi16(cs0, cs1), _mm256_add_epi16(cs2, cs3));
             cs4 = _mm256_add_epi16(_mm256_add_epi16(cs4, cs5), _mm256_add_epi16(cs6, cs7));
@@ -1628,7 +1624,7 @@ namespace AV1PP
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1644,14 +1640,14 @@ namespace AV1PP
             }
             if (dst[3]) {
             // filter for sec_strength = 4
-            cs0 = constrain(s0, x, 4, sec_damping - 2);
-            cs1 = constrain(s1, x, 4, sec_damping - 2);
-            cs2 = constrain(s2, x, 4, sec_damping - 2);
-            cs3 = constrain(s3, x, 4, sec_damping - 2);
-            cs4 = constrain(s4, x, 4, sec_damping - 2);
-            cs5 = constrain(s5, x, 4, sec_damping - 2);
-            cs6 = constrain(s6, x, 4, sec_damping - 2);
-            cs7 = constrain(s7, x, 4, sec_damping - 2);
+            cs0 = constrain(s0, x0, 4, sec_damping - 2);
+            cs1 = constrain(s1, x0, 4, sec_damping - 2);
+            cs2 = constrain(s2, x0, 4, sec_damping - 2);
+            cs3 = constrain(s3, x0, 4, sec_damping - 2);
+            cs4 = constrain(s4, x0, 4, sec_damping - 2);
+            cs5 = constrain(s5, x0, 4, sec_damping - 2);
+            cs6 = constrain(s6, x0, 4, sec_damping - 2);
+            cs7 = constrain(s7, x0, 4, sec_damping - 2);
 
             cs0 = _mm256_add_epi16(_mm256_add_epi16(cs0, cs1), _mm256_add_epi16(cs2, cs3));
             cs4 = _mm256_add_epi16(_mm256_add_epi16(cs4, cs5), _mm256_add_epi16(cs6, cs7));
@@ -1660,7 +1656,7 @@ namespace AV1PP
             sum = _mm256_add_epi16(sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
             sum = _mm256_srai_epi16(sum, 4);
-            filtx = _mm256_add_epi16(x, sum);
+            filtx = _mm256_add_epi16(x0, sum);
             filtx = _mm256_min_epi16(_mm256_max_epi16(filtx, min), max);
 
             diff = _mm256_sub_epi16(o, filtx);
@@ -1776,8 +1772,8 @@ namespace AV1PP
             __m256i cp3 = constrain(p3, x, pri_strength0, pri_damping0);
             cp0 = _mm256_add_epi16(cp0, cp1);
             cp2 = _mm256_add_epi16(cp2, cp3);
-            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16(pri0_taps[0]), cp0);
-            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16(pri0_taps[1]), cp2);
+            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri0_taps[0]), cp0);
+            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri0_taps[1]), cp2);
             pri0_sum = _mm256_add_epi16(cp0, cp2);
             sum = _mm256_add_epi16(pri0_sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), pri0_sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
@@ -1796,8 +1792,8 @@ namespace AV1PP
             cp3 = constrain(p3, x, pri_strength1, pri_damping1);
             cp0 = _mm256_add_epi16(cp0, cp1);
             cp2 = _mm256_add_epi16(cp2, cp3);
-            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16(pri1_taps[0]), cp0);
-            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16(pri1_taps[1]), cp2);
+            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri1_taps[0]), cp0);
+            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri1_taps[1]), cp2);
             pri1_sum = _mm256_add_epi16(cp0, cp2);
             sum = _mm256_add_epi16(pri1_sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), pri1_sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
@@ -2018,8 +2014,8 @@ namespace AV1PP
             __m256i cp3 = constrain(p3, x, pri_strength0, pri_damping0);
             cp0 = _mm256_add_epi16(cp0, cp1);
             cp2 = _mm256_add_epi16(cp2, cp3);
-            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16(pri0_taps[0]), cp0);
-            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16(pri0_taps[1]), cp2);
+            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri0_taps[0]), cp0);
+            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri0_taps[1]), cp2);
             pri0_sum = _mm256_add_epi16(cp0, cp2);
             sum = _mm256_add_epi16(pri0_sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), pri0_sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));
@@ -2038,8 +2034,8 @@ namespace AV1PP
             cp3 = constrain(p3, x, pri_strength1, pri_damping1);
             cp0 = _mm256_add_epi16(cp0, cp1);
             cp2 = _mm256_add_epi16(cp2, cp3);
-            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16(pri1_taps[0]), cp0);
-            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16(pri1_taps[1]), cp2);
+            cp0 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri1_taps[0]), cp0);
+            cp2 = _mm256_mullo_epi16(_mm256_set1_epi16((short)pri1_taps[1]), cp2);
             pri1_sum = _mm256_add_epi16(cp0, cp2);
             sum = _mm256_add_epi16(pri1_sum, _mm256_cmpgt_epi16(_mm256_setzero_si256(), pri1_sum));
             sum = _mm256_add_epi16(sum, _mm256_set1_epi16(8));

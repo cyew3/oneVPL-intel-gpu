@@ -390,7 +390,8 @@ namespace AV1Enc {
 
 #if ENABLE_BITSTREAM_MEM_REDUCTION
         void SetBitsreamPtr(mfxBitstream  &mfxBS);
-        struct {
+        struct TotalBitstreamBuffer {
+            TotalBitstreamBuffer() : m_size(0), m_data(nullptr), m_workBuffer() {}
             void init(uint8_t* data_, size_t size_) { m_size = size_;  m_data = data_; }
             void resize(size_t size_) { m_workBuffer.resize(size_); m_size = size_;  m_data = m_workBuffer.data(); }
             size_t size(void) const { return m_size; }

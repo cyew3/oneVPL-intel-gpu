@@ -20,8 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
 
 #include "assert.h"
 #include "string.h"
@@ -49,8 +47,8 @@ enum { no_horz = 0, do_horz = 1 };
 enum { no_vert = 0, do_vert = 1 };
 
 int round_power_of_two(int value, int n) { return (value + ((1 << n) >> 1)) >> n; };
-uint8_t clip_pixel(int val) { return (val > 255) ? 255 : (val < 0) ? 0 : val; }
-uint16_t clip_pixel10(int val) { return (val > 1023) ? 1023 : (val < 0) ? 0 : val; }
+uint8_t clip_pixel(int val) { return (uint8_t) ((val > 255) ? 255 : (val < 0) ? 0 : val); }
+uint16_t clip_pixel10(int val) { return (uint16_t) ((val > 1023) ? 1023 : (val < 0) ? 0 : val); }
 
 
 namespace details {
@@ -60,7 +58,7 @@ namespace details {
 
     static inline uint8_t clip_pixel(int val)
     {
-        return (val > 255) ? 255 : (val < 0) ? 0 : val;
+        return (uint8_t) ((val > 255) ? 255 : (val < 0) ? 0 : val);
     }
 
     static const InterpKernel *get_filter_base(const int16_t *filter)
@@ -739,7 +737,7 @@ namespace AV1PP
                 for (int k = 0; k < SUBPEL_TAPS; ++k)
                     sum += fy[k] * tmp[(y + k) * pitchTmp + x];
                 int res = round_power_of_two(sum, round1);
-                dst[y * pitchDst + x] = res;
+                dst[y * pitchDst + x] = (int16_t) res;
             }
         }
     }
@@ -769,7 +767,7 @@ namespace AV1PP
                 for (int k = 0; k < SUBPEL_TAPS; ++k)
                     sum += fy[k] * tmp[(y + k) * pitchTmp + x];
                 int res = round_power_of_two(sum, round1);
-                dst[y * pitchDst + x] = res;
+                dst[y * pitchDst + x] = (int16_t) res;
             }
         }
     }

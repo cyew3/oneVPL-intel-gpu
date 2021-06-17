@@ -20,8 +20,6 @@
 
 __pragma(warning(disable:4127))
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
 
 #include "assert.h"
 #include "string.h"
@@ -54,10 +52,10 @@ namespace AV1PP {
             a23 = diffBuff[b][2] + diffBuff[b][3];
             b01 = diffBuff[b][0] - diffBuff[b][1];
             b23 = diffBuff[b][2] - diffBuff[b][3];
-            tmpBuff[b][0] = a01 + a23;
-            tmpBuff[b][1] = a01 - a23;
-            tmpBuff[b][2] = b01 - b23;
-            tmpBuff[b][3] = b01 + b23;
+            tmpBuff[b][0] = (short) (a01 + a23);
+            tmpBuff[b][1] = (short) (a01 - a23);
+            tmpBuff[b][2] = (short) (b01 - b23);
+            tmpBuff[b][3] = (short) (b01 + b23);
         }
         for (b = 0; b < 4; b ++) {
             int a01, a23, b01, b23;
@@ -225,14 +223,14 @@ namespace AV1PP {
             int s6 = t4 - t6;
             int s5 = t5 + t7;
             int s7 = t5 - t7;
-            diff[i][0] = s0 + s1;
-            diff[i][1] = s0 - s1;
-            diff[i][2] = s2 + s3;
-            diff[i][3] = s2 - s3;
-            diff[i][4] = s4 + s5;
-            diff[i][5] = s4 - s5;
-            diff[i][6] = s6 + s7;
-            diff[i][7] = s6 - s7;
+            diff[i][0] = (short) (s0 + s1);
+            diff[i][1] = (short) (s0 - s1);
+            diff[i][2] = (short) (s2 + s3);
+            diff[i][3] = (short) (s2 - s3);
+            diff[i][4] = (short) (s4 + s5);
+            diff[i][5] = (short) (s4 - s5);
+            diff[i][6] = (short) (s6 + s7);
+            diff[i][7] = (short) (s6 - s7);
         }
         for (i = 0; i < 8; i++) {
             int t0 = diff[0][i] + diff[4][i];
@@ -556,14 +554,14 @@ namespace AV1PP {
             int s6 = t4 - t6;
             int s5 = t5 + t7;
             int s7 = t5 - t7;
-            diff[i][0] = s0 + s1;
-            diff[i][1] = s0 - s1;
-            diff[i][2] = s2 + s3;
-            diff[i][3] = s2 - s3;
-            diff[i][4] = s4 + s5;
-            diff[i][5] = s4 - s5;
-            diff[i][6] = s6 + s7;
-            diff[i][7] = s6 - s7;
+            diff[i][0] = (short) (s0 + s1);
+            diff[i][1] = (short) (s0 - s1);
+            diff[i][2] = (short) (s2 + s3);
+            diff[i][3] = (short) (s2 - s3);
+            diff[i][4] = (short) (s4 + s5);
+            diff[i][5] = (short) (s4 - s5);
+            diff[i][6] = (short) (s6 + s7);
+            diff[i][7] = (short) (s6 - s7);
         }
         for (i = 0; i < 8; i++) {
             int t0 = diff[0][i] + diff[4][i];

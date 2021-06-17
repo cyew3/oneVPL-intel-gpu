@@ -18,10 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// FIXME: these lines are just to unblock CI, and should be fixed correctly
-__pragma(warning(disable:4244))
-__pragma(warning(disable:4456))
-
 
 #include <stdint.h>
 #include <assert.h>
@@ -551,18 +547,18 @@ static inline __m128i predict_unclipped(const __m128i *input, __m128i alpha_q12,
 static  void cfl_predict_nv12_u8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int bd, int width, int height)
 {
     bd; //ignore bd
-    const __m128i alpha_sign = _mm_set1_epi16(alpha_q3);
+    const __m128i alpha_sign = _mm_set1_epi16((short) alpha_q3);
     const __m128i alpha_q12 = _mm_slli_epi16(_mm_abs_epi16(alpha_sign), 9);
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV<<16));
     __m128i *row = (__m128i *)pred_buf_q3;
     const __m128i *row_end = row + height * CFL_BUF_LINE_I128;
     do {
         __m128i res = predict_unclipped(row, alpha_q12, alpha_sign, dc_q0);
-        __m128i v1 = _mm_unpacklo_epi16(res, res);
-        v1 = _mm_add_epi16(v1, dc_q0);
-        __m128i v2 = _mm_unpackhi_epi16(res, res);
-        v2 = _mm_add_epi16(v2, dc_q0);
-        res = _mm_packus_epi16(v1, v2);
+        __m128i v10 = _mm_unpacklo_epi16(res, res);
+        v10 = _mm_add_epi16(v10, dc_q0);
+        __m128i v20 = _mm_unpackhi_epi16(res, res);
+        v20 = _mm_add_epi16(v20, dc_q0);
+        res = _mm_packus_epi16(v10, v20);
         if (width < 16) {
             if (width == 4)
                 _mm_storel_epi64((__m128i *)dst, res);
@@ -571,12 +567,12 @@ static  void cfl_predict_nv12_u8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t 
         }
         else {
             __m128i next = predict_unclipped(row + 1, alpha_q12, alpha_sign, dc_q0);
-            __m128i next1 = _mm_unpacklo_epi16(next, next);
-            next1 = _mm_add_epi16(next1, dc_q0);
-            __m128i next2 = _mm_unpackhi_epi16(next, next);
-            next2 = _mm_add_epi16(next2, dc_q0);
+            __m128i next10 = _mm_unpacklo_epi16(next, next);
+            next10 = _mm_add_epi16(next10, dc_q0);
+            __m128i next20 = _mm_unpackhi_epi16(next, next);
+            next20 = _mm_add_epi16(next20, dc_q0);
 
-            next = _mm_packus_epi16(next1, next2);
+            next = _mm_packus_epi16(next10, next20);
             _mm_storeu_si128((__m128i *)dst, res);
             _mm_storeu_si128((__m128i *)(dst+16), next);
             if (width == 32) {
@@ -605,7 +601,7 @@ static  void cfl_predict_nv12_u8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t 
 
 static  void cfl_predict_nv12_u8_4_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int, int, int height)
 {
-    const __m128i alpha_sign = _mm_set1_epi16(alpha_q3);
+    const __m128i alpha_sign = _mm_set1_epi16((short)alpha_q3);
     const __m128i alpha_q12 = _mm_slli_epi16(_mm_abs_epi16(alpha_sign), 9);
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV << 16));
     __m128i *row = (__m128i *)pred_buf_q3;
@@ -624,7 +620,7 @@ static  void cfl_predict_nv12_u8_4_ssse3_impl(const int16_t *pred_buf_q3, uint8_
 
 static  void cfl_predict_nv12_u8_8_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int, int, int height)
 {
-    const __m128i alpha_sign = _mm_set1_epi16(alpha_q3);
+    const __m128i alpha_sign = _mm_set1_epi16((short)alpha_q3);
     const __m128i alpha_q12 = _mm_slli_epi16(_mm_abs_epi16(alpha_sign), 9);
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV << 16));
     __m128i *row = (__m128i *)pred_buf_q3;
@@ -643,7 +639,7 @@ static  void cfl_predict_nv12_u8_8_ssse3_impl(const int16_t *pred_buf_q3, uint8_
 
 static  void cfl_predict_nv12_u8_16_ssse3_impl(const int16_t *pred_buf_q3, uint8_t *dst, int dst_stride, uint8_t dcU, uint8_t dcV, int alpha_q3, int, int, int height)
 {
-    const __m128i alpha_sign = _mm_set1_epi16(alpha_q3);
+    const __m128i alpha_sign = _mm_set1_epi16((short)alpha_q3);
     const __m128i alpha_q12 = _mm_slli_epi16(_mm_abs_epi16(alpha_sign), 9);
     const __m128i dc_q0 = _mm_set1_epi32(dcU | (dcV << 16));
     __m128i *row = (__m128i *)pred_buf_q3;
