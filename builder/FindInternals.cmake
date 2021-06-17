@@ -178,7 +178,6 @@ target_compile_definitions(mfx_va_properties
     >
     $<$<PLATFORM_ID:Windows>:
       MFX_D3D11_ENABLED
-      MFX_D3D11_SUPPORT # FIXME: rename all occurences to _ENABLED
       MFX_DX9ON11
     >
   )
