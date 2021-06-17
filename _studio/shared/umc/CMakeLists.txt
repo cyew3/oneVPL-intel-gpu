@@ -34,8 +34,6 @@ add_subdirectory(core/umc)
 add_library(umc_va_hw STATIC)
 set_property(TARGET umc_va_hw PROPERTY FOLDER "umc")
 
-include(sources_ext.cmake OPTIONAL)
-
 target_sources(umc_va_hw
   PRIVATE
     io/umc_va/include/umc_va.h
@@ -95,4 +93,5 @@ target_link_libraries(bitrate_control PUBLIC umc)
 
 ### UMC codec brc
 
+include(sources_ext.cmake OPTIONAL)
 include(sources_tool_ext.cmake OPTIONAL)

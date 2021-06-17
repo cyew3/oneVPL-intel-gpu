@@ -59,7 +59,6 @@
     // enable defines
     #include "mfxconfig.h"
 
-    #define MFX_ENABLE_VC1_VIDEO_DECODE
     #define MFX_ENABLE_H265_VIDEO_ENCODE
 #elif defined(ANDROID)
     #include "mfx_android_defs.h"
@@ -74,10 +73,6 @@
 #define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
 
 // closed source fixed-style defines
-#if !defined(ANDROID) && defined(__linux__)
-    #define MFX_ENABLE_MJPEG_ROTATE_VPP
-#endif
-
 #if !defined(OPEN_SOURCE) && !defined(ANDROID)
     #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
         #define PRE_SI_GEN 11
@@ -85,9 +80,6 @@
 
     #if (MFX_VERSION >= MFX_VERSION_NEXT)
         #define MFX_ENABLE_AV1_VIDEO_ENCODE
-    #endif
-    #if (MFX_VERSION >= MFX_VERSION_NEXT) && (defined(LINUX_TARGET_PLATFORM_XEHP) || defined(MFX_VA_WIN))
-        #define MFX_ENABLE_AV1_VIDEO_DECODE
     #endif
 
     #if defined(MFX_ENABLE_VPP)
@@ -140,36 +132,11 @@
 
 #endif
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #undef MFX_ENABLE_AV1_VIDEO_DECODE
-#endif
-
 #define MFX_ENABLE_GET_CM_DEVICE
 
 #if defined(_WIN32) || defined(_WIN64)
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
-
-#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_MPEG2D) || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D)  || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VC1D)   || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD)  || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)   || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D)  || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
-
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-#endif
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_AV1D) && !defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
-        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    #endif
-#endif
 
 #define DEFAULT_WAIT_HW_TIMEOUT_MS 60000
 
@@ -177,13 +144,8 @@
 
 #endif // #ifndef OPEN_SOURCE
 
-#define DECODE_DEFAULT_TIMEOUT  60000
-
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
-#if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
-#define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-#endif //MFX_ENABLE_MPEG2_VIDEO_DECODE
 
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
     #if MFX_VERSION >= 1023
@@ -235,30 +197,9 @@
     #endif
 #endif
 
-
-    #if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
-        #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-    #endif
-
     #if defined(MFX_VA_WIN)
         #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-
-        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
-        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
-        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D
-        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
-
-        #if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_MPEG2D) || \
-            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D)  || \
-            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VC1D)   || \
-            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD)  || \
-            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)   || \
-            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D)  || \
-            defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
-
-            #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-        #endif
     #endif
 
     #if defined (MFX_VA_LINUX)
@@ -339,7 +280,10 @@
 #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #define MFX_ENABLE_CP
 #endif
-#if defined (_WIN32) && (_DEBUG)
-#define MFX_VC1_VIDEO_DECODE_DEBUG_THREADID
-#endif
+
+// Per component configs
+#include "mfx_config_decode.h"
+#include "mfx_config_encode.h"
+#include "mfx_config_vpp.h"
+
 #endif // _MFX_CONFIG_H_
