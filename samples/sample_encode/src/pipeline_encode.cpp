@@ -1494,7 +1494,6 @@ mfxStatus CEncodingPipeline::GetAdapterNum(const sInputParams & params, mfxU32 &
     interface_request.Requirements.mfx.CodecId                  = params.CodecId;
     interface_request.Requirements.mfx.CodecProfile             = params.CodecProfile;
     interface_request.Requirements.mfx.CodecLevel               = params.CodecLevel;
-    interface_request.Requirements.mfx.RateControlMethod        = params.nRateControlMethod;
     interface_request.Requirements.mfx.FrameInfo.BitDepthLuma   = BitDepth;
     interface_request.Requirements.mfx.FrameInfo.BitDepthChroma = BitDepth;
     interface_request.Requirements.mfx.FrameInfo.Shift          = Shift;
@@ -1503,6 +1502,14 @@ mfxStatus CEncodingPipeline::GetAdapterNum(const sInputParams & params, mfxU32 &
     interface_request.Requirements.mfx.FrameInfo.Height         = Height;
     interface_request.Requirements.mfx.FrameInfo.PicStruct      = params.nPicStruct;
     interface_request.Requirements.mfx.FrameInfo.ChromaFormat   = FourCCToChroma(params.EncodeFourCC);
+    interface_request.Requirements.mfx.RateControlMethod        = params.nRateControlMethod;
+
+    if (params.nRateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        interface_request.Requirements.mfx.QPI = params.nQPI;
+        interface_request.Requirements.mfx.QPP = params.nQPP;
+        interface_request.Requirements.mfx.QPB = params.nQPB;
+    }
 
     /* Note! IOPattern is mandatory according to MSDK manual! */
     if (D3D9_MEMORY == params.memType || D3D11_MEMORY == params.memType)
