@@ -29,7 +29,9 @@
 #include "umc_av1_frame.h"
 #include "umc_av1_bitstream.h"
 #include "umc_av1_va_packer.h"
+#ifdef UMC_VA_DXVA
 #include "umc_av1_msft_ddi.h"
+#endif
 
 #include "umc_frame_data.h"
 

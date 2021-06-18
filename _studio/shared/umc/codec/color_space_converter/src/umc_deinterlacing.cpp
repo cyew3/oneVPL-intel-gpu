@@ -156,10 +156,6 @@ static void DeinterlacingEdgeDetect(uint8_t *psrc,
   pInD = pInE - 1;
   pInF = pInE + 1;
 
-#if 0
-  hi = 240;
-  lo = 16;
-#endif
 
   for (y = 3; y <= h - 3; y += 2) {
     pdst[0] = psrc[0];
@@ -184,10 +180,6 @@ static void DeinterlacingEdgeDetect(uint8_t *psrc,
           res = ((int32_t)pInB[x] + (int32_t)pInE[x]) >> 1; //3
         }
       }
-#if 0
-      if (res > hi) res = hi;
-      else if (res < lo) res = lo;
-#endif
       pdst[x] = (uint8_t)res;
     }
     psrc += 2*iSrcPitch;
