@@ -477,6 +477,7 @@ mfxStatus EncTools::CloseVPP()
     }
     if (m_mfxSession_LA)
     {
+        m_mfxSession_LA.DisjoinSession();
         sts = m_mfxSession_LA.Close();
         MFX_CHECK_STS(sts);
     }
@@ -622,11 +623,9 @@ mfxStatus EncTools::Close()
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
 
-    if (IsOn(m_config.BRC))
-    {
-        m_brc.Close();
-        m_config.BRC = false;
-    }
+    if (m_bVPPInit)
+        sts = CloseVPP();
+
     if (isPreEncSCD(m_config, m_ctrl))
     {
         m_scd.Close();
@@ -635,14 +634,15 @@ mfxStatus EncTools::Close()
 
     if (isPreEncLA(m_config,  m_ctrl))
     {
-        if (m_ctrl.LaScale)
-            m_lpLookAhead.DisjoinSession();
         m_lpLookAhead.Close();
         OffPreEncLATools(&m_config);
     }
 
-    if (m_bVPPInit)
-        sts = CloseVPP();
+    if (IsOn(m_config.BRC))
+    {
+        m_brc.Close();
+        m_config.BRC = false;
+    }
 
     m_bInit = false;
     return sts;

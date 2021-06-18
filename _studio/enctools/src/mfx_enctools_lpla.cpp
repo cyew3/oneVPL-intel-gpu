@@ -284,13 +284,6 @@ mfxStatus LPLA_EncTool::ConfigureExtBuffs(mfxEncToolsCtrl const & ctrl, mfxExtEn
     return sts;
 }
 
-mfxStatus LPLA_EncTool::DisjoinSession()
-{
-    mfxStatus sts = MFX_ERR_NONE;
-    sts = m_mfxSession.DisjoinSession();
-    return sts;
-}
-
 MFXVideoSession* LPLA_EncTool::GetEncSession()
 {
     return &m_mfxSession;
