@@ -1152,21 +1152,33 @@ void Packer::QueryTask(const FeatureBlocks&, TPushQT Push)
             if (!(task.InsertHeaders & INSERT_REPEATED))
                 return MFX_ERR_NONE;
 
-            SH& sh = Glob::SH::Get(global);
-            FH tempFh = {};
+            const SH           &sh    = Glob::SH::Get(global);
+            mfxVideoParam      &vp    = Glob::VideoParam::Get(global);
+            ObuExtensionHeader oeh    = {task.TemporalID, 0};
+            FH                 tempFh = {};
             tempFh.show_existing_frame = 1;
-            mfxVideoParam& videoParam = Glob::VideoParam::Get(global);
-            ObuExtensionHeader oeh = {task.TemporalID, 0};
 
-            mfxU8* dst = task.pBsData + task.BsDataLength;
+            mfxU8 *dst            = task.pBsData + task.BsDataLength;
             mfxU32 bytesAvailable = task.BsBytesAvailable;
-
-            for (auto frame : task.FramesToShow)
+            for (const auto &frame : task.FramesToShow)
             {
                 BitstreamWriter bitstream(dst, bytesAvailable);
-                mfxU32 insertHeaders = INSERT_PPS | INSERT_IVF_FRM;
+                mfxU32 insertHeaders = INSERT_PPS;
                 tempFh.frame_to_show_map_idx = frame.FrameToShowMapIdx;
-                PackIVF(bitstream, tempFh, insertHeaders, videoParam);
+                const mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
+                if (IsOn(av1Par.WriteIVFHeaders))
+                {
+                    insertHeaders |= INSERT_IVF_FRM;
+                    PackIVF(bitstream, tempFh, insertHeaders, vp);
+                }
+
+                if (IsOn(av1Par.InsertTemporalDelimiter))
+                {
+                    // Add temporal delimiter for shown frame
+                    mfxU32 ext = sh.operating_points_cnt_minus_1 ? 1 : 0;
+                    PackOBUHeader(bitstream, OBU_TEMPORAL_DELIMITER, ext, oeh);
+                    PackOBUHeaderSize(bitstream, 0);
+                }
 
                 PackPPS(bitstream, task.Offsets, sh, tempFh, oeh, insertHeaders);
                 const mfxU32 repeatedFrameSize = (bitstream.GetOffset() + 7) / 8;

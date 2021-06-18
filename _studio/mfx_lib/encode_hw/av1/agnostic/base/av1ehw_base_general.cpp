@@ -2337,8 +2337,12 @@ inline void SetTaskIVFHeaderInsert(
 
 inline void SetTaskTDHeaderInsert(
     TaskCommonPar& task
+    , const TaskCommonPar& prevTask
     , const mfxVideoParam& par)
 {
+    if (IsHidden(prevTask))
+        return;
+
     const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
     if (IsOn(av1Par.InsertTemporalDelimiter))
     {
@@ -2354,6 +2358,7 @@ inline void SetTaskTDHeaderInsert(
 
 inline void SetTaskInsertHeaders(
     TaskCommonPar& task
+    , const TaskCommonPar& prevTask
     , const mfxVideoParam& par
     , bool& insertIVFSeq)
 {
@@ -2361,7 +2366,7 @@ inline void SetTaskInsertHeaders(
     if (IsOn(av1Par.WriteIVFHeaders))
         SetTaskIVFHeaderInsert(task, insertIVFSeq);
 
-    SetTaskTDHeaderInsert(task, par);
+    SetTaskTDHeaderInsert(task, prevTask, par);
 
     if (IsI(task.FrameType))
         task.InsertHeaders |= INSERT_SPS;
@@ -2398,7 +2403,7 @@ void General::ConfigureTask(
     }
     SetTaskRepeatedFrames(task);
 
-    SetTaskInsertHeaders(task, par, m_insertIVFSeq);
+    SetTaskInsertHeaders(task, m_prevTask, par, m_insertIVFSeq);
 
     if (!IsHidden(task))
         task.wasShown = true;
