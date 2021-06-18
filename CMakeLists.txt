@@ -21,7 +21,9 @@
 cmake_minimum_required( VERSION 3.14 )
 
 cmake_policy(SET CMP0048 NEW)   # version handled by project()
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.15)
 cmake_policy(SET CMP0092 NEW)   # we handle warning level programmaticaly
+endif()
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES WindowsStore)
   cmake_policy(SET CMP0091 NEW) # CMAKE_MSVC_RUNTIME_LIBRARY to rule runtime selection
