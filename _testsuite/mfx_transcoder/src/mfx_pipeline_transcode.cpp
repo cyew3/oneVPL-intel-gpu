@@ -1949,22 +1949,27 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-roi_dqp"), VM_STRING("the same as -roi  but implies MFX_ROI_MODE_QP_DELTA"), OPT_SPECIAL, VM_STRING("NumRect [Left Top Right Bottom Priority]{0..NumRect}")))
         {
+            auto pExt = m_bResetParamsStart ? RetrieveExtBuffer<mfxExtEncoderROI>(*m_ExtBuffers.get()) : m_extEncoderRoi.get();
+
             MFX_CHECK(1 + argv < argvEnd);
             argv++;
-            MFX_PARSE_INT(m_extEncoderRoi->NumROI, argv[0]);
-            m_extEncoderRoi->ROIMode = MFX_ROI_MODE_QP_DELTA;
-            MFX_CHECK(m_extEncoderRoi->NumROI * 5 + argv < argvEnd);
+            MFX_PARSE_INT(pExt->NumROI, argv[0]);
+            pExt->ROIMode = MFX_ROI_MODE_QP_DELTA;
+            MFX_CHECK(pExt->NumROI * 5 + argv < argvEnd);
             argv++;
             for (mfxU8 i = 0; i < m_extEncoderRoi->NumROI; i++)
             {
-                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Left, argv[0]);
-                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Top, argv[1]);
-                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Right, argv[2]);
-                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Bottom, argv[3]);
-                MFX_PARSE_INT(m_extEncoderRoi->ROI[i].Priority, argv[4]);
+                MFX_PARSE_INT(pExt->ROI[i].Left, argv[0]);
+                MFX_PARSE_INT(pExt->ROI[i].Top, argv[1]);
+                MFX_PARSE_INT(pExt->ROI[i].Right, argv[2]);
+                MFX_PARSE_INT(pExt->ROI[i].Bottom, argv[3]);
+                MFX_PARSE_INT(pExt->ROI[i].Priority, argv[4]);
                 argv += 5;
             }
             argv--;
+
+            if (m_bResetParamsStart)
+                m_ExtBuffers.get()->push_back(pExt);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-vp9SegmentationBlockSize"), VM_STRING("Set size of block (NxN) for segmentation map: 8, 16, 32, 64"), OPT_SPECIAL, VM_STRING("integer")))
         {
