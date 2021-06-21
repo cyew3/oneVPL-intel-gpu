@@ -183,6 +183,7 @@ inline static mfxStatus GetNumBytesRequired(const mfxFrameInfo & Info, mfxU32& n
 #ifdef MFX_ENABLE_RGBP
     case MFX_FOURCC_RGBP:
 #endif
+    case MFX_FOURCC_BGRP:
         nbytes = Pitch * Height2 + Pitch * Height2 + Pitch * Height2;
         break;
 
@@ -360,6 +361,12 @@ static inline mfxStatus SetPointers(mfxFrameData& frame_data, const mfxFrameInfo
         frame_data.R = frame_data.B + 2 * frame_data.Pitch*Height2;
         break;
 #endif
+    case MFX_FOURCC_BGRP:
+        std::tie(frame_data.PitchHigh, frame_data.PitchLow) = pitch_from_width(info.Width, 1u);
+        frame_data.B = bytes;
+        frame_data.G = frame_data.B + frame_data.Pitch*Height2;
+        frame_data.R = frame_data.B + 2 * frame_data.Pitch*Height2;
+        break;
     case MFX_FOURCC_RGB4:
         std::tie(frame_data.PitchHigh, frame_data.PitchLow) = pitch_from_width(info.Width, 4u);
         frame_data.B = bytes;

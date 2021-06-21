@@ -82,6 +82,8 @@ static inline mfxU32 ConvertMfxFourccToVAFormat(mfxU32 fourcc)
     case MFX_FOURCC_RGBP:
         return VA_FOURCC_RGBP;
 #endif
+    case MFX_FOURCC_BGRP:
+        return VA_FOURCC_BGRP;
     case MFX_FOURCC_P8:
         return VA_FOURCC_P208;
     case MFX_FOURCC_UYVY:
@@ -163,6 +165,9 @@ static void FillSurfaceAttrs(std::vector<VASurfaceAttrib> &attrib, unsigned int 
             }    
             break;
 #endif
+        case MFX_FOURCC_BGRP:
+            format = VA_RT_FORMAT_RGBP;
+            break;
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_BGR4:
             format = VA_RT_FORMAT_RGB32;
