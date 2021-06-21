@@ -261,7 +261,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
         if(request->Type & MFX_MEMTYPE_SHARED_RESOURCE)
         {
             Desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
-            Desc.MiscFlags |= D3D11_RESOURCE_MISC_SHARED_NTHANDLE | D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+            Desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
         }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -301,17 +301,8 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
             }
 
             hr = pSelf->m_pD11Device->CreateTexture2D(&Desc, NULL, &pSelf->m_SrfPool[i]);
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_MEMORY_ALLOC);
-
-            if (Desc.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX)
-            {
-                CComPtr<IDXGIKeyedMutex> mutex;
-                hr = pSelf->m_SrfPool[i]->QueryInterface(IID_PPV_ARGS(&mutex));
-                MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-                hr = mutex->AcquireSync(0, 1000);
-                MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-            }
+            if (FAILED(hr))
+                return MFX_ERR_MEMORY_ALLOC;
         }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -328,22 +319,27 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
             Desc.Usage = D3D11_USAGE_STAGING;
             Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             Desc.BindFlags = 0;
-            Desc.MiscFlags = 0;
 
             hr = pSelf->m_pD11Device->CreateTexture2D(&Desc, NULL, &pSelf->m_StagingSrfPool);
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_MEMORY_ALLOC);
         }
 
         // create mapping table
-        pSelf->m_frameHandles.resize(maxNumFrames);
-        for (numAllocated = 0; numAllocated < maxNumFrames; numAllocated++)
+        if (SUCCEEDED(hr))
         {
-            size_t id = (size_t)(numAllocated + 1);
-            pSelf->m_frameHandles[numAllocated] = (mfxHDL)id ;
+            pSelf->m_frameHandles.resize(maxNumFrames);
+            for (numAllocated = 0; numAllocated < maxNumFrames; numAllocated++)
+            {
+                size_t id = (size_t)(numAllocated + 1);
+                pSelf->m_frameHandles[numAllocated] = (mfxHDL)id ;
+            }
+            response->mids = &pSelf->m_frameHandles[0];
+            response->NumFrameActual = maxNumFrames;
+            pSelf->NumFrames = maxNumFrames;
         }
-        response->mids = &pSelf->m_frameHandles[0];
-        response->NumFrameActual = maxNumFrames;
-        pSelf->NumFrames = maxNumFrames;
+        else
+        {
+            return MFX_ERR_MEMORY_ALLOC;
+        }
 
         // check the number of allocated frames
         if (numAllocated < request->NumFrameMin)
@@ -545,22 +541,8 @@ mfxStatus mfxDefaultAllocatorD3D11::FreeFramesHW(mfxHDL pthis, mfxFrameAllocResp
 
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
 
-    D3D11_TEXTURE2D_DESC desc = {};
-    HRESULT hr = 0;
     for (mfxU32 i = 0; i < pSelf->m_NumSurface; i++)
-    {
-        pSelf->m_SrfPool[i]->GetDesc(&desc);
-        if (desc.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX)
-        {
-            CComPtr<IDXGIKeyedMutex> mutex;
-            hr = pSelf->m_SrfPool[i]->QueryInterface(IID_PPV_ARGS(&mutex));
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-            hr = mutex->ReleaseSync(0);
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-        }
         SAFE_RELEASE(pSelf->m_SrfPool[i]);
-    }
 
     SAFE_RELEASE(pSelf->m_StagingSrfPool);
 
