@@ -23,12 +23,14 @@ $FILES=@(
 
 $FILES_WIN32=@(
     'vpl\x32\__bin\Release\mfx_player.exe',
-    'vpl\x32\__bin\Release\mfx_transcoder.exe'
+    'vpl\x32\__bin\Release\mfx_transcoder.exe',
+    'vpl\x32\__bin\Release\libvpl.dll'
 )
 
 $FILES_WIN64=@(
     'vpl\x64\__bin\Release\mfx_player.exe',
-    'vpl\x64\__bin\Release\mfx_transcoder.exe'
+    'vpl\x64\__bin\Release\mfx_transcoder.exe',
+    'vpl\x64\__bin\Release\libvpl.dll'
 )
 
 $package_dir="$PathToSave\to_archive"
