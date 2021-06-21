@@ -4541,6 +4541,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     mfxFrameSurface1 **    opaqSurf,
     mfxU32                 numOpaqSurf)
 {
+#if defined (MFX_ENABLE_OPAQUE_MEMORY)
     if (m_core || m_cmDevice)
         return Error(MFX_ERR_MEMORY_ALLOC);
 
@@ -4558,6 +4559,14 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;
     NumFrameActual = req.NumFrameMin; // no need in redundant frames
     return MFX_ERR_NONE;
+#else
+    std::ignore = core;
+    std::ignore = req;
+    std::ignore = opaqSurf;
+    std::ignore = numOpaqSurf;
+
+    return MFX_ERR_UNSUPPORTED;
+#endif
 }
 
 mfxStatus MfxFrameAllocResponse::AllocCmBuffers(
