@@ -2925,7 +2925,7 @@ void General::SetDefaults(
         SetDefault(pAV1Par->WriteIVFHeaders, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->UseAnnexB, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->PackOBUFrame, MFX_CODINGOPTION_ON);
-        SetDefault(pAV1Par->InsertTemporalDelimiter, MFX_CODINGOPTION_OFF);
+        SetDefault(pAV1Par->InsertTemporalDelimiter, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->DisableCdfUpdate, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->DisableFrameEndUpdateCdf, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->EnableCdef, MFX_CODINGOPTION_ON);
