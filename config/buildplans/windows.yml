@@ -33,13 +33,6 @@ steps:
   - name: unit tests x32
     command: ..\..\..\build_tools\cmake\bin\ctest -j %NUMBER_OF_PROCESSORS% --output-on-failure
     working_dir: "../Build/vpl/x32"
-  - name: create integration lib drop
-    command: powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\create_windows_drop.ps1
-      -BuildDir "%WORKSPACE%\Build" -Msdk1xPath "%WORKSPACE%\mediasdk_1x_binaries\Windows\msdk\runtime\*.zip"
-      -PathToSave "%WORKSPACE%\output\Windows\integration\runtime"
-  - name: copy integration tools drop
-    command: mkdir %WORKSPACE%\output\Windows\integration\tools &&
-      xcopy %WORKSPACE%\mediasdk_1x_binaries\Windows\msdk\tools\*.zip %WORKSPACE%\output\Windows\integration\tools
   - name: create vpl lib drop
     command: powershell -file %WORKSPACE%\sources\mdp_msdk-lib\config\scripts\vpl_windows_drop.ps1
       -BuildDir "%WORKSPACE%\Build" -PathToSave "%WORKSPACE%\output\Windows\vpl\runtime"
@@ -55,12 +48,6 @@ types:
     - source_dir: "../output/packages/windows"
       file_patterns: "*.zip"
       destination_dir: Packages/windows
-    - source_dir: "../output/Windows/integration/runtime"
-      file_patterns: "*.zip"
-      destination_dir: Windows/integration/runtime
-    - source_dir: "../output/Windows/integration/tools"
-      file_patterns: "*.zip"
-      destination_dir: Windows/integration/tools
     - source_dir: "../output/Windows/vpl/runtime"
       file_patterns: "*.zip"
       destination_dir: Windows/vpl/runtime

@@ -40,15 +40,6 @@ steps:
   - name: pack vpl binaries
     command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Linux && cd sources/mdp_msdk-lib/output/Linux
       && tar cvfz $LINUX_DISTRIBUTIVE_msdk.tgz -C /opt/src/sources/mdp_msdk-lib/build ."
-  - name: create integration lib drop
-    command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/drop_linux_lib.sh
-      -b /opt/src/sources/mdp_msdk-lib/build
-      -m /opt/src/mediasdk_1x_binaries/$LINUX_DISTRIBUTIVE/msdk/runtime/l_MSDK_p*.tgz
-      -p /opt/src/sources/mdp_msdk-lib/output/Linux/integration/runtime
-      -n $BUILD_NUMBER"
-  - name: copy integration tools drop
-    command: docker exec $BUILD_ID /bin/bash -c "mkdir /opt/src/sources/mdp_msdk-lib/output/Linux/integration/tools &&
-      cp /opt/src/mediasdk_1x_binaries/$LINUX_DISTRIBUTIVE/msdk/tools/tools_drop*.zip /opt/src/sources/mdp_msdk-lib/output/Linux/integration/tools"
   - name: create vpl lib drop
     command: docker exec $BUILD_ID /bin/bash -c "/opt/src/sources/mdp_msdk-lib/config/scripts/vpl_drop_linux_lib.sh
       -b /opt/src/sources/mdp_msdk-lib/build
@@ -77,12 +68,6 @@ types:
       source_dir: "../sources/mdp_msdk-lib/output/Linux"
       destination_dir: Packages/Ubuntu
     - file_patterns: "*.tgz"
-      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/runtime"
-      destination_dir: Ubuntu/integration/runtime
-    - file_patterns: "*.zip"
-      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/tools"
-      destination_dir: Ubuntu/integration/tools
-    - file_patterns: "*.tgz"
       source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
       destination_dir: Ubuntu/vpl/runtime
     - file_patterns: "*.zip"
@@ -96,12 +81,6 @@ types:
     - file_patterns: "*.tgz"
       source_dir: "../sources/mdp_msdk-lib/output/Linux"
       destination_dir: Packages/RHEL
-    - file_patterns: "*.tgz"
-      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/runtime"
-      destination_dir: RHEL/integration/runtime
-    - file_patterns: "*.zip"
-      source_dir: "../sources/mdp_msdk-lib/output/Linux/integration/tools"
-      destination_dir: RHEL/integration/tools
     - file_patterns: "*.tgz"
       source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
       destination_dir: RHEL/vpl/runtime
