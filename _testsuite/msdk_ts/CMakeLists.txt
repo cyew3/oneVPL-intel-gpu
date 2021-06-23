@@ -442,6 +442,7 @@ target_sources(msdk_gmock
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/ptir_reset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/query_platform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/query_impls_description.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/test_plugin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/threading_mfxinitex.cpp
 
     $<$<PLATFORM_ID:Linux>:
