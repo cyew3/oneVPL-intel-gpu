@@ -1,10 +1,3 @@
-add_library(fast_copy_sse4 OBJECT
-  ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_sse4_impl.h
-  ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
-)
-target_include_directories(fast_copy_sse4 PRIVATE ${MSDK_STUDIO_ROOT}/shared/include)
-target_link_libraries(fast_copy_sse4 PRIVATE bitrate_control mfx_require_sse4_properties)
-
 set(sources_common
     scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core.cpp
     scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_ischeduler.cpp
@@ -70,7 +63,6 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_alloc_wrapper.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_mjpeg_vpp.cpp
     ${MSDK_STUDIO_ROOT}/shared/src/mfx_static_assert_structs.cpp
-    $<TARGET_OBJECTS:fast_copy_sse4>
   )
 
 set(sources_hw
@@ -89,93 +81,99 @@ set(sources_hw
     ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_vaapi.cpp
   )
 
-get_mfx_version(mfx_version_major mfx_version_minor)
+add_library(mfxcore OBJECT)
 
-set(VARIANTS hw)
+target_sources(mfxcore PRIVATE ${sources_common})
+target_sources(mfxcore PRIVATE ${sources_hw})
 
-set(IPP_LIBS "")
+set(HW_ONLY_LIBS
+  cmrt_cross_platform_hw
+  asc
+  genx
+  $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>
+)
+
 if (MFX_BUNDLED_IPP)
   set(IPP_LIBS ipp)
 else()
   set(IPP_LIBS IPP::msdk IPP::j IPP::vc IPP::cc IPP::cv IPP::i IPP::s IPP::core)
 endif()
 
-if (CMAKE_SYSTEM_NAME MATCHES Windows)
+set(LIBS
+  bitrate_control
+  decode_hw
+  encode_hw
+  vpp_hw
+  mfx_common_hw
+  mfx_trace
+  ${IPP_LIBS}
+  ${HW_ONLY_LIBS}
+  $<$<BOOL:${ITT_FOUND}>:itt>
+  Threads::Threads
+  ${CMAKE_DL_LIBS}
+)
 
-  add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/media_sdk_etw.rc ${CMAKE_BINARY_DIR}/media_sdk_etw.h
-    SOURCES ${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man
-    COMMENT Running Windows Message Compiler to compile Media SDK ETW manifest
-    COMMAND mc ARGS -h "${CMAKE_BINARY_DIR}" -r "${CMAKE_BINARY_DIR}" -z media_sdk_etw -um "${MSDK_STUDIO_ROOT}/shared/mfx_trace/media_sdk_etw.man"
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+target_compile_definitions(mfxcore
+  PUBLIC
+    MFX_VA
+)
+
+target_include_directories(mfxcore
+  PUBLIC
+    scheduler/include
+    scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
   )
 
-  add_custom_target(windows_etw_generator 
-    DEPENDS 
-      ${CMAKE_BINARY_DIR}/media_sdk_etw.rc
-      ${CMAKE_BINARY_DIR}/media_sdk_etw.h
+target_link_libraries(mfxcore
+  PUBLIC
+    ${LIBS}
+  PRIVATE
+    mfx_static_lib
+    mfx_sdl_properties
   )
-endif()
+
+add_library(fast_copy_sse4 OBJECT
+  ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_sse4_impl.h
+  ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_sse4_impl.cpp
+)
+target_include_directories(fast_copy_sse4
+  PRIVATE
+    ${MSDK_STUDIO_ROOT}/shared/include
+)
+target_link_libraries(fast_copy_sse4
+  PRIVATE
+    bitrate_control
+    mfx_require_sse4_properties
+)
 
 if( DEFINED MFX_LIBNAME )
   set( mfxlibname "${MFX_LIBNAME}")
 else()
-  make_runtime_name( ${VARIANTS} mfxlibname )
+  make_runtime_name( hw mfxlibname )
 endif()
 
 message( DEBUG "Runtime name: ${mfxlibname}")
 
 add_library(${mfxlibname} SHARED)
 
-target_sources(${mfxlibname} PRIVATE ${sources_common})
-
-
-if (CMAKE_SYSTEM_NAME MATCHES Windows)
-  add_dependencies(${mfxlibname} windows_etw_generator)
-  target_sources(${mfxlibname}
-    PRIVATE
-      ${CMAKE_BINARY_DIR}/media_sdk_etw.h
-      ${CMAKE_BINARY_DIR}/media_sdk_etw.rc
-  )
-endif()
-
-
-target_sources(${mfxlibname} PRIVATE ${sources_hw})
-
-set(HW_ONLY_LIBS "")
-set(HW_ONLY_LIBS umc_va_hw cmrt_cross_platform_hw $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw> asc genx)
-
-set(LIBS
-  bitrate_control
-  ${HW_ONLY_LIBS}
-  decode_${VARIANTS}
-  encode_${VARIANTS}
-  mfx_common_${VARIANTS}
-  vpp_${VARIANTS}
-  mfx_trace
-  mfx_shared_lib
-  mfx_sdl_properties
-  $<$<BOOL:${ITT_FOUND}>:itt>
-  Threads::Threads
-  ${CMAKE_DL_LIBS}
+target_sources(${mfxlibname}
+  PRIVATE
+    $<TARGET_OBJECTS:fast_copy_sse4>
 )
 
-target_include_directories(${mfxlibname}
+target_link_libraries(${mfxlibname}
   PRIVATE
-    scheduler/include
-    scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
-    fei/include
-  )
+    mfxcore
+    mfx_shared_lib
+    mfx_sdl_properties
+)
 
 target_link_options(${mfxlibname}
   PRIVATE
     $<$<PLATFORM_ID:Linux>:LINKER:--version-script=${MSDK_LIB_ROOT}/libmfxhw.map>
-  )
-target_link_libraries(${mfxlibname}
-  PRIVATE
-    ${LIBS}
-    $<$<BOOL:${MFX_ENABLE_USER_ENCTOOLS}>:enctools_hw>
-  )
+)
+
+get_mfx_version(mfx_version_major mfx_version_minor)
 
 set(libversion   ${mfx_version_major}.${mfx_version_minor})
 set(libsoversion ${mfx_version_major})

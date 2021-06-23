@@ -43,15 +43,6 @@
 #include "mfx_interface_scheduler.h"
 #include "libmfx_core_interface.h"
 
-
-// static section of the file
-namespace
-{
-
-void* g_hModule = NULL; // DLL handle received in DllMain
-
-} // namespace
-
 mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 {
     mfxInitParam par = {};
@@ -81,7 +72,6 @@ static mfxStatus MFXInit_Internal(mfxInitParam par, mfxSession* session, mfxIMPL
 
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
-    (void)g_hModule;
     mfxStatus mfxRes;
     int adapterNum = 0;
     mfxIMPL impl = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
@@ -94,7 +84,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInitEx");
     ETW_NEW_EVENT(MFX_TRACE_API_MFX_INIT_EX_TASK, 0, make_event_data((mfxU32) par.Implementation, par.GPUCopy), [&](){ return make_event_data(mfxRes, session ? *session : nullptr);});
-    MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
 
     // check the library version
     if (MakeVersion(par.Version.Major, par.Version.Minor) > MFX_VERSION)
@@ -679,22 +668,3 @@ mfxStatus MFX_CDECL MFXReleaseImplDescription(mfxHDL hdl)
 
     return MFX_ERR_NONE;
 }
-
-#if defined(_WIN32) || defined(_WIN64)
-BOOL APIENTRY DllMain(HMODULE hModule,
-                      DWORD  ul_reason_for_call,
-                      LPVOID lpReserved)
-{
-    // touch unreferenced parameters
-    g_hModule = hModule;
-    lpReserved = lpReserved;
-    (void)ul_reason_for_call;
-
-    return TRUE;
-} // BOOL APIENTRY DllMain(HMODULE hModule,
-#else // #if defined(_WIN32) || defined(_WIN64)
-void __attribute__ ((constructor)) dll_init(void)
-{
-
-}
-#endif // #if defined(_WIN32) || defined(_WIN64)
