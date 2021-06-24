@@ -790,6 +790,9 @@ void VAPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         AddPackedHeaderIf(!!((task.InsertHeaders & INSERT_IVF_SEQ) || (task.InsertHeaders & INSERT_IVF_FRM))
             , ph.IVF, par, VAEncPackedHeaderAV1_SPS);
 
+        AddPackedHeaderIf(!!(task.InsertHeaders & INSERT_TD)
+            , ph.TD, par, VAEncPackedHeaderAV1_SPS);
+
         AddPackedHeaderIf(!!(task.InsertHeaders & INSERT_SPS)
             , ph.SPS, par, VAEncPackedHeaderAV1_SPS);
 
