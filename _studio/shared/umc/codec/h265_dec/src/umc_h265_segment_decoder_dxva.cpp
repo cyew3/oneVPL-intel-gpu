@@ -208,7 +208,8 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
     SwitchCurrentAU();
 #endif
-#elif defined(UMC_VA_DXVA)
+#else
+#if defined(UMC_VA_DXVA)
     bool wasCompleted = false;
     UMC::Status sts = UMC::UMC_OK;
 
@@ -340,6 +341,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
         m_lastCounter = 0;
     }
 
+#endif
 #endif
 
     return false;

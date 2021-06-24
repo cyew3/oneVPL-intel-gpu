@@ -96,7 +96,8 @@ Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
     else
 #endif
         packer = new PackerDXVA2(va, supplier);
-#elif defined (UMC_VA_LINUX)
+#else
+#if defined (UMC_VA_LINUX)
 #ifdef MFX_ENABLE_CPLIB
     if (va->GetProtectedVA() && IS_PROTECTION_CENC(va->GetProtectedVA()->GetProtected()))
         packer = new PackerVA_CENC(va, supplier);
@@ -104,6 +105,7 @@ Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
 #endif // MFX_ENABLE_CPLIB
         packer = new PackerVA(va, supplier);
 #endif // UMC_VA_LINUX
+#endif
 
     return packer;
 }
