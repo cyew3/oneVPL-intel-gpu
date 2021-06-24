@@ -11,12 +11,8 @@ File Name: mfx_extended_buffer_id.h
 *******************************************************************************/
 
 #pragma once
-#ifdef MFX_ONEVPL
 #include "mfxpavp.h"
 #include "mfxdeprecated.h"
-#else
-#include "mfxcamera.h"
-#endif
 #if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
 #include "mfxenctools-int.h"
 #endif
@@ -102,14 +98,6 @@ DECL_BUFFER_TYPE(mfxExtColorConversion, MFX_EXTBUFF_VPP_COLOR_CONVERSION);
 DECL_BUFFER_TYPE(mfxExtVPPProcAmp, MFX_EXTBUFF_VPP_PROCAMP);
 DECL_BUFFER_TYPE(mfxExtVPPFieldProcessing, MFX_EXTBUFF_VPP_FIELD_PROCESSING);
 DECL_BUFFER_TYPE(mfxExtVPPDeinterlacing, MFX_EXTBUFF_VPP_DEINTERLACING);
-#ifndef MFX_ONEVPL
-DECL_BUFFER_TYPE(mfxExtCamPipeControl,          MFX_EXTBUF_CAM_PIPECONTROL     );
-DECL_BUFFER_TYPE(mfxExtCamPadding,              MFX_EXTBUF_CAM_PADDING         );
-DECL_BUFFER_TYPE(mfxExtCamGammaCorrection,      MFX_EXTBUF_CAM_GAMMA_CORRECTION);
-DECL_BUFFER_TYPE(mfxExtCamBlackLevelCorrection, MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION);
-DECL_BUFFER_TYPE(mfxExtCamWhiteBalance,         MFX_EXTBUF_CAM_WHITE_BALANCE);
-DECL_BUFFER_TYPE(mfxExtCamColorCorrection3x3,   MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3);
-#endif
 DECL_BUFFER_TYPE(mfxExtMVCSeqDesc, MFX_EXTBUFF_MVC_SEQ_DESC);
 DECL_BUFFER_TYPE(mfxExtCodingOption, MFX_EXTBUFF_CODING_OPTION);
 DECL_BUFFER_TYPE(mfxExtCodingOption2, MFX_EXTBUFF_CODING_OPTION2);

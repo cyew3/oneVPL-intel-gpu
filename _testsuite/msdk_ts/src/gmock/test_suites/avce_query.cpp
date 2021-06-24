@@ -13,10 +13,7 @@ File Name: avce_query.cpp
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
-
-#if defined(MFX_ONEVPL)
 #include "mfxpavp.h"
-#endif
 
 namespace avce_query
 {

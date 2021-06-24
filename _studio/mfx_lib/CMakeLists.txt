@@ -177,10 +177,8 @@ get_mfx_version(mfx_version_major mfx_version_minor)
 
 set(libversion   ${mfx_version_major}.${mfx_version_minor})
 set(libsoversion ${mfx_version_major})
-if(${API_USE_VPL})
-  set(libversion   1.${libversion})
-  set(libsoversion 1.${libsoversion})
-endif()
+set(libversion   1.${libversion})
+set(libsoversion 1.${libsoversion})
 
 set_target_properties(${mfxlibname} PROPERTIES
    VERSION ${libversion}

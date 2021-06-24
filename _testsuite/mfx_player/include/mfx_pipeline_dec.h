@@ -193,13 +193,7 @@ struct sCommandlineParams
   mfxU16         nDenoiseFactorPlus1;
   mfxU16         nDetailFactorPlus1;
   bool bUseCameraPipe;
-#ifndef MFX_ONEVPL
-  mfxExtCamPipeControl m_CameraPipeControl;
-#endif  
   bool bUseCameraPipePadding;
-#ifndef MFX_ONEVPL
-  mfxExtCamPadding     m_CameraPipePadding;
-#endif
   mfxU16         nFieldProcessing;
   bool           bFieldProcessing;
   bool           bSwapFieldProcessing;
@@ -454,10 +448,6 @@ struct sCommandlineParams
       m_container = MFX_CONTAINER_RAW;
       bGPUHangRecovery = false;
       bUseCameraPipe = false;
-#ifndef MFX_ONEVPL
-      m_CameraPipeControl = {};
-      m_CameraPipePadding = {};
-#endif
       m_nMonitor = 0;
       NumExtParam = 0;
       m_WallN = 0;
@@ -677,14 +667,6 @@ protected:
     //multivieencoding support
     MFXExtBufferVector m_InputExtBuffers;
     MFXExtBufferPtr<mfxExtDecVideoProcessing>  m_extDecVideoProcessing;
-
-#ifndef MFX_ONEVPL
-    //Camera specific buffers
-    MFXExtBufferPtr<mfxExtCamBlackLevelCorrection> m_extExtCamBlackLevelCorrection;
-    MFXExtBufferPtr<mfxExtCamWhiteBalance>         m_extExtCamWhiteBalance;
-    MFXExtBufferPtr<mfxExtCamGammaCorrection>      m_extExtCamGammaCorrection;
-    MFXExtBufferPtr<mfxExtCamColorCorrection3x3>   m_extExtColorCorrection3x3;
-#endif
 
     //map for dec view order to enc view id map
     std::vector<std::pair<mfxU16, mfxU16> > m_viewOrderMap;

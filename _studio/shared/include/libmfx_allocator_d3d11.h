@@ -251,7 +251,6 @@ namespace mfxDefaultAllocatorD3D11
 
 }
 
-#if defined(MFX_ONEVPL)
 
 class staging_texture
 {
@@ -453,8 +452,6 @@ private:
 };
 
 using FlexibleFrameAllocatorHW_D3D11 = FlexibleFrameAllocator<mfxFrameSurface1_hw_d3d11, staging_adapter_d3d11_texture>;
-
-#endif
 
 #endif
 #endif

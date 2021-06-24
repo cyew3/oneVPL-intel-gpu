@@ -39,9 +39,6 @@ File Name: .h
 #include "mfxenctools.h"
 #endif
 #include "mfxvideo.h"
-#if !defined(MFX_ONEVPL)
-#include "mfxcamera.h"
-#endif
 #include "vm_strings.h"
 #include "vm_time.h"
 #include "vm_file.h"
@@ -63,11 +60,6 @@ typedef enum {
 enum {
     MFX_CODEC_H263 = MFX_MAKEFOURCC('H','2','6','3'),
 };
-
-//////////////////////////////////////////////////////////////////////////
-#if (defined(_WIN32) || defined(_WIN64)) && !defined(MFX_ONEVPL)
-#define PAVP_BUILD
-#endif // defined(_WIN32) || defined(_WIN64)
 
 //////////////////////////////////////////////////////////////////////////
 //custom error codes - to separate errors from MFX components from errors in pipeline level

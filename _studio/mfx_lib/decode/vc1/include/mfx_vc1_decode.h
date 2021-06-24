@@ -65,9 +65,7 @@ public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
-#if defined(MFX_ONEVPL)
     static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
-#endif
 
     MFXVideoDECODEVC1(VideoCORE *core, mfxStatus* mfxSts);
     virtual ~MFXVideoDECODEVC1(void);
@@ -100,10 +98,7 @@ public:
                         mfxU32 threadNumber,
                         mfxU32 taskID);
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurface() override;
-#endif
-
 
 protected:
 

@@ -58,16 +58,10 @@ namespace mfx
                 MFX_ERR_UNDEFINED_BEHAVIOR,          "MFX_ERR_UNDEFINED_BEHAVIOR: undefined behavior",
                 MFX_ERR_DEVICE_FAILED,               "MFX_ERR_DEVICE_FAILED: device operation failure",
                 MFX_ERR_MORE_BITSTREAM,              "MFX_ERR_MORE_BITSTREAM: expect more bitstream buffers at output",
-#if !defined(MFX_ONEVPL)
-                MFX_ERR_INCOMPATIBLE_AUDIO_PARAM,    "MFX_ERR_INCOMPATIBLE_AUDIO_PARAM: incompatible audio parameters",
-                MFX_ERR_INVALID_AUDIO_PARAM,         "MFX_ERR_INVALID_AUDIO_PARAM: invalid audio parameters",
-#endif
                 MFX_ERR_GPU_HANG,                    "MFX_ERR_GPU_HANG: device operation failure caused by GPU hang",
                 MFX_ERR_REALLOC_SURFACE,             "MFX_ERR_REALLOC_SURFACE: bigger output surface required",
-#if defined(MFX_ONEVPL)
                 MFX_ERR_RESOURCE_MAPPED,             "MFX_ERR_RESOURCE_MAPPED: write access is already acquired and user requested "\
                                                      "another write access, or read access with MFX_MEMORY_NO_WAIT flag",
-#endif
 
                 MFX_WRN_IN_EXECUTION,                "MFX_WRN_IN_EXECUTION: the previous asynchronous operation is in execution",
                 MFX_WRN_DEVICE_BUSY,                 "MFX_WRN_DEVICE_BUSY: the HW acceleration device is busy",
@@ -77,9 +71,6 @@ namespace mfx
                 MFX_WRN_VALUE_NOT_CHANGED,           "MFX_WRN_VALUE_NOT_CHANGED: the value is saturated based on its valid range",
                 MFX_WRN_OUT_OF_RANGE,                "MFX_WRN_OUT_OF_RANGE: the value is out of valid range",
                 MFX_WRN_FILTER_SKIPPED,              "MFX_WRN_FILTER_SKIPPED: one of requested filters has been skipped",
-#if !defined(MFX_ONEVPL)
-                MFX_WRN_INCOMPATIBLE_AUDIO_PARAM,    "MFX_WRN_INCOMPATIBLE_AUDIO_PARAM: incompatible audio parameters",
-#endif
 
 #if MFX_VERSION >= 1031
                 MFX_ERR_NONE_PARTIAL_OUTPUT,         "MFX_ERR_NONE_PARTIAL_OUTPUT: frame is not ready, but bitstream contains partial output",
@@ -116,18 +107,14 @@ namespace mfx
 
                 case MFX_ERR_INCOMPATIBLE_VIDEO_PARAM:
                 case MFX_ERR_INVALID_VIDEO_PARAM: return std::errc::invalid_argument;
-#if !defined(MFX_ONEVPL)
-                case MFX_ERR_INCOMPATIBLE_AUDIO_PARAM:
-                case MFX_ERR_INVALID_AUDIO_PARAM: return std::errc::invalid_argument;
-#endif
 
                 case MFX_ERR_UNDEFINED_BEHAVIOR:
                 case MFX_ERR_DEVICE_FAILED:       return std::errc::state_not_recoverable;
 
                 case MFX_ERR_REALLOC_SURFACE:     return std::errc::message_size;
-#if defined(MFX_ONEVPL)
+
                 case MFX_ERR_RESOURCE_MAPPED:     return std::errc::resource_deadlock_would_occur;
-#endif
+
                 case MFX_ERR_GPU_HANG:            return std::errc::device_or_resource_busy;
 
                 default: return std::error_condition(value, *this);

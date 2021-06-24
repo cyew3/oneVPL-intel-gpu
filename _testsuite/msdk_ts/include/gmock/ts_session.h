@@ -64,9 +64,6 @@ public:
     mfxStatus CreateSession(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
     mfxStatus ReleaseLoader();
 
-#if !defined(MFX_ONEVPL)
-    mfxStatus MFXDoWork(mfxSession session);
-#endif
     mfxStatus MFXJoinSession(mfxSession session);
     mfxStatus MFXDisjoinSession();
 };

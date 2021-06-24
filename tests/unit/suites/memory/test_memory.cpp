@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(MFX_ONEVPL)
 #if defined (MFX_ENABLE_UNIT_TEST_MEMORY)
 
 #include "gtest/gtest.h"
@@ -604,4 +603,3 @@ extern "C"
 }
 
 #endif // MFX_ENABLE_UNIT_TEST_MEMORY
-#endif // MFX_ONEVPL

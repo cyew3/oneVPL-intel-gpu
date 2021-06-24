@@ -73,7 +73,6 @@ set( API_VERSION "${major_vers}.${minor_vers}")
 set( MFX_VERSION_MAJOR ${major_vers})
 set( MFX_VERSION_MINOR ${minor_vers})
 
-set( API_USE_VPL TRUE )
 set( API_USE_LATEST TRUE )
 set( API_FLAGS -DMFX_VERSION_USE_LATEST )
 

@@ -69,11 +69,7 @@ public:
     virtual mfxStatus GetPriority( mfxPriority *priority) { return MFXGetPriority(m_session, priority);}
     virtual mfxStatus SetBufferAllocator(mfxBufferAllocator *allocator)
     { 
-#ifndef MFX_ONEVPL
-        return MFXVideoCORE_SetBufferAllocator(m_session, allocator);
-#else 
         return MFX_ERR_UNSUPPORTED;
-#endif
     }
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) 
     { 

@@ -175,9 +175,7 @@ public:
 
     static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut);
     static mfxStatus QueryIOSurf(VideoCORE *pCore, mfxVideoParam *pPar, mfxFrameAllocRequest *pRequest);
-#if defined(MFX_ONEVPL)
     static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
-#endif
 
     virtual mfxStatus Init(mfxVideoParam *pPar) override;
     virtual mfxStatus Reset(mfxVideoParam *pPar) override;
@@ -195,9 +193,7 @@ public:
     virtual mfxStatus GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload) override;
     virtual mfxStatus SetSkipMode(mfxSkipMode mode) override;
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurface() override;
-#endif
 
 private:
 

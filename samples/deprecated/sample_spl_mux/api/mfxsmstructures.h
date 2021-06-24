@@ -29,10 +29,8 @@ File Name: mfxsmstructures.h
 *******************************************************************************/
 #ifndef __MFXSMSTRUCTURES_H__
 #define __MFXSMSTRUCTURES_H__
-#ifndef MFX_ONEVPL
-#include "mfxvstructures.h"
-#include "mfxastructures.h"
-#endif
+
+#include "mfxstructures.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -76,9 +74,6 @@ typedef struct {
     mfxU16             reserved[16];
 
     union {
-#ifndef MFX_ONEVPL
-        mfxAudioInfoMFX AudioParam;
-#endif
         mfxInfoMFX      VideoParam;
     };
 } mfxTrackInfo;

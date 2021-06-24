@@ -20,10 +20,7 @@ File Name: mfxstructures.h
 #include <sstream>
 #include "mfx_pipeline_types.h"
 #include "mfx_serial_formater.h"
-
-#ifdef MFX_ONEVPL
 #include "mfxdeprecated.h"
-#endif
 
 #if defined(MFX_ENABLE_USER_ENCTOOLS) && defined(MFX_ENABLE_ENCTOOLS)
 #include "mfxenctools-int.h"

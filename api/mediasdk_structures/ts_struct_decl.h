@@ -557,99 +557,7 @@ STRUCT(mfxExtVP8CodingOption,
     FIELD_T(mfxU16, LoopFilterType)
 )
 
-#if !defined(MFX_ONEVPL)
-STRUCT(mfxPluginUID,
-    FIELD_T(mfxU8, Data)
-)
-#endif //!MFX_ONEVPL
 
-#if !defined(MFX_ONEVPL)
-STRUCT(mfxExtCamGammaCorrection,
-    FIELD_S(mfxExtBuffer, Header         )
-    FIELD_T(mfxU16,       Mode           )
-    FIELD_T(mfxU16,       reserved1      )
-    FIELD_T(mfxF64,       GammaValue     )
-    FIELD_T(mfxU16,       reserved2      )
-    FIELD_T(mfxU16,       NumPoints      )
-    FIELD_T(mfxU16,       GammaPoint     )
-    FIELD_T(mfxU16,       GammaCorrected )
-)
-STRUCT(mfxExtCamWhiteBalance,
-    FIELD_S(mfxExtBuffer, Header  )
-    FIELD_T(mfxU32,       Mode    )
-    FIELD_T(mfxF64,       R       )
-    FIELD_T(mfxF64,       G0      )
-    FIELD_T(mfxF64,       B       )
-    FIELD_T(mfxF64,       G1      )
-    FIELD_T(mfxU32,       reserved) /* Fixed size array */
-)
-STRUCT(mfxExtCamHotPixelRemoval,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16,       PixelThresholdDifference )
-    FIELD_T(mfxU16,       PixelCountThreshold )
-)
-STRUCT(mfxCamVignetteCorrectionElement,
-    FIELD_T(mfxU8, integer )
-    FIELD_T(mfxU8, mantissa)
-)
-STRUCT(mfxExtCamBlackLevelCorrection,
-    FIELD_S(mfxExtBuffer, Header   )
-    FIELD_T(mfxU16,       R        )
-    FIELD_T(mfxU16,       G0       )
-    FIELD_T(mfxU16,       B        )
-    FIELD_T(mfxU16,       G1       )
-    FIELD_T(mfxU32,       reserved ) /* Fixed size array */
-)
- STRUCT(mfxExtCamTotalColorControl,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU8, R)
-    FIELD_T(mfxU8, G)
-    FIELD_T(mfxU8, B)
-    FIELD_T(mfxU8, C)
-    FIELD_T(mfxU8, M)
-    FIELD_T(mfxU8, Y)
-)
-
-STRUCT(mfxExtCamCscYuvRgb,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxF32, PreOffset)
-    FIELD_T(mfxF32, Matrix)
-    FIELD_T(mfxF32, PostOffset)
-    FIELD_T(mfxU16, reserved)
-)
-
-STRUCT(mfxCamVignetteCorrectionParam,
-    FIELD_S(mfxCamVignetteCorrectionElement, R )
-    FIELD_S(mfxCamVignetteCorrectionElement, G0)
-    FIELD_S(mfxCamVignetteCorrectionElement, B )
-    FIELD_S(mfxCamVignetteCorrectionElement, G1)
-)
-STRUCT(mfxExtCamVignetteCorrection,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU32      , Width )
-    FIELD_T(mfxU32      , Height)
-    FIELD_T(mfxU32      , Pitch )
-)
-STRUCT(mfxExtCamBayerDenoise,
-    FIELD_S(mfxExtBuffer, Header   )
-    FIELD_T(mfxU16,       Threshold)
-)
-STRUCT(mfxExtCamColorCorrection3x3,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxF64,       CCM   )
-)
-STRUCT(mfxExtCamPadding,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16,       Top   )
-    FIELD_T(mfxU16,       Bottom)
-    FIELD_T(mfxU16,       Left  )
-    FIELD_T(mfxU16,       Right )
-)
-STRUCT(mfxExtCamPipeControl,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16, RawFormat   )
-)
-#endif //!MFX_ONEVPL
 
 STRUCT(mfxExtAVCRefLists_mfxRefPic,
     FIELD_T(mfxU32, FrameOrder)
@@ -862,26 +770,6 @@ STRUCT(mfxExtCodingOption3,
 )
 #endif
 
-#if !defined(MFX_ONEVPL)
-STRUCT(mfxExtLAControl,
-    FIELD_S(mfxExtBuffer, Header       )
-    FIELD_T(mfxU16      , LookAheadDepth)
-    FIELD_T(mfxU16      , DependencyDepth)
-    FIELD_T(mfxU16      , DownScaleFactor)
-    FIELD_T(mfxU16      , NumOutStream)
-
-)
-
-STRUCT(mfxExtLAFrameStatistics,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16           , NumAlloc)
-    FIELD_T(mfxU16           , NumStream)
-    FIELD_T(mfxU16           , NumFrame)
-    FIELD_T(mfxLAFrameInfo  *, FrameStat)
-    FIELD_T(mfxFrameSurface1*, OutSurface)
-)
-#endif //!MFX_ONEVPL
-
 STRUCT(mfxQPandMode,
     FIELD_T(mfxU8,  QP)
     FIELD_T(mfxU16, Mode)
@@ -919,27 +807,6 @@ STRUCT(mfxExtChromaLocInfo,
     FIELD_T(mfxU16      , ChromaSampleLocTypeTopField)
     FIELD_T(mfxU16      , ChromaSampleLocTypeBottomField)
 )
-
-#if !defined(MFX_ONEVPL) && !defined(OPEN_SOURCE)
-STRUCT(mfxExtFEIH265Param,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU32      , MaxCUSize)
-    FIELD_T(mfxU32      , MPMode)
-    FIELD_T(mfxU32      , NumIntraModes)
-)
-
-STRUCT(mfxExtFEIH265Input,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU32      , FEIOp)
-    FIELD_T(mfxU32      , FrameType)
-    FIELD_T(mfxU32      , RefIdx)
-)
-
-STRUCT(mfxExtFEIH265Output,
-    FIELD_S(mfxExtBuffer      , Header)
-    FIELD_T(mfxFEIH265Output* , feiOut)
-)
-#endif //!MFX_ONEVPL && !OPEN_SOURCE
 
 STRUCT(mfxExtDecodedFrameInfo,
     FIELD_S(mfxExtBuffer, Header)
@@ -1265,7 +1132,7 @@ STRUCT(mfxExtEncodedUnitsInfo,
     FIELD_T(mfxU16, NumUnitsEncoded)
 )
 
-#if defined(__MFXPCP_H__) && !defined(MFX_ONEVPL) || defined(__MFXPAVP_H__)
+#if defined(__MFXPAVP_H__)
 
 #if !defined(OPEN_SOURCE)
 STRUCT(mfxAES128CipherCounter,
@@ -1448,13 +1315,6 @@ STRUCT(mfxExtAV1Segmentation,
 )
 #endif
 
-#endif
-
-#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT)
-STRUCT(mfxExtAVCScalingMatrix,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16, Type)
-)
 #endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)

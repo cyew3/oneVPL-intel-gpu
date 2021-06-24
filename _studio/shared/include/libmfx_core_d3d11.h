@@ -49,10 +49,8 @@ class D3D11VideoCORE_T : public Base
 {
     friend class FactoryCORE;
     friend class D3D11Adapter;
-#if defined(MFX_ONEVPL)
     friend class D3D11VideoCORE20;
     friend class deprecate_from_base<D3D11VideoCORE_T<CommonCORE20>>;
-#endif
     class D3D11Adapter : public D3D11Interface
     {
     public:
@@ -210,9 +208,6 @@ protected:
 
 using D3D11VideoCORE = D3D11VideoCORE_T<CommonCORE>;
 
-#if defined(MFX_ONEVPL)
-// Refactored MSDK 2.0 core
-
 using D3D11VideoCORE20_base = deprecate_from_base<D3D11VideoCORE_T<CommonCORE20>>;
 
 class D3D11VideoCORE20 : public D3D11VideoCORE20_base
@@ -234,7 +229,6 @@ private:
     virtual mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)                                      override;
     virtual mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType) override;
 };
-#endif
 
 #endif
 #endif

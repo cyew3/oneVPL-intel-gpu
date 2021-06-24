@@ -140,7 +140,7 @@ cmake_dependent_option( MFX_ENABLE_USER_ENCTOOLS     "Enable encoding tools?" ON
 
 cmake_dependent_option(
   MFX_ENABLE_VIDEO_HYPER_ENCODE_HW "Enabled Hyper Encode?" ON
-  "${API_USE_VPL}; ${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF)
+  "${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF)
 
 cmake_dependent_option( MFX_ENABLE_SPECTRE_MITIGATIONS "Enable Spectre mitigations?" ON
   "${CMAKE_SYSTEM_NAME} MATCHES Windows" OFF )

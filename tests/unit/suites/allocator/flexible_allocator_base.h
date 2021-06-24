@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 #pragma once
-#if defined(MFX_ONEVPL)
 #if defined (MFX_ENABLE_UNIT_TEST_ALLOCATOR)
 
 #include "gtest/gtest.h"
@@ -205,4 +204,3 @@ namespace test
     };
 }
 #endif // MFX_ENABLE_UNIT_TEST_ALLOCATOR
-#endif

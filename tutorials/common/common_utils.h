@@ -28,10 +28,7 @@
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
 #include "mfxdispatcher.h"
-
-#if defined(MFX_ONEVPL)
 #include "mfxdeprecated.h"
-#endif
 #include "mfxplugin.h"
 
 // =================================================================

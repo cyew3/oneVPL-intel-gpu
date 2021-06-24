@@ -18,8 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(asg-hevc)
 add_subdirectory(bs_parser_av1)
 add_subdirectory(bs_parser_hevc)
 add_subdirectory(bs_parser_hevc/tools/hevc_fei_extractor)
-add_subdirectory(tracer)

@@ -21,7 +21,6 @@
 #ifndef _MFX_FUNCTIONS_H_
 #define _MFX_FUNCTIONS_H_
 
-#if defined(MFX_ONEVPL)
 /*
 When public API function is called from RT library - the call goes to dispatcher’s exported function instead of internal (RT’s) one.
 Since session object differs between RT and dispatcher this can lead to seg. fault. To avoid this we
@@ -234,7 +233,5 @@ MFX_API_FUNCTION_IMPL(MFXQueryImplsDescription, mfxHDL*, (mfxImplCapsDeliveryFor
 MFX_API_FUNCTION_IMPL(MFXReleaseImplDescription, mfxStatus, (mfxHDL hdl), (hdl))
 
 #undef MFX_API_FUNCTION_IMPL
-
-#endif //defined(MFX_ONEVPL)
 
 #endif //_MFX_FUNCTIONS_H_

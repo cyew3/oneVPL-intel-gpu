@@ -61,9 +61,7 @@ public:
     static mfxStatus Query(VideoCORE*, mfxVideoParam* in, mfxVideoParam* out);
     static mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam*, mfxFrameAllocRequest*);
     static mfxStatus DecodeHeader(VideoCORE*, mfxBitstream*, mfxVideoParam*);
-#if defined(MFX_ONEVPL)
     static mfxStatus QueryImplsDescription(VideoCORE&, mfxDecoderDescription::decoder&, mfx::PODArraysHolder&);
-#endif
 
     virtual mfxStatus Init(mfxVideoParam*) override;
     virtual mfxStatus Reset(mfxVideoParam*) override;
@@ -78,9 +76,7 @@ public:
 
     mfxStatus QueryFrame(mfxThreadTask);
 
-#if defined(MFX_ONEVPL)
     virtual mfxFrameSurface1* GetSurface() override;
-#endif
 
 private:
     static mfxStatus FillVideoParam(VideoCORE*, UMC_AV1_DECODER::AV1DecoderParams const*, mfxVideoParam*);

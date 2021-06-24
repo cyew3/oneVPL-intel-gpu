@@ -78,9 +78,6 @@ EXTBUF(mfxExtEncodedUnitsInfo            , MFX_EXTBUFF_ENCODED_UNITS_INFO       
 #if (MFX_VERSION >= 1031)
 EXTBUF(mfxExtPartialBitstreamParam       , MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM   )
 #endif
-#if !defined(MFX_ONEVPL) && (MFX_VERSION >= MFX_VERSION_NEXT)
-EXTBUF(mfxExtAVCScalingMatrix            , MFX_EXTBUFF_AVC_SCALING_MATRIX        )
-#endif
 EXTBUF(mfxExtEncoderIPCMArea             , MFX_EXTBUFF_ENCODER_IPCM_AREA               )
 EXTBUF(mfxExtInsertHeaders               , MFX_EXTBUFF_INSERT_HEADERS                  )
 
@@ -100,22 +97,6 @@ EXTBUF(mfxExtFEIH265Input                , MFX_EXTBUFF_FEI_H265_INPUT           
 EXTBUF(mfxExtFEIH265Output               , MFX_EXTBUFF_FEI_H265_OUTPUT           )
 #endif //__MFXFEIH265_H__ && !OPEN_SOURCE
 
-#if !defined(MFX_ONEVPL) && defined(__MFXCAMERA_H__)
-// Camera
-EXTBUF(mfxExtCamTotalColorControl        , MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL    )
-EXTBUF(mfxExtCamCscYuvRgb                , MFX_EXTBUF_CAM_CSC_YUV_RGB            )
-EXTBUF(mfxExtCamGammaCorrection          , MFX_EXTBUF_CAM_GAMMA_CORRECTION       )
-EXTBUF(mfxExtCamWhiteBalance             , MFX_EXTBUF_CAM_WHITE_BALANCE          )
-EXTBUF(mfxExtCamHotPixelRemoval          , MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL      )
-EXTBUF(mfxExtCamBlackLevelCorrection     , MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION )
-EXTBUF(mfxExtCamVignetteCorrection       , MFX_EXTBUF_CAM_VIGNETTE_CORRECTION    )
-EXTBUF(mfxExtCamBayerDenoise             , MFX_EXTBUF_CAM_BAYER_DENOISE          )
-EXTBUF(mfxExtCamColorCorrection3x3       , MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3   )
-EXTBUF(mfxExtCamPadding                  , MFX_EXTBUF_CAM_PADDING                )
-EXTBUF(mfxExtCamPipeControl              , MFX_EXTBUF_CAM_PIPECONTROL            )
-// end of Camera
-#endif //!MFX_ONEVPL && __MFXCAMERA_H__
-
 #if defined(__MFXCOMMON_H__)
 // Threading API
 EXTBUF(mfxExtThreadsParam                , MFX_EXTBUFF_THREADS_PARAM)
@@ -131,7 +112,7 @@ EXTBUF(mfxExtVP9DecodedFrameInfo         , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO   
 EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 #endif // defined(__MFXBRC_H__)
 
-#if defined(__MFXPCP_H__) && !defined(MFX_ONEVPL) || defined(__MFXPAVP_H__)
+#if defined(__MFXPAVP_H__)
 #if !defined(OPEN_SOURCE)
 EXTBUF(mfxExtPAVPOption                  , MFX_EXTBUFF_PAVP_OPTION               )
 #endif
@@ -166,9 +147,7 @@ EXTBUF(mfxExtLplaParam                   , MFX_EXTBUFF_LP_LOOKAHEAD             
 EXTBUF(mfxExtLpLaStatus                  , MFX_EXTBUFF_LPLA_STATUS               )
 #endif
 
-#if defined(MFX_ONEVPL)
 EXTBUF(mfxExtHyperModeParam               , MFX_EXTBUFF_HYPER_MODE_PARAM    	 )
-#endif
 
 #if defined(MFX_ENABLE_ENCTOOLS)
 EXTBUF(mfxExtEncToolsConfig              , MFX_EXTBUFF_ENCTOOLS_CONFIG           )
