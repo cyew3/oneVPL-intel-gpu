@@ -59,7 +59,6 @@
     // enable defines
     #include "mfxconfig.h"
 
-    #define MFX_ENABLE_H265_VIDEO_ENCODE
 #elif defined(ANDROID)
     #include "mfx_android_defs.h"
 
@@ -70,16 +69,10 @@
     #include "mfxconfig.h"
 #endif
 
-#define MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
-
 // closed source fixed-style defines
 #if !defined(OPEN_SOURCE) && !defined(ANDROID)
     #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
         #define PRE_SI_GEN 11
-    #endif
-
-    #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        #define MFX_ENABLE_AV1_VIDEO_ENCODE
     #endif
 
     #if defined(MFX_ENABLE_VPP)
@@ -92,7 +85,6 @@
         #define MFX_CAMERA_FEATURE_DISABLE
 
         #if (MFX_VERSION < MFX_VERSION_NEXT)
-            #define MFX_EXT_DPB_HEVC_DISABLE
             #define MFX_ADAPTIVE_PLAYBACK_DISABLE
             #define MFX_FUTURE_FEATURE_DISABLE
         #endif
@@ -147,56 +139,6 @@
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
 
-#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
-    #if MFX_VERSION >= 1023
-        #define MFX_ENABLE_H264_REPARTITION_CHECK
-        #if defined(MFX_VA_WIN)
-            #define ENABLE_H264_MBFORCE_INTRA
-        #endif
-    #endif
-    #if MFX_VERSION >= 1027
-        #define MFX_ENABLE_H264_ROUNDING_OFFSET
-    #endif
-    #ifndef OPEN_SOURCE
-        #define MFX_ENABLE_AVCE_DIRTY_RECTANGLE
-        #define MFX_ENABLE_AVCE_MOVE_RECTANGLE
-        #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-            #define MFX_ENABLE_AVCE_VDENC_B_FRAMES
-        #endif
-        #if (MFX_VERSION >= MFX_VERSION_NEXT)
-            #ifdef MFX_VA_WIN
-                #define MFX_ENABLE_AVC_CUSTOM_QMATRIX
-                #define MFX_ENABLE_GPU_BASED_SYNC
-            #endif
-        #endif
-    #endif
-    #if defined(MFX_ENABLE_MCTF) && defined(MFX_ENABLE_KERNELS)
-        #define MFX_ENABLE_MCTF_IN_AVC
-    #endif
-#endif
-
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
-    #define MFX_ENABLE_HEVCE_INTERLACE
-    #define MFX_ENABLE_HEVCE_ROI
-    #ifndef OPEN_SOURCE
-        #define MFX_ENABLE_HEVCE_DIRTY_RECT
-        #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
-        #if defined (MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-            #define MFX_ENABLE_HEVCE_FADE_DETECTION
-        #endif
-        #define MFX_ENABLE_HEVCE_HDR_SEI
-        #if (MFX_VERSION >= MFX_VERSION_NEXT)
-            #define MFX_ENABLE_HEVCE_UNITS_INFO
-            #ifdef MFX_VA_WIN
-                #define MFX_ENABLE_HEVC_CUSTOM_QMATRIX
-            #endif
-        #endif
-        #ifndef SKIP_EMBARGO
-            #define MFX_ENABLE_HEVCE_SCC
-        #endif
-    #endif
-#endif
-
     #if defined(MFX_VA_WIN)
         #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
@@ -238,20 +180,8 @@
     #define MFX_ENABLE_MCTF_EXT // extended MCTF interface
 #endif
 
-#if MFX_VERSION >= 1028
-    #define MFX_ENABLE_RGBP
-    #define MFX_ENABLE_FOURCC_RGB565
-#endif
-
-#if MFX_VERSION >= 1031
-    #define MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
-#endif
-
-#if defined(MFX_VA_LINUX)
-    #if VA_CHECK_VERSION(1,3,0)
-        #define MFX_ENABLE_QVBR
-    #endif
-#endif
+#define MFX_ENABLE_RGBP
+#define MFX_ENABLE_FOURCC_RGB565
 
 #define CMAPIUPDATE
 
@@ -260,18 +190,6 @@
 
 #if !defined(NDEBUG)
 #define MFX_ENV_CFG_ENABLE
-#endif
-
-#if (defined(_WIN32) || defined(_WIN64)) && !defined(STRIP_EMBARGO)
-    #define MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
-#endif
-
-#ifdef MFX_ENABLE_USER_ENCTOOLS
-    #define MFX_ENABLE_ENCTOOLS
-    #if defined(_WIN32) || defined(_WIN64) 
-        #define MFX_ENABLE_ENCTOOLS_LPLA
-        #define MFX_ENABLE_LP_LOOKAHEAD
-    #endif
 #endif
 
 #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)

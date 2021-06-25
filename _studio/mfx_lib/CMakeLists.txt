@@ -27,7 +27,6 @@ set(sources_common
     shared/include/mfx_utils_extbuf.h
     ${MSDK_CMAKE_BINARY_ROOT}/mfxconfig.h  # Cmake-generated configuration derived from BuildOptions
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_config.h
-
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_common.h
 
     ${MSDK_STUDIO_ROOT}/shared/include/cm_mem_copy.h
@@ -45,8 +44,6 @@ set(sources_common
     ${MSDK_STUDIO_ROOT}/shared/include/mfxstructurespro.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfxvideo++int.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_cenc.h
-    ${MSDK_STUDIO_ROOT}/shared/include/mfx_common.h
-    ${MSDK_STUDIO_ROOT}/shared/include/mfx_config.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_ext_buffers.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_reflect.h
     ${MSDK_STUDIO_ROOT}/shared/include/mfx_timing.h

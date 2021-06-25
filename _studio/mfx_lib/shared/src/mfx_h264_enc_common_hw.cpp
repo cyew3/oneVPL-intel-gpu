@@ -1724,7 +1724,7 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 #endif
         || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
         || id == MFX_EXTBUFF_MBQP
-#ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
+#if defined (MFX_ENABLE_H264_PRIVATE_CTRL)
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
 #endif
 #if MFX_VERSION >= 1023
@@ -1762,7 +1762,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
 #endif
-#ifndef MFX_PRIVATE_AVC_ENCODE_CTRL_DISABLE
+#if defined (MFX_ENABLE_H264_PRIVATE_CTRL)
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
 #endif
         || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
