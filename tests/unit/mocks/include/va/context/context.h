@@ -140,14 +140,14 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaCreateBuffer(VADisplay d, VAContextID ctx, VABufferType type, unsigned int size, unsigned int count, void* data, VABufferID* id)
     {
         return
             static_cast<mocks::va::display*>(d)->CreateBuffer(ctx, type, size, count, data, id);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaDestroyBuffer(VADisplay d, VABufferID id)
     {
         return

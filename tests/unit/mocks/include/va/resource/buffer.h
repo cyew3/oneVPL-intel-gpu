@@ -111,14 +111,14 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaMapBuffer(VADisplay d, VABufferID id, void** p)
     {
         return
             static_cast<mocks::va::display*>(d)->MapBuffer(id, p);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaUnmapBuffer(VADisplay d, VABufferID id)
     {
         return

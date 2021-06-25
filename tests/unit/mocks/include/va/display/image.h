@@ -84,7 +84,7 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaCreateImage(VADisplay d, VAImageFormat* format, int width, int height, VAImage* image)
     {
         return

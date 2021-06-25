@@ -180,7 +180,7 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaCreateSurfaces(VADisplay d, unsigned int format, unsigned int width, unsigned int height, VASurfaceID* surfaces, 
                                      unsigned int num_surfaces, VASurfaceAttrib* attributes, unsigned int num_attribs)
     {
@@ -188,7 +188,7 @@ extern "C"
             static_cast<mocks::va::display*>(d)->CreateSurfaces(format, width, height, surfaces, num_surfaces, attributes, num_attribs);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaDestroySurfaces(VADisplay d, VASurfaceID* surfaces, int count)
     {
         return

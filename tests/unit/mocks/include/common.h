@@ -298,7 +298,7 @@ namespace mocks
 }
 
 #if defined(__GNUC__)
-    #define FORCE_USE_SYMBOL __attribute__((used))
+    #define MOCKS_FORCE_USE_SYMBOL __attribute__((used))
 #else
-    #define FORCE_USE_SYMBOL
+    #define MOCKS_FORCE_USE_SYMBOL
 #endif

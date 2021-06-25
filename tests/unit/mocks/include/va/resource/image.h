@@ -66,7 +66,7 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaDestroyImage(VADisplay d, VAImageID id)
     {
         return

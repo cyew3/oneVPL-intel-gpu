@@ -150,14 +150,14 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaCreateContext(VADisplay d, VAConfigID id, int width, int height, int flags, VASurfaceID* targets, int count, VAContextID* ctx)
     {
         return
             static_cast<mocks::va::display*>(d)->CreateContext(id, width, height, flags, targets, count, ctx);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaDestroyContext(VADisplay d, VAContextID ctx)
     {
         return

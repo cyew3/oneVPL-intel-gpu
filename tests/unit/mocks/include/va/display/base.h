@@ -384,84 +384,84 @@ namespace mocks { namespace va
 
 extern "C"
 {
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAMessageCallback vaSetErrorCallback(VADisplay d, VAMessageCallback callback, void* ctx)
     {
         return
             static_cast<mocks::va::display*>(d)->SetErrorCallback(callback, ctx);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaInitialize(VADisplay d, int* major, int* minor)
     {
         return
             static_cast<mocks::va::display*>(d)->Initialize(major, minor);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaTerminate(VADisplay d)
     {
         return
             static_cast<mocks::va::display*>(d)->Terminate();
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     char const* vaQueryVendorString(VADisplay d)
     {
         return
             static_cast<mocks::va::display*>(d)->QueryVendorString();
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     int vaMaxNumProfiles(VADisplay d)
     {
         return
             static_cast<mocks::va::display*>(d)->MaxNumProfiles();
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     int vaMaxNumEntrypoints(VADisplay d)
     {
         return
             static_cast<mocks::va::display*>(d)->MaxNumEntrypoints();
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     int vaMaxNumConfigAttributes(VADisplay d)
     {
         return
             static_cast<mocks::va::display*>(d)->MaxNumConfigAttributes();
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaQueryConfigProfiles(VADisplay d, VAProfile* profiles, int* count)
     {
         return
             static_cast<mocks::va::display*>(d)->QueryConfigProfiles(profiles, count);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaQueryConfigEntrypoints(VADisplay d, VAProfile profile, VAEntrypoint* entrypoints, int* count)
     {
         return
             static_cast<mocks::va::display*>(d)->QueryConfigEntrypoints(profile, entrypoints, count);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaCreateConfig(VADisplay d, VAProfile profile, VAEntrypoint entrypoint, VAConfigAttrib* attributes, int count, VAConfigID* id)
     {
         return
             static_cast<mocks::va::display*>(d)->CreateConfig(profile, entrypoint, attributes, count, id);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaDestroyConfig(VADisplay d, VAConfigID id)
     {
         return
             static_cast<mocks::va::display*>(d)->DestroyConfig(id);
     }
 
-    inline FORCE_USE_SYMBOL
+    inline MOCKS_FORCE_USE_SYMBOL
     VAStatus vaQueryConfigAttributes(VADisplay d, VAConfigID id, VAProfile* profile, VAEntrypoint* entrypoint, VAConfigAttrib* attributes, int* count)
     {
         return
