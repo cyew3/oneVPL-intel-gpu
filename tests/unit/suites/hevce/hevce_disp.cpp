@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,20 +25,35 @@
 #include "../hevcehw_disp.h"
 #include "hevcehw_base_win.h"
 #include "hevcehw_g11lkf.h"
+#if defined(MFX_VA_WIN)
 #include "hevcehw_g11lkf_win.h"
 #include "hevcehw_g12_win.h"
 #include "hevcehw_g12xehp_win.h"
 #include "hevcehw_g12dg2_win.h"
+#elif defined(MFX_VA_LINUX)
+#include "hevcehw_g11lkf_lin.h"
+#include "hevcehw_g12_lin.h"
+#include "hevcehw_g12xehp_lin.h"
+#include "hevcehw_g12dg2_lin.h"
+#endif
 #include "hevce_coremock.h"
 
 namespace hevce { namespace tests
 {
 using Core = CoreMock;
+#if defined(MFX_VA_WIN)
 using TBase     = HEVCEHW::Windows::Base::MFXVideoENCODEH265_HW;
 using TGen11LKF = HEVCEHW::Windows::Gen11LKF::MFXVideoENCODEH265_HW;
 using TGen12    = HEVCEHW::Windows::Gen12::MFXVideoENCODEH265_HW;
 using TGen12XEHP = HEVCEHW::Windows::Gen12XEHP::MFXVideoENCODEH265_HW;
 using TGen12DG2 = HEVCEHW::Windows::Gen12DG2::MFXVideoENCODEH265_HW;
+#elif defined(MFX_VA_LINUX)
+using TBase     = HEVCEHW::Linux::Base::MFXVideoENCODEH265_HW;
+using TGen11LKF = HEVCEHW::Linux::Gen11LKF::MFXVideoENCODEH265_HW;
+using TGen12    = HEVCEHW::Linux::Gen12::MFXVideoENCODEH265_HW;
+using TGen12XEHP = HEVCEHW::Linux::Gen12XEHP::MFXVideoENCODEH265_HW;
+using TGen12DG2 = HEVCEHW::Linux::Gen12DG2::MFXVideoENCODEH265_HW;
+#endif
 
 template<typename T>
 inline bool IsGen(VideoENCODE*) { return false; }

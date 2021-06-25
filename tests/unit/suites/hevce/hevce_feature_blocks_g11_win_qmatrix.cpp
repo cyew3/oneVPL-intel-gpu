@@ -29,11 +29,16 @@
 #include "base/hevcehw_base_legacy.h"
 #include "base/hevcehw_base_qmatrix_win.h"
 
+#include <initguid.h>
+#include "mocks/include/mfx/guids.h"
+
 #include "mocks/include/dxgi/format.h"
 
 #include "mocks/include/mfx/dispatch.h"
 #include "mocks/include/mfx/dx11/decoder.h"
 #include "mocks/include/mfx/dx11/encoder.h"
+
+#include "libmfx_core_factory.h"
 
 namespace hevce { namespace tests
 {
@@ -50,12 +55,11 @@ namespace hevce { namespace tests
         std::unique_ptr<mocks::registry>      registry;
         std::unique_ptr<mocks::dx11::device>  device;
 
-        MFXVideoSession                       session;
-
+        std::unique_ptr<VideoCORE>            core;
         FeatureBlocks                         blocks{};
 
-        HEVCEHW::Base::Legacy                legacy;
-        Windows::Base::QMatrix               qmatrix;
+        HEVCEHW::Base::Legacy                 legacy;
+        Windows::Base::QMatrix                qmatrix;
 
         StorageRW                             storage;
 
@@ -79,16 +83,10 @@ namespace hevce { namespace tests
                 mocks::mfx::make_param(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
             );
 
-            ASSERT_EQ(
-                session.InitEx(
-                    mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
-                ),
-                MFX_ERR_NONE
+            core.reset(
+                FactoryCORE::CreateCORE(MFX_HW_D3D11, 0, 0, nullptr)
             );
-
-            //populate session's dx11 core for encoder
-            auto s = static_cast<_mfxSession*>(session);
-            storage.Insert(Base::Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+            storage.Insert(Base::Glob::VideoCore::Key, new StorableRef<VideoCORE>(*core));
 
             qmatrix.Init(HEVCEHW::INIT | HEVCEHW::RUNTIME, blocks);
 

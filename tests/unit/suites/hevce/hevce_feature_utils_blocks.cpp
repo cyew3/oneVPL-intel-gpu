@@ -33,7 +33,7 @@ namespace hevce { namespace tests
 
     struct block
     {
-        using TCall = std::unary_function<void, mfxStatus>;
+        using TCall = std::function<mfxStatus()>;
 
         int* value = nullptr;
         foo* f     = nullptr;

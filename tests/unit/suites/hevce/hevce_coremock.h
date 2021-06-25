@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,6 @@ public:
     virtual mfxStatus CheckHandle() override { return MFX_ERR_UNSUPPORTED; };
     virtual mfxStatus GetFrameHDL(mfxMemId, mfxHDL*, bool) override { return MFX_ERR_UNSUPPORTED; };
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest*, mfxFrameAllocResponse*, bool) override { return MFX_ERR_UNSUPPORTED; }
-    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest*, mfxFrameAllocResponse*, mfxFrameSurface1**, mfxU32) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus  LockFrame(mfxMemId, mfxFrameData*) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus  UnlockFrame(mfxMemId, mfxFrameData*) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus  FreeFrames(mfxFrameAllocResponse*, bool) override { return MFX_ERR_UNSUPPORTED; }
@@ -73,7 +72,15 @@ public:
     virtual eMFXHWType   GetHWType() { return m_hw; };
 
     virtual bool         SetCoreId(mfxU32) override { return false; }
-    virtual eMFXVAType   GetVAType() const override { return MFX_HW_D3D11; }
+    virtual eMFXVAType   GetVAType() const override
+    {
+#if defined(MFX_VA_WIN)
+        return MFX_HW_D3D11;
+#elif defined(MFX_VA_LINUX)
+        return MFX_HW_VAAPI;
+#endif
+    }
+
     virtual mfxStatus CopyFrame(mfxFrameSurface1*, mfxFrameSurface1*) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus CopyBuffer(mfxU8*, mfxU32, mfxFrameSurface1*) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus CopyFrameEx(mfxFrameSurface1*, mfxU16, mfxFrameSurface1*, mfxU16) override { return MFX_ERR_UNSUPPORTED; }

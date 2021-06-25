@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020-2021 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,27 +18,38 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+if(NOT (${CMAKE_SIZEOF_VOID_P} EQUAL 8))
+    return()
+endif()
+
 add_executable(mfx_hevce_test
+    hevce_disp.cpp
     hevce_feature_blocks_g11_interlace.cpp
     hevce_feature_utils_blocks.cpp
     hevce_feature_utils_storage.cpp
     hevce_utils_misc.cpp
-    ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/shared/src/mfx_common_int.cpp
-    ${MSDK_STUDIO_ROOT}/shared/include/fast_copy_c_impl.h
-    ${MSDK_STUDIO_ROOT}/shared/include/fast_copy.h
-    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_c_impl.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
-    $<TARGET_OBJECTS:fast_copy_sse4>
+    $<$<PLATFORM_ID:Windows>:hevce_feature_blocks_dx11_ddi.cpp>
+    $<$<PLATFORM_ID:Windows>:hevce_feature_blocks_g11_win_qmatrix.cpp>
 )
 
 target_link_libraries(mfx_hevce_test
     PRIVATE
-        encode_hw
-        mfx_trace
+        ${MFX_DISPATCHER}
+        mfxcore
+        $<$<PLATFORM_ID:Windows>:detours>
+        mfx_shared_lib
         gtest_main
         gmock
-        mfx_va_properties
         fast_copy_sse4
+        mocks::mocks
+)
+
+target_compile_definitions (mfx_hevce_test
+    PRIVATE
+        MFX_ENABLE_UNIT_TEST_HEVCE_DX11_DDI
+        ENABLE_MFX_INTEL_GUID_DECODE
+        ENABLE_MFX_INTEL_GUID_ENCODE
+        ENABLE_MFX_INTEL_GUID_PRIVATE
 )
 
 set_target_properties (mfx_hevce_test
