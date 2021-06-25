@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -17,8 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
-#ifndef __genx_copy_kernel_dg2__
-#define __genx_copy_kernel_dg2__
-extern const unsigned char genx_copy_kernel_dg2[1576789];
+#ifndef __dg2_copy_kernel_genx__
+#define __dg2_copy_kernel_genx__
+extern const unsigned char genx_copy_kernel_dg2[1628509];
 #endif
