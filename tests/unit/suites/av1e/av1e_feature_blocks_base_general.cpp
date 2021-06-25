@@ -31,10 +31,6 @@
 using namespace AV1EHW;
 using namespace AV1EHW::Base;
 
-mfxStatus APIImpl_MFXQueryVersion(_mfxSession*, mfxVersion*) {
-    return MFX_ERR_NONE;
-}
-
 namespace av1e {
     namespace tests
     {

@@ -34,65 +34,19 @@ add_executable (mfx_av1e_test
     av1e_feature_blocks_base_superres.cpp
     av1e_feature_blocks_base_task.cpp
     av1e_feature_blocks_base_tile.cpp
-    ${MSDK_LIB_ROOT}/shared/src/libmfxsw_async.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/cm_mem_copy.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy_c_impl.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_factory.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/fast_copy.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core.cpp
-    ${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_hw.cpp
-    ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core.cpp
-    ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_iunknown.cpp
-    ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_ischeduler.cpp
-    ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_task.cpp
-    ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_task_management.cpp
-    ${MSDK_LIB_ROOT}/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/src/mfx_scheduler_core_thread.cpp
-    ${MSDK_LIB_ROOT}/shared/src/mfx_session.cpp
-    $<$<PLATFORM_ID:Linux>:${MSDK_STUDIO_ROOT}/shared/src/mfx_vpp_vaapi.cpp>
-    $<$<PLATFORM_ID:Linux>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_vaapi.cpp>
-    $<$<PLATFORM_ID:Linux>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_vaapi.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d9.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_allocator_d3d11.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d9on11.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/libmfx_core_d3d11.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/auxiliary_device.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/d3d11_decode_accelerator.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/d3d11_video_processor.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_alloc_wrapper.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/mfx_dxva2_device.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/fast_compositing_ddi.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_mjpeg_vpp.cpp>
-    $<$<PLATFORM_ID:Windows>:${MSDK_LIB_ROOT}/shared/src/mfx_check_hardware_support.cpp>
 )
 
 target_link_libraries (mfx_av1e_test
     PRIVATE
+        mfxcore
         ${MFX_DISPATCHER}
         $<$<PLATFORM_ID:Windows>:detours>
-        $<$<PLATFORM_ID:Windows>:IPP::core>
-        $<$<PLATFORM_ID:Windows>:IPP::s>
-        $<$<PLATFORM_ID:Windows>:IPP::i>
-        $<$<PLATFORM_ID:Windows>:IPP::cc>
-        mfx_trace
         gtest_main
         gmock
-        mfx_common_hw
         mfx_shared_lib
         bs_parser_av1_static
-        encode_hw
-        mfx_va_properties
         mocks::mocks
-        vpp_hw
         fast_copy_sse4
-)
-
-target_include_directories (mfx_av1e_test
-    PRIVATE
-        ${MSDK_LIB_ROOT}/shared/include
-        ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/include
-        ${MSDK_STUDIO_ROOT}/mfx_lib/scheduler/$<IF:$<PLATFORM_ID:Linux>,linux,windows>/include
 )
 
 target_compile_definitions (mfx_av1e_test
