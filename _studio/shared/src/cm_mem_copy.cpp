@@ -3253,7 +3253,7 @@ bool CmCopyWrapper::CheckSurfaceContinuouslyAllocated(const mfxFrameSurface1 &su
     case MFX_FOURCC_RGBP:
         {
             size_t channel_size_in_bytes = stride_in_bytes * mfx::align2_value(surf.Info.Height, 16);
-            return surf.Data.B + channel_size_in_bytes == surf.Data.G && surf.Data.G + channel_size_in_bytes == surf.Data.R;
+            return surf.Data.R + channel_size_in_bytes == surf.Data.G && surf.Data.G + channel_size_in_bytes == surf.Data.B;
             break;
         }
     }
@@ -3374,7 +3374,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1
 #ifdef MFX_ENABLE_RGBP
     if (pDst->Info.FourCC == MFX_FOURCC_RGBP)
     {
-        verticalPitch = (mfxI64)(pDst->Data.G - pDst->Data.B);
+        verticalPitch = (mfxI64)(pDst->Data.G - pDst->Data.R);
         verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
     }
 #endif

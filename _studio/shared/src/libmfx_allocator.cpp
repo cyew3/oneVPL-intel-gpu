@@ -356,9 +356,9 @@ static inline mfxStatus SetPointers(mfxFrameData& frame_data, const mfxFrameInfo
 #ifdef MFX_ENABLE_RGBP
     case MFX_FOURCC_RGBP:
         std::tie(frame_data.PitchHigh, frame_data.PitchLow) = pitch_from_width(info.Width, 1u);
-        frame_data.B = bytes;
-        frame_data.G = frame_data.B + frame_data.Pitch*Height2;
-        frame_data.R = frame_data.B + 2 * frame_data.Pitch*Height2;
+        frame_data.R = bytes;
+        frame_data.G = frame_data.R + frame_data.Pitch*Height2;
+        frame_data.B = frame_data.R + 2*frame_data.Pitch*Height2;
         break;
 #endif
     case MFX_FOURCC_BGRP:
