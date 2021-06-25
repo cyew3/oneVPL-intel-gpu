@@ -4047,7 +4047,7 @@ mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *p
             }
         }
 
-        if ((m_inParams.bUseVPP != true) && (m_components[eDEC].m_bufType == MFX_BUF_HW_DX11))
+        if ((m_inParams.bUseVPP != true) && (m_components[eDEC].m_bufType == MFX_BUF_HW_DX11) && m_inParams.nMemoryModel == GENERAL_ALLOC)
         {
             IHWDevice* pHWDevice = m_pHWDevice.get();
             MFX_CHECK_STS(m_pRender->SetDevice(pHWDevice));
