@@ -110,6 +110,8 @@ public:
 
             mfxStatus ReallocFrame(mfxFrameSurface1 *surf);
 
+            mfxStatus InitializeCm(const mfxFrameInfo& info, bool creation_hint = true);
+
     virtual void      GetVA(mfxHDL* phdl, mfxU16 type) override
     {
         if (!phdl) return;

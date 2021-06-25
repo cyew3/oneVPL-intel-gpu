@@ -393,39 +393,7 @@ mfxStatus D3D11VideoCORE_T<Base>::AllocFrames(mfxFrameAllocRequest *request,
         mfxStatus sts = InitializeDevice();
         MFX_CHECK_STS(sts);
 
-        if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
-        {
-            m_pCmCopy.reset(new CmCopyWrapper);
-
-            if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device))
-            {
-                //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
-                //if failed to create CM device, continue without CmCopy
-                m_bCmCopy        = false;
-                m_bCmCopyAllowed = false;
-
-                m_pCmCopy.reset();
-                //return MFX_ERR_DEVICE_FAILED;
-            }
-            else
-            {
-                sts = m_pCmCopy->Initialize(GetHWType());
-                MFX_CHECK_STS(sts);
-                m_bCmCopy = true;
-            }
-        }
-        else if (m_bCmCopy)
-        {
-            if (m_pCmCopy)
-                m_pCmCopy->ReleaseCmSurfaces();
-            else
-                m_bCmCopy = false;
-        }
-        if (m_pCmCopy && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_P010))
-        {
-            sts = m_pCmCopy->InitializeSwapKernels(GetHWType());
-            m_bCmCopySwap = true;
-        }
+        MFX_SAFE_CALL(InitializeCm(request->Info, isNeedCopy));
 
         // use common core for sw surface allocation
         if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)
@@ -466,6 +434,48 @@ mfxStatus D3D11VideoCORE_T<Base>::AllocFrames(mfxFrameAllocRequest *request,
         MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
     }
 } // mfxStatus D3D11VideoCORE_T<Base>::AllocFrames
+
+template <class Base>
+mfxStatus D3D11VideoCORE_T<Base>::InitializeCm(const mfxFrameInfo& info, bool creation_hint)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (!m_bCmCopy && m_bCmCopyAllowed && creation_hint)
+    {
+        m_pCmCopy.reset(new CmCopyWrapper);
+
+        if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device))
+        {
+            //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
+            //if failed to create CM device, continue without CmCopy
+            m_bCmCopy = false;
+            m_bCmCopyAllowed = false;
+
+            m_pCmCopy.reset();
+            //return MFX_ERR_DEVICE_FAILED;
+        }
+        else
+        {
+            sts = m_pCmCopy->Initialize(GetHWType());
+            MFX_CHECK_STS(sts);
+            m_bCmCopy = true;
+        }
+    }
+    else if (m_bCmCopy)
+    {
+        if (m_pCmCopy)
+            m_pCmCopy->ReleaseCmSurfaces();
+        else
+            m_bCmCopy = false;
+    }
+    if (m_pCmCopy && !m_bCmCopySwap && (info.FourCC == MFX_FOURCC_BGR4 || info.FourCC == MFX_FOURCC_RGB4 || info.FourCC == MFX_FOURCC_ARGB16 || info.FourCC == MFX_FOURCC_ABGR16 || info.FourCC == MFX_FOURCC_P010))
+    {
+        sts = m_pCmCopy->InitializeSwapKernels(GetHWType());
+        m_bCmCopySwap = true;
+    }
+
+    MFX_RETURN(sts);
+}
 
 template <class Base>
 mfxStatus D3D11VideoCORE_T<Base>::ReallocFrame(mfxFrameSurface1 *surf)
@@ -1345,44 +1355,7 @@ mfxStatus D3D11VideoCORE20::AllocFrames(mfxFrameAllocRequest *request, mfxFrameA
 
         m_frame_allocator_wrapper.SetDevice(m_pD11Device);
 
-        if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
-        {
-            m_pCmCopy.reset(new CmCopyWrapper);
-
-            if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device))
-            {
-                //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
-                //if failed to create CM device, continue without CmCopy
-                m_bCmCopy = false;
-                m_bCmCopyAllowed = false;
-
-                m_pCmCopy.reset();
-                //return MFX_ERR_DEVICE_FAILED;
-            }
-            else
-            {
-                sts = m_pCmCopy->Initialize(GetHWType());
-                MFX_CHECK_STS(sts);
-                m_bCmCopy = true;
-            }
-        }
-        else if (m_bCmCopy)
-        {
-            if (m_pCmCopy)
-                m_pCmCopy->ReleaseCmSurfaces();
-            else
-                m_bCmCopy = false;
-        }
-        if (m_pCmCopy && !m_bCmCopySwap &&
-                              (  request->Info.FourCC == MFX_FOURCC_BGR4
-                              || request->Info.FourCC == MFX_FOURCC_RGB4
-                              || request->Info.FourCC == MFX_FOURCC_ARGB16
-                              || request->Info.FourCC == MFX_FOURCC_ARGB16
-                              || request->Info.FourCC == MFX_FOURCC_P010))
-        {
-            sts = m_pCmCopy->InitializeSwapKernels(GetHWType());
-            m_bCmCopySwap = true;
-        }
+        MFX_SAFE_CALL(InitializeCm(request->Info, isNeedCopy));
 
         return m_frame_allocator_wrapper.Alloc(*request, *response);
     }
@@ -1717,6 +1690,8 @@ mfxStatus D3D11VideoCORE20::CreateSurface(mfxU16 type, const mfxFrameInfo& info,
 
     MFX_SAFE_CALL(InitializeDevice());
     m_frame_allocator_wrapper.SetDevice(m_pD11Device);
+
+    MFX_SAFE_CALL(InitializeCm(info, true));
 
     return m_frame_allocator_wrapper.CreateSurface(type, info, surf);
 }
