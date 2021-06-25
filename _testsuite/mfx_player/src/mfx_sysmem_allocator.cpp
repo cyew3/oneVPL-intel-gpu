@@ -215,8 +215,8 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 #endif
 #if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
-        ptr->G = ptr->B + Width2 * Height2;
-        ptr->R = ptr->G + Width2 * Height2;
+        ptr->G = ptr->R + Width2 * Height2;
+        ptr->B = ptr->G + Width2 * Height2;
         ptr->PitchHigh = 0;
         ptr->PitchLow  = Width2;
         break;

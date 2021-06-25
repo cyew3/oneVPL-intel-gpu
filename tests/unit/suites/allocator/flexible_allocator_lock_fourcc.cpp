@@ -325,7 +325,7 @@ namespace test
         , { MFX_FOURCC_RGB3,       MFX_ERR_NONE,        WIDTH * 3,      &mfxFrameData::B, &mfxFrameData::G, 1,                  &mfxFrameData::R, 2,                      nullptr, 0 } // 17
         , { MFX_FOURCC_IMC3,       MFX_ERR_UNSUPPORTED, 0,              nullptr,          nullptr,          0,                  nullptr,          0,                      nullptr, 0 } // 18
     #ifdef MFX_ENABLE_RGBP
-        , { MFX_FOURCC_RGBP,    MFX_ERR_NONE,           WIDTH,          &mfxFrameData::B, &mfxFrameData::G, WIDTH* HEIGHT,      &mfxFrameData::R, WIDTH* HEIGHT * 2,      nullptr, 0 } // 19
+        , { MFX_FOURCC_RGBP,    MFX_ERR_NONE,           WIDTH,          &mfxFrameData::R, &mfxFrameData::G, WIDTH* HEIGHT,      &mfxFrameData::B, WIDTH* HEIGHT * 2,      nullptr, 0 } // 19
     #endif
     };
 
