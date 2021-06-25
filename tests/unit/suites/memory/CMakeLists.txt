@@ -24,7 +24,7 @@
 # is propagated by mediasdk test system should be avoided.
 
 add_executable (mfx_memory_test
-    test_memory
+    test_memory.cpp
 )
 
 target_link_libraries (mfx_memory_test
@@ -32,16 +32,23 @@ target_link_libraries (mfx_memory_test
         ${MFX_DISPATCHER}
         ${MFX_API_TARGET}
         $<$<PLATFORM_ID:Windows>:detours>
+        mfx_shared_lib
+        mfx_trace
         gtest_main
+        mfx_common_hw
         gmock
+        encode_hw
         mocks::mocks
         mfx_va_properties
 )
 
 target_compile_definitions (mfx_memory_test
     PRIVATE
-        MFX_ENABLE_UNIT_TEST_MEMORY
+        $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:MFX_ENABLE_UNIT_TEST_MEMORY>
         MFX_DEPRECATED_OFF
+        ENABLE_MFX_INTEL_GUID_DECODE
+        ENABLE_MFX_INTEL_GUID_ENCODE
+        ENABLE_MFX_INTEL_GUID_PRIVATE
 )
 
 set_target_properties (mfx_memory_test
