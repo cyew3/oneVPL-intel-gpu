@@ -153,31 +153,23 @@ namespace Base
         mfxStatus CheckBuffers(const ParamSupport& sprt, const mfxVideoParam& in, const mfxVideoParam* out = nullptr);
         mfxStatus CopyConfigurable(const ParamSupport& sprt, const mfxVideoParam& in, mfxVideoParam& out);
 
-        mfxStatus CheckCodedPicSize(
-            mfxVideoParam & par
-            , const Defaults::Param& defPar);
+        mfxStatus CheckCodedPicSize(mfxVideoParam& par, const Defaults::Param& defPar);
         mfxStatus CheckTU(mfxVideoParam & par, const ENCODE_CAPS_AV1& caps);
         mfxStatus CheckDeltaQ(mfxVideoParam& par);
         mfxStatus CheckFrameOBU(mfxVideoParam& par, const ENCODE_CAPS_AV1& caps);
         mfxStatus CheckOrderHint(mfxVideoParam& par, const ENCODE_CAPS_AV1& caps);
         mfxStatus CheckOrderHintBits(mfxVideoParam& par);
         mfxStatus CheckCDEF(mfxVideoParam& par, const ENCODE_CAPS_AV1& caps);
-        mfxStatus CheckTemporalLayers(mfxVideoParam & par);
-        mfxStatus CheckStillPicture(mfxVideoParam & par);
+        mfxStatus CheckTemporalLayers(mfxVideoParam& par);
+        mfxStatus CheckStillPicture(mfxVideoParam& par);
         mfxStatus CheckGopRefDist(mfxVideoParam& par, const Defaults::Param& defPar);
-        mfxStatus CheckGPB(mfxVideoParam & par);
-        mfxStatus CheckIOPattern(mfxVideoParam & par);
-        mfxStatus CheckRateControl(
-            mfxVideoParam & par
-            , const Defaults::Param& defPar);
-        mfxStatus CheckCrops(
-            mfxVideoParam & par
-            , const Defaults::Param& defPar);
-        mfxStatus CheckShift(mfxVideoParam & par);
-        mfxStatus CheckFrameRate(mfxVideoParam & par);
-        mfxStatus CheckNumRefFrame(
-            mfxVideoParam & par
-            , const Defaults::Param& defPar);
+        mfxStatus CheckGPB(mfxVideoParam& par);
+        mfxStatus CheckIOPattern(mfxVideoParam& par);
+        mfxStatus CheckRateControl(mfxVideoParam& par, const Defaults::Param& defPar);
+        mfxStatus CheckCrops(mfxVideoParam& par, const Defaults::Param& defPar);
+        mfxStatus CheckShift(mfxVideoParam& par);
+        mfxStatus CheckFrameRate(mfxVideoParam& par);
+        mfxStatus CheckNumRefFrame(mfxVideoParam& par, const Defaults::Param& defPar);
 
         void SetDefaults(
             mfxVideoParam& par

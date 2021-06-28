@@ -1080,9 +1080,9 @@ namespace Base
         TChain<mfxU16> GetMinRefForBNoPyramid;
         TChain<mfxU16> GetBRefType;
         TChain<mfxU16> GetPRefType;
+        TChain<mfxU16> GetBitDepthLuma;
         TChain<mfxU16> GetTargetBitDepthLuma;
         TChain<mfxU16> GetTargetChromaFormat;
-        TChain<mfxU16> GetMaxBitDepth;
         TChain<mfxU16> GetRateControlMethod;
         TChain<mfxU16> GetProfile;
         TChain<mfxU16> GetMBBRC;

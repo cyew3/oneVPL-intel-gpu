@@ -131,9 +131,9 @@ public:
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
     {
-        auto&   fi          = par.mvp.mfx.FrameInfo;
-        bool    bCropsValid = fi.CropW > 0;
-        mfxU16  W           = mfxU16(bCropsValid * (fi.CropW + fi.CropX) + !bCropsValid * fi.Width);
+        const auto&  fi          = par.mvp.mfx.FrameInfo;
+        const bool   bCropsValid = fi.CropW > 0 && (fi.CropW + fi.CropX <= fi.Width);
+        const mfxU16 W           = mfxU16(bCropsValid * (fi.CropW + fi.CropX) + !bCropsValid * fi.Width);
 
         return mfx::align2_value(W, par.base.GetCodedPicAlignment(par));
     }
@@ -142,9 +142,9 @@ public:
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
     {
-        auto&   fi          = par.mvp.mfx.FrameInfo;
-        bool    bCropsValid = fi.CropH > 0;
-        mfxU16  H           = mfxU16(bCropsValid * (fi.CropH + fi.CropY) + !bCropsValid * fi.Height);
+        const auto&  fi          = par.mvp.mfx.FrameInfo;
+        const bool   bCropsValid = fi.CropH > 0 && (fi.CropH + fi.CropY <= fi.Height);
+        const mfxU16 H           = mfxU16(bCropsValid * (fi.CropH + fi.CropY) + !bCropsValid * fi.Height);
 
         return mfx::align2_value(H, par.base.GetCodedPicAlignment(par));
     }
@@ -387,11 +387,15 @@ public:
         return std::make_tuple(frN, frD);
     }
 
-    static mfxU16 MaxBitDepth(
+    static mfxU16 BitDepthLuma(
         Defaults::TChain<mfxU16>::TExt
         , const Defaults::Param& par)
     {
-        par;
+        if (par.mvp.mfx.FrameInfo.BitDepthLuma)
+        {
+            return par.mvp.mfx.FrameInfo.BitDepthLuma;
+        }
+
         return mfxU16(BITDEPTH_8);
     }
 
@@ -406,7 +410,7 @@ public:
             return pCO3->TargetBitDepthLuma;
         }
 
-        return par.mvp.mfx.FrameInfo.BitDepthLuma;
+        return par.base.GetBitDepthLuma(par);
     }
 
     static mfxU16 TargetChromaFormat(
@@ -569,36 +573,15 @@ public:
             }
         };
 
-        // (1) If target bit depth, chroma sampling are specified explicitly - check that they are correct.
-        const mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par.mvp);
-        bool bBDInvalid = pCO3 && Check<mfxU16, BITDEPTH_10, BITDEPTH_8, 0>(pCO3->TargetBitDepthLuma);
+        const mfxU16 BitDepth     = par.base.GetBitDepthLuma(par);
+        const mfxU16 ChromaFormat = par.mvp.mfx.FrameInfo.ChromaFormat;
 
-        // (2) Try to deduce bit depth and chroma sampling from profile and platform.
-        //     For Base only Main profile is supported (8 and 10 bits, 4:2:0 sampling).
-        mfxU16 BitDepth = 0;                           // can't derive BitDepth from profile
-        mfxU16 ChromaFormat = MFX_CHROMAFORMAT_YUV420; // Main profile supports only 4:2:0 sampling
-
-        // (3) Prepare mfxVideoParam for getting target bit depth and chroma sampling.
-        //     - If incorrect depth and sampling were provided explicitly - remove mfxExtCodingOption3 from parameters
-        //     - If not - do nothing
-        auto mvpCopy = par.mvp;
-        mvpCopy.NumExtParam = 0;
-
-        Defaults::Param parCopy(mvpCopy, par.caps, par.hw, par.base);
-        auto pParForBD = &par;
-
-        // (4) If BitDepth is zero, get it from mfxVideoParam
-        SetIf(pParForBD, bBDInvalid, &parCopy);
-        SetIf(BitDepth, !BitDepth, [&]() { return pParForBD->base.GetTargetBitDepthLuma(*pParForBD); });
-        if (!pParForBD->mvp.mfx.FrameInfo.BitDepthLuma)
-            BitDepth = BITDEPTH_8;
-
-        // (5) Check that list of GUIDs contains GUID for resulting BitDepth, ChromaFormat
+        // Check that list of GUIDs contains GUID for resulting BitDepth, ChromaFormat
         bool bSupported =
             GUIDSupported.count(BitDepth)
             && GUIDSupported.at(BitDepth).count(ChromaFormat);
 
-        // (6) Choose and return GUID
+        // Choose and return GUID
         SetIf(guid, bSupported, [&]() { return GUIDSupported.at(BitDepth).at(ChromaFormat); });
 
         return bSupported;
@@ -889,7 +872,7 @@ public:
         PUSH_DEFAULT(BRefType);
         PUSH_DEFAULT(PRefType);
         PUSH_DEFAULT(FrameRate);
-        PUSH_DEFAULT(MaxBitDepth);
+        PUSH_DEFAULT(BitDepthLuma);
         PUSH_DEFAULT(TargetBitDepthLuma);
         PUSH_DEFAULT(TargetChromaFormat);
         PUSH_DEFAULT(BufferSizeInKB);

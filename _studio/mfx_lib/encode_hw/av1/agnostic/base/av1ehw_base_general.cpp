@@ -2794,7 +2794,7 @@ void SetDefaultFormat(
 
     assert(fi.FourCC);
 
-    SetDefault(fi.BitDepthLuma, [&]() { return defPar.base.GetMaxBitDepth(defPar); });
+    SetDefault(fi.BitDepthLuma, [&]() { return defPar.base.GetBitDepthLuma(defPar); });
     SetDefault(fi.BitDepthChroma, fi.BitDepthLuma);
 
     if (pCO3)
@@ -3045,20 +3045,27 @@ mfxStatus General::CheckShift(mfxVideoParam & par)
 
 mfxStatus General::CheckCrops(
     mfxVideoParam & par
-    , const Defaults::Param& defPar)
+    , const Defaults::Param& /*defPar*/)
 {
-    mfxU32 changed = 0;
-
-    auto W = defPar.base.GetCodedPicWidth(defPar);
-    auto H = defPar.base.GetCodedPicHeight(defPar);
     auto& fi = par.mfx.FrameInfo;
 
-    changed += CheckMaxOrClip(fi.CropX, W);
-    changed += CheckMaxOrClip(fi.CropW, W - fi.CropX);
-    changed += CheckMaxOrClip(fi.CropY, H);
-    changed += CheckMaxOrClip(fi.CropH, H - fi.CropY);
+    mfxU32 invalid = 0;
+    invalid += CheckOrZero<mfxU16>(fi.CropX, 0);
+    invalid += CheckOrZero<mfxU16>(fi.CropY, 0);
+    MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
+
+    mfxU32 changed = 0;
+    changed += CheckMaxOrClip(fi.CropW, fi.Width);
+    changed += CheckMaxOrClip(fi.CropH, fi.Height);
+    const mfxExtAV1Param* pAv1Par = ExtBuffer::Get(par);
+    if (pAv1Par)
+    {
+        changed += pAv1Par->FrameWidth && CheckMaxOrClip(fi.CropW, pAv1Par->FrameWidth);
+        changed += pAv1Par->FrameHeight && CheckMaxOrClip(fi.CropH, pAv1Par->FrameHeight);
+    }
 
     MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+
     return MFX_ERR_NONE;
 }
 
