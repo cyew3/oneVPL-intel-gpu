@@ -183,6 +183,8 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     }
 #endif //MFX_ENABLE_OPAQUE_MEMORY
 
+    request_internal = request;
+
     if (IsD3D9Simulation(*m_core))
         useInternal = true;
 
@@ -190,8 +192,6 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
     else
         request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
-
-    request_internal = request;
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     bool mapOpaq = false;
