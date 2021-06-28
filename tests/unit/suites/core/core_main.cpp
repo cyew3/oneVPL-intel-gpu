@@ -73,6 +73,24 @@ namespace test
         );
     }
 
+    TEST_F(coreMain, DoFastCopyExtendedWrongSrcPitch)
+    {
+        src->Data.Pitch = src->Info.Width / 2;
+        EXPECT_EQ(
+            core->DoFastCopyExtended(dst, src),
+            MFX_ERR_UNDEFINED_BEHAVIOR
+        );
+    }
+
+    TEST_F(coreMain, DoFastCopyExtendedWrongDstPitch)
+    {
+        dst->Data.Pitch = dst->Info.Width / 2;
+        EXPECT_EQ(
+            core->DoFastCopyExtended(dst, src),
+            MFX_ERR_UNDEFINED_BEHAVIOR
+        );
+    }
+
     TEST_F(coreMain, DoFastCopyExtended)
     {
         dst->Data.MemId = src->Data.MemId = nullptr;
