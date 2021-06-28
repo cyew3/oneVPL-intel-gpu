@@ -23,8 +23,8 @@
 #if defined (MFX_ENABLE_VPP)
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
-#ifndef __MFX_VPP_JPEG_D3D_H
-#define __MFX_VPP_JPEG_D3D_H
+#ifndef __MFX_VPP_JPEG_H
+#define __MFX_VPP_JPEG_H
 
 #include "umc_va_base.h"
 #include "mfx_vpp_interface.h"
@@ -35,12 +35,12 @@
 
 #include <map>
 
-class VideoVppJpegD3D
+class VideoVppJpeg
 {
 public:
 
-    VideoVppJpegD3D(VideoCORE *core, bool useInternalMem, bool isOpaq);
-    virtual ~VideoVppJpegD3D(void);
+    VideoVppJpeg(VideoCORE *core, bool useInternalMem, bool isOpaq);
+    virtual ~VideoVppJpeg(void);
 
     mfxStatus Init(const mfxVideoParam *par);
     mfxStatus Close(void);
@@ -72,7 +72,7 @@ protected:
 
 
 
-#endif // __MFX_VPP_JPEG_D3D_H
+#endif // __MFX_VPP_JPEG_H
 
 #endif // MFX_ENABLE_MJPEG_VIDEO_DECODE
 #endif // MFX_ENABLE_VPP

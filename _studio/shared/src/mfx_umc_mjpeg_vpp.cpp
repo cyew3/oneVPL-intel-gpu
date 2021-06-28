@@ -26,7 +26,7 @@
 #include "mfx_common_int.h"
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
-#include "mfx_vpp_jpeg_d3d.h"
+#include "mfx_vpp_jpeg.h"
 
 UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorParams *,
                                                           VideoCORE* mfxCore,
@@ -132,7 +132,7 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::Reset()
     return mfx_UMC_FrameAllocator_D3D::Reset();
 }
 
-mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpegD3D(const mfxVideoParam *params)
+mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpeg(const mfxVideoParam *params)
 {
     bool useInternalMem = false;
     bool isOpaque = false;
@@ -155,14 +155,14 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpegD3D(const mfxVid
     if (IsD3D9Simulation(*m_pCore))
         useInternalMem = true;
 
-    m_pCc.reset(new VideoVppJpegD3D(m_pCore, useInternalMem, isOpaque));
+    m_pCc.reset(new VideoVppJpeg(m_pCore, useInternalMem, isOpaque));
 
     mfxStatus mfxSts;
     if (params->mfx.Rotation == MFX_ROTATION_90 || params->mfx.Rotation == MFX_ROTATION_270)
     {
         mfxVideoParam localParams = *params;
 
-        // Frame allocation is possible inside VideoVppJpegD3D::Init().
+        // Frame allocation is possible inside VideoVppJpeg::Init().
         // Those frames must have width/height of target image, so the swapping.
         std::swap(localParams.mfx.FrameInfo.Width, localParams.mfx.FrameInfo.Height);
         std::swap(localParams.mfx.FrameInfo.CropW, localParams.mfx.FrameInfo.CropH);
@@ -205,7 +205,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
 
     if (!m_pCc)
     {
-        MFX_SAFE_CALL( InitVideoVppJpegD3D(par) );
+        MFX_SAFE_CALL( InitVideoVppJpeg(par) );
     }
 
     mfxHDLPair hdlPair;
@@ -364,7 +364,7 @@ UMC::Status SurfaceSourceJPEG::Reset()
     }
 }
 
-mfxStatus SurfaceSourceJPEG::InitVideoVppJpegD3D(const mfxVideoParam *params)
+mfxStatus SurfaceSourceJPEG::InitVideoVppJpeg(const mfxVideoParam *params)
 {
     MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
@@ -375,13 +375,13 @@ mfxStatus SurfaceSourceJPEG::InitVideoVppJpegD3D(const mfxVideoParam *params)
 
         bool isD3DToSys = params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
-        m_pCc.reset(new VideoVppJpegD3D(m_core, isD3DToSys, false));
+        m_pCc.reset(new VideoVppJpeg(m_core, isD3DToSys, false));
 
         if (params->mfx.Rotation == MFX_ROTATION_90 || params->mfx.Rotation == MFX_ROTATION_270)
         {
             mfxVideoParam localParams = *params;
 
-            // Frame allocation is possible inside VideoVppJpegD3D::Init().
+            // Frame allocation is possible inside VideoVppJpeg::Init().
             // Those frames must have width/height of target image, so do the swapping.
             std::swap(localParams.mfx.FrameInfo.Width, localParams.mfx.FrameInfo.Height);
             std::swap(localParams.mfx.FrameInfo.CropW, localParams.mfx.FrameInfo.CropH);
@@ -393,7 +393,7 @@ mfxStatus SurfaceSourceJPEG::InitVideoVppJpegD3D(const mfxVideoParam *params)
     }
     else
     {
-        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->InitVideoVppJpegD3D(params);
+        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->InitVideoVppJpeg(params);
     }
 }
 
@@ -447,7 +447,7 @@ mfxStatus SurfaceSourceJPEG::StartPreparingToOutput(mfxFrameSurface1 *surface_wo
 
         if (!m_pCc)
         {
-            MFX_SAFE_CALL(InitVideoVppJpegD3D(par));
+            MFX_SAFE_CALL(InitVideoVppJpeg(par));
         }
 
         mfxHDLPair hdlPair;

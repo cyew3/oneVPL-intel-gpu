@@ -1865,7 +1865,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::GetVideoParam(mfxVideoParam *par)
 
 mfxStatus VideoDECODEMJPEGBase_HW::CheckVPPCaps(VideoCORE * core, mfxVideoParam * par)
 {
-    VideoVppJpegD3D cc(core, false,
+    VideoVppJpeg cc(core, false,
 #if defined (MFX_ENABLE_OPAQUE_MEMORY)
         bool(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
 #else

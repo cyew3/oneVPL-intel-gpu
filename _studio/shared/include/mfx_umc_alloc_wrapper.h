@@ -337,7 +337,7 @@ public:
 };
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
-class VideoVppJpegD3D;
+class VideoVppJpeg;
 
 struct JPEG_Info
 {
@@ -363,9 +363,9 @@ public:
 private:
     JPEG_Info  m_jpegInfo;
 
-    std::unique_ptr<VideoVppJpegD3D> m_pCc;
+    std::unique_ptr<VideoVppJpeg> m_pCc;
 
-    mfxStatus InitVideoVppJpegD3D(const mfxVideoParam *params);
+    mfxStatus InitVideoVppJpeg(const mfxVideoParam *params);
     mfxStatus FindSurfaceByMemId(const UMC::FrameData* in, bool isOpaq, const mfxHDLPair &hdlPair, mfxFrameSurface1 &out_surface);
 };
 
@@ -390,9 +390,9 @@ public:
 
 private:
     JPEG_Info  m_jpegInfo;
-    std::unique_ptr<VideoVppJpegD3D> m_pCc;
+    std::unique_ptr<VideoVppJpeg> m_pCc;
 
-    mfxStatus InitVideoVppJpegD3D(const mfxVideoParam *params);
+    mfxStatus InitVideoVppJpeg(const mfxVideoParam *params);
     mfxStatus FindSurfaceByMemId(const UMC::FrameData* in, bool isOpaq, const mfxHDLPair &hdlPair, mfxFrameSurface1 &out_surface);
 
     friend class SurfaceSourceJPEG;

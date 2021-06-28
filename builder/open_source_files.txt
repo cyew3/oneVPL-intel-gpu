@@ -760,8 +760,8 @@ _studio/shared/umc/codec/jpeg_enc/src/enchtbl.cpp
 _studio/shared/umc/codec/jpeg_enc/src/encqtbl.cpp
 _studio/shared/umc/codec/jpeg_enc/src/jpegenc.cpp
 _studio/shared/umc/codec/jpeg_enc/CMakeLists.txt
-_studio/mfx_lib/vpp/include/mfx_vpp_jpeg_d3d.h
-_studio/mfx_lib/vpp/src/mfx_vpp_jpeg_d3d.cpp
+_studio/mfx_lib/vpp/include/mfx_vpp_jpeg.h
+_studio/mfx_lib/vpp/src/mfx_vpp_jpeg.cpp
 _studio/mfx_lib/decode/vc1/include/mfx_vc1_decode.h
 _studio/mfx_lib/decode/vc1/src/mfx_vc1_decode.cpp
 _studio/shared/umc/codec/vc1_common/include/umc_vc1_common.h
