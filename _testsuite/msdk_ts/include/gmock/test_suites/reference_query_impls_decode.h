@@ -328,7 +328,16 @@ namespace query_impls_description
     static ReferenceDecodeADL ref_ADL_dec;
 
     class ReferenceDecodeATS : public ReferenceDecode
-    {};
+    {
+    public:
+        ReferenceDecodeATS()
+        {
+#if !defined(_WIN32) && !defined(_WIN64)
+            // VC1d not support
+            m_reference.Codecs.erase((mfxU32)MFX_CODEC_VC1);
+#endif
+        }
+    };
     static ReferenceDecodeATS ref_ATS_dec;
 
     class ReferenceDecodeDG2 : public ReferenceDecode
