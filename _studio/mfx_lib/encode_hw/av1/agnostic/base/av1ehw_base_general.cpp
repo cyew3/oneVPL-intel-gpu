@@ -3147,19 +3147,21 @@ mfxStatus General::CheckRateControl(
         changed++;
     }
 
-    MFX_CHECK(par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+    const auto rateControl = defPar.base.GetRateControlMethod(defPar);
+    const bool bCQP = rateControl == MFX_RATECONTROL_CQP;
+    MFX_CHECK(bCQP
+        || rateControl == MFX_RATECONTROL_CBR
+        || rateControl == MFX_RATECONTROL_VBR
         , MFX_ERR_UNSUPPORTED);
 
-    changed += ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    changed += ((rateControl == MFX_RATECONTROL_VBR)
         && par.mfx.MaxKbps != 0
         && par.mfx.TargetKbps != 0)
         && CheckMinOrClip(par.mfx.MaxKbps, par.mfx.TargetKbps);
 
     const auto minQP = defPar.base.GetMinQPMFX(defPar);
     const auto maxQP = defPar.base.GetMaxQPMFX(defPar);
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    if (bCQP)
     {
         changed += CheckAndFixQP(par.mfx.QPI, minQP, maxQP);
         changed += CheckAndFixQP(par.mfx.QPP, minQP, maxQP);
@@ -3183,7 +3185,6 @@ mfxStatus General::CheckRateControl(
     mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
     if (pCO3)
     {
-        const bool   bCQP           = defPar.base.GetRateControlMethod(defPar) == MFX_RATECONTROL_CQP;
         const mfxU16 GopRefDist     = defPar.base.GetGopRefDist(defPar);
         const bool   bBPyr          = GopRefDist > 1 && defPar.base.GetBRefType(defPar) == MFX_B_REF_PYRAMID;
         const bool   bQpOffsetValid = bCQP && bBPyr;
@@ -3213,7 +3214,7 @@ mfxStatus General::CheckRateControl(
     mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
     if (pAuxPar)
     {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        if (bCQP)
         {
             changed += CheckOrZero<mfxU8>(pAuxPar->QP.MinBaseQIndex, 0);
             changed += CheckOrZero<mfxU8>(pAuxPar->QP.MaxBaseQIndex, 0);
