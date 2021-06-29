@@ -72,15 +72,6 @@ if( CMAKE_SYSTEM_NAME MATCHES Linux )
   endif( )
 endif( )
 
-if( CMAKE_SYSTEM_NAME MATCHES Darwin )
-  add_definitions(-DOSX)
-  add_definitions(-DOSX32)
-
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_definitions(-DOSX64)
-  endif( )
-endif( )
-
 set(no_warnings "-Wno-unknown-pragmas -Wno-unused")
 set(warnings "-Wall -Wformat -Wformat-security")
 
