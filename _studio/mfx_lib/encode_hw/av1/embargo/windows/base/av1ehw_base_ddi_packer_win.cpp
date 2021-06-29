@@ -569,6 +569,7 @@ void DDIPacker::FillPpsBuffer(
     pps.ref_frame_ctrl_l0.value = 0;
     pps.ref_frame_ctrl_l1.value = 0;
     FillRefParams(task, bs_fh, pps);
+    pps.PicFlags.fields.DisableFrameRecon = (bs_fh.refresh_frame_flags == 0);
 
     //loop filter
     auto& lf = bs_fh.loop_filter_params;
