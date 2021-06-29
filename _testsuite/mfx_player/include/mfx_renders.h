@@ -68,6 +68,7 @@ class MFXVideoRender
     IMPLEMENT_CLONE(MFXVideoRender);
 public:
     MFXVideoRender(IVideoSession *core, mfxStatus *status);
+    virtual ~MFXVideoRender();
     // IMFXVideoRender
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) ;
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);

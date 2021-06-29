@@ -38,6 +38,7 @@ MFXVideoRender::MFXVideoRender( IVideoSession * core
     , m_bAutoView(false)
     , m_nViewId()
     , m_nMemoryModel(GENERAL_ALLOC)
+    , m_bDecodeD3D11(false)
 #if defined(_WIN32) || defined(_WIN64)
     , m_pLock(nullptr)
 #endif
@@ -46,6 +47,11 @@ MFXVideoRender::MFXVideoRender( IVideoSession * core
         *status = MFX_ERR_NONE;
 
     m_pSessionWrapper = core;
+}
+
+MFXVideoRender::~MFXVideoRender()
+{
+    Close();
 }
 
 mfxStatus MFXVideoRender::Query(mfxVideoParam *in, mfxVideoParam *out) 

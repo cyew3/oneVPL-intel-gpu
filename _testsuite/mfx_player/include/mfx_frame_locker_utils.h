@@ -15,12 +15,14 @@ class MFXFrameLocker
 {
 public:
     MFXFrameLocker(IHWDevice* pHWDevice);
+    virtual ~MFXFrameLocker();
 
     virtual mfxStatus MapFrame(mfxFrameData* ptr, mfxHDL handle);
     virtual mfxStatus UnmapFrame(mfxFrameData* ptr);
+    virtual mfxStatus Close();
 
 protected:
-    ID3D11Texture2D* m_pStaging;
+    CComPtr<ID3D11Texture2D> m_pStaging;
     ID3D11Device* m_pDevice;
     CComPtr<ID3D11DeviceContext> m_pDeviceContext;
 };

@@ -22,6 +22,11 @@ MFXFrameLocker::MFXFrameLocker(IHWDevice* pHWDevice)
     m_pDevice->GetImmediateContext(&m_pDeviceContext);
 }
 
+MFXFrameLocker::~MFXFrameLocker()
+{
+    Close();
+}
+
 mfxStatus MFXFrameLocker::MapFrame(mfxFrameData* ptr, mfxHDL handle)
 {
     HRESULT hRes = S_OK;
@@ -207,7 +212,15 @@ mfxStatus MFXFrameLocker::UnmapFrame(mfxFrameData* ptr)
         ptr->A = ptr->R = ptr->G = ptr->B = 0;
     }
 
-    m_pStaging->Release();
+    m_pStaging.Release();
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXFrameLocker::Close()
+{
+    m_pDeviceContext.Release();
+    m_pStaging.Release();
 
     return MFX_ERR_NONE;
 }
