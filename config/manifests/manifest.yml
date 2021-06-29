@@ -72,7 +72,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/frameworks.media.onevpl.dispatcher
     branch: main
-    revision: v2021.4.0_RC2
+    revision: v2021.4.0_RC5
     clone_depth: 1
     dest_dir: sources/oneVPL-disp
   windows_pre_built_binaries:
