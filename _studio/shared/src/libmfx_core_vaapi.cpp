@@ -299,6 +299,7 @@ mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
                 case MFX_HW_DG1:
                 case MFX_HW_DG2:
                 case MFX_HW_XE_HP_SDV:
+                case MFX_HW_PVC:
                     // These platforms support VPL feature set
                     this->m_enabled20Interface = true;
                     break;

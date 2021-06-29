@@ -1309,6 +1309,7 @@ D3D11VideoCORE20::D3D11VideoCORE20(const mfxU32 adapterNum, const mfxU32 numThre
         case MFX_HW_ADL_P:
         case MFX_HW_DG1:
         case MFX_HW_DG2:
+        case MFX_HW_PVC:
             // These platforms support VPL feature set
             m_enabled20Interface = true;
             break;
