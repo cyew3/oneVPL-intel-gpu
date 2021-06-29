@@ -1073,6 +1073,7 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             MFX_CHECK(tm.m_stages.at(tm.Stage(S_ET_QUERY)).size() >= std::max(m_maxDelay,1U)  || bFlush,MFX_ERR_NONE);
 
             StorageW* pTask = tm.GetTask(tm.Stage(S_ET_QUERY));
+            MFX_CHECK(pTask, MFX_ERR_NONE);
             auto sts = QueryPreEncTask(global, *pTask);
             MFX_CHECK_STS(sts);
 
