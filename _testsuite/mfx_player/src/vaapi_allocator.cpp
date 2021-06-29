@@ -684,6 +684,8 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->G = pBuffer + vaapi_mid->m_image.offsets[1];
                     ptr->B = pBuffer + vaapi_mid->m_image.offsets[2];
                 }
+                else return MFX_ERR_LOCK_MEMORY;
+                break; 
 #endif
             case VA_FOURCC_P208:
                 if (mfx_fourcc == MFX_FOURCC_NV12)
