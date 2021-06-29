@@ -11,7 +11,11 @@ BIN_FILES=(
     "mfx_transcoder"
     "msdk_gmock"
     "sample_encode"
+    "sample_decode"
+    "sample_vpp"
     "sample_multi_transcode"
+    "simple_11_decode_vp_n_outputs"
+    "simple_11_decode_vp_skip_original"
 	)
 
 # build number arg is optional; only last number of this arg will be used for versioning: 0.0.0 -> 0

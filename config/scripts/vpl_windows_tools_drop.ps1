@@ -17,7 +17,11 @@ $FILES=@(
     'vpl\x64\__bin\Release\mfx_transcoder.exe',
     'vpl\x64\__bin\Release\msdk_gmock.exe',
     'vpl\x64\__bin\Release\sample_encode.exe',
+    'vpl\x64\__bin\Release\sample_decode.exe',
+    'vpl\x64\__bin\Release\sample_vpp.exe',
     'vpl\x64\__bin\Release\sample_multi_transcode.exe',
+    'vpl\x64\__bin\Release\simple_11_decode_vp_skip_original.exe',
+    'vpl\x64\__bin\Release\simple_11_decode_vp_n_outputs.exe',
     'vpl\x64\__bin\Release\libvpl.dll'
 )
 
