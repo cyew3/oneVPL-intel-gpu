@@ -147,6 +147,11 @@ elseif( Windows )
       /GS
       /Gy
   )
+  target_link_options(mfx_common_properties
+    INTERFACE
+      /guard:cf
+  )
+
 endif( )
 
 if( NOT DEFINED MFX_APPS_DIR)
