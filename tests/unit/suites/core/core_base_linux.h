@@ -44,10 +44,10 @@ namespace test
         public testing::Test
     {
         std::shared_ptr<mocks::va::display> display;
-        VideoCORE*                          core{};
+        std::unique_ptr<VideoCORE>          core{};
         std::unique_ptr<FrameAllocatorBase> allocator;
 
-        mfxFrameInfo                        info{};
+        mfxVideoParam                       vp{};
         mfxFrameSurface1*                   src = nullptr;
         mfxFrameSurface1*                   dst = nullptr;
 
@@ -55,9 +55,9 @@ namespace test
 
         void SetUp() override
         {
-            info.Width        = 640;
-            info.Height       = 480;
-            info.FourCC       = MFX_FOURCC_NV12;
+            vp.mfx.FrameInfo.Width        = 640;
+            vp.mfx.FrameInfo.Height       = 480;
+            vp.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
 
             auto surface_attributes = VASurfaceAttrib{ VASurfaceAttribPixelFormat, VA_SURFACE_ATTRIB_SETTABLE, {VAGenericValueTypeInteger,.value = {.i = VA_FOURCC_NV12} } };
             display = mocks::va::make_display(
@@ -72,9 +72,11 @@ namespace test
                 )
             );
 
-            core = FactoryCORE::CreateCORE(MFX_HW_VAAPI, 0, 0, nullptr);
+            core.reset(
+                FactoryCORE::CreateCORE(MFX_HW_VAAPI, 0, 0, nullptr)
+            );
 
-            buffer.resize(info.Width * info.Height * 4);
+            buffer.resize(vp.mfx.FrameInfo.Width * vp.mfx.FrameInfo.Height * 4);
             ASSERT_EQ(
                 core->SetHandle(MFX_HANDLE_VA_DISPLAY, display.get()),
                 MFX_ERR_NONE
@@ -110,12 +112,12 @@ namespace test
             );
 
             ASSERT_EQ(
-                allocator->CreateSurface(MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME, info, dst),
+                allocator->CreateSurface(MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME, vp.mfx.FrameInfo, dst),
                 MFX_ERR_NONE
             );
 
             ASSERT_EQ(
-                allocator->CreateSurface(MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME, info, src),
+                allocator->CreateSurface(MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME, vp.mfx.FrameInfo, src),
                 MFX_ERR_NONE
             );
 

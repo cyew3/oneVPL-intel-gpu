@@ -56,26 +56,27 @@ namespace test
         static testing::MockFunction<mfxStatus(mfxFrameSurface1*, mfxU32)>* mockPtr;
         testing::MockFunction<mfxStatus(mfxFrameSurface1*, mfxU32)>         mock;
         mfxU16                                                              memtype;
+
         void SetUp() override
         {
             mockPtr = &mock;
             coreBase::SetUp();
 
-            auto memtype = std::get<0>(GetParam());
+            memtype = std::get<0>(GetParam());
 
             SetAllocator(memtype);
 
             ASSERT_EQ(
-                allocator->CreateSurface(memtype, info, dst),
+                allocator->CreateSurface(memtype, vp.mfx.FrameInfo, dst),
                 MFX_ERR_NONE
             );
 
             ASSERT_EQ(
-                allocator->CreateSurface(memtype, info, src),
+                allocator->CreateSurface(memtype, vp.mfx.FrameInfo, src),
                 MFX_ERR_NONE
             );
 
-            memtype |= std::get<1>(GetParam());
+            memtype = std::get<1>(GetParam());
 
             ASSERT_EQ(
                 src->FrameInterface->Map(src, MFX_MAP_READ),

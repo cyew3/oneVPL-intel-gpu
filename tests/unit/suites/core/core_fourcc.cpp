@@ -40,20 +40,23 @@ namespace test
         void SetUp() override
         {
             coreBase::SetUp();
-            int fourcc = GetParam();
-            SetAllocator(MFX_MEMTYPE_SYSTEM_MEMORY);
 
-#if (defined(_WIN32) || defined(_WIN64))
-            auto guid = DXVA_ModeHEVC_VLD_Main;
+            int fourcc = GetParam();
+            mfxU16 memtype = MFX_MEMTYPE_SYSTEM_MEMORY;
+
+#if defined(MFX_VA_WIN)
+            auto constexpr guid = mocks::guid<&DXVA2_ModeH264_VLD_NoFGT>{};
             vp = mocks::mfx::make_param(
                 fourcc,
                 mocks::mfx::make_param(guid, vp)
             );
-            auto constexpr type = mocks::mfx::HW_TGL_LP;
-            component = mocks::mfx::dx11::make_decoder(type, nullptr, vp);
 
-#elif defined(__linux__)
-            info.FourCC = fourcc;
+            mocks::mfx::dx11::mock_component(type, *(component->device.p),
+                std::make_tuple(guid, vp)
+            );
+
+#elif defined(MFX_VA_LINUX)
+            vp.mfx.FrameInfo.FourCC = fourcc;
             
             auto va_fourcc = mocks::va::to_native(fourcc);
             auto format = mocks::va::to_native_rt(fourcc);
@@ -71,13 +74,9 @@ namespace test
                     { return buffer.data(); }
                 )
             );
-#endif
-
-            mfxU16 memtype = MFX_MEMTYPE_SYSTEM_MEMORY;
             if(fourcc == MFX_FOURCC_P8)
             {
                 memtype |= MFX_MEMTYPE_FROM_ENCODE;
-                
                 buffer.resize((640 * 480 * 400) / 256);
                 mocks::va::make_context(display.get(),
                     std::make_tuple(VAContextID(0), VAConfigID(0)),
@@ -89,14 +88,16 @@ namespace test
                     )
                 );
             }
+#endif
+            SetAllocator(memtype);
 
             ASSERT_EQ(
-                allocator->CreateSurface(memtype, info, dst),
+                allocator->CreateSurface(memtype, vp.mfx.FrameInfo, dst),
                 MFX_ERR_NONE
             );
 
             ASSERT_EQ(
-                allocator->CreateSurface(memtype, info, src),
+                allocator->CreateSurface(memtype, vp.mfx.FrameInfo, src),
                 MFX_ERR_NONE
             );
 

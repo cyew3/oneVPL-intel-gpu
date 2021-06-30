@@ -37,9 +37,9 @@ namespace test
             coreMain::SetUp();
             req.AllocId = 1;
             req.NumFrameMin = req.NumFrameSuggested = 1;
-            req.Info.Width = info.Width;
-            req.Info.Height = info.Height;
-            req.Info.FourCC = MFX_FOURCC_NV12;
+            req.Info.Width = vp.mfx.FrameInfo.Width;
+            req.Info.Height = vp.mfx.FrameInfo.Height;
+            req.Info.FourCC = vp.mfx.FrameInfo.FourCC;
         }
     };
 

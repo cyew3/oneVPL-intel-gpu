@@ -30,16 +30,10 @@
 #include "encoding_ddi.h"
 #include "mfxpavp.h"
 
-#include <dlfcn.h>
-
 #include "mfxdispatcher.h"
 
 #if (defined(_WIN32) || defined(_WIN64))
 #include "libmfx_allocator_d3d11.h"
-
-#define ENABLE_MFX_INTEL_GUID_DECODE
-#define ENABLE_MFX_INTEL_GUID_ENCODE
-#define ENABLE_MFX_INTEL_GUID_PRIVATE
 
 #include "mocks/include/dxgi/format.h"
 #include "mocks/include/dxgi/device/factory.h"
@@ -51,6 +45,7 @@
 #include "mocks/include/dx9/device/d3d.h"
 
 #elif defined(__linux__)
+#include <dlfcn.h>
 #include "mocks/include/va/display/display.h"
 #include "mocks/include/va/display/surface.h"
 #include "mocks/include/va/display/context.h"
@@ -64,6 +59,7 @@
 
 namespace test
 {
+#if defined(MFX_VA_LINUX)
     inline
     void SetupImplDescription(std::vector<char>& bufferImpl)
     {
@@ -100,12 +96,11 @@ namespace test
         impl->Enc.Codecs[0].Profiles[0].MemDesc[0].ColorFormats = reinterpret_cast<mfxU32*>(ptr);
     }
 
-#if (defined(_WIN32) || defined(_WIN64))
+#elif defined(MFX_VA_WIN)
 
     int constexpr INTEL_VENDOR_ID = 0x8086;
 
-    int constexpr DEVICE_ID = 42; //The value which is returned both as 'DeviceID' by adapter and by mocked registry.
-                                  //Actual value doesn't matter here.
+    int constexpr DEVICE_ID = 0xFF20; // MFX_HW_TGL_LP
 #endif
 
     struct coreHandleBase :
@@ -113,15 +108,15 @@ namespace test
     {
         static mfxImplDescription*                   impl;
         static std::vector<char>                     bufferImpl;
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
         std::unique_ptr<mocks::registry>             registry;
         std::unique_ptr<mocks::dxgi::factory>        factory;
         std::unique_ptr<mocks::mfx::dx11::component> component;
-#elif defined(__linux__)
+#elif defined(MFX_VA_LINUX)
         std::shared_ptr<mocks::va::display>          display;
 #endif
         mfxVideoParam                                vp{};
-        mfxSession                                   session;
+        mfxSession                                   session{};
         std::vector<mfxU32>                          buffer;
 
         mfxHDL                                       hdl{};
@@ -130,9 +125,10 @@ namespace test
 
         void SetUp() override
         {
+#if defined(MFX_VA_LINUX)
             SetupImplDescription(bufferImpl);
             impl = reinterpret_cast<mfxImplDescription*>(bufferImpl.data());
-#if (defined(_WIN32) || defined(_WIN64))
+#elif defined(MFX_VA_WIN)
             ASSERT_NO_THROW({
                 registry = mocks::mfx::dispatch_to(INTEL_VENDOR_ID, DEVICE_ID, 1);
             });
@@ -140,13 +136,6 @@ namespace test
             factory = mocks::dxgi::make_factory(
                 DXGI_ADAPTER_DESC1{ L"iGFX", INTEL_VENDOR_ID, DEVICE_ID },
                 __uuidof(IDXGIFactory), __uuidof(IDXGIFactory1)
-            );
-
-            ASSERT_EQ(
-                session.InitEx(
-                    mfxInitParam{ MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11, { 0, 1 } }
-                ),
-                MFX_ERR_NONE
             );
 #endif
             vp.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
@@ -158,43 +147,34 @@ namespace test
             vp.mfx.FrameInfo.FrameRateExtD = 1;
             vp.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             vp.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            vp.mfx.CodecId = MFX_CODEC_AVC;
-            vp.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
-            vp.mfx.CodecLevel = MFX_LEVEL_AVC_41;
+            vp.mfx.CodecId = MFX_CODEC_HEVC;
+            vp.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
             vp.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
             buffer.resize(vp.mfx.FrameInfo.Width * vp.mfx.FrameInfo.Height * 4);
-            mfxLoader loader = MFXLoad();
-            ASSERT_TRUE(loader != nullptr);
+        }
 
-            mfxConfig cfg = MFXCreateConfig(loader);
-            ASSERT_TRUE(cfg != nullptr);
-
-            mfxVariant impl_value{};
-            impl_value.Type = MFX_VARIANT_TYPE_U32;
-            impl_value.Data.U32 = MFX_CODEC_HEVC;
-
+        void TearDown() override
+        {
             ASSERT_EQ(
-                MFXSetConfigFilterProperty(
-                    cfg,
-                    (mfxU8 *)"mfxImplDescription.mfxDecoderDescription.decoder.CodecID",
-                    impl_value
-                ),
-                MFX_ERR_NONE
-            );
-
-            ASSERT_EQ(
-                MFXCreateSession(loader, 0, &session),
+                MFXClose(session),
                 MFX_ERR_NONE
             );
         }
 
         void EndInitialization()
         {
-#if (defined(_WIN32) || defined(_WIN64))
-            auto constexpr type = mocks::mfx::HW_CFL;
+#if defined(MFX_VA_WIN)
+            auto constexpr type = mocks::mfx::HW_TGL_LP;
             component = mocks::mfx::dx11::make_decoder(type, nullptr, vp);
-#elif defined(__linux__)
+
+            // for MFXVideoDecodeInit (for ID3D11Device::CreateBuffer)
+            mocks::dx11::mock_device(*(component->device.p),
+                D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_STAGING, 0, D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE, D3D11_RESOURCE_MISC_SHARED },
+                D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_DECODER | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_SHARED },
+                D3D11_TEXTURE2D_DESC{ UINT(vp.mfx.FrameInfo.Width), UINT(vp.mfx.FrameInfo.Height), 1, 1, DXGI_FORMAT_NV12, {1, 0}, D3D11_USAGE_DEFAULT, D3D11_BIND_DECODER | D3D11_BIND_VIDEO_ENCODER | D3D11_BIND_SHADER_RESOURCE, 0, D3D11_RESOURCE_MISC_SHARED }
+            );
+#elif defined(MFX_VA_LINUX)
             auto surface_attributes = VASurfaceAttrib{ VASurfaceAttribPixelFormat, VA_SURFACE_ATTRIB_SETTABLE, {VAGenericValueTypeInteger,.value = {.i = VA_FOURCC_NV12} } };
             auto f = [&](unsigned int /*format*/, unsigned int /*fourcc*/, size_t /*width*/, size_t /*height*/)
             { return buffer.data(); };
@@ -220,7 +200,7 @@ namespace test
                     f
                 ),
 
-                std::make_tuple(VAProfileH264High,
+                std::make_tuple(VAProfileHEVCMain,
                                 VAEntrypointVLD,
                                 std::make_tuple(attributes, count)
                 ),
@@ -230,12 +210,40 @@ namespace test
                     352, 288, 0x1
                 )
             );
+#endif
+            mfxLoader loader = MFXLoad();
+            ASSERT_TRUE(loader != nullptr);
 
+            mfxConfig cfg = MFXCreateConfig(loader);
+            ASSERT_TRUE(cfg != nullptr);
+
+            mfxVariant impl_value{};
+            impl_value.Type = MFX_VARIANT_TYPE_U32;
+            impl_value.Data.U32 = MFX_CODEC_HEVC;
+
+            ASSERT_EQ(
+                MFXSetConfigFilterProperty(
+                    cfg,
+                    (mfxU8 *)"mfxImplDescription.mfxDecoderDescription.decoder.CodecID",
+                    impl_value
+                ),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_EQ(
+                MFXCreateSession(loader, 0, &session),
+                MFX_ERR_NONE
+            );
+
+            ASSERT_NE(session, nullptr);
+
+#if defined(MFX_VA_LINUX)
             ASSERT_EQ(
                 MFXVideoCORE_SetHandle(session, MFX_HANDLE_VA_DISPLAY, display.get()),
                 MFX_ERR_NONE
             );
 #endif
+
             ASSERT_EQ(
                 MFXVideoDECODE_Init(session, &vp),
                 MFX_ERR_NONE
@@ -247,7 +255,7 @@ namespace test
     mfxImplDescription* coreHandleBase::impl = nullptr;
     std::vector<char> coreHandleBase::bufferImpl;
 
-#if (defined(_WIN32) || defined(_WIN64))
+#if defined(MFX_VA_WIN)
 
     struct coreHandle
         : public coreHandleBase
@@ -266,6 +274,11 @@ namespace test
                 vp.NumExtParam = 1;
             }
             EndInitialization();
+        }
+
+        void TearDown()
+        {
+            coreHandleBase::TearDown();
         }
     };
 
@@ -319,9 +332,13 @@ namespace test
         );
     }
 
-    TEST_F(coreHandleMain, GetHandleUninitializedSession)
+    TEST_F(coreHandleMain, DISABLED_GetHandleUninitializedSession)
     {
-        MFXClose(session);
+        ASSERT_EQ(
+            MFXClose(session),
+            MFX_ERR_NONE
+        );
+
         EXPECT_EQ(
             MFXVideoCORE_GetHandle(session, static_cast<mfxHandleType>(MFX_HANDLE_VIDEO_DECODER), &hdl),
             MFX_ERR_INVALID_HANDLE
@@ -361,9 +378,13 @@ namespace test
     }
 
 
-    TEST_F(coreHandleMain, SetHandleUninitializedSession)
+    TEST_F(coreHandleMain, DISABLED_SetHandleUninitializedSession)
     {
-        MFXClose(session);
+        ASSERT_EQ(
+            MFXClose(session),
+            MFX_ERR_NONE
+        );
+
         EXPECT_EQ(
             MFXVideoCORE_SetHandle(session, static_cast<mfxHandleType>(MFX_HANDLE_VIDEO_DECODER), &hdl),
             MFX_ERR_INVALID_HANDLE
@@ -395,6 +416,7 @@ namespace test
     }
 }
 
+#if defined(MFX_VA_LINUX)
 extern "C"
 {
     mfxHDL* TestMFXQueryImplsDescription(mfxImplCapsDeliveryFormat /*format*/, mfxU32* num_impls)
@@ -435,6 +457,6 @@ extern "C"
         return libc_dlsym(handle, name);
     }
 }
-
+#endif // MFX_VA_LINUX
 
 #endif // MFX_ENABLE_UNIT_TEST_CORE

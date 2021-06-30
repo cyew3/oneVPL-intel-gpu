@@ -24,9 +24,8 @@
     #include "core_base_windows.h"
 #elif defined(__linux__)
     #include "core_base_linux.h"
+    #include "mocks/include/va/ioctl.h"
 #endif
-
-#include "mocks/include/va/ioctl.h"
 
 namespace test
 {

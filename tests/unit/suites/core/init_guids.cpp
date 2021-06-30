@@ -20,16 +20,11 @@
 
 #if defined (MFX_ENABLE_UNIT_TEST_CORE)
 
-#define ENABLE_MFX_INTEL_GUID_ENCODE
-#define ENABLE_MFX_INTEL_GUID_DECODE
-#define ENABLE_MFX_INTEL_GUID_PRIVATE
-
 #define MFX_ENABLE_HEVCE_SCC
 #define MFX_ENABLE_AV1_VIDEO_DECODE
 #define MFX_ENABLE_AV1_VIDEO_ENCODE
 
 #include <initguid.h>
 #include "mocks/include/mfx/guids.h"
-#include "mocks/include/dxva/traits.h"
 
 #endif //MFX_ENABLE_UNIT_TEST_CORE
