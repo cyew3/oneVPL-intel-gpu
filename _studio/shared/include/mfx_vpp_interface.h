@@ -423,6 +423,8 @@ namespace MfxHwVideoProcessing
                ,bDenoiseAutoAdjust(false)
                ,denoiseFactor(0)
                ,denoiseFactorOriginal(0)
+               ,denoiseMode(MFX_DENOISE_MODE_DEFAULT)
+               ,bdenoiseAdvanced(false)
                ,bDetailAutoAdjust(false)
                ,detailFactor(0)
                ,detailFactorOriginal(0)
