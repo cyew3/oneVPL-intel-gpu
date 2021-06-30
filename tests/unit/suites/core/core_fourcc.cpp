@@ -118,7 +118,7 @@ namespace test
           MFX_FOURCC_NV12
         , MFX_FOURCC_YUY2
         , MFX_FOURCC_YV12
-        // , MFX_FOURCC_P8 // problem w/ pitch! wrong srcStep in mfxCopyRect?
+        , MFX_FOURCC_P8
     };
 
     INSTANTIATE_TEST_SUITE_P(

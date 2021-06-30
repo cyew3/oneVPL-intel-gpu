@@ -1333,6 +1333,10 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 
     case MFX_FOURCC_P8:
 
+        MFX_CHECK(mfxU32(roi.width) * roi.height <= mfxU32(std::numeric_limits<int>::max()), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        roi = { roi.width * roi.height, 1 };
+
         return m_pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
     default:
