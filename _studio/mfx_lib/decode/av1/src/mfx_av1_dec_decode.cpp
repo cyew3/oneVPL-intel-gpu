@@ -126,6 +126,9 @@ namespace MFX_VPX_Utility
         if (!par)
             return MFX_PLATFORM_SOFTWARE;
 
+        if(IsD3D9Simulation(*core))
+            return MFX_PLATFORM_SOFTWARE;
+
         eMFXPlatform platform = core->GetPlatformType();
         return
             platform != MFX_PLATFORM_SOFTWARE && !CheckGUID(core, core->GetHWType(), par) ?
@@ -668,7 +671,7 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
     eMFXPlatform platform = MFX_VPX_Utility::GetPlatform(core, out);
     if (platform != core->GetPlatformType())
     {
-        sts = MFX_ERR_UNSUPPORTED;
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
 
     sts = CheckLevel(in, out);
