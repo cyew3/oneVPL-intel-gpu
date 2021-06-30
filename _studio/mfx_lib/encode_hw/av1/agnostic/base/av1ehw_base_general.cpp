@@ -1165,9 +1165,13 @@ void General::Reset(const FeatureBlocks& blocks, TPushR Push)
         hint.Flags |= RF_SPS_CHANGED * isSpsChanged;
 
         bool isIdrRequired = false;
+        const auto numTlOld = defOld.base.GetNumTemporalLayers(defOld);
+        const auto numTlNew = defNew.base.GetNumTemporalLayers(defNew);
+
         isIdrRequired =
                (hint.Flags & RF_SPS_CHANGED)
             || (hint.Flags & RF_IDR_REQUIRED)
+            || (numTlOld != numTlNew)
             || parOld.mfx.GopPicSize != parNew.mfx.GopPicSize;
 
         hint.Flags |= RF_IDR_REQUIRED * isIdrRequired;
