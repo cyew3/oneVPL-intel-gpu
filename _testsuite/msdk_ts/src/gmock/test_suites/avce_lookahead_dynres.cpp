@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2021 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -46,25 +46,29 @@ private:
     };
 
     static const tc_struct test_case[];
+
 };
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/*0*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*0*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {LA, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_OFF},
         {RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
         {RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 496},
        },
     },
-    {/*1*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*1*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {LA, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x},
         {RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
         {RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 496},
        },
     },
-    {/*2*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {LA, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x},
         {RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736},
@@ -72,6 +76,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
        },
     },
     {/*3*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
@@ -83,7 +88,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {RESET, &tsStruct::mfxVideoParam.mfx.TargetKbps, 5000000},
        },
     },
-    {/*4*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*4*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
@@ -95,7 +101,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {RESET, &tsStruct::mfxVideoParam.mfx.TargetKbps, 1000000},
        },
     },
-    {/*5*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*5*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
@@ -108,6 +115,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
        },
     },
     {/*6*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
@@ -119,7 +127,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {RESET, &tsStruct::mfxVideoParam.mfx.TargetKbps, 5000000},
        },
     },
-    {/*7*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*7*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
@@ -131,7 +140,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {RESET, &tsStruct::mfxVideoParam.mfx.TargetKbps, 1000000},
        },
     },
-    {/*8*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*8*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},

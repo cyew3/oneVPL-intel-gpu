@@ -1,10 +1,10 @@
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 ////
 ////                  INTEL CORPORATION PROPRIETARY INFORMATION
 ////     This software is supplied under the terms of a license agreement or
 ////     nondisclosure agreement with Intel Corporation and may not be copied
 ////     or disclosed except in accordance with the terms of that agreement.
-////          Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
+////          Copyright(c) 2017-2021 Intel Corporation. All Rights Reserved.
 ////
 
 #pragma once
@@ -254,6 +254,124 @@ typedef struct tagENCODE_CAPS_HEVC
     mfxU32   reserved32bits2;
     mfxU32   reserved32bits3;
 } ENCODE_CAPS_HEVC;
+
+
+typedef struct tagENCODE_CAPS_AVC
+{
+    union
+    {
+        struct
+        {
+            mfxU32    CodingLimitSet : 1;
+            mfxU32    NoFieldFrame : 1;
+            mfxU32    NoCabacSupport : 1;
+            mfxU32    NoGapInFrameCount : 1;
+            mfxU32    NoGapInPicOrder : 1;
+            mfxU32    NoUnpairedField : 1;
+            mfxU32    BitDepth8Only : 1;
+            mfxU32    ConsecutiveMBs : 1;
+            mfxU32    SliceStructure : 3;
+            mfxU32    SliceIPOnly : 1;
+            mfxU32    SliceIPBOnly : 1;
+            mfxU32    NoWeightedPred : 1;
+            mfxU32    NoMinorMVs : 1;
+            mfxU32    ClosedGopOnly : 1;
+            mfxU32    NoFrameCropping : 1;
+            mfxU32    FrameLevelRateCtrl : 1;
+            mfxU32    HeaderInsertion : 1;
+            mfxU32    RawReconRefToggle : 1; // doesn't shpport change reference frame (original vs. recon) at a per frame basis.
+            mfxU32    NoPAFF : 1; // doesn't support change frame/field coding at per frame basis.
+            mfxU32    NoInterlacedField : 1; // DDI 0.87
+            mfxU32    BRCReset : 1;
+            mfxU32    EnhancedEncInput : 1;
+            mfxU32    RollingIntraRefresh : 1;
+            mfxU32    UserMaxFrameSizeSupport : 1;
+            mfxU32    LayerLevelRateCtrl : 1;
+            mfxU32    SliceLevelRateCtrl : 1;
+            mfxU32    VCMBitrateControl : 1;
+            mfxU32    NoESS : 1;
+            mfxU32    Color420Only : 1;
+            mfxU32    ICQBRCSupport : 1;
+        };
+        mfxU32 CodingLimits;
+    };
+    union
+    {
+        struct
+        {
+            mfxU16 EncFunc : 1;
+            mfxU16 PakFunc : 1;
+            mfxU16 EncodeFunc : 1;  // Enc+Pak
+            mfxU16 InputAnalysisFunc : 1;  // Reserved for now
+            mfxU16 reserved : 12;
+        };
+        mfxU16 CodingFunction;
+    };
+    mfxU32  MaxPicWidth;
+    mfxU32  MaxPicHeight;
+    mfxU8   MaxNum_Reference;
+    mfxU8   MaxNum_SPS_id;
+    mfxU8   MaxNum_PPS_id;
+    mfxU8   MaxNum_Reference1;
+    mfxU8   MaxNum_QualityLayer;
+    mfxU8   MaxNum_DependencyLayer;
+    mfxU8   MaxNum_DQLayer;
+    mfxU8   MaxNum_TemporalLayer;
+    mfxU8   MBBRCSupport;
+    union {
+        struct {
+            mfxU8 MaxNumOfROI : 5; // [0..16]
+            mfxU8 : 1;
+            mfxU8 ROIBRCDeltaQPLevelSupport : 1;
+            mfxU8 ROIBRCPriorityLevelSupport : 1;
+        };
+        mfxU8 ROICaps;
+    };
+
+    union {
+        struct {
+            mfxU32    SkipFrame : 1;
+            mfxU32    MbQpDataSupport : 1;
+            mfxU32    SliceLevelWeightedPred : 1;
+            mfxU32    LumaWeightedPred : 1;
+            mfxU32    ChromaWeightedPred : 1;
+            mfxU32    QVBRBRCSupport : 1;
+            mfxU32    SliceLevelReportSupport : 1;
+            mfxU32    HMEOffsetSupport : 1;
+            mfxU32    DirtyRectSupport : 1;
+            mfxU32    MoveRectSupport : 1;
+            mfxU32    FrameSizeToleranceSupport : 1;
+            mfxU32    HWCounterAutoIncrement : 2;
+            mfxU32    MBControlSupport : 1;
+            mfxU32    ForceRepartitionCheckSupport : 1;
+            mfxU32    CustomRoundingControl : 1;
+            mfxU32    LLCStreamingBufferSupport : 1;
+            mfxU32    DDRStreamingBufferSupport : 1;
+            mfxU32    LowDelayBRCSupport : 1;
+            mfxU32    MaxNumDeltaQPMinus1 : 4;
+            mfxU32    TCBRCSupport : 1;
+            mfxU32    HRDConformanceSupport : 1;
+            mfxU32    PollingModeSupport : 1;
+            mfxU32    LookaheadBRCSupport : 1;
+            mfxU32    QpAdjustmentSupport : 1;
+            mfxU32    LookaheadAnalysisSupport : 1;
+            mfxU32 : 3;
+        };
+        mfxU32      CodingLimits2;
+    };
+    mfxU8    MaxNum_WeightedPredL0;
+    mfxU8    MaxNum_WeightedPredL1;
+// AVC_DDI_VERSION_0952
+    mfxU16   reserved16bits0;
+    mfxU16   reserved16bits1;
+    mfxU16   MaxNumOfConcurrentFramesMinus1;
+    mfxU16   LLCSizeInMBytes;
+    mfxU16   reserved16bits2;
+    mfxU32     reserved32bits1;
+    mfxU32     reserved32bits2;
+    mfxU32     reserved32bits3;
+// AVC_DDI_VERSION_0952
+} ENCODE_CAPS_AVC;
 
 typedef struct tagENCODE_CAPS_VP9
 {
