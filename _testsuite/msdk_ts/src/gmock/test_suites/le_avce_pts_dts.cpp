@@ -485,8 +485,6 @@ namespace le_avce_pts_dts
         g_tsStatus.expect(enc_sts);
         EncodeFrames(MAX_PTS);
 
-        DrainEncodedBitstream();
-
         TS_END;
         return 0;
     }
