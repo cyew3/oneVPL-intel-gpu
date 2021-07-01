@@ -25,6 +25,10 @@
 #define MFX_ENABLE_MJPEG_ROTATE_VPP
 #endif
 
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_DECODE)
+#define UMC_ENABLE_VP9_AV1_DECODE
+#endif
+
 #if !defined(OPEN_SOURCE) && !defined(ANDROID)
 
 #if defined(_WIN32) || defined(_WIN64)

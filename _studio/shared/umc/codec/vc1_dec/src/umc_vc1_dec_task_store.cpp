@@ -242,12 +242,14 @@ namespace UMC
                 pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA<VC1PackerDXVA>>();
                 m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA<VC1PackerDXVA>(m_pMemoryAllocator,va);
             }
-#elif defined(UMC_VA_LINUX)
+#else
+#if defined(UMC_VA_LINUX)
             uint8_t* pBuf;
             pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_Linux<VC1PackerLVA> >();
             m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_Linux<VC1PackerLVA>(m_pMemoryAllocator,va);
 #else
             m_pDescriptorQueue[i] = 0;
+#endif
 #endif
 
             if (!m_pDescriptorQueue[i])

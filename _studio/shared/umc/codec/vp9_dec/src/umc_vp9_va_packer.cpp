@@ -48,8 +48,10 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     else
         packer = new PackerMS(va);
 #endif
-#elif defined(UMC_VA_LINUX)
+#else
+#if defined(UMC_VA_LINUX)
     packer = new PackerVA(va);
+#endif
 #endif
 
     return packer;
