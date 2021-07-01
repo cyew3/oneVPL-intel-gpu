@@ -308,6 +308,15 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -PicTimingSEI:<on,off>                    Enables or disables picture timing SEI\n"));
     msdk_printf(MSDK_STRING("  -NalHrdConformance:<on,off>               Enables or disables picture HRD conformance\n"));
     msdk_printf(MSDK_STRING("  -VuiNalHrdParameters:<on,off>             Enables or disables NAL HRD parameters in VUI header\n"));
+    msdk_printf(MSDK_STRING("  -EmbeddedHVSDenoise <mode> <level>        Enables HVS Denoiser in encoder\n"));
+    msdk_printf(MSDK_STRING("           mode - mode of deniose\n"));
+    msdk_printf(MSDK_STRING("               0    - default\n"));
+    msdk_printf(MSDK_STRING("               1001 - auto BD rate\n"));
+    msdk_printf(MSDK_STRING("               1002 - auto subjective\n"));
+    msdk_printf(MSDK_STRING("               1003 - auto adjust\n"));
+    msdk_printf(MSDK_STRING("               1004 - manual mode for pre-processing, need level\n"));
+    msdk_printf(MSDK_STRING("               1005 - manual mode for post-processing, need level\n"));
+    msdk_printf(MSDK_STRING("           level - range of noise level is [0, 100]\n"));
 
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
@@ -1334,6 +1343,22 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-trace")))
     {
         InputParams.EnableTracing = true;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-EmbeddedHVSDenoise")))
+    {
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.DenoiseMode))
+        {
+            PrintError(argv[0], MSDK_STRING("DenoiseMode is invalid"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.DenoiseLevel))
+        {
+            PrintError(argv[0], MSDK_STRING("DenoiseLevel is invalid"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+        InputParams.bEmbeddedHVSDenoiser = true;
     }
     else
     {

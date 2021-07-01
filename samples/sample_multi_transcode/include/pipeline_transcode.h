@@ -229,6 +229,9 @@ namespace TranscodingSample
         mfxU16 nEncTileRows; // number of rows for encoding tiling
         mfxU16 nEncTileCols; // number of columns for encoding tiling
 
+        bool bEmbeddedHVSDenoiser; // enable or disable embeded HVS Denoiser
+        mfxU16 DenoiseMode;
+
         bool bEnableDeinterlacing;
         mfxU16 DeinterlacingMode;
         int DenoiseLevel;

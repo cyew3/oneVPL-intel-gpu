@@ -532,6 +532,7 @@ namespace MfxHwVideoProcessing
                     bDenoiseAutoAdjust != 0 ||
                     bDetailAutoAdjust != 0 ||
                     denoiseFactor != 0 ||
+                    bdenoiseAdvanced != false ||
                     detailFactor != 0 ||
                     iTargetInterlacingMode != 0 ||
                     bEnableProcAmp != false ||

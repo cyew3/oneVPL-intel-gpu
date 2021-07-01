@@ -132,6 +132,10 @@ sInputParams::sInputParams() : __sInputParams()
     bDecoderPostProcessing = false;
     bROIasQPMAP = false;
 #endif
+    bEmbeddedHVSDenoiser = false;
+    DenoiseMode = 0;
+    DenoiseLevel = 0;
+
 }
 
 CTranscodingPipeline::CTranscodingPipeline():
@@ -335,7 +339,6 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
 
             m_bIsVpp = true;
         }
-
 
         //override VPP desision
         if (m_bDecodeEnable && m_ScalerConfig.CascadeScalerRequired) {
@@ -2744,6 +2747,12 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     if (pInParams->InitialDelayInKB)
     {
         m_mfxEncParams.mfx.InitialDelayInKB = pInParams->InitialDelayInKB;
+    }
+    if (pInParams->bEmbeddedHVSDenoiser)
+    {
+        auto hvsParam = m_mfxEncParams.AddExtBuffer<mfxExtVPPDenoise2>();
+        hvsParam->Mode = (mfxDenoiseMode)pInParams->DenoiseMode;
+        hvsParam->Strength = pInParams->DenoiseLevel;
     }
 
     return MFX_ERR_NONE;

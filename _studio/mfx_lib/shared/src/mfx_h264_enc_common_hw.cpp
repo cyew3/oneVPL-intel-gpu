@@ -1397,11 +1397,14 @@ bool MfxHwH264Encode::IsMctfSupported(
     eMFXHWType            platform)
 {
     (void)video;
-    bool
-        isSupported = false;
+    bool isSupported = false;
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
-    isSupported = (hasSupportVME(platform) &&
+    isSupported = ((
+#ifndef STRIP_EMBARGO
+        (platform >= MFX_HW_DG2) ||
+#endif
+        hasSupportVME(platform)) &&
         IsOn(extOpt2.ExtBRC) &&
         IsExtBrcSceneChangeSupported(video, platform) &&
         (video.mfx.FrameInfo.Width <= 3840 && video.vpp.In.Height <= 2160) &&
@@ -1861,6 +1864,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM
 #endif
         || id == MFX_EXTBUFF_HYPER_MODE_PARAM
+        || id == MFX_EXTBUFF_VPP_DENOISE2
        );
 }
 
