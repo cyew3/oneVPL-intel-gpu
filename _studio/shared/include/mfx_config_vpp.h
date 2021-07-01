@@ -21,4 +21,33 @@
 #ifndef _MFX_CONFIG_VPP_H_
 #define _MFX_CONFIG_VPP_H_
 
+#if defined(MFX_ENABLE_VPP)
+    #define MFX_ENABLE_VPP_COMPOSITION
+    #define MFX_ENABLE_VPP_ROTATION
+    #define MFX_ENABLE_VPP_VIDEO_SIGNAL
+    #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
+
+    #if defined(OPEN_SOURCE)
+        #define MFX_ENABLE_DENOISE_VIDEO_VPP
+        #define MFX_ENABLE_MJPEG_ROTATE_VPP
+        #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
+    #endif
+
+    #if MFX_VERSION >= MFX_VERSION_NEXT
+        #define MFX_ENABLE_VPP_RUNTIME_HSBC
+    #endif
+    //#define MFX_ENABLE_VPP_FRC
+#endif
+
+#if defined(MFX_ENABLE_ASC)
+    #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
+#endif
+
+#if defined(MFX_ENABLE_MCTF)
+    #define MFX_ENABLE_MCTF_EXT // extended MCTF interface
+#endif
+
+#define MFX_ENABLE_RGBP
+#define MFX_ENABLE_FOURCC_RGB565
+
 #endif // _MFX_CONFIG_VPP_H_

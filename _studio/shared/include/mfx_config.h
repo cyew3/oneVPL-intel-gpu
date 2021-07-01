@@ -75,10 +75,6 @@
         #define PRE_SI_GEN 11
     #endif
 
-    #if defined(MFX_ENABLE_VPP)
-        #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
-    #endif //MFX_ENABLE_VPP
-
     #if defined(__linux__)
         // Unsupported on Linux:
         #define MFX_PROTECTED_FEATURE_DISABLE
@@ -88,100 +84,59 @@
             #define MFX_ADAPTIVE_PLAYBACK_DISABLE
             #define MFX_FUTURE_FEATURE_DISABLE
         #endif
-        #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
     #endif
     #if defined (MFX_VA_LINUX)
         #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
     #endif
 
-#if defined (PRE_SI_GEN)
-    #define ENABLE_PRE_SI_FEATURES
-    #if PRE_SI_GEN == 11
-        #ifdef ENABLE_PRE_SI_FEATURES
-                #undef ENABLE_PRE_SI_FEATURES
+    #if defined (PRE_SI_GEN)
+        #define ENABLE_PRE_SI_FEATURES
+        #if PRE_SI_GEN == 11
+            #ifdef ENABLE_PRE_SI_FEATURES
+                    #undef ENABLE_PRE_SI_FEATURES
+            #endif
+            #ifdef PRE_SI_TARGET_PLATFORM_GEN12
+                    #undef PRE_SI_TARGET_PLATFORM_GEN12
+            #endif
+        #elif PRE_SI_GEN == 12
+            #define PRE_SI_TARGET_PLATFORM_GEN12
+        #else
+            #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 11 or 12. \
+            \n11:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN12 = off\n \
+            \n12:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN12 = on\n")
+            #error Wrong value of PRE_SI_GEN
         #endif
-        #ifdef PRE_SI_TARGET_PLATFORM_GEN12
-                #undef PRE_SI_TARGET_PLATFORM_GEN12
-        #endif
-    #elif PRE_SI_GEN == 12
-        #define PRE_SI_TARGET_PLATFORM_GEN12
     #else
-        #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 11 or 12. \
-        \n11:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN12 = off\n \
-        \n12:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN12 = on\n")
-        #error Wrong value of PRE_SI_GEN
+        #define ENABLE_PRE_SI_FEATURES
+
+        #define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
+        //#define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
+
+        #if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+            #define PRE_SI_TARGET_PLATFORM_GEN12 // assume that all Gen12 features are supported on Gen12p5
+        #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
+
     #endif
-#else
-    #define ENABLE_PRE_SI_FEATURES
 
-    #define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
-    //#define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
-
-    #if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
-        #define PRE_SI_TARGET_PLATFORM_GEN12 // assume that all Gen12 features are supported on Gen12p5
-    #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
-
-#endif
-
-#define MFX_ENABLE_GET_CM_DEVICE
-
-#if defined(_WIN32) || defined(_WIN64)
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-
-#define DEFAULT_WAIT_HW_TIMEOUT_MS 60000
-
-#endif//#if defined(_WIN32) || defined(_WIN64)
+    #define MFX_ENABLE_GET_CM_DEVICE
 
 #endif // #ifndef OPEN_SOURCE
 
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
 
-    #if defined(MFX_VA_WIN)
-        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-    #endif
-
-    #if defined (MFX_VA_LINUX)
-        #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
-        #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-    #endif
-
 #if defined(MFX_VA_WIN)
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    #define MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+    #define DEFAULT_WAIT_HW_TIMEOUT_MS 60000
     #define MFX_ENABLE_SINGLE_THREAD
 #endif
 
-#if defined(MFX_ENABLE_VPP)
-    #define MFX_ENABLE_VPP_COMPOSITION
-    #define MFX_ENABLE_VPP_ROTATION
-    #define MFX_ENABLE_VPP_VIDEO_SIGNAL
-
-    #if defined(OPEN_SOURCE)
-        #define MFX_ENABLE_DENOISE_VIDEO_VPP
-        #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
-        #define MFX_ENABLE_MJPEG_ROTATE_VPP
-        #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-        #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
-    #endif
-
-    #if MFX_VERSION >= MFX_VERSION_NEXT
-        #define MFX_ENABLE_VPP_RUNTIME_HSBC
-    #endif
-    //#define MFX_ENABLE_VPP_FRC
+#if defined (MFX_VA_LINUX)
+    #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
+    #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 #endif
-
-#if defined(MFX_ENABLE_ASC)
-    #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-#endif
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && defined(MFX_ENABLE_MCTF)
-    #define MFX_ENABLE_MCTF_EXT // extended MCTF interface
-#endif
-
-#define MFX_ENABLE_RGBP
-#define MFX_ENABLE_FOURCC_RGB565
 
 #define CMAPIUPDATE
 
@@ -193,7 +148,7 @@
 #endif
 
 #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#define MFX_ENABLE_CP
+    #define MFX_ENABLE_CP
 #endif
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) || defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
