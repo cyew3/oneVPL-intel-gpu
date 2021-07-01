@@ -1689,10 +1689,13 @@ mfxStatus D3D11VideoCORE20::CreateSurface(mfxU16 type, const mfxFrameInfo& info,
 {
     MFX_CHECK(m_enabled20Interface, MFX_ERR_UNSUPPORTED);
 
-    MFX_SAFE_CALL(InitializeDevice());
-    m_frame_allocator_wrapper.SetDevice(m_pD11Device);
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+        MFX_SAFE_CALL(InitializeDevice());
+        m_frame_allocator_wrapper.SetDevice(m_pD11Device);
 
-    MFX_SAFE_CALL(InitializeCm(info, true));
+        MFX_SAFE_CALL(InitializeCm(info, true));
+    }
 
     return m_frame_allocator_wrapper.CreateSurface(type, info, surf);
 }
