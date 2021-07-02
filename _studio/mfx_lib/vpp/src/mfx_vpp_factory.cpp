@@ -33,13 +33,10 @@
     #if defined (MFX_D3D11_ENABLED)
         #include "d3d11_video_processor.h"
     #endif
+#endif
 
-#elif defined (MFX_VA_LINUX)
+#if defined (MFX_VA_LINUX)
     #include "mfx_vpp_vaapi.h"
-
-#elif defined (MFX_VA_MACOS)
-    #include "mfx_vpp_ddi_macos.h"
-
 #endif
 
 using namespace MfxHwVideoProcessing;
@@ -51,7 +48,7 @@ DriverVideoProcessing* MfxHwVideoProcessing::CreateVideoProcessing(VideoCORE* co
     //assert( core );
     (void)core;
 
-#if   defined (MFX_VA_WIN) // Windows DirectX9
+#if defined (MFX_VA_WIN) // Windows DirectX9
 
     if (MFX_HW_D3D9 == core->GetVAType())
     {
@@ -67,19 +64,12 @@ DriverVideoProcessing* MfxHwVideoProcessing::CreateVideoProcessing(VideoCORE* co
     {
         return NULL;
     }
-#elif defined (MFX_VA_LINUX)
-
-    return new VAAPIVideoProcessing;
-
-#elif defined (MFX_VA_MACOS)
-
-    return new MacosVideoProcessing;
-
-#else
-
-    return NULL;
-
 #endif
+
+#if defined (MFX_VA_LINUX)
+    return new VAAPIVideoProcessing;
+#endif
+
 } // mfxStatus CreateVideoProcessing( VideoCORE* core )
 
 

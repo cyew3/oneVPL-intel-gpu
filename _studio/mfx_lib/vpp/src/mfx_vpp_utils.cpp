@@ -509,9 +509,7 @@ bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output)
 
 void ShowPipeline( std::vector<mfxU32> pipelineList )
 {
-#if !defined(_DEBUG) && \
-    !defined(MFX_VA_WIN) || \
-    !defined(MFX_VA_LINUX)
+#if !defined(_DEBUG)
 
     (void)pipelineList;
 #endif
@@ -725,7 +723,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
     OutputDebugStringA(cStr);
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
-#if defined(LINUX) || defined(LINUX32) || defined(LINUX64)
+#if defined (MFX_VA_LINUX)
     mfxU32 filterIndx;
     fprintf(stderr, "VPP PIPELINE: \n");
 

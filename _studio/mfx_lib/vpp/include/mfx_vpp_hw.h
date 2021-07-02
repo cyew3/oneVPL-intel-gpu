@@ -40,15 +40,15 @@
 #include "mfx_win_event_cache.h"
 #endif
 
- #include "cmrt_cross_platform.h" // Gpucopy stuff
- #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
-  #include "asc.h"        // Scene change detection
- #endif
- #include "cm_mem_copy.h"         // Needed for mirroring kernels
- #ifndef STRIP_EMBARGO
-  #include "genx_fcopy_xehp_sdv_isa.h"
- #endif
- #include "genx_fcopy_gen12lp_isa.h"
+#include "cmrt_cross_platform.h" // Gpucopy stuff
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+ #include "asc.h"        // Scene change detection
+#endif
+#include "cm_mem_copy.h"         // Needed for mirroring kernels
+#ifndef STRIP_EMBARGO
+ #include "genx_fcopy_xehp_sdv_isa.h"
+#endif
+#include "genx_fcopy_gen12lp_isa.h"
 
 #ifdef MFX_ENABLE_MCTF
 #include "mctf_common.h"

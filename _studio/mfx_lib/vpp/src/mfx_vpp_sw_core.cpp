@@ -864,7 +864,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                         }
                         //--------------------------------------
                     }
-#if defined(_WIN32) || defined(_WIN64)
+#if defined (MFX_VA_WIN)
                     else if (MFX_EXTBUFF_MVC_SEQ_DESC == in->ExtParam[i]->BufferId)
                     {
                         mfxExtMVCSeqDesc* pHintMVC = NULL;
