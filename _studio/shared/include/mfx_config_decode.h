@@ -57,4 +57,16 @@
 #define MFX_VC1_VIDEO_DECODE_DEBUG_THREADID
 #endif
 
+#ifdef __INTEL_COMPILER
+#define H265_RESTRICT __restrict
+#elif defined _MSC_VER
+#if _MSC_VER >= 1400
+#define H265_RESTRICT __restrict
+#else
+#define H265_RESTRICT
+#endif
+#else
+#define H265_RESTRICT
+#endif
+
 #endif // _MFX_CONFIG_DECODE_H_
