@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2021 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -94,6 +94,7 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 #define HANDLE_EXT_MFE(member, OPT_TYPE, description)         HANDLE_OPTION_FOR_EXT_BUFFER(m_extMFEParam, member, OPT_TYPE, description, 0)
 #define HANDLE_AV1_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsAV1E, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
+#define HANDLE_AV1_BS_PARAM(member, OPT_TYPE, description)    HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1BsParam, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #define HANDLE_AV1_PARAM(member, OPT_TYPE, description)       HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1Param, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #define HANDLE_AV1_AUX_DATA(member, OPT_TYPE, description)    HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1AuxData, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #endif
@@ -149,6 +150,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
     , m_extCodingOptionsAV1E(new mfxExtCodingOptionAV1E())
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
+    , m_extAV1BsParam(new mfxExtAV1BitstreamParam())
     , m_extAV1Param(new mfxExtAV1Param())
     , m_extAV1AuxData(new mfxExtAV1AuxData())
     , m_extAV1Segmentation(new mfxExtAV1Segmentation())
@@ -462,7 +464,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         HANDLE_AV1_PARAM(FrameWidth,               OPT_UINT_16,   "0-maxU16"),
         HANDLE_AV1_PARAM(FrameHeight,              OPT_UINT_16,   "0-maxU16"),
-        HANDLE_AV1_PARAM(WriteIVFHeaders,          OPT_TRI_STATE, "on/off: Insertion IVF container headers to output stream"),
         HANDLE_AV1_PARAM(UseAnnexB,                OPT_TRI_STATE, "on/off"),
         HANDLE_AV1_PARAM(PackOBUFrame,             OPT_TRI_STATE, "on/off"),
         HANDLE_AV1_PARAM(InsertTemporalDelimiter,  OPT_TRI_STATE, "on/off"),
@@ -483,6 +484,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_PARAM(StillPictureMode,         OPT_TRI_STATE, "on/off"),
         HANDLE_AV1_PARAM(SwitchInterval,           OPT_UINT_16,   "0-maxU16: Interval (0 - disabled)"),
         HANDLE_AV1_PARAM(EnableLoopFilter,         OPT_TRI_STATE, "on/off: Loop Filter"),
+
+        HANDLE_AV1_BS_PARAM(WriteIVFHeaders,       OPT_TRI_STATE, "on/off: Insertion IVF container headers to output stream"),
 
         HANDLE_AV1_AUX_DATA(Cdef.CdefDampingMinus3, OPT_UINT_8, "0-3"),
         HANDLE_AV1_AUX_DATA(Cdef.CdefBits, OPT_UINT_8, "0-3"),
@@ -707,6 +710,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     m_bSSIMMode     = false;
     m_bYuvDumpMode  = false;
     m_bResetParamsStart = false;
+
+    m_bPerFrameParamsStart = false;
+    m_nFrame = 0;
 
     m_BitRate = 0;
     m_MaxBitrate = 0;
@@ -2814,6 +2820,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extVP9Param.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP9Param);
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (!m_extAV1BsParam.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
+        m_components[eREN].m_extParams.push_back(m_extAV1BsParam);
     if (!m_extAV1Param.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
         m_components[eREN].m_extParams.push_back(m_extAV1Param);
     if (!m_extAV1AuxData.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)

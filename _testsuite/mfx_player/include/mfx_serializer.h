@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2021 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -692,6 +692,24 @@ protected:
     virtual void ConstructValues () const;
 };
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
+template<>
+class MFXStructureRef <mfxExtAV1BitstreamParam>
+    : public MFXStructureBase<mfxExtAV1BitstreamParam>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAV1BitstreamParam>((mfxExtAV1BitstreamParam &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtAV1BitstreamParam & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtAV1BitstreamParam>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
 template<>
 class MFXStructureRef <mfxExtAV1Param>
     : public MFXStructureBase<mfxExtAV1Param>

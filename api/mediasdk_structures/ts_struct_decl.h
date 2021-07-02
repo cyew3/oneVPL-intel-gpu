@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 - 2020 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014 - 2021 Intel Corporation. All Rights Reserved.
 //
 
 STRUCT(mfxI16Pair,
@@ -1255,6 +1255,11 @@ STRUCT(mfxExtAV1Param,
     FIELD_T(mfxU8, SuperresScaleDenominator)
     FIELD_T(mfxU8, StillPictureMode)
     FIELD_T(mfxU16, SwitchInterval)
+)
+
+STRUCT(mfxExtAV1BitstreamParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, WriteIVFHeaders)
 )
 
 STRUCT(mfxExtAV1AuxData_Cdef,

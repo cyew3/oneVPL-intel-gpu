@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2020 Intel Corporation
+// Copyright (c) 2014-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -417,6 +417,7 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1FilmGrainParam      ,256  )
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1BitstreamParam      ,72   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1Param               ,1124 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1AuxData             ,168  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1SegmentParam           ,46   )
@@ -545,6 +546,7 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1FilmGrainParam      ,256 )
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1BitstreamParam      ,72   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1Param               ,1124 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1AuxData             ,168  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1SegmentParam           ,46   )
@@ -1853,6 +1855,9 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrOffset                      ,168  )
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1BitstreamParam            ,Header                        ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1BitstreamParam            ,WriteIVFHeaders               ,8    )
+
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameWidth                    ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameHeight                   ,10   )
@@ -2737,6 +2742,9 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrOffset                      ,168  )
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1BitstreamParam            ,Header                        ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1BitstreamParam            ,WriteIVFHeaders               ,8    )
+
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameWidth                    ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameHeight                   ,10   )

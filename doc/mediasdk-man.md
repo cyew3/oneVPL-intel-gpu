@@ -7625,6 +7625,35 @@ Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure
 
 This structure is available since SDK API **TBD**.
 
+## <a id='mfxExtAV1BitstreamParam'>mfxExtAV1BitstreamParam</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 WriteIVFHeaders; /*!< Tri-state option to control IVF headers insertion, default is ON. */
+
+    mfxU16 reserved[31];
+} mfxExtAV1BitstreamParam;
+```
+
+**Description**
+
+Attached to the [mfxVideoParam](#mfxVideoParam) structure extends AV1 encoder with more parameter control to encode frame.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`          | Must be [MFX_EXTBUFF_AV1_BITSTREAM_PARAM](#ExtendedBufferID).
+`WriteIVFHeaders`          | Turn this option ON to make encoder insert IVF container headers to output stream. NumFrame field of IVF sequence header will be zero, it’s responsibility of application to update it with correct value.<br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 ## <a id='mfxExtAV1Segmentation'>mfxExtAV1Segmentation</a>
 
 **Definition**

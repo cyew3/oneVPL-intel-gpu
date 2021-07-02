@@ -82,6 +82,14 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(mfx.FrameInfo.ChromaFormat);
     });
 
+    blocks.m_ebCopySupported[MFX_EXTBUFF_AV1_BITSTREAM_PARAM].emplace_back(
+        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
+    {
+        const auto& buf_src = *(const mfxExtAV1BitstreamParam*)pSrc;
+        auto& buf_dst = *(mfxExtAV1BitstreamParam*)pDst;
+        MFX_COPY_FIELD(WriteIVFHeaders);
+    });
+
     blocks.m_ebCopySupported[MFX_EXTBUFF_AV1_PARAM].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -90,7 +98,6 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(FrameWidth);
         MFX_COPY_FIELD(FrameHeight);
 
-        MFX_COPY_FIELD(WriteIVFHeaders);
         MFX_COPY_FIELD(UseAnnexB);
         MFX_COPY_FIELD(PackOBUFrame);
         MFX_COPY_FIELD(InsertTemporalDelimiter);
@@ -352,6 +359,17 @@ void General::SetInherited(ParamInheritance& par)
     auto& ebReset = *(TYPE*)pDst;
 #define INHERIT_OPT(OPT) InheritOption(ebInit.OPT, ebReset.OPT);
 
+    par.m_ebInheritDefault[MFX_EXTBUFF_AV1_BITSTREAM_PARAM].emplace_back(
+        [](const mfxVideoParam& /*parInit*/
+            , const mfxExtBuffer* pSrc
+            , const mfxVideoParam& /*parReset*/
+            , mfxExtBuffer* pDst)
+    {
+        INIT_EB(mfxExtAV1BitstreamParam);
+
+        INHERIT_OPT(WriteIVFHeaders);
+    });
+
     par.m_ebInheritDefault[MFX_EXTBUFF_AV1_PARAM].emplace_back(
         [](const mfxVideoParam& /*parInit*/
             , const mfxExtBuffer* pSrc
@@ -359,7 +377,6 @@ void General::SetInherited(ParamInheritance& par)
             , mfxExtBuffer* pDst)
     {
         INIT_EB(mfxExtAV1Param);
-        INHERIT_OPT(WriteIVFHeaders);
         INHERIT_OPT(UseAnnexB);
         INHERIT_OPT(PackOBUFrame);
         INHERIT_OPT(InsertTemporalDelimiter);
@@ -2287,8 +2304,8 @@ inline void SetTaskInsertHeaders(
     , const mfxVideoParam& par
     , bool& insertIVFSeq)
 {
-    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-    if (IsOn(av1Par.WriteIVFHeaders))
+    const mfxExtAV1BitstreamParam& bsPar = ExtBuffer::Get(par);
+    if (IsOn(bsPar.WriteIVFHeaders))
         SetTaskIVFHeaderInsert(task, insertIVFSeq);
 
     SetTaskTDHeaderInsert(task, prevTask, par);
@@ -2301,6 +2318,7 @@ inline void SetTaskInsertHeaders(
     if (!task.FramesToShow.empty())
         task.InsertHeaders |= INSERT_REPEATED;
 
+    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
     if (IsOn(av1Par.PackOBUFrame))
         task.InsertHeaders |= INSERT_FRM_OBU;
 }
@@ -2828,6 +2846,12 @@ void General::SetDefaults(
     SetDefault(fi.CropW, fi.Width);
     SetDefault(fi.CropH, fi.Height);
 
+    mfxExtAV1BitstreamParam* pBsPar = ExtBuffer::Get(par);
+    if (pBsPar != nullptr)
+    {
+        SetDefault(pBsPar->WriteIVFHeaders, MFX_CODINGOPTION_ON);
+    }
+
     mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
     if (pAV1Par != nullptr)
     {
@@ -2847,7 +2871,6 @@ void General::SetDefaults(
 
     if (pAV1Par)
     {
-        SetDefault(pAV1Par->WriteIVFHeaders, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->UseAnnexB, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->PackOBUFrame, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->InsertTemporalDelimiter, MFX_CODINGOPTION_ON);

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2021 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -87,10 +87,11 @@ protected:
     MFXExtBufferPtr<mfxExtCodingOptionHEVC>  m_extCodingOptionsHEVC;
     MFXExtBufferPtr<mfxExtCodingOptionAV1E>  m_extCodingOptionsAV1E;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    MFXExtBufferPtr<mfxExtAV1Param>         m_extAV1Param;
-    MFXExtBufferPtr<mfxExtAV1AuxData>       m_extAV1AuxData;
-    MFXExtBufferPtr<mfxExtAV1Segmentation>  m_extAV1Segmentation;
-    std::vector<std::unique_ptr<mfxU8>>     m_segMaps;
+    MFXExtBufferPtr<mfxExtAV1BitstreamParam> m_extAV1BsParam;
+    MFXExtBufferPtr<mfxExtAV1Param>          m_extAV1Param;
+    MFXExtBufferPtr<mfxExtAV1AuxData>        m_extAV1AuxData;
+    MFXExtBufferPtr<mfxExtAV1Segmentation>   m_extAV1Segmentation;
+    std::vector<std::unique_ptr<mfxU8>>      m_segMaps;
 #endif
     MFXExtBufferPtr<mfxExtHEVCTiles> m_extHEVCTiles;
     MFXExtBufferPtr<mfxExtHEVCParam> m_extHEVCParam;

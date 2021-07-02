@@ -1165,13 +1165,14 @@ void Packer::QueryTask(const FeatureBlocks&, TPushQT Push)
                 BitstreamWriter bitstream(dst, bytesAvailable);
                 mfxU32 insertHeaders = INSERT_PPS;
                 tempFh.frame_to_show_map_idx = frame.FrameToShowMapIdx;
-                const mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
-                if (IsOn(av1Par.WriteIVFHeaders))
+                const mfxExtAV1BitstreamParam& bsPar = ExtBuffer::Get(vp);
+                if (IsOn(bsPar.WriteIVFHeaders))
                 {
                     insertHeaders |= INSERT_IVF_FRM;
                     PackIVF(bitstream, tempFh, insertHeaders, vp);
                 }
 
+                const mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
                 if (IsOn(av1Par.InsertTemporalDelimiter))
                 {
                     // Add temporal delimiter for shown frame

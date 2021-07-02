@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010 - 2020 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010 - 2021 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_serializer.cpp
 
@@ -595,6 +595,10 @@ void MFXStructureRef <mfxExtAV1Param>::ConstructValues() const
     SERIALIZE_INT(SuperresScaleDenominator);
     SERIALIZE_INT(StillPictureMode);
     SERIALIZE_INT(SwitchInterval);
+}
+void MFXStructureRef <mfxExtAV1BitstreamParam>::ConstructValues() const
+{
+    SERIALIZE_INT(WriteIVFHeaders);
 }
 void MFXStructureRef <mfxExtAV1AuxData>::ConstructValues() const
 {
@@ -1280,6 +1284,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_EXTBUFF_AV1_PARAM: {
             SerializeStruct(VM_STRING("AV1."), *(mfxExtAV1Param*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AV1_BITSTREAM_PARAM: {
+            SerializeStruct(VM_STRING("AV1BS."), *(mfxExtAV1BitstreamParam*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_AV1_AUXDATA: {
