@@ -216,7 +216,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         //direct access to mfx_videoparams
         HANDLE_GLOBAL_OPTION2("", pMFXParams->mfx., LowPower, OPT_TRI_STATE, "on/off low power mode (VDEnc)", NULL),
         HANDLE_MFX_INFO("",             BRCParamMultiplier,       "target bitrate = TargetKbps * BRCParamMultiplier"),
-        HANDLE_MFX_INFO("",             CodecProfile,             "Codec profile"),
         HANDLE_MFX_INFO("",             CodecLevel,               "Codec level"),
         HANDLE_MFX_INFO("-u|",          TargetUsage,              "1=BEST_QUALITY .. 7=BEST_SPEED"),
         HANDLE_MFX_INFO("-g|--keyint|", GopPicSize,               "GOP size (1 means I-frames only)"),
@@ -904,6 +903,25 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 }
             }
             continue;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-CodecProfile"), VM_STRING("")))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            if (isdigit(*argv[1]))
+            {
+                MFX_PARSE_INT(m_EncParams.mfx.CodecProfile, argv[1]);
+            }
+            else if (!vm_string_stricmp(argv[1], VM_STRING("main10sp")))
+            {
+                m_EncParams.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN10;
+                m_extHEVCParam->GeneralConstraintFlags = MFX_HEVC_CONSTR_REXT_ONE_PICTURE_ONLY;
+            }
+            else
+            {
+                PipelineTrace((VM_STRING("Codec Profile is not supported\n")));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            argv++;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-RefRaw"), VM_STRING("motion estimation on raw (input) frames")))
         {
