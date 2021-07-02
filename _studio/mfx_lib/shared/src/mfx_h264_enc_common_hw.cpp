@@ -1383,10 +1383,6 @@ bool MfxHwH264Encode::IsCmNeededForSCD(
 #if (MFX_VERSION >= 1026)
     // If frame in Sys memory then Cm is not needed
     useCm = !(video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(video);
-    useCm = useCm && !(video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY));
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 #endif
 
     return useCm;
@@ -1834,9 +1830,6 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #endif
         || id == MFX_EXTBUFF_MVC_SEQ_DESC
         || id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
-#endif
         || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
         || id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS
         || id == MFX_EXTBUFF_CODING_OPTION2
@@ -2109,11 +2102,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     }
 
     auto const supportedMemoryType =
-           (par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || (par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-        ;
+           (par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY);
 
     MFX_CHECK(supportedMemoryType || (par.Protected == 0), MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -2139,17 +2128,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     sts = CheckForAllowedH264SpecViolations(par);
     if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
         checkSts = sts;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(par);
-
-        mfxU32 numFrameMin = CalcNumFrameMin(par, hwCaps, platform);
-
-        MFX_CHECK(extOpaq.In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
@@ -2506,9 +2484,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
         if (   par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY
             && par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            && par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
             )
         {
             changed = true;
@@ -7996,9 +7971,6 @@ MfxVideoParam::MfxVideoParam()
     , m_extSpecModes()
 #endif
     , m_extVideoSignal()
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    , m_extOpaque()
-#endif
     , m_extMvcSeqDescr()
     , m_extPicTiming()
     , m_extTempLayers()
@@ -8296,9 +8268,6 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtSpecialEncodingModes, m_extSpecModes);
 #endif
     CONSTRUCT_EXT_BUFFER(mfxExtVideoSignalInfo,      m_extVideoSignal);
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    CONSTRUCT_EXT_BUFFER(mfxExtOpaqueSurfaceAlloc,   m_extOpaque);
-#endif
     // perform deep copy of the mfxExtMVCSeqDesc buffer
     InitExtBufHeader(m_extMvcSeqDescr);
     if (mfxExtMVCSeqDesc * buffer = GetExtBuffer(par))

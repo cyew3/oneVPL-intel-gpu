@@ -194,16 +194,6 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
         MFX_CHECK_NULL_PTR2(request, response);
         mfxFrameAllocRequest temp_request = *request;
 
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        // external allocator doesn't know how to allocate opaque surfaces
-        // we can treat opaque as internal
-        if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
-        {
-            temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
-            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-        }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
         // external allocator
         if (m_bSetExtFrameAlloc && !(request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
         {
@@ -654,26 +644,7 @@ mfxFrameSurface1* CommonCORE::GetNativeSurface(mfxFrameSurface1 *pOpqSurface, bo
     return 0;
 
 }
-mfxFrameSurface1* CommonCORE::GetOpaqSurface(mfxMemId mid, bool ExtendedSearch)
-{
-    if (0 == mid)
-        return 0;
 
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::GetOpaqSurface");
-    {
-        UMC::AutomaticUMCMutex guard(m_guard);
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetOpaqSurface");
-        OpqTbl_MemId::iterator opq_it = m_OpqTbl_MemId.find(mid);
-        if (m_OpqTbl_MemId.end() != opq_it) {
-            return opq_it->second;
-        }
-    }
-
-    if (ExtendedSearch)
-        return m_session->m_pOperatorCore->GetSurface(&VideoCORE::GetOpaqSurface, mid);
-
-    return 0;
-}
 mfxStatus CommonCORE::FreeMidArray(mfxFrameAllocator* pAlloc, mfxFrameAllocResponse *response)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -1762,39 +1733,8 @@ bool CommonCORE::CheckOpaqueRequest(mfxFrameAllocRequest *request,
     if (request->NumFrameMin != NumOpaqueSurface)
         return false;
 
-#if !defined(MFX_ENABLE_OPAQUE_MEMORY)
     std::ignore = ExtendedSearch;
     return false;
-#else
-    if (!(request->Type  & MFX_MEMTYPE_OPAQUE_FRAME))
-        return false;
-
-    if (m_OpqTbl.size())
-    {
-        OpqTbl::iterator oqp_it;
-        bool isOpaqAllocated = false;
-        mfxU32 i = 0;
-        // each opaq surface has correspondence in already allocated OR
-        // no one opaq surface sholud already allocated
-        for (;i < request->NumFrameMin;i++)
-        {
-            oqp_it = m_OpqTbl.find(pOpaqueSurface[i]);
-            if (oqp_it != m_OpqTbl.end())
-            {
-                isOpaqAllocated = true;
-            }
-            else if (isOpaqAllocated)
-                return false;
-        }
-    }
-    if (ExtendedSearch)// try to find in another cores
-    {
-        bool sts = m_session->m_pOperatorCore->CheckOpaqRequest(request, pOpaqueSurface, NumOpaqueSurface);
-        return sts;
-    }
-
-    return true;
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 }
 
 bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,

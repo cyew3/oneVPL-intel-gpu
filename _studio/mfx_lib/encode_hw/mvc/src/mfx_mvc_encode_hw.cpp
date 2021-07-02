@@ -784,11 +784,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     auto const supportedMemoryType =
            inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
-        ;
+        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY;
     MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_ENCODE_CAPS hwCaps = {};
@@ -822,12 +818,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
-        else
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-            request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
     // get FrameInfo from original VideoParam
@@ -898,9 +889,6 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
     mfxExtCodingOption *       extOpt  = GetExtBuffer(m_video);
 // MVC BD }
     mfxExtMVCSeqDesc *         extMvc  = GetExtBuffer(m_video);
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
-#endif
 
 // MVC BD {
     m_numEncs = 1;
@@ -965,35 +953,9 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
         }
 // MVC BD }
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        request.Type        = extOpaq->In.Type;
-        request.NumFrameMin = extOpaq->In.NumSurface;
-
-        sts = m_opaqResponse.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
-        MFX_CHECK_STS(sts);
-
-        if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-        {
-            request.Type        = MFX_MEMTYPE_D3D_INT;
-            request.NumFrameMin = mfxU16(m_numEncs ? extOpaq->In.NumSurface / extMvc->NumView : extOpaq->In.NumSurface); // FIXME: NumFrameMin should be devided by NumView if m_numEncs > 1
-// MVC BD {
-            for (mfxU32 i = 0; i < m_numEncs; i ++)
-            {
-                sts = m_raw[i].Alloc(m_core, request);
-                MFX_CHECK_STS(sts);
-            }
-// MVC BD }
-        }
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     m_inputFrameType =
             m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-#endif
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -1086,15 +1048,6 @@ mfxStatus ImplementationMvc::Reset(mfxVideoParam *par)
 #endif
 
     MfxVideoParam newPar(*par);
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc * optOpaqNew = GetExtBuffer(newPar);
-    mfxExtOpaqueSurfaceAlloc * optOpaqOld = GetExtBuffer(m_video);
-    MFX_CHECK(
-        optOpaqOld->In.Type       == optOpaqNew->In.Type       &&
-        optOpaqOld->In.NumSurface == optOpaqNew->In.NumSurface,
-        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     InheritDefaultValues(m_video, newPar, m_ddiCaps);
 
@@ -1221,22 +1174,6 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         bs,
         m_core->IsExternalFrameAllocator(), m_ddiCaps);
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if (surface && m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        //mfxFrameSurface1 * opaqSurf = surface;
-        surface = m_core->GetNativeSurface(inSurf);
-        if (surface == 0)
-            return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        surface->Info            = inSurf->Info;
-        surface->Data.TimeStamp  = inSurf->Data.TimeStamp;
-        surface->Data.FrameOrder = inSurf->Data.FrameOrder;
-        surface->Data.Corrupted  = inSurf->Data.Corrupted;
-        surface->Data.DataFlag   = inSurf->Data.DataFlag;
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     MvcTask * task = 0;
     mfxStatus assignSts = m_taskMan.AssignTask(m_video, ctrl, surface, bs, task);

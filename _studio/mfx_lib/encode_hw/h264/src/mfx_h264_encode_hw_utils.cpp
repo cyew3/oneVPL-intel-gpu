@@ -1070,16 +1070,6 @@ void TaskManager::Init(
 
     m_video = video;
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
-        m_video.IOPattern = (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-            ? mfxU16(MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-            : mfxU16(MFX_IOPATTERN_IN_VIDEO_MEMORY);
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
     m_numReorderFrames = GetNumReorderFrames(video);
 
     m_dpb.Resize(0);
@@ -4990,17 +4980,9 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             if (checkSts < MFX_ERR_NONE) { return checkSts; }
         }
 
-#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
-        bool opaq = false;
-#else
-        mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(video);
-        bool opaq = extOpaq.In.Surfaces != 0;
-#endif
-
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.Pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator || opaq, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK((surface->Data.Y == 0 && surface->Data.MemId == 0) || !opaq, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Info.Width >= video.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(surface->Info.Height >= video.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
 

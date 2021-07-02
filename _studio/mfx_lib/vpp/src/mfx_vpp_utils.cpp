@@ -118,9 +118,6 @@ const mfxU32 g_TABLE_CONFIG [] =
 
 const mfxU32 g_TABLE_EXT_PARAM [] =
 {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-#endif
     MFX_EXTBUFF_MVC_SEQ_DESC,
 
     MFX_EXTBUFF_VPP_DONOTUSE,
@@ -2042,84 +2039,6 @@ mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
 
 } // mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-mfxStatus CheckOpaqMode( mfxVideoParam* par, bool bOpaqMode[2] )
-{
-    if ( (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) || (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) )
-    {
-        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = 0;
-
-        pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        if (!pOpaqAlloc)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-        else
-        {
-            if( par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY )
-            {
-                if (!(pOpaqAlloc->In.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)) && !(pOpaqAlloc->In.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
-                {
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                }
-
-                if ((pOpaqAlloc->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (pOpaqAlloc->In.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)))
-                {
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                }
-
-                bOpaqMode[VPP_IN] = true;
-            }
-
-            if( par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY )
-            {
-                if (!(pOpaqAlloc->Out.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)) && !(pOpaqAlloc->Out.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
-                {
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                }
-
-                if ((pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (pOpaqAlloc->Out.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)))
-                {
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                }
-
-                bOpaqMode[VPP_OUT] = true;
-            }
-        }
-    }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus CheckOpaqMode( mfxVideoParam* par, bool bOpaqMode[2] )
-
-
-mfxStatus GetOpaqRequest( mfxVideoParam* par, bool bOpaqMode[2], mfxFrameAllocRequest requestOpaq[2] )
-{
-    if( bOpaqMode[VPP_IN] || bOpaqMode[VPP_OUT] )
-    {
-        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBufferInternal(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        if( bOpaqMode[VPP_IN] )
-        {
-            requestOpaq[VPP_IN].Info = par->vpp.In;
-            requestOpaq[VPP_IN].NumFrameMin = requestOpaq[VPP_IN].NumFrameSuggested = (mfxU16)pOpaqAlloc->In.NumSurface;
-            requestOpaq[VPP_IN].Type = (mfxU16)pOpaqAlloc->In.Type;
-        }
-
-        if( bOpaqMode[VPP_OUT] )
-        {
-            requestOpaq[VPP_OUT].Info = par->vpp.Out;
-            requestOpaq[VPP_OUT].NumFrameMin = requestOpaq[VPP_OUT].NumFrameSuggested = (mfxU16)pOpaqAlloc->Out.NumSurface;
-            requestOpaq[VPP_OUT].Type = (mfxU16)pOpaqAlloc->Out.Type;
-        }
-    }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus GetOpaqRequest( mfxVideoParam* par, bool bOpaqMode[2], mfxFrameAllocRequest requestOpaq[2] )
-#endif
-
 mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, mfxU16* pOutMemType, bool bSWLib)
 {
     if ((IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) &&
@@ -2134,10 +2053,6 @@ mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, 
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxU16 nativeMemType = (bSWLib) ? (mfxU16)MFX_MEMTYPE_SYSTEM_MEMORY : (mfxU16)MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
-#endif
-
     if( IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY )
     {
           *pInMemType = MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
@@ -2146,12 +2061,6 @@ mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, 
     {
         *pInMemType = MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    else if (IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        *pInMemType = MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|nativeMemType;
-    }
-#endif
     else
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2165,12 +2074,6 @@ mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, 
     {
         *pOutMemType = MFX_MEMTYPE_FROM_VPPOUT|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    else if(IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-    {
-        *pOutMemType = MFX_MEMTYPE_FROM_VPPOUT|MFX_MEMTYPE_OPAQUE_FRAME|nativeMemType;
-    }
-#endif
     else
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;

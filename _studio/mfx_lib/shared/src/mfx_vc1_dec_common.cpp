@@ -251,11 +251,7 @@ mfxStatus MFXVC1DecCommon::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
             out->mfx.NumThread = in->mfx.NumThread;
 
         if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-            || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-#endif
-            )
+            || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
             out->IOPattern = in->IOPattern;
         else if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
             out->IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;

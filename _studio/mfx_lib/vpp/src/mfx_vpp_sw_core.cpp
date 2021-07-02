@@ -119,15 +119,6 @@ VideoVPPBase::VideoVPPBase(VideoCORE *core, mfxStatus* sts )
     , m_core(core)
     , m_pHWVPP()
 {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    /* opaque processing */
-    m_bOpaqMode[VPP_IN]  = false;
-    m_bOpaqMode[VPP_OUT] = false;
-
-    memset(&m_requestOpaq[VPP_IN], 0, sizeof(mfxFrameAllocRequest));
-    memset(&m_requestOpaq[VPP_OUT], 0, sizeof(mfxFrameAllocRequest));
-#endif
-
     /* common */
     m_bDynamicDeinterlace = false;
     memset(&m_stat, 0, sizeof(mfxVPPStat));
@@ -152,24 +143,6 @@ mfxStatus VideoVPPBase::Close(void)
     m_stat.NumFrame       = 0;
 
     m_bDynamicDeinterlace = false;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    /* opaque processing */
-
-    if( m_bOpaqMode[VPP_IN] )
-    {
-        m_requestOpaq[VPP_IN].NumFrameMin = m_requestOpaq[VPP_IN].NumFrameSuggested = 0;
-        m_requestOpaq[VPP_IN].Type = 0;
-    }
-
-    if( m_bOpaqMode[VPP_OUT] )
-    {
-        m_requestOpaq[VPP_OUT].NumFrameMin = m_requestOpaq[VPP_OUT].NumFrameSuggested = 0;
-        m_requestOpaq[VPP_OUT].Type = 0;
-    }
-
-    m_bOpaqMode[VPP_IN] = m_bOpaqMode[VPP_OUT] = false;
-#endif
 
     //m_numUsedFilters      = 0;
     m_pipelineList.resize(0);
@@ -222,43 +195,6 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
     /* step [1]: building stage of VPP pipeline */
     sts = GetPipelineList( par, m_pipelineList, true);
     MFX_CHECK_STS(sts);
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    // opaque configuration rules:
-    // (1) in case of OPAQ request VPP should ignore IOPattern and use extBuffer native memory type
-    // (2) VPP_IN abd VPP_OUT should be checked independently of one another
-    sts = CheckOpaqMode( par, m_bOpaqMode );
-    MFX_CHECK_STS( sts );
-
-    if( m_bOpaqMode[VPP_IN] || m_bOpaqMode[VPP_OUT] )
-    {
-        sts = GetOpaqRequest( par, m_bOpaqMode, m_requestOpaq);
-        MFX_CHECK_STS( sts );
-
-        // VPP controls OPAQUE request.
-        // will be combined with SW::CreatePipeline() to prevent multu run of QueryIOSurf()
-        {
-            mfxFrameAllocRequest  cntrlRequest[2];
-            sts = QueryIOSurf(m_core, par, cntrlRequest);
-            VPP_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-            MFX_CHECK_STS( sts );
-
-            if( m_bOpaqMode[VPP_IN] &&
-                (m_requestOpaq[VPP_IN].NumFrameMin < cntrlRequest[VPP_IN].NumFrameMin ||
-                m_requestOpaq[VPP_IN].NumFrameSuggested < cntrlRequest[VPP_IN].NumFrameSuggested) )
-            {
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-            }
-
-            if( m_bOpaqMode[VPP_OUT] &&
-                (m_requestOpaq[VPP_OUT].NumFrameMin < cntrlRequest[VPP_OUT].NumFrameMin ||
-                m_requestOpaq[VPP_OUT].NumFrameSuggested < cntrlRequest[VPP_OUT].NumFrameSuggested) )
-            {
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-            }
-        }
-    }
-#endif
 
     sts = InternalInit(par);
     if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts)
@@ -928,12 +864,6 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                         }
                         //--------------------------------------
                     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                    else if( MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION == in->ExtParam[i]->BufferId )
-                    {
-                        // No specific checks for Opaque ext buffer at the moment.
-                    }
-#endif
 #if defined(_WIN32) || defined(_WIN64)
                     else if (MFX_EXTBUFF_MVC_SEQ_DESC == in->ExtParam[i]->BufferId)
                     {
@@ -1299,51 +1229,6 @@ mfxStatus VideoVPPBase::Reset(mfxVideoParam *par)
     }
     //-----------------------------------------------------
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    /* Opaque */
-    if( m_bOpaqMode[VPP_IN] || m_bOpaqMode[VPP_OUT] )
-    {
-        bool bLocalOpaqMode[2] = {false, false};
-
-        sts = CheckOpaqMode( par, bLocalOpaqMode );
-        MFX_CHECK_STS( sts );
-
-        if( bLocalOpaqMode[VPP_IN] && !m_bOpaqMode[VPP_IN] )
-        {
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        }
-
-        if( bLocalOpaqMode[VPP_OUT] && !m_bOpaqMode[VPP_OUT] )
-        {
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        }
-
-        if( bLocalOpaqMode[VPP_IN] || bLocalOpaqMode[VPP_OUT] )
-        {
-            mfxFrameAllocRequest localOpaqRequest[2];
-            sts = GetOpaqRequest( par, bLocalOpaqMode, localOpaqRequest);
-            MFX_CHECK_STS( sts );
-
-            if( bLocalOpaqMode[VPP_IN] )
-            {
-                if ( m_requestOpaq[VPP_IN].NumFrameMin != localOpaqRequest[VPP_IN].NumFrameMin ||
-                    m_requestOpaq[VPP_IN].NumFrameSuggested != localOpaqRequest[VPP_IN].NumFrameSuggested )
-                {
-                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-                }
-            }
-            if( bLocalOpaqMode[VPP_OUT] )
-            {
-                if ( m_requestOpaq[VPP_OUT].NumFrameMin != localOpaqRequest[VPP_OUT].NumFrameMin ||
-                    m_requestOpaq[VPP_OUT].NumFrameSuggested != localOpaqRequest[VPP_OUT].NumFrameSuggested )
-                {
-                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-                }
-            }
-        }
-    }// Opaque
-#endif
-
     bool isCompositionModeInNewParams = IsCompositionMode(par);
     // Enabling/disabling composition via Reset() doesn't work currently.
     // This is a workaround to prevent undefined behavior.
@@ -1437,9 +1322,6 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     VideoVPPHW::IOMode mode = VideoVPPHW::GetIOMode(par
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        , m_requestOpaq
-#endif
     );
 
     m_pHWVPP.reset(new VideoVPPHW(mode, m_core));

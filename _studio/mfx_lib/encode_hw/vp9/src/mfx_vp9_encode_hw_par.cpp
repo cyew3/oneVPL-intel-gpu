@@ -37,9 +37,6 @@ namespace MfxHwVP9Encode
 bool IsExtBufferSupportedInInit(mfxU32 id)
 {
     return id == MFX_EXTBUFF_VP9_PARAM
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
-#endif
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_DDI // RefreshFrameContext is used by driver
@@ -1000,11 +997,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     if (   par.IOPattern
         && par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY
-        && par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        && par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
-        )
+        && par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         par.IOPattern = 0;
         unsupported = true;
@@ -1489,17 +1482,6 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc& opaq = GetExtBufferRef(par);
-    if (par.IOPattern &&
-        par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY
-        && opaq.In.NumSurface)
-    {
-        opaq.In.NumSurface = 0;
-        changed = true;
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
     mfxU16 width = extPar.FrameWidth ? extPar.FrameWidth : fi.Width;
     mfxU16 height = extPar.FrameHeight ? extPar.FrameHeight : fi.Height;
 
@@ -1842,20 +1824,6 @@ mfxStatus CheckParametersAndSetDefaults(
         MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    // (5) opaque memory allocation
-    if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(par);
-        if (opaq.In.NumSurface == 0 ||
-            opaq.In.Surfaces == 0 ||
-            (opaq.In.Type & MFX_MEMTYPE_SYS_OR_D3D) == 0)
-        {
-            MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
-        }
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
     // (6) Mandatory segmentation parameters
     mfxExtVP9Segmentation const & seg = GetExtBufferRef(par);
     if (AnyMandatorySegMapParam(seg) && seg.NumSegments != 0 && !AllMandatorySegMapParams(seg))
@@ -1921,13 +1889,6 @@ mfxStatus CheckSurface(
     mfxU32 initHeight,
     ENCODE_CAPS_VP9 const &caps)
 {
-#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
-    bool isOpaq = false;
-#else
-    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
-    bool isOpaq = video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && extOpaq.In.NumSurface > 0;
-#endif //!MFX_ENABLE_OPAQUE_MEMORY
-
     // check that surface contains valid data
     MFX_CHECK(CheckFourcc(surface.Info.FourCC, caps), MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -1941,10 +1902,6 @@ mfxStatus CheckSurface(
             MFX_CHECK(surface.Data.U != 0 || (surface.Data.MemId && LumaIsNull(&surface)), MFX_ERR_NULL_PTR);
             MFX_CHECK(surface.Data.V != 0 || (surface.Data.MemId && LumaIsNull(&surface)), MFX_ERR_NULL_PTR);
         }
-    }
-    else if (isOpaq == false)
-    {
-        MFX_CHECK(surface.Data.MemId != 0, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     const mfxExtVP9Param& extPar = GetExtBufferRef(video);

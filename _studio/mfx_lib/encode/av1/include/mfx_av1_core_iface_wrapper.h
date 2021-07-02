@@ -108,130 +108,6 @@ static mfxStatus mfxCOREGetFrameHDL1(mfxHDL pthis, mfxFrameData *fd, mfxHDL *han
     return mfxRes;
 } // mfxStatus mfxCOREGetFrameHDL(mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle)
 
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-static mfxStatus mfxCOREMapOpaqueSurface1(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
-{
-    VideoCORE* pVCore = (VideoCORE*)pthis;
-    mfxStatus mfxRes;
-
-    MFX_CHECK(pVCore, MFX_ERR_NOT_INITIALIZED);
-
-    CommonCORE *pCore = (CommonCORE *)pVCore->QueryCoreInterface(MFXIVideoCORE_GUID);
-    if (!pCore)
-        return MFX_ERR_INVALID_HANDLE;
-
-    try
-    {
-        if (!op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        if (!*op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        mfxFrameAllocRequest  request;
-        mfxFrameAllocResponse response;
-
-        request.Type = (mfxU16)type;
-        request.NumFrameMin = request.NumFrameSuggested = (mfxU16)num;
-        request.Info = op_surf[0]->Info;
-
-        mfxRes = pCore->AllocFrames(&request, &response, op_surf, num);
-        MFX_CHECK_STS(mfxRes);
-
-        pCore->AddPluginAllocResponse(response);
-
-        return mfxRes;
-
-    }
-    // handle error(s)
-    catch (...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
-
-} // mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
-
-static mfxStatus mfxCOREUnmapOpaqueSurface1(mfxHDL pthis, mfxU32  num, mfxU32, mfxFrameSurface1 **op_surf)
-{
-    VideoCORE* pVCore = (VideoCORE*)pthis;
-    mfxStatus mfxRes;
-
-    MFX_CHECK(pVCore, MFX_ERR_NOT_INITIALIZED);
-
-    CommonCORE *pCore = (CommonCORE *)pVCore->QueryCoreInterface(MFXIVideoCORE_GUID);
-    if (!pCore)
-        return MFX_ERR_INVALID_HANDLE;
-
-    try
-    {
-        if (!op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        if (!*op_surf)
-            return MFX_ERR_MEMORY_ALLOC;
-
-        mfxFrameAllocResponse response;
-        mfxFrameSurface1 *pSurf = NULL;
-
-        std::vector<mfxMemId> mids(num);
-        response.mids = &mids[0];
-        response.NumFrameActual = (mfxU16)num;
-        for (mfxU32 i = 0; i < num; i++)
-        {
-            pSurf = pCore->GetNativeSurface(op_surf[i]);
-            if (!pSurf)
-                return MFX_ERR_INVALID_HANDLE;
-
-            response.mids[i] = pSurf->Data.MemId;
-        }
-
-        if (!pCore->GetPluginAllocResponse(response))
-            return MFX_ERR_INVALID_HANDLE;
-
-        mfxRes = pVCore->FreeFrames(&response);
-        return mfxRes;
-
-    }
-    // handle error(s)
-    catch (...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
-
-} // mfxStatus mfxCOREUnmapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf)
-#endif
-
-static mfxStatus mfxCOREGetOpaqueSurface1(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf)
-{
-    VideoCORE* pCore = (VideoCORE*)pthis;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    MFX_CHECK(pCore, MFX_ERR_NOT_INITIALIZED);
-
-    try
-    {
-        *op_surf = pCore->GetOpaqSurface(surf->Data.MemId);
-        if (!*op_surf)
-            return MFX_ERR_INVALID_HANDLE;
-
-        return mfxRes;
-    }
-    // handle error(s)
-    catch (...)
-    {
-        // set the default error value
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
-}// mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
-
 static mfxStatus mfxCOREGetRealSurface1(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
 {
     VideoCORE* pCore = (VideoCORE*)pthis;
@@ -418,12 +294,7 @@ static void InitCoreInterface1(mfxCoreInterface *pCoreInterface, const VideoCORE
     pCoreInterface->DecreaseReference = &mfxCORE1DecreaseReference;
     pCoreInterface->CopyFrame = &mfxCORE1CopyFrame;
     pCoreInterface->CopyBuffer = &mfxCORE1CopyBuffer;
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-    pCoreInterface->MapOpaqueSurface = &mfxCOREMapOpaqueSurface1;
-    pCoreInterface->UnmapOpaqueSurface = &mfxCOREUnmapOpaqueSurface1;
-#endif //MFX_ENABLE_OPAQUE_MEMORY
     pCoreInterface->GetRealSurface = &mfxCOREGetRealSurface1;
-    pCoreInterface->GetOpaqueSurface = &mfxCOREGetOpaqueSurface1;
     pCoreInterface->CreateAccelerationDevice = &mfxCORECreateAccelerationDevice1;
     pCoreInterface->QueryPlatform = &mfxCOREQueryPlatform1;
 
@@ -509,12 +380,6 @@ public:
             return MFX_ERR_NULL_PTR;
         }
         return m_core.GetRealSurface(m_core.pthis, op_surf, surf);
-    }
-    virtual mfxStatus GetOpaqueSurface(mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf) {
-        if (!IsCoreSet()) {
-            return MFX_ERR_NULL_PTR;
-        }
-        return m_core.GetOpaqueSurface(m_core.pthis, surf, op_surf);
     }
     virtual mfxStatus CreateAccelerationDevice(mfxHandleType type, mfxHDL *handle) {
         if (!IsCoreSet()) {

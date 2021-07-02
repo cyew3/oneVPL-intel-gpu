@@ -53,9 +53,6 @@ mfxStatus VideoVPPMain::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFram
 VideoVPPMain::VideoVPPMain(VideoCORE *core, mfxStatus* sts )
 : m_core( core )
 {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    m_bOpaqMode[VPP_IN] = m_bOpaqMode[VPP_OUT] = false;
-#endif
 
     *sts   = MFX_ERR_NONE;
 
@@ -104,60 +101,6 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
 
     internalSts = mfxSts;
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    // opaque configuration    
-    mfxSts = CheckOpaqMode( par, m_bOpaqMode );
-    MFX_CHECK_STS( mfxSts );
-
-    if( m_bOpaqMode[VPP_IN] || m_bOpaqMode[VPP_OUT] )
-    {
-        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBufferInternal(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        mfxFrameAllocRequest  requestOpaq;
-
-        if( m_bOpaqMode[VPP_IN] )
-        {
-            requestOpaq.Info = par->vpp.In;
-            requestOpaq.NumFrameMin = requestOpaq.NumFrameSuggested = (mfxU16)pOpaqAlloc->In.NumSurface;
-            requestOpaq.Type = (mfxU16)(pOpaqAlloc->In.Type|MFX_MEMTYPE_FROM_VPPIN);
-
-            mfxSts = m_core->AllocFrames(&(requestOpaq),
-                                         &(m_responseOpaq[VPP_IN]),
-                                         pOpaqAlloc->In.Surfaces,
-                                         pOpaqAlloc->In.NumSurface);
-            MFX_CHECK_STS( mfxSts );
-        }
-
-        if( m_bOpaqMode[VPP_OUT] )
-        {
-            requestOpaq.Info = par->vpp.Out;
-            requestOpaq.NumFrameMin = requestOpaq.NumFrameSuggested = (mfxU16)pOpaqAlloc->Out.NumSurface;
-            requestOpaq.Type = (mfxU16)(pOpaqAlloc->Out.Type|MFX_MEMTYPE_FROM_VPPOUT);
-
-            mfxSts = m_core->AllocFrames(&(requestOpaq),
-                                         &(m_responseOpaq[VPP_OUT]),
-                                         pOpaqAlloc->Out.Surfaces,
-                                         pOpaqAlloc->Out.NumSurface);
-
-            MFX_CHECK_STS( mfxSts );
-
-#if defined (MFX_VA_WIN)
-            // additional check for case when encoder allocates surfaces for vpp out
-            // check that for DX11 they have MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET BingFlags
-            if (MFX_HW_D3D11 == m_core->GetVAType() && !(requestOpaq.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-            {
-                if (!(requestOpaq.Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
-                {
-                    mfxSts = MFX_ERR_INVALID_VIDEO_PARAM;
-                }
-            }
-
-            MFX_CHECK_STS( mfxSts );
-#endif
-        }
-    }
-#endif
-
     m_impl = std::move(impl);
 
     return (MFX_ERR_NONE == mfxSts) ? internalSts : mfxSts;
@@ -174,22 +117,6 @@ mfxStatus VideoVPPMain::Close( void )
 
     m_impl->Close();
     m_impl.reset();
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    /* opaque processing */
-    if( m_bOpaqMode[VPP_IN] )
-    {
-        m_core->FreeFrames( &(m_responseOpaq[VPP_IN]) );
-        m_responseOpaq[VPP_IN].NumFrameActual  = 0;
-    }
-    if( m_bOpaqMode[VPP_OUT] )
-    {
-        m_core->FreeFrames( &(m_responseOpaq[VPP_OUT]) );
-        m_responseOpaq[VPP_OUT].NumFrameActual = 0;
-    }
-
-    m_bOpaqMode[VPP_IN] = m_bOpaqMode[VPP_OUT] = false;
-#endif
 
     return MFX_ERR_NONE;
 
@@ -215,20 +142,6 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if (in && m_bOpaqMode[VPP_IN])
-    {
-        if (in->Data.Y || in->Data.U || in->Data.V || in->Data.A || in->Data.MemId)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    if (out && m_bOpaqMode[VPP_OUT])
-    {
-        if (out->Data.Y || out->Data.U || out->Data.V || out->Data.A || out->Data.MemId)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-#endif
-
     mfxFrameSurface1* pInputNative  =  GetNativeSurface(in, VPP_IN);
     mfxFrameSurface1* pOutputNative =  GetNativeSurface(out, VPP_OUT);
 
@@ -239,22 +152,6 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
     }
 
     mfxStatus mfxSts = m_impl->VppFrameCheck( pInputNative, pOutputNative, aux, pEntryPoint, numEntryPoints );
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    // Check() updated out:frameInfo & out:Data. so we need sync in case of output opaq surface
-    if( m_bOpaqMode[VPP_OUT] && pOutputNative )
-    {
-        if( (MFX_ERR_NONE == mfxSts) ||
-            (MFX_ERR_MORE_DATA == mfxSts) ||
-            ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxSts) ||
-            (MFX_ERR_MORE_SURFACE == mfxSts) )
-        {
-            out->Data.FrameOrder = pOutputNative->Data.FrameOrder;
-            out->Data.TimeStamp  = pOutputNative->Data.TimeStamp;
-            out->Info = pOutputNative->Info;
-        }
-    }
-#endif
 
     return mfxSts;
 

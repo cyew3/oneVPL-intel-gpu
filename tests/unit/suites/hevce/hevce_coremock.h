@@ -50,7 +50,6 @@ public:
     virtual mfxStatus  UnlockExternalFrame(mfxMemId, mfxFrameData*, bool) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxMemId MapIdx(mfxMemId) override { return nullptr; }
     virtual mfxFrameSurface1* GetNativeSurface(mfxFrameSurface1*, bool = true) override { return nullptr; }
-    virtual mfxFrameSurface1* GetOpaqSurface(mfxMemId, bool = true) override { return nullptr; }
     virtual mfxStatus  IncreaseReference(mfxFrameData*, bool) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus  DecreaseReference(mfxFrameData*, bool) override { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus IncreasePureReference(mfxU16&) override { return MFX_ERR_UNSUPPORTED; }

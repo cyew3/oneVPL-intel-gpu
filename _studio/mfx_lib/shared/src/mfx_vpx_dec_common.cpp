@@ -297,32 +297,6 @@ namespace MFX_VPX_Utility
             {
                 sts = MFX_ERR_UNSUPPORTED;
             }
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            mfxExtOpaqueSurfaceAlloc *opaque_in  = (mfxExtOpaqueSurfaceAlloc *)mfx::GetExtBuffer(p_in->ExtParam, p_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-            mfxExtOpaqueSurfaceAlloc *opaque_out = (mfxExtOpaqueSurfaceAlloc *)mfx::GetExtBuffer(p_out->ExtParam, p_out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-            if (opaque_in && opaque_out)
-            {
-                MFX_CHECK(opaque_out->In.Surfaces && opaque_in->In.Surfaces, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-                opaque_out->In.Type = opaque_in->In.Type;
-                opaque_out->In.NumSurface = opaque_in->In.NumSurface;
-                if (opaque_in->In.Surfaces != opaque_out->In.Surfaces)
-                    std::copy_n(opaque_in->In.Surfaces, opaque_in->In.NumSurface, opaque_out->In.Surfaces);
-
-                MFX_CHECK(opaque_out->Out.Surfaces && opaque_in->Out.Surfaces, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-                opaque_out->Out.Type = opaque_in->Out.Type;
-                opaque_out->Out.NumSurface = opaque_in->Out.NumSurface;
-                if (opaque_in->Out.Surfaces != opaque_out->Out.Surfaces)
-                    std::copy_n(opaque_in->Out.Surfaces, opaque_in->Out.NumSurface, opaque_out->Out.Surfaces);
-            }
-            else
-            {
-                MFX_CHECK(!opaque_out && !opaque_in, MFX_ERR_UNDEFINED_BEHAVIOR);
-            }
-#endif // defined (MFX_ENABLE_OPAQUE_MEMORY)
         }
         else
         {
@@ -364,13 +338,6 @@ namespace MFX_VPX_Utility
             {
                 p_out->IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
             }
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            mfxExtOpaqueSurfaceAlloc * opaqueOut = (mfxExtOpaqueSurfaceAlloc *)mfx::GetExtBuffer(p_out->ExtParam, p_out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-            if (opaqueOut)
-            {
-            }
-#endif
         }
 
         return sts;
@@ -401,19 +368,11 @@ namespace MFX_VPX_Utility
             return false;
 
         if (!(p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-            && !(p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            && !(p_in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-#endif
-            )
+            && !(p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
             return false;
 
         if ((p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-            && (p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            && (p_in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-#endif
-            )
+            && (p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
             return false;
 
         if (codecId == MFX_CODEC_VP8)
@@ -515,12 +474,6 @@ namespace MFX_VPX_Utility
         {
             p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
         }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        else if (p_params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE;
-        }
-#endif
 
         return MFX_ERR_NONE;
     }

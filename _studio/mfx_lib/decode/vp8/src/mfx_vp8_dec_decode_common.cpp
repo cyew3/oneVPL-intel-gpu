@@ -272,32 +272,6 @@ mfxStatus MFX_VP8_Utility::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVide
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        mfxExtOpaqueSurfaceAlloc *opaque_in = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(p_in->ExtParam, p_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        mfxExtOpaqueSurfaceAlloc *opaque_out = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(p_out->ExtParam, p_out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        if (opaque_in && opaque_out)
-        {
-            MFX_CHECK(opaque_out->In.Surfaces && opaque_in->In.Surfaces, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-            opaque_out->In.Type = opaque_in->In.Type;
-            opaque_out->In.NumSurface = opaque_in->In.NumSurface;
-            if (opaque_in->In.Surfaces != opaque_out->In.Surfaces)
-                std::copy_n(opaque_in->In.Surfaces, opaque_in->In.NumSurface, opaque_out->In.Surfaces);
-
-            MFX_CHECK(opaque_out->Out.Surfaces && opaque_in->Out.Surfaces, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-            opaque_out->Out.Type = opaque_in->Out.Type;
-            opaque_out->Out.NumSurface = opaque_in->Out.NumSurface;
-            if (opaque_in->Out.Surfaces != opaque_out->Out.Surfaces)
-                std::copy_n(opaque_in->Out.Surfaces, opaque_in->Out.NumSurface, opaque_out->Out.Surfaces);
-        }
-        else
-        {
-            MFX_CHECK(!opaque_out && !opaque_in, MFX_ERR_UNDEFINED_BEHAVIOR);
-        }
-#endif
-
         if (GetPlatform(p_core, p_out) != p_core->GetPlatformType() && sts == MFX_ERR_NONE)
         {
             VM_ASSERT(GetPlatform(p_core, p_out) == MFX_PLATFORM_SOFTWARE);

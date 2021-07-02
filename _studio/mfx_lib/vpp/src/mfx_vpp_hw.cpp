@@ -1885,19 +1885,8 @@ mfxStatus  VideoVPPHW::CopyPassThrough(mfxFrameSurface1 *pInputSurface, mfxFrame
 
     if (m_pCore->IsExternalFrameAllocator())
     {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            srcPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
-        else
-#endif
-            srcPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            dstPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
-        else
-#endif
-            dstPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        srcPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        dstPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
     else
     {
@@ -2692,10 +2681,6 @@ mfxStatus VideoVPPHW::InitMCTF(const mfxFrameInfo& info, const IntMctfParams& Mc
         request.Type = MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
         request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            request.Type |= MFX_MEMTYPE_OPAQUE_FRAME;
-#endif
         request.NumFrameMin = request.NumFrameSuggested = (mfxU16)MctfQueueDepth;
         if (0 == request.NumFrameMin)
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2720,17 +2705,10 @@ mfxStatus VideoVPPHW::InitMCTF(const mfxFrameInfo& info, const IntMctfParams& Mc
         m_MctfMids.resize(MctfQueueDepth);
         m_MctfMfxAlocResponse.mids = &(m_MctfMids[0]);
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
-            sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, &(m_pMCTFSurfacePool[0]), MctfQueueDepth);
+        if (D3D_TO_SYS == m_ioMode || SYS_TO_SYS == m_ioMode) // [OUT == SYSTEM_MEMORY]
+            sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, false);
         else
-#endif
-        {
-            if (D3D_TO_SYS == m_ioMode || SYS_TO_SYS == m_ioMode) // [OUT == SYSTEM_MEMORY]
-                sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, false);
-            else
-                sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, false);
-        }
+            sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, false);
 
         if (m_MctfMfxAlocResponse.NumFrameActual != request.NumFrameMin)
             sts = MFX_ERR_MEMORY_ALLOC;
@@ -2778,17 +2756,8 @@ mfxStatus VideoVPPHW::GetFrameHandle(mfxFrameSurface1& surf, mfxHDLPair& handle,
 
     if ((IOMode::D3D_TO_D3D == m_ioMode || IOMode::SYS_TO_D3D == m_ioMode) && !bInternalAlloc && !m_isD3D9SimWithVideoMemOut)
     {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            MFX_SAFE_CALL(m_pCore->GetFrameHDL(surf, handle));
-        }
-        else
-#endif
-        {
-            //MFX_SAFE_CALL(m_pCore->GetFrameHDL(surf, handle));
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surf, handle, false));
-        }
+        //MFX_SAFE_CALL(m_pCore->GetFrameHDL(surf, handle));
+        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surf, handle, false));
     }
     else
     {
@@ -3491,9 +3460,6 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
     if ((D3D_TO_D3D == m_ioMode || SYS_TO_D3D == m_ioMode) && !m_isD3D9SimWithVideoMemIn)
     {
         if (
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
-#endif
             output.bForcedInternalAlloc
             || output.pSurf->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME
             )
@@ -3628,13 +3594,6 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
         }
         else
         {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            if ((m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)){
-                MFX_SAFE_CALL(m_pCore->GetFrameHDL(*surfQueue[i].pSurf, hdl));
-                bExternal = false;
-            }
-            else
-#endif
             {
                 MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(*surfQueue[i].pSurf, hdl));
                 bExternal = true;
@@ -3931,17 +3890,6 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
         inputSurfs[indx] = pTask->m_refList[pTask->bkwdRefCount + i].pSurf;
     }
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if(m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        for (i = 0; i < numSamples; ++i)
-        {
-            inputSurfs[i] = m_pCore->GetOpaqSurface(inputSurfs[i]->Data.MemId);
-            MFX_CHECK(inputSurfs[i], MFX_ERR_NULL_PTR);
-        }
-    }
-#endif
-
     mfxExtVPPVideoSignalInfo *vsi;
     for (i = 0; i < numSamples; i++)
     {
@@ -3986,10 +3934,6 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
 #endif
 
     mfxFrameSurface1 * outputSurf =
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY ?
-        m_pCore->GetOpaqSurface(pTask->output.pSurf->Data.MemId):
-#endif
         pTask->output.pSurf;
     MFX_CHECK(outputSurf, MFX_ERR_NULL_PTR);
     // Update Video Signal info params for output
@@ -4118,10 +4062,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     if (m_executeParams.iFieldProcessingMode != 0)
     {
         mfxFrameSurface1 * pInputSurface =
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ?
-            m_pCore->GetOpaqSurface(surfQueue[0].pSurf->Data.MemId):
-#endif
             surfQueue[0].pSurf;
         MFX_CHECK(pInputSurface, MFX_ERR_NULL_PTR);
 
@@ -4398,16 +4338,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
                 }
                 else
                 {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                    if (m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-                    {
-                        MFX_SAFE_CALL(m_pCore->GetFrameHDL(*surfQueue[frameIndex].pSurf, frameHandle));
-                    }
-                    else
-#endif
-                    {
-                        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(*surfQueue[frameIndex].pSurf, frameHandle));
-                    }
+                    MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(*surfQueue[frameIndex].pSurf, frameHandle));
                 }
                 // SCD detects scene change for field to be display.
                 // 30i->30p displays only first of current (frame N = field 2N)
@@ -6061,24 +5992,13 @@ mfxStatus ConfigureExecuteParams(
                             switch (videoParam.IOPattern)
                             {
                             case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                            case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
-                            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
-                            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
-#endif
                                 executeParams.mirroringPosition = MIRROR_WO_EXEC;
 
                                 break;
                             case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                            case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
-#endif
                                 executeParams.mirroringPosition = MIRROR_INPUT;
                                 break;
                             case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-#endif
                                 executeParams.mirroringPosition = MIRROR_OUTPUT;
                                 break;
                             case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
@@ -6710,11 +6630,7 @@ mfxStatus ConfigureExecuteParams(
 // UTILS
 //---------------------------------------------------------
 VideoVPPHW::IOMode   VideoVPPHW::GetIOMode(
-    mfxVideoParam *par
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    , mfxFrameAllocRequest* opaqReq
-#endif
-    )
+    mfxVideoParam *par)
 {
     IOMode mode = VideoVPPHW::ALL;
 
@@ -6739,76 +6655,6 @@ VideoVPPHW::IOMode   VideoVPPHW::GetIOMode(
 
         mode = VideoVPPHW::D3D_TO_D3D;
         break;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        // OPAQ support: we suggest that OPAQ means D3D for HW_VPP by default
-    case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-        {
-            mode = VideoVPPHW::D3D_TO_SYS;
-
-            if( opaqReq[VPP_IN].Type & MFX_MEMTYPE_SYSTEM_MEMORY )
-            {
-                mode = VideoVPPHW::SYS_TO_SYS;
-            }
-            break;
-        }
-
-    case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
-        {
-            mode = VideoVPPHW::D3D_TO_D3D;
-
-            if( opaqReq[VPP_IN].Type & MFX_MEMTYPE_SYSTEM_MEMORY )
-            {
-                mode = VideoVPPHW::SYS_TO_D3D;
-            }
-
-            break;
-        }
-
-    case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
-        {
-            mode = VideoVPPHW::D3D_TO_D3D;
-
-            if( (opaqReq[VPP_IN].Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqReq[VPP_OUT].Type & MFX_MEMTYPE_SYSTEM_MEMORY) )
-            {
-                mode = VideoVPPHW::SYS_TO_SYS;
-            }
-            else if( opaqReq[VPP_IN].Type & MFX_MEMTYPE_SYSTEM_MEMORY )
-            {
-                mode = VideoVPPHW::SYS_TO_D3D;
-            }
-            else if( opaqReq[VPP_OUT].Type & MFX_MEMTYPE_SYSTEM_MEMORY )
-            {
-                mode = VideoVPPHW::D3D_TO_SYS;
-            }
-
-            break;
-        }
-
-    case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
-        {
-            mode = VideoVPPHW::SYS_TO_D3D;
-
-            if( opaqReq[VPP_OUT].Type & MFX_MEMTYPE_SYSTEM_MEMORY )
-            {
-                mode = VideoVPPHW::SYS_TO_SYS;
-            }
-
-            break;
-        }
-
-    case MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
-        {
-            mode = VideoVPPHW::D3D_TO_D3D;
-
-            if( opaqReq[VPP_OUT].Type & MFX_MEMTYPE_SYSTEM_MEMORY )
-            {
-                mode = VideoVPPHW::D3D_TO_SYS;
-            }
-
-            break;
-        }
-#endif // defined (MFX_ENABLE_OPAQUE_MEMORY)
     }// switch ioPattern
 
     return mode;
@@ -7074,20 +6920,12 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 mfxStatus MfxFrameAllocResponse::Alloc(
     VideoCORE *            core
     , mfxFrameAllocRequest & req
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    , mfxFrameSurface1 **    opaqSurf
-    , mfxU32                 numOpaqSurf
-#endif
 )
 {
     req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
 
     mfxStatus sts = core->AllocFrames(&req
         , this
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        , opaqSurf
-        , numOpaqSurf
-#endif
     );
     MFX_CHECK_STS(sts);
 

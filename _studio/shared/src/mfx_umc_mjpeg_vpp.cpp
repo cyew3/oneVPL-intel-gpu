@@ -135,27 +135,16 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::Reset()
 mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpeg(const mfxVideoParam *params)
 {
     bool useInternalMem = false;
-    bool isOpaque = false;
 
     if(params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
         useInternalMem = true;
     }
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-    else if (params->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-    {
-        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        MFX_CHECK(pOpaqAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
-
-        useInternalMem = (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) != 0;
-        isOpaque = true;
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     if (IsD3D9Simulation(*m_pCore))
         useInternalMem = true;
 
-    m_pCc.reset(new VideoVppJpeg(m_pCore, useInternalMem, isOpaque));
+    m_pCc.reset(new VideoVppJpeg(m_pCore, useInternalMem));
 
     mfxStatus mfxSts;
     if (params->mfx.Rotation == MFX_ROTATION_90 || params->mfx.Rotation == MFX_ROTATION_270)
@@ -177,7 +166,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::InitVideoVppJpeg(const mfxVideoP
     return mfxSts;
 }
 
-mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::FindSurfaceByMemId(const UMC::FrameData* in, bool isOpaq,
+mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::FindSurfaceByMemId(const UMC::FrameData* in,
                                                                    const mfxHDLPair &hdlPair,
                                                                    mfxFrameSurface1 &out_surface)
 {
@@ -185,7 +174,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::FindSurfaceByMemId(const UMC::Fr
 
     UMC::FrameMemID index = in->GetFrameMID();
     mfxMemId memInter = m_frameDataInternal.GetSurface(index).Data.MemId;
-    mfxMemId memId = isOpaq?(memInter):(m_pCore->MapIdx(memInter));
+    mfxMemId memId = m_pCore->MapIdx(memInter);
 
     // if memid of in is same as memid of surface_work, StartPreparingToOutput() must not be called
     MFX_CHECK_WITH_ASSERT(!hdlPair.first || hdlPair.first != memId, MFX_ERR_UNSUPPORTED);
@@ -197,8 +186,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::FindSurfaceByMemId(const UMC::Fr
 mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameSurface1 *surface_work,
                                                                        UMC::FrameData* in,
                                                                        const mfxVideoParam *par,
-                                                                       mfxU16 *taskId,
-                                                                       bool isOpaq)
+                                                                       mfxU16 *taskId)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
     mfxStatus sts = MFX_ERR_NONE;
@@ -209,10 +197,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
     }
 
     mfxHDLPair hdlPair;
-    if(isOpaq)
-        sts = m_pCore->GetFrameHDL(surface_work->Data.MemId, (mfxHDL*)&hdlPair);
-    else
-        sts = m_pCore->GetExternalFrameHDL(surface_work->Data.MemId, (mfxHDL*)&hdlPair);
+    sts = m_pCore->GetExternalFrameHDL(surface_work->Data.MemId, (mfxHDL*)&hdlPair);
     if (sts == MFX_ERR_UNDEFINED_BEHAVIOR // nothing found by Get*FrameHDL()
         || sts == MFX_ERR_UNSUPPORTED)    // Get*FrameHDL() does not support obtaining OS-specific handle
     {
@@ -227,7 +212,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
     mfxFrameSurface1 srcSurface[2];
     for (int i = 0; i < 1 + (surface_work->Info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE); ++i)
     {
-        MFX_SAFE_CALL( FindSurfaceByMemId(&in[i], isOpaq, hdlPair, srcSurface[i]) );
+        MFX_SAFE_CALL( FindSurfaceByMemId(&in[i], hdlPair, srcSurface[i]) );
 
 #ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
         /* JPEG standard does not support crops as it is done in AVC, so:
@@ -325,8 +310,8 @@ void mfx_UMC_FrameAllocator_D3D_Converter::SetJPEGInfo(JPEG_Info * jpegInfo)
 }
 
 SurfaceSourceJPEG::SurfaceSourceJPEG(VideoCORE* core, const mfxVideoParam & video_param, eMFXPlatform platform, mfxFrameAllocRequest& request, mfxFrameAllocRequest& request_internal,
-    mfxFrameAllocResponse& response, mfxFrameAllocResponse& response_alien, void* opaq_surfaces, bool mapOpaq)
-    : SurfaceSource(core, video_param, platform, request, request_internal, response, response_alien, opaq_surfaces, mapOpaq, true)
+    mfxFrameAllocResponse& response, mfxFrameAllocResponse& response_alien)
+    : SurfaceSource(core, video_param, platform, request, request_internal, response, response_alien, true)
 {}
 
 void SurfaceSourceJPEG::SetJPEGInfo(JPEG_Info * jpegInfo)
@@ -375,7 +360,7 @@ mfxStatus SurfaceSourceJPEG::InitVideoVppJpeg(const mfxVideoParam *params)
 
         bool isD3DToSys = params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
-        m_pCc.reset(new VideoVppJpeg(m_core, isD3DToSys, false));
+        m_pCc.reset(new VideoVppJpeg(m_core, isD3DToSys));
 
         if (params->mfx.Rotation == MFX_ROTATION_90 || params->mfx.Rotation == MFX_ROTATION_270)
         {
@@ -397,7 +382,7 @@ mfxStatus SurfaceSourceJPEG::InitVideoVppJpeg(const mfxVideoParam *params)
     }
 }
 
-mfxStatus SurfaceSourceJPEG::FindSurfaceByMemId(const UMC::FrameData* in, bool isOpaq,
+mfxStatus SurfaceSourceJPEG::FindSurfaceByMemId(const UMC::FrameData* in,
     const mfxHDLPair &hdlPair,
     mfxFrameSurface1 &out_surface)
 {
@@ -426,15 +411,14 @@ mfxStatus SurfaceSourceJPEG::FindSurfaceByMemId(const UMC::FrameData* in, bool i
     }
     else
     {
-        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->FindSurfaceByMemId(in, isOpaq, hdlPair, out_surface);
+        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->FindSurfaceByMemId(in, hdlPair, out_surface);
     }
 }
 
 mfxStatus SurfaceSourceJPEG::StartPreparingToOutput(mfxFrameSurface1 *surface_work,
     UMC::FrameData* in,
     const mfxVideoParam *par,
-    mfxU16 *taskId,
-    bool isOpaq)
+    mfxU16 *taskId)
 {
     MFX_CHECK(m_redirect_to_msdk20 == !!m_surface20_cache_decoder_surfaces, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(!m_redirect_to_msdk20 == !!m_umc_allocator_adapter, MFX_ERR_NOT_INITIALIZED);
@@ -467,7 +451,7 @@ mfxStatus SurfaceSourceJPEG::StartPreparingToOutput(mfxFrameSurface1 *surface_wo
         mfxFrameSurface1 srcSurface[2];
         for (int i = 0; i < 1 + (surface_work->Info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE); ++i)
         {
-            MFX_SAFE_CALL(FindSurfaceByMemId(&in[i], isOpaq, hdlPair, srcSurface[i]));
+            MFX_SAFE_CALL(FindSurfaceByMemId(&in[i], hdlPair, srcSurface[i]));
 
 #ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
             /* JPEG standard does not support crops as it is done in AVC, so:
@@ -499,7 +483,7 @@ mfxStatus SurfaceSourceJPEG::StartPreparingToOutput(mfxFrameSurface1 *surface_wo
     }
     else
     {
-        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->StartPreparingToOutput(surface_work, in, par, taskId, isOpaq);
+        return ((mfx_UMC_FrameAllocator_D3D_Converter*)m_umc_allocator_adapter.get())->StartPreparingToOutput(surface_work, in, par, taskId);
     }
 }
 

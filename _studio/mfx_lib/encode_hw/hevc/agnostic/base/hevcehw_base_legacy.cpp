@@ -118,20 +118,6 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(NumTileRows);
         MFX_COPY_FIELD(NumTileColumns);
     });
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    blocks.m_ebCopySupported[MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION].emplace_back(
-        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
-    {
-        const auto& buf_src = *(const mfxExtOpaqueSurfaceAlloc*)pSrc;
-        auto& buf_dst = *(mfxExtOpaqueSurfaceAlloc*)pDst;
-        MFX_COPY_FIELD(In.Surfaces);
-        MFX_COPY_FIELD(In.Type);
-        MFX_COPY_FIELD(In.NumSurface);
-        MFX_COPY_FIELD(Out.Surfaces);
-        MFX_COPY_FIELD(Out.Type);
-        MFX_COPY_FIELD(Out.NumSurface);
-    });
-#endif //MFX_ENABLE_OPAQUE_MEMORY
     blocks.m_ebCopySupported[MFX_EXTBUFF_AVC_REFLISTS].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -852,11 +838,7 @@ void Legacy::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
     {
         bool check_result = Check<mfxU16
             , MFX_IOPATTERN_IN_VIDEO_MEMORY
-            , MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            , MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
-            >
+            , MFX_IOPATTERN_IN_SYSTEM_MEMORY>
             (par.IOPattern);
 
         MFX_CHECK(!check_result, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -906,17 +888,10 @@ void Legacy::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
 
         bool bSYS = par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY;
         bool bVID = par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        bool bOPQ = par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY;
-#endif //!MFX_ENABLE_OPAQUE_MEMORY
 
         req.Type =
             bSYS * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME)
-            + bVID * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            + bOPQ * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME)
-#endif
-            ;
+            + bVID * (MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME);
         MFX_CHECK(req.Type, MFX_ERR_INVALID_VIDEO_PARAM);
 
         req.NumFrameMin = GetMaxRaw(par);
@@ -1188,24 +1163,6 @@ void Legacy::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             sts = AllocRaw(rawInfo.NumFrameMin);
             MFX_CHECK_STS(sts);
         }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        else if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            const mfxExtOpaqueSurfaceAlloc& osa = ExtBuffer::Get(par);
-            std::unique_ptr<IAllocation> pAllocOpq(Tmp::MakeAlloc::Get(local)(Glob::VideoCore::Get(strg)));
-
-            sts = pAllocOpq->AllocOpaque(par.mfx.FrameInfo, osa.In.Type, osa.In.Surfaces, osa.In.NumSurface);
-            MFX_CHECK_STS(sts);
-
-            strg.Insert(Glob::AllocOpq::Key, std::move(pAllocOpq));
-
-            if (osa.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-            {
-                sts = AllocRaw(osa.In.NumSurface);
-                MFX_CHECK_STS(sts);
-            }
-        }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         bool bSkipFramesMode = (
             (IsSWBRC(par)
@@ -1596,23 +1553,6 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
 
         if (pCtrl)
             tpar.ctrl = *pCtrl;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        auto& par = Glob::VideoParam::Get(global);
-
-        if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            tpar.pSurfReal = core.GetNativeSurface(tpar.pSurfIn);
-            MFX_CHECK(tpar.pSurfReal, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-            tpar.pSurfReal->Info             = tpar.pSurfIn->Info;
-            tpar.pSurfReal->Data.TimeStamp   = tpar.pSurfIn->Data.TimeStamp;
-            tpar.pSurfReal->Data.FrameOrder  = tpar.pSurfIn->Data.FrameOrder;
-            tpar.pSurfReal->Data.Corrupted   = tpar.pSurfIn->Data.Corrupted;
-            tpar.pSurfReal->Data.DataFlag    = tpar.pSurfIn->Data.DataFlag;
-        }
-        else
-#endif //MFX_ENABLE_OPAQUE_MEMORY
             tpar.pSurfReal = tpar.pSurfIn;
 
         core.IncreaseReference(*tpar.pSurfIn);
@@ -1786,9 +1726,6 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
     {
         auto& core = Glob::VideoCore::Get(global);
         auto& par = Glob::VideoParam::Get(global);
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        const mfxExtOpaqueSurfaceAlloc& opaq = ExtBuffer::Get(par);
-#endif
         auto& task = Task::Common::Get(s_task);
 
         bool bInternalFrame =
@@ -1810,11 +1747,6 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         MFX_CHECK(par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY
             , core.GetExternalFrameHDL(*task.pSurfReal, task.HDLRaw));
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        MFX_CHECK(par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
-            , MFX_ERR_UNDEFINED_BEHAVIOR);
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
         return core.GetFrameHDL(task.pSurfReal->Data.MemId, &task.HDLRaw.first);
     });
 
@@ -1824,20 +1756,12 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
             , StorageW& s_task)->mfxStatus
     {
         auto& par = Glob::VideoParam::Get(global);
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        const mfxExtOpaqueSurfaceAlloc& opaq = ExtBuffer::Get(par);
-#endif
         auto& task = Task::Common::Get(s_task);
         auto dflts = GetRTDefaults(global);
 
         bool videoMemory =
             (par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
-                && !IsD3D9Simulation(Glob::VideoCore::Get(global)))
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            || (    par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
-                 && !(opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-            ;
+                && !IsD3D9Simulation(Glob::VideoCore::Get(global)));
 
         MFX_CHECK(!(task.bSkip || videoMemory), MFX_ERR_NONE);
 
@@ -3948,12 +3872,6 @@ bool Legacy::IsInVideoMem(const mfxVideoParam & par)
     if (par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         return true;
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc const* pOSA = ExtBuffer::Get(par);
-    if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        return (!pOSA || (pOSA->In.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)));
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
     return false;
 }
 
@@ -4240,9 +4158,6 @@ mfxStatus Legacy::CheckIOPattern(mfxVideoParam & par)
     bool check_result = Check<mfxU16
                             , MFX_IOPATTERN_IN_VIDEO_MEMORY
                             , MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                            , MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
                             , 0>
                             (par.IOPattern);
 

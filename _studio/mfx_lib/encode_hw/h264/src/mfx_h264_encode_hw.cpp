@@ -752,11 +752,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     auto const supportedMemoryType =
            inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
-        ;
+        || inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
     MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -801,12 +797,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
-        else
-#endif
-            request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
     request->NumFrameMin = CalcNumFrameMin(tmp, hwCaps, core->GetHWType());
@@ -1250,10 +1241,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_emulatorForSyncPart.Init(m_video, adaptGopDelay, m_core->GetHWType());
     m_emulatorForAsyncPart = m_emulatorForSyncPart;
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(m_video);
-#endif
-
     // Allocate raw surfaces.
     // This is required only in case of system memory at input
     m_isD3D9SimWithVideoMem = IsD3D9Simulation(*m_core) && (m_video.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY);
@@ -1268,29 +1255,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         }
         MFX_CHECK_STS(sts);
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        request.Type = extOpaq.In.Type;
-        request.NumFrameMin = extOpaq.In.NumSurface;
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
-            sts = m_opaqResponse.Alloc(m_core, request, extOpaq.In.Surfaces, extOpaq.In.NumSurface);
-        }
-        MFX_CHECK_STS(sts);
-
-        if (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-        {
-            request.Type = MFX_MEMTYPE_D3D_INT;
-            request.NumFrameMin = extOpaq.In.NumSurface;
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
-                sts = m_raw.Alloc(m_core, request, true);
-            }
-        }
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
     bool bPanicModeSupport = m_enabledSwBrc;
@@ -1307,9 +1271,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     m_inputFrameType =
             m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-#endif
         ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
         : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -1815,15 +1776,6 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     sts = ReadSpsPpsHeaders(newPar);
     MFX_CHECK_STS(sts);
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc & extOpaqNew = GetExtBufferRef(newPar);
-    mfxExtOpaqueSurfaceAlloc & extOpaqOld = GetExtBufferRef(m_video);
-    MFX_CHECK(
-        extOpaqOld.In.Type       == extOpaqNew.In.Type       &&
-        extOpaqOld.In.NumSurface == extOpaqNew.In.NumSurface,
-        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(newPar);
 
@@ -3079,16 +3031,7 @@ mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & task)
     mfxHDLPair handle = { nullptr,nullptr };
     if (IsCmNeededForSCD(m_video))
     {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            MFX_SAFE_CALL(m_core->GetFrameHDL(*pSurfI, handle));
-        }
-        else
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-        {
-            MFX_SAFE_CALL(m_core->GetExternalFrameHDL(*pSurfI, handle, false));
-        }
+        MFX_SAFE_CALL(m_core->GetExternalFrameHDL(*pSurfI, handle, false));
 
         mfxHDLPair cmScdSurf = { nullptr,nullptr };
         task.m_idxScd = FindFreeResourceIndex(m_scd);
@@ -3393,16 +3336,7 @@ mfxStatus ImplementationAvc::CalculateFrameCmplx(DdiTask const &task, mfxU32 &ra
 
     if (IsCmNeededForSCD(m_video))
     {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            MFX_SAFE_CALL(m_core->GetFrameHDL(*pSurfI, handle));
-        }
-        else
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-        {
-            MFX_SAFE_CALL(m_core->GetExternalFrameHDL(*pSurfI, handle, false));
-        }
+        MFX_SAFE_CALL(m_core->GetExternalFrameHDL(*pSurfI, handle, false));
         MFX_SAFE_CALL(amtScd.calc_RaCa_Surf(handle, raca));
     }
     else

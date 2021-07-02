@@ -334,9 +334,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCodingOptionVPS        ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVideoSignalInfo        ,20  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPDoUse               ,24  )
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtOpaqueSurfaceAlloc     ,80  )
-#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAVCRefListCtrl         ,1068)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPFrameRateConversion ,72  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPImageStab           ,32  )
@@ -469,9 +466,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCodingOptionVPS        ,32  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVideoSignalInfo        ,20  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPDoUse               ,16  )
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtOpaqueSurfaceAlloc     ,72  )
-#endif
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAVCRefListCtrl         ,1068)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPFrameRateConversion ,72  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVPPImageStab           ,32  )
@@ -1455,18 +1449,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,NumAlg                        ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,AlgList                       ,16   )
 
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In                            ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.Surfaces                   ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.Type                       ,44   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.NumSurface                 ,46   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out                           ,48   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Surfaces                  ,48   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Type                      ,76   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.NumSurface                ,78   )
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,Header                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,NumRefIdxL0Active              ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,NumRefIdxL1Active              ,10   )
@@ -2330,18 +2312,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,NumAlg                        ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVPPDoUse                     ,AlgList                       ,12   )
-
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In                            ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.Surfaces                   ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.Type                       ,40   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,In.NumSurface                 ,42   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out                           ,44   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Surfaces                  ,44   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.Type                      ,68   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtOpaqueSurfaceAlloc           ,Out.NumSurface                ,70   )
-#endif
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,Header                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAVCRefListCtrl               ,NumRefIdxL0Active              ,8    )
@@ -3799,7 +3769,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,MapOpaqueSurface                  ,192  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,UnmapOpaqueSurface                ,200  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,GetRealSurface                    ,208  )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,GetOpaqueSurface                  ,216  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,CreateAccelerationDevice          ,224  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,GetFrameHandle                    ,232  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,QueryPlatform                     ,240  )
@@ -3863,7 +3832,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,MapOpaqueSurface                  ,112  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,UnmapOpaqueSurface                ,116  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,GetRealSurface                    ,120  )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,GetOpaqueSurface                  ,124  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,CreateAccelerationDevice          ,128  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,GetFrameHandle                    ,132  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxCoreInterface               ,QueryPlatform                     ,136  )

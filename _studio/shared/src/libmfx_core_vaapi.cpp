@@ -350,16 +350,6 @@ mfxStatus VAAPIVideoCORE_T<Base>::AllocFrames(
         mfxStatus sts = MFX_ERR_NONE;
         mfxFrameAllocRequest temp_request = *request;
 
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        // external allocator doesn't know how to allocate opaque surfaces
-        // we can treat opaque as internal
-        if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
-        {
-            temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
-            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-        }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy && m_Display)
         {
             m_pCmCopy.reset(new CmCopyWrapper);

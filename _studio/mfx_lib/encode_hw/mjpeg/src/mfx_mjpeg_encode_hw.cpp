@@ -172,7 +172,6 @@ MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
     m_pCore        = core;
     m_bInitialized = false;
     m_deviceFailed = false;
-    m_isOpaqIn     = false;
     m_counter      = 1;
 
     memset(&m_vFirstParam, 0, sizeof(mfxVideoParam));
@@ -435,9 +434,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
             case 0:
             case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
             case MFX_IOPATTERN_IN_VIDEO_MEMORY:
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
-#endif
                 out->IOPattern = in->IOPattern;
                 break;
             default:
@@ -539,18 +535,10 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
     // check for valid IOPattern
     mfxU16 IOPatternIn = par->IOPattern & (
           MFX_IOPATTERN_IN_VIDEO_MEMORY
-        | MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        | MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
-    );
+        | MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     if (!par->IOPattern || (
            (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-#endif
-        ))
+        && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY)))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -607,15 +595,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
         m_checkedJpegHT.Header.BufferSz = sizeof(m_checkedJpegHT);
     }
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)mfx::GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
-    if (opaqAllocReq)
-    {
-        m_checkedOpaqAllocReq = *opaqAllocReq;
-        m_pCheckedExt[ext_counter++] = &m_checkedOpaqAllocReq.Header;
-    }
-#endif
-
     checked.ExtParam = m_pCheckedExt;
     checked.NumExtParam = ext_counter;
 
@@ -633,11 +612,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     QueryStatus = sts;
 
     par = &checked; // from now work with fixed copy of input!
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if (opaqAllocReq)
-        opaqAllocReq = &m_checkedOpaqAllocReq;
-#endif
 
     bool core20_interface = Supports20FeatureSet(*m_pCore);
 
@@ -689,17 +663,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
             sts == MFX_ERR_NONE &&
             m_raw.NumFrameActual >= request.NumFrameMin,
             MFX_ERR_MEMORY_ALLOC);
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == m_vParam.IOPattern)
-        {
-            if( NULL == opaqAllocReq )
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-            else
-            {
-                m_isOpaqIn = true;
-            }
-        }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
     else if (m_bUseInternalMem)
     {
@@ -719,17 +682,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
             m_raw.NumFrameActual >= request.NumFrameMin,
             MFX_ERR_MEMORY_ALLOC);
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    else if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == m_vParam.IOPattern)
-    {
-        if( NULL == opaqAllocReq )
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        else
-        {
-            m_isOpaqIn = true;
-        }
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
     // Allocate bitstream surfaces.
     request.Type = MFX_MEMTYPE_VIDEO_INT;
@@ -819,14 +771,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
         m_checkedJpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
         m_checkedJpegHT.Header.BufferSz = sizeof(m_checkedJpegHT);
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)mfx::GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
-    if (opaqAllocReq)
-    {
-        m_checkedOpaqAllocReq = *opaqAllocReq;
-        m_pCheckedExt[ext_counter++] = &m_checkedOpaqAllocReq.Header;
-    }
-#endif
 
     checked.ExtParam = m_pCheckedExt;
     checked.NumExtParam = ext_counter;
@@ -846,30 +790,16 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
     // check for valid IOPattern
     mfxU16 IOPatternIn = par->IOPattern & (
           MFX_IOPATTERN_IN_VIDEO_MEMORY
-        | MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        | MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
-    );
+        | MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     if (!par->IOPattern || (
            (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-#endif
-        ))
+        && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY)))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     if (!m_pCore->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
         return MFX_ERR_INVALID_VIDEO_PARAM;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    // checks for opaque memory
-    if (!(m_vFirstParam.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY))
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-#endif
 
     if(par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN &&
        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
@@ -968,19 +898,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     mfxExtJPEGHuffmanTables* jpegHT = NULL;
     JpegEncCaps              hwCaps = {};
 
-    mfxFrameSurface1 *surface = GetOriginalSurface(inSurface);
-    // input surface is opaque surface
-    if (surface != inSurface)
-    {
-        if (surface == 0)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-        surface->Info = inSurface->Info;
-        surface->Data.Corrupted = inSurface->Data.Corrupted;
-        surface->Data.DataFlag = inSurface->Data.DataFlag;
-        surface->Data.TimeStamp = inSurface->Data.TimeStamp;
-        surface->Data.FrameOrder = inSurface->Data.FrameOrder;
-    }
+    mfxFrameSurface1 *surface = inSurface;
 
     if (inSurface && !surface)
     {
@@ -1196,7 +1114,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         {
             // In fact this is a CM copy path
             mfxU16 src_memtype = (mfxU16)((nativeSurf->Data.B == 0) ? MFX_MEMTYPE_DXVA2_DECODER_TARGET : MFX_MEMTYPE_SYSTEM_MEMORY);
-            src_memtype |= enc.m_isOpaqIn ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
+            src_memtype |= MFX_MEMTYPE_EXTERNAL_FRAME;
             sts = enc.m_pCore->DoFastCopyWrapper(&dst, MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
                                                  nativeSurf, src_memtype);
             MFX_CHECK_STS(sts);
@@ -1218,12 +1136,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
 
         sts = enc.m_pCore->GetFrameHDL(enc.m_raw.mids[task.m_idx], pSurfaceHdl);
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    else if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == enc.m_vParam.IOPattern)
-    {
-        sts = enc.m_pCore->GetFrameHDL(nativeSurf->Data.MemId, pSurfaceHdl);
-    }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
     else
     {
         sts = enc.m_pCore->GetExternalFrameHDL(*nativeSurf, surfacePair);

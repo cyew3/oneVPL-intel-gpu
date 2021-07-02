@@ -116,17 +116,6 @@ protected:
     // Fill up resolution information if new header arrived
     void FillVideoParam(mfxVideoParamWrapper *par, bool full);
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    // Fill up frame allocator request data
-    mfxStatus UpdateAllocRequest(mfxVideoParam *par,
-                                mfxFrameAllocRequest *request,
-                                mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
-                                bool &mapping);
-#endif
-
-    // Get original Surface corresponding to OpaqueSurface
-    mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
-
     std::unique_ptr<UMC_HEVC_DECODER::MFXTaskSupplier_H265>  m_pH265VideoDecoder;
     mfx_UMC_MemAllocator              m_MemoryAllocator;
 
@@ -140,7 +129,6 @@ protected:
     VideoCORE * m_core;
 
     bool    m_isInit;
-    bool    m_isOpaq;
     bool    m_globalTask;
 
     mfxU16  m_frameOrder;

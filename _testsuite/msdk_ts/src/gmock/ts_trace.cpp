@@ -105,14 +105,8 @@ tsTrace& tsTrace::operator<<(const mfxVideoParam& p)
         *this << m_off << "IOPattern = " << p.IOPattern << " = ";
         if(IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY  ) *this << "IN_VIDEO|";
         if(IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ) *this << "IN_SYSTEM|";
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        if(IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY ) *this << "IN_OPAQUE|";
-#endif
         if(IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY ) *this << "OUT_VIDEO|";
         if(IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) *this << "OUT_SYSTEM|";
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        if(IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) *this << "OUT_OPAQUE";
-#endif
         *this << "\n";
     };
 

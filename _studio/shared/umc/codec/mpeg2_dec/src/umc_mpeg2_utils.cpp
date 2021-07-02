@@ -381,22 +381,11 @@ namespace UMC_MPEG2_DECODER
 
         if (   !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
             && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-#endif
             )
             return false;
 
         if ((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
             return false;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-            return false;
-
-        if ((in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-            return false;
-#endif //MFX_ENABLE_OPAQUE_MEMORY
 
         return true;
     }

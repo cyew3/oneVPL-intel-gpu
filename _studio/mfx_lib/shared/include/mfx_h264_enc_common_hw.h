@@ -137,11 +137,7 @@ namespace MfxHwH264Encode
     static const mfxU16 MFX_IOPATTERN_IN_MASK_SYS_OR_D3D =
         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
-    static const mfxU16 MFX_IOPATTERN_IN_MASK = MFX_IOPATTERN_IN_MASK_SYS_OR_D3D
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        | MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
-        ;
+    static const mfxU16 MFX_IOPATTERN_IN_MASK = MFX_IOPATTERN_IN_MASK_SYS_OR_D3D;
 
     // masks for VideoParam.mfx.CodecProfile
     static const mfxU16 MASK_PROFILE_IDC          = (0xff);
@@ -199,9 +195,6 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSpecialEncodingModes, MFX_EXTBUFF_SPECIAL_MODES            );
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtVideoSignalInfo,      MFX_EXTBUFF_VIDEO_SIGNAL_INFO        );
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,   MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-#endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCSeqDesc,           MFX_EXTBUFF_MVC_SEQ_DESC             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCTargetViews,       MFX_EXTBUFF_MVC_TARGET_VIEWS         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPictureTimingSEI,     MFX_EXTBUFF_PICTURE_TIMING_SEI       );
@@ -659,10 +652,6 @@ namespace MfxHwH264Encode
         mfxExtSpecialEncodingModes  m_extSpecModes;
 #endif
         mfxExtVideoSignalInfo       m_extVideoSignal;
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        mfxExtOpaqueSurfaceAlloc    m_extOpaque;
-#endif
 
         mfxExtMVCSeqDesc            m_extMvcSeqDescr;
         mfxExtPictureTimingSEI      m_extPicTiming;

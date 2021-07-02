@@ -127,13 +127,6 @@ mfxStatus tsVideoDecoder::Init()
         {
             DecodeHeader();
         }
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            QueryIOSurf();
-            AllocOpaque(m_request, m_par);
-        }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
     return Init(m_session, m_pPar);
 }
@@ -154,13 +147,6 @@ mfxStatus tsVideoDecoder::NoAllocatorCheckInit()
         {
             DecodeHeader();
         }
-#if defined(MFX_ENABLE_OPAQUE_MEMORY)
-        if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            QueryIOSurf();
-            AllocOpaque(m_request, m_par);
-        }
-#endif //MFX_ENABLE_OPAQUE_MEMORY
     }
     return Init(m_session, m_pPar);
 }

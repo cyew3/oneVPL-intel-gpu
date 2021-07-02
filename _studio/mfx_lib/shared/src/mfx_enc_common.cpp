@@ -546,76 +546,22 @@ bool CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 
 mfxStatus InputSurfaces::Reset(mfxVideoParam *par, mfxU16 NumFrameMin)
 {
     mfxStatus sts = MFX_ERR_NONE;
-#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
+
     std::ignore = NumFrameMin;
-#endif
+
     mfxU32 ioPattern = par->IOPattern & (
         MFX_IOPATTERN_IN_VIDEO_MEMORY
         | MFX_IOPATTERN_IN_SYSTEM_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        | MFX_IOPATTERN_IN_OPAQUE_MEMORY
-#endif
     );
     if (ioPattern & (ioPattern - 1))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     MFX_INTERNAL_CPY(&m_Info,&par->mfx.FrameInfo,sizeof(mfxFrameInfo));
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    bool bOpaq = (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)!=0;
+    bool bSysMemFrames = (par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) != 0;
+    MFX_CHECK(bSysMemFrames == m_bSysMemFrames || !m_bInitialized, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    m_bSysMemFrames = bSysMemFrames;
 
-    MFX_CHECK(bOpaq == m_bOpaq || !m_bInitialized, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-    if (bOpaq)
-    {
-        MFX_CHECK (m_pCore->IsCompatibleForOpaq(), MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        mfxExtOpaqueSurfaceAlloc * pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        MFX_CHECK (pOpaqAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
-
-        switch (pOpaqAlloc->In.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
-        {
-        case MFX_MEMTYPE_SYSTEM_MEMORY:
-            m_bSysMemFrames = true;
-            break;
-        case MFX_MEMTYPE_DXVA2_DECODER_TARGET:
-        case MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET:
-            m_bSysMemFrames = false;
-            break;
-        default:
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        }
-
-       if (pOpaqAlloc->In.NumSurface < NumFrameMin)
-            return m_bInitialized ? MFX_ERR_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_INVALID_VIDEO_PARAM;
-        if (pOpaqAlloc->In.NumSurface > m_request.NumFrameMin && m_bInitialized)
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-
-        if (!m_bInitialized)
-        {
-            m_request.Info = par->mfx.FrameInfo;
-            m_request.NumFrameMin = m_request.NumFrameSuggested = (mfxU16)pOpaqAlloc->In.NumSurface;
-            m_request.Type = (mfxU16)pOpaqAlloc->In.Type;
-
-            sts = m_pCore->AllocFrames(&m_request,
-                &m_response,
-                pOpaqAlloc->In.Surfaces,
-                pOpaqAlloc->In.NumSurface);
-
-            if (MFX_ERR_UNSUPPORTED == sts && (pOpaqAlloc->In.Type & MFX_MEMTYPE_FROM_ENCODE) == 0)  sts = MFX_ERR_NONE;
-            MFX_CHECK_STS(sts);
-        }
-        m_bOpaq = true;
-    }
-    else
-#else
-    std::ignore = NumFrameMin;
-#endif
-    {
-        bool bSysMemFrames = (par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) != 0;
-        MFX_CHECK(bSysMemFrames == m_bSysMemFrames || !m_bInitialized, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-        m_bSysMemFrames = bSysMemFrames;
-    }
     m_bInitialized = true;
     return sts;
 }
@@ -625,9 +571,6 @@ mfxStatus InputSurfaces::Close()
     {
         m_pCore->FreeFrames (&m_response);
     }
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    m_bOpaq = false;
-#endif
     m_bSysMemFrames = false;
     m_bInitialized = false;
 

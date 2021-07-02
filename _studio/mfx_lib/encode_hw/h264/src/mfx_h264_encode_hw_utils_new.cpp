@@ -2623,36 +2623,13 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
     DdiTask const &       task,
     bool                  isD3D9SimWithVideoMem)
 {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
-#endif
-
     mfxFrameSurface1 * surface = task.m_yuv;
 
     mfxU16 inMemType = static_cast<mfxU16>((video.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET) |
         MFX_MEMTYPE_EXTERNAL_FRAME);
 
-    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || isD3D9SimWithVideoMem
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-#endif
-        )
+    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || isD3D9SimWithVideoMem)
     {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            surface = core.GetNativeSurface(task.m_yuv);
-            if (surface == 0)
-                return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
-
-            surface->Info            = task.m_yuv->Info;
-            surface->Data.TimeStamp  = task.m_yuv->Data.TimeStamp;
-            surface->Data.FrameOrder = task.m_yuv->Data.FrameOrder;
-            surface->Data.Corrupted  = task.m_yuv->Data.Corrupted;
-            surface->Data.DataFlag   = task.m_yuv->Data.DataFlag;
-        }
-#endif
-
         mfxStatus sts = MFX_ERR_NONE;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
@@ -2764,35 +2741,11 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
     mfxHDL * nativeHandle = &handle.first;
 
     mfxFrameSurface1 * surface = task.m_yuv;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        surface = core.GetNativeSurface(task.m_yuv);
-        if (surface == 0)
-            return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        surface->Info            = task.m_yuv->Info;
-        surface->Data.TimeStamp  = task.m_yuv->Data.TimeStamp;
-        surface->Data.FrameOrder = task.m_yuv->Data.FrameOrder;
-        surface->Data.Corrupted  = task.m_yuv->Data.Corrupted;
-        surface->Data.DataFlag   = task.m_yuv->Data.DataFlag;
-    }
-
-    mfxExtOpaqueSurfaceAlloc const & extOpaq = GetExtBufferRef(video);
-#endif
-
-    if (    video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || isD3D9SimWithVideoMem
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-#endif
-        )
+    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || isD3D9SimWithVideoMem)
         sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
     else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         sts = core.GetExternalFrameHDL(*surface, handle);
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    else if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
-        sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
-#endif //MFX_ENABLE_OPAQUE_MEMORY
     else
         return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 

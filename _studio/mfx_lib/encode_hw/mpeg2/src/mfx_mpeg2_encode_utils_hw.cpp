@@ -145,9 +145,6 @@ namespace MPEG2EncoderHW
         mfxU32 supported_buffers[] = {
             MFX_EXTBUFF_CODING_OPTION
             ,MFX_EXTBUFF_CODING_OPTION_SPSPPS
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            ,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
-#endif
             ,MFX_EXTBUFF_VIDEO_SIGNAL_INFO
 #ifdef PAVP_SUPPORT
             ,MFX_EXTBUFF_PAVP_OPTION
@@ -832,18 +829,11 @@ namespace MPEG2EncoderHW
                 case 0:
                 case MFX_IOPATTERN_IN_VIDEO_MEMORY:
                 case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
-#endif
                     break;
                 default:
                     bWarning = true;
                     if (out->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
                         out->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                    else if (in->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-                        out->IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
-#endif
                     else if (out->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
                         out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
                     else
@@ -1173,19 +1163,11 @@ namespace MPEG2EncoderHW
         ApplyTargetUsage (&videoParamEx);
 
         if (    (par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY)) == MFX_IOPATTERN_IN_VIDEO_MEMORY
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            || ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY)) == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-#endif
             )
         {
             request->Info              = videoParamEx.mfxVideoParams.mfx.FrameInfo ;
             request->NumFrameMin       = videoParamEx.mfxVideoParams.mfx.GopRefDist + 3;
             request->NumFrameSuggested = request->NumFrameMin;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-            if (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-                request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME  |MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-            else
-#endif
                 request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
         }
         else if ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))==MFX_IOPATTERN_IN_SYSTEM_MEMORY)
@@ -1929,7 +1911,7 @@ namespace MPEG2EncoderHW
                 pInternalParams->SkipFrame   = 0;
             }
 
-            *reordered_surface = GetOpaqSurface(surface);
+            *reordered_surface = surface;
 
             if (m_InputFrameOrder < m_pWaitingList->GetDelay())
             {

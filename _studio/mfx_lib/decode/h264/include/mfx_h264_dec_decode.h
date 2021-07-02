@@ -100,15 +100,8 @@ protected:
 
     void FillVideoParam(mfxVideoParamWrapper *par, bool full);
 
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxStatus UpdateAllocRequest(mfxVideoParam *par, 
-                                mfxFrameAllocRequest *request,
-                                mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
-                                bool &mapping);
-#endif
-
-    mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
     mfxFrameSurface1 * GetInternalSurface(mfxFrameSurface1 *surface) override;
+
     std::unique_ptr<UMC::MFXTaskSupplier>  m_pH264VideoDecoder;
     mfx_UMC_MemAllocator                   m_MemoryAllocator;
 
@@ -122,7 +115,6 @@ protected:
     VideoCORE * m_core;
 
     bool    m_isInit;
-    bool    m_isOpaq;
 
     mfxU16  m_frameOrder;
 

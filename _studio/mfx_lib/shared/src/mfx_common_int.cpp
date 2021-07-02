@@ -437,33 +437,16 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
 {
     mfxStatus sts = CheckVideoParamCommon(in, type);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
     std::ignore = IsCompatibleForOpaq;
-#endif
 
     auto const supportedMemoryType =
            (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-        || (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-#endif //MFX_ENABLE_OPAQUE_MEMORY
-        ;
+        || (in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     MFX_CHECK(supportedMemoryType, MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
         , MFX_ERR_INVALID_VIDEO_PARAM);
-
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    if (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-    {
-        MFX_CHECK(IsCompatibleForOpaq, MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),  MFX_ERR_INVALID_VIDEO_PARAM);
-    }
-#else
-    std::ignore = IsCompatibleForOpaq;
-#endif
 
     MFX_CHECK(!in->mfx.DecodedOrder || in->mfx.CodecId == MFX_CODEC_JPEG
                                     || in->mfx.CodecId == MFX_CODEC_AVC
@@ -492,14 +475,7 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
                 MFX_ERR_INVALID_VIDEO_PARAM);
         }
 
-#if !defined (MFX_ENABLE_OPAQUE_MEMORY)
         MFX_CHECK((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
-#else
-        MFX_CHECK(
-            (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            , MFX_ERR_INVALID_VIDEO_PARAM
-        );
-#endif //!MFX_ENABLE_OPAQUE_MEMORY
 
         return MFX_ERR_NONE;
     }
@@ -683,9 +659,6 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 {
     static const mfxU32 g_commonSupportedExtBuffers[]       = {
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-                                                               MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-#endif
 #ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
                                                                MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK,
 #endif
@@ -1080,9 +1053,6 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_PAVP_OPTION:
 #endif
         case MFX_EXTBUFF_VIDEO_SIGNAL_INFO:
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-        case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
-#endif
 #if defined(MFX_ENABLE_SVC_VIDEO_DECODE)
         case MFX_EXTBUFF_SVC_SEQ_DESC:
         case MFX_EXTBUFF_SVC_TARGET_LAYER:

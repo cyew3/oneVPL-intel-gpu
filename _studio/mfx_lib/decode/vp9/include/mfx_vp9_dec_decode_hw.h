@@ -90,12 +90,10 @@ protected:
     mfxStatus DecodeFrameHeader(mfxBitstream *in, UMC_VP9_DECODER::VP9DecoderFrame & info);
     mfxStatus PackHeaders(mfxBitstream *bs, UMC_VP9_DECODER::VP9DecoderFrame const & info);
 
-    mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *);
     mfxStatus GetOutputSurface(mfxFrameSurface1 **, mfxFrameSurface1 *, UMC::FrameMemID);
 
 private:
     bool                    m_isInit;
-    bool                    m_is_opaque_memory;
     VideoCORE*              m_core;
     eMFXPlatform            m_platform;
 
@@ -125,9 +123,6 @@ private:
 
     mfxFrameAllocResponse    m_response;
     mfxFrameAllocResponse    m_response_alien;
-#if defined (MFX_ENABLE_OPAQUE_MEMORY)
-    mfxExtOpaqueSurfaceAlloc m_OpaqAlloc;
-#endif
     mfxDecodeStat            m_stat;
 
     friend mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
