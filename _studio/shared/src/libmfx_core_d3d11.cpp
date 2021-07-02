@@ -91,14 +91,11 @@ mfxStatus D3D11VideoCORE_T<Base>::InternalInit()
     //need to replace with specific D3D11 approach
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
+    std::set<eMFXHWType> cmCopyPlatforms = { MFX_HW_TGL_LP, MFX_HW_DG1, MFX_HW_ADL_S, MFX_HW_ADL_P };
 #ifndef STRIP_EMBARGO
-    // Temporary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
-    if (   m_HWType == MFX_HW_RYF
-        || m_HWType == MFX_HW_RKL
-        || m_HWType == MFX_HW_MTL
-        || m_HWType == MFX_HW_ELG)
-        m_bCmCopyAllowed = false;
+    cmCopyPlatforms.insert({ MFX_HW_XE_HP_SDV, MFX_HW_DG2, MFX_HW_PVC });
 #endif
+    m_bCmCopyAllowed = (cmCopyPlatforms.find(m_HWType) != cmCopyPlatforms.end());
 
     m_deviceId = MFX::GetDeviceId(m_adapterNum);
 
