@@ -183,7 +183,6 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->A = (mfxU8*)(ptr->V16 + 3);
         ptr->Pitch = 8 * Width2;
         break;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
@@ -202,7 +201,6 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->A = 0;
         ptr->Pitch = 4 * Width2;
         break;
-#endif // #if (MFX_VERSION >= 1027)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
         ptr->U16 = (mfxU16*)ptr->B;
@@ -213,14 +211,12 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->PitchLow  = (mfxU16)((8 * (mfxU32)Width2) % (1 << 16));
         break;
 #endif
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         ptr->G = ptr->R + Width2 * Height2;
         ptr->B = ptr->G + Width2 * Height2;
         ptr->PitchHigh = 0;
         ptr->PitchLow  = Width2;
         break;
-#endif // #if (MFX_VERSION >= 1028)
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -247,11 +243,7 @@ mfxStatus SysMemFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
     MFX_CHECK(m_pBufferAllocator, MFX_ERR_NOT_INITIALIZED);
 
-    if (!mid && ptr && (ptr->Y
-#if (MFX_VERSION >= 1027)
-        || ptr->Y410
-#endif
-    ))
+    if (!mid && ptr && (ptr->Y || ptr->Y410))
     {
         mfxStatus sts = m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, mid);
         MFX_CHECK_STS(sts);
@@ -303,23 +295,17 @@ static mfxU32 GetSurfaceSize(mfxU32 FourCC, mfxU32 Width2, mfxU32 Height2)
         nbytes *= 2; // 16bits
         break;
     case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
 #endif
         nbytes = Width2*Height2 + (Width2>>1)*(Height2)+(Width2>>1)*(Height2);
         nbytes *= 2; // 16bits
         break;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
         nbytes = 4 * Width2*Height2;
         break;
-#endif
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
-#endif
     case MFX_FOURCC_RGB3:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;

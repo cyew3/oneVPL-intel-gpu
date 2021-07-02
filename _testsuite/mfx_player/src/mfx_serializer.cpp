@@ -233,18 +233,14 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
 #endif
     SERIALIZE_INT(TransformSkip);
     SERIALIZE_INT(AdaptiveMaxFrameSize);
-#if (MFX_VERSION >= 1027)
     SERIALIZE_INT(TargetChromaFormatPlus1);
     SERIALIZE_INT(TargetBitDepthLuma);
     SERIALIZE_INT(TargetBitDepthChroma);
-#endif
     SERIALIZE_INT(ExtBrcAdaptiveLTR);
     SERIALIZE_INT(EnableMBQP);
 
-#if (MFX_VERSION >= 1027)
     if (m_pStruct->TargetChromaFormatPlus1)
         m_values_map[VM_STRING("TargetChromaFormatPlus1")] = GetMFXChromaString(m_pStruct->TargetChromaFormatPlus1 - 1) + VM_STRING(" + 1");
-#endif
     SERIALIZE_INT(BRCPanicMode);
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     SERIALIZE_INT(AdaptiveCQM);
@@ -562,10 +558,8 @@ void MFXStructureRef <mfxExtVP9Param>::ConstructValues() const
     SERIALIZE_INT(QIndexDeltaChromaAC);
     SERIALIZE_INT(QIndexDeltaChromaDC);
 
-#if (MFX_VERSION >= 1029)
     SERIALIZE_INT(NumTileRows);
     SERIALIZE_INT(NumTileColumns);
-#endif
 }
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 void MFXStructureRef <mfxExtAV1Param>::ConstructValues() const

@@ -645,7 +645,6 @@ namespace hevce_nalutype
         s.Data.FrameOrder  = m_extFrameEmulator.poc  = f.poc;
         m_pCtrl->FrameType = m_extFrameEmulator.type = f.type;
 
-#if (MFX_VERSION >= 1025)
         bool bFields = !!(m_par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE);
         bool isIDR  = !!(m_extFrameEmulator.type & MFX_FRAMETYPE_IDR);
         bool isI    = !!(m_extFrameEmulator.type & MFX_FRAMETYPE_I);
@@ -761,7 +760,6 @@ namespace hevce_nalutype
 
             m_extFrameEmuVec.push_back(m_extFrameEmulator);
         }
-#endif
 
         m_frameCnt++;
         return MFX_ERR_NONE;
@@ -785,7 +783,6 @@ namespace hevce_nalutype
 
             const auto& nalu = AU.nalu[i];
 
-#if (MFX_VERSION >= 1025)
             /* CHECK external nal type settings */
             mfxExtCodingOption3& co3 = m_par;
             if (m_nalTypeCtrl != DEFAULT)
@@ -807,7 +804,6 @@ namespace hevce_nalutype
                     m_extFrameEmuVec.erase(extFrameEmu);
                 }
             }
-#endif
 
             if (isIRAPPicture(nalu->nal_unit_type))
             {
@@ -945,7 +941,6 @@ namespace hevce_nalutype
         mfxExtCodingOption3& co3 = m_par;
         co3.PRefType = tc.PRefType;
         co3.GPB = MFX_CODINGOPTION_OFF;
-#if (MFX_VERSION >= 1025)
         if (g_tsHWtype > MFX_HW_ICL)
             co3.GPB = MFX_CODINGOPTION_ON;
         m_nalTypeCtrl = tc.NaluTypeCtrl;
@@ -953,7 +948,6 @@ namespace hevce_nalutype
             co3.EnableNalUnitType = MFX_CODINGOPTION_OFF;
         else
             co3.EnableNalUnitType = MFX_CODINGOPTION_ON;
-#endif
 
         m_par.mfx.FrameInfo.PicStruct = tc.PicStruct;
         m_par.mfx.EncodedOrder = tc.EncodedOrder;

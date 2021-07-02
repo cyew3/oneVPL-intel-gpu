@@ -61,10 +61,8 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("RGB3");
     case MFX_FOURCC_RGB4:
         return VM_STRING("RGB4");
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         return MSDK_STRING("RGBP");
-#endif
     case MFX_FOURCC_YUV400:
         return VM_STRING("YUV400");
     case MFX_FOURCC_YUV411:
@@ -87,12 +85,10 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("UYVY");
     case MFX_FOURCC_AYUV:
         return VM_STRING("AYUV");
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return VM_STRING("Y210");
     case MFX_FOURCC_Y410:
         return VM_STRING("Y410");
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         return VM_STRING("P016");
@@ -1394,7 +1390,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
-#if (MFX_VERSION >= 1027)
     else if (   pInfo->FourCC == MFX_FOURCC_Y210
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
              || pInfo->FourCC == MFX_FOURCC_Y216
@@ -1419,7 +1414,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
-#endif // #if (MFX_VERSION >= 1027)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {
@@ -2001,7 +1995,6 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
-#if (MFX_VERSION >= 1028)
     else if (pInfo->FourCC == MFX_FOURCC_RGBP)
     {
         CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -2024,7 +2017,6 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, w);
         }
     }
-#endif
     else if (pInfo->FourCC == MFX_FOURCC_AYUV)
     {
         ptr = IPP_MIN( IPP_MIN(pData->Y, pData->U), IPP_MIN(pData->V, pData->A) );
@@ -2035,7 +2027,6 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
-#if (MFX_VERSION >= 1027)
     else if(    pInfo->FourCC == MFX_FOURCC_Y210
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
              || pInfo->FourCC == MFX_FOURCC_Y216
@@ -2058,7 +2049,6 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
-#endif // #if (MFX_VERSION >= 1027)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {

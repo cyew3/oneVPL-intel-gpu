@@ -59,10 +59,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-h]                      - output height\n"));
     msdk_printf(MSDK_STRING("   [-di bob/adi]             - enable deinterlacing BOB/ADI\n"));
     msdk_printf(MSDK_STRING("   [-scaling_mode value]     - specify scaling mode (lowpower/quality) for VPP\n"));
-#if (MFX_VERSION >= 1025)
     msdk_printf(MSDK_STRING("   [-d]                      - enable decode error report\n"));
-#endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     msdk_printf(MSDK_STRING("   [-dGfx]                   - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1'\n"));
     msdk_printf(MSDK_STRING("   [-iGfx]                   - preffer processing on iGfx (by default system decides)\n"));
 #endif
@@ -86,11 +84,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-rgb4_fcr] - pipeline output format: RGB4 in full color range, output file format: RGB4 in full color range\n"));
     msdk_printf(MSDK_STRING("   [-p010] - pipeline output format: P010, output file format: P010\n"));
     msdk_printf(MSDK_STRING("   [-a2rgb10] - pipeline output format: A2RGB10, output file format: A2RGB10\n"));
-#if (MFX_VERSION >= 1031)
     msdk_printf(MSDK_STRING("   [-p016] - pipeline output format: P010, output file format: P016\n"));
     msdk_printf(MSDK_STRING("   [-y216] - pipeline output format: Y216, output file format: Y216\n"));
     msdk_printf(MSDK_STRING("   [-y416] - pipeline output format: Y416, output file format: Y416\n"));
-#endif
     msdk_printf(MSDK_STRING("\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d]                    - work with d3d9 surfaces\n"));
@@ -125,14 +121,12 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-gpucopy::<on,off>] Enable or disable GPU copy mode\n"));
     msdk_printf(MSDK_STRING("   [-robust:soft]            - GPU hang recovery by inserting an IDR frame\n"));
     msdk_printf(MSDK_STRING("   [-timeout]                - timeout in seconds\n"));
-#if MFX_VERSION >= 1022
     msdk_printf(MSDK_STRING("   [-dec_postproc force/auto] - resize after decoder using direct pipe\n"));
     msdk_printf(MSDK_STRING("                  force: instruct to use decoder-based post processing\n"));
     msdk_printf(MSDK_STRING("                         or fail if the decoded stream is unsupported\n"));
     msdk_printf(MSDK_STRING("                  auto: instruct to use decoder-based post processing for supported streams \n"));
     msdk_printf(MSDK_STRING("                        or perform VPP operation through separate pipeline component for unsupported streams\n"));
 
-#endif //MFX_VERSION >= 1022
 #if !defined(_WIN32) && !defined(_WIN64)
     msdk_printf(MSDK_STRING("   [-threads_num]            - number of mediasdk task threads\n"));
     msdk_printf(MSDK_STRING("   [-threads_schedtype]      - scheduling type of mediasdk task threads\n"));
@@ -484,7 +478,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->strDevicePath = strInput[++i];
         }
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dGfx")))
         {
             pParams->bPrefferdGfx = true;
@@ -504,12 +498,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
 #endif
 #if !defined(_WIN32) && !defined(_WIN64)
-#if (MFX_VERSION >= 1025)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d")))
         {
             pParams->bErrorReport = true;
         }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-threads_num")))
         {
             if(i + 1 >= nArgNum)
@@ -550,7 +542,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
         }
 #endif // #if !defined(_WIN32) && !defined(_WIN64)
-#if MFX_VERSION >= 1022
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dec_postproc")))
         {
             if(i + 1 >= nArgNum)
@@ -578,7 +569,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-#endif //MFX_VERSION >= 1022
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-fps")))
         {
             if(i + 1 >= nArgNum)
@@ -664,7 +654,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->fourcc = MFX_FOURCC_A2RGB10;
         }
-#if (MFX_VERSION >= 1031)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p016")))
         {
             pParams->fourcc = MFX_FOURCC_P016;
@@ -677,17 +666,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->fourcc = MFX_FOURCC_Y416;
         }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i:null")))
         {
             ;
         }
-#if (MFX_VERSION >= 1034)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ignore_level_constrain")))
         {
             pParams->bIgnoreLevelConstrain = true;
         }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-disable_film_grain")))
         {
             pParams->bDisableFilmGrain = true;
@@ -757,7 +743,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nAsyncDepth = 4; //set by default;
     }
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     if (pParams->bPrefferdGfx && pParams->bPrefferiGfx)
     {
         msdk_printf(MSDK_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered"));

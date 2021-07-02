@@ -29,9 +29,7 @@ const mfxPluginUID NativePlugins[] =
     MFX_PLUGINID_VP9D_HW,
     MFX_PLUGINID_HEVCE_HW,
     MFX_PLUGINID_VP9E_HW,
-#if MFX_VERSION >= 1027
     MFX_PLUGINID_HEVC_FEI_ENCODE
-#endif
 };
 
 #include "mfxstructures-int.h"

@@ -491,16 +491,12 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         case MFX_FOURCC_RGBP:
 #endif
         case MFX_FOURCC_BGRP:
-#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_AYUV:
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
-#endif
-#if (MFX_VERSION >= 1031)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
-#endif
         case MFX_FOURCC_P010:
         // A2RGB10 supported as input in case of passthru copy
         case MFX_FOURCC_A2RGB10:
@@ -519,20 +515,16 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_BGR4:
         case MFX_FOURCC_A2RGB10:
-#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_AYUV:
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
-#endif
 #ifdef MFX_ENABLE_RGBP
         case MFX_FOURCC_RGBP:
 #endif
         case MFX_FOURCC_BGRP:
-#if (MFX_VERSION >= 1031)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
-#endif
         case MFX_FOURCC_P010:
             caps.mFormatSupport[fourcc] |= MFX_FORMAT_SUPPORT_OUTPUT;
             break;
@@ -1278,9 +1270,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     case MFX_FOURCC_RGBP:
 #endif
     case MFX_FOURCC_BGRP:
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGB565:
-#endif
         m_pipelineParam[0].surface_color_standard = VAProcColorStandardNone;
         ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].input_color_properties.color_range = VA_SOURCE_RANGE_FULL);
         break;
@@ -1299,9 +1289,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     case MFX_FOURCC_RGBP:
 #endif
     case MFX_FOURCC_BGRP:
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGB565:
-#endif
         m_pipelineParam[0].output_color_standard = VAProcColorStandardNone;
         ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].output_color_properties.color_range = VA_SOURCE_RANGE_FULL);
         break;
@@ -1422,7 +1410,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     m_pipelineParam[0].input_color_properties.chroma_sample_location  = VA_CHROMA_SITING_UNKNOWN;
     m_pipelineParam[0].output_color_properties.chroma_sample_location = VA_CHROMA_SITING_UNKNOWN;
 
-#if (MFX_VERSION >= 1033)
     mfxU32 interpolation[4] = {
         VA_FILTER_INTERPOLATION_DEFAULT,            // MFX_INTERPOLATION_DEFAULT                = 0,
         VA_FILTER_INTERPOLATION_NEAREST_NEIGHBOR,   // MFX_INTERPOLATION_NEAREST_NEIGHBOR       = 1,
@@ -1431,7 +1418,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     };
     mfxSts = (pParams->interpolationMethod > MFX_INTERPOLATION_ADVANCED) ? MFX_ERR_UNSUPPORTED : MFX_ERR_NONE;
     MFX_CHECK_STS(mfxSts);
-#endif
     /* Scaling params */
     switch (pParams->scalingMode)
     {
@@ -1443,9 +1429,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             *  If scaling ratio is less than 1/16 -> bilinear
             */
         m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_DEFAULT;
-#if (MFX_VERSION >= 1033)
         m_pipelineParam[0].filter_flags |= interpolation[pParams->interpolationMethod];
-#endif
         break;
     case MFX_SCALING_MODE_QUALITY:
         /*  VA_FILTER_SCALING_HQ means the following:
@@ -1453,10 +1437,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             *  For all other cases, AVS is used.
             */
         m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_HQ;
-#if (MFX_VERSION >= 1033)
         m_pipelineParam[0].filter_flags |= interpolation[pParams->interpolationMethod];
         mfxSts = ((pParams->interpolationMethod == MFX_INTERPOLATION_DEFAULT) || (pParams->interpolationMethod == MFX_INTERPOLATION_ADVANCED)) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
-#endif
         break;
     case MFX_SCALING_MODE_DEFAULT:
     default:
@@ -1470,15 +1452,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             /* Force AVS by default for all platforms except BXT */
             m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_HQ;
         }
-#if (MFX_VERSION >= 1033)
         m_pipelineParam[0].filter_flags |= interpolation[pParams->interpolationMethod];
         mfxSts = ((pParams->interpolationMethod == MFX_INTERPOLATION_DEFAULT) || (pParams->interpolationMethod == MFX_INTERPOLATION_ADVANCED)) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
-#endif
         break;
     }
     MFX_CHECK_STS(mfxSts);
 
-#if (MFX_VERSION >= 1025)
         uint8_t& chromaSitingMode = m_pipelineParam[0].input_color_properties.chroma_sample_location;
         chromaSitingMode = VA_CHROMA_SITING_UNKNOWN;
 
@@ -1513,7 +1492,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
         }
         m_pipelineParam[0].output_color_properties.chroma_sample_location = chromaSitingMode;
-#endif
 
 if (pParams->mirroringExt)
 {
@@ -2113,25 +2091,19 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         }
         else if(inInfo->FourCC == MFX_FOURCC_P010
                 || inInfo->FourCC == MFX_FOURCC_P210
-#if (MFX_VERSION >= 1027)
                 || inInfo->FourCC == MFX_FOURCC_Y210
-                || inInfo->FourCC == MFX_FOURCC_Y410
-#endif
-            )
+                || inInfo->FourCC == MFX_FOURCC_Y410)
         {
             attrib.value.value.i = VA_FOURCC_P010; // We're going to flood fill this surface, so let's use most common 10-bit format
             rt_format = VA_RT_FORMAT_YUV420_10BPP;
         }
-#if (MFX_VERSION >= 1031)
         else if(inInfo->FourCC == MFX_FOURCC_P016
                 || inInfo->FourCC == MFX_FOURCC_Y216
-                || inInfo->FourCC == MFX_FOURCC_Y416
-            )
+                || inInfo->FourCC == MFX_FOURCC_Y416)
         {
             attrib.value.value.i = VA_FOURCC_P016; // We're going to flood fill this surface, so let's use most common 10-bit format
             rt_format = VA_RT_FORMAT_YUV420_10BPP;
         }
-#endif
         else
         {
             attrib.value.value.i = VA_FOURCC_NV12;
@@ -2204,10 +2176,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             }
 
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_P010
-#if (MFX_VERSION >= 1031)
-                || imagePrimarySurface.format.fourcc == VA_FOURCC_P016
-#endif
-            )
+                || imagePrimarySurface.format.fourcc == VA_FOURCC_P016)
             {
                 uint32_t Y=0;
                 uint32_t U=0;
@@ -2218,7 +2187,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                     U = (uint32_t)((pParams->iBackgroundColor >> 10) & 0xffC0);
                     V = (uint32_t)((pParams->iBackgroundColor <<  6) & 0xffC0);
                 }
-#if (MFX_VERSION >= 1031)
                 else
                 {
                     // 12 bit depth is used for these CCs
@@ -2226,7 +2194,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                     U = (uint32_t)((pParams->iBackgroundColor >> 12) & 0xfff0);
                     V = (uint32_t)((pParams->iBackgroundColor <<  4) & 0xfff0);
                 }
-#endif
 
                 uint16_t valueY = (uint16_t)Y;
                 uint32_t valueUV = (int32_t)((V << 16) + U); // Keep in mind that short is stored in memory using little-endian notation

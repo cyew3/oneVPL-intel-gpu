@@ -26,7 +26,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #error MFX_VERSION not defined
 #endif
 
-#if (MFX_VERSION >= 1024)
 #include "mfxbrc.h"
 
 
@@ -490,6 +489,4 @@ namespace HEVCExtBRC
         return MFX_ERR_NONE;
     }
 }
-#endif
-
 #endif

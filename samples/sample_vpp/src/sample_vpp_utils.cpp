@@ -79,10 +79,8 @@ static
         return MSDK_STRING("YV12");
     case MFX_FOURCC_YUY2:
         return MSDK_STRING("YUY2");
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGB565:
         return MSDK_STRING("RGB565");
-#endif
     case MFX_FOURCC_RGB3:
         return MSDK_STRING("RGB3");
     case MFX_FOURCC_RGB4:
@@ -115,20 +113,16 @@ static
         return MSDK_STRING("AYUV");
     case MFX_FOURCC_I420:
         return MSDK_STRING("I420");
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return MSDK_STRING("Y210");
     case MFX_FOURCC_Y410:
         return MSDK_STRING("Y410");
-#endif
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
         return MSDK_STRING("P016");
     case MFX_FOURCC_Y216:
         return MSDK_STRING("Y216");
     case MFX_FOURCC_Y416:
         return MSDK_STRING("Y416");
-#endif
     default:
         return MSDK_STRING("Unknown");
     }
@@ -199,9 +193,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     msdk_printf(MSDK_STRING("Deinterlace\t%s\n"), (pParams->frameInfoIn[0].PicStruct != pParams->frameInfoOut[0].PicStruct) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
     msdk_printf(MSDK_STRING("Signal info\t%s\n"),   (VPP_FILTER_DISABLED != pParams->videoSignalInfoParam[0].mode) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
     msdk_printf(MSDK_STRING("Scaling\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->bScaling) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
-#if MFX_VERSION >= 1025
     msdk_printf(MSDK_STRING("CromaSiting\t\t%s\n"), (VPP_FILTER_DISABLED != pParams->bChromaSiting) ? MSDK_STRING("ON") : MSDK_STRING("OFF"));
-#endif
     msdk_printf(MSDK_STRING("Denoise\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->denoiseParam[0].mode) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
 #ifdef ENABLE_MCTF
     msdk_printf(MSDK_STRING("MCTF\t\t%s\n"), (VPP_FILTER_DISABLED != pParams->mctfParam[0].mode) ? MSDK_STRING("ON") : MSDK_STRING("OFF"));
@@ -275,7 +267,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     else
         msdk_printf(MSDK_STRING("HW accelaration is disabled\n"));
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     if (pParams->bPrefferdGfx)
         msdk_printf(MSDK_STRING("dGfx adapter is preffered\n"));
 
@@ -388,7 +380,7 @@ mfxStatus InitParamsVPP(MfxVideoParamsWrapper* pParams, sInputParams* pInParams,
 
 /* ******************************************************************* */
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
 mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params)
 {
     if (adapters.NumActual == 0 || !adapters.Adapters)
@@ -489,7 +481,7 @@ mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputPara
 
     return MFX_ERR_NONE;
 }
-#endif // (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#endif // defined(_WIN64) || defined(_WIN32)
 
 mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 {
@@ -503,7 +495,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
 
     WipeFrameProcessor(pProcessor);
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     sts = GetImpl(*pParams, impl, *pInParams, adapterNum, deviceID);
     MSDK_CHECK_STATUS(sts, "GetImpl failed");
 #endif
@@ -1199,11 +1191,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_P010
-#if (MFX_VERSION >= 1031)
-          || pInfo->FourCC == MFX_FOURCC_P016
-#endif
-            )
+    else if( pInfo->FourCC == MFX_FOURCC_P010 || pInfo->FourCC == MFX_FOURCC_P016)
     {
         ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
 
@@ -1242,7 +1230,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
         }
     }
-#if (MFX_VERSION >= 1028)
     else if (pInfo->FourCC == MFX_FOURCC_RGB565)
     {
         MSDK_CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -1258,7 +1245,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 2*w, MFX_ERR_MORE_DATA);
         }
     }
-#endif
     else if (pInfo->FourCC == MFX_FOURCC_RGB3)
     {
         MSDK_CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -1350,12 +1336,8 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
-#if (MFX_VERSION >= 1027)
-    else if (pInfo->FourCC == MFX_FOURCC_Y210
-#if (MFX_VERSION >= 1031)
-    || pInfo->FourCC == MFX_FOURCC_Y216
-#endif
-)
+
+    else if (pInfo->FourCC == MFX_FOURCC_Y210 || pInfo->FourCC == MFX_FOURCC_Y216)
     {
         ptr = (mfxU8*)(pData->Y16 + pInfo->CropX * 2) + pInfo->CropY * pitch;
 
@@ -1375,8 +1357,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
-#endif
-#if (MFX_VERSION >= 1031)
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {
         ptr = (mfxU8*)(pData->U16 + pInfo->CropX * 4) + pInfo->CropY * pitch;
@@ -1387,7 +1367,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 8 * w, MFX_ERR_MORE_DATA);
         }
     }
-#endif
     else
     {
         return MFX_ERR_UNSUPPORTED;
@@ -1850,11 +1829,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-    else if(    pInfo->FourCC == MFX_FOURCC_P010
-#if (MFX_VERSION >= 1031)
-             || pInfo->FourCC == MFX_FOURCC_P016
-#endif
-           )
+    else if(pInfo->FourCC == MFX_FOURCC_P010 || pInfo->FourCC == MFX_FOURCC_P016)
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
 
@@ -1982,12 +1957,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-#if (MFX_VERSION >= 1027)
-    else if (pInfo->FourCC == MFX_FOURCC_Y210
-#if (MFX_VERSION >= 1031)
-    || pInfo->FourCC == MFX_FOURCC_Y216
-#endif
-)
+    else if (pInfo->FourCC == MFX_FOURCC_Y210 || pInfo->FourCC == MFX_FOURCC_Y216)
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
@@ -2005,8 +1975,6 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL(fwrite(ptr + i * pitch, 1, 4*w, m_fDst), w * 4u, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-#endif
-#if (MFX_VERSION >= 1031)
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {
         ptr = (mfxU8*)(pData->U16 + pInfo->CropX * 4) + pInfo->CropY * pitch;
@@ -2016,7 +1984,6 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL(fwrite(ptr + i * pitch, 1, 8 * w, m_fDst), w * 8u, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-#endif
     else
     {
         return MFX_ERR_UNSUPPORTED;

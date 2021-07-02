@@ -36,13 +36,10 @@
 #include "mfxenctools.h"
 #endif
 
-#if (MFX_VERSION >= 1026)
 #include "mfxbrc.h"
-#endif
 
 #include "mfxdeprecated.h"
 
-#if (MFX_VERSION >= 1025)
 #include "ts_typedef.h"
 
 #include "mfxdeprecated.h"
@@ -551,4 +548,3 @@ namespace mfx_reflect
     }
 }
 
-#endif

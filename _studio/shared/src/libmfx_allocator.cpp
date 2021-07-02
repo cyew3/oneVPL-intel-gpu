@@ -166,9 +166,7 @@ inline static mfxStatus GetNumBytesRequired(const mfxFrameInfo & Info, mfxU32& n
         nbytes = Pitch * Height2 + (Pitch >> 1) * (Height2 >> 1) + (Pitch >> 1) * (Height2 >> 1);
         break;
     case MFX_FOURCC_P010:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
-#endif
         Pitch  = mfx::align2_value(Info.Width * 2, 32);
         nbytes = Pitch * Height2 + (Pitch >> 1) * (Height2 >> 1) + (Pitch >> 1) * (Height2 >> 1);
         break;
@@ -209,11 +207,8 @@ inline static mfxStatus GetNumBytesRequired(const mfxFrameInfo & Info, mfxU32& n
         nbytes = Pitch * Height2;
         break;
 
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y216:
-#endif
         Pitch  = mfx::align2_value(Info.Width * 2, 32);
         nbytes = Pitch * Height2 + (Pitch >> 1) * Height2 + (Pitch >> 1) * Height2;
         break;
@@ -222,14 +217,11 @@ inline static mfxStatus GetNumBytesRequired(const mfxFrameInfo & Info, mfxU32& n
         Pitch  = mfx::align2_value(Info.Width * 4, 32);
         nbytes = Pitch * Height2;
         break;
-#endif
 
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y416:
         Pitch  = mfx::align2_value(Info.Width * 8, 32);
         nbytes = Pitch * Height2;
         break;
-#endif
 
     default:
         MFX_RETURN(MFX_ERR_UNSUPPORTED);
@@ -313,9 +305,7 @@ static inline mfxStatus SetPointers(mfxFrameData& frame_data, const mfxFrameInfo
         frame_data.V = frame_data.U + 1;
         break;
     case MFX_FOURCC_P010:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
-#endif
         std::tie(frame_data.PitchHigh, frame_data.PitchLow) = pitch_from_width(info.Width, 2u);
         frame_data.Y = bytes;
         frame_data.U = frame_data.Y + frame_data.Pitch*Height2;
@@ -402,11 +392,8 @@ static inline mfxStatus SetPointers(mfxFrameData& frame_data, const mfxFrameInfo
         frame_data.Y = frame_data.V + 2;
         frame_data.A = frame_data.V + 3;
         break;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y216:
-#endif
         std::tie(frame_data.PitchHigh, frame_data.PitchLow) = pitch_from_width(info.Width, 4u);
         frame_data.Y16 = (mfxU16*)bytes;
         frame_data.U16 = frame_data.Y16 + 1;
@@ -417,9 +404,7 @@ static inline mfxStatus SetPointers(mfxFrameData& frame_data, const mfxFrameInfo
         std::tie(frame_data.PitchHigh, frame_data.PitchLow) = pitch_from_width(info.Width, 4u);
         frame_data.Y410 = (mfxY410*)bytes;
         break;
-#endif
 
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y416:
         std::tie(frame_data.PitchHigh, frame_data.PitchLow) = pitch_from_width(info.Width, 8u);
         frame_data.U16 = (mfxU16*)bytes;
@@ -427,7 +412,6 @@ static inline mfxStatus SetPointers(mfxFrameData& frame_data, const mfxFrameInfo
         frame_data.V16 = frame_data.Y16 + 1;
         frame_data.A   = (mfxU8 *)(frame_data.V16 + 1);
         break;
-#endif
 
     default:
         MFX_RETURN(MFX_ERR_UNSUPPORTED);

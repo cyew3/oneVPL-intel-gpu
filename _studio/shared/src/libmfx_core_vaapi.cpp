@@ -205,7 +205,6 @@ mfxStatus VAAPIVideoCORE_T<Base>::GetHandle(
     UMC::AutomaticUMCMutex guard(this->m_guard);
 
 #if (defined (MFX_ENABLE_CPLIB)) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
-#if (MFX_VERSION >= 1030)
     if (MFX_HANDLE_VA_CONTEXT_ID == (mfxU32)type)
     {
         // not exist handle yet
@@ -215,7 +214,6 @@ mfxStatus VAAPIVideoCORE_T<Base>::GetHandle(
         return MFX_ERR_NONE;
     }
     else
-#endif
 #endif
         return Base::GetHandle(type, handle);
 
@@ -234,7 +232,6 @@ mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
         switch ((mfxU32)type)
         {
 #if (defined (MFX_ENABLE_CPLIB)) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
-#if (MFX_VERSION >= 1030)
         case MFX_HANDLE_VA_CONFIG_ID:
             // if device manager already set
             MFX_CHECK(m_VAConfigHandle == (mfxHDL)VA_INVALID_ID, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -252,7 +249,6 @@ mfxStatus VAAPIVideoCORE_T<Base>::SetHandle(
             m_VAContextHandle = hdl;
             m_KeepVAState = true;
             break;
-#endif
 #endif
         case MFX_HANDLE_VA_DISPLAY:
         {

@@ -149,10 +149,8 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_R16G16B16A16_UNORM != desc.Format &&
                 DXGI_FORMAT_P010 != desc.Format &&
                 DXGI_FORMAT_AYUV != desc.Format
-#if (MFX_VERSION >= 1027)
                 && DXGI_FORMAT_Y210 != desc.Format
                 && DXGI_FORMAT_Y410 != desc.Format
-#endif
 #ifdef ENABLE_PS
                 && DXGI_FORMAT_P016 != desc.Format
                 && DXGI_FORMAT_Y216 != desc.Format
@@ -276,7 +274,6 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             break;
         case DXGI_FORMAT_Y216:
 #endif
-#if (MFX_VERSION >= 1027)
         case DXGI_FORMAT_Y210:
             ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
             ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
@@ -295,7 +292,6 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->A = 0;
 
             break;
-#endif
 
         default:
 
@@ -449,13 +445,11 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         desc.SampleDesc.Count = 1;
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.MiscFlags = m_initParams.uncompressedResourceMiscFlags | D3D11_RESOURCE_MISC_SHARED;
-#if (MFX_VERSION >= 1025)
         if ((request->Type&MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && (request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
         {
             desc.BindFlags = D3D11_BIND_DECODER | D3D11_BIND_VIDEO_ENCODER;
         }
         else
-#endif
             desc.BindFlags = D3D11_BIND_DECODER;
 
         if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == desc.Format) ||
@@ -576,12 +570,10 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
         case MFX_FOURCC_AYUV:
             return DXGI_FORMAT_AYUV;
 
-#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
             return DXGI_FORMAT_Y210;
         case MFX_FOURCC_Y410:
             return DXGI_FORMAT_Y410;
-#endif
 #ifdef ENABLE_PS
         case MFX_FOURCC_P016:
             return DXGI_FORMAT_P016;

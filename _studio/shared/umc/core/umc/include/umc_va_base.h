@@ -146,12 +146,8 @@ enum VideoAccelerationProfile
     VA_PROFILE_444              = 0x0b000,
     VA_PROFILE_10               = 0x10000,
     VA_PROFILE_REXT             = 0x20000,
-#if (MFX_VERSION >= 1031)
     VA_PROFILE_12               = 0x40000,
-#if (MFX_VERSION >= 1032)
     VA_PROFILE_SCC              = 0x80000,
-#endif
-#endif
 
     // configurations
     VA_CONFIGURATION            = 0x0ff00000,
@@ -193,28 +189,22 @@ enum VideoAccelerationProfile
     H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
 #endif
 
-#if (MFX_VERSION >= 1031)
     H265_12_VLD_420             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12,
     H265_12_VLD_422             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12 | VA_PROFILE_422,
     H265_12_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12 | VA_PROFILE_444,
-#endif
 
-#if (MFX_VERSION >= 1032)
     H265_VLD_SCC                = VA_H265 | VA_VLD | VA_PROFILE_SCC,
     H265_VLD_444_SCC            = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_444,
     H265_10_VLD_SCC             = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_10,
     H265_10_VLD_444_SCC         = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_10 | VA_PROFILE_444,
-#endif
 
     VP9_10_VLD                  = VA_VP9 | VA_VLD | VA_PROFILE_10,
     VP9_VLD_422                 = VA_VP9 | VA_VLD | VA_PROFILE_422,
     VP9_VLD_444                 = VA_VP9 | VA_VLD | VA_PROFILE_444,
     VP9_10_VLD_422              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
     VP9_10_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
-#if (MFX_VERSION >= 1031)
     VP9_12_VLD_420              = VA_VP9 | VA_VLD | VA_PROFILE_12,
     VP9_12_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_12 | VA_PROFILE_444,
-#endif
 
 };
 

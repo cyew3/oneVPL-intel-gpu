@@ -138,7 +138,7 @@ CDecodingPipeline::~CDecodingPipeline()
     Close();
 }
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
 mfxU32 CDecodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params)
 {
     if (adapters.NumActual == 0 || !adapters.Adapters)
@@ -200,7 +200,7 @@ mfxStatus CDecodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
         return MFX_ERR_NONE;
     }
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     mfxU32 num_adapters_available;
 
     mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
@@ -268,7 +268,7 @@ mfxStatus CDecodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
 #else
     // Library should pick first available compatible adapter during InitEx call with MFX_IMPL_HARDWARE_ANY
     impl = MFX_IMPL_HARDWARE_ANY;
-#endif // (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#endif // defined(_WIN64) || defined(_WIN32)
 
     // If d3d11 surfaces are used ask the library to run acceleration through D3D11
     // feature may be unsupported due to OS or MSDK API version
@@ -529,9 +529,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     // set video type in parameters
     m_mfxVideoParams.mfx.CodecId = pParams->videoType;
 
-#if (MFX_VERSION >= 1034)
     m_mfxVideoParams.mfx.IgnoreLevelConstrain = pParams->bIgnoreLevelConstrain;
-#endif
 
     // Populate parameters. Involves DecodeHeader call
     sts = InitMfxParams(pParams);
@@ -607,14 +605,12 @@ bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
         (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height))
     {
         bVppIsUsed = pParams->Width && pParams->Height;
-#if MFX_VERSION >= 1022
         if ((MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing) ||
             (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing) )
         {
             /* Decoder will make decision about internal post-processing usage slightly later */
             bVppIsUsed = false;
         }
-#endif //MFX_VERSION >= 1022
     }
 
     // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
@@ -709,13 +705,11 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 &numViews = pParams->numViews;
 
-#if (MFX_VERSION >= 1025)
     if (pParams->bErrorReport)
     {
         auto decErrorReport = m_mfxBS.AddExtBuffer<mfxExtDecodeErrorReport>();
         MSDK_CHECK_POINTER(decErrorReport, MFX_ERR_MEMORY_ALLOC);
     }
-#endif
 
     if (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_VP9)
         m_mfxVideoParams.mfx.EnableReallocRequest = MFX_CODINGOPTION_ON;
@@ -727,7 +721,6 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         // trying to find PicStruct information in AVI headers
         if (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_JPEG)
             MJPEG_AVI_ParsePicStruct(&m_mfxBS);
-#if (MFX_VERSION >= 1025)
         if (pParams->bErrorReport)
         {
             auto errorReport = m_mfxBS.GetExtBuffer<mfxExtDecodeErrorReport>();
@@ -741,7 +734,6 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
             PrintDecodeErrorReport(errorReport);
         }
         else
-#endif
         {
             // parse bit stream and fill mfx params
             sts = m_pmfxDEC->DecodeHeader(&m_mfxBS, &m_mfxVideoParams);
@@ -851,7 +843,6 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         }
     }
 
-#if MFX_VERSION >= 1022
     /* Lets make final decision how to use VPP...*/
     if (!m_bVppIsUsed)
     {
@@ -919,7 +910,6 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
                 msdk_printf(MSDK_STRING("Decoder post-processing is unsupported for this stream, VPP is used\n") );
         }
     }
-#endif //MFX_VERSION >= 1022
 
     // If MVC mode we need to detect number of views in stream
     if (m_bIsMVC)
@@ -953,10 +943,8 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
 
     m_mfxVideoParams.AsyncDepth = pParams->nAsyncDepth;
 
-#if (MFX_VERSION >= 1034)
     if (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_AV1)
         m_mfxVideoParams.mfx.FilmGrain = pParams->bDisableFilmGrain ? 0 : m_mfxVideoParams.mfx.FilmGrain;
-#endif
 
     return MFX_ERR_NONE;
 }
@@ -1035,16 +1023,10 @@ mfxStatus CDecodingPipeline::InitVppParams()
     // P010 video surfaces should be shifted
     if (m_memType != SYSTEM_MEMORY &&
         (  m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_P010
-#if (MFX_VERSION >= 1027)
         || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_Y210
-#endif
-#if (MFX_VERSION >= 1331)
         || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_P016
         || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_Y216
-        || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_Y416
-#endif
-        )
-    )
+        || m_mfxVppVideoParams.vpp.Out.FourCC == MFX_FOURCC_Y416))
     {
         m_mfxVppVideoParams.vpp.Out.Shift = 1;
     }
@@ -1831,18 +1813,14 @@ mfxStatus CDecodingPipeline::RunDecoding()
             }
             pOutSurface = NULL;
             do {
-#if (MFX_VERSION >= 1025)
                 mfxExtDecodeErrorReport *errorReport = nullptr;
                 if (pBitstream)
                 {
                     errorReport = (mfxExtDecodeErrorReport *)GetExtBuffer(pBitstream->ExtParam, pBitstream->NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT);
                 }
-#endif
                 sts = m_pmfxDEC->DecodeFrameAsync(pBitstream, &(m_pCurrentFreeSurface->frame), &pOutSurface, &(m_pCurrentFreeOutputSurface->syncp));
 
-#if (MFX_VERSION >= 1025)
                 PrintDecodeErrorReport(errorReport);
-#endif
 
                 if (pBitstream && MFX_ERR_MORE_DATA == sts && pBitstream->MaxLength == pBitstream->DataLength)
                 {

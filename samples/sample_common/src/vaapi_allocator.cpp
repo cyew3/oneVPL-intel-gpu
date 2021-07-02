@@ -43,12 +43,10 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_UYVY;
     case MFX_FOURCC_YV12:
         return VA_FOURCC_YV12;
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGB565:
         return VA_FOURCC_RGB565;
     case MFX_FOURCC_RGBP:
         return VA_FOURCC_RGBP;
-#endif
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
     case MFX_FOURCC_P8:
@@ -59,12 +57,10 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_ARGB;  // rt format will be VA_RT_FORMAT_RGB32_10BPP
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         return VA_FOURCC_P016;
@@ -162,14 +158,10 @@ static mfxStatus GetVAFourcc(mfxU32 fourcc, unsigned int &va_fourcc)
         (VA_FOURCC_P208 != va_fourcc) &&
         (VA_FOURCC_P010 != va_fourcc) &&
         (VA_FOURCC_YUY2 != va_fourcc) &&
-#if (MFX_VERSION >= 1027)
         (VA_FOURCC_Y210 != va_fourcc) &&
         (VA_FOURCC_Y410 != va_fourcc) &&
-#endif
-#if (MFX_VERSION >= 1028)
         (VA_FOURCC_RGB565 != va_fourcc) &&
         (VA_FOURCC_RGBP   != va_fourcc) &&
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         (VA_FOURCC_P016 != va_fourcc) &&
         (VA_FOURCC_Y216 != va_fourcc) &&
@@ -324,12 +316,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             {
                 format = VA_RT_FORMAT_RGB32_10BPP;
             }
-#if (MFX_VERSION >= 1028)
             else if (fourcc == MFX_FOURCC_RGBP)
             {
                 format = VA_RT_FORMAT_RGBP;
             }
-#endif
 
             va_res = m_libva->vaCreateSurfaces(m_dpy,
                                     format,
@@ -574,7 +564,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->V = ptr->U + 2;
                 }
                 break;
-#if (MFX_VERSION >= 1028)
             case VA_FOURCC_RGB565:
                 if (mfx_fourcc == MFX_FOURCC_RGB565)
                 {
@@ -584,7 +573,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else return MFX_ERR_LOCK_MEMORY;
                 break;
-#endif
             case VA_FOURCC_ARGB:
                 if (mfx_fourcc == MFX_FOURCC_RGB4)
                 {
@@ -645,7 +633,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->A = ptr->V + 3;
                 }
                 break;
-#if (MFX_VERSION >= 1027)
             case VA_FOURCC_Y210:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             case VA_FOURCC_Y216:
@@ -668,7 +655,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->A = 0;
                 }
                 break;
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             case VA_FOURCC_Y416:
                 if (mfx_fourcc != vaapi_mid->m_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;

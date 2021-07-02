@@ -37,7 +37,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 using namespace std;
 using namespace TranscodingSample;
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
 mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params)
 {
     if (adapters.NumActual == 0 || !adapters.Adapters)
@@ -152,7 +152,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     sts = m_pLoader->ConfigureAndEnumImplementations(m_InputParamsArray[0].libType, m_accelerationMode);
     MSDK_CHECK_STATUS(sts, "pLoader->ConfigureAndEnumImplementations failed");
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
     // check available adapters
     sts = QueryAdapters();
     MSDK_CHECK_STATUS(sts, "QueryAdapters failed");
@@ -418,7 +418,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
         pThreadPipeline->pPipeline.reset(CreatePipeline());
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
         pThreadPipeline->pPipeline->SetPrefferiGfx(m_InputParamsArray[i].bPrefferiGfx);
         pThreadPipeline->pPipeline->SetPrefferdGfx(m_InputParamsArray[i].dGfxIdx);
 #endif
@@ -511,7 +511,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         sts = MFX_ERR_MORE_DATA;
         if (Source == m_InputParamsArray[i].eMode)
         {
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
             sts = CheckAndFixAdapterDependency(i, pSinkPipeline);
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
@@ -534,7 +534,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         }
         else
         {
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
             sts = CheckAndFixAdapterDependency(i, pParentPipeline);
             MSDK_CHECK_STATUS(sts, "CheckAndFixAdapterDependency failed");
             // force implementation type based on iGfx/dGfx parameters
@@ -820,7 +820,7 @@ mfxStatus Launcher::ProcessResult()
     return FinalSts;
 } // mfxStatus Launcher::ProcessResult()
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
 mfxStatus Launcher::QueryAdapters()
 {
     mfxU32 num_adapters_available;
@@ -942,7 +942,7 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
 
     return MFX_ERR_NONE;
 }
-#endif //(_WIN32 || _WIN64) && (MFX_VERSION >= 1031)
+#endif //(_WIN32 || _WIN64)
 
 mfxStatus Launcher::VerifyCrossSessionsOptions()
 {
@@ -956,8 +956,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     mfxU16 minAsyncDepth = 0;
     bool bUseExternalAllocator = false;
     bool bSingleTexture = false;
-
-#if (MFX_VERSION >= 1025)
     bool allMFEModesEqual=true;
     bool allMFEFramesEqual=true;
     bool allMFESessionsJoined = true;
@@ -1014,7 +1012,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         msdk_printf(MSDK_STRING("WARNING: All sessions for MFE should have the same mode!\n, used mode: %d\n"),  (int)usedMFEMode);
     if(!allMFESessionsJoined)
         msdk_printf(MSDK_STRING("WARNING: Sessions for MFE should be joined! All sessions forced to be joined\n"));
-#endif
 
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {

@@ -78,10 +78,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("                                 If not specified, defaults to the first Intel device found on the system\n"));
 #endif
 #if (defined(_WIN64) || defined(_WIN32))
-#if (MFX_VERSION >= 1031)
     msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1' \n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
-#endif	#endif
     msdk_printf(MSDK_STRING("   [-dual_gfx::<on,off,adaptive>] - prefer processing on both iGfx and dGfx simultaneously\n"));
 #endif
 #ifdef MOD_ENC
@@ -106,10 +104,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-num_active_P numRefs]   - number of maximum allowed references for P frames (for HEVC only)\n"));
     msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed references for B frames in L0 (for HEVC only)\n"));
     msdk_printf(MSDK_STRING("   [-num_active_BL1 numRefs] - number of maximum allowed references for B frames in L1 (for HEVC only)\n"));
-#if (MFX_VERSION >= 1027)
     msdk_printf(MSDK_STRING("   [-TargetBitDepthLuma] - Encoding target bit depth for luma samples, by default same as source one \n"));
     msdk_printf(MSDK_STRING("   [-TargetBitDepthChroma] - Encoding target bit depth for chroma samples, by default same as source one \n"));
-#endif
     msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) (by default constant bitrate control method is used)\n"));
     msdk_printf(MSDK_STRING("           for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [0,100] (0 - default: auto-select by mediasdk library).\n"));
@@ -137,9 +133,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-qpi]                   - constant quantizer for I frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("   [-qpp]                   - constant quantizer for P frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("   [-qpb]                   - constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
-#if (MFX_VERSION >= 1027)
     msdk_printf(MSDK_STRING("   [-round_offset_in file]  - use this file to set per frame inter/intra rounding offset(for AVC only)\n"));
-#endif
     msdk_printf(MSDK_STRING("   [-lowpower:<on,off>]     - Turn this option ON to enable QuickSync Fixed Function (low-power HW) encoding mode\n"));
     msdk_printf(MSDK_STRING("   [-ir_type]               - Intra refresh type. 0 - no refresh, 1 - vertical refresh, 2 - horisontal refresh, 3 - slice refresh\n"));
     msdk_printf(MSDK_STRING("   [-ir_cycle_size]         - Number of pictures within refresh cycle starting from 2\n"));
@@ -171,11 +165,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-wb]                    - specifies the maximum bitrate averaged over a sliding window in Kbps\n"));
     msdk_printf(MSDK_STRING("   [-amfs:<on,off>]         - adaptive max frame size. If set on, P or B frame size can exceed MaxFrameSize when the scene change is detected.\
                             It can benefit the video quality \n"));
-#if (MFX_VERSION >= 1023)
     msdk_printf(MSDK_STRING("   [-LowDelayBRC]           - strictly obey average frame size set by MaxKbps\n"));
-#endif
 
-#if (MFX_VERSION >= 1031) && (defined(_WIN64) || defined(_WIN32))
+#if defined(_WIN64) || defined(_WIN32)
     msdk_printf(MSDK_STRING("   [-PartialOutput <mode> <<block_size>>]         - specify partial output mode [0 - slice, 1 - block <blocksize>B, 2 - any]\n"));
 #endif
 
@@ -197,9 +189,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-dblk_alpha]            - alpha deblocking parameter. In range[-12,12]. 0 by default.\n"));
     msdk_printf(MSDK_STRING("   [-dblk_beta]             - beta deblocking parameter. In range[-12,12]. 0 by default.\n"));
 #endif
-#if (MFX_VERSION >= 1024)
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off,implicit>] - External BRC for AVC and HEVC encoders\n"));
-#endif
     msdk_printf(MSDK_STRING("   [-encTools]     - enables enctools for AVC encoder\n"));
     msdk_printf(MSDK_STRING("   [-et:adaptiveI:<on,off>] - flag for configuring “Frame type calculation” feature.\n"));
     msdk_printf(MSDK_STRING("                      Distance between Intra frames depends on the content.\n"));
@@ -217,9 +207,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-et:brchints:<on,off>]  - flag for enabling “BRC buffer hints” feature: calculation of optimal frame size, HRD buffer fullness, etc.\n"));
     msdk_printf(MSDK_STRING("   [-et:brc:<on,off>]       - flag for enabling functionality: QP calculation for frame encoding, encoding status calculation after frame encoding\n"));
     msdk_printf(MSDK_STRING("   [-ScenarioInfo n] - Sets scenario info. 0=unknown, 7=MFX_SCENARIO_GAME_STREAMING, 8=MFX_SCENARIO_REMOTE_GAMING \n"));
-#if (MFX_VERSION >= 1026)
     msdk_printf(MSDK_STRING("   [-ExtBrcAdaptiveLTR:<on,off>] - Set AdaptiveLTR for implicit extbrc\n"));
-#endif
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
     msdk_printf(MSDK_STRING("   [-preset <default,dss,conference,gaming>] - Use particular preset for encoding parameters\n"));
     msdk_printf(MSDK_STRING("   [-pp] - Print preset parameters\n"));
@@ -384,7 +372,6 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
     {
         pParams->FileInputFourCC = MFX_FOURCC_NV16;
     }
-#if (MFX_VERSION >= 1031)
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p016")))
     {
         pParams->FileInputFourCC = MFX_FOURCC_P016;
@@ -393,7 +380,6 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
     {
         pParams->FileInputFourCC = MFX_FOURCC_Y216;
     }
-#endif
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ec::yuy2")))
     {
         pParams->EncodeFourCC = MFX_FOURCC_YUY2;
@@ -418,7 +404,6 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
     {
         pParams->EncodeFourCC = MFX_FOURCC_NV16;
     }
-#if (MFX_VERSION >= 1027)
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ec::y210")))
     {
         pParams->EncodeFourCC = MFX_FOURCC_Y210;
@@ -427,8 +412,6 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
     {
         pParams->EncodeFourCC = MFX_FOURCC_Y410;
     }
-#endif
-#if (MFX_VERSION >= 1031)
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ec::p016")))
     {
         pParams->EncodeFourCC = MFX_FOURCC_P016;
@@ -437,7 +420,6 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
     {
         pParams->EncodeFourCC = MFX_FOURCC_Y216;
     }
-#endif
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-fps")))
     {
         VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
@@ -448,7 +430,6 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
             return MFX_ERR_UNSUPPORTED;
         }
 	}
-#if (MFX_VERSION >= 1027)
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-TargetBitDepthLuma")))
     {
         VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
@@ -469,7 +450,6 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
             return MFX_ERR_UNSUPPORTED;
         }
     }
-#endif
 #if (defined(_WIN64) || defined(_WIN32))
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dual_gfx::on")))
     {
@@ -517,9 +497,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->nPRefType = MFX_P_REF_DEFAULT;
     pParams->QPFileMode = false;
     pParams->BitrateLimit = MFX_CODINGOPTION_OFF;
-#if (MFX_VERSION >= 1027)
     pParams->RoundingOffsetFile = NULL;
-#endif
 #if defined (ENABLE_V4L2_SUPPORT)
     pParams->MipiPort = -1;
     pParams->MipiMode = NONE;
@@ -583,7 +561,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->strDevicePath = strInput[++i];
         }
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dGfx")))
         {
             pParams->bPrefferdGfx = true;
@@ -657,7 +635,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->FileInputFourCC = MFX_FOURCC_UYVY;
         }
-#if (MFX_VERSION >= 1027)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y210")))
         {
             pParams->FileInputFourCC = MFX_FOURCC_Y210;
@@ -666,7 +643,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->FileInputFourCC = MFX_FOURCC_Y410;
         }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-a2rgb10")))
         {
             pParams->FileInputFourCC = MFX_FOURCC_A2RGB10;
@@ -1135,13 +1111,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-#if (MFX_VERSION >= 1027)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-round_offset_in")))
         {
             VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
             pParams->RoundingOffsetFile = strInput[++i];
         }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpb:on")))
         {
             pParams->nGPB = MFX_CODINGOPTION_ON;
@@ -1185,7 +1159,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-#if (MFX_VERSION >= 1024)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {
             pParams->nExtBRC= EXTBRC_ON;
@@ -1198,8 +1171,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nExtBRC = EXTBRC_IMPLICIT;
         }
-#endif
-#if (MFX_VERSION >= 1026)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ExtBrcAdaptiveLTR:on")))
         {
             pParams->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_ON;
@@ -1208,7 +1179,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;;
         }
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_alpha")))
         {
@@ -1408,7 +1378,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->UseRegionEncode = true;
         }
-#if (MFX_VERSION >= 1031) && (defined(_WIN64) || defined(_WIN32))
+#if defined(_WIN64) || defined(_WIN32)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-PartialOutput")))
         {
             VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
@@ -1757,7 +1727,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         msdk_printf(MSDK_STRING("File output is disabled as -o option isn't specified\n"));
     }
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     if (pParams->bPrefferdGfx && pParams->bPrefferiGfx)
     {
         msdk_printf(MSDK_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered"));
@@ -1765,12 +1735,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 #endif
 
-#if (MFX_VERSION >= 1031)
     if(pParams->PartialOutputMode) {
         pParams->nAsyncDepth = 1;
         msdk_printf(MSDK_STRING("Warning: async depth changed to 1 for partial output"));
     }
-#endif
 
     return MFX_ERR_NONE;
 }

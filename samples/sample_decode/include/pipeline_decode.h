@@ -68,12 +68,10 @@ enum eWorkMode {
   MODE_FILE_DUMP
 };
 
-#if MFX_VERSION >= 1022
 enum eDecoderPostProc {
   MODE_DECODER_POSTPROC_AUTO  = 0x1,
   MODE_DECODER_POSTPROC_FORCE = 0x2
 };
-#endif //MFX_VERSION >= 1022
 
 struct sInputParams
 {
@@ -92,10 +90,7 @@ struct sInputParams
     mfxU32  nWallH; //number of windows located in each column
     mfxU32  nWallMonitor; //monitor id, 0,1,.. etc
     bool    bWallNoTitle; //whether to show title for each window with fps value
-#if MFX_VERSION >= 1022
     mfxU16  nDecoderPostProcessing;
-#endif //MFX_VERSION >= 1022
-
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
     mfxU16  nAsyncDepth; // asyncronous queue
@@ -120,9 +115,7 @@ struct sInputParams
     bool    bRenderWin;
     mfxU32  nRenderWinX;
     mfxU32  nRenderWinY;
-#if (MFX_VERSION >= 1025)
     bool    bErrorReport;
-#endif
 
     mfxI32  monitorType;
 #if defined(LIBVA_SUPPORT)
@@ -131,15 +124,13 @@ struct sInputParams
 #if defined(LINUX32) || defined(LINUX64)
     std::string strDevicePath;
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
     mfxU32 dGfxIdx;
 #endif
 
-#if (MFX_VERSION >= 1034)
     bool bIgnoreLevelConstrain;
-#endif
 
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
@@ -194,7 +185,6 @@ public:
     virtual void PrintInfo();
     mfxU64 GetTotalBytesProcessed() { return totalBytesProcessed + m_mfxBS.DataOffset; }
 
-#if (MFX_VERSION >= 1025)
     inline void PrintDecodeErrorReport(mfxExtDecodeErrorReport *pDecodeErrorReport)
     {
         if (pDecodeErrorReport)
@@ -213,10 +203,9 @@ public:
 
         }
     }
-#endif
 
 protected: // functions
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     mfxU32    GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params);
 #endif
     mfxStatus GetImpl(const sInputParams & params, mfxIMPL & impl);

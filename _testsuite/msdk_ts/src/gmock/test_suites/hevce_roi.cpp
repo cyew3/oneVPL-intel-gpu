@@ -142,7 +142,6 @@ namespace hevce_roi
         // checking Query with one region with not aligned coordinates [quantity, top, left, right, bottom, qp-alter]
         {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, NOT_ALIGNED_ROI, MFX_ROI_MODE_PRIORITY, 1, 10, 20, 30, 40, 1 },
 
-#if MFX_VERSION > 1021
         // one correct delta QP based region in CBR
         {/*19*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, 20,
         {
@@ -379,7 +378,6 @@ namespace hevce_roi
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
         }
         },
-#endif // #if  MFX_VERSION > 1021
     };
 
     const unsigned int TestSuite::n_cases = sizeof(test_case) / sizeof(tc_struct);
@@ -609,9 +607,7 @@ namespace hevce_roi
             roi.NumROI = tc.roi_cnt;
         }
 
-#if MFX_VERSION > 1021
         roi.ROIMode = tc.roi_mode;
-#endif // MFX_VERSION > 1021
         mfxU32 multiplier = tc.type == WRONG_ROI_OUT_OF_IMAGE ? m_par.mfx.FrameInfo.Width : 32;
         const mfxU32 end_count = roi.NumROI > MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS ? MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS : roi.NumROI;
         //We want to check handling of NumRoI but in case of

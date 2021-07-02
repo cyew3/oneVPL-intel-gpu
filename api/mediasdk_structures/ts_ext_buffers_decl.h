@@ -49,9 +49,7 @@ EXTBUF(mfxExtVP8CodingOption             , MFX_EXTBUFF_VP8_CODING_OPTION        
 EXTBUF(mfxExtVPPFieldProcessing          , MFX_EXTBUFF_VPP_FIELD_PROCESSING            )
 EXTBUF(mfxExtContentLightLevelInfo       , MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO        )
 EXTBUF(mfxExtMasteringDisplayColourVolume, MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME )
-#if (MFX_VERSION >= 1026)
 EXTBUF(mfxExtVppMctf                     , MFX_EXTBUFF_VPP_MCTF                        )
-#endif
 EXTBUF(mfxExtColorConversion             , MFX_EXTBUFF_VPP_COLOR_CONVERSION            )
 EXTBUF(mfxExtAVCRefLists                 , MFX_EXTBUFF_AVC_REFLISTS               )
 EXTBUF(mfxExtCodingOption3               , MFX_EXTBUFF_CODING_OPTION3             )
@@ -66,18 +64,14 @@ EXTBUF(mfxExtMVCSeqDesc                  , MFX_EXTBUFF_MVC_SEQ_DESC)
 EXTBUF(mfxExtMBDisableSkipMap            , MFX_EXTBUFF_MB_DISABLE_SKIP_MAP)
 EXTBUF(mfxExtDirtyRect                   , MFX_EXTBUFF_DIRTY_RECTANGLES          )
 EXTBUF(mfxExtMoveRect                    , MFX_EXTBUFF_MOVING_RECTANGLES         )
-#if (MFX_VERSION >= 1026)
 EXTBUF(mfxExtVP9Segmentation             , MFX_EXTBUFF_VP9_SEGMENTATION          )
 EXTBUF(mfxExtVP9TemporalLayers           , MFX_EXTBUFF_VP9_TEMPORAL_LAYERS       )
 EXTBUF(mfxExtVP9Param                    , MFX_EXTBUFF_VP9_PARAM                 )
-#endif
 EXTBUF(mfxExtHEVCParam                   , MFX_EXTBUFF_HEVC_PARAM                )
 EXTBUF(mfxExtHEVCTiles                   , MFX_EXTBUFF_HEVC_TILES                )
 EXTBUF(mfxExtPredWeightTable             , MFX_EXTBUFF_PRED_WEIGHT_TABLE         )
 EXTBUF(mfxExtEncodedUnitsInfo            , MFX_EXTBUFF_ENCODED_UNITS_INFO        )
-#if (MFX_VERSION >= 1031)
 EXTBUF(mfxExtPartialBitstreamParam       , MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM   )
-#endif
 EXTBUF(mfxExtEncoderIPCMArea             , MFX_EXTBUFF_ENCODER_IPCM_AREA               )
 EXTBUF(mfxExtInsertHeaders               , MFX_EXTBUFF_INSERT_HEADERS                  )
 
@@ -118,9 +112,7 @@ EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 EXTBUF(mfxExtPAVPOption                  , MFX_EXTBUFF_PAVP_OPTION               )
 #endif
 
-#if (MFX_VERSION >= 1030)
 EXTBUF(mfxExtCencParam                   , MFX_EXTBUFF_CENC_PARAM                )
-#endif
 #endif // defined(__MFXPCP_H__)
 
 #if defined(__MFXSCD_H__)

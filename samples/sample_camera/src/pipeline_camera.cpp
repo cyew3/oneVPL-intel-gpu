@@ -273,7 +273,6 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "AllocAndInitCamBlackLevelCorrection failed");
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_BlackLevelCorrection);
     }
-#if MFX_VERSION >= 1023
     if (pParams->bTCC)
     {
         sts = AllocAndInitCamTotalColorControl(pParams);
@@ -286,7 +285,6 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "AllocAndInitCamRGBToYUV failed");
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_RGBToYUV);
     }
-#endif
     if (pParams->bHP)
     {
         sts = AllocAndInitCamHotPixelRemoval(pParams);
@@ -754,7 +752,6 @@ CCameraPipeline::CCameraPipeline()
     MSDK_ZERO_MEMORY(m_3DLUT_GammaCorrection);
     m_3DLUT_GammaCorrection.Header.BufferId = MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION;
     m_3DLUT_GammaCorrection.Header.BufferSz = sizeof(m_3DLUT_GammaCorrection);
-#if MFX_VERSION >= 1023
     MSDK_ZERO_MEMORY(m_TotalColorControl);
     m_TotalColorControl.Header.BufferId = MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL;
     m_TotalColorControl.Header.BufferSz = sizeof(m_TotalColorControl);
@@ -762,7 +759,6 @@ CCameraPipeline::CCameraPipeline()
     MSDK_ZERO_MEMORY(m_RGBToYUV);
     m_RGBToYUV.Header.BufferId = MFX_EXTBUF_CAM_CSC_YUV_RGB;
     m_RGBToYUV.Header.BufferSz = sizeof(m_RGBToYUV);
-#endif
     MSDK_ZERO_MEMORY(m_BlackLevelCorrection);
     m_BlackLevelCorrection.Header.BufferId = MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION;
     m_BlackLevelCorrection.Header.BufferSz = sizeof(m_BlackLevelCorrection);
@@ -1040,7 +1036,6 @@ mfxStatus CCameraPipeline::AllocAndInitCamBlackLevelCorrection(sInputParams *pPa
     return MFX_ERR_NONE;
 }
 
-#if MFX_VERSION >= 1023
 mfxStatus CCameraPipeline::AllocAndInitCamRGBtoYUV(sInputParams *pParams)
 {
     for (int i = 0; i < 3; i++)
@@ -1072,7 +1067,6 @@ mfxStatus CCameraPipeline::AllocAndInitCamTotalColorControl(sInputParams *pParam
 
     return MFX_ERR_NONE;
 }
-#endif
 
 mfxStatus CCameraPipeline::AllocAndInitDenoise(sInputParams *pParams)
 {

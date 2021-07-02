@@ -29,10 +29,7 @@
 
 #include "umc_hevc_ddi.h"
 #include "umc_h265_va_packer_dxva.h"
-
-#if (MFX_VERSION >= 1032)
 #include "platform/umc_h265_va_packer_common_g12.hpp"
-#endif
 
 #if DDI_VERSION < 943
     #error "Gen11 should be compiled with DDI_VERSION >= 0.943"
@@ -509,7 +506,6 @@ namespace UMC_HEVC_DECODER
         if (!pSliceInfo)
             throw h265_exception(UMC_ERR_FAILED);
 
-#if (MFX_VERSION >= 1032)
         if (m_va->m_Profile & VA_PROFILE_SCC)
         {
             DXVA_Intel_PicParams_HEVC_SCC* pp = 0;
@@ -518,7 +514,6 @@ namespace UMC_HEVC_DECODER
             pp->PicParamsRext.PicParamsMain.StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
         }
         else
-#endif
         if (m_va->m_Profile & VA_PROFILE_REXT)
         {
             DXVA_Intel_PicParams_HEVC_Rext* pp = 0;
@@ -626,7 +621,6 @@ namespace UMC_HEVC_DECODER
         if (!sh->num_entry_point_offsets)
             return;
 
-#if (MFX_VERSION >= 1032)
         H265DecoderFrame* frame = pSlice->GetCurrentFrame();
         if (!frame)
             throw h265_exception(UMC_ERR_FAILED);
@@ -638,7 +632,6 @@ namespace UMC_HEVC_DECODER
         auto p = G12::GetEntryPoint(pSlice);
         header->EntryOffsetToSubsetArray = p.first;
         header->num_entry_point_offsets  = p.second;
-#endif
     }
 
     inline
@@ -759,11 +752,7 @@ namespace UMC_HEVC_DECODER
             UMCVACompBuffer *compBuf;
             DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
 
-            if (   (m_va->m_Profile & VA_PROFILE_REXT)
-#if (MFX_VERSION >= 1032)
-                || (m_va->m_Profile & VA_PROFILE_SCC)
-#endif
-                )
+            if ((m_va->m_Profile & VA_PROFILE_REXT) || (m_va->m_Profile & VA_PROFILE_SCC))
             {
                 DXVA_Intel_Slice_HEVC_EXT_Long* header = 0;
                 GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_EXT_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
@@ -788,7 +777,6 @@ namespace UMC_HEVC_DECODER
 
     void PackerDXVA2intel::PackSubsets(H265DecoderFrame const* frame)
     {
-#if (MFX_VERSION >= 1032)
         if (m_va->m_HWPlatform < MFX_HW_TGL_LP)
             return;
 
@@ -814,7 +802,6 @@ namespace UMC_HEVC_DECODER
 
         auto offset = &subset->entry_point_offset_minus1[0];
         G12::FillSubsets(fi, offset, offset + compBuf->GetDataSize() / sizeof(*offset));
-#endif
     }
 }
 

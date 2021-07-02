@@ -26,7 +26,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #error MFX_VERSION not defined
 #endif
 
-#if (MFX_VERSION >= 1024)
 #define BRC_SCENE_CHANGE_RATIO1 20.0
 #define BRC_SCENE_CHANGE_RATIO2 5.0
 
@@ -1278,4 +1277,3 @@ void sHrdInput::Init(cBRCParams par)
     m_cpbSize90k = mfxU32(90000. * par.bufferSizeInBytes*8.0 / m_bitrate);
     m_initCpbRemovalDelay = 90000. * 8. * par.initialDelayInBytes / m_bitrate;
 }
-#endif

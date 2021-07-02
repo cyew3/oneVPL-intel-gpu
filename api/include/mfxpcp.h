@@ -47,7 +47,7 @@ enum {
     MFX_MEMTYPE_PROTECTED   =   0x0080
 };
 
-#if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
+#if!defined(OPEN_SOURCE)
 /* Protected in mfxVideoParam */
 enum {
 #if !defined(OPEN_SOURCE)
@@ -55,12 +55,10 @@ enum {
     MFX_PROTECTION_GPUCP_PAVP           = 0x0002,
     MFX_PROTECTION_GPUCP_AES128_CTR     = 0x0003,
 #endif
-#if (MFX_VERSION >= 1030)
     MFX_PROTECTION_CENC_WV_CLASSIC      = 0x0004,
     MFX_PROTECTION_CENC_WV_GOOGLE_DASH  = 0x0005,
-#endif
 };
-#endif // #if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
+#endif // #if !defined(OPEN_SOURCE)
 
 #if !defined(OPEN_SOURCE)
 /* EncryptionType in mfxExtPAVPOption */
@@ -80,17 +78,15 @@ enum
 };
 #endif
 
-#if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
+#if !defined(OPEN_SOURCE)
 /* Extended Buffer Ids */
 enum {
 #if !defined(OPEN_SOURCE)
     MFX_EXTBUFF_PAVP_OPTION         = MFX_MAKEFOURCC('P','V','O','P'),
 #endif
-#if (MFX_VERSION >= 1030)
     MFX_EXTBUFF_CENC_PARAM          = MFX_MAKEFOURCC('C','E','N','P')
-#endif
 };
-#endif // #if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
+#endif // #if !defined(OPEN_SOURCE)
 
 #if !defined(OPEN_SOURCE)
 MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
@@ -126,7 +122,6 @@ typedef struct _mfxExtPAVPOption{
 MFX_PACK_END()
 #endif
 
-#if (MFX_VERSION >= 1030)
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct _mfxExtCencParam{
     mfxExtBuffer Header;
@@ -135,7 +130,6 @@ typedef struct _mfxExtCencParam{
     mfxU32 reserved[15];
 } mfxExtCencParam;
 MFX_PACK_END()
-#endif
 
 #ifdef __cplusplus
 } // extern "C"

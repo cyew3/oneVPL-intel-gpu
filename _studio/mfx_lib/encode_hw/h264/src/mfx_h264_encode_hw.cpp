@@ -499,9 +499,7 @@ mfxStatus ImplementationAvc::Query(
         if (mfxExtEncoderROI * extRoi = GetExtBuffer(*out))
         {
             extRoi->NumROI          = 1;
-#if MFX_VERSION > 1021
             extRoi->ROIMode         = MFX_ROI_MODE_QP_DELTA;
-#endif // MFX_VERSION > 1021
             extRoi->ROI[0].Left     = 1;
             extRoi->ROI[0].Right    = 1;
             extRoi->ROI[0].Top      = 1;
@@ -1692,11 +1690,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_sei.Alloc(mfxU32(MAX_SEI_SIZE + MAX_FILLER_SIZE));
     }
 
-#if MFX_VERSION >= 1023
     #ifndef MFX_ENABLE_H264_REPARTITION_CHECK
         MFX_CHECK(extOpt3.RepartitionCheckEnable == MFX_CODINGOPTION_UNKNOWN, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     #endif //MFX_ENABLE_H264_REPARTITION_CHECK
-#endif // MFX_VERSION >= 1023
 
 #if USE_AGOP
     m_agopCurrentLen = 0;
@@ -1885,11 +1881,9 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 #endif
 
-#if MFX_VERSION >= 1023
     // we can use feature only if sufs was allocated on init
     if (IsOn(extOpt3New.EnableMBForceIntra) && m_useMbControlSurfs == false)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-#endif
 
 
     if (IsOn(extOpt3New.FadeDetection) && !(m_cmCtx.get() && m_cmCtx->isHistogramSupported()))

@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <algorithm>
 
-#if (MFX_VERSION >= 1027) && defined(LIBVA_SUPPORT)
+#if defined(LIBVA_SUPPORT)
 #include <va/va.h>
 #endif
 

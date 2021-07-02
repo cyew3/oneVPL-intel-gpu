@@ -118,13 +118,11 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->R = ptr->B + 2;
         ptr->Pitch = 3 * Width2;
         break;
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         ptr->G = ptr->B + Width2 * Height2;
         ptr->R = ptr->B + Width2 * Height2 * 2;
         ptr->Pitch = Width2;
         break;
-#endif
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_A2RGB10:
         ptr->G = ptr->B + 1;
@@ -155,7 +153,6 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->A = ptr->V + 3;
         ptr->Pitch = 4 * Width2;
         break;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
@@ -169,7 +166,6 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U = ptr->V = ptr->A = ptr->Y;
         ptr->Pitch = 4 * Width2;
         break;
-#endif // #if (MFX_VERSION >= 1027)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
         ptr->PitchHigh = (mfxU16)(8 * Width2 / (1 << 16));
@@ -248,20 +244,16 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     case MFX_FOURCC_NV16:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         break;
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
-#endif
     case MFX_FOURCC_RGB3:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_AYUV:
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;
-#endif
     case MFX_FOURCC_YUY2:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         break;
@@ -273,9 +265,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = 3*Width2*Height2;
         break;
     case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
 #endif

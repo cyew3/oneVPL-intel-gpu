@@ -92,14 +92,12 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_ARGB16,             VM_STRING("ARGB16")  },
     { MFX_FOURCC_NV16,               VM_STRING("NV16")  },
     { MFX_FOURCC_P210,               VM_STRING("P210")  },
-#if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+#if defined(LINUX32) || defined(LINUX64)
     { MFX_FOURCC_RGB565,             VM_STRING("RGB565")  },
     { MFX_FOURCC_RGBP,               VM_STRING("RGBP")  },
 #endif
-#if (MFX_VERSION >= 1027)
     { MFX_FOURCC_Y210,               VM_STRING("Y210")  },
     { MFX_FOURCC_Y410,               VM_STRING("Y410")  },
-#endif
     { MFX_FOURCC_AYUV,               VM_STRING("AYUV")  },
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     { MFX_FOURCC_P016,               VM_STRING("P016")  },
@@ -844,7 +842,6 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             break;
         }
-#if (MFX_VERSION >= 1027)
         case 17:
         {
             info.FourCC = MFX_FOURCC_Y410;
@@ -857,7 +854,6 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             break;
         }
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         case 19:
         {
@@ -952,7 +948,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.Shift=0;
             break;
         }
-#if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+#if defined(LINUX32) || defined(LINUX64)
         case 31://rgb565
         {
             info.FourCC = MFX_FOURCC_RGB565;

@@ -101,9 +101,7 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
 {
     mfxExtEncoderROI& roi = enc.m_par;
     roi.NumROI            = p0;
-#if MFX_VERSION > 1022
     roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
-#endif // #if  MFX_VERSION > 1022
     mfxU32 k = (p2 == 0) ? 16 : p2;
     for(mfxU32 i = 0; i < p0; ++i)
     {
@@ -111,20 +109,14 @@ void ROI_1(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
-#if MFX_VERSION > 1022
         roi.ROI[i].DeltaQP    = p1;
-#else
-        roi.ROI[i].Priority   = p1;
-#endif // MFX_VERSION > 1022
     }
 }
 void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32 p2)
 {
     mfxExtEncoderROI& roi = enc.m_ctrl;
     roi.NumROI            = p0;
-#if MFX_VERSION > 1022
     roi.ROIMode           = MFX_ROI_MODE_QP_DELTA;
-#endif // MFX_VERSION > 1022
     mfxU32 k = (p2 == 0) ? 16 : p2;
     for(mfxU32 i = 0; i < p0; ++i)
     {
@@ -132,11 +124,7 @@ void ROI_ctrl(tsVideoEncoder& enc, mfxVideoParam* , mfxU32 p0, mfxU32 p1, mfxU32
         roi.ROI[i].Top        = 0+i*k;
         roi.ROI[i].Right      = k+i*k;
         roi.ROI[i].Bottom     = k+i*k;
-#if MFX_VERSION > 1022
         roi.ROI[i].DeltaQP    = p1;
-#else
-        roi.ROI[i].Priority   = p1;
-#endif // MFX_VERSION > 1022
     }
 }
 

@@ -628,7 +628,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16, EnableNalUnitType)
     FIELD_T(mfxU16, ExtBrcAdaptiveLTR)     /* tri-state option for ExtBrcAdaptiveLTR */
 )
-#elif (MFX_VERSION >= 1027)
+#else
 STRUCT(mfxExtCodingOption3,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, NumSliceI)
@@ -676,97 +676,6 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16, EncodedUnitsInfo)
     FIELD_T(mfxU16, EnableNalUnitType)
     FIELD_T(mfxU16, ExtBrcAdaptiveLTR)
-)
-
-#elif (MFX_VERSION >= 1026)
-STRUCT(mfxExtCodingOption3,
-    FIELD_S(mfxExtBuffer, Header                        )
-    FIELD_T(mfxU16      , NumSliceI                     )
-    FIELD_T(mfxU16      , NumSliceP                     )
-    FIELD_T(mfxU16      , NumSliceB                     )
-    FIELD_T(mfxU16      , WinBRCMaxAvgKbps              )
-    FIELD_T(mfxU16      , WinBRCSize                    )
-    FIELD_T(mfxU16      , QVBRQuality                   )
-    FIELD_T(mfxU16      , EnableMBQP                    )
-    FIELD_T(mfxU16      , IntRefCycleDist               )
-    FIELD_T(mfxU16      , DirectBiasAdjustment          )
-    FIELD_T(mfxU16      , GlobalMotionBiasAdjustment    )/* tri-state option */
-    FIELD_T(mfxU16      , MVCostScalingFactor           )
-    FIELD_T(mfxU16      , MBDisableSkipMap              )/* tri-state option */
-    FIELD_T(mfxU16      , WeightedPred                  )
-    FIELD_T(mfxU16      , WeightedBiPred                )
-    FIELD_T(mfxU16      , AspectRatioInfoPresent        ) /* tri-state option */
-    FIELD_T(mfxU16      , OverscanInfoPresent           ) /* tri-state option */
-    FIELD_T(mfxU16      , OverscanAppropriate           ) /* tri-state option */
-    FIELD_T(mfxU16      , TimingInfoPresent             ) /* tri-state option */
-    FIELD_T(mfxU16      , BitstreamRestriction          ) /* tri-state option */
-    FIELD_T(mfxU16      , LowDelayHrd                   ) /* tri-state option */
-    FIELD_T(mfxU16      , MotionVectorsOverPicBoundaries) /* tri-state option */
-    FIELD_T(mfxU16      , ScenarioInfo                  )
-    FIELD_T(mfxU16      , ContentInfo                   )
-    FIELD_T(mfxU16      , PRefType                      )
-    FIELD_T(mfxU16      , FadeDetection                 ) /* tri-state option */
-    FIELD_T(mfxU16      , GPB                           )
-    FIELD_T(mfxU32      , MaxFrameSizeI                 )
-    FIELD_T(mfxU32      , MaxFrameSizeP                 )
-    FIELD_T(mfxU16      , EnableQPOffset                )
-    FIELD_T(mfxI16      , QPOffset                      )
-    FIELD_T(mfxU16      , NumRefActiveP                 )
-    FIELD_T(mfxU16      , NumRefActiveBL0               )
-    FIELD_T(mfxU16      , NumRefActiveBL1               )
-    FIELD_T(mfxU16      , TransformSkip)
-    FIELD_T(mfxU16      , BRCPanicMode                  )
-    FIELD_T(mfxU16      , LowDelayBRC                   )
-    FIELD_T(mfxU16      , EnableMBForceIntra            )
-    FIELD_T(mfxU16      , AdaptiveMaxFrameSize          )
-    FIELD_T(mfxU16      , RepartitionCheckEnable        ) /* tri-state option */
-    FIELD_T(mfxU16      , EncodedUnitsInfo              )
-    FIELD_T(mfxU16      , EnableNalUnitType             )
-    FIELD_T(mfxU16      , ExtBrcAdaptiveLTR)
-)
-#else
-STRUCT(mfxExtCodingOption3,
-    FIELD_S(mfxExtBuffer, Header                        )
-    FIELD_T(mfxU16      , NumSliceI                     )
-    FIELD_T(mfxU16      , NumSliceP                     )
-    FIELD_T(mfxU16      , NumSliceB                     )
-    FIELD_T(mfxU16      , WinBRCMaxAvgKbps              )
-    FIELD_T(mfxU16      , WinBRCSize                    )
-    FIELD_T(mfxU16      , QVBRQuality                   )
-    FIELD_T(mfxU16      , EnableMBQP                    )
-    FIELD_T(mfxU16      , IntRefCycleDist               )
-    FIELD_T(mfxU16      , DirectBiasAdjustment          )
-    FIELD_T(mfxU16      , GlobalMotionBiasAdjustment    )/* tri-state option */
-    FIELD_T(mfxU16      , MVCostScalingFactor           )
-    FIELD_T(mfxU16      , MBDisableSkipMap              )/* tri-state option */
-    FIELD_T(mfxU16      , WeightedPred                  )
-    FIELD_T(mfxU16      , WeightedBiPred                )
-    FIELD_T(mfxU16      , AspectRatioInfoPresent        ) /* tri-state option */
-    FIELD_T(mfxU16      , OverscanInfoPresent           ) /* tri-state option */
-    FIELD_T(mfxU16      , OverscanAppropriate           ) /* tri-state option */
-    FIELD_T(mfxU16      , TimingInfoPresent             ) /* tri-state option */
-    FIELD_T(mfxU16      , BitstreamRestriction          ) /* tri-state option */
-    FIELD_T(mfxU16      , LowDelayHrd                   ) /* tri-state option */
-    FIELD_T(mfxU16      , MotionVectorsOverPicBoundaries) /* tri-state option */
-    FIELD_T(mfxU16      , ScenarioInfo                  )
-    FIELD_T(mfxU16      , ContentInfo                   )
-    FIELD_T(mfxU16      , PRefType                      )
-    FIELD_T(mfxU16      , FadeDetection                 ) /* tri-state option */
-    FIELD_T(mfxU16      , GPB                           )
-    FIELD_T(mfxU32      , MaxFrameSizeI                 )
-    FIELD_T(mfxU32      , MaxFrameSizeP                 )
-    FIELD_T(mfxU16      , EnableQPOffset                )
-    FIELD_T(mfxI16      , QPOffset                      )
-    FIELD_T(mfxU16      , NumRefActiveP                 )
-    FIELD_T(mfxU16      , NumRefActiveBL0               )
-    FIELD_T(mfxU16      , NumRefActiveBL1               )
-    FIELD_T(mfxU16      , BRCPanicMode                  )
-    FIELD_T(mfxU16      , LowDelayBRC                   )
-    FIELD_T(mfxU16      , EnableMBForceIntra            )
-    FIELD_T(mfxU16      , AdaptiveMaxFrameSize          )
-    FIELD_T(mfxU16      , RepartitionCheckEnable        ) /* tri-state option */
-    FIELD_T(mfxU16      , EncodedUnitsInfo              )
-    FIELD_T(mfxU16      , EnableNalUnitType             )
 )
 #endif
 
@@ -934,8 +843,7 @@ STRUCT(mfxExtHEVCParam,
     FIELD_T(mfxU16       , LCUSize)
 )
 
-#elif (MFX_VERSION >= 1026)
-
+#else
 STRUCT(mfxExtHEVCParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, PicWidthInLumaSamples)
@@ -944,17 +852,6 @@ STRUCT(mfxExtHEVCParam,
     FIELD_T(mfxU16, SampleAdaptiveOffset)
     FIELD_T(mfxU16, LCUSize)
 )
-
-#else
-
-STRUCT(mfxExtHEVCParam,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16, PicWidthInLumaSamples)
-    FIELD_T(mfxU16, PicHeightInLumaSamples)
-    FIELD_T(mfxU64, GeneralConstraintFlags)
-
-)
-
 #endif
 
 STRUCT(mfxExtHEVCTiles,
@@ -978,7 +875,6 @@ STRUCT(mfxExtVP9DecodedFrameInfo,
 )
 #endif
 
-#if (MFX_VERSION >= 1026)
 STRUCT(mfxVP9SegmentParam,
     FIELD_T(mfxU16,  FeatureEnabled)
     FIELD_T(mfxI16,  QIndexDelta)
@@ -1004,7 +900,6 @@ STRUCT(mfxExtVP9TemporalLayers,
     FIELD_S(mfxExtBuffer        , Header)
     FIELD_S(mfxVP9TemporalLayer , Layer)
 )
-#endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtVP9Param,
@@ -1020,7 +915,7 @@ STRUCT(mfxExtVP9Param,
     FIELD_T(mfxU16      , NumTileRows)
     FIELD_T(mfxU16      , NumTileColumns)
 )
-#elif (MFX_VERSION >= 1026)
+#else
 STRUCT(mfxExtVP9Param,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16      , FrameWidth)
@@ -1090,7 +985,6 @@ STRUCT(mfxBRCFrameParam,
     FIELD_T(mfxExtBuffer**, ExtParam)
 )
 
-#if (MFX_VERSION >= 1029)
 STRUCT(mfxBRCFrameCtrl,
     FIELD_T(mfxI32        , QpY)
     FIELD_T(mfxU32        , InitialCpbRemovalDelay)
@@ -1102,13 +996,6 @@ STRUCT(mfxBRCFrameCtrl,
     FIELD_T(mfxU16        , NumExtParam)
     FIELD_T(mfxExtBuffer**, ExtParam)
 )
-#else
-STRUCT(mfxBRCFrameCtrl,
-    FIELD_T(mfxI32, QpY)
-    FIELD_T(mfxU32, reserved1)
-    FIELD_T(mfxHDL, reserved2)
-)
-#endif
 
 STRUCT(mfxBRCFrameStatus,
     FIELD_T(mfxU32, MinFrameSize)
@@ -1160,12 +1047,10 @@ STRUCT(mfxExtPAVPOption,
 )
 #endif
 
-#if (MFX_VERSION >= 1030)
 STRUCT(mfxExtCencParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32      , StatusReportIndex)
 )
-#endif
 
 #endif // defined(__MFXPCP_H__)
 
@@ -1176,7 +1061,6 @@ STRUCT(mfxExtSCD,
 )
 #endif // defined(__MFXSCD_H__)
 
-#if (MFX_VERSION >= 1026)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtVppMctf,
     FIELD_S(mfxExtBuffer, Header)
@@ -1194,7 +1078,6 @@ STRUCT(mfxExtVppMctf,
 )
 #endif
 
-#if (MFX_VERSION >= 1034)
 STRUCT(mfxAV1FilmGrainPoint,
     FIELD_T(mfxU8, Value)
     FIELD_T(mfxU8, Scaling)
@@ -1225,7 +1108,6 @@ STRUCT(mfxExtAV1FilmGrainParam,
     FIELD_T(mfxU8, CrLumaMult)
     FIELD_T(mfxU16, CrOffset)
 )
-#endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
 STRUCT(mfxExtAV1Param,
@@ -1320,22 +1202,18 @@ STRUCT(mfxExtAV1Segmentation,
 )
 #endif
 
-#endif
-
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtDPB,
     FIELD_S(mfxExtBuffer, Header)
 )
 #endif
 
-#if (MFX_VERSION >= 1031)
 STRUCT(mfxExtPartialBitstreamParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32, BlockSize)
     FIELD_T(mfxU16, Granularity)
     FIELD_T(mfxU16, reserved)
 )
-#endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtAV1LargeScaleTileParam,

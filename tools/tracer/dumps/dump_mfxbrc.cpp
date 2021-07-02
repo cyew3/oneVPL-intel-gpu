@@ -72,7 +72,6 @@ std::string DumpContext::dump(const std::string structName, const mfxBRCFrameCtr
     std::string str;
 
     DUMP_FIELD(QpY);
-#if (MFX_VERSION >= 1029)
     DUMP_FIELD(InitialCpbRemovalDelay);
     DUMP_FIELD(InitialCpbRemovalOffset);
     DUMP_FIELD_RESERVED(reserved1);
@@ -80,10 +79,6 @@ std::string DumpContext::dump(const std::string structName, const mfxBRCFrameCtr
     DUMP_FIELD(DeltaQP);
     DUMP_FIELD(MaxNumRepak);
     dump_mfxExtParams(structName, _struct);
-#else
-    DUMP_FIELD_RESERVED(reserved1);
-    DUMP_FIELD(reserved2);
-#endif
     return str;
 }
 

@@ -11,8 +11,6 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 
-#if MFX_VERSION >= 1023
-
 namespace avce_adaptivemaxframesize
 {
 
@@ -204,5 +202,3 @@ namespace avce_adaptivemaxframesize
 
     TS_REG_TEST_SUITE_CLASS(avce_adaptivemaxframesize);
 }
-
-#endif //if MFX_VERSION >= 1023

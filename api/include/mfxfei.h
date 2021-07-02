@@ -198,15 +198,11 @@ typedef struct {
         mfxU32    ForceToIntra     : 1;
         mfxU32    ForceToSkip      : 1;
         mfxU32    ForceToNoneSkip  : 1;
-#if (MFX_VERSION >= 1025)
         mfxU32    DirectBiasAdjustment        : 1;
         mfxU32    GlobalMotionBiasAdjustment  : 1;
         mfxU32    MVCostScalingFactor         : 3;
 
         mfxU32    reserved1        : 24;
-#else
-        mfxU32    reserved1        : 29;
-#endif
         mfxU32    reserved2;
         mfxU32    reserved3;
 
@@ -360,7 +356,6 @@ typedef struct {
 } mfxExtFeiRepackCtrl;
 MFX_PACK_END()
 
-#if (MFX_VERSION >= 1025)
 /* FEI repack status */
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
@@ -369,7 +364,6 @@ typedef struct {
     mfxU16          reserved[58];
 } mfxExtFeiRepackStat;
 MFX_PACK_END()
-#endif
 
 /* 1 decode stream out */
 MFX_PACK_BEGIN_USUAL_STRUCT()
@@ -570,9 +564,7 @@ enum {
     MFX_EXTBUFF_FEI_CODING_OPTION  = MFX_MAKEFOURCC('F','C','D','O'),
     MFX_EXTBUFF_FEI_DEC_STREAM_OUT = MFX_MAKEFOURCC('F','D','S','O'),
     MFX_EXTBUFF_FEI_REPACK_CTRL    = MFX_MAKEFOURCC('F','E','R','P'),
-#if (MFX_VERSION >= 1025)
     MFX_EXTBUFF_FEI_REPACK_STAT    = MFX_MAKEFOURCC('F','E','R','S')
-#endif
 };
 
 /* should be attached to mfxVideoParam during initialization to indicate FEI function */

@@ -134,7 +134,6 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_12Profile,
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_12Profile,
     0x5b08e35d, 0xc66, 0x4c51, 0xa6, 0xf1, 0x89, 0xd0, 0xc, 0xb2, 0xc1, 0x97);
 
-#if (MFX_VERSION >= 1032)
 // {0E4BC693-5D2C-4936-B125-AEFE32B16D8A}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile,
     0xe4bc693, 0x5d2c, 0x4936, 0xb1, 0x25, 0xae, 0xfe, 0x32, 0xb1, 0x6d, 0x8a);
@@ -150,7 +149,6 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile,
 // {AE0D4E15-2360-40a8-BF82-028E6A0DD827}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile,
     0xae0d4e15, 0x2360, 0x40a8, 0xbf, 0x82, 0x2, 0x8e, 0x6a, 0xd, 0xd8, 0x27);
-#endif
 
 // {A7F759DD-5F54-4d7f-8291-42E883C546FE}
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD,
@@ -385,7 +383,6 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H265_VLD_444:
     case H265_10_VLD_422:
     case H265_10_VLD_444:
-#if (MFX_VERSION >= 1032)
     case H265_12_VLD_420:
     case H265_12_VLD_422:
     case H265_12_VLD_444:
@@ -393,12 +390,7 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H265_10_VLD_SCC:
     case H265_VLD_444_SCC:
     case H265_10_VLD_444_SCC:
-#endif
-        if (   (profile_flags & VA_PROFILE_REXT)
-#if (MFX_VERSION >= 1032)
-            || (profile_flags & VA_PROFILE_SCC)
-#endif
-            )
+        if ((profile_flags & VA_PROFILE_REXT) || (profile_flags & VA_PROFILE_SCC))
             res = (HEVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
         else
         if (profile_flags & VA_LONG_SLICE_MODE)

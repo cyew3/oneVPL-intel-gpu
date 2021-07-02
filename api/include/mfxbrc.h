@@ -44,14 +44,10 @@ enum {
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
-#if (MFX_VERSION >= 1026)
     mfxU32 reserved[23];
     mfxU16 SceneChange;     // Frame is Scene Chg frame
     mfxU16 LongTerm;        // Frame is long term refrence
     mfxU32 FrameCmplx;      // Frame Complexity
-#else
-    mfxU32 reserved[25];
-#endif
     mfxU32 EncodedOrder;    // Frame number in a sequence of reordered frames starting from encoder Init()
     mfxU32 DisplayOrder;    // Frame number in a sequence of frames in display order starting from last IDR
     mfxU32 CodedFrameSize;  // Size of frame in bytes after encoding
@@ -66,7 +62,6 @@ MFX_PACK_END()
 MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxI32 QpY;             // Frame-level Luma QP
-#if (MFX_VERSION >= 1029)
     mfxU32 InitialCpbRemovalDelay;
     mfxU32 InitialCpbRemovalOffset;
     mfxU32 reserved1[7];
@@ -75,10 +70,6 @@ typedef struct {
     mfxU16 MaxNumRepak;     // Max number of rePak to provide MaxFrameSize (from 0 to 8)
     mfxU16 NumExtParam;
     mfxExtBuffer** ExtParam;   // extension buffer list
-#else
-    mfxU32 reserved1[13];
-    mfxHDL reserved2;
-#endif
 } mfxBRCFrameCtrl;
 MFX_PACK_END()
 

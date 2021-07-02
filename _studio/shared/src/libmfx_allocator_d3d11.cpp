@@ -80,12 +80,10 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
     case MFX_FOURCC_A2RGB10:
         return DXGI_FORMAT_R10G10B10A2_UNORM;
 
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return DXGI_FORMAT_Y210;
     case MFX_FOURCC_Y410:
         return DXGI_FORMAT_Y410;
-#endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
@@ -128,10 +126,8 @@ static inline bool check_supported_fourcc(mfxU32 fourcc)
     case MFX_FOURCC_ARGB16:
     case MFX_FOURCC_ABGR16:
     case MFX_FOURCC_A2RGB10:
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
@@ -407,7 +403,6 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
         frame_data.R = frame_data.G = frame_data.B = frame_data.A = (mfxU8 *)LockedRect.pData;
         break;
 
-#if (MFX_VERSION >= 1027)
     case DXGI_FORMAT_Y410:
         frame_data.Y410 = (mfxY410 *)LockedRect.pData;
         break;
@@ -419,7 +414,6 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
         frame_data.U16 = frame_data.Y16 + 1;
         frame_data.V16 = frame_data.Y16 + 3;
         break;
-#endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_Y416:

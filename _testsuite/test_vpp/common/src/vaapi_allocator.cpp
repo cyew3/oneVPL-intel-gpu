@@ -30,10 +30,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_YV12;
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
-#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         return VA_FOURCC_RGBP;
-#endif
     case MFX_FOURCC_BGR4:
         return VA_FOURCC_ABGR;
     case MFX_FOURCC_A2RGB10:
@@ -44,12 +42,10 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_P010;
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         return VA_FOURCC_P016;
@@ -159,12 +155,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 // the format in vaapi_mid->m_image.format.fourcc from vaDeriveImage is VA_FOURCC_A2R10G10B10
                 format = VA_RT_FORMAT_RGB32_10BPP;
             }
-#if (MFX_VERSION >= 1028)
             else if (fourcc == MFX_FOURCC_RGBP)
             {
                 format = VA_RT_FORMAT_RGBP;
             }
-#endif
 
             va_res = m_libva.vaCreateSurfaces(m_dpy,
                                     format,
@@ -361,7 +355,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else return MFX_ERR_LOCK_MEMORY;
                 break;
-#if (MFX_VERSION >= 1028)
             case VA_FOURCC_RGBP:
                 if (mfx_fourcc != vaapi_mid->m_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
 
@@ -371,7 +364,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->R = pBuffer + vaapi_mid->m_image.offsets[2];
                 }
                 break;
-#endif
             case VA_FOURCC_ABGR:
                 if (mfx_fourcc == MFX_FOURCC_BGR4)
                 {
@@ -404,7 +396,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->A = ptr->V + 3;
                 }
                 break;
-#if (MFX_VERSION >= 1027)
             case VA_FOURCC_Y210:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             case VA_FOURCC_Y216:
@@ -427,7 +418,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->A = 0;
                 }
                 break;
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             case VA_FOURCC_Y416:
                 if (mfx_fourcc != vaapi_mid->m_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;

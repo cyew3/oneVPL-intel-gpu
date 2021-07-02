@@ -256,11 +256,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     DUMP_FIELD(ForceToIntra);
     DUMP_FIELD(ForceToSkip);
     DUMP_FIELD(ForceToNoneSkip);
-#if (MFX_VERSION >= 1025)
     DUMP_FIELD(DirectBiasAdjustment);
     DUMP_FIELD(GlobalMotionBiasAdjustment);
     DUMP_FIELD(MVCostScalingFactor);
-#endif
     DUMP_FIELD(reserved1);
 
     DUMP_FIELD(reserved2);
@@ -442,7 +440,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiRepac
     return str;
 }
 
-#if (MFX_VERSION >= 1025)
 std::string DumpContext::dump(const std::string structName, const mfxExtFeiRepackStat &_struct)
 {
     std::string str;
@@ -451,7 +448,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiRepac
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
-#endif
 
 std::string DumpContext::dump(const std::string structName, const mfxFeiDecStreamOutMBCtrl &_struct)
 {

@@ -2080,7 +2080,7 @@ mfxStatus D3D11VideoProcessor::SetStreamDenoise(UINT streamIndex, mfxExecutePara
     return MFX_ERR_NONE;
 }
 
-#if (MFX_VERSION >= 1025)
+
 mfxStatus D3D11VideoProcessor::SetStreamChromaSiting(UINT streamIndex, VPE_VPREP_CHROMASITING_PARAM param)
 {
     HRESULT hRes;
@@ -2099,8 +2099,6 @@ mfxStatus D3D11VideoProcessor::SetStreamChromaSiting(UINT streamIndex, VPE_VPREP
 
     return MFX_ERR_NONE;
 }
-#endif
-
 mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 {
     MFX_CHECK_NULL_PTR1(pParams);
@@ -2338,11 +2336,9 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
         case MFX_SCALING_MODE_LOWPOWER:
             param.FastMode = VPE_SCALING_MODE_DEFAULT;
-#if (MFX_VERSION >= 1033)
             // Low power mode supports AVS, Nearest and Bilinear
             param.InterpolationMethod = pParams->interpolationMethod;
             sts = (pParams->interpolationMethod > MFX_INTERPOLATION_ADVANCED) ? MFX_ERR_UNSUPPORTED : MFX_ERR_NONE;
-#endif
             break;
 
         case MFX_SCALING_MODE_QUALITY:
@@ -2350,10 +2346,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         default:
             // False for HW mirroring, true otherwise
             param.FastMode = (!pParams->mirroringExt) ? VPE_SCALING_MODE_ADV : VPE_SCALING_MODE_DEFAULT;
-#if (MFX_VERSION >= 1033)
             sts = ((pParams->interpolationMethod == MFX_INTERPOLATION_DEFAULT) || (pParams->interpolationMethod == MFX_INTERPOLATION_ADVANCED)) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
             param.InterpolationMethod = pParams->interpolationMethod;
-#endif
             break;
         }
         MFX_CHECK_STS(sts);
@@ -2361,7 +2355,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_STS(sts);
     }
 
-#if (MFX_VERSION >= 1025)
     if (m_vpreCaps.bChromaSitingControl)
     {
         VPE_VPREP_CHROMASITING_PARAM chromaSitingParams = { 0 };
@@ -2422,7 +2415,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_STS(sts);
         }
     }
-#endif
 
     // [4] ProcAmp
     if(pParams->bEnableProcAmp)
@@ -2976,10 +2968,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     float maxRange = -1;
     if (outInfo->FourCC == MFX_FOURCC_P010 ||
-#if (MFX_VERSION >= 1027)
         outInfo->FourCC == MFX_FOURCC_Y210 ||
         outInfo->FourCC == MFX_FOURCC_Y410 ||
-#endif
         outInfo->FourCC == MFX_FOURCC_P210 )
     {
         maxRange = 1023.f;

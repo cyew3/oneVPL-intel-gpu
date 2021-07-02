@@ -124,14 +124,12 @@ std::unique_ptr<IBitstreamConverterFactory> MFXPipelineFactory::CreateBitstreamC
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_YUV444_8, MFX_FOURCC_AYUV)));
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_AYUV, MFX_FOURCC_AYUV)));
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_A2RGB10, MFX_FOURCC_A2RGB10)));
-#if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+#if defined(LINUX32) || defined(LINUX64)
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_RGB565, MFX_FOURCC_RGB565)));
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_RGBP, MFX_FOURCC_RGBP)));
 #endif
-#if (MFX_VERSION >= 1027)
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_Y210, MFX_FOURCC_Y210)));
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_Y410, MFX_FOURCC_Y410)));
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_P016, MFX_FOURCC_P016)));
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_Y216, MFX_FOURCC_Y216)));

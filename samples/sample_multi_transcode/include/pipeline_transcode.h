@@ -50,10 +50,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 #include "plugin_utils.h"
 #include "preset_manager.h"
-
-#if (MFX_VERSION >= 1024)
 #include "brc_routines.h"
-#endif
 
 #define TIME_STATS 1 // Enable statistics processing
 #include "time_statistics.h"
@@ -196,7 +193,7 @@ namespace TranscodingSample
 #if defined(LINUX32) || defined(LINUX64)
         std::string strDevicePath;
 #endif
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
         //Adapter type
         bool bPrefferiGfx;
         mfxI32    dGfxIdx;
@@ -355,16 +352,12 @@ namespace TranscodingSample
 
         mfxU16 BitrateLimit;
 
-#if (MFX_VERSION >= 1025)
         mfxU16 numMFEFrames;
         mfxU16 MFMode;
         mfxU32 mfeTimeout;
-#endif
 
-#if (MFX_VERSION >= 1027)
         mfxU16 TargetBitDepthLuma;
         mfxU16 TargetBitDepthChroma;
-#endif
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
         mfxU16 nRenderWinX;
@@ -390,12 +383,10 @@ namespace TranscodingSample
     {
         sInputParams();
         msdk_string DumpLogFileName;
-#if MFX_VERSION >= 1022
         std::vector<mfxExtEncoderROI> m_ROIData;
 
         bool bDecoderPostProcessing;
         bool bROIasQPMAP;
-#endif //MFX_VERSION >= 1022
 #ifdef ENABLE_MCTF
         sMCTFParam mctfParam;
 #endif
@@ -828,7 +819,7 @@ namespace TranscodingSample
 
             return ss.str();
         }
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
         //Adapter type
         void SetPrefferiGfx(bool prefferiGfx) { bPrefferiGfx = prefferiGfx; };
         void SetPrefferdGfx(mfxU32 dGfxIdx = 0) { dGfxIdx = dGfxIdx; };
@@ -1049,7 +1040,6 @@ namespace TranscodingSample
 
         bool shouldUseGreedyFormula;
 
-#if MFX_VERSION >= 1022
         // ROI data
         std::vector<mfxExtEncoderROI> m_ROIData;
         mfxU32         m_nSubmittedFramesNum;
@@ -1074,12 +1064,11 @@ namespace TranscodingSample
         msdk_string       m_strMfxParamsDumpFile;
 
         void FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct);
-#endif //MFX_VERSION >= 1022
 
 #ifdef  ENABLE_MCTF
         sMctfRunTimeParams   m_MctfRTParams;
 #endif
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+#if defined(_WIN32) || defined(_WIN64)
         //Adapter type
         bool bPrefferiGfx;
         mfxU32    dGfxIdx;

@@ -49,9 +49,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "v4l2_util.h"
 #endif
 
-#if (MFX_VERSION >= 1024)
 #include "brc_routines.h"
-#endif
 
 #if defined(_WIN64) || defined(_WIN32)
 #include "mfxadapter.h"
@@ -127,11 +125,9 @@ struct sInputParams
 #if (defined(_WIN64) || defined(_WIN32))
     bool isDualMode;
     mfxHyperMode hyperMode;
-#if (MFX_VERSION >= 1031)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
     mfxU32 dGfxIdx;
-#endif
 #endif
 
     std::list<msdk_string> InputFiles;
@@ -233,11 +229,9 @@ struct sInputParams
 
     bool bSingleTexture;
 
-#if (MFX_VERSION >= 1027)
     msdk_char *RoundingOffsetFile;
     mfxU16 TargetBitDepthLuma;
     mfxU16 TargetBitDepthChroma;
-#endif
     msdk_char DumpFileName[MSDK_MAX_FILENAME_LEN];
     msdk_char uSEI[MSDK_MAX_USER_DATA_UNREG_SEI_LEN];
 
@@ -384,9 +378,7 @@ protected:
     bool m_bQPFileMode;
 
     bool isV4L2InputEnabled;
-#if (MFX_VERSION >= 1027)
     FILE* m_round_in;
-#endif
     bool m_bSoftRobustFlag;
 
     mfxU32 m_nTimeout;
@@ -410,7 +402,7 @@ protected:
 
     FPSLimiter m_fpsLimiter;
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     mfxU32    GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params) const;
 #endif
     mfxStatus GetImpl(const sInputParams & params, mfxIMPL & impl);

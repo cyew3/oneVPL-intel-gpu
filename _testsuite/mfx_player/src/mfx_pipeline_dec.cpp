@@ -614,10 +614,8 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     if ( MFX_FOURCC_P010    == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_YUY2    == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_P210    == m_inParams.FrameInfo.FourCC ||
-#if (MFX_VERSION >= 1027)
          MFX_FOURCC_Y210    == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_Y410    == m_inParams.FrameInfo.FourCC ||
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
          MFX_FOURCC_P016    == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_Y216    == m_inParams.FrameInfo.FourCC ||
@@ -631,7 +629,6 @@ mfxStatus MFXDecPipeline::BuildPipeline()
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC = m_inParams.FrameInfo.FourCC;
     }
 
-#if (MFX_VERSION >= 1027)
     if ((MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         || (MFX_FOURCC_Y216 == m_inParams.FrameInfo.FourCC)
@@ -642,12 +639,9 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     {
         m_components[eDEC].m_params.mfx.FrameInfo.Shift = 1;
     }
-#endif // #if (MFX_VERSION >= 1027)
 
     if ( MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC ||
-#if (MFX_VERSION >= 1027)
          MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC ||
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
          MFX_FOURCC_Y216 == m_inParams.FrameInfo.FourCC ||
 #endif
@@ -663,9 +657,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
 
     if (
-#if (MFX_VERSION >= 1027)
          MFX_FOURCC_Y410    == m_inParams.FrameInfo.FourCC ||
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
          MFX_FOURCC_Y416    == m_inParams.FrameInfo.FourCC ||
 #endif
@@ -677,10 +669,8 @@ mfxStatus MFXDecPipeline::BuildPipeline()
 
     if (    MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC
          || MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC
-#if (MFX_VERSION >= 1027)
          || MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC
          || MFX_FOURCC_Y410 == m_inParams.FrameInfo.FourCC
-#endif
        )
     {
         m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = 10;
@@ -1006,10 +996,8 @@ mfxStatus MFXDecPipeline::InitBitDepthByFourCC(mfxFrameInfo &info)
             // 10 bit
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
-#endif
             info.BitDepthLuma = 10;
             break;
             // 12 bit
@@ -1023,10 +1011,8 @@ mfxStatus MFXDecPipeline::InitBitDepthByFourCC(mfxFrameInfo &info)
             // not applicable
         case MFX_FOURCC_P8:
         case MFX_FOURCC_P8_TEXTURE:
-#if (MFX_VERSION >= 1028)
         case MFX_FOURCC_RGB565:
         case MFX_FOURCC_RGBP:
-#endif
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_RGB3:
         case MFX_FOURCC_BGR4:
@@ -2008,10 +1994,8 @@ mfxStatus MFXDecPipeline::CreateRender()
 
         if (   m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010
             || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210
-#if (MFX_VERSION >= 1027)
             || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
             || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
@@ -2067,7 +2051,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         || MFX_FOURCC_AYUV    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_RGB4    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
-#if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+#if defined(LINUX32) || defined(LINUX64)
         || MFX_FOURCC_RGB565  == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_RGBP    == m_inParams.outFrameInfo.FourCC
 #endif

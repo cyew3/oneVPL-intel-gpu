@@ -185,14 +185,10 @@ enum {
     MFX_PLATFORM_SKYLAKE        = 7,
     MFX_PLATFORM_APOLLOLAKE     = 8,
     MFX_PLATFORM_KABYLAKE       = 9,
-#if (MFX_VERSION >= 1025)
     MFX_PLATFORM_GEMINILAKE     = 10,
     MFX_PLATFORM_COFFEELAKE     = 11,
     MFX_PLATFORM_CANNONLAKE     = 20,
-#endif
-#if (MFX_VERSION >= 1027)
     MFX_PLATFORM_ICELAKE        = 30,
-#endif
 #ifndef STRIP_EMBARGO
     MFX_PLATFORM_LAKEFIELD      = 31,
 #endif
@@ -212,25 +208,19 @@ enum {
     MFX_PLATFORM_KEEMBAY        = 50,
 };
 
-#if (MFX_VERSION >= 1031)
 typedef enum
 {
     MFX_MEDIA_UNKNOWN           = 0xffff,
     MFX_MEDIA_INTEGRATED        = 0,
     MFX_MEDIA_DISCRETE          = 1
 } mfxMediaAdapterType;
-#endif
 
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxU16 CodeName;
     mfxU16 DeviceId;
-#if (MFX_VERSION >= 1031)
     mfxU16 MediaAdapterType;
     mfxU16 reserved[13];
-#else
-    mfxU16 reserved[14];
-#endif
 } mfxPlatform;
 MFX_PACK_END()
 

@@ -839,9 +839,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);
         mfxStatus SetStreamScalingMode(UINT StreamIndex, VPE_VPREP_SCALING_MODE_PARAM param);
         mfxStatus SetStreamDenoise(UINT StreamIndex, mfxExecuteParams* pParams);
-#if (MFX_VERSION >= 1025)
         mfxStatus SetStreamChromaSiting(UINT StreamIndex, VPE_VPREP_CHROMASITING_PARAM param);
-#endif
 
         void SetOutputTargetRect(BOOL Enable, RECT *pRect);
         void SetOutputBackgroundColor(BOOL YCbCr, D3D11_VIDEO_COLOR *pColor);

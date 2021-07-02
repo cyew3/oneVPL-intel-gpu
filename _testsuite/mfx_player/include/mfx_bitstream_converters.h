@@ -839,7 +839,7 @@ protected:
         return (mfxU8*)surface->Data.Y410;
     }
 };
-#endif // #if (MFX_VERSION >= 1027)
+#endif
 
 class DECL_CONVERTER(MFX_FOURCC_A2RGB10, MFX_FOURCC_A2RGB10)
     : public BSConverterPacketedCopy
@@ -861,7 +861,7 @@ protected:
     }
 };
 
-#if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+#if defined(LINUX32) || defined(LINUX64)
 class DECL_CONVERTER(MFX_FOURCC_RGB565, MFX_FOURCC_RGB565)
     : public BSConverterPacketedCopy
 {
@@ -901,7 +901,7 @@ protected:
         return (mfxU8*)surface->Data.R;
     }
 };
-#endif // #if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+#endif // #if defined(LINUX32) || defined(LINUX64)
 
 class DECL_CONVERTER(MFX_FOURCC_AYUV, MFX_FOURCC_AYUV)
     : public BSConverterPacketedCopy

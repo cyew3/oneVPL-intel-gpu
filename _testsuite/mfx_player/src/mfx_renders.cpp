@@ -832,7 +832,6 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
-#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_Y216:
@@ -861,7 +860,6 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
-#endif // #if (MFX_VERSION >= 1027)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_Y416:
         {
@@ -878,7 +876,6 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             break;
         }
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
-#if (MFX_VERSION >= 1028)
         case MFX_FOURCC_RGBP:
         {
             m_Current.m_comp = VM_STRING('R');
@@ -908,7 +905,6 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
-#endif
         default:
         {
             MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("[MFXFileWriteRender] file writing in %s colorformat not supported\n"), 
@@ -1746,10 +1742,8 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         pSurfaceIn->Info.FourCC != MFX_FOURCC_P010 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_NV16 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_P210 &&
-#if (MFX_VERSION >= 1027)
         pSurfaceIn->Info.FourCC != MFX_FOURCC_Y210 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_Y410 &&
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         pSurfaceIn->Info.FourCC != MFX_FOURCC_P016 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_Y216 &&
@@ -1849,7 +1843,6 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     }
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV422_16)
     {
-#if (MFX_VERSION >= 1027)
         if (   pSurfaceIn->Info.FourCC == MFX_FOURCC_Y210
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             || pSurfaceIn->Info.FourCC == MFX_FOURCC_Y216
@@ -1920,7 +1913,6 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
             }
         }
         else
-#endif // #if (MFX_VERSION >= 1027)
         {
             copyPlane<mfxU16, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, l_shift);
             copyChromaPlane<mfxU16, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width / 2, c_shift);
@@ -1928,7 +1920,6 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
 
         return pSurfaceOut;
     }
-#if (MFX_VERSION >= 1027)
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV444_16)
     {
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_Y410)
@@ -1996,7 +1987,6 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         }
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
     }
-#endif // #if (MFX_VERSION >= 1027)
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YV12)
     {
         VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12);
@@ -2056,7 +2046,6 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
 
         switch (pSurfaceIn->Info.FourCC)
         {
-#if (MFX_VERSION >= 1027)
             case MFX_FOURCC_Y410:
                 {
                     mfxY410 const* pSrc = pSurfaceIn->Data.Y410;
@@ -2072,7 +2061,6 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
                     }
                 }
                 break;
-#endif
             case MFX_FOURCC_AYUV:
                 for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
                 {
@@ -2142,9 +2130,7 @@ mfxStatus       AllocSurface(const mfxFrameInfo *pTargetInfo, mfxFrameSurface1* 
         pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 &&
         pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16 &&
         pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV444_16
-#if (MFX_VERSION >= 1027)
         && pSurfaceOut->Info.FourCC != MFX_FOURCC_Y410
-#endif
     )
     {
         mfxU8 * pBuffer = new mfxU8[bufSize];

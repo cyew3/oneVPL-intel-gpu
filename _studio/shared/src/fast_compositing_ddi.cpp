@@ -1075,11 +1075,8 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
     mfxU32 shift=0xFF;
     if(outInfo->FourCC == MFX_FOURCC_P010
         || outInfo->FourCC == MFX_FOURCC_P210
-#if (MFX_VERSION >= 1027)
         || outInfo->FourCC == MFX_FOURCC_Y210
-        || outInfo->FourCC == MFX_FOURCC_Y410
-#endif
-    )
+        || outInfo->FourCC == MFX_FOURCC_Y410)
     {
         shift = 6; // Colors should be shifted to MSB
     }
@@ -1262,7 +1259,6 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
     //}
 
     //{
-#if (MFX_VERSION >= 1025)
         FASTCOMP_CHROMASUBSAMPLING_PARAMS_V1_0 chromaSitingParams = { 0 };
         FASTCOMP_BLT_PARAMS_OBJECT chromaSitingObject;
         bool  bExternalChromeSiting = true;
@@ -1332,7 +1328,6 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         }
 
         bltParams.ChromaSitingObject = chromaSitingObject;
-#endif
     //}
 
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC

@@ -75,20 +75,16 @@ mfxU16 FourCcBitDepth(mfxU32 fourCC)
 
     case MFX_FOURCC_P010:
     case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
-#endif
         return 10;
         break;
 
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
         return 12;
         break;
-#endif
     default:
         return 0;
     }
@@ -170,19 +166,15 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
     // non-null sync point indicates that task is in execution
     if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
     {
-#if (MFX_VERSION >= 1031)
       int iteration = 0;
       do
       {
-#endif
         sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, syncOpTimeout);
 
-#if (MFX_VERSION >= 1031)
         msdk_tick stop = time_get_tick();
 
         if(iteration == 0)
             firstOut_total += stop - firstOut_start;
-#endif
 
         if (sts == MFX_ERR_GPU_HANG && m_bGpuHangRecovery)
         {
@@ -203,9 +195,7 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
 
         if (MFX_ERR_NONE == sts)
         {
-#if (MFX_VERSION >= 1031)
             lastOut_total += stop - lastOut_start;
-#endif
 
             m_statFile.StartTimeMeasurement();
             sts = m_pTasks[m_nTaskBufferStart].WriteBitstream();
@@ -226,7 +216,6 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
                 }
             }
         }
-#if (MFX_VERSION >= 1031)
         else if(MFX_ERR_NONE_PARTIAL_OUTPUT == sts)
         {
             m_statFile.StartTimeMeasurement();
@@ -234,7 +223,6 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
             m_statFile.StopTimeMeasurement();
             MSDK_CHECK_STATUS(sts1, "m_pTasks[m_nTaskBufferStart].WriteBitstream failed");
         }
-#endif
         else if (MFX_ERR_ABORTED == sts)
         {
             while (!m_pTasks[m_nTaskBufferStart].DependentVppTasks.empty())
@@ -261,10 +249,8 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
                 }
             }
         }
-#if (MFX_VERSION >= 1031)
         iteration++;
       } while (sts == MFX_ERR_NONE_PARTIAL_OUTPUT);
-#endif
 
     }
     else
@@ -705,23 +691,19 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         codingOption2->IntRefQPDelta = pInParams->IntRefQPDelta;
     }
 
-#if (MFX_VERSION >= 1024)
     // This is for explicit extbrc only. In case of implicit (built-into-library) version - we don't need this extended buffer
     if (pInParams->nExtBRC == EXTBRC_ON && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
     {
         auto extBRC = m_mfxEncParams.AddExtBuffer<mfxExtBRC>();
         HEVCExtBRC::Create(*extBRC);
     }
-#endif
 
     // set up mfxCodingOption3
     if (pInParams->nGPB || pInParams->LowDelayBRC || pInParams->WeightedPred || pInParams->WeightedBiPred
         || pInParams->nPRefType || pInParams->IntRefCycleDist || pInParams->nAdaptiveMaxFrameSize
         || pInParams->nNumRefActiveP || pInParams->nNumRefActiveBL0 || pInParams->nNumRefActiveBL1
         || pInParams->ExtBrcAdaptiveLTR || pInParams->QVBRQuality || pInParams->WinBRCSize
-#if (MFX_VERSION >= 1027)
         || pInParams->TargetBitDepthLuma || pInParams->TargetBitDepthChroma
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         || pInParams->DeblockingAlphaTcOffset || pInParams->DeblockingBetaOffset
 #endif
@@ -738,21 +720,14 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
         codingOption3->WeightedPred   = pInParams->WeightedPred;
         codingOption3->WeightedBiPred = pInParams->WeightedBiPred;
-#if (MFX_VERSION >= 1023)
         codingOption3->LowDelayBRC    = pInParams->LowDelayBRC;
-#endif
         codingOption3->PRefType       = pInParams->nPRefType;
         codingOption3->IntRefCycleDist= pInParams->IntRefCycleDist;
         codingOption3->AdaptiveMaxFrameSize = pInParams->nAdaptiveMaxFrameSize;
         codingOption3->QVBRQuality    = pInParams->QVBRQuality;
-#if (MFX_VERSION >= 1026)
         codingOption3->ExtBrcAdaptiveLTR = pInParams->ExtBrcAdaptiveLTR;
-#endif
-
-#if (MFX_VERSION >= 1027)
         codingOption3->TargetBitDepthLuma = pInParams->TargetBitDepthLuma;
         codingOption3->TargetBitDepthChroma = pInParams->TargetBitDepthChroma;
-#endif
         codingOption3->WinBRCSize = pInParams->WinBRCSize;
         codingOption3->WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
         codingOption3->ScenarioInfo = pInParams->ScenarioInfo;
@@ -784,7 +759,6 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         videoSignalInfo->MatrixCoefficients = pInParams->TransferMatrix;
     }
 
-#if (MFX_VERSION >= 1031)
     if(pInParams->PartialOutputMode) {
         auto extPartialOutputParam = m_mfxEncParams.AddExtBuffer<mfxExtPartialBitstreamParam>();
         switch(pInParams->PartialOutputMode)
@@ -807,7 +781,6 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
             break;
         }
     }
-#endif
 
     // JPEG encoder settings overlap with other encoders settings in mfxInfoMFX structure
     if (MFX_CODEC_JPEG == pInParams->CodecId)
@@ -1293,9 +1266,7 @@ CEncodingPipeline::CEncodingPipeline()
 
     m_hwdev = NULL;
 
-#if (MFX_VERSION >= 1027)
     m_round_in = nullptr;
-#endif
 
     MSDK_ZERO_MEMORY(m_EncResponse);
     MSDK_ZERO_MEMORY(m_VppResponse);
@@ -1392,7 +1363,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     return sts;
 }
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
 mfxU32 CEncodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params) const
 {
     if (adapters.NumActual == 0 || !adapters.Adapters)
@@ -1444,7 +1415,7 @@ mfxU32 CEncodingPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapter
     // Other ways return 0, i.e. best suitable detected by dispatcher
     return 0;
 }
-#endif // (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#endif // defined(_WIN64) || defined(_WIN32)
 
 mfxStatus CEncodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl)
 {
@@ -1467,7 +1438,7 @@ mfxStatus CEncodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
 mfxStatus CEncodingPipeline::GetAdapterNum(const sInputParams & params, mfxU32 & adapterNum, mfxU16 & deviceID) const
 {
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     mfxU32 num_adapters_available;
 
     mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
@@ -1475,14 +1446,12 @@ mfxStatus CEncodingPipeline::GetAdapterNum(const sInputParams & params, mfxU32 &
 
     mfxComponentInfo interface_request = { mfxComponentType::MFX_COMPONENT_ENCODE };
 
-    bool isFourccNeedShift = params.FileInputFourCC == MFX_FOURCC_P010 || params.FileInputFourCC == MFX_FOURCC_P210
-#if (MFX_VERSION >= 1027)
+    bool isFourccNeedShift = params.FileInputFourCC == MFX_FOURCC_P010
+        || params.FileInputFourCC == MFX_FOURCC_P210
         || params.FileInputFourCC == MFX_FOURCC_Y210
-#endif
-#if (MFX_VERSION >= 1031)
-        || params.FileInputFourCC == MFX_FOURCC_Y216 || params.FileInputFourCC == MFX_FOURCC_P016
-#endif
-        ;
+        || params.FileInputFourCC == MFX_FOURCC_Y216
+        || params.FileInputFourCC == MFX_FOURCC_P016;
+
     mfxU16 Shift    = params.IsSourceMSB || (isFourccNeedShift && ((params.memType != SYSTEM_MEMORY && AreGuidsEqual(params.pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW)) || params.CodecId == MFX_CODEC_VP9));
     mfxU16 Height   = (MFX_PICSTRUCT_PROGRESSIVE == params.nPicStruct) ? MSDK_ALIGN16(params.nDstHeight) : MSDK_ALIGN32(params.nDstHeight);
     mfxU16 LowPower = mfxU16(params.enableQSVFF ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_UNKNOWN);
@@ -1543,7 +1512,7 @@ mfxStatus CEncodingPipeline::GetAdapterNum(const sInputParams & params, mfxU32 &
     mfxU32 idx = GetPreferredAdapterNum(adapters, params);
     adapterNum = adapters.Adapters[idx].Number;
     deviceID = adapters.Adapters[idx].Platform.DeviceId;
-#endif // (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#endif // defined(_WIN64) || defined(_WIN32)
 
     return MFX_ERR_NONE;
 }
@@ -1655,13 +1624,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     bool readerShift = false;
     if (pParams->FileInputFourCC == MFX_FOURCC_P010
         || pParams->FileInputFourCC == MFX_FOURCC_P210
-#if (MFX_VERSION >= 1027)
         || pParams->FileInputFourCC == MFX_FOURCC_Y210
-#endif
-#if (MFX_VERSION >= 1031)
-        || pParams->FileInputFourCC == MFX_FOURCC_Y216 || pParams->FileInputFourCC == MFX_FOURCC_P016
-#endif
-    )
+        || pParams->FileInputFourCC == MFX_FOURCC_Y216
+        || pParams->FileInputFourCC == MFX_FOURCC_P016)
     {
         if (pParams->IsSourceMSB)
         {
@@ -1864,11 +1829,9 @@ void CEncodingPipeline::Close()
     MSDK_SAFE_DELETE(m_pmfxENC);
     MSDK_SAFE_DELETE(m_pmfxVPP);
 
-#if (MFX_VERSION >= 1024)
     auto extBRC = m_mfxEncParams.GetExtBuffer<mfxExtBRC>();
     if (extBRC)
         HEVCExtBRC::Destroy(*extBRC);
-#endif
 
     DeallocateExtMVCBuffers();
     FreeVppFilters();
@@ -1881,13 +1844,11 @@ void CEncodingPipeline::Close()
     m_FileReader.Close();
     FreeFileWriters();
 
-#if (MFX_VERSION >= 1027)
     if(m_round_in)
     {
         fclose(m_round_in);
         m_round_in = nullptr;
     }
-#endif
     // allocator if used as external for MediaSDK must be deleted after SDK components
     DeleteAllocator();
 }
@@ -2011,7 +1972,6 @@ mfxStatus CEncodingPipeline::OpenRoundingOffsetFile(sInputParams *pInParams)
 {
     MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);
 
-#if (MFX_VERSION >= 1027)
     bool enableRoundingOffset = pInParams->RoundingOffsetFile && pInParams->CodecId == MFX_CODEC_AVC;
     if (enableRoundingOffset && m_round_in == nullptr)
     {
@@ -2028,7 +1988,6 @@ mfxStatus CEncodingPipeline::OpenRoundingOffsetFile(sInputParams *pInParams)
     {
         return MFX_ERR_NONE;
     }
-#endif
 
     return MFX_ERR_NONE;
 }

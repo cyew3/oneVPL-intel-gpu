@@ -144,29 +144,19 @@ mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat
         MFX_FOURCC_P210 != ColorFormat &&
         MFX_FOURCC_AYUV != ColorFormat &&
         MFX_FOURCC_A2RGB10 != ColorFormat
-#if (MFX_VERSION >= 1027)
         && MFX_FOURCC_Y210 != ColorFormat
         && MFX_FOURCC_Y410 != ColorFormat
-#endif
-#if (MFX_VERSION >= 1031)
         && MFX_FOURCC_P016 != ColorFormat
-        && MFX_FOURCC_Y216 != ColorFormat
-#endif
-        )
+        && MFX_FOURCC_Y216 != ColorFormat)
     {
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (   MFX_FOURCC_P010 == ColorFormat
         || MFX_FOURCC_P210 == ColorFormat
-#if (MFX_VERSION >= 1027)
         || MFX_FOURCC_Y210 == ColorFormat
-#endif
-#if (MFX_VERSION >= 1031)
         || MFX_FOURCC_P016 == ColorFormat
-        || MFX_FOURCC_Y216 == ColorFormat
-#endif
-    )
+        || MFX_FOURCC_Y216 == ColorFormat)
     {
         shouldShift10BitsHigh = enableShifting;
     }
@@ -265,25 +255,18 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         h = pInfo.Height;
     }
 
-    mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010 || pInfo.FourCC == MFX_FOURCC_P210
-#if (MFX_VERSION >= 1031)
-        || pInfo.FourCC == MFX_FOURCC_P016
-#endif
-    ) ? 2 : 1;
+    mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010 
+        || pInfo.FourCC == MFX_FOURCC_P210
+        || pInfo.FourCC == MFX_FOURCC_P016) ? 2 : 1;
 
     if (   MFX_FOURCC_YUY2 == pInfo.FourCC
         || MFX_FOURCC_RGB4 == pInfo.FourCC
         || MFX_FOURCC_BGR4 == pInfo.FourCC
         || MFX_FOURCC_AYUV == pInfo.FourCC
         || MFX_FOURCC_A2RGB10 == pInfo.FourCC
-#if (MFX_VERSION >= 1027)
         || MFX_FOURCC_Y210 == pInfo.FourCC
         || MFX_FOURCC_Y410 == pInfo.FourCC
-#endif
-#if (MFX_VERSION >= 1031)
-        || MFX_FOURCC_Y216 == pInfo.FourCC
-#endif
-    )
+        || MFX_FOURCC_Y216 == pInfo.FourCC)
     {
         //Packed format: Luminance and chrominance are on the same plane
         switch (m_ColorFormat)
@@ -320,18 +303,11 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 }
             }
             break;
-#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
-#if (MFX_VERSION >= 1031)
         case MFX_FOURCC_Y216:
-#endif
             pitch = pData.Pitch;
-            ptr = ((pInfo.FourCC == MFX_FOURCC_Y210
-#if (MFX_VERSION >= 1031)
-            || pInfo.FourCC == MFX_FOURCC_Y216
-#endif
-            )  ? pData.Y : (mfxU8*)pData.Y410) + pInfo.CropX*4 + pInfo.CropY * pData.Pitch;
+            ptr = ((pInfo.FourCC == MFX_FOURCC_Y210 || pInfo.FourCC == MFX_FOURCC_Y216) ? pData.Y : (mfxU8*)pData.Y410) + pInfo.CropX*4 + pInfo.CropY * pData.Pitch;
 
             for (i = 0; i < h; i++)
             {
@@ -343,9 +319,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 }
 
                 if ((MFX_FOURCC_Y210 == pInfo.FourCC
-#if (MFX_VERSION >= 1031)
                     || MFX_FOURCC_Y216 == pInfo.FourCC
-#endif
                 ) && shouldShift10BitsHigh)
                 {
                     mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
@@ -357,7 +331,6 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
 
             }
             break;
-#endif
         default:
             return MFX_ERR_UNSUPPORTED;
         }
@@ -366,9 +339,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             || MFX_FOURCC_YV12 == pInfo.FourCC
             || MFX_FOURCC_P010 == pInfo.FourCC
             || MFX_FOURCC_P210 == pInfo.FourCC
-#if (MFX_VERSION >= 1031)
             || MFX_FOURCC_P016 == pInfo.FourCC
-#endif
     )
     {
         pitch = pData.Pitch;
@@ -387,10 +358,8 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             // Shifting data if required
             if((MFX_FOURCC_P010 == pInfo.FourCC
              || MFX_FOURCC_P210 == pInfo.FourCC
-#if (MFX_VERSION >= 1031)
-             || MFX_FOURCC_P016 == pInfo.FourCC
-#endif
-            ) && shouldShift10BitsHigh)
+             || MFX_FOURCC_P016 == pInfo.FourCC)
+                && shouldShift10BitsHigh)
             {
                 mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
                 for(int idx = 0; idx < w; idx++)
@@ -498,9 +467,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1031)
         case MFX_FOURCC_P016:
-#endif
             if (MFX_FOURCC_P210 != pInfo.FourCC)
             {
                 h /= 2;
@@ -518,10 +485,8 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 // Shifting data if required
             if((MFX_FOURCC_P010 == pInfo.FourCC
              || MFX_FOURCC_P210 == pInfo.FourCC
-#if (MFX_VERSION >= 1031)
-             || MFX_FOURCC_P016 == pInfo.FourCC
-#endif
-             ) && shouldShift10BitsHigh)
+             || MFX_FOURCC_P016 == pInfo.FourCC)
+             && shouldShift10BitsHigh)
                 {
                     mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
                     for(int idx = 0; idx < w; idx++)
@@ -1084,11 +1049,8 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
                 pInfo.CropW, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
         break;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y216: // Luma and chroma will be filled below
-#endif
     {
         for (i = 0; i < pInfo.CropH; i++)
         {
@@ -1117,8 +1079,6 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         return MFX_ERR_NONE;
     }
     break;
-#endif
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410: // Luma and chroma will be filled below
     {
         mfxU8* pBuffer = (mfxU8*)pData.Y410;
@@ -1131,7 +1091,6 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         return MFX_ERR_NONE;
     }
     break;
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:  // Luma and chroma will be filled below
     {
@@ -1840,18 +1799,14 @@ const msdk_char* ColorFormatToStr(mfxU32 format)
        return MSDK_STRING("P010");
     case MFX_FOURCC_P210:
         return MSDK_STRING("P210");
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return MSDK_STRING("Y210");
     case MFX_FOURCC_Y410:
         return MSDK_STRING("Y410");
-#endif
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
         return MSDK_STRING("P016");
     case MFX_FOURCC_Y216:
         return MSDK_STRING("Y216");
-#endif
     default:
         return MSDK_STRING("unsupported");
     }
@@ -2700,24 +2655,16 @@ mfxU16 FourCCToChroma(mfxU32 fourCC)
     {
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_P010:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
-#endif
         return MFX_CHROMAFORMAT_YUV420;
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#endif
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y216:
-#endif
     case MFX_FOURCC_YUY2:
         return MFX_CHROMAFORMAT_YUV422;
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
     case MFX_FOURCC_A2RGB10:
-#endif
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_RGB4:
         return MFX_CHROMAFORMAT_YUV444;

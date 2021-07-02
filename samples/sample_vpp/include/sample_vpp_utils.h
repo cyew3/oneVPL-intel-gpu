@@ -180,7 +180,7 @@ struct sInputParams
 #if defined(LINUX32) || defined(LINUX64)
     std::string strDevicePath; // path to device for processing
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
 #endif
@@ -287,7 +287,7 @@ struct sInputParams
         rtBrightness = {};
         rtContrast = {};
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
         bPrefferdGfx = false;
         bPrefferiGfx = false;
 #endif

@@ -36,8 +36,6 @@ extern "C"
 {
 #endif
 
-#if (MFX_VERSION >= 1027)
-
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer Header;
@@ -289,8 +287,6 @@ enum {
     MFX_EXTBUFF_HEVCFEI_ENC_DIST       = MFX_MAKEFOURCC('F','H','D','S')
 #endif
 };
-
-#endif // MFX_VERSION
 
 #ifdef __cplusplus
 } /* extern "C" */

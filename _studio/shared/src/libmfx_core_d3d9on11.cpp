@@ -576,21 +576,21 @@ static mfxU32 DXGItoMFX(DXGI_FORMAT format)
     case DXGI_FORMAT_AYUV:
         return MFX_FOURCC_AYUV;
 
-#if (MFX_VERSION >= 1027)
     case DXGI_FORMAT_Y210 :
         return MFX_FOURCC_Y210;
+
     case DXGI_FORMAT_Y410:
         return MFX_FOURCC_Y410;
-#endif
 
-#if (MFX_VERSION >= 1031)
     case DXGI_FORMAT_P016:
         return MFX_FOURCC_P016;
+
     case DXGI_FORMAT_Y216 :
         return MFX_FOURCC_Y216;
+
     case DXGI_FORMAT_Y416:
         return MFX_FOURCC_Y416;
-#endif
+
     default:
         return 0;
     }

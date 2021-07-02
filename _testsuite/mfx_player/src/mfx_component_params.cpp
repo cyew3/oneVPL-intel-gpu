@@ -42,7 +42,7 @@ mfxU32 ComponentParams::GetAdapter()
 
     if (m_deviceID == -1 || m_adapterNum == -1)
     {
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
+#if defined(_WIN64) || defined(_WIN32)
         mfxU32 num_adapters_available;
 
         mfxStatus sts = MFX_ERR_NONE;

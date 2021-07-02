@@ -294,15 +294,11 @@ namespace test
         , { MFX_FOURCC_BGR4,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::R, &mfxFrameData::G, 1,                  &mfxFrameData::B, 2,                      &mfxFrameData::A, 3 } // 4
         , { MFX_FOURCC_AYUV,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::V, &mfxFrameData::U, 1,                  &mfxFrameData::Y, 2,                      &mfxFrameData::A, 3 } // 5
         , { MFX_FOURCC_A2RGB10, MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::R, &mfxFrameData::G, 0,                  &mfxFrameData::B, 0,                      &mfxFrameData::A, 0 } // 6
-    #if (MFX_VERSION >= 1027)
         , { MFX_FOURCC_Y210,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::Y, &mfxFrameData::U, 2,                  &mfxFrameData::V, 6,                      nullptr,          0 } // 7
         , { MFX_FOURCC_Y410,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::U, nullptr,          0,                  nullptr,          0,                      nullptr,          0 } // 8
-    #endif
-    #if (MFX_VERSION >= 1031)
         , { MFX_FOURCC_P016,    MFX_ERR_NONE, WIDTH * 2, &mfxFrameData::Y, &mfxFrameData::U, WIDTH * HEIGHT * 2, &mfxFrameData::V, WIDTH * HEIGHT * 2 + 2, nullptr,          0 } // 9
         , { MFX_FOURCC_Y216,    MFX_ERR_NONE, WIDTH * 4, &mfxFrameData::Y, &mfxFrameData::U, 2,                  &mfxFrameData::V, 6,                      nullptr,          0 } // 10
         , { MFX_FOURCC_Y416,    MFX_ERR_NONE, WIDTH * 8, &mfxFrameData::U, &mfxFrameData::Y, 2,                  &mfxFrameData::V, 4,                      &mfxFrameData::A, 6 } // 11
-    #endif
 
     };
 

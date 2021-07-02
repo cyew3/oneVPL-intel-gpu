@@ -433,11 +433,9 @@ public:
                         case MFX_EXTBUFF_FEI_REPACK_CTRL:
                             str += dump(name, *((mfxExtFeiRepackCtrl*)_struct.ExtParam[i])) + "\n";
                             break;
-#if (MFX_VERSION >= 1025)
                         case MFX_EXTBUFF_FEI_REPACK_STAT:
                             str += dump(name, *((mfxExtFeiRepackStat*)_struct.ExtParam[i])) + "\n";
                             break;
-#endif
                         case MFX_EXTBUFF_VPP_MIRRORING:
                             str += dump(name, *((mfxExtVPPMirroring*)_struct.ExtParam[i])) + "\n";
                             break;
@@ -462,7 +460,6 @@ public:
                         case MFX_EXTBUFF_INSERT_HEADERS:
                             str += dump(name, *((mfxExtInsertHeaders*)_struct.ExtParam[i])) + "\n";
                             break;
-#if (MFX_VERSION >= 1025)
                         case  MFX_EXTBUFF_DECODE_ERROR_REPORT:
                             str += dump(name, *((mfxExtDecodeErrorReport*)_struct.ExtParam[i])) + "\n";
                             break;
@@ -484,14 +481,10 @@ public:
                         case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
                             str += dump(name, *((mfxExtColorConversion*)_struct.ExtParam[i])) + "\n";
                             break;
-#endif
-#if (MFX_VERSION >= 1026)
                         case MFX_EXTBUFF_VPP_MCTF:
                             str += dump(name, *((mfxExtVppMctf*)_struct.ExtParam[i])) + "\n";
                             break;
-#endif
 
-#if (MFX_VERSION >= 1026)
                         case MFX_EXTBUFF_VP9_SEGMENTATION:
                             str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
                             break;
@@ -501,7 +494,6 @@ public:
                         case MFX_EXTBUFF_VP9_PARAM:
                             str += dump(name, *((mfxExtVP9Param*)_struct.ExtParam[i])) + "\n";
                             break;
-#endif
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -607,7 +599,6 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMBQP);
     DEFINE_DUMP_FUNCTION(mfxExtEncoderIPCMArea);
     DEFINE_DUMP_FUNCTION(mfxExtInsertHeaders);
-#if (MFX_VERSION >= 1025)
     DEFINE_DUMP_FUNCTION(mfxExtDecodeErrorReport);
     DEFINE_DUMP_FUNCTION(mfxExtMasteringDisplayColourVolume);
     DEFINE_DUMP_FUNCTION(mfxExtContentLightLevelInfo);
@@ -615,23 +606,13 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameControl);
     DEFINE_DUMP_FUNCTION(mfxExtEncodedUnitsInfo);
     DEFINE_DUMP_FUNCTION(mfxExtColorConversion);
-#endif
-#if (MFX_VERSION >= 1026)
     DEFINE_DUMP_FUNCTION(mfxExtVppMctf);
-#endif
-
-#if (MFX_VERSION >= 1026)
-
     DEFINE_DUMP_FUNCTION(mfxVP9SegmentParam);
     DEFINE_DUMP_FUNCTION(mfxExtVP9Segmentation);
     DEFINE_DUMP_FUNCTION(mfxVP9TemporalLayer);
     DEFINE_DUMP_FUNCTION(mfxExtVP9TemporalLayers);
     DEFINE_DUMP_FUNCTION(mfxExtVP9Param);
-#endif
-
-#if (MFX_VERSION >= 1034)
     DEFINE_DUMP_FUNCTION(mfxExtAV1FilmGrainParam);
-#endif
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
@@ -663,9 +644,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxFeiPakMBCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiPakMBCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiRepackCtrl);
-#if (MFX_VERSION >= 1025)
     DEFINE_DUMP_FUNCTION(mfxExtFeiRepackStat);
-#endif
     DEFINE_DUMP_FUNCTION(mfxExtFeiParam);
     DEFINE_DUMP_FUNCTION(mfxPAKInput);
     DEFINE_DUMP_FUNCTION(mfxPAKOutput);

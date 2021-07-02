@@ -105,15 +105,10 @@ UMC::Status FillParam(VideoCORE *core, MFXTaskSupplier_H265 * decoder, mfxVideoP
     if (MFX_Utility::GetPlatform_H265(core, par) != MFX_PLATFORM_SOFTWARE)
     {
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-#if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
-#endif
-#if (MFX_VERSION >= 1031)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
-            || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
-#endif
-            )
+            || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416)
             par->mfx.FrameInfo.Shift = 1;
     }
 
@@ -235,16 +230,11 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
                       || videoProcessing->Out.FourCC == MFX_FOURCC_P010
                       || videoProcessing->Out.FourCC == MFX_FOURCC_YUY2
                       || videoProcessing->Out.FourCC == MFX_FOURCC_AYUV
-#if (MFX_VERSION >= 1027)
                       || videoProcessing->Out.FourCC == MFX_FOURCC_Y410
                       || videoProcessing->Out.FourCC == MFX_FOURCC_Y210
-#endif
-#if (MFX_VERSION >= 1031)
                       || videoProcessing->Out.FourCC == MFX_FOURCC_Y216
                       || videoProcessing->Out.FourCC == MFX_FOURCC_Y416
-                      || videoProcessing->Out.FourCC == MFX_FOURCC_P016
-#endif
-                      );
+                      || videoProcessing->Out.FourCC == MFX_FOURCC_P016);
         }
        MFX_CHECK(is_fourcc_supported,MFX_ERR_UNSUPPORTED);
         if (m_core->GetVAType() == MFX_HW_VAAPI)
@@ -276,14 +266,10 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         request = request_internal;
 
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-#if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
-#endif
-#if (MFX_VERSION >= 1031)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
-#endif
             )
         {
             request.Info.Shift = request_internal.Info.Shift = 1;
@@ -1095,7 +1081,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         MFXMediaDataAdapter src(bs);
 
-#if (MFX_VERSION >= 1025)
         mfxExtBuffer* extbuf = (bs) ? GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECODE_ERROR_REPORT) : NULL;
 
         if (extbuf)
@@ -1103,7 +1088,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             reinterpret_cast<mfxExtDecodeErrorReport *>(extbuf)->ErrorTypes = 0;
             src.SetExtBuffer(extbuf);
         }
-#endif
 
         for (;;)
         {

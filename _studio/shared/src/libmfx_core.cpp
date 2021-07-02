@@ -805,9 +805,7 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
 {
     mfxPlatform platform = {};
 
-#if (MFX_VERSION >= 1031)
     platform.MediaAdapterType = MFX_MEDIA_INTEGRATED;
-#endif
 
     switch (type)
     {
@@ -821,23 +819,18 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
     case MFX_HW_SCL    : platform.CodeName = MFX_PLATFORM_SKYLAKE;       break;
     case MFX_HW_APL    : platform.CodeName = MFX_PLATFORM_APOLLOLAKE;    break;
     case MFX_HW_KBL    : platform.CodeName = MFX_PLATFORM_KABYLAKE;      break;
-#if (MFX_VERSION >= 1025)
     case MFX_HW_GLK    : platform.CodeName = MFX_PLATFORM_GEMINILAKE;    break;
     case MFX_HW_CFL    : platform.CodeName = MFX_PLATFORM_COFFEELAKE;    break;
     case MFX_HW_CNL    : platform.CodeName = MFX_PLATFORM_CANNONLAKE;    break;
-#endif
 #ifndef STRIP_EMBARGO
     case MFX_HW_CNX_G  :
 #endif
-#if (MFX_VERSION >= 1027)
+
     case MFX_HW_ICL    :
     case MFX_HW_ICL_LP : platform.CodeName = MFX_PLATFORM_ICELAKE;       break;
-#endif
-#if (MFX_VERSION >= 1031)
+
     case MFX_HW_EHL    : platform.CodeName = MFX_PLATFORM_ELKHARTLAKE;   break;
     case MFX_HW_JSL    : platform.CodeName = MFX_PLATFORM_JASPERLAKE;    break;
-#endif
-#if (MFX_VERSION >= 1031)
     case MFX_HW_RKL    :
     case MFX_HW_TGL_LP : platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
     case MFX_HW_DG1    :
@@ -845,30 +838,21 @@ static inline mfxPlatform MakePlatform(eMFXHWType type, mfxU16 device_id)
                          platform.CodeName = MFX_PLATFORM_TIGERLAKE;     break;
     case MFX_HW_ADL_S  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_S;   break;
     case MFX_HW_ADL_P  : platform.CodeName = MFX_PLATFORM_ALDERLAKE_P;   break;
-#endif
 #ifndef STRIP_EMBARGO
     case MFX_HW_XE_HP_SDV :
-#if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
-#endif
                          platform.CodeName = MFX_PLATFORM_XEHP_SDV;      break;
     case MFX_HW_PVC    :
-#if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
-#endif
                          platform.CodeName = MFX_PLATFORM_PONTE_VECCHIO; break;
     case MFX_HW_DG2:
-#if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_DISCRETE;
-#endif
                          platform.CodeName = MFX_PLATFORM_DG2;           break;
     case MFX_HW_MTL    : platform.CodeName = MFX_PLATFORM_METEORLAKE;    break;
     case MFX_HW_ELG    : platform.CodeName = MFX_PLATFORM_ELASTICG;      break;
 #endif //STRIP_EMBARGO
     default:
-#if (MFX_VERSION >= 1031)
                          platform.MediaAdapterType = MFX_MEDIA_UNKNOWN;
-#endif
                          platform.CodeName = MFX_PLATFORM_UNKNOWN;       break;
     }
 
@@ -1330,9 +1314,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src,
     switch (dst.Info.FourCC)
     {
     case MFX_FOURCC_P010:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
-#endif
 
         if (src.Info.Shift != dst.Info.Shift)
         {
@@ -1404,11 +1386,8 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src,
 
         return FastCopy::Copy(dst.Data.Y, dstPitch, src.Data.Y, srcPitch, roi, copyFlag);
 
-#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y216:
-#endif
 
         MFX_CHECK_NULL_PTR1(src.Data.Y);
 
@@ -1444,9 +1423,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src,
 
         return FastCopy::Copy(ptrDst, dstPitch, ptrSrc, srcPitch, roi, copyFlag);
     }
-#endif
 
-#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y416:
         MFX_CHECK_NULL_PTR1(src.Data.U16);
 
@@ -1470,7 +1447,6 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src,
             roi.width *= 8;
             return FastCopy::Copy((mfxU8*)dst.Data.U16, dstPitch, (mfxU8*)src.Data.U16, srcPitch, roi, copyFlag);
         }
-#endif
 
 #if defined (MFX_ENABLE_FOURCC_RGB565)
     case MFX_FOURCC_RGB565:
