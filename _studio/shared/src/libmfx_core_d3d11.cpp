@@ -93,7 +93,7 @@ mfxStatus D3D11VideoCORE_T<Base>::InternalInit()
 
     std::set<eMFXHWType> cmCopyPlatforms = { MFX_HW_TGL_LP, MFX_HW_DG1, MFX_HW_ADL_S, MFX_HW_ADL_P };
 #ifndef STRIP_EMBARGO
-    cmCopyPlatforms.insert({ MFX_HW_XE_HP_SDV, MFX_HW_DG2, MFX_HW_PVC });
+    cmCopyPlatforms.insert({ MFX_HW_XE_HP_SDV, MFX_HW_PVC });
 #endif
     m_bCmCopyAllowed = (cmCopyPlatforms.find(m_HWType) != cmCopyPlatforms.end());
 
