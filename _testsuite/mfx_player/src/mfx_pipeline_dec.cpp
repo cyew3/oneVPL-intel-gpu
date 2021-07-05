@@ -1270,6 +1270,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_inParams.bUseVPP_ifdi);
     ENABLE_VPP(m_inParams.nImageStab);
     ENABLE_VPP(m_inParams.bExtVppApi);
+    ENABLE_VPP(m_inParams.bDenoiseMode);
 
     if (m_inParams.bUseVPP && m_inParams.bNoVpp)
     {
@@ -1383,6 +1384,17 @@ mfxStatus MFXDecPipeline::CreateVPP()
         if (!m_inParams.bSceneAnalyzer)
             pExtDoNotUse->AlgList.push_back(MFX_EXTBUFF_VPP_SCENE_ANALYSIS);
    }
+
+    //trun on HSV denoise
+    if (m_inParams.bDenoiseMode)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtVPPDenoise2());
+        MFXExtBufferPtr<mfxExtVPPDenoise2> pDenoise2(m_components[eVPP].m_extParams);
+        pDenoise2->Mode = m_inParams.nDenoiseMode;
+        pDenoise2->Strength = m_inParams.nDenoiseStrength;
+        PrintInfo(VM_STRING("Denoise Mode:"), VM_STRING("%d"), m_inParams.nDenoiseMode);
+        PrintInfo(VM_STRING("Denoise Strength:"), VM_STRING("%d"),  m_inParams.nDenoiseStrength);
+    }
 
     // turn on detail/edge enhancement
     if (m_inParams.nDetailFactorPlus1)
@@ -5301,6 +5313,48 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_CHECK(1 + argv != argvEnd);
                 m_inParams.bUseVPP_ifdi = true;
                 MFX_PARSE_INT(m_inParams.nVppDeinterlacingMode,  argv[1]);
+                argv+=1;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-dn_mode"), VM_STRING("specify Denoise mode for oneVPL VPP Denoise: 0 - Default is decided in driver to an appropriate mode; 1~1000 - reserve for vender specifc; 1001 - Auto BD rate mode; 1002 - Auto Subjective mode; 1003 - Auto adjust mode for post-processing; 1004 - Manual mode for pre-processing; 1005 - Manual mode for post-processing; (need set -dn_strength for manual mode)"), OPT_INT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                mfxU32 nDNMode = 0; 
+                MFX_PARSE_INT(nDNMode,  argv[1]);
+                switch (nDNMode)
+                {
+                case MFX_DENOISE_MODE_INTEL_HVS_AUTO_BDRATE :
+                    m_inParams.nDenoiseMode = MFX_DENOISE_MODE_INTEL_HVS_AUTO_BDRATE;
+                    m_inParams.bDenoiseMode = true;
+                    break;
+                case MFX_DENOISE_MODE_INTEL_HVS_AUTO_SUBJECTIVE :
+                    m_inParams.nDenoiseMode = MFX_DENOISE_MODE_INTEL_HVS_AUTO_SUBJECTIVE;
+                    m_inParams.bDenoiseMode = true;
+                    break;
+                case MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST :
+                    m_inParams.nDenoiseMode = MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST;
+                    m_inParams.bDenoiseMode = true;
+                    break;
+                case MFX_DENOISE_MODE_DEFAULT :
+                    m_inParams.nDenoiseMode = MFX_DENOISE_MODE_DEFAULT;
+                    m_inParams.bDenoiseMode = true;
+                    break;
+                case MFX_DENOISE_MODE_INTEL_HVS_PRE_MANUAL :
+                    m_inParams.nDenoiseMode = MFX_DENOISE_MODE_INTEL_HVS_PRE_MANUAL;
+                    m_inParams.bDenoiseMode = true;
+                    break;
+                case MFX_DENOISE_MODE_INTEL_HVS_POST_MANUAL :
+                    m_inParams.nDenoiseMode = MFX_DENOISE_MODE_INTEL_HVS_POST_MANUAL;
+                    m_inParams.bDenoiseMode = true;
+                    break;
+                default :
+                    break;
+                }
+                argv+=1;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-dn_strength"), VM_STRING("specify Denoise Manual Mode strength (from 0 to 100, default 0)"), OPT_INT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                MFX_PARSE_INT(m_inParams.nDenoiseStrength,  argv[1]);
                 argv+=1;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-vpp_chroma_siting"), VM_STRING("specify chroma siting mode for VPP color conversion, allowwed values: vtop|vcen|vbot hleft|hcen"), OPT_INT_32))

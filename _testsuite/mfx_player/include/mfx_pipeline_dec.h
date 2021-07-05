@@ -199,6 +199,9 @@ struct sCommandlineParams
   bool           bSwapFieldProcessing;
   bool           bFieldWeaving;
   bool           bFieldSplitting;
+  bool           bDenoiseMode;
+  mfxDenoiseMode nDenoiseMode;
+  mfxU16         nDenoiseStrength;
 
   bool           bUsePrivateDDI;
 
@@ -453,6 +456,9 @@ struct sCommandlineParams
       m_WallN = 0;
       nDecodeInAdvance = 0;
       nDenoiseFactorPlus1 = 0;
+      bDenoiseMode = false;
+      nDenoiseMode = MFX_DENOISE_MODE_DEFAULT;
+      nDenoiseStrength = 0;
       nLimitChunkSize = 0;
       nDecoderSurfs = 0;
       bUseVPP_ifdi = false;
