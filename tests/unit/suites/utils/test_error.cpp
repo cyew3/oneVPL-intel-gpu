@@ -28,7 +28,7 @@ namespace utils { namespace tests
     TEST(Error, Exception)
     {
         char const* msg = "TEXT";
-        std::system_error e(std::make_error_code(MFX_ERR_ABORTED), msg);
+        std::system_error e(mfx::make_error_code(MFX_ERR_ABORTED), msg);
         std::string what{ e.what() };
 
         EXPECT_THAT(
@@ -81,14 +81,14 @@ namespace utils { namespace tests
     TEST_P(Error, MakeErrorCode)
     {
         auto p = static_cast<mfxStatus>(GetParam());
-        std::error_code code = std::make_error_code(p);
+        std::error_code code = mfx::make_error_code(p);
         EXPECT_EQ(code.value(), int(p));
     }
 
     TEST_P(Error, Message)
     {
         auto p = static_cast<mfxStatus>(GetParam());
-        std::error_code code = std::make_error_code(p);
+        std::error_code code = mfx::make_error_code(p);
         ASSERT_EQ(code.value(), int(p));
 
         std::string msg
@@ -126,7 +126,7 @@ namespace utils { namespace tests
     TEST_P(Condition, Equivalent)
     {
         auto p = GetParam();
-        std::error_code code = std::make_error_code(static_cast<mfxStatus>(p.first));
+        std::error_code code = mfx::make_error_code(static_cast<mfxStatus>(p.first));
         EXPECT_EQ(
             code, p.second
         );

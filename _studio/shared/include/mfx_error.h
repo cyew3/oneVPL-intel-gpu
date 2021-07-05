@@ -126,20 +126,12 @@ namespace mfx
         static const error_category c;
         return c;
     }
-}
-
-namespace std
-{
-    template <>
-    struct is_error_code_enum<mfxStatus>
-        : true_type
-    {};
 
     inline
-    error_code make_error_code(mfxStatus status)
-    { return error_code(int(status), mfx::category()); }
+    std::error_code make_error_code(mfxStatus status)
+    { return std::error_code(int(status), category()); }
 
     inline
-    error_condition make_error_condition(mfxStatus status)
-    { return error_condition(int(status), mfx::category()); }
+    std::error_condition make_error_condition(mfxStatus status)
+    { return std::error_condition(int(status), category()); }
 }
