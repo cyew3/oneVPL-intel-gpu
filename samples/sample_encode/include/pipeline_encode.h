@@ -112,8 +112,6 @@ struct sInputParams
     msdk_string strQPFilePath;
 
     mfxAccelerationMode accelerationMode;
-    mfxU32  adapterNum;
-    mfxU16  deviceID;
 
     mfxIMPL libType;
     MemType memType;
@@ -125,8 +123,7 @@ struct sInputParams
 #if (defined(_WIN64) || defined(_WIN32))
     bool isDualMode;
     mfxHyperMode hyperMode;
-    bool bPrefferdGfx;
-    bool bPrefferiGfx;
+    mfxU16 adapterType;
     mfxU32 dGfxIdx;
 #endif
 
@@ -402,11 +399,6 @@ protected:
 
     FPSLimiter m_fpsLimiter;
 
-#if defined(_WIN64) || defined(_WIN32)
-    mfxU32    GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params) const;
-#endif
-    mfxStatus GetImpl(const sInputParams & params, mfxIMPL & impl);
-    mfxStatus GetAdapterNum(const sInputParams & params, mfxU32 & adapterNum, mfxU16 & deviceID) const;
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 

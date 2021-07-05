@@ -159,6 +159,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     // set default implementation
     pParams->bUseHWLib = true;
     pParams->bUseFullColorRange = false;
+#if defined(_WIN64) || defined(_WIN32)
+    pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+    pParams->dGfxIdx = -1;
+#endif
 #if defined(LIBVA_SUPPORT)
     pParams->libvaBackend = MFX_LIBVA_DRM;
 #endif
@@ -481,8 +485,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #if defined(_WIN64) || defined(_WIN32)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dGfx")))
         {
-            pParams->bPrefferdGfx = true;
-            pParams->dGfxIdx = 0;
+            pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
             if (i + 1 < nArgNum && isdigit(*strInput[1 + i]))
             {
                 if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->dGfxIdx))
@@ -494,7 +497,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-iGfx")))
         {
-            pParams->bPrefferiGfx = true;
+            pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
         }
 #endif
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -742,14 +745,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         pParams->nAsyncDepth = 4; //set by default;
     }
-
-#if defined(_WIN64) || defined(_WIN32)
-    if (pParams->bPrefferdGfx && pParams->bPrefferiGfx)
-    {
-        msdk_printf(MSDK_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered"));
-        pParams->bPrefferdGfx = false;
-    }
-#endif
 
     return MFX_ERR_NONE;
 }

@@ -61,7 +61,6 @@ namespace TranscodingSample
 
     protected:
 #if defined(_WIN32) || defined(_WIN64)
-        mfxStatus QueryAdapters();
         void      ForceImplForSession(mfxU32 idxSession);
         mfxStatus CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscodingPipeline * pParentPipeline);
 #endif
@@ -92,8 +91,6 @@ namespace TranscodingSample
         // need to work with HW pipeline
         mfxHandleType                        m_eDevType;
         mfxAccelerationMode                  m_accelerationMode;
-        mfxU32                               m_adapterNum;
-        mfxU16                               m_deviceID;
         std::unique_ptr<VPLImplementationLoader> m_pLoader;
 
         std::vector<sVppCompDstRect>         m_VppDstRects;
@@ -103,12 +100,6 @@ namespace TranscodingSample
 
     private:
         DISALLOW_COPY_AND_ASSIGN(Launcher);
-
-#if defined(_WIN32) || defined(_WIN64)
-        std::vector<mfxAdapterInfo> m_DisplaysData;
-        mfxAdaptersInfo             m_Adapters;
-#endif
-
     };
 }
 

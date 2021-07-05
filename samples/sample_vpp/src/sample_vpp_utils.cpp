@@ -267,15 +267,6 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     else
         msdk_printf(MSDK_STRING("HW accelaration is disabled\n"));
 
-#if defined(_WIN64) || defined(_WIN32)
-    if (pParams->bPrefferdGfx)
-        msdk_printf(MSDK_STRING("dGfx adapter is preffered\n"));
-
-    if (pParams->bPrefferiGfx)
-        msdk_printf(MSDK_STRING("iGfx adapter is preffered\n"));
-#endif
-
-
     mfxVersion ver;
     pMfxSession->QueryVersion(&ver);
     msdk_printf(MSDK_STRING("MediaSDK ver\t%d.%d\n"), ver.Major, ver.Minor);
@@ -380,125 +371,15 @@ mfxStatus InitParamsVPP(MfxVideoParamsWrapper* pParams, sInputParams* pInParams,
 
 /* ******************************************************************* */
 
-#if defined(_WIN64) || defined(_WIN32)
-mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params)
-{
-    if (adapters.NumActual == 0 || !adapters.Adapters)
-        return 0;
-
-    if (params.bPrefferdGfx)
-    {
-        // Find dGfx adapter in list and return it's index
-
-        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
-            [](const mfxAdapterInfo info)
-        {
-            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
-        });
-
-        // No dGfx in list
-        if (idx == adapters.Adapters + adapters.NumActual)
-        {
-            msdk_printf(MSDK_STRING("Warning: No dGfx detected on machine. Will pick another adapter\n"));
-            return 0;
-        }
-
-        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
-    }
-
-    if (params.bPrefferiGfx)
-    {
-        // Find iGfx adapter in list and return it's index
-
-        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
-            [](const mfxAdapterInfo info)
-        {
-            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
-        });
-
-        // No iGfx in list
-        if (idx == adapters.Adapters + adapters.NumActual)
-        {
-            msdk_printf(MSDK_STRING("Warning: No iGfx detected on machine. Will pick another adapter\n"));
-            return 0;
-        }
-
-        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
-    }
-
-    // Other ways return 0, i.e. best suitable detected by dispatcher
-    return 0;
-}
-
-mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputParams & cmd_params, mfxU32 & adapterNum, mfxU16 & deviceID)
-{
-    if (!(impl & MFX_IMPL_HARDWARE))
-        return MFX_ERR_NONE;
-
-    mfxU32 num_adapters_available;
-
-    mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
-    MSDK_CHECK_STATUS(sts, "MFXQueryAdaptersNumber failed");
-
-    mfxComponentInfo interface_request = { mfxComponentType::MFX_COMPONENT_VPP };
-    interface_request.Requirements.vpp = params.vpp;
-
-    std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
-    mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };
-
-    sts = MFXQueryAdapters(&interface_request, &adapters);
-    if (sts == MFX_ERR_NOT_FOUND)
-    {
-        msdk_printf(MSDK_STRING("ERROR: No suitable adapters found for this workload\n"));
-    }
-    MSDK_CHECK_STATUS(sts, "MFXQueryAdapters failed");
-
-    impl &= ~MFX_IMPL_HARDWARE;
-
-    mfxU32 idx = GetPreferredAdapterNum(adapters, cmd_params);
-    adapterNum = adapters.Adapters[idx].Number;
-    deviceID = adapters.Adapters[idx].Platform.DeviceId;
-    switch (adapters.Adapters[idx].Number)
-    {
-    case 0:
-        impl |= MFX_IMPL_HARDWARE;
-        break;
-    case 1:
-        impl |= MFX_IMPL_HARDWARE2;
-        break;
-    case 2:
-        impl |= MFX_IMPL_HARDWARE3;
-        break;
-    case 3:
-        impl |= MFX_IMPL_HARDWARE4;
-        break;
-
-    default:
-        // Try searching on all display adapters
-        impl |= MFX_IMPL_HARDWARE_ANY;
-        break;
-    }
-
-    return MFX_ERR_NONE;
-}
-#endif // defined(_WIN64) || defined(_WIN32)
-
 mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 {
     mfxStatus  sts = MFX_ERR_NONE;
     mfxIMPL    impl    = pInParams->ImpLib;
-    mfxU32 adapterNum;
-    mfxU16 deviceID;
 
     MSDK_CHECK_POINTER(pProcessor, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
 
     WipeFrameProcessor(pProcessor);
-
-#if defined(_WIN64) || defined(_WIN32)
-    sts = GetImpl(*pParams, impl, *pInParams, adapterNum, deviceID);
-    MSDK_CHECK_STATUS(sts, "GetImpl failed");
-#endif
 
     //MFX session
     pProcessor->pLoader.reset(new VPLImplementationLoader);
@@ -507,7 +388,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     sts = pProcessor->pLoader->ConfigureAccelerationMode(pInParams->accelerationMode, impl);
     MSDK_CHECK_STATUS(sts, "mfxSession.ConfigureAccelerationMode failed");
 #if (defined(_WIN64) || defined(_WIN32))
-    pProcessor->pLoader->SetDeviceAndAdapter(deviceID, adapterNum);
+    pProcessor->pLoader->SetAdapterTypeAndNum(pInParams->adapterType, pInParams->dGfxIdx);
 #endif
     sts = pProcessor->pLoader->EnumImplementations();
     MSDK_CHECK_STATUS(sts, "mfxSession.EnumImplementations failed");
