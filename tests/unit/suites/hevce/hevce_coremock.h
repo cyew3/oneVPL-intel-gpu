@@ -88,7 +88,6 @@ public:
     virtual bool IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1**, mfxU32, mfxFrameAllocResponse*, bool) override { return false; }
     virtual void* QueryCoreInterface(const MFX_GUID&) override { return nullptr; };
     virtual mfxSession GetSession() override { return nullptr; }
-    virtual void SetWrapper(void*) override {}
     virtual mfxU16 GetAutoAsyncDepth() override { return 0; }
     virtual bool IsCompatibleForOpaq() override { return false; }
 };

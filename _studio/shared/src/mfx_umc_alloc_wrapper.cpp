@@ -364,8 +364,6 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
         m_extSurfaces.reserve(response->NumFrameActual);
     }
 
-    mfxCore->SetWrapper(this);
-
     return UMC::UMC_OK;
 }
 
