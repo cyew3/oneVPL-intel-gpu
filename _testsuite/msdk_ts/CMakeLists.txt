@@ -455,7 +455,6 @@ target_sources(msdk_gmock
 target_compile_definitions(msdk_gmock
   PRIVATE
     _VARIADIC_MAX=10
-    ENABLE_PS=1
     MFX_VERSION_USE_LATEST
     MFX_DEPRECATED_OFF
     MFX_HAVE_EXTERNAL_CONFIG
