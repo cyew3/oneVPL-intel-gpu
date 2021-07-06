@@ -18,9 +18,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-if(CMAKE_SYSTEM_NAME MATCHES Linux)
-    add_subdirectory(va)
-endif()
+cmake_minimum_required (VERSION 3.7)
 
-add_subdirectory(common)
-add_subdirectory(mfx)
+add_executable (mocks-common-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/traits.cpp
+)
+
+target_link_libraries (mocks-common-tests
+    PRIVATE
+        gmock
+        gtest_main
+
+        mocks::mocks
+        mfx_shared_lib
+)
+
+set_target_properties (mocks-common-tests
+    PROPERTIES
+        FOLDER tests
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+)
+
+add_test (NAME mocks-common-tests
+    COMMAND
+        $<TARGET_FILE:mocks-common-tests>
+    WORKING_DIRECTORY
+        WORKING_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}
+)
+
+set_property (TEST mocks-common-tests
+    PROPERTY
+        ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}"
+)

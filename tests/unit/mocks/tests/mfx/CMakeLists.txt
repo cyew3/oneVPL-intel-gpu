@@ -22,6 +22,7 @@ cmake_minimum_required (VERSION 3.7)
 
 file (GLOB
     MOCKS_MFX_TESTS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/allocator.cpp"
+    MOCKS_MFX_TESTS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/core.cpp"
 )
 
 add_executable (mocks-mfx-tests
@@ -40,8 +41,10 @@ target_link_libraries (mocks-mfx-tests
 
         mocks::mocks
 
+        mfxcore
         mfx_va_properties
         mfx_shared_lib
+        fast_copy_sse4
 )
 
 target_compile_definitions (mocks-mfx-tests

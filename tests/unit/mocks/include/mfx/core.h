@@ -24,7 +24,7 @@
 #include "mocks/include/mfx/detail/core.hxx"
 
 namespace mocks { namespace mfx
-{ 
+{
     struct core : api::core
     {
         MOCK_METHOD2(GetHandle, mfxStatus(mfxHandleType, mfxHDL*));
@@ -32,6 +32,8 @@ namespace mocks { namespace mfx
         MOCK_METHOD1(SetFrameAllocator, mfxStatus(mfxFrameAllocator*));
 
         MOCK_METHOD0(GetHWType, eMFXHWType());
+        MOCK_METHOD1(SetCoreId, bool(mfxU32));
+        MOCK_CONST_METHOD0(GetVAType, eMFXVAType());
         MOCK_METHOD1(QueryCoreInterface, void*(const MFX_GUID&));
 
         MOCK_METHOD3(GetFrameHDL, mfxStatus(mfxMemId, mfxHDL*, bool));
@@ -90,6 +92,37 @@ namespace mocks { namespace mfx
                 .WillRepeatedly(testing::Return(type));
         }
 
+        inline
+        void mock_core(core_tag, core& c, eMFXVAType type)
+        {
+            EXPECT_CALL(c, GetVAType())
+                .WillRepeatedly(testing::Return(type));
+        }
+
+        template <typename Matcher>
+        inline
+        typename std::enable_if<
+            is_matcher<Matcher>::value
+        >::type
+        mock_core(core_tag, core& c, std::tuple<Matcher, bool> params)
+        {
+            EXPECT_CALL(c, SetCoreId(std::get<0>(params)))
+                .WillRepeatedly(testing::Return(std::get<1>(params)));
+        }
+
+        template <typename T>
+        inline
+        typename std::enable_if<
+            std::is_integral<T>::value
+        >::type
+        mock_core(core_tag, core& c, std::tuple<T, bool> params)
+        {
+            return mock_core(core_tag{}, c,
+                std::make_tuple(testing::Eq(std::get<0>(params)), std::get<1>(params))
+            );
+        }
+
+        inline
         void mock_core(core_tag, core& c, std::tuple<mfxMemId, mfxHDL, bool> params)
         {
             auto const mid      = std::get<0>(params);
@@ -106,6 +139,7 @@ namespace mocks { namespace mfx
                 ));
         }
 
+        inline
         void mock_core(core_tag, core& c, std::tuple<mfxMemId, mfxHDL> params)
         {
             return mock_core(core_tag{}, c,
@@ -113,6 +147,7 @@ namespace mocks { namespace mfx
             );
         }
 
+        inline
         void mock_core(core_tag, core& c, std::tuple<mfxFrameAllocRequest, mfxFrameAllocResponse, bool> params)
         {
             auto const request  = std::get<0>(params);
@@ -132,6 +167,7 @@ namespace mocks { namespace mfx
                 ));
         }
 
+        inline
         void mock_core(core_tag, core& c, std::tuple<mfxFrameAllocRequest, mfxFrameAllocResponse> params)
         {
             return mock_core(core_tag{}, c,
@@ -200,6 +236,8 @@ namespace mocks { namespace mfx
         EXPECT_CALL(*c, GetHWType())
             .WillRepeatedly(testing::Return(MFX_HW_UNKNOWN));
 
+        EXPECT_CALL(*c, SetCoreId(_))
+            .WillRepeatedly(testing::Return(false));
         EXPECT_CALL(*c, QueryCoreInterface(_))
             .WillRepeatedly(testing::Return(nullptr));
 

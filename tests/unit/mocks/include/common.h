@@ -295,6 +295,47 @@ namespace mocks
     inline constexpr
     void invoke_if(F&&, P&&, pack<>, Args&&...)
     {}
+
+    namespace detail
+    {
+        struct any
+        {
+            template <typename T>
+            operator T() const
+            { return T{}; }
+        };
+
+        template <typename T, typename Enable = void>
+        struct is_convertible_to_matcher : std::false_type {};
+
+        template <typename M>
+        struct is_convertible_to_matcher<M, typename std::enable_if<
+            std::is_convertible<M, testing::Matcher<any> >::value
+        >::type> : std::true_type
+        {};
+
+        template <typename T, typename Enable = void>
+        struct has_matcher_interface : std::false_type {};
+
+        template <typename M>
+        struct has_matcher_interface<M,
+            decltype(
+                std::declval<M>().MatchAndExplain(any{}, nullptr), void()
+            )
+        > : std::true_type
+        {};
+    }
+
+    template <typename T, typename Enable = void>
+    struct is_matcher : std::false_type {};
+    template <typename M>
+    struct is_matcher<M, typename std::enable_if<
+        std::disjunction<
+              detail::is_convertible_to_matcher<M>
+            , detail::has_matcher_interface<M>
+        >::value
+    >::type> : std::true_type
+    {};
 }
 
 #if defined(__GNUC__)

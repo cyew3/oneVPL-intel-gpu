@@ -37,4 +37,9 @@ target_compile_options (mocks
         $<$<PLATFORM_ID:Windows>:/bigobj>
 )
 
+target_link_libraries (mocks
+    INTERFACE
+        $<$<PLATFORM_ID:Windows>:detours>
+)
+
 add_library (mocks::mocks ALIAS mocks)
