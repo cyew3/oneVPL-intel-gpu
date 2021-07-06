@@ -37,6 +37,59 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 using namespace std;
 using namespace TranscodingSample;
 
+#if defined(_WIN32) || defined(_WIN64)
+mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params)
+{
+    if (adapters.NumActual == 0 || !adapters.Adapters)
+        return 0;
+
+    if (params.dGfxIdx >= 0)
+    {
+        mfxU32 dGfxIdxCnt = 0;
+        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
+            [&dGfxIdxCnt, params](const mfxAdapterInfo info)
+            {
+                if (info.Platform.MediaAdapterType != mfxMediaAdapterType::MFX_MEDIA_DISCRETE)
+                    return false;
+
+                return dGfxIdxCnt++ == params.dGfxIdx;
+            });
+
+        // No dGfx in list
+        if (idx == adapters.Adapters + adapters.NumActual)
+        {
+            msdk_printf(MSDK_STRING("Warning: No dGfx detected on machine. Will pick another adapter\n"));
+            return 0;
+        }
+
+        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
+    }
+
+    if (params.bPrefferiGfx)
+    {
+        // Find iGfx adapter in list and return it's index
+
+        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
+            [](const mfxAdapterInfo info)
+        {
+            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+        });
+
+        // No iGfx in list
+        if (idx == adapters.Adapters + adapters.NumActual)
+        {
+            msdk_printf(MSDK_STRING("Warning: No iGfx detected on machine. Will pick another adapter\n"));
+            return 0;
+        }
+
+        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
+    }
+
+    // Other ways return 0, i.e. best suitable detected by dispatcher
+    return 0;
+}
+#endif
+
 Launcher::Launcher():
     m_StartTime(0),
     m_eDevType(static_cast<mfxHandleType>(0)),
@@ -100,8 +153,15 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     MSDK_CHECK_STATUS(sts, "pLoader->ConfigureAndEnumImplementations failed");
 
 #if defined(_WIN32) || defined(_WIN64)
-    if(m_InputParamsArray[0].adapterType == mfxMediaAdapterType::MFX_MEDIA_UNKNOWN)
-        m_InputParamsArray[0].adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+    // check available adapters
+    sts = QueryAdapters();
+    MSDK_CHECK_STATUS(sts, "QueryAdapters failed");
+
+    if (m_eDevType && m_DisplaysData.empty())
+    {
+        msdk_printf(MSDK_STRING("No adapters found. HW-accelerated transcoding is impossible.\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
 #endif
 
     for (i = 0; i < m_InputParamsArray.size(); i++)
@@ -113,9 +173,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
 #if defined(_WIN32) || defined(_WIN64)
         ForceImplForSession(i);
-        m_pLoader->SetAdapterTypeAndNum(m_InputParamsArray[0].adapterType, m_InputParamsArray[0].dGfxIdx);
+        m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
         sts = m_pLoader->EnumImplementations();
-        MSDK_CHECK_STATUS(sts, "EnumImplementations(m_InputParamsArray[0].adapterType, m_InputParamsArray[0].dGfxIdx) failed");
+        MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
 
         if (m_eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
         {
@@ -359,8 +419,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         pThreadPipeline->pPipeline.reset(CreatePipeline());
 
 #if defined(_WIN32) || defined(_WIN64)
-        pThreadPipeline->pPipeline->SetAdapterType(m_InputParamsArray[i].adapterType);
-        pThreadPipeline->pPipeline->SetPrefferdGfx(m_pLoader->GetDeviceIDAndAdapter().second);
+        pThreadPipeline->pPipeline->SetPrefferiGfx(m_InputParamsArray[i].bPrefferiGfx);
+        pThreadPipeline->pPipeline->SetPrefferdGfx(m_InputParamsArray[i].dGfxIdx);
 #endif
 
         pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back().get();
@@ -458,9 +518,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             if(m_InputParamsArray[i].libType != MFX_IMPL_SOFTWARE)
             {
                 ForceImplForSession(i);
-                m_pLoader->SetAdapterTypeAndNum(m_InputParamsArray[i].adapterType, m_InputParamsArray[i].dGfxIdx);
+                m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
                 sts = m_pLoader->EnumImplementations();
-                MSDK_CHECK_STATUS(sts, "EnumImplementations(m_InputParamsArray[i].adapterType, m_InputParamsArray[i].dGfxIdx) failed");
+                MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
             }
 #endif
             sts = pThreadPipeline->pPipeline->Init(&m_InputParamsArray[i],
@@ -481,9 +541,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             if (m_InputParamsArray[i].libType != MFX_IMPL_SOFTWARE)
             {
                 ForceImplForSession(i);
-                m_pLoader->SetAdapterTypeAndNum(m_InputParamsArray[i].adapterType, m_InputParamsArray[i].dGfxIdx);
+                m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
                 sts = m_pLoader->EnumImplementations();
-                MSDK_CHECK_STATUS(sts, "EnumImplementations(m_InputParamsArray[i].adapterType, m_InputParamsArray[i].dGfxIdx) failed");
+                MSDK_CHECK_STATUS(sts, "EnumImplementations(m_deviceID, m_adapterNum) failed");
             }
 #endif
             sts =  pThreadPipeline->pPipeline->Init(&m_InputParamsArray[i],
@@ -761,6 +821,28 @@ mfxStatus Launcher::ProcessResult()
 } // mfxStatus Launcher::ProcessResult()
 
 #if defined(_WIN32) || defined(_WIN64)
+mfxStatus Launcher::QueryAdapters()
+{
+    mfxU32 num_adapters_available;
+
+    mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
+    MFX_CHECK_STS(sts);
+
+    // no adapters on the machine, able to use software implementation
+    if (!num_adapters_available)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    m_DisplaysData.resize(num_adapters_available);
+    m_Adapters = { m_DisplaysData.data(), mfxU32(m_DisplaysData.size()), 0u };
+
+    sts = MFXQueryAdapters(nullptr, &m_Adapters);
+    MFX_CHECK_STS(sts);
+
+    return MFX_ERR_NONE;
+}
+
 void Launcher::ForceImplForSession(mfxU32 idxSession)
 {
     if (m_InputParamsArray[idxSession].libType == MFX_IMPL_SOFTWARE)
@@ -769,9 +851,31 @@ void Launcher::ForceImplForSession(mfxU32 idxSession)
     //change only 8 bit of the implementation. Don't touch type of frames
     mfxIMPL impl = m_InputParamsArray[idxSession].libType & mfxI32(~0xFF);
 
-    impl |= MFX_IMPL_HARDWARE_ANY;
+    mfxU32 idx = GetPreferredAdapterNum(m_Adapters, m_InputParamsArray[idxSession]);
+    switch (m_Adapters.Adapters[idx].Number)
+    {
+    case 0:
+        impl |= MFX_IMPL_HARDWARE;
+        break;
+    case 1:
+        impl |= MFX_IMPL_HARDWARE2;
+        break;
+    case 2:
+        impl |= MFX_IMPL_HARDWARE3;
+        break;
+    case 3:
+        impl |= MFX_IMPL_HARDWARE4;
+        break;
+
+    default:
+        // try searching on all display adapters
+        impl |= MFX_IMPL_HARDWARE_ANY;
+        break;
+    }
 
     m_InputParamsArray[idxSession].libType = impl;
+    m_adapterNum = m_Adapters.Adapters[idx].Number;
+    m_deviceID = m_Adapters.Adapters[idx].Platform.DeviceId;
 }
 
 mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscodingPipeline * pParentPipeline)
@@ -780,22 +884,50 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
         return MFX_ERR_NONE;
 
     // Inherited sessions must have the same adapter as parent
-    if (pParentPipeline->GetAdapterType() != mfxMediaAdapterType::MFX_MEDIA_UNKNOWN && m_InputParamsArray[idxSession].adapterType == mfxMediaAdapterType::MFX_MEDIA_UNKNOWN)
+    if ((pParentPipeline->IsPrefferiGfx() || pParentPipeline->IsPrefferdGfx()) && !m_InputParamsArray[idxSession].bPrefferiGfx && !m_InputParamsArray[idxSession].dGfxIdx >= 0)
     {
-        m_InputParamsArray[idxSession].adapterType = pParentPipeline->GetAdapterType();
+        m_InputParamsArray[idxSession].bPrefferiGfx = pParentPipeline->IsPrefferiGfx();
         m_InputParamsArray[idxSession].dGfxIdx = pParentPipeline->GetdGfxIdx();
         msdk_stringstream ss;
         ss << MSDK_STRING("\n\n session with index: ") << idxSession
             << MSDK_STRING(" adapter type was forced to ")
-            << (pParentPipeline->GetAdapterType() == mfxMediaAdapterType::MFX_MEDIA_INTEGRATED ? MSDK_STRING("integrated") : MSDK_STRING("discrete with index %d", pParentPipeline->GetdGfxIdx()))
+            << (pParentPipeline->IsPrefferiGfx() ? MSDK_STRING("integrated") : MSDK_STRING("discrete with index %d", pParentPipeline->GetdGfxIdx()))
             << std::endl << std::endl;
         msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
 
         return MFX_ERR_NONE;
     }
 
+    // App can't change initialization of the previous session (parent session)
+    if (!pParentPipeline->IsPrefferiGfx() && !pParentPipeline->IsPrefferdGfx() && (m_InputParamsArray[idxSession].bPrefferiGfx || m_InputParamsArray[idxSession].dGfxIdx >= 0))
+    {
+        msdk_stringstream ss;
+        ss << MSDK_STRING("\n\n session with index: ") << idxSession
+            << MSDK_STRING(" failed because parent session [")
+            << pParentPipeline->GetSessionText()
+            << MSDK_STRING("] doesn't have explicit adapter setting")
+            << std::endl << std::endl;
+        msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
+
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     // Inherited sessions must have the same adapter as parent
-    if (pParentPipeline->GetAdapterType() != m_InputParamsArray[idxSession].adapterType)
+    if (pParentPipeline->IsPrefferiGfx() && !m_InputParamsArray[idxSession].bPrefferiGfx)
+    {
+        msdk_stringstream ss;
+        ss << MSDK_STRING("\n\n session with index: ") << idxSession
+            << MSDK_STRING(" failed because it has different adapter type with parent session [")
+            << pParentPipeline->GetSessionText()
+            << MSDK_STRING("]")
+            << std::endl << std::endl;
+        msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
+
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    // Inherited sessions must have the same adapter as parent
+    if (pParentPipeline->IsPrefferdGfx() && !m_InputParamsArray[idxSession].dGfxIdx >= 0)
     {
         msdk_stringstream ss;
         ss << MSDK_STRING("\n\n session with index: ") << idxSession

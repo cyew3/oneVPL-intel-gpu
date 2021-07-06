@@ -37,14 +37,33 @@ mfxU32 ComponentParams::GetAdapter()
     // get from lib, which was found by loader and will be used for creating session
     if (m_pLoader)
     {
-        m_adapterNum = m_pLoader->GetDeviceIDAndAdapter().second;
-    }
-    else
-    {
-        m_adapterNum = 0;
+        std::tie(m_adapterNum, m_deviceID) = m_pLoader->GetDeviceIDAndAdapter();
     }
 
-    return m_adapterNum;
+    if (m_deviceID == -1 || m_adapterNum == -1)
+    {
+#if defined(_WIN64) || defined(_WIN32)
+        mfxU32 num_adapters_available;
+
+        mfxStatus sts = MFX_ERR_NONE;
+
+        sts = MFXQueryAdaptersNumber(&num_adapters_available);
+        MFX_CHECK_STS(sts);
+
+        std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
+        mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };
+
+        sts = MFXQueryAdapters(nullptr, &adapters);
+        MFX_CHECK_STS(sts);
+
+        m_adapterNum = adapters.Adapters[0].Number;
+        m_deviceID = adapters.Adapters[0].Platform.DeviceId;
+#else
+        return 0;
+#endif
+    }
+
+     return m_adapterNum;
 }
 
 mfxU16 ComponentParams::GetIoPatternIn()
@@ -525,7 +544,10 @@ mfxStatus ComponentParams::ConfigureLoader()
 
     MFX_CHECK_STS(m_pLoader->ConfigureAccelerationMode(m_accelerationMode, m_libType));
 
-    m_pLoader->SetAdapterTypeAndNum(m_adapterType, m_adapterNum);
+    if (m_deviceID != -1 && m_adapterNum != -1)
+    {
+        m_pLoader->SetDeviceAndAdapter(m_deviceID, m_adapterNum);
+    }
 
     MFX_CHECK_STS(m_pLoader->EnumImplementations());
 

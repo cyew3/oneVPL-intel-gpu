@@ -113,7 +113,7 @@ sInputParams::sInputParams() : __sInputParams()
     libType = MFX_IMPL_SOFTWARE;
 #if defined(_WIN32) || defined(_WIN64)
     //Adapter type
-    adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
+    bPrefferiGfx = false;
     dGfxIdx = -1;
 #endif
     MaxFrameNumber = MFX_INFINITE;

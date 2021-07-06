@@ -30,8 +30,7 @@ class VPLImplementationLoader {
     std::vector<mfxConfig> m_Configs;
     mfxImplDescription* m_idesc;
     mfxU32 m_ImplIndex;
-    mfxU16 m_adapterType;
-    mfxU32 m_adapterNum;
+    mfxChar devIDAndAdapter[MFX_STRFIELD_LEN] = {};
     mfxU32 m_MinVersion;
 
 public:
@@ -43,7 +42,7 @@ public:
     mfxStatus ConfigureImplementation(mfxIMPL impl);
     mfxStatus ConfigureAccelerationMode(mfxAccelerationMode accelerationMode, mfxIMPL impl);
     mfxStatus ConfigureVersion(mfxVersion const version);
-    void SetAdapterTypeAndNum(mfxU16 adapterType, mfxU32 adapterNum);
+    void SetDeviceAndAdapter(mfxU16 deviceID, mfxU32 adapterNum);
     mfxStatus EnumImplementations();
     mfxStatus ConfigureAndEnumImplementations(mfxIMPL impl, mfxAccelerationMode accelerationMode);
     mfxLoader GetLoader() const;

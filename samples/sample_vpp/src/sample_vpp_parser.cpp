@@ -1763,19 +1763,11 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 #if defined(_WIN64) || defined(_WIN32)
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dGfx")))
             {
-                pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
-                if (i + 1 < nArgNum && isdigit(*strInput[1 + i]))
-                {
-                    if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->dGfxIdx))
-                    {
-                        msdk_printf(MSDK_STRING("value of -dGfx is invalid"));
-                        return MFX_ERR_UNSUPPORTED;
-                    }
-                }
+                pParams->bPrefferdGfx = true;
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-iGfx")))
             {
-                pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+                pParams->bPrefferiGfx = true;
             }
 #endif
 #if defined(D3D_SURFACES_SUPPORT)
@@ -1942,6 +1934,14 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
         msdk_printf(MSDK_STRING("Warning: IOPattern has been reset to 'sys_to_sys' mode because software library implementation is selected."));
         pParams->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
+
+#if defined(_WIN64) || defined(_WIN32)
+    if (pParams->bPrefferdGfx && pParams->bPrefferiGfx)
+    {
+        msdk_printf(MSDK_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered"));
+        pParams->bPrefferdGfx = false;
+    }
+#endif
 
     // Align values of luma and chroma bit depth if only one of them set by user
     AdjustBitDepth(*pParams);

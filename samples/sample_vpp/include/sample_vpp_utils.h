@@ -181,8 +181,8 @@ struct sInputParams
     std::string strDevicePath; // path to device for processing
 #endif
 #if defined(_WIN64) || defined(_WIN32)
-    mfxU16 adapterType;
-    mfxU32 dGfxIdx;
+    bool bPrefferdGfx;
+    bool bPrefferiGfx;
 #endif
 
     mfxU16   asyncNum;
@@ -288,8 +288,8 @@ struct sInputParams
         rtContrast = {};
 #endif
 #if defined(_WIN64) || defined(_WIN32)
-        adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
-        dGfxIdx = -1;
+        bPrefferdGfx = false;
+        bPrefferiGfx = false;
 #endif
     }
 };

@@ -1226,11 +1226,11 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
 #if defined(_WIN32) || defined(_WIN64)
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-iGfx")))
     {
-        InputParams.adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+        InputParams.bPrefferiGfx = true;
     }
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dGfx")))
     {
-        InputParams.adapterType = mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
+        InputParams.dGfxIdx = 0;
         if (i + 1 < argc && isdigit(*argv[1 + i]))
         {
             if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.dGfxIdx))
@@ -2916,6 +2916,14 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         InputParams.nEncTileRows = 0;
         InputParams.nEncTileCols = 0;
     }
+
+#if defined(_WIN32) || defined(_WIN64)
+    if (InputParams.bPrefferiGfx && InputParams.dGfxIdx >= 0)
+    {
+        msdk_printf(MSDK_STRING("WARNING: both dGfx and iGfx flags set. iGfx will be preffered\n"));
+        InputParams.dGfxIdx = -1;
+    }
+#endif
 
     return MFX_ERR_NONE;
 } //mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)

@@ -77,6 +77,12 @@ struct sCommandlineParams
 #if defined(LINUX32) || defined(LINUX64)
   std::string    strDevicePath; // path to device for processing
 #endif
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+  //Adapter type
+  bool           bPrefferiGfx;
+  bool           bPrefferdGfx;
+  mfxU32         dGfxIdx;
+#endif
   mfxU32         nCorruptionLevel;
   double         fLimitPipelineFps; //sleeps in every frame processing
   mfxU32         nLimitFileReader; //sleeps in every frame processing
@@ -368,6 +374,13 @@ struct sCommandlineParams
       bInitEx = false;
       nGpuCopyMode = MFX_GPUCOPY_DEFAULT;
 
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+      //Adapter type
+      bPrefferiGfx = false;
+      bPrefferdGfx = false;
+      dGfxIdx = 0;
+#endif
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
       AV1LargeScaleTileMode = 0;
       AV1AnchorFramesNum = 0;
@@ -603,6 +616,12 @@ protected:
     virtual mfxStatus        WriteParFile();
     virtual mfxStatus        ReadParFile(const vm_char * pInFile, IProcessCommand * pHandler);
     virtual mfxStatus        CheckExitingCondition();//if number frames is limited by cmd line
+
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    //force implementation type for special user cases
+    mfxU32                   GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sCommandlineParams & params);
+    mfxStatus                ForceAdapterAndDeviceID(const sCommandlineParams & params, mfxI32 & adapterNum, mfxI16 & deviceID);
+#endif
 
     //////////////////////////////////////////////////////////////////////////
     //light reset support in case of invalid params, no reset for splitter, cmp render

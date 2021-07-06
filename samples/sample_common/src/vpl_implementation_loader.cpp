@@ -30,17 +30,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <map>
 #include <regex>
 
-static mfxU32 GetAdapterNumber(const mfxChar* cDeviceID) {
-    std::string strDevID(cDeviceID);
-    size_t idx = strDevID.rfind('/');
-    mfxU32 adapterIdx = -1;
-
-    if (idx != std::string::npos && (idx + 1) < strDevID.size())
-        adapterIdx = std::stoi(strDevID.substr(idx + 1));
-
-    return adapterIdx;
-}
-
  const std::map<mfxAccelerationMode, const msdk_tstring> mfxAccelerationModeNames = {
     { MFX_ACCEL_MODE_NA, MSDK_STRING("MFX_ACCEL_MODE_NA") },
     { MFX_ACCEL_MODE_VIA_D3D9, MSDK_STRING("MFX_ACCEL_MODE_VIA_D3D9") },
@@ -60,8 +49,6 @@ VPLImplementationLoader::VPLImplementationLoader()
     m_idesc = nullptr;
     m_ImplIndex = 0;
     m_MinVersion = MakeVersion(2, 0);
-    m_adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
-    m_adapterNum = -1;
 }
 
 VPLImplementationLoader::~VPLImplementationLoader()
@@ -165,22 +152,12 @@ mfxStatus VPLImplementationLoader::ConfigureVersion(mfxVersion const version)
     return sts;
 }
 
-void VPLImplementationLoader::SetAdapterTypeAndNum(mfxU16 adapterType, mfxU32 adapterNum)
+void VPLImplementationLoader::SetDeviceAndAdapter(mfxU16 deviceID, mfxU32 adapterNum)
 {
-    if (adapterType != mfxMediaAdapterType::MFX_MEDIA_UNKNOWN)
-    {
-        m_adapterType = adapterType;
-        m_adapterNum = adapterNum;
-
-        msdk_stringstream ss;
-        ss << MSDK_STRING("CONFIGURE LOADER: required adapter type: ")
-            << (m_adapterType == mfxMediaAdapterType::MFX_MEDIA_INTEGRATED ? MSDK_STRING("integrated") : MSDK_STRING("discrete"));
-        if (m_adapterNum != -1)
-            ss << MSDK_STRING(" with index ") << m_adapterNum;
-        ss << std::endl;
-
-        msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
-    }
+    snprintf(devIDAndAdapter, sizeof(devIDAndAdapter), "%x/%d", deviceID, adapterNum);
+    msdk_tstring strDevIDAndAdapter;
+    std::copy(devIDAndAdapter, devIDAndAdapter + strlen(devIDAndAdapter), back_inserter(strDevIDAndAdapter));
+    msdk_printf(MSDK_STRING("CONFIGURE LOADER: required deviceID/adapterNum: %s \n"), strDevIDAndAdapter.c_str());
 }
 
 mfxStatus VPLImplementationLoader::EnumImplementations()
@@ -199,8 +176,7 @@ mfxStatus VPLImplementationLoader::EnumImplementations()
             sts = MFX_ERR_NULL_PTR;
             break;
         }
-        else if ((idesc->Dev.MediaAdapterType == m_adapterType || mfxMediaAdapterType::MFX_MEDIA_UNKNOWN == m_adapterType)
-            && (m_adapterNum == -1 || GetAdapterNumber(idesc->Dev.DeviceID) == m_adapterNum)
+        else if (((devIDAndAdapter && strncmp(idesc->Dev.DeviceID, devIDAndAdapter, sizeof(devIDAndAdapter)) == 0) || strcmp(devIDAndAdapter, "") == 0)
             && MakeVersion(idesc->ApiVersion) >= m_MinVersion)
         {
             m_idesc = idesc;

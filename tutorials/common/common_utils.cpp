@@ -43,7 +43,7 @@ static mfxU32 GetAdapterNumber(const mfxChar* cDeviceID) {
     size_t idx = strDevID.rfind('/');
     mfxU32 adapterIdx = -1;
 
-    if (idx != std::string::npos && (idx + 1) < strDevID.size())
+    if (idx != std::string::npos)
         adapterIdx = std::stoi(strDevID.substr(idx + 1));
 
     return adapterIdx;
