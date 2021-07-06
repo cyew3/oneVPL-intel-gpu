@@ -1007,7 +1007,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 
         // Creating a device is only necessary in case of using external memory (generall alloc) or inter/joined sessions.
         IsInterOrJoined = m_InputParamsArray[i].eMode == Sink || m_InputParamsArray[i].eMode == Source || m_InputParamsArray[i].bIsJoin;
-        if(m_InputParamsArray[i].nMemoryModel == GENERAL_ALLOC || IsInterOrJoined)
+        if((m_InputParamsArray[i].nMemoryModel == GENERAL_ALLOC || IsInterOrJoined) && !m_InputParamsArray[i].bForceSysMem)
         {
             IsNeedToCreateDevice = true;
         }
