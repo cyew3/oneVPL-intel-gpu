@@ -96,22 +96,19 @@ enum
 };
 
 VideoVppJpeg::VideoVppJpeg(VideoCORE *core, bool useInternalMem)
-    : m_IOPattern()
+    : m_pCore(core)
+    , m_IOPattern()
+    , m_bUseInternalMem(useInternalMem)
+    , m_taskId(1)
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    , m_rotation(0)
+#endif
     , m_surfaces()
     , m_guard()
     , AssocIdx()
     , m_ddi()
 {
-    m_pCore = core;
-    m_bUseInternalMem = useInternalMem;
-
-    m_taskId = 1;
-#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
-    m_rotation = 0;
-#endif
-
     memset(&m_response, 0, sizeof(mfxFrameAllocResponse));
-
 } // VideoVppJpeg::VideoVppJpeg(VideoCORE *core)
 
 
