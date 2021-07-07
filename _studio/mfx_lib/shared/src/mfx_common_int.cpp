@@ -33,7 +33,7 @@
 #include <climits>
 #include <algorithm>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <DXGI.h>
 #endif
 
@@ -87,7 +87,7 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
 #endif
         break;
@@ -182,7 +182,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
     switch (codecId)
     {
     case MFX_CODEC_JPEG:
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != DXGI_FORMAT_AYUV && info->FourCC != MFX_FOURCC_RGB4 && info->FourCC != MFX_FOURCC_YUY2)
             MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
 #else

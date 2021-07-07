@@ -21,6 +21,23 @@
 
 target_sources(mfx_common_hw
   PRIVATE
+    include/encoder_ddi.hpp
+    include/encoding_ddi.h
+    include/mfx_check_hardware_support.h
+    include/mfx_h264_encode_d3d11.h
+    include/mfx_h264_encode_d3d9.h
+    include/mfx_h264_encode_d3d_common.h
+    include/mfx_mpeg2_encode_d3d11.h
+    include/mfx_mpeg2_encode_d3d9.h
+    include/mfx_mpeg2_encode_d3d_common.h
+    include/mfx_win_event_cache.h
     src/mfx_check_hardware_support.cpp
+    src/mfx_h264_encode_d3d11.cpp
+    src/mfx_h264_encode_d3d9.cpp
+    src/mfx_h264_encode_d3d_common.cpp
+    src/mfx_mpeg2_encode_d3d11.cpp
+    src/mfx_mpeg2_encode_d3d9.cpp
+    src/mfx_mpeg2_encode_d3d_common.cpp
+    src/mfx_win_event_cache.cpp
   )
 

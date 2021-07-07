@@ -36,11 +36,11 @@
 #include "mfx_win_event_cache.h"
 #endif
 
+#if defined(MFX_VA_WIN)
 // structures will be abstracted (ENCODE_CAPS, D3DDDIFORMAT)
-#if   defined(MFX_VA_WIN)
-    #include "encoding_ddi.h"
-#elif defined(MFX_VA_LINUX)
-    #include "mfx_h264_encode_struct_vaapi.h"
+#include "encoding_ddi.h"
+#else
+#include "mfx_h264_encode_struct_vaapi.h"
 #endif
 
 namespace MfxHwH264Encode
@@ -184,4 +184,4 @@ namespace MfxHwH264Encode
 }; // namespace
 
 #endif // __MFX_H264_ENCODE_INTERFACE__H
-#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined(MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)

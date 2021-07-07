@@ -61,8 +61,6 @@
 #include "umc_defs.h"
 #include "ipps.h"
 
-#define ENABLE_APQ_LQ
-
 #define LOWPOWERENCODE_AVC
 
 #define D3DFMT_NV12 (D3DFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
@@ -955,21 +953,6 @@ namespace MfxHwH264Encode
         const mfxFrameSurface1&   srcSurf,
         mfxFrameInfo const&       info,
         const mfxU16&             inMemType);
-
-#if 0 // removed dependency from file operations
-    void WriteFrameData(
-        vm_file *            file,
-        VideoCORE *          core,
-        mfxFrameData const & data,
-        mfxFrameInfo const & info);
-
-    mfxStatus ReadFrameData(
-        vm_file *            file,
-        mfxU32               frameNum,
-        VideoCORE *          core,
-        mfxFrameData const & data,
-        mfxFrameInfo const & info);
-#endif // removed dependency from file operations
 
     bool IsLpLookaheadSupported(
         mfxU16 scenario,

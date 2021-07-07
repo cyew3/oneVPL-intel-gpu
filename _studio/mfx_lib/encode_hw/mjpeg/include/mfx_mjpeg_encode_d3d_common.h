@@ -23,7 +23,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include "encoding_ddi.h"
 #include "mfx_mjpeg_encode_interface.h"
@@ -60,6 +61,7 @@ namespace MfxHwMJpegEncode
     };
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) 
+#endif // #if defined (MFX_VA_WIN)
 #endif // __MFX_MJPEG_ENCODE_D3D_COMMON_H
 /* EOF */

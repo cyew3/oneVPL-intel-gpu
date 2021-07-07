@@ -20,7 +20,9 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #define CHECK_HRES(hRes) \
         if (FAILED(hRes))\
@@ -575,4 +577,6 @@ mfxStatus D3D11Encoder::Init(
 
 } // mfxStatus D3D11Encoder::Init(...)
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+#endif // #if defined (MFX_D3D11_ENABLED)
+#endif // #if defined (MFX_VA_WIN)

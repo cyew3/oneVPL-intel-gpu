@@ -20,7 +20,8 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined(MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include <va/va.h>
 #include <assert.h>
@@ -1912,5 +1913,6 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     return sts;
 } // mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt)
 
-#endif // (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && (MFX_VA_LINUX)
+#endif // (MFX_ENABLE_MPEG2_VIDEO_ENCODE) 
+#endif // (MFX_VA_LINUX)
 /* EOF */

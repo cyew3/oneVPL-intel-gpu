@@ -20,7 +20,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "libmfx_core_factory.h"
@@ -523,4 +524,6 @@ mfxStatus D3D9Encoder::Destroy()
     return sts;
 }
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+#endif // #if defined (MFX_VA_WIN)
+

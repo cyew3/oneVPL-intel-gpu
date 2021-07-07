@@ -20,7 +20,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #include "mfx_h264_encode_d3d9.h"
 #include "libmfx_core_interface.h"
@@ -1747,7 +1748,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(
             for (mfxU32 i = 0; i < hMB; i++)
                 MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
         }
-#ifdef ENABLE_APQ_LQ
+#ifdef MFX_ENABLE_APQ_LQ
         else if (task.m_ALQOffset) {
             for (mfxU32 i = 0; i < hMB; i++)
                 for (mfxU32 j = 0; j < wMB; j++)
@@ -3441,5 +3442,6 @@ mfxStatus D3D9SvcEncoder::Destroy()
 
 #endif
 
-#endif // (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE
+#endif // MFX_VA_WIN
 /* EOF */

@@ -18,7 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined (_WIN32) || defined (_WIN64)
+#include "mfx_common.h"
+
+#if defined (MFX_VA_WIN)
 
 #include "libmfx_core_interface.h"
 #include "mfx_vp9_encode_hw_utils.h"
@@ -33,25 +35,23 @@ namespace MfxHwVP9Encode
 #define MFX_VP9E_HW_D3D11_DEFAULT_WIDTH  (1920)
 #define MFX_VP9E_HW_D3D11_DEFAULT_HEIGHT (1088)
 
-#if defined (MFX_VA_WIN)
-
-    DriverEncoder* CreatePlatformVp9Encoder(VideoCORE* pCore)
+DriverEncoder* CreatePlatformVp9Encoder(VideoCORE* pCore)
+{
+    if (pCore)
     {
-        if (pCore)
+        switch (pCore->GetVAType())
         {
-            switch (pCore->GetVAType())
-            {
-            case MFX_HW_D3D9:
-                return new D3D9Encoder;
-            case MFX_HW_D3D11:
-                return new D3D11Encoder;
-            default:
-                return 0;
-            }
+        case MFX_HW_D3D9:
+            return new D3D9Encoder;
+        case MFX_HW_D3D11:
+            return new D3D11Encoder;
+        default:
+            return 0;
         }
+    }
 
-        return 0;
-    };
+    return 0;
+};
 
 D3D11Encoder::D3D11Encoder()
     : m_guid()
@@ -659,9 +659,6 @@ mfxStatus D3D11Encoder::Destroy()
 
     return MFX_ERR_NONE;
 } // mfxStatus D3D11Encoder::Destroy()
-
-#endif // (MFX_VA_WIN)
-
 } // MfxHwVP9Encode
 
-#endif // (_WIN32) || (_WIN64)
+#endif // (MFX_VA_WIN)

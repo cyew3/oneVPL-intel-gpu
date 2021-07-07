@@ -23,7 +23,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #include <vector>
 #include <assert.h>
@@ -439,6 +440,7 @@ namespace MfxHwH264Encode
 
 }; // namespace
 
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE && MFX_VA_WIN
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE
+#endif // MFX_VA_WIN
 #endif // __MFX_H264_ENCODE_D3D9__H
 /* EOF */

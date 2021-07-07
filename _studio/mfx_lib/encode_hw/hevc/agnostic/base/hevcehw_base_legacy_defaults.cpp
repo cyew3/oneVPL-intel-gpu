@@ -2580,7 +2580,7 @@ public:
         changed += fi.BitDepthLuma && pCO3->TargetBitDepthLuma && !IsOn(par.mfx.LowPower) &&
             SetIf(pCO3->TargetBitDepthLuma, pCO3->TargetBitDepthLuma != fi.BitDepthLuma, 0);
         changed += fi.BitDepthChroma && pCO3->TargetBitDepthChroma && !IsOn(par.mfx.LowPower) &&
-            SetIf(pCO3->TargetBitDepthChroma,  pCO3->TargetBitDepthChroma != fi.BitDepthChroma, 0);
+            SetIf(pCO3->TargetBitDepthChroma, pCO3->TargetBitDepthChroma != fi.BitDepthChroma, 0);
 
         MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 

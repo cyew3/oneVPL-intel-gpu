@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ namespace Base
     public:
         mfxStatus SubmitPreEncTask(StorageW&  global, StorageW& s_task);
         mfxStatus QueryPreEncTask(StorageW&  global, StorageW& s_task);
-        mfxStatus BRCGetCtrl(StorageW&  global, StorageW& s_task, 
+        mfxStatus BRCGetCtrl(StorageW&  global, StorageW& s_task,
             mfxEncToolsBRCQuantControl &extQuantCtrl, mfxEncToolsBRCHRDPos  &extHRDPos);
         mfxStatus BRCUpdate(StorageW&  global, StorageW& s_task,
             mfxEncToolsBRCStatus &sts);

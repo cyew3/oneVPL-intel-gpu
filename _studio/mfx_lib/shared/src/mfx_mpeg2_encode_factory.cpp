@@ -34,7 +34,8 @@
     #include "mfx_mpeg2_encode_d3d11.h"
 #endif
 
-#elif defined (MFX_VA_LINUX)
+#endif
+#if defined(MFX_VA_LINUX)
     #include "mfx_mpeg2_encode_vaapi.h"
 #endif
 

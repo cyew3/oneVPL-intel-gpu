@@ -592,5 +592,4 @@ void Interlace::QueryTask(const FeatureBlocks&, TPushQT Push)
     });
 }
 
-
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

@@ -20,7 +20,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #define CHECK_HRES(hRes) \
         if (FAILED(hRes))\
@@ -612,7 +613,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
             for (mfxU32 i = 0; i < hMB; i++)
                 MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
         }
-#ifdef ENABLE_APQ_LQ
+#ifdef MFX_ENABLE_APQ_LQ
         else if(task.m_ALQOffset) {
             for (mfxU32 i = 0; i < hMB; i++)
                 for (mfxU32 j = 0; j < wMB; j++)
@@ -1970,163 +1971,6 @@ void D3D11SvcEncoder::PackSlice(
 
 } // void D3D11SvcEncoder::PackSlice(...)
 
-#if 0
-// FIXME: remove, use common PackSlice from mfx_h264_encode_d3d9.h
-void D3D11SvcEncoder::PackSlice(
-    OutputBitstream & obs,
-    DdiTask const &   task,
-    mfxU32            fieldId,
-    mfxU32            sliceId) const
-{
-    ENCODE_SET_SLICE_HEADER_SVC const &        slice = m_slice[sliceId];
-    ENCODE_SET_PICTURE_PARAMETERS_SVC const &  pps   = m_pps[slice.pic_parameter_set_id];
-    ENCODE_SET_SEQUENCE_PARAMETERS_SVC const & sps   = m_sps[pps.seq_parameter_set_id];
-
-    mfxU32 sliceType = slice.slice_type % 5;
-
-    mfxU8 startcode[3] = { 0, 0, 1 };
-    obs.PutRawBytes(startcode, startcode + sizeof startcode);
-    obs.PutBit(0);
-    obs.PutBits(pps.RefPicFlag ? 1 : 0, 2);
-    obs.PutBits(20, 5);
-    obs.PutUe(slice.first_mb_in_slice);
-    obs.PutUe(slice.slice_type);
-    obs.PutUe(slice.pic_parameter_set_id);
-    obs.PutBits(pps.frame_num, sps.log2_max_frame_num_minus4 + 4);
-    if (!sps.frame_mbs_only_flag)
-    {
-        obs.PutBit(pps.FieldCodingFlag);
-        if (pps.FieldCodingFlag)
-            obs.PutBit(fieldId);
-    }
-    if (pps.bIdrPic)
-        obs.PutUe(task.m_idrPicId);
-    if (sps.pic_order_cnt_type == 0)
-    {
-        obs.PutBits(task.GetPoc(fieldId), sps.log2_max_pic_order_cnt_lsb_minus4 + 4);
-        if (pps.pic_order_present_flag && !pps.FieldCodingFlag)
-            obs.PutSe(0); // delta_pic_order_cnt_bottom
-    }
-    if (sps.pic_order_cnt_type == 1 && !sps.delta_pic_order_always_zero_flag)
-    {
-        obs.PutSe(0); // delta_pic_order_cnt[0]
-        if (pps.pic_order_present_flag && !pps.FieldCodingFlag)
-            obs.PutSe(0); // delta_pic_order_cnt[1]
-    }
-    if (task.m_qid == 0)
-    {
-        if (sliceType == SLICE_TYPE_B)
-            obs.PutBit(slice.direct_spatial_mv_pred_flag);
-        if (sliceType != SLICE_TYPE_I)
-        {
-            obs.PutBit(slice.num_ref_idx_active_override_flag);
-            if (slice.num_ref_idx_active_override_flag)
-            {
-                obs.PutUe(slice.num_ref_idx_l0_active_minus1);
-                if (sliceType == SLICE_TYPE_B)
-                    obs.PutUe(slice.num_ref_idx_l1_active_minus1);
-            }
-        }
-        if (sliceType != SLICE_TYPE_I)
-        {
-            obs.PutBit(task.m_refPicList0Mod[fieldId].Size() > 0 ? 1 : 0);
-            if (task.m_refPicList0Mod[fieldId].Size())
-            {
-                for (mfxU32 i = 0; i < task.m_refPicList0Mod[fieldId].Size(); i++)
-                {
-                    obs.PutUe(task.m_refPicList0Mod[fieldId][i].m_idc);
-                    obs.PutUe(task.m_refPicList0Mod[fieldId][i].m_diff);
-                }
-                obs.PutUe(3);
-            }
-        }
-        if (sliceType == SLICE_TYPE_B)
-        {
-            obs.PutBit(task.m_refPicList1Mod[fieldId].Size() > 0 ? 1 : 0);
-            if (task.m_refPicList1Mod[fieldId].Size())
-            {
-                for (mfxU32 i = 0; i < task.m_refPicList1Mod[fieldId].Size(); i++)
-                {
-                    obs.PutUe(task.m_refPicList1Mod[fieldId][i].m_idc);
-                    obs.PutUe(task.m_refPicList1Mod[fieldId][i].m_diff);
-                }
-                obs.PutUe(3);
-            }
-        }
-        if (pps.weighted_pred_flag  == 1 && sliceType == SLICE_TYPE_P ||
-            pps.weighted_bipred_idc == 1 && sliceType == SLICE_TYPE_B)
-        {
-            assert(!"explicit weighted prediction is unsupported");
-        }
-        if (pps.RefPicFlag)
-        {
-            if (pps.bIdrPic)
-            {
-                obs.PutBit(0);
-                obs.PutBit(0);
-            }
-            else
-            {
-                obs.PutBit(0);
-            }
-        }
-    }
-    if (pps.entropy_coding_mode_flag && sliceType != SLICE_TYPE_I)
-        obs.PutUe(slice.cabac_init_idc);
-    obs.PutSe(slice.slice_qp_delta);
-    if (mfxU32 deblocking_filter_control_present_flag = 1)
-    {
-        obs.PutUe(slice.disable_deblocking_filter_idc);
-        if (slice.disable_deblocking_filter_idc != 1)
-        {
-            obs.PutSe(slice.slice_alpha_c0_offset_div2);
-            obs.PutSe(slice.slice_beta_offset_div2);
-        }
-    }
-    if (!slice.no_inter_layer_pred_flag && task.m_qid == 0)
-    {
-        obs.PutUe(pps.ref_layer_dependency_id * 16 + pps.ref_layer_quality_id);
-        obs.PutUe(pps.disable_inter_layer_deblocking_filter_idc);
-        if (pps.disable_inter_layer_deblocking_filter_idc != 1)
-        {
-            obs.PutSe(pps.inter_layer_slice_alpha_c0_offset_div2);
-            obs.PutSe(pps.inter_layer_slice_beta_offset_div2);
-        }
-        obs.PutBit(pps.constrained_intra_resampling_flag);
-        if (sps.extended_spationl_scalability_idc == 2)
-        {
-            if (sps.chroma_format_idc > 0)
-            {
-                obs.PutBit(pps.ref_layer_chroma_phase_x_plus1_flag);
-                obs.PutBits(pps.ref_layer_chroma_phase_y_plus1, 2);
-            }
-            obs.PutSe(pps.scaled_ref_layer_left_offset);
-            obs.PutSe(pps.scaled_ref_layer_top_offset);
-            obs.PutSe(pps.scaled_ref_layer_right_offset);
-            obs.PutSe(pps.scaled_ref_layer_bottom_offset);
-        }
-    }
-    if (!slice.no_inter_layer_pred_flag)
-    {
-        obs.PutBit(0); // slice_skip_flag
-        obs.PutBit(slice.adaptive_base_mode_flag);
-        if (!slice.adaptive_base_mode_flag)
-            obs.PutBit(slice.default_base_mode_flag);
-        if (!slice.default_base_mode_flag)
-        {
-            obs.PutBit(slice.adaptive_motion_prediction_flag);
-            if (!slice.adaptive_motion_prediction_flag)
-                obs.PutBit(slice.default_base_mode_flag);
-        }
-        obs.PutBit(slice.adaptive_residual_prediction_flag);
-        if (!slice.adaptive_residual_prediction_flag)
-            obs.PutBit(slice.default_residual_prediction_flag);
-        obs.PutBit(pps.tcoeff_level_prediction_flag);
-        obs.PutBits(slice.scan_idx_start, 4);
-        obs.PutBits(slice.scan_idx_end, 4);
-    }
-}
-#endif // (FIXME: remove, use common PackSlice from mfx_h264_encode_d3d9.h)
-
-#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
+#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
+#endif // #if defined (MFX_D3D11_ENABLED)
 /* EOF */

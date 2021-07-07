@@ -20,7 +20,9 @@
 
 #pragma once
 
-#if defined (_WIN32) || defined (_WIN64)
+#include "mfx_common.h"
+
+#if defined (MFX_VA_WIN)
 
 #include "auxiliary_device.h"
 #include "mfx_vp9_encode_hw_d3d_common.h"

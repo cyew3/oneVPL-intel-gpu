@@ -1069,7 +1069,7 @@ namespace MfxHwH264Encode
             , m_nextLayerTask(0)
             , m_repack(0)
             , m_fractionalQP(0)
-#ifdef ENABLE_APQ_LQ
+#ifdef MFX_ENABLE_APQ_LQ
             , m_ALQOffset(0)
 #endif
             , m_midRaw(MID_INVALID)
@@ -1140,7 +1140,7 @@ namespace MfxHwH264Encode
             , m_wsGpuImage(0)
             , m_wsIdxGpuImage(0)
             , m_Yscd(0)
-#if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_H264_REPARTITION_CHECK)
             , m_RepartitionCheck(0)
 #endif
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
@@ -1340,7 +1340,7 @@ namespace MfxHwH264Encode
         DdiTask const * m_nextLayerTask; // set to 0 if no nextLayerResolutionChange
         mfxU32  m_repack;
         mfxI32  m_fractionalQP; //if m_fractionalQP > 0 set it value in QM matrices
-#ifdef ENABLE_APQ_LQ
+#ifdef MFX_ENABLE_APQ_LQ
         mfxI32  m_ALQOffset;     // MBQP Offset for Lambda QP adjustment
 #endif
 
@@ -1423,8 +1423,7 @@ namespace MfxHwH264Encode
 
         mfxU32 m_startTime;
         eMFXHWType m_hwType;  // keep HW type information
-
-#if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_H264_REPARTITION_CHECK)
         mfxU8 m_RepartitionCheck; //  DDI level ForceRepartitionCheck
 #endif
 

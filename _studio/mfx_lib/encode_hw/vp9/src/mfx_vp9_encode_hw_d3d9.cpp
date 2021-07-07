@@ -23,12 +23,10 @@
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_par.h"
 
-#if defined (_WIN32) || defined (_WIN64)
+#if defined (MFX_VA_WIN)
 
 namespace MfxHwVP9Encode
 {
-
-#if defined (MFX_VA_WIN)
 
 mfxU16 MapBitDepthToDDI(mfxU16 depth)
 {
@@ -957,9 +955,6 @@ void PrintDdiToLogOnce(ENCODE_CAPS_VP9 const &caps)
     {
     }
 }
-
-#endif // (MFX_VA_WIN)
-
 } // MfxHwVP9Encode
 
-#endif // (_WIN32) || (_WIN64)
+#endif // (MFX_VA_WIN)

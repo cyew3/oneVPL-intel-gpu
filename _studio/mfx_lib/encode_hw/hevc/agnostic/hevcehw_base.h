@@ -35,7 +35,6 @@
 #endif //!defined(MFX_PROTECTED_FEATURE_DISABLE)
 #endif //defined(MFX_VA_WIN)
 
-
 #include "mfxvideo++int.h"
 
 #include "mfx_utils_extbuf.h"

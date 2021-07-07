@@ -28,11 +28,12 @@
 #include <ippcore.h>
 #include <set>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <windows.h>
 #include <tchar.h>
 #include "mfx_dxva2_device.h"
-#else
+#endif
+#if defined(MFX_VA_LINUX)
 #include <unistd.h>
 #include <fcntl.h>
 #include "va/va_drm.h"
@@ -114,7 +115,8 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     #endif
         (MFX_IMPL_VIA_D3D11 != implInterface) &&
         (MFX_IMPL_VIA_D3D9 != implInterface) &&
-#elif defined(MFX_VA_LINUX)
+#endif 
+#if defined(MFX_VA_LINUX)
         (MFX_IMPL_VIA_VAAPI != implInterface) &&
 #endif // MFX_VA_*
         (MFX_IMPL_VIA_ANY != implInterface))
@@ -571,7 +573,8 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
             if (!QueryImplDesc(*pCore, deviceId, adapter))
                 return nullptr;
         }
-#elif defined(MFX_VA_LINUX)
+#endif // defined(MFX_VA_WIN)
+#if defined(MFX_VA_LINUX)
         for (int i = 0; i < 64; ++i)
         {
             std::string path;
@@ -635,7 +638,7 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
                 }
             }
         }
-#endif
+#endif // defined(MFX_VA_LINUX)
 
         if (!holder->GetSize())
             return impl;

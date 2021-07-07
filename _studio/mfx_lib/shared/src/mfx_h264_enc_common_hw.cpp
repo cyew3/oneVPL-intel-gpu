@@ -2340,9 +2340,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #if defined(LOWPOWERENCODE_AVC)
     if (IsOn(par.mfx.LowPower))
     {
-#if !defined(STRIP_EMBARGO) && defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
+#if defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
         // Gen12HP VDEnc supports B frames
-        if (par.mfx.GopRefDist > 1 && platform < MFX_HW_XE_HP_SDV)
+        if (par.mfx.GopRefDist > 1
+#if !defined(STRIP_EMBARGO)
+            && platform < MFX_HW_XE_HP_SDV
+#endif
+            )
 #else
         if (par.mfx.GopRefDist > 1)
 #endif
@@ -4993,16 +4997,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #endif
 
 #ifdef MFX_ENABLE_H264_REPARTITION_CHECK
-    if (!CheckTriStateOptionWithAdaptive(extOpt3->RepartitionCheckEnable)) changed = true;
-#ifdef MFX_VA_WIN
-        if ((extOpt3->RepartitionCheckEnable != MFX_CODINGOPTION_ADAPTIVE) &&
-            (extOpt3->RepartitionCheckEnable != MFX_CODINGOPTION_UNKNOWN) &&
-            !hwCaps.ddi_caps.ForceRepartitionCheckSupport)
-        {
-            extOpt3->RepartitionCheckEnable = 0;
-            unsupported = true;
-        }
-#endif // MFX_VA_WIN
+    if (!CheckTriStateOptionWithAdaptive(extOpt3->RepartitionCheckEnable))
+    {
+        changed = true;
+    }
+    if ((extOpt3->RepartitionCheckEnable != MFX_CODINGOPTION_ADAPTIVE) &&
+        (extOpt3->RepartitionCheckEnable != MFX_CODINGOPTION_UNKNOWN) &&
+        !hwCaps.ddi_caps.ForceRepartitionCheckSupport)
+    {
+        extOpt3->RepartitionCheckEnable = 0;
+        unsupported = true;
+    }
 #endif // MFX_ENABLE_H264_REPARTITION_CHECK
 
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
@@ -6337,13 +6342,15 @@ void MfxHwH264Encode::SetDefaults(
     }
 
     if (extOpt3->EnableMBQP == MFX_CODINGOPTION_UNKNOWN) {
-#if defined(ENABLE_APQ_LQ)  && defined(MFX_ENABLE_ENCTOOLS)
+#if defined(MFX_ENABLE_APQ_LQ)
+#if defined(MFX_ENABLE_ENCTOOLS)
         if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || (!IsOff(extConfig->BRC)))
             && (!IsOff(extConfig->AdaptivePyramidQuantP) || !IsOff(extConfig->AdaptivePyramidQuantB)))
         {
             extOpt3->EnableMBQP = MFX_CODINGOPTION_ON;
         }
         else
+#endif
 #endif
         extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
     }

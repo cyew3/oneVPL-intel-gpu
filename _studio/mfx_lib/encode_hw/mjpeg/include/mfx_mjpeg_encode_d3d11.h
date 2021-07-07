@@ -23,7 +23,9 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include <vector>
 #include <assert.h>
@@ -121,5 +123,7 @@ namespace MfxHwMJpegEncode
 
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+#endif // #if defined (MFX_D3D11_ENABLED)
+#endif // #if defined (MFX_VA_WIN)
 #endif // __MFX_MJPEG_ENCODE_D3D11_H__

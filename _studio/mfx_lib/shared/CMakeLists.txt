@@ -2,12 +2,9 @@ add_library(mfx_common_hw STATIC)
 
 target_sources(mfx_common_hw
   PRIVATE
-    include/encoder_ddi.hpp
-    include/encoding_ddi.h
     include/libmfxsw.h
     include/mediasdk_version.h
     include/mfx_brc_common.h
-    include/mfx_check_hardware_support.h
     include/mfx_common_decode_int.h
     include/mfx_common_int.h
     include/mfx_critical_error_handler.h
@@ -15,9 +12,6 @@ target_sources(mfx_common_hw
     include/mfx_enc_common.h
     include/mfx_frames.h
     include/mfx_h264_enc_common_hw.h
-    include/mfx_h264_encode_d3d11.h
-    include/mfx_h264_encode_d3d9.h
-    include/mfx_h264_encode_d3d_common.h
     include/mfx_h264_encode_interface.h
     include/mfx_h264_encode_struct_vaapi.h
     include/mfx_h264_encode_vaapi.h
@@ -27,9 +21,6 @@ target_sources(mfx_common_hw
     include/mfx_mpeg2_dec_common.h
     include/mfx_mpeg2_enc_common.h
     include/mfx_mpeg2_enc_common_hw.h
-    include/mfx_mpeg2_encode_d3d11.h
-    include/mfx_mpeg2_encode_d3d9.h
-    include/mfx_mpeg2_encode_d3d_common.h
     include/mfx_mpeg2_encode_interface.h
     include/mfx_mpeg2_encode_vaapi.h
     include/mfx_msg.h
@@ -41,7 +32,6 @@ target_sources(mfx_common_hw
     include/mfx_tools.h
     include/mfx_vc1_dec_common.h
     include/mfx_vpx_dec_common.h
-    include/mfx_win_event_cache.h
 
     src/mfx_brc_common.cpp
     src/mfx_common_decode_int.cpp
@@ -54,18 +44,11 @@ target_sources(mfx_common_hw
     src/mfx_h264_enc_common_hw.cpp
     src/mfx_h264_encode_factory.cpp
     src/mfx_h264_encode_vaapi.cpp
-    src/mfx_h264_encode_d3d11.cpp
-    src/mfx_h264_encode_d3d9.cpp
-    src/mfx_h264_encode_d3d_common.cpp
 
     src/mfx_mpeg2_encode_vaapi.cpp
-    src/mfx_mpeg2_encode_d3d11.cpp
-    src/mfx_mpeg2_encode_d3d9.cpp
     src/mfx_mpeg2_encode_factory.cpp
-    src/mfx_mpeg2_encode_d3d_common.cpp
     src/mfx_mpeg2_enc_common_hw.cpp
     src/mfx_vpx_dec_common.cpp
-    src/mfx_win_event_cache.cpp
   )
 
 target_include_directories(mfx_common_hw

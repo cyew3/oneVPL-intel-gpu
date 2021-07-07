@@ -20,7 +20,9 @@
 
 #pragma once
 
-#if defined (_WIN32) || defined (_WIN64)
+#include "mfx_common.h"
+
+#if defined (MFX_VA_WIN)
 
 #include "auxiliary_device.h"
 #include "mfx_vp9_encode_hw_d3d_common.h"
@@ -28,7 +30,6 @@
 
 namespace MfxHwVP9Encode
 {
-#if defined (MFX_VA_WIN)
 
 class D3D11Encoder : public D3DXCommonEncoder
 {
@@ -124,7 +125,6 @@ private:
 
     UMC::Mutex m_guard;
 };
-#endif // (MFX_VA_LINUX)
 } // MfxHwVP9Encode
 
-#endif // (_WIN32) || (_WIN64)
+#endif // (MFX_VA_WIN) 

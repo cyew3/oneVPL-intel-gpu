@@ -2574,7 +2574,7 @@ void MfxHwH264Encode::ConfigureTask(
     }
 #endif
 
-#if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_H264_REPARTITION_CHECK)
     {
         switch (extOpt3.RepartitionCheckEnable)
         {

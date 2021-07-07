@@ -25,81 +25,81 @@
 #include "hevcehw_base.h"
 
 #if defined(MFX_VA_LINUX)
-    #if defined(STRIP_EMBARGO)
-    #include "hevcehw_base_lin.h"
-    namespace HEVCEHWDisp
-    {
-        namespace SKL { using namespace HEVCEHW::Linux::Base; };
-        namespace ICL { using namespace HEVCEHW::Linux::Base; };
-    };
-    #else
-    #include "hevcehw_base_embargo_lin.h"
-    namespace HEVCEHWDisp
-    {
-        namespace SKL { using namespace HEVCEHW::Linux::Base_Embargo; };
-        namespace ICL { using namespace HEVCEHW::Linux::Base_Embargo; };
-    };
-    #endif //defined(STRIP_EMBARGO)
+#if defined(STRIP_EMBARGO)
+#include "hevcehw_base_lin.h"
+namespace HEVCEHWDisp
+{
+    namespace SKL { using namespace HEVCEHW::Linux::Base; };
+    namespace ICL { using namespace HEVCEHW::Linux::Base; };
+};
 #else
-    #include "hevcehw_base_win.h"
-    namespace HEVCEHWDisp
-    {
-        namespace SKL { using namespace HEVCEHW::Windows::Base; };
-        namespace ICL { using namespace HEVCEHW::Windows::Base; };
-    };
+#include "hevcehw_base_embargo_lin.h"
+namespace HEVCEHWDisp
+{
+    namespace SKL { using namespace HEVCEHW::Linux::Base_Embargo; };
+    namespace ICL { using namespace HEVCEHW::Linux::Base_Embargo; };
+};
+#endif //defined(STRIP_EMBARGO)
+#else
+#include "hevcehw_base_win.h"
+namespace HEVCEHWDisp
+{
+    namespace SKL { using namespace HEVCEHW::Windows::Base; };
+    namespace ICL { using namespace HEVCEHW::Windows::Base; };
+};
 #endif
 
 #ifndef STRIP_EMBARGO
 #if defined(MFX_VA_LINUX)
-    #include "hevcehw_g11lkf_lin.h"
-    namespace HEVCEHWDisp
-    {
-        namespace LKF { using namespace HEVCEHW::Linux::Gen11LKF; };
-    };
+#include "hevcehw_g11lkf_lin.h"
+namespace HEVCEHWDisp
+{
+    namespace LKF { using namespace HEVCEHW::Linux::Gen11LKF; };
+};
 #else
-    #include "hevcehw_g11lkf_win.h"
-    namespace HEVCEHWDisp
-    {
-        namespace LKF { using namespace HEVCEHW::Windows::Gen11LKF; };
-    };
+#include "hevcehw_g11lkf_win.h"
+namespace HEVCEHWDisp
+{
+    namespace LKF { using namespace HEVCEHW::Windows::Gen11LKF; };
+};
 #endif
 #endif
 
 #if defined(MFX_VA_LINUX)
-    #include "hevcehw_g12_lin.h"
-    namespace HEVCEHWDisp
-    {
-        namespace TGL { using namespace HEVCEHW::Linux::Gen12; };
-        namespace DG1 { using namespace HEVCEHW::Linux::Gen12; };
-    };
+#include "hevcehw_g12_lin.h"
+namespace HEVCEHWDisp
+{
+    namespace TGL { using namespace HEVCEHW::Linux::Gen12; };
+    namespace DG1 { using namespace HEVCEHW::Linux::Gen12; };
+};
 #else
-    #include "hevcehw_g12_win.h"
-    namespace HEVCEHWDisp
-    {
-        namespace TGL { using namespace HEVCEHW::Windows::Gen12; };
-        namespace DG1 { using namespace HEVCEHW::Windows::Gen12; };
-    };
+#include "hevcehw_g12_win.h"
+namespace HEVCEHWDisp
+{
+    namespace TGL { using namespace HEVCEHW::Windows::Gen12; };
+    namespace DG1 { using namespace HEVCEHW::Windows::Gen12; };
+};
 #endif
 
 
 #if !defined(STRIP_EMBARGO)
 
 #if defined(MFX_VA_LINUX)
-    #include "hevcehw_g12xehp_lin.h"
-    #include "hevcehw_g12dg2_lin.h"
-    namespace HEVCEHWDisp
-    {
-        namespace ATS { using namespace HEVCEHW::Linux::Gen12XEHP; };
-        namespace DG2 { using namespace HEVCEHW::Linux::Gen12DG2; };
-    };
+#include "hevcehw_g12xehp_lin.h"
+#include "hevcehw_g12dg2_lin.h"
+namespace HEVCEHWDisp
+{
+    namespace ATS { using namespace HEVCEHW::Linux::Gen12XEHP; };
+    namespace DG2 { using namespace HEVCEHW::Linux::Gen12DG2; };
+};
 #else
-    #include "hevcehw_g12xehp_win.h"
-    #include "hevcehw_g12dg2_win.h"
-    namespace HEVCEHWDisp
-    {
-        namespace ATS { using namespace HEVCEHW::Windows::Gen12XEHP; };
-        namespace DG2 { using namespace HEVCEHW::Windows::Gen12DG2; };
-    };
+#include "hevcehw_g12xehp_win.h"
+#include "hevcehw_g12dg2_win.h"
+namespace HEVCEHWDisp
+{
+    namespace ATS { using namespace HEVCEHW::Windows::Gen12XEHP; };
+    namespace DG2 { using namespace HEVCEHW::Windows::Gen12DG2; };
+};
 #endif
 #endif // !(STRIP_EMBARGO)
 

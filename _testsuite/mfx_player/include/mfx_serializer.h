@@ -556,27 +556,6 @@ protected:
     virtual void ConstructValues() const;
 };
 
-#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
-template<>
-class MFXStructureRef <mfxExtCodingOptionQuantMatrix>
-    : public MFXStructureBase<mfxExtCodingOptionQuantMatrix>
-{
-public:
-    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
-        : MFXStructureBase<mfxExtCodingOptionQuantMatrix>((mfxExtCodingOptionQuantMatrix &)refStruct, flags)
-    {
-    }
-
-    MFXStructureRef(mfxExtCodingOptionQuantMatrix & refStruct, int flags = 0)
-        :MFXStructureBase<mfxExtCodingOptionQuantMatrix>(refStruct, flags)
-    {
-    }
-
-protected:
-    virtual void ConstructValues () const;
-};
-#endif
-
 template<>
 class MFXStructureRef <mfxExtCodingOptionAV1E>
     : public MFXStructureBase<mfxExtCodingOptionAV1E>

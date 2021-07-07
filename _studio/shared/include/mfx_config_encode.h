@@ -35,8 +35,9 @@
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
 
     //#define MFX_ENABLE_H264_PRIVATE_CTRL
-    #define MFX_ENABLE_H264_REPARTITION_CHECK
+    #define MFX_ENABLE_APQ_LQ
     #if defined(MFX_VA_WIN)
+        #define MFX_ENABLE_H264_REPARTITION_CHECK
         #define ENABLE_H264_MBFORCE_INTRA
     #endif
 

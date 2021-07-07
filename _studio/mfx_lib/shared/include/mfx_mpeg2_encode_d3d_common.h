@@ -13,7 +13,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include "encoding_ddi.h"
 #include "mfx_mpeg2_enc_common_hw.h"
@@ -54,6 +55,7 @@ namespace MfxHwMpeg2Encode
 }; // namespace
 
 #endif // MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#endif //#if defined (MFX_VA_WIN)
 #endif // __MFX_MPEG2_ENCODE_D3D_COMMON_H
 /* EOF */

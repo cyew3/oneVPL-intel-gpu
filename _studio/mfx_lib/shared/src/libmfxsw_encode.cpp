@@ -36,10 +36,6 @@
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 #include "mfx_h264_encode_hw.h"
-
-#if defined(MFX_ENABLE_H264_FEI_ENCPAK)
-#include "mfxfei.h"
-#endif
 #endif //MFX_ENABLE_H264_VIDEO_ENCODE
 
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)

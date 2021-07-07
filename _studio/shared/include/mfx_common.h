@@ -34,10 +34,11 @@
 #include "mfx_config.h"
 #include "mfx_functions.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-    #include <windows.h>
-#else
-    #include <stddef.h>
+#if defined(MFX_VA_WIN)
+#include <windows.h>
+#endif
+#if defined(MFX_VA_LINUX)
+#include <stddef.h>
 #endif
 
 #define MFX_BIT_IN_KB 8*1000

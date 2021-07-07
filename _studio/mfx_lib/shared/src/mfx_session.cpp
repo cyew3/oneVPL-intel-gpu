@@ -32,7 +32,8 @@
 #include <libmfx_core_d3d9.h>
 #include <atlbase.h>
 #include "mfx_dxva2_device.h"
-#elif defined(MFX_VA_LINUX)
+#endif
+#if defined(MFX_VA_LINUX)
 #include <libmfx_core_vaapi.h>
 #endif
 
@@ -201,7 +202,9 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
             m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_D3D9, m_adapterNum, maxNumThreads, this));
 
     }
-#elif defined(MFX_VA_LINUX)
+#endif
+#if defined(MFX_VA_LINUX)
+
     else
     {
         m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VAAPI, m_adapterNum, maxNumThreads, this));

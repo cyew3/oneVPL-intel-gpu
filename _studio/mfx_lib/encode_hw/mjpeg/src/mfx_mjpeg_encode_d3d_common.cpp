@@ -24,7 +24,8 @@
 #include "libmfx_core_interface.h"
 #include "mfx_session.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include "mfx_mjpeg_encode_d3d_common.h"
 
@@ -115,5 +116,6 @@ mfxStatus D3DXCommonEncoder::Execute(DdiTask &task, mfxHDL surface)
     return MFX_ERR_NONE;
 }
 
-#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+#endif // #if defined (MFX_VA_WIN)
 /* EOF */

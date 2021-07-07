@@ -33,11 +33,11 @@
 #include "mfx_mpeg2_enc_common_hw.h"
 
 #if   defined(MFX_VA_WIN)
-    #include "encoding_ddi.h"
-    #include "encoder_ddi.hpp"
-#elif defined(MFX_VA_LINUX)
-    #include "mfx_h264_encode_struct_vaapi.h"
-    #include <va/va_enc_mpeg2.h>
+#include "encoding_ddi.h"
+#include "encoder_ddi.hpp"
+#else
+#include "mfx_h264_encode_struct_vaapi.h"
+#include <va/va_enc_mpeg2.h>
 #endif
 
 #if defined (_WIN32)

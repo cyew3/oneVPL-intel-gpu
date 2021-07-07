@@ -23,7 +23,8 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #include <vector>
 #include <assert.h>
@@ -330,6 +331,7 @@ namespace MfxHwH264Encode
 
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && (MFX_D3D11_ENABLED)
+#endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
+#endif // #if defined (MFX_D3D11_ENABLED)
 #endif // __MFX_H264_ENCODE_D3D11__H
 /* EOF */

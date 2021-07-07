@@ -3709,7 +3709,7 @@ mfxStatus ImplementationAvc::FillPreEncParams(DdiTask &task)
         if (m_encTools.IsAdaptiveQP())
         {
             task.m_QPmodulation = st.QPModulation;
-#ifdef ENABLE_APQ_LQ
+#ifdef MFX_ENABLE_APQ_LQ
             if (task.m_currGopRefDist == 8) {
                 if ((task.m_type[0] & MFX_FRAMETYPE_B)) {
                     task.m_ALQOffset = 2;
@@ -4511,7 +4511,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
                 mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
                 task->m_isMBQP = task->m_mbqp && task->m_mbqp->QP && task->m_mbqp->NumQPAlloc >= wMB * hMB;
-#ifdef ENABLE_APQ_LQ
+#ifdef MFX_ENABLE_APQ_LQ
                 if (!task->m_isMBQP && task->m_ALQOffset != 0) {
                     task->m_isMBQP = true;
                     if (task->m_ALQOffset > 0) {

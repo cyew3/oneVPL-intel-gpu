@@ -26,7 +26,6 @@
 #include "hevcehw_base_enctools.h"
 #include "hevcehw_base_task.h"
 
-
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
 
@@ -783,6 +782,7 @@ mfxStatus HevcEncTools::BRCGetCtrl(StorageW&  , StorageW& s_task,
     }
     return MFX_ERR_NONE;
  }
+
 mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
 {
     MFX_CHECK(m_pEncTools && m_pEncTools->Query, MFX_ERR_NONE);
@@ -801,7 +801,6 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
                      IsOn(m_EncToolConfig.BRC));
 
     MFX_CHECK(task.DisplayOrder!= (mfxU32)(-1), MFX_ERR_NONE);
-
     task_par.DisplayOrder = task.DisplayOrder;
     task_par.NumExtParam = 0;
 
@@ -842,7 +841,6 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
 
     task_par.ExtParam = extParams.data();
     task_par.NumExtParam = (mfxU16)extParams.size();
-
     MFX_CHECK(task_par.NumExtParam, MFX_ERR_NONE);
 
     auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
@@ -901,6 +899,7 @@ mfxStatus HevcEncTools::QueryPreEncTask(StorageW&  /*global*/, StorageW& s_task)
 
     return sts;
 }
+
 mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCStatus & brcStatus)
 {
     MFX_CHECK(IsOn(m_EncToolConfig.BRC) && m_pEncTools && m_pEncTools->Query, MFX_ERR_NONE);
@@ -937,7 +936,6 @@ mfxStatus HevcEncTools::BRCUpdate(StorageW&  , StorageW& s_task, mfxEncToolsBRCS
         task_par.ExtParam = extParams.data();
         auto sts = m_pEncTools->Query(m_pEncTools->Context, &task_par, ENCTOOLS_QUERY_TIMEOUT);
         MFX_CHECK_STS(sts)
-
     }
 
     return MFX_ERR_NONE;
@@ -1063,11 +1061,7 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             , StorageW& s_task) -> mfxStatus
         {
             std::unique_lock<std::mutex> closeGuard(tm.m_closeMtx);
-
-            //auto& taskMgrIface = TaskManager::TMInterface::Get(global);
-            //auto& tm = taskMgrIface.Manager;
             bool       bFlush = !tm.IsInputTask(s_task);
-
 
             // Delay For LookAhead Depth
             MFX_CHECK(tm.m_stages.at(tm.Stage(S_ET_QUERY)).size() >= std::max(m_maxDelay,1U)  || bFlush,MFX_ERR_NONE);
@@ -1109,7 +1103,6 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
                     dst_task.LplaStatus = *(LpLaStatus.begin());
                     LpLaStatus.pop_front();
                 }
-                //dst_task.LplaStatus = src_task.LplaStatus;
             }
             return MFX_ERR_NONE;
         };
@@ -1118,6 +1111,7 @@ void HevcEncTools::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         return MFX_ERR_NONE;
     });
 }
+
 void HevcEncTools::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
     Push(BLK_GetFrameCtrl
@@ -1164,7 +1158,6 @@ void HevcEncTools::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
             task.bCUQPMap = (task.etQpMapNZ > 0);
         }
         return MFX_ERR_NONE;
-
     });
 }
 

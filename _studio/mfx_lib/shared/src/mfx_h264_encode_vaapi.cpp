@@ -974,7 +974,6 @@ void UpdatePPS(
     mfxU32 i   = 0;
     mfxU32 idx = 0;
 
-#if 1
     for( i = 0; i < task.m_dpb[fieldId].Size(); i++ )
     {
         pps.ReferenceFrames[i].frame_idx = idx     = task.m_dpb[fieldId][i].m_frameIdx & 0x7f;
@@ -983,33 +982,6 @@ void UpdatePPS(
         pps.ReferenceFrames[i].TopFieldOrderCnt    = task.m_dpb[fieldId][i].m_poc[0];
         pps.ReferenceFrames[i].BottomFieldOrderCnt = task.m_dpb[fieldId][i].m_poc[1];
     }
-#else
-    // [sefremov] Below RefPicList formation algo (based on active reference lists) shouldn't be used. For every frame MSDK should pass to driver whole DPB, not just active refs.
-    // [sefremov] Driver immidiately releases DPB frame if it wasn't passed with RefPicList.
-    mfxU32 ref = 0;
-    ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
-    ArrayU8x33 const & list0 = task.m_list0[fieldId];
-    ArrayU8x33 const & list1 = task.m_list1[fieldId];
-    assert(task.m_list0[fieldId].Size() + task.m_list1[fieldId].Size() <= 16);
-
-    for (ref = 0; ref < list0.Size() && i < 16; i++, ref++)
-    {
-        pps.ReferenceFrames[i].frame_idx = idx  = dpb[list0[ref] & 0x7f].m_frameIdx & 0x7f;
-        pps.ReferenceFrames[i].picture_id       = reconQueue[idx].surface;
-        pps.ReferenceFrames[i].flags            = dpb[list0[ref] & 0x7f].m_longterm ? VA_PICTURE_H264_LONG_TERM_REFERENCE : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-        pps.ReferenceFrames[i].TopFieldOrderCnt = dpb[list0[ref] & 0x7f].m_poc[0];
-        pps.ReferenceFrames[i].BottomFieldOrderCnt = dpb[list0[ref] & 0x7f].m_poc[1];
-    }
-
-    for (ref = 0; ref < list1.Size() && i < 16; i++, ref++)
-    {
-        pps.ReferenceFrames[i].frame_idx = idx  = dpb[list1[ref] & 0x7f].m_frameIdx & 0x7f;
-        pps.ReferenceFrames[i].picture_id       = reconQueue[idx].surface;
-        pps.ReferenceFrames[i].flags            = dpb[list1[ref] & 0x7f].m_longterm ? VA_PICTURE_H264_LONG_TERM_REFERENCE : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-        pps.ReferenceFrames[i].TopFieldOrderCnt = dpb[list1[ref] & 0x7f].m_poc[0];
-        pps.ReferenceFrames[i].BottomFieldOrderCnt = dpb[list1[ref] & 0x7f].m_poc[1];
-    }
-#endif
 
     for (; i < 16; i++)
     {
@@ -2653,7 +2625,7 @@ mfxStatus VAAPIEncoder::Execute(
 
             configBuffers.push_back(m_mbqpBufferId);
         }
-#ifdef ENABLE_APQ_LQ
+#ifdef MFX_ENABLE_APQ_LQ
         else if (task.m_ALQOffset) {
             Zero(m_mbqp_buffer);
             for (mfxU32 mbRow = 0; mbRow < mbH; mbRow++)

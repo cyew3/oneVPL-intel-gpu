@@ -13,7 +13,8 @@
 #include "libmfx_core_interface.h"
 #include "mfx_session.h"
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 #include "mfx_mpeg2_encode_d3d_common.h"
@@ -85,5 +86,6 @@ mfxStatus D3DXCommonEncoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, m
 }
 
 #endif // MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#endif //#if defined (MFX_VA_WIN)
 /* EOF */
