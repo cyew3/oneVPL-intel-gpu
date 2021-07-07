@@ -30,13 +30,13 @@ steps:
   - name: config_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && ./autogen.sh --prefix=/usr --libdir=/usr/lib64"
     conditions:
-      params.type: [rhel8.2]
+      params.type: [rhel8.2,sles15sp2]
   - name: build_libva
     command: docker exec $BUILD_ID /bin/bash -c "cd libva && sudo make install"
   - name: config and build vpl
     command: docker exec $BUILD_ID /bin/bash -c './sources/mdp_msdk-lib/config/scripts/build/build-linux-ubuntu.sh'
   - name: unit tests
-    command: docker exec $BUILD_ID /bin/bash -c 'cd ./sources/mdp_msdk-lib/build && /opt/tools/cmake-latest/bin/ctest -j $(nproc) --output-on-failure'
+    command: docker exec $BUILD_ID /bin/bash -c 'cd ./sources/mdp_msdk-lib/build && ctest -j $(nproc) --output-on-failure'
   - name: pack vpl binaries
     command: docker exec $BUILD_ID /bin/bash -c "mkdir -p sources/mdp_msdk-lib/output/Linux && cd sources/mdp_msdk-lib/output/Linux
       && tar cvfz $LINUX_DISTRIBUTIVE_msdk.tgz -C /opt/src/sources/mdp_msdk-lib/build ."
@@ -84,6 +84,14 @@ types:
     - file_patterns: "*.tgz"
       source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
       destination_dir: RHEL/vpl/runtime
-    - file_patterns: "*.zip"
-      source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/tools"
-      destination_dir: RHEL/vpl/tools
+  sles15sp2:
+    env:
+      DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-sle15-15.2:2
+      LINUX_DISTRIBUTIVE: "SLES"
+    output:
+      - file_patterns: "*.tgz"
+        source_dir: "../sources/mdp_msdk-lib/output/Linux"
+        destination_dir: Packages/SLES
+      - file_patterns: "*.tgz"
+        source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
+        destination_dir: SLES/vpl/runtime

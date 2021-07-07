@@ -163,7 +163,7 @@ components:
     root_url: https://gfx-assets.inn.intel.com/artifactory
     asset_path: mediasdk-builds/ci
     asset_name: mediasdk-1x
-    asset_version: mediasdk-ci-mediasdk-1x-1.0.186
+    asset_version: mediasdk-ci-mediasdk-1x-1.0.207
     asset_patterns:
     - Windows/msdk/runtime/*.zip
     - Windows/msdk/tools/*.zip
@@ -171,6 +171,8 @@ components:
     - Ubuntu/msdk/tools/tools_drop*.zip
     - RHEL/msdk/runtime/l_MSDK_p*.tgz
     - RHEL/msdk/tools/tools_drop*.zip
+    - SLES/msdk/runtime/l_MSDK_p*.tgz
+    - SLES/msdk/tools/tools_drop*.zip
     dest_dir: mediasdk_1x_binaries
   linux_kw_security_scan:
     type: artifactory
