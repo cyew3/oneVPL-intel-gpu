@@ -412,11 +412,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     }
     else if( MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName )
     {
-#if defined(MFX_VA_WIN)
-        sts = MFX_ERR_UNSUPPORTED;
-#else
         sts = MFX_ERR_NONE;
-#endif
     }
     else if (MFX_EXTBUFF_VPP_SCALING == filterName)
     {
