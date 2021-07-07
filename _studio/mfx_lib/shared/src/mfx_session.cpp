@@ -52,8 +52,8 @@ TRY_GET_SESSION(2,1)
 //  _mfxSession members
 //////////////////////////////////////////////////////////////////////////
 
-_mfxSession::_mfxSession(const mfxU32 adapterNum):
-      m_currentPlatform()
+_mfxSession::_mfxSession(const mfxU32 adapterNum)
+    : m_currentPlatform()
     , m_adapterNum(adapterNum)
     , m_implInterface()
     , m_pScheduler()

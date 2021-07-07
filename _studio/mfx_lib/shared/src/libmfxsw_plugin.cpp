@@ -62,3 +62,4 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 /*type*/,
     }
     return MFX_ERR_UNSUPPORTED;
 }
+

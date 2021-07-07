@@ -749,11 +749,11 @@ typedef enum _GPU_PLATFORM {
 #endif
     PLATFORM_INTEL_RKL = 19,  //RocketLake
     PLATFORM_INTEL_DG1 = 20,  //DG1
-#ifndef STRIP_EMBARGO
     PLATFORM_INTEL_ADL_S = 21,  //AlderLake
+#ifndef STRIP_EMBARGO
     PLATFORM_INTEL_DG2 = 22,  //DG2
-    PLATFORM_INTEL_ADL_P = 23, //AlderLake
 #endif
+    PLATFORM_INTEL_ADL_P = 23, //AlderLake
 } GPU_PLATFORM;
 
 //Time in seconds before kernel should timeout

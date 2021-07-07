@@ -397,11 +397,10 @@ static mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type, bool IsCompatibleForOpaq)
+mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, eMFXHWType type)
 {
     mfxStatus sts = CheckVideoParamCommon(in, type);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-    std::ignore = IsCompatibleForOpaq;
 
     auto const supportedMemoryType =
            (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
@@ -415,13 +414,6 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     MFX_CHECK(!in->mfx.DecodedOrder || in->mfx.CodecId == MFX_CODEC_JPEG
                                     || in->mfx.CodecId == MFX_CODEC_AVC
                                     || in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
-
-#if MFX_VERSION < MFX_VERSION_NEXT
-     MFX_CHECK(IsExternalFrameAllocator || !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
-#else
-    // Ext allocator is not required by MSDK 2.0 to support video memory. Internal allocation of video surfaces is possible
-    std::ignore = IsExternalFrameAllocator;
-#endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (in->Protected)
@@ -453,20 +445,13 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     return MFX_ERR_NONE;
 }
 
-mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type)
+mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, eMFXHWType type)
 {
     mfxStatus sts = CheckFrameInfoEncoders(&in->mfx.FrameInfo);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     sts = CheckVideoParamCommon(in, type);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-
-#if MFX_VERSION < MFX_VERSION_NEXT
-    MFX_CHECK(IsExternalFrameAllocator || !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
-#else
-    // Ext allocator is not required by MSDK 2.0 to support video memory. Internal allocation of video surfaces is possible
-    std::ignore = IsExternalFrameAllocator;
-#endif
 
     MFX_CHECK(!in->Protected || (in->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY), MFX_ERR_INVALID_VIDEO_PARAM);
 

@@ -1274,7 +1274,7 @@ namespace MPEG2EncoderHW
             m_VideoParamsEx.mfxVideoParams.mfx.BRCParamMultiplier = 1;
 
         /*-------------------Check and correct parameters:---------------------*/
-        sts = CheckVideoParamEncoders(par, m_pCore->IsExternalFrameAllocator(), type);
+        sts = CheckVideoParamEncoders(par, type);
         MFX_CHECK_STS(sts);
 
 #ifndef PAVP_SUPPORT
@@ -1614,7 +1614,7 @@ namespace MPEG2EncoderHW
             sts = QueryIOSurf(m_pCore, par, &request);
             MFX_CHECK(sts>=0,sts);
 
-            sts = m_InputSurfaces.Reset (par, request.NumFrameMin);
+            sts = m_InputSurfaces.Reset(par);
             MFX_CHECK(sts != MFX_ERR_INVALID_VIDEO_PARAM, m_bInitialized ? MFX_ERR_INCOMPATIBLE_VIDEO_PARAM: sts);
             MFX_CHECK_STS(sts);
         }

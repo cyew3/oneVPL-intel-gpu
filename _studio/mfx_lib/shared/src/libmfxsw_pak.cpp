@@ -36,3 +36,4 @@ FUNCTION_DEPRECATED_IMPL(PAK, Query,             (mfxSession /*session*/, mfxVid
 FUNCTION_DEPRECATED_IMPL(PAK, GetVideoParam,     (mfxSession /*session*/, mfxVideoParam */*par*/))
 FUNCTION_DEPRECATED_IMPL(PAK, ProcessFrameAsync, (mfxSession /*session*/, mfxPAKInput */*in*/, mfxPAKOutput */*out*/, mfxSyncPoint */*syncp*/))
 #undef FUNCTION_DEPRECATED_IMPL
+

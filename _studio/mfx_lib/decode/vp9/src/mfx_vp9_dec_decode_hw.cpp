@@ -458,7 +458,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     }
 #endif
 
-    MFX_CHECK(MFX_ERR_NONE <= CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq()), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(MFX_ERR_NONE <= CheckVideoParamDecoders(par, type), MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(CheckHardwareSupport(m_core, par), MFX_ERR_UNSUPPORTED);
 
@@ -677,7 +677,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
     }
 #endif
 
-    MFX_CHECK(MFX_ERR_NONE <= CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type, m_core->IsCompatibleForOpaq()), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(MFX_ERR_NONE <= CheckVideoParamDecoders(par, type), MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_VP9, m_core->GetPlatformType(), type), MFX_ERR_INVALID_VIDEO_PARAM);
 

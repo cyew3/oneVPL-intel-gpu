@@ -222,7 +222,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBForceIntra,         MFX_EXTBUFF_MB_FORCE_INTRA           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtChromaLocInfo,        MFX_EXTBUFF_CHROMA_LOC_INFO          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBDisableSkipMap,     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      );
-#if defined (MFX_ENABLE_H264_PRIVATE_CTRL)
+#if defined(MFX_ENABLE_H264_PRIVATE_CTRL)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodeCtrl,        MFX_EXTBUFF_AVC_ENCODE_CTRL          );
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPredWeightTable,      MFX_EXTBUFF_PRED_WEIGHT_TABLE        );
@@ -1515,9 +1515,7 @@ namespace MfxHwH264Encode
 
     inline mfxStatus Error(mfxStatus sts)
     {
-#if defined(_DEBUG) && defined(_WIN32)
         //__asm { int 3 }
-#endif // _DEBUG
         return sts;
     }
 

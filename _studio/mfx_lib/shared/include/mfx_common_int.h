@@ -30,8 +30,8 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 codecId);
 mfxStatus CheckFrameInfoEncoders(mfxFrameInfo  *info);
 mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId = MFX_CODEC_AVC, bool isHW = false);
 
-mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
-mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type, bool IsCompatibleForOpaq);
+mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, eMFXHWType type);
+mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, eMFXHWType type);
 
 mfxStatus UpdateCscOutputFormat(mfxVideoParam *par, mfxFrameAllocRequest *request);
 
