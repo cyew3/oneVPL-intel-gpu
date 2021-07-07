@@ -84,6 +84,9 @@ types:
     - file_patterns: "*.tgz"
       source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
       destination_dir: RHEL/vpl/runtime
+    - file_patterns: "*.zip"
+      source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/tools"
+      destination_dir: RHEL/vpl/tools
   sles15sp2:
     env:
       DOCKER_IMAGE: dockerv2-gfx-build.gfx-assets.intel.com/common/mediasdk-sle15-15.2:2
@@ -95,3 +98,6 @@ types:
       - file_patterns: "*.tgz"
         source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/runtime"
         destination_dir: SLES/vpl/runtime
+      - file_patterns: "*.zip"
+        source_dir: "../sources/mdp_msdk-lib/output/Linux/vpl/tools"
+        destination_dir: SLES/vpl/tools
