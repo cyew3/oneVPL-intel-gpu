@@ -925,7 +925,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_KBL:
     case PLATFORM_INTEL_CFL:
     case PLATFORM_INTEL_GLK:
-        return MFX_ERR_DEVICE_FAILED;
+        return MFX_ERR_UNSUPPORTED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_me_gen12_isa, sizeof(mctf_me_gen12_isa), programMe, "nojitter");
@@ -983,7 +983,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_KBL:
     case PLATFORM_INTEL_CFL:
     case PLATFORM_INTEL_GLK:
-        return MFX_ERR_DEVICE_FAILED;
+        res = MFX_ERR_UNSUPPORTED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_mc_gen12_isa, sizeof(mctf_mc_gen12_isa), programMc, "nojitter");
@@ -1012,7 +1012,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_KBL:
     case PLATFORM_INTEL_CFL:
     case PLATFORM_INTEL_GLK:
-        return MFX_ERR_DEVICE_FAILED;
+        res = MFX_ERR_UNSUPPORTED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_sd_gen12_isa, sizeof(mctf_sd_gen12_isa), programDe, "nojitter");
