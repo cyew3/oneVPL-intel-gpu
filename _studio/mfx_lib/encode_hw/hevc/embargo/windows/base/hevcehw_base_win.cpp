@@ -32,7 +32,7 @@
 #include "hevcehw_base_task.h"
 #include "hevcehw_base_ext_brc.h"
 #include "hevcehw_base_dirty_rect_win.h"
-#if !defined(MFX_EXT_DPB_HEVC_DISABLE) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_HEVC_EXT_DPB)
 #include "hevcehw_base_dpb_report.h"
 #endif
 #include "hevcehw_base_dump_files.h"
@@ -109,7 +109,7 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #endif
     m_features.emplace_back(new ExtBRC(FEATURE_EXT_BRC));
     m_features.emplace_back(new DirtyRect(FEATURE_DIRTY_RECT));
-#if !defined(MFX_EXT_DPB_HEVC_DISABLE) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_HEVC_EXT_DPB)
     m_features.emplace_back(new DPBReport(FEATURE_DPB_REPORT));
 #endif
 #if (DEBUG_REC_FRAMES_INFO)

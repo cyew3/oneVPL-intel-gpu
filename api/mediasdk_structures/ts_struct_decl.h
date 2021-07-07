@@ -596,8 +596,6 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16, BitstreamRestriction) /* tri-state option */
     FIELD_T(mfxU16, LowDelayHrd) /* tri-state option */
     FIELD_T(mfxU16, MotionVectorsOverPicBoundaries) /* tri-state option */
-    FIELD_T(mfxU16, Log2MaxMvLengthHorizontal) /* 0..16 */
-    FIELD_T(mfxU16, Log2MaxMvLengthVertical) /* 0..16 */
     FIELD_T(mfxU16, ScenarioInfo)
     FIELD_T(mfxU16, ContentInfo)
     FIELD_T(mfxU16, PRefType)
@@ -621,9 +619,6 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16, EnableMBForceIntra)
     FIELD_T(mfxU16, AdaptiveMaxFrameSize)
     FIELD_T(mfxU16, RepartitionCheckEnable) /* tri-state option */
-    FIELD_T(mfxU16, QuantScaleType)
-    FIELD_T(mfxU16, IntraVLCFormat)
-    FIELD_T(mfxU16, ScanType)
     FIELD_T(mfxU16, EncodedUnitsInfo)
     FIELD_T(mfxU16, EnableNalUnitType)
     FIELD_T(mfxU16, ExtBrcAdaptiveLTR)     /* tri-state option for ExtBrcAdaptiveLTR */

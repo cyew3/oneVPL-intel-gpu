@@ -174,12 +174,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(BitstreamRestriction);
     DUMP_FIELD(LowDelayHrd);                    /* tri-state option */
     DUMP_FIELD(MotionVectorsOverPicBoundaries); /* tri-state option */
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    DUMP_FIELD(Log2MaxMvLengthHorizontal);      /* 0..16 */
-    DUMP_FIELD(Log2MaxMvLengthVertical);        /* 0..16 */
-#else
     DUMP_FIELD_RESERVED(reserved1);
-#endif
 
     DUMP_FIELD(ScenarioInfo);
     DUMP_FIELD(ContentInfo);
@@ -210,14 +205,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(EnableMBForceIntra);
     DUMP_FIELD(AdaptiveMaxFrameSize);
     DUMP_FIELD(RepartitionCheckEnable);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    DUMP_FIELD(QuantScaleType);
-    DUMP_FIELD(IntraVLCFormat);
-    DUMP_FIELD(ScanType);
-#endif
-#if (MFX_VERSION < MFX_VERSION_NEXT)
     DUMP_FIELD_RESERVED(reserved5);
-#endif
     DUMP_FIELD(EncodedUnitsInfo);
     DUMP_FIELD(EnableNalUnitType);
     DUMP_FIELD(ExtBrcAdaptiveLTR)

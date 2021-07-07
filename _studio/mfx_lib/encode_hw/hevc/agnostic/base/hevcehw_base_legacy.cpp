@@ -187,7 +187,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(WinBRCSize);
         MFX_COPY_FIELD(EnableNalUnitType);
         MFX_COPY_FIELD(LowDelayBRC);
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if defined(MFX_ENABLE_DEBLOCKING_FILTER)
         MFX_COPY_FIELD(DeblockingAlphaTcOffset);
         MFX_COPY_FIELD(DeblockingBetaOffset);
 #endif
@@ -3623,8 +3623,7 @@ mfxStatus Legacy::CheckESPackParam(mfxVideoParam & par, eMFXHWType hw)
             , mfxU16(MFX_CODINGOPTION_UNKNOWN)
             , mfxU16(MFX_CODINGOPTION_OFF)
             , mfxU16(MFX_CODINGOPTION_ON * !!par.mfx.EncodedOrder));
-
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if defined(MFX_ENABLE_DEBLOCKING_FILTER)
         changed += CheckRangeOrSetDefault<mfxI16>(pCO3->DeblockingAlphaTcOffset, -12, 12, 0);
         changed += CheckRangeOrSetDefault<mfxI16>(pCO3->DeblockingBetaOffset, -12, 12, 0);
 #endif
@@ -4716,7 +4715,7 @@ mfxStatus Legacy::GetSliceHeader(
     s.deblocking_filter_override_flag = (s.deblocking_filter_disabled_flag != pps.deblocking_filter_disabled_flag);
     s.beta_offset_div2                = pps.beta_offset_div2;
     s.tc_offset_div2                  = pps.tc_offset_div2;
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if defined(MFX_ENABLE_DEBLOCKING_FILTER)
     const mfxExtCodingOption3&   CO3 = ExtBuffer::Get(par);
     const mfxExtCodingOption3  *pCO3 = ExtBuffer::Get(task.ctrl);
 

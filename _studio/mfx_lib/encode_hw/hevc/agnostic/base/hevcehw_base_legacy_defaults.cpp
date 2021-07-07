@@ -2089,11 +2089,10 @@ public:
         pps.deblocking_filter_control_present_flag  = 1;
         pps.deblocking_filter_disabled_flag         = !!CO2.DisableDeblockingIdc;
         pps.deblocking_filter_override_enabled_flag = 1; // to disable deblocking per frame
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if defined(MFX_ENABLE_DEBLOCKING_FILTER)
         pps.beta_offset_div2                        = mfxI8(CO3.DeblockingBetaOffset * 0.5 * !pps.deblocking_filter_disabled_flag);
         pps.tc_offset_div2                          = mfxI8(CO3.DeblockingAlphaTcOffset * 0.5 * !pps.deblocking_filter_disabled_flag);
 #endif
-
         pps.scaling_list_data_present_flag              = 0;
         pps.lists_modification_present_flag             = 1;
         pps.log2_parallel_merge_level_minus2            = 0;

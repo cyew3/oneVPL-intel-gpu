@@ -4309,14 +4309,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #endif //MFX_AUTOLTR_FEATURE_DISABLE
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (!CheckTriStateOption(extOpt3->AdaptiveCQM)) changed = true;
     if (IsOn(extOpt3->AdaptiveCQM) && !isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
     {
         extOpt3->AdaptiveCQM = MFX_CODINGOPTION_OFF;
         changed = true;
     }
-#endif
 #endif
 
     if (IsMvcProfile(par.mfx.CodecProfile) && MFX_ERR_UNSUPPORTED == CheckMVCSeqDescQueryLike(extMvc))
@@ -4879,7 +4877,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 2, 0)) changed = true;
-#if MFX_VERSION >= MFX_VERSION_NEXT
+#if defined(MFX_ENABLE_DEBLOCKING_FILTER)
     if (!CheckRangeDflt(extOpt3->DeblockingAlphaTcOffset, -12, 12, 0)) changed = true;
     if (!CheckRangeDflt(extOpt3->DeblockingBetaOffset, -12, 12, 0)) changed = true;
 #endif
@@ -6295,7 +6293,6 @@ void MfxHwH264Encode::SetDefaults(
     }
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
     {
         if (extOpt3->AdaptiveCQM == MFX_CODINGOPTION_UNKNOWN)
@@ -6303,7 +6300,6 @@ void MfxHwH264Encode::SetDefaults(
     }
     else
         extOpt3->AdaptiveCQM = MFX_CODINGOPTION_OFF;
-#endif
 #endif
 
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType, config);
@@ -6831,11 +6827,8 @@ void MfxHwH264Encode::SetDefaults(
         }
 
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        if (IsOn(extOpt3->AdaptiveCQM))
-#endif
-        if (isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
+        if (IsOn(extOpt3->AdaptiveCQM)&&
+            isAdaptiveCQMSupported(extOpt3->ScenarioInfo, platform, IsOn(par.mfx.LowPower)))
         {
             std::vector<mfxExtPpsHeader> &extCqmPps = par.GetCqmPps();
             for (mfxU8 j = 0; j < extCqmPps.size(); j++)
@@ -9657,10 +9650,8 @@ void HeaderPacker::Init(
 #endif
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     const mfxExtCodingOption3 &extOpt3 = GetExtBufferRef(par);
     if (IsOn(extOpt3.AdaptiveCQM))
-#endif
     {
         const std::vector<mfxExtPpsHeader> &extCqmPps = par.GetCqmPps();
         if (m_cqmPps.empty())

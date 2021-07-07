@@ -331,12 +331,7 @@ void CParametersDumper::SerializeExtensionBuffer(msdk_ostream& sstr,msdk_string 
             SERIALIZE_INFO(MaxFrameSizeP);
             SERIALIZE_INFO(TargetBitDepthLuma);
             SERIALIZE_INFO(TargetBitDepthChroma);
-#if defined(MFX_VERSION_NEXT) && (MFX_VERSION >= MFX_VERSION_NEXT)
-            SERIALIZE_INFO(Log2MaxMvLengthHorizontal);
-            SERIALIZE_INFO(Log2MaxMvLengthVertical);
-#else
             SERIALIZE_INFO_ARRAY(reserved1);
-#endif
             SERIALIZE_INFO(EnableQPOffset);
             SERIALIZE_INFO_ARRAY(QPOffset);
             SERIALIZE_INFO_ARRAY(NumRefActiveP);

@@ -1482,31 +1482,6 @@ enum {
                                 DPB by a sliding window. */
 };
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-
-/* QuantScaleType */
-enum {
-    MFX_MPEG2_QUANT_SCALE_TYPE_DEFAULT    = 0,
-    MFX_MPEG2_QUANT_SCALE_TYPE_LINEAR     = 1, /* q_scale_type = 0 */
-    MFX_MPEG2_QUANT_SCALE_TYPE_NONLINEAR  = 2  /* q_scale_type = 1 */
-};
-
-/* IntraVLCFormat */
-enum {
-    MFX_MPEG2_INTRA_VLC_FORMAT_DEFAULT    = 0,
-    MFX_MPEG2_INTRA_VLC_FORMAT_B14        = 1, /* use table B.14 */
-    MFX_MPEG2_INTRA_VLC_FORMAT_B15        = 2  /* use table B.15 */
-};
-
-/* ScanType */
-enum {
-    MFX_MPEG2_SCAN_TYPE_DEFAULT   = 0,
-    MFX_MPEG2_SCAN_TYPE_ZIGZAG    = 1, /* alternate_scan = 0 */
-    MFX_MPEG2_SCAN_TYPE_ALTERNATE = 2  /* alternate_scan = 1 */
-};
-
-#endif
-
 MFX_PACK_BEGIN_USUAL_STRUCT()
 /*!
    Used with mfxExtCodingOption and mfxExtCodingOption2 structures to specify additional options for encoding.
@@ -1612,12 +1587,7 @@ typedef struct {
        See the CodingOptionValue enumerator for values of this option.
     */
     mfxU16      MotionVectorsOverPicBoundaries;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    mfxU16      Log2MaxMvLengthHorizontal;      /* 0..16 */
-    mfxU16      Log2MaxMvLengthVertical;        /* 0..16 */
-#else
     mfxU16      reserved1[2];
-#endif
 
     mfxU16      ScenarioInfo; /*!< Provides a hint to encoder about the scenario for the encoding session. See the ScenarioInfo enumerator for values of this option. */
     mfxU16      ContentInfo;  /*!< Provides a hint to encoder about the content for the encoding session. See the ContentInfo enumerator for values of this option. */
@@ -1720,13 +1690,8 @@ typedef struct {
        MFX_CODINGOPTION_ON forces encoder to favor quality and MFX_CODINGOPTION_OFF forces encoder to favor performance.
     */
     mfxU16      RepartitionCheckEnable;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    mfxU16      QuantScaleType;            /* For MPEG2, specifies mapping between quantiser_scale_code and quantiser_scale (see QuantScaleType enum). */
-    mfxU16      IntraVLCFormat;            /* For MPEG2, specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
-    mfxU16      ScanType;                  /* For MPEG2, specifies transform coefficients scan pattern (see ScanType enum) */
-#else
     mfxU16      reserved5[3];
-#endif
+
     mfxU16      EncodedUnitsInfo;          /*!< Set this flag to ON to make encoded units info available in mfxExtEncodedUnitsInfo. */
     /*!
        If this flag is set to ON, the HEVC encoder uses the NAL unit type provided by the application in the mfxEncodeCtrl::MfxNalUnitType field.
@@ -3894,18 +3859,6 @@ typedef struct {
     mfxU8  ScalingList8x8[6][64];
 } mfxExtAVCScalingMatrix;
 MFX_PACK_END()
-
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct {
-    mfxExtBuffer Header;
-
-    mfxU16 reserved[28];
-
-    mfxU8  LoadMatrix[4]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
-    mfxU8  Matrix[4][64]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
-} mfxExtMPEG2QuantMatrix;
-MFX_PACK_END()
-
 #endif
 
 /*! The Angle enumerator itemizes valid rotation angles. */
@@ -3987,26 +3940,6 @@ typedef struct {
     mfxU16 reserved[10];
 } mfxExtVPPScaling;
 MFX_PACK_END()
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-
-/* SceneChangeType */
-enum {
-    MFX_SCENE_NO_CHANGE = 0,
-    MFX_SCENE_START     = 1,
-    MFX_SCENE_END       = 2
-};
-
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct {
-    mfxExtBuffer Header;
-
-    mfxU16 Type;
-    mfxU16 reserved[11];
-} mfxExtSceneChange;
-MFX_PACK_END()
-
-#endif
 
 typedef mfxExtAVCRefListCtrl mfxExtHEVCRefListCtrl;
 typedef mfxExtAVCRefLists mfxExtHEVCRefLists;

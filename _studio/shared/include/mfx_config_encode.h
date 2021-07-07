@@ -22,6 +22,7 @@
 #define _MFX_CONFIG_ENCODE_H_
 
 #define MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
+#define MFX_ENABLE_DEBLOCKING_FILTER
 
 // closed source fixed-style defines
 #if !defined(OPEN_SOURCE) && !defined(ANDROID)
@@ -29,13 +30,6 @@
     #if (MFX_VERSION >= MFX_VERSION_NEXT)
         #define MFX_ENABLE_AV1_VIDEO_ENCODE
     #endif
-
-    #if defined(MFX_VA_LINUX)
-        #if (MFX_VERSION < MFX_VERSION_NEXT)
-            #define MFX_EXT_DPB_HEVC_DISABLE
-        #endif
-    #endif
-
 #endif // #ifndef OPEN_SOURCE
 
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
@@ -69,6 +63,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
     #define MFX_ENABLE_HEVCE_INTERLACE
     #define MFX_ENABLE_HEVCE_ROI
+    #define MFX_ENABLE_HEVC_EXT_DPB
     #if !defined(OPEN_SOURCE)
         #define MFX_ENABLE_HEVCE_DIRTY_RECT
         #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION

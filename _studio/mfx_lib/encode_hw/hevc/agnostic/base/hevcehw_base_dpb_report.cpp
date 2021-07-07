@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_HEVC_EXT_DPB)
 
 #include "hevcehw_base_dpb_report.h"
 
@@ -71,4 +71,4 @@ void DPBReport::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     });
 }
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_HEVC_EXT_DPB)
