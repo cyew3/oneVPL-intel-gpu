@@ -222,6 +222,10 @@ function(configure_universal_target target)
     set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_MONDELLO_SUPPORT" )
   endif()
 
+  if(ENABLE_PS)
+    set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_PS" )
+  endif()
+
   if(ENABLE_FF)
     set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_FF" )
   endif()

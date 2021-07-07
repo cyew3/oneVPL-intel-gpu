@@ -30,8 +30,9 @@ mfxU16 FourCCToChroma(mfxU32 fourCC)
         return MFX_CHROMAFORMAT_YUV420;
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
+#ifdef ENABLE_PS
     case MFX_FOURCC_Y210:
-
+#endif
     case MFX_FOURCC_YUY2:
         return MFX_CHROMAFORMAT_YUV422;
     case MFX_FOURCC_RGB4:
@@ -51,7 +52,9 @@ mfxU32 FourCCToBPP(mfxU32 fourCC)
         return 12;
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
+#ifdef ENABLE_PS
     case MFX_FOURCC_Y210:
+#endif
     case MFX_FOURCC_YUY2:
         return 16;
     case MFX_FOURCC_RGB4:

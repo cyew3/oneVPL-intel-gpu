@@ -149,8 +149,10 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_R16G16B16A16_UNORM != desc.Format &&
                 DXGI_FORMAT_P010 != desc.Format &&
                 DXGI_FORMAT_AYUV != desc.Format
+#ifdef ENABLE_PS
                 && DXGI_FORMAT_Y210 != desc.Format &&
                 DXGI_FORMAT_Y410 != desc.Format
+#endif
 )
             {
                 return MFX_ERR_LOCK_MEMORY;
@@ -247,7 +249,8 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->U16 = 0;
             ptr->V16 = 0;
 
-            break; 
+            break;
+#ifdef ENABLE_PS
         case DXGI_FORMAT_Y210:
             ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
             ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
@@ -266,6 +269,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->A = 0;
 
             break;
+#endif
         default:
 
             return MFX_ERR_LOCK_MEMORY;
