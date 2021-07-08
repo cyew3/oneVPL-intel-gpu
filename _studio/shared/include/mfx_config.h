@@ -30,6 +30,9 @@
 #if defined(DEBUG) || defined(_DEBUG)
 #undef  MFX_DEBUG_TOOLS // to avoid redefinition
 #define MFX_DEBUG_TOOLS
+
+#undef  MFX_ENABLE_SLICE_MODE_CFG // to avoid redefinition
+#define MFX_ENABLE_SLICE_MODE_CFG
 #endif
 #endif // #if defined(_WIN32) || defined(_WIN64)
 

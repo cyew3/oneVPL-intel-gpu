@@ -21,6 +21,9 @@
 #pragma once
 
 #include "umc_va_base.h"
+#ifdef MFX_ENABLE_SLICE_MODE_CFG
+#include "atlbase.h"
+#endif // MFX_ENABLE_SLICE_MODE_CFG
 
 #ifdef UMC_VA_DXVA
 
@@ -326,6 +329,18 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     }
 
     bool res = false;
+
+#ifdef MFX_ENABLE_SLICE_MODE_CFG
+    DWORD sliceModeSwitch = 1;
+    CRegKey key;
+    LONG lRes = ERROR_SUCCESS;
+    lRes = key.Open(HKEY_CURRENT_USER, _T("Software\\Intel\\MediaSDK"), KEY_READ);
+    if (lRes == ERROR_SUCCESS)
+    {
+        key.QueryDWORDValue(_T("SLICE_MODE_ENABLE"), sliceModeSwitch);
+    }
+#endif // MFX_ENABLE_SLICE_MODE_CFG	
+	
     switch(profile)
     {
     case JPEG_VLD:
@@ -391,7 +406,18 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H265_VLD_444_SCC:
     case H265_10_VLD_444_SCC:
         if ((profile_flags & VA_PROFILE_REXT) || (profile_flags & VA_PROFILE_SCC))
+#ifdef MFX_ENABLE_SLICE_MODE_CFG
+            if (sliceModeSwitch)
+            {
+                res = (HEVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
+            }
+            else
+            {
+                res = (HEVC_LONG_FORMAT_SLICE_NON_REXT_DATA == config->ConfigBitstreamRaw || HEVC_LONG_FORMAT_SLICE_REXT_DATA == config->ConfigBitstreamRaw);
+            }
+#else
             res = (HEVC_SHORT_FORMAT_SLICE_DATA == config->ConfigBitstreamRaw);
+#endif
         else
         if (profile_flags & VA_LONG_SLICE_MODE)
             res = (HEVC_LONG_FORMAT_SLICE_NON_REXT_DATA == config->ConfigBitstreamRaw || HEVC_LONG_FORMAT_SLICE_REXT_DATA == config->ConfigBitstreamRaw);
