@@ -108,7 +108,6 @@ static const
 MFX_GUID MFXI_IS_CORED3D9ON11_GUID =
 { 0x4c849533, 0x839f, 0x4686, { 0x9c, 0x94, 0x5f, 0xbc, 0x39, 0x0, 0x8c, 0xd9 } };
 
-
 // Try to obtain required interface
 // Declare a template to query an interface
 template <class T> inline
