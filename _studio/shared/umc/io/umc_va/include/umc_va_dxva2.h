@@ -351,10 +351,8 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case VP9_VLD_444:
     case VP9_10_VLD_422:
     case VP9_10_VLD_444:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case VP9_12_VLD_420:
     case VP9_12_VLD_444:
-#endif
 #if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
     case AV1_VLD:
     case AV1_10_VLD:

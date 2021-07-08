@@ -85,14 +85,12 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
     case MFX_FOURCC_Y410:
         return DXGI_FORMAT_Y410;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         return DXGI_FORMAT_P016;
     case MFX_FOURCC_Y216:
         return DXGI_FORMAT_Y216;
     case MFX_FOURCC_Y416:
         return DXGI_FORMAT_Y416;
-#endif
     }
     return DXGI_FORMAT_UNKNOWN;
 
@@ -128,11 +126,9 @@ static inline bool check_supported_fourcc(mfxU32 fourcc)
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
-#endif
         return true;
     default:
         return false;
@@ -356,9 +352,7 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
     switch (Desc.Format)
     {
     case DXGI_FORMAT_P010:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_P016:
-#endif
         frame_data.Y = (mfxU8 *)LockedRect.pData;
         frame_data.U = (mfxU8 *)LockedRect.pData + Desc.Height * LockedRect.RowPitch;
         frame_data.V = frame_data.U + 2;
@@ -407,22 +401,18 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
         frame_data.Y410 = (mfxY410 *)LockedRect.pData;
         break;
     case DXGI_FORMAT_Y210:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_Y216:
-#endif
         frame_data.Y16 = (mfxU16*)LockedRect.pData;
         frame_data.U16 = frame_data.Y16 + 1;
         frame_data.V16 = frame_data.Y16 + 3;
         break;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_Y416:
         frame_data.U16 = (mfxU16*)LockedRect.pData;
         frame_data.Y16 = frame_data.U16 + 1;
         frame_data.V16 = frame_data.Y16 + 1;
         frame_data.A   = (mfxU8 *)(frame_data.V16 + 1);
         break;
-#endif
 
     default:
         MFX_RETURN(MFX_ERR_LOCK_MEMORY);

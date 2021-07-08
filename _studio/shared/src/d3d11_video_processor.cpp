@@ -2975,7 +2975,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         maxRange = 1023.f;
     }
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if(outInfo->FourCC == MFX_FOURCC_P016 ||
         outInfo->FourCC == MFX_FOURCC_Y216 ||
         outInfo->FourCC == MFX_FOURCC_Y416)
@@ -2983,7 +2982,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         mfxU32 depth = pParams->targetSurface.frameInfo.BitDepthLuma ? (16 - pParams->targetSurface.frameInfo.BitDepthLuma) : 12;
         maxRange = (float)((1 << depth) - 1);
     }
-#endif
 
     if(maxRange>0)
     {

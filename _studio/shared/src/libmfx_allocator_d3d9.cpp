@@ -43,11 +43,9 @@
 #define D3DFMT_Y410     (D3DFORMAT)MFX_FOURCC_Y410
 #define D3DFMT_Y210     (D3DFORMAT)MFX_FOURCC_Y210
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
 #define D3DFMT_P016     (D3DFORMAT)MFX_FOURCC_P016
 #define D3DFMT_Y216     (D3DFORMAT)MFX_FOURCC_Y216
 #define D3DFMT_Y416     (D3DFORMAT)MFX_FOURCC_Y416
-#endif
 
 // D3D9 surface working
 mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
@@ -76,11 +74,9 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
-#endif
         break;
 
     default:
@@ -206,11 +202,9 @@ mfxStatus mfxDefaultAllocatorD3D9::ReallocFrameHW(mfxHDL pthis, const mfxMemId m
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
-#endif
         break;
 
     default:
@@ -290,9 +284,7 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
     switch ((DWORD)desc.Format)
     {
     case D3DFMT_P010:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case D3DFMT_P016:
-#endif
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)LockedRect.pBits;
@@ -407,9 +399,7 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         break;
 
     case D3DFMT_Y210:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case D3DFMT_Y216:
-#endif
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
         ptr->Y16 = (mfxU16*)LockedRect.pBits;
@@ -425,7 +415,6 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         ptr->A = 0;
         break;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case D3DFMT_Y416:
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
@@ -434,7 +423,6 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         ptr->V16 = ptr->Y16 + 1;
         ptr->A   = (mfxU8 *)(ptr->V16 + 1);
         break;
-#endif
 
     default:
         return MFX_ERR_LOCK_MEMORY;

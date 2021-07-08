@@ -1080,7 +1080,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
     {
         shift = 6; // Colors should be shifted to MSB
     }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
     if(outInfo->FourCC == MFX_FOURCC_P016 ||
        outInfo->FourCC == MFX_FOURCC_Y216 ||
        outInfo->FourCC == MFX_FOURCC_Y416)
@@ -1088,7 +1088,6 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         mfxU32 depth = pExecuteParams->targetSurface.frameInfo.BitDepthLuma ? (16 - pExecuteParams->targetSurface.frameInfo.BitDepthLuma) : 12;
         shift = 16-depth; // Colors should be shifted to MSB
     }
-#endif
 
     if(shift!=0xFF)
     {
