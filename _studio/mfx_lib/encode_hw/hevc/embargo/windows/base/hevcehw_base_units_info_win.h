@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_ENABLE_HEVCE_UNITS_INFO)
+#if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
 
 #include "hevcehw_base.h"
 #include "hevcehw_base_data.h"
@@ -59,4 +59,4 @@ protected:
 } //namespace Windows
 } //namespace HEVCEHW
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_HEVCE_UNITS_INFO)

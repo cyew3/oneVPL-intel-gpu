@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX) && defined (MFX_ENABLE_HEVC_CUSTOM_QMATRIX)
+#if defined (MFX_ENABLE_HEVC_CUSTOM_QMATRIX)
 
 #include "hevcehw_base_qmatrix_win.h"
 #include "hevcehw_base_ddi_packer_win.h"
@@ -266,4 +266,4 @@ void QMatrix::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
     });
 }
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif //defined(MFX_ENABLE_HEVC_CUSTOM_QMATRIX)
