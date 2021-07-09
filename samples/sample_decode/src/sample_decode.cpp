@@ -54,6 +54,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-hw]                     - use platform specific SDK implementation (default)\n"));
     msdk_printf(MSDK_STRING("   [-sw]                     - use software implementation, if not specified platform specific SDK implementation is used\n"));
     msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
+    msdk_printf(MSDK_STRING("   [-p plugin]               - DEPRECATED: decoder plugin. Supported values: hevcd_sw, hevcd_hw, vp8d_hw, vp9d_hw, camera_hw, capture_hw\n"));
     msdk_printf(MSDK_STRING("   [-fps]                    - limits overall fps of pipeline\n"));
     msdk_printf(MSDK_STRING("   [-w]                      - output width\n"));
     msdk_printf(MSDK_STRING("   [-h]                      - output height\n"));
@@ -682,6 +683,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             switch (strInput[i][1])
             {
+            case MSDK_CHAR('p'):
+                ++i;
+                msdk_printf(MSDK_STRING("WARNING: plugins are deprecated and not supported by VPL RT \n"));
+                break;
             case MSDK_CHAR('i'):
                 if (++i < nArgNum) {
                     msdk_opt_read(strInput[i], pParams->strSrcFile);
