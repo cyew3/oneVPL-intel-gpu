@@ -26,25 +26,17 @@
     #define MFX_ENABLE_VPP_ROTATION
     #define MFX_ENABLE_VPP_VIDEO_SIGNAL
     #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
+    #define MFX_ENABLE_VPP_RUNTIME_HSBC
 
-    #if defined(OPEN_SOURCE)
-        #define MFX_ENABLE_DENOISE_VIDEO_VPP
+    #if defined(MFX_VA_LINUX)
         #define MFX_ENABLE_MJPEG_ROTATE_VPP
-        #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
     #endif
 
-    #if MFX_VERSION >= MFX_VERSION_NEXT
-        #define MFX_ENABLE_VPP_RUNTIME_HSBC
-    #endif
     //#define MFX_ENABLE_VPP_FRC
 #endif
 
 #if defined(MFX_ENABLE_ASC)
     #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-#endif
-
-#if defined(MFX_ENABLE_MCTF)
-    #define MFX_ENABLE_MCTF_EXT // extended MCTF interface
 #endif
 
 #define MFX_ENABLE_RGBP

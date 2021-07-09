@@ -1670,13 +1670,7 @@
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,FilterStrength                ,8    )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Overlap                       ,10   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,BitsPerPixelx100k             ,12   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Deblocking                    ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,TemporalMode                  ,18   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,MVPrecision                   ,20   )
-#endif
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1FilmGrainPoint               ,Value                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1FilmGrainPoint               ,Scaling                       ,1    )
@@ -2507,13 +2501,7 @@
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,FilterStrength                ,8    )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Overlap                       ,10   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,BitsPerPixelx100k             ,12   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Deblocking                    ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,TemporalMode                  ,18   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,MVPrecision                   ,20   )
-#endif
+
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1FilmGrainPoint               ,Value                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1FilmGrainPoint               ,Scaling                       ,1    )
 
@@ -3351,13 +3339,7 @@
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,FilterStrength                ,8    )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Overlap                       ,10   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,BitsPerPixelx100k             ,12   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,Deblocking                    ,16   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,TemporalMode                  ,18   )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtVppMctf                      ,MVPrecision                   ,20   )
-#endif
+
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1FilmGrainPoint               ,Value                         ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1FilmGrainPoint               ,Scaling                       ,1    )
 
