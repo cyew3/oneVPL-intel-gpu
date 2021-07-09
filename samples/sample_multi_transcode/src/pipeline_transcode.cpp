@@ -4633,7 +4633,7 @@ mfxStatus FileBitstreamProcessor::SetReader(std::unique_ptr<CSmplYUVReader>& rea
 mfxStatus FileBitstreamProcessor::SetReader(std::unique_ptr<CSmplBitstreamReader>& reader)
 {
     m_pFileReader = std::move(reader);
-    m_Bitstream.Extend(1024 * 1024);
+    m_Bitstream.Extend(1024 * 1024 * 2);
 
     return MFX_ERR_NONE;
 }
