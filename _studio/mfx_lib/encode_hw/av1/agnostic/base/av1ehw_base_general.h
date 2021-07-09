@@ -44,7 +44,6 @@ namespace Base
     DECL_BLOCK(PreCheckChromaFormat )\
     DECL_BLOCK(PreCheckExtBuffers   )\
     DECL_BLOCK(CopyConfigurable     )\
-    DECL_BLOCK(CheckAndFixLowPower  )\
     DECL_BLOCK(SetGUID              )\
     DECL_BLOCK(CheckFormat          )\
     DECL_BLOCK(CheckLevel           )\

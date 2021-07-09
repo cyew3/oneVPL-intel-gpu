@@ -49,7 +49,6 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(IOPattern);
         MFX_COPY_FIELD(Protected);
         MFX_COPY_FIELD(AsyncDepth);
-        MFX_COPY_FIELD(mfx.LowPower);
         MFX_COPY_FIELD(mfx.CodecId);
         MFX_COPY_FIELD(mfx.CodecLevel);
         MFX_COPY_FIELD(mfx.CodecProfile);
@@ -516,18 +515,6 @@ void General::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
         , [this, &blocks](const mfxVideoParam& in, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
         return CopyConfigurable(blocks, in, out);
-    });
-
-    Push(BLK_CheckAndFixLowPower
-        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW& /*strg*/) -> mfxStatus
-    {
-        mfxU32 invalid = 0;
-        invalid += CheckOrZero<mfxU16>(out.mfx.LowPower, MFX_CODINGOPTION_ON, 0);
-        MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
-
-        out.mfx.LowPower = MFX_CODINGOPTION_ON;
-
-        return MFX_ERR_NONE;
     });
 
     Push(BLK_SetGUID
@@ -2833,7 +2820,6 @@ void General::SetDefaults(
     SetDefault(par.mfx.CodecProfile, defPar.base.GetProfile(defPar));
     SetDefault(par.mfx.CodecLevel, 0);
     SetDefault(par.mfx.TargetUsage, DEFAULT_TARGET_USAGE);
-    SetDefault(par.mfx.LowPower, MFX_CODINGOPTION_ON);
     SetDefault(par.mfx.NumThread, 1);
 
     mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
