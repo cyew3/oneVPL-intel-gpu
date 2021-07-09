@@ -2388,7 +2388,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lad")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
-            InputParams.nRateControlMethod = MFX_RATECONTROL_LA;
             i++;
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nLADepth))
             {
@@ -2822,6 +2821,11 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     {
         PrintError(MSDK_STRING("Unsupported value of -lad parameter, must be in range [1,100] or 0 for automatic selection"));
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (!InputParams.nRateControlMethod && InputParams.nLADepth)
+    {
+        InputParams.nRateControlMethod = MFX_RATECONTROL_LA;
     }
 
     if ((InputParams.nMaxSliceSize) && !(InputParams.libType & MFX_IMPL_HARDWARE_ANY))
