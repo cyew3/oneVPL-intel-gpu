@@ -446,15 +446,16 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-    mfxHDLPair handle;
-    if (NULL != pSurface->Data.MemId)
-    {
-        MFX_CHECK_STS(GetFrameHDL(pSurface->Data.MemId, (mfxHDL*)(&handle)));
-    }
 
     bool bFrameLocked = false;
     if (m_bDecodeD3D11)
     {
+        mfxHDLPair handle;
+        if (NULL != pSurface->Data.MemId)
+        {
+            MFX_CHECK_STS(GetFrameHDL(pSurface->Data.MemId, (mfxHDL*)(&handle)));
+        }
+
         if (m_pLock == nullptr)
             m_pLock = new MFXFrameLocker(m_pHWDevice);
         if (NULL != pSurface)

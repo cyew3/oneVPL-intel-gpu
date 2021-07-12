@@ -71,10 +71,16 @@ mfxStatus MFXLoopDecoder::DecodeFrameAsync( mfxBitstream2 & bs2
 
         m_Surfaces.push_back(*surface_out);
 
+        if ((*surface_out)->FrameInterface)
+        {
+            (*surface_out)->FrameInterface->AddRef(*surface_out);
+        }
+
         MFX_CHECK_STS(sts = base::SyncOperation(*syncp, TimeoutVal<>::val()));
 
         sts = MFX_ERR_MORE_DATA;
-    }else
+    }
+    else
     {
         *surface_out = m_Surfaces[m_CurrSurfaceIndex];
         *syncp = m_syncPoint;
@@ -92,4 +98,15 @@ mfxStatus MFXLoopDecoder::SyncOperation(mfxSyncPoint syncp, mfxU32 /*wait*/)
     MFX_CHECK_WITH_ERR(m_syncPoint == syncp, MFX_ERR_INVALID_HANDLE);
     
     return MFX_ERR_NONE;
+}
+
+MFXLoopDecoder::~MFXLoopDecoder(void)
+{
+    for(mfxFrameSurface1* surface: m_Surfaces)
+    {
+        if (surface->FrameInterface)
+        {
+            surface->FrameInterface->Release(surface);
+        }
+    }
 }

@@ -24,6 +24,7 @@ class MFXLoopDecoder
     typedef InterfaceProxy<IYUVSource> base;
 public:
     MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::unique_ptr<IYUVSource> &&pTarget);
+    ~MFXLoopDecoder();
 
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
     //virtual mfxStatus Init(mfxVideoParam *par);

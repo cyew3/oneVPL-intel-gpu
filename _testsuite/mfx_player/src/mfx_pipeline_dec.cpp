@@ -2614,16 +2614,15 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         m_pYUVSource .reset( new MFXDecoder(m_components[eDEC].m_pSession->GetMFXSession()));
     }
 
-    if (m_inParams.nYUVLoop) {
-        MFX_CHECK_STS_CUSTOM_HANDLER(MFX_ERR_UNSUPPORTED,
-                                    { PipelineTrace((VM_STRING("Error: nYUVLoop is not supported with memoty 2.0"))); });
+    if (m_inParams.nYUVLoop)
+    {
         m_pYUVSource .reset( new MFXLoopDecoder( m_inParams.nYUVLoop, std::move(m_pYUVSource)));
     }
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (MFX_CODEC_AV1 == m_components[eDEC].m_params.mfx.CodecId)
     {
-        if (m_inParams.nMemoryModel != GENERAL_ALLOC && 
+        if (m_inParams.nMemoryModel != GENERAL_ALLOC &&
             (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES ||
              m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM))
         {
