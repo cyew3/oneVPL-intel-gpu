@@ -4537,6 +4537,9 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     MfxHwVideoProcessing::mfxExecuteParams  execParams = m_executeParams;
     sts = MergeRuntimeParams(pTask, &execParams);
     MFX_CHECK_STS(sts);
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+    m_executeParams.gpuHangTrigger = execParams.gpuHangTrigger;
+#endif
 
     if (execParams.bComposite &&
         (MFX_HW_D3D11 == m_pCore->GetVAType() && execParams.refCount > MAX_STREAMS_PER_TILE))
@@ -4677,7 +4680,12 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
             {
                 sts = (*pHwVpp->m_ddi)->QueryTaskStatus(pTask);
             }
-
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+            if (pHwVpp->m_executeParams.gpuHangTrigger)
+            {
+                sts = MFX_ERR_GPU_HANG;
+            }
+#endif
             if(sts == MFX_ERR_DEVICE_FAILED ||
                 sts == MFX_ERR_GPU_HANG)
             {
