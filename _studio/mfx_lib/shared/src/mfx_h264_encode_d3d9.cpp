@@ -619,8 +619,8 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         : SliceDividerType(hwCaps.ddi_caps.SliceStructure),
         task.m_numMbPerSlice,
         pps.NumSlice,
-        sps.FrameWidth  / 16,
-        sps.FrameHeight / 16 / numPics);
+        mfx::CeilDiv<mfxU16>(sps.FrameWidth,  16),
+        mfx::CeilDiv<mfxU16>(sps.FrameHeight, 16) / numPics);
 
     if (divider.GetNumSlice() != slice.size())
     {
