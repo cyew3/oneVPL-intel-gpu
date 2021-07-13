@@ -20,36 +20,115 @@
 
 if(MFX_ENABLE_KERNELS)
 
+  set( MSDK_GENX_ROOT ${MSDK_LIB_ROOT}/genx )
+
+  if (BUILD_KERNELS)
+    # Here we define build steps to generate c-array binary kernels. If you
+    # don't use BUILD_KERNELS options these kernels will just be used from
+    # pre-built form. If you will regenerate kernels you may notice the
+    # difference from the per-built kernels in git-diff.
+
+    # Helper application to generate c-array data representation of .isa binary
+    # kernels.
+    add_executable(embed_isa ${MSDK_GENX_ROOT}/tools/embed_isa.c)
+    set_target_properties(embed_isa PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    # Generates CM kernel suitable for usage in C/C++ application sources
+    #   ${src} - input CM kernel source file
+    #   ${genx} - platform generation level
+    #   ${out_dir} - directory to generate output
+    # Generated outputs for ${src}=path/file.cpp, ${genx}=gen9:
+    #   ${out_dir}/file_gen9_isa.h
+    #   ${out_dir}/file_gen9_isa.cpp
+    function(add_cmc_target src genx out_dir)
+      get_filename_component(tgt ${src} NAME_WE)
+      add_custom_command(
+        OUTPUT ${tgt}_${genx}.isa
+        DEPENDS embed_isa ${src}
+        COMMAND ${CMC}
+          -c -Qxcm -Qxcm_release -Qxcm_print_asm_count
+          -menableiga -mCM_init_global -mCM_printregusage
+          -Dtarget_${genx} -Qxcm_jit_target=${genx}
+          ${src} -o ${tgt}_${genx}.isa)
+
+      add_custom_command(
+        OUTPUT ${tgt}_${genx}_isa.cpp ${tgt}_${genx}_isa.h
+        DEPENDS embed_isa ${tgt}_${genx}.isa
+        COMMAND embed_isa ${tgt}_${genx}.isa)
+      add_custom_command(
+        OUTPUT ${out_dir}/${tgt}_${genx}_isa.h ${out_dir}/${tgt}_${genx}_isa.cpp
+        DEPENDS ${tgt}_${genx}_isa.cpp ${tgt}_${genx}_isa.h
+        COMMAND ${CMAKE_COMMAND} -E copy ${tgt}_${genx}_isa.h ${out_dir}
+        COMMAND ${CMAKE_COMMAND} -E copy ${tgt}_${genx}_isa.cpp ${out_dir})
+    endfunction()
+  endif()
+
+  if( MFX_ENABLE_ASC )
+    if(BUILD_KERNELS)
+      foreach(platform gen12lp)
+        add_cmc_target(${MSDK_GENX_ROOT}/asc/src/genx_scd.cpp ${platform} ${MSDK_GENX_ROOT}/asc/isa)
+      endforeach()
+    endif()
+
+    set( prefix ${MSDK_GENX_ROOT}/asc/isa )
+    list( APPEND sources
+        ${prefix}/genx_scd_gen12lp_isa.cpp
+    )
+  endif()
+
+  if(BUILD_KERNELS)
+    foreach(platform gen12lp)
+      add_cmc_target(${MSDK_GENX_ROOT}/copy_kernels/src/genx_copy_kernel.cpp ${platform} ${MSDK_GENX_ROOT}/copy_kernels/isa)
+    endforeach()
+  endif()
+
+  set( prefix ${MSDK_GENX_ROOT}/copy_kernels/isa )
   list( APPEND sources
-    asc/isa/genx_scd_gen12lp_isa.cpp
-    asc/isa/genx_scd_xehp_sdv_isa.cpp
+    ${prefix}/genx_copy_kernel_gen12lp_isa.cpp
   )
 
+  if(BUILD_KERNELS)
+    foreach(platform gen12lp)
+      add_cmc_target(${MSDK_GENX_ROOT}/field_copy/src/genx_fcopy.cpp ${platform} ${MSDK_GENX_ROOT}/field_copy/isa)
+    endforeach()
+  endif()
+
+  set( prefix ${MSDK_GENX_ROOT}/field_copy/isa )
   list( APPEND sources
-    copy_kernels/isa/genx_copy_kernel_gen12lp_isa.cpp
-    copy_kernels/isa/genx_copy_kernel_xehp_sdv_isa.cpp
-    copy_kernels/isa/genx_copy_kernel_dg2_isa.cpp
+    ${prefix}/genx_fcopy_gen12lp_isa.cpp
   )
 
+  if(BUILD_KERNELS)
+    foreach(platform gen12lp)
+      add_cmc_target(${MSDK_GENX_ROOT}/h264_encode/src/genx_histogram.cpp ${platform} ${MSDK_GENX_ROOT}/h264_encode/isa)
+      add_cmc_target(${MSDK_GENX_ROOT}/h264_encode/src/genx_simple_me.cpp ${platform} ${MSDK_GENX_ROOT}/h264_encode/isa)
+    endforeach()
+  endif()
+
+  set( prefix ${MSDK_GENX_ROOT}/h264_encode/isa )
   list( APPEND sources
-    field_copy/isa/genx_fcopy_gen12lp_isa.cpp
-    field_copy/isa/genx_fcopy_xehp_sdv_isa.cpp
+    ${MSDK_GENX_ROOT}/h264_encode/src/genx_simple_me_proto.cpp
+    ${prefix}/genx_simple_me_gen12lp_isa.cpp
+    ${prefix}/genx_histogram_gen12lp_isa.cpp
   )
 
-  list( APPEND sources
-    h264_encode/isa/genx_histogram_gen12lp_isa.cpp
-    h264_encode/isa/genx_simple_me_gen12lp_isa.cpp
-    h264_encode/src/genx_simple_me_proto.cpp
-  )
+  if(MFX_ENABLE_MCTF)
+    if(BUILD_KERNELS)
+      foreach(platform gen12lp)
+        add_cmc_target(${MSDK_GENX_ROOT}/mctf/src/genx_me.cpp ${platform} ${MSDK_GENX_ROOT}/mctf/isa)
+        add_cmc_target(${MSDK_GENX_ROOT}/mctf/src/genx_mc.cpp ${platform} ${MSDK_GENX_ROOT}/mctf/isa)
+        add_cmc_target(${MSDK_GENX_ROOT}/mctf/src/genx_sd.cpp ${platform} ${MSDK_GENX_ROOT}/mctf/isa)
+      endforeach()
+    endif()
 
-  list( APPEND sources
-    mctf/isa/genx_mc_xehp_sdv_isa.cpp
-    mctf/isa/genx_me_xehp_sdv_isa.cpp
-    mctf/isa/genx_sd_xehp_sdv_isa.cpp
-    mctf/isa/genx_mc_gen12lp_isa.cpp
-    mctf/isa/genx_me_gen12lp_isa.cpp
-    mctf/isa/genx_sd_gen12lp_isa.cpp
-  )
+    set( prefix ${MSDK_GENX_ROOT}/mctf/isa )
+    list( APPEND sources
+      ${prefix}/genx_mc_gen12lp_isa.cpp
+      ${prefix}/genx_me_gen12lp_isa.cpp
+      ${prefix}/genx_sd_gen12lp_isa.cpp
+    )
+  endif()
 
   add_library(genx STATIC ${sources})
   set_property(TARGET genx PROPERTY FOLDER "kernels")
@@ -61,7 +140,6 @@ if(MFX_ENABLE_KERNELS)
       field_copy/isa
       h264_encode/isa
       mctf/isa
-      av1_encode/include
     )
 
   target_link_libraries(genx

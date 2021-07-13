@@ -137,3 +137,26 @@ if(ENABLE_HEVC AND CMAKE_SYSTEM_NAME MATCHES Windows)
       h265_encode/include
   )
 endif()
+
+if(MFX_ENABLE_KERNELS)
+  
+  target_include_directories(genx
+    PUBLIC
+      av1_encode/include
+    )
+
+  target_sources(genx
+    PRIVATE
+      asc/isa/genx_scd_xehp_sdv_isa.cpp
+      
+      copy_kernels/isa/genx_copy_kernel_xehp_sdv_isa.cpp
+      copy_kernels/isa/genx_copy_kernel_dg2_isa.cpp
+      
+      field_copy/isa/genx_fcopy_xehp_sdv_isa.cpp
+
+      mctf/isa/genx_mc_xehp_sdv_isa.cpp
+      mctf/isa/genx_me_xehp_sdv_isa.cpp
+      mctf/isa/genx_sd_xehp_sdv_isa.cpp
+  )
+
+endif()
