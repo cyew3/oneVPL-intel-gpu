@@ -366,20 +366,23 @@ mfxStatus EncTools::InitVPP(mfxEncToolsCtrl const& ctrl)
 
 
     //SCD VPP
-    sts = InitVPPSession(&m_mfxSession_SCD);
-    MFX_CHECK_STS(sts);
+    if (isPreEncSCD(m_config, ctrl))
+    {
+        sts = InitVPPSession(&m_mfxSession_SCD);
+        MFX_CHECK_STS(sts);
 
-    m_pmfxVPP_SCD.reset(new MFXVideoVPP(m_mfxSession_SCD));
-    MFX_CHECK(m_pmfxVPP_SCD, MFX_ERR_MEMORY_ALLOC);
+        m_pmfxVPP_SCD.reset(new MFXVideoVPP(m_mfxSession_SCD));
+        MFX_CHECK(m_pmfxVPP_SCD, MFX_ERR_MEMORY_ALLOC);
 
-    sts = m_pmfxVPP_SCD->Init(&m_mfxVppParams_AEnc);
-    MFX_CHECK_STS(sts);
+        sts = m_pmfxVPP_SCD->Init(&m_mfxVppParams_AEnc);
+        MFX_CHECK_STS(sts);
 
-    //memory allocation for SCD
-    m_IntSurfaces_SCD.Info = m_mfxVppParams_AEnc.vpp.Out;
-    m_IntSurfaces_SCD.Data.Y = new mfxU8[m_IntSurfaces_SCD.Info.Width * m_IntSurfaces_SCD.Info.Height * 3 / 2];
-    m_IntSurfaces_SCD.Data.UV = m_IntSurfaces_SCD.Data.Y + m_IntSurfaces_SCD.Info.Width * m_IntSurfaces_SCD.Info.Height;
-    m_IntSurfaces_SCD.Data.Pitch = m_IntSurfaces_SCD.Info.Width;
+        //memory allocation for SCD
+        m_IntSurfaces_SCD.Info = m_mfxVppParams_AEnc.vpp.Out;
+        m_IntSurfaces_SCD.Data.Y = new mfxU8[m_IntSurfaces_SCD.Info.Width * m_IntSurfaces_SCD.Info.Height * 3 / 2];
+        m_IntSurfaces_SCD.Data.UV = m_IntSurfaces_SCD.Data.Y + m_IntSurfaces_SCD.Info.Width * m_IntSurfaces_SCD.Info.Height;
+        m_IntSurfaces_SCD.Data.Pitch = m_IntSurfaces_SCD.Info.Width;
+    }
 
     m_bVPPInit = true;
     return MFX_ERR_NONE;
@@ -413,16 +416,18 @@ mfxStatus EncTools::InitMfxVppParams(mfxEncToolsCtrl const & ctrl)
     m_mfxVppParams_LA.IOPattern = ctrl.IOPattern | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
 
     //SCD
-    m_mfxVppParams_AEnc = mfxVppParams_Common;
-    mfxFrameInfo frameInfo;
-    mfxStatus sts = m_scd.GetInputFrameInfo(frameInfo);
-    MFX_CHECK_STS(sts);
-    m_mfxVppParams_AEnc.vpp.Out.Width = frameInfo.Width;
-    m_mfxVppParams_AEnc.vpp.Out.Height = frameInfo.Height;
-    m_mfxVppParams_AEnc.vpp.Out.CropW = m_mfxVppParams_AEnc.vpp.Out.Width;
-    m_mfxVppParams_AEnc.vpp.Out.CropH = m_mfxVppParams_AEnc.vpp.Out.Height;
-    m_mfxVppParams_AEnc.IOPattern = ctrl.IOPattern | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-
+    if (isPreEncSCD(m_config, ctrl))
+    {
+        m_mfxVppParams_AEnc = mfxVppParams_Common;
+        mfxFrameInfo frameInfo;
+        mfxStatus sts = m_scd.GetInputFrameInfo(frameInfo);
+        MFX_CHECK_STS(sts);
+        m_mfxVppParams_AEnc.vpp.Out.Width = frameInfo.Width;
+        m_mfxVppParams_AEnc.vpp.Out.Height = frameInfo.Height;
+        m_mfxVppParams_AEnc.vpp.Out.CropW = m_mfxVppParams_AEnc.vpp.Out.Width;
+        m_mfxVppParams_AEnc.vpp.Out.CropH = m_mfxVppParams_AEnc.vpp.Out.Height;
+        m_mfxVppParams_AEnc.IOPattern = ctrl.IOPattern | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    }
     return MFX_ERR_NONE;
 }
 
