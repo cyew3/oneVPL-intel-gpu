@@ -364,10 +364,10 @@ void DDIPacker::FillSpsBuffer(
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
         || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
     {
-      sps.TargetBitRate[0]           = par.mfx.TargetKbps;
-      sps.MaxBitRate                 = par.mfx.MaxKbps;
-      sps.VBVBufferSizeInBit         = par.mfx.BufferSizeInKB * 8000;
-      sps.InitVBVBufferFullnessInBit = par.mfx.InitialDelayInKB * 8000;
+      sps.TargetBitRate[0]           = TargetKbps(par.mfx);
+      sps.MaxBitRate                 = MaxKbps(par.mfx);
+      sps.VBVBufferSizeInBit         = 8000 * BufferSizeInKB(par.mfx);
+      sps.InitVBVBufferFullnessInBit = 8000 * InitialDelayInKB(par.mfx);
     }
 
     mfxU32 nom = par.mfx.FrameInfo.FrameRateExtN;
