@@ -32,6 +32,10 @@
         #define MFX_ENABLE_MJPEG_ROTATE_VPP
     #endif
 
+    #if !defined(OPEN_SOURCE)
+        #define MFX_ENABLE_VPP_HVS
+    #endif
+
     //#define MFX_ENABLE_VPP_FRC
 #endif
 

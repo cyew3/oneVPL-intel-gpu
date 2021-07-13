@@ -56,8 +56,10 @@ const mfxU32 g_TABLE_DO_NOT_USE [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_MIRRORING,
-    MFX_EXTBUFF_VPP_3DLUT,
-    MFX_EXTBUFF_VPP_DENOISE2
+    MFX_EXTBUFF_VPP_3DLUT
+#if defined (MFX_ENABLE_VPP_HVS)
+    ,MFX_EXTBUFF_VPP_DENOISE2
+#endif
 };
 
 
@@ -80,8 +82,10 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_MIRRORING,
-    MFX_EXTBUFF_VPP_3DLUT,
-    MFX_EXTBUFF_VPP_DENOISE2
+    MFX_EXTBUFF_VPP_3DLUT
+#if defined (MFX_ENABLE_VPP_HVS)    
+    ,MFX_EXTBUFF_VPP_DENOISE2
+#endif
 };
 
 
@@ -105,8 +109,10 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_SCALING,
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
     MFX_EXTBUFF_VPP_MIRRORING,
-    MFX_EXTBUFF_VPP_3DLUT,
-    MFX_EXTBUFF_VPP_DENOISE2
+    MFX_EXTBUFF_VPP_3DLUT
+#if defined (MFX_ENABLE_VPP_HVS)
+    ,MFX_EXTBUFF_VPP_DENOISE2
+#endif
 };
 
 
@@ -135,8 +141,10 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_SCALING,
     MFX_EXTBUFF_VPP_COLOR_CONVERSION,
     MFX_EXTBUFF_VPP_MIRRORING,
-    MFX_EXTBUFF_VPP_3DLUT,
-    MFX_EXTBUFF_VPP_DENOISE2
+    MFX_EXTBUFF_VPP_3DLUT
+#if defined (MFX_ENABLE_VPP_HVS)
+    ,MFX_EXTBUFF_VPP_DENOISE2
+#endif
 };
 
 PicStructMode GetPicStructMode(mfxU16 inPicStruct, mfxU16 outPicStruct)
@@ -519,7 +527,9 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
         switch( pipelineList[filterIndx] )
         {
             case (mfxU32)MFX_EXTBUFF_VPP_DENOISE:
+#if defined (MFX_ENABLE_VPP_HVS)
             case (mfxU32)MFX_EXTBUFF_VPP_DENOISE2:
+#endif
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "DENOISE");
                 OutputDebugStringA(cStr);
@@ -723,7 +733,9 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
         switch( pipelineList[filterIndx] )
         {
             case (mfxU32)MFX_EXTBUFF_VPP_DENOISE:
+#if defined (MFX_ENABLE_VPP_HVS)
             case (mfxU32)MFX_EXTBUFF_VPP_DENOISE2:
+#endif
             {
                 fprintf(stderr, "DENOISE \n");
                 break;
@@ -950,11 +962,13 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_RESIZE;
         index++;
     }*/
+#if defined (MFX_ENABLE_VPP_HVS)
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DENOISE2 ))
     {
         newList[index] = MFX_EXTBUFF_VPP_DENOISE2;
         index++;
     }
+#endif
     else if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DENOISE ))
     {
         newList[index] = MFX_EXTBUFF_VPP_DENOISE;
@@ -1947,10 +1961,12 @@ size_t GetConfigSize( mfxU32 filterId )
         {
             return sizeof(mfxExtVPPDenoise);
         }
+#if defined (MFX_ENABLE_VPP_HVS)
     case MFX_EXTBUFF_VPP_DENOISE2:
         {
             return sizeof(mfxExtVPPDenoise2);
         }
+#endif
     case MFX_EXTBUFF_VPP_PROCAMP:
         {
             return sizeof(mfxExtVPPProcAmp);
@@ -2424,12 +2440,12 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     {
         list.push_back(MFX_EXTBUFF_VPP_DENOISE);
     }
-
+#if defined (MFX_ENABLE_VPP_HVS)
     if(caps.uDenoise2Filter)
     {
         list.push_back(MFX_EXTBUFF_VPP_DENOISE2);
     }
-
+#endif
     if(caps.uDetailFilter)
     {
         list.push_back(MFX_EXTBUFF_VPP_DETAIL);

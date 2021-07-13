@@ -63,6 +63,7 @@ mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
             sts = MFX_STS_TRACE(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
     }
+#if defined (MFX_ENABLE_VPP_HVS)
     else if (MFX_EXTBUFF_VPP_DENOISE2 == bufferId)
     {
         mfxExtVPPDenoise2* bufDN = reinterpret_cast<mfxExtVPPDenoise2*>(pHint);
@@ -82,8 +83,10 @@ mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
             }
             default:
                 break;
-            }
+        }
     }
+#endif
+
     return sts;
 
 } // static mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )

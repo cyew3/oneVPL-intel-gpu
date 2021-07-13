@@ -429,7 +429,9 @@ mfxStatus VideoVPPBase::GetVideoParam(mfxVideoParam *par)
                         continue;
                     }
                     case MFX_EXTBUFF_VPP_DENOISE:
+#if defined (MFX_ENABLE_VPP_HVS)
                     case MFX_EXTBUFF_VPP_DENOISE2:
+#endif
                     case MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
                     case MFX_EXTBUFF_VPP_PROCAMP:
                     case MFX_EXTBUFF_VPP_DETAIL:
