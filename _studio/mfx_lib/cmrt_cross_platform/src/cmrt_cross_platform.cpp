@@ -29,28 +29,32 @@
 
 #if defined(_WIN64)
 
-#   ifdef CMRT_EMU
-        const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64_emu.dll");
-        const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64_emu.dll");
-#   else //CMRT_EMU
-        const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64.dll");
-        const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64.dll");
-#   endif //CMRT_EMU
+#if defined CMRT_EMU
+    const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64_emu.dll");
+    const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64_emu.dll");
+#else
+    const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64.dll");
+    const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64.dll");
+#endif
 
-#elif defined(_WIN32)
+#else
+#if defined(_WIN32)
 
-#   ifdef CMRT_EMU
-        const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt32_emu.dll");
-        const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt32_emu.dll");
-#   else //CMRT_EMU
+#if defined CMRT_EMU
+    const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt32_emu.dll");
+    const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt32_emu.dll");
+#else
     const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt32.dll");
     const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt32.dll");
-#   endif //CMRT_EMU
+#endif
 
-#elif defined(LINUX64) || defined(LINUX32)
+#else
+#if defined(MFX_VA_LINUX)
 const vm_char * DLL_NAME_LINUX = VM_STRING("libigfxcmrt.so.7");
 #else
 #error "undefined configuration"
+#endif
+#endif
 #endif
 
 #if defined(ANDROID)
