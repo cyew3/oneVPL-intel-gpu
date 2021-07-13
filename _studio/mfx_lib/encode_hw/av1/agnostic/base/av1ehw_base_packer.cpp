@@ -1112,17 +1112,25 @@ void Packer::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 #define IVF_SEQ_HEADER_SIZE_BYTES 32
 #define IVF_PIC_HEADER_SIZE_BYTES 12
 
-inline void PatchIVFFrameInfo(mfxU8* IVFHeaderStart, mfxU32 frameSize, mfxU32 frameNum, mfxU32 insertHeaders)
+inline void PatchIVFFrameInfo(mfxU8* IVFHeaderStart, mfxU32 frameSize, mfxU64 pts, mfxU32 insertHeaders)
 {
     if (insertHeaders & INSERT_IVF_FRM)
     {
         const bool insertIvfSeqHeader = insertHeaders & INSERT_IVF_SEQ;
         mfxU32 frameLen = frameSize - IVF_PIC_HEADER_SIZE_BYTES - ((insertIvfSeqHeader) ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
-        mfxU32 ivfFrameHeader[3] = { frameLen, frameNum << 1, 0x00000000 };
+
+        // IVF is a simple file format that transports raw data and multi-byte numbers of little-endian
+        MFX_PACK_BEGIN_USUAL_STRUCT()
+        struct IVF
+        {
+            mfxU32 len;
+            mfxU64 pts;
+        } ivf = {frameLen, pts};
+        MFX_PACK_END()
+        auto begin = (mfxU8*)&ivf;
 
         mfxU8 * pIVFPicHeader = insertIvfSeqHeader ? (IVFHeaderStart + IVF_SEQ_HEADER_SIZE_BYTES) : IVFHeaderStart;
-
-        std::copy(std::begin(ivfFrameHeader), std::end(ivfFrameHeader), reinterpret_cast <mfxU32*> (pIVFPicHeader));
+        std::copy(begin, begin + sizeof(ivf), pIVFPicHeader);
     }
 }
 
