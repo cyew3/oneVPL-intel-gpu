@@ -23,5 +23,5 @@ target_include_directories(${sample_spl_mux_dispatcher_name}
     ${CMAKE_CURRENT_SOURCE_DIR}/../api/
   PRIVATE
     ${MSDK_SAMPLES_ROOT}/deprecated/sample_spl_mux/api
-    ${CMAKE_HOME_DIRECTORY}/api/include
+    ${MFX_API_HOME}
   )

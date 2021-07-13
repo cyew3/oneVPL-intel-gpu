@@ -25,4 +25,3 @@ endforeach()
 
 create_plugins_cfg(${CMAKE_BINARY_DIR})
 
-add_subdirectory(pavp)
