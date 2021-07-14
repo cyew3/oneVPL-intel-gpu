@@ -28,6 +28,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include "mfx_config.h"
 #include "mfxvideo++.h"
 
 #define MFX_ENABLE_H265_VIDEO_ENCODE

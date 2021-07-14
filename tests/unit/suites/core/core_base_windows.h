@@ -27,6 +27,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include "mfx_config.h"
 #include "mfxvideo++.h"
 
 #include "encoding_ddi.h"

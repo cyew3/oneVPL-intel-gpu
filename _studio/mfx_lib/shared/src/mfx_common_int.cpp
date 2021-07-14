@@ -1261,6 +1261,7 @@ mfxU16 ChromaFormatFromFourcc(mfxU32 fourcc)
     }
 }
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  mfxBitstreamWrapperWithLock implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1304,3 +1305,4 @@ void mfxBitstreamWrapperWithLock::Extend(mfxU32 n_bytes)
     Data = m_data.data();
     MaxLength = n_bytes;
 }
+#endif //MFX_ENABLE_VIDEO_HYPER_ENCODE_HW

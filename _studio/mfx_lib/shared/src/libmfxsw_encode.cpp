@@ -318,6 +318,7 @@ static const CodecId2Handlers codecId2Handlers =
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE
 }; // codecId2Handlers
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
 static inline bool isHyperEncodeRequired(mfxVideoParam* par)
 {
     MFX_CHECK(par, false);
@@ -336,6 +337,7 @@ static inline bool isHyperEncodeModeAdapt(mfxVideoParam* par)
     MFX_CHECK(hyperModeParam, false);
     return IsHyperModeAdapt(hyperModeParam->Mode);
 }
+#endif
 
 template<>
 VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
@@ -345,24 +347,21 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
     std::unique_ptr<VideoENCODE> pENCODE;
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     bool bIsHyperEncodeSingleFallbackMode = false;
 
     if (isHyperEncodeRequired(&par))
     {
-#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
         pENCODE.reset(new MFXHWVideoHyperENCODE(core, &par, &mfxRes));
         if (isHyperEncodeModeAdapt(&par) && mfxRes == MFX_ERR_UNSUPPORTED)
             bIsHyperEncodeSingleFallbackMode = true;
         else
             if (MFX_STS_TRACE(mfxRes) != MFX_ERR_NONE)
                 return nullptr;
-#else
-        return nullptr;
-#endif
     }
 
-
     if (!isHyperEncodeRequired(&par) || bIsHyperEncodeSingleFallbackMode)
+#endif //MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
     {
         // create a codec instance
         auto handler = codecId2Handlers.find(CodecKey(CodecId));
@@ -412,26 +411,27 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     bool bIsHWENCSupport = false;
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     bool bIsHyperEncodeSingleFallbackMode = false;
+#endif
 
     try
     {
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
         if(isHyperEncodeRequired(in))
         {
-#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
             mfxRes = MFXHWVideoHyperENCODE::Query(session->m_pCORE.get(), in, out);
             if (isHyperEncodeModeAdapt(in) && mfxRes == MFX_ERR_UNSUPPORTED)
                 bIsHyperEncodeSingleFallbackMode = true;
             else
                 MFX_CHECK(mfxRes >= MFX_ERR_NONE, mfxRes);
-#else
-            return MFX_ERR_UNSUPPORTED;
-#endif
+
             if(mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
                 bIsHWENCSupport = true;
         }
 
         if (!isHyperEncodeRequired(in) || bIsHyperEncodeSingleFallbackMode)
+#endif
         {
             CodecId2Handlers::const_iterator handler;
             handler = codecId2Handlers.find(CodecKey(out->mfx.CodecId));
@@ -511,28 +511,26 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     bool bIsHWENCSupport = false;
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     bool bIsHyperEncodeSingleFallbackMode = false;
+#endif
 
     try
     {
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
         if(isHyperEncodeRequired(par))
         {
-#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
             mfxRes = MFXHWVideoHyperENCODE::QueryIOSurf(session->m_pCORE.get(), par, request);
             if (isHyperEncodeModeAdapt(par) && mfxRes == MFX_ERR_UNSUPPORTED)
                 bIsHyperEncodeSingleFallbackMode = true;
             else
                 MFX_CHECK(mfxRes >= MFX_ERR_NONE, mfxRes);
-#else
-            return MFX_ERR_UNSUPPORTED;
-#endif
             if (mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
                 bIsHWENCSupport = true;
         }
 
-
         if (!isHyperEncodeRequired(par) || bIsHyperEncodeSingleFallbackMode)
-
+#endif
         {
             CodecId2Handlers::const_iterator handler;
             handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId));
@@ -567,8 +565,10 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     // return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM in the case of hyper encode single fallback mode
     mfxRes = (mfxRes == MFX_ERR_NONE && bIsHyperEncodeSingleFallbackMode) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : mfxRes;
+#endif
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, request);
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);

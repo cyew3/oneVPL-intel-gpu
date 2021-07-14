@@ -2008,11 +2008,10 @@ mfxStatus D3D9Encoder::QueryStatusAsync(
     // in case if TDR occur driver device failed, runtime always return S_OK and doesn't change anything in fitback structures
     for(int i=0; i< (int)m_feedbackUpdate.size(); i++)
         m_feedbackUpdate[i].bStatus = ENCODE_ERROR;
-#ifdef NEW_STATUS_REPORTING_DDI_0915
+    
     ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
     feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
     feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-#endif // NEW_STATUS_REPORTING_DDI_0915
 
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
@@ -2024,13 +2023,8 @@ mfxStatus D3D9Encoder::QueryStatusAsync(
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
                 hr = m_auxDevice->Execute(
                     ENCODE_QUERY_STATUS_ID,
-#ifdef NEW_STATUS_REPORTING_DDI_0915
                     (void *)&feedbackDescr,
                     sizeof(feedbackDescr),
-#else // NEW_STATUS_REPORTING_DDI_0915
-                    (void *)0,
-                    0,
-#endif // NEW_STATUS_REPORTING_DDI_0915
                     &m_feedbackUpdate[0],
                     (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
             }
@@ -3378,11 +3372,9 @@ mfxStatus D3D9SvcEncoder::QueryStatus(
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber[fieldId]);
 
-#ifdef NEW_STATUS_REPORTING_DDI_0915
     ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
     feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
     feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-#endif // NEW_STATUS_REPORTING_DDI_0915
 
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
@@ -3391,13 +3383,8 @@ mfxStatus D3D9SvcEncoder::QueryStatus(
         {
             HRESULT hr = m_auxDevice->Execute(
                 ENCODE_QUERY_STATUS_ID,
-#ifdef NEW_STATUS_REPORTING_DDI_0915
                 (void *)&feedbackDescr,
                 sizeof(feedbackDescr),
-#else // NEW_STATUS_REPORTING_DDI_0915
-                (void *)0,
-                0,
-#endif // NEW_STATUS_REPORTING_DDI_0915
                 &m_feedbackUpdate[0],
                 (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
 

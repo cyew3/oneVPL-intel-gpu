@@ -1180,21 +1180,14 @@ mfxStatus D3D11Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
         {
             if (m_feedback.isUpdateNeeded())
             {
-                 D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-#ifdef NEW_STATUS_REPORTING_DDI_0915
+                D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = {};
                 ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
-                feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS);
-                feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-#endif // NEW_STATUS_REPORTING_DDI_0915
+                feedbackDescr.SizeOfStatusParamStruct  = sizeof(ENCODE_QUERY_STATUS_PARAMS);
+                feedbackDescr.StatusParamType          = QUERY_STATUS_PARAM_FRAME;
                 decoderExtParams.Function              = ENCODE_QUERY_STATUS_ID;
 
-#ifdef NEW_STATUS_REPORTING_DDI_0915
                 decoderExtParams.pPrivateInputData     = &feedbackDescr;
                 decoderExtParams.PrivateInputDataSize  = sizeof(feedbackDescr);
-#else // NEW_STATUS_REPORTING_DDI_0915
-                decoderExtParams.pPrivateInputData     = 0;
-                decoderExtParams.PrivateInputDataSize  = 0;
-#endif // NEW_STATUS_REPORTING_DDI_0915
 
                 decoderExtParams.pPrivateOutputData    = m_feedback.GetPointer();
                 decoderExtParams.PrivateOutputDataSize = m_feedback.GetSize();
@@ -1275,20 +1268,13 @@ mfxStatus D3D11Encoder::QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSize
     if (m_feedback.isUpdateNeeded())
     {
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-#ifdef NEW_STATUS_REPORTING_DDI_0915
         ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
         feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS);
         feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-#endif // NEW_STATUS_REPORTING_DDI_0915
 
         decoderExtParams.Function = ENCODE_QUERY_STATUS_ID;
-#ifdef NEW_STATUS_REPORTING_DDI_0915
         decoderExtParams.pPrivateInputData = &feedbackDescr;
         decoderExtParams.PrivateInputDataSize = sizeof(feedbackDescr);
-#else // NEW_STATUS_REPORTING_DDI_0915
-        decoderExtParams.pPrivateInputData = 0;
-        decoderExtParams.PrivateInputDataSize = 0;
-#endif // NEW_STATUS_REPORTING_DDI_0915
         decoderExtParams.pPrivateOutputData = m_feedback.GetPointer();
         decoderExtParams.PrivateOutputDataSize = m_feedback.GetSize();
         decoderExtParams.ResourceCount = 0;

@@ -23,7 +23,7 @@
 
 #include <mfxvideo++int.h>
 
-#if (defined(_WIN32) || defined(_WIN64)) 
+#if defined(MFX_VA_WIN) 
 #include <windows.h>
 #include <d3d9.h>
 #include <dxva.h>
@@ -39,9 +39,9 @@
 typedef IDirectXVideoDecoderService*    _mfxPlatformAccelerationService;
 typedef IDirect3DSurface9*              _mfxPlatformVideoSurface;
 
-#else // #if (defined(_WIN32) || defined(_WIN64)) 
+#else // #if defined(MFX_VA_WIN) 
 
-#if (defined(LINUX32) || defined(LINUX64) )
+#if defined(MFX_VA_LINUX)
 /* That's tricky: if LibVA will not be installed on the machine, you should be able
  * to build SW Media SDK and some apps in SW mode. Thus, va.h should not be visible.
  * Since we develop on machines where LibVA is installed, we forget about LibVA-free
@@ -50,7 +50,7 @@ typedef IDirect3DSurface9*              _mfxPlatformVideoSurface;
 #include <va/va.h>
 typedef VADisplay                       _mfxPlatformAccelerationService;
 typedef VASurfaceID                     _mfxPlatformVideoSurface;
-#endif // #if (defined(LINUX32) || defined(LINUX64) )
+#endif // #if defined(MFX_VA_LINUX)
 
 #ifndef D3DDDIFORMAT
 #define D3DDDIFORMAT        D3DFORMAT
@@ -67,7 +67,7 @@ typedef unsigned char  UCHAR;
 typedef unsigned short USHORT;
 typedef unsigned int   UINT;
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 typedef long            LONG;
 typedef unsigned long   ULONG;
 typedef unsigned long   DWORD;
@@ -84,6 +84,6 @@ typedef unsigned long long UINT64;
 
 typedef int D3DFORMAT;
 
-#endif // #if (defined(_WIN32) || defined(_WIN64)) 
+#endif // #if defined(MFX_VA_WIN) 
 
 #endif // __MFX_PLATFORM_HEADERS_H__

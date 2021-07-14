@@ -32,9 +32,9 @@
 #include "mfx_utils.h"
 
 // from pavp
-#ifndef PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
-#define PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
 
+namespace UMC
+{
 typedef enum
 {
     // Available counter types
@@ -58,8 +58,6 @@ typedef struct tagPAVP_ENCRYPTION_MODE
     PAVP_COUNTER_TYPE       eCounterMode;
 } PAVP_ENCRYPTION_MODE;
 
-#endif // PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
-
 typedef struct _DXVA_Intel_Pavp_Protocol
 {
     DXVA_EncryptProtocolHeader EncryptProtocolHeader;
@@ -74,9 +72,6 @@ typedef struct _DXVA_Intel_Pavp_Protocol2
     DWORD                      dwAesCounter[4];
     PAVP_ENCRYPTION_MODE       PavpEncryptionMode;
 } DXVA_Intel_Pavp_Protocol2, *PDXVA_Intel_Pavp_Protocol2;
-
-namespace UMC
-{
 
 class ProtectedVA
 {

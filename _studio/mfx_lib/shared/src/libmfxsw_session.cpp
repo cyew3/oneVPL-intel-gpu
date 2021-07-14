@@ -189,14 +189,6 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
     return MFX_ERR_NONE;
 }
 
-#if 0
-mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
-{
-    session; msg; size;
-    return MFX_ERR_UNSUPPORTED;
-}
-#endif
-
 mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_session)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInternalPseudoJoinSession");

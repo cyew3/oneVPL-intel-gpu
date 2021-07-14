@@ -34,8 +34,6 @@
  *  changes interface 
  */
 
-#define DDI_086
-
 /* EncoderDevice device functions */
 #endif
 

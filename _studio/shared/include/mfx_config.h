@@ -163,12 +163,18 @@
 #endif
 
 #if defined(MFX_ENABLE_AV1_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
-#define MFX_ENABLE_AV1_VIDEO_CODEC
+    #define MFX_ENABLE_AV1_VIDEO_CODEC
 #endif
+
+#define MFX_ENABLE_QIMPLDESC_MEDIA_ADAPTER_TYPE //API 2.5
 
 // Per component configs
 #include "mfx_config_decode.h"
 #include "mfx_config_encode.h"
 #include "mfx_config_vpp.h"
+
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
+    #define MFX_ENABLE_GLOBAL_HW_EVENT
+#endif
 
 #endif // _MFX_CONFIG_H_

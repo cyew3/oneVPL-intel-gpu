@@ -114,7 +114,7 @@ mfxStatus MFXVideoDECODE_VPP_Init(mfxSession session, mfxVideoParam* decode_par,
                 if (channelPar->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_SCALING) {
                     switch (reinterpret_cast<mfxExtVPPScaling*>(channelPar->ExtParam[i])->ScalingMode) {
                     case MFX_SCALING_MODE_INTEL_GEN_VDBOX:
-#ifdef MFX_VA_WIN
+#if defined(MFX_VA_WIN)
                         if (session->m_pCORE->GetVAType() == MFX_HW_D3D11)
                         {
                             // Decoded output can't be return on windows in case of VDBOX + SFC.
@@ -122,12 +122,10 @@ mfxStatus MFXVideoDECODE_VPP_Init(mfxSession session, mfxVideoParam* decode_par,
                             vppScalingModeMap[id] = MFX_SCALING_MODE_LOWPOWER;
                         }
                         else
+#endif
                         {
-#endif
                             session->m_pDVP->sfcChannelID = sfcChannelID = id;
-#ifdef MFX_VA_WIN
                         }
-#endif
                         break;
                     case MFX_SCALING_MODE_INTEL_GEN_VEBOX:
                         vppScalingModeMap[id] = MFX_SCALING_MODE_LOWPOWER;

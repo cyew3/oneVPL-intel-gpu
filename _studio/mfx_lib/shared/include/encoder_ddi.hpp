@@ -23,14 +23,8 @@
 #ifndef _ENCODER_DDI_HPP
 #define _ENCODER_DDI_HPP
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include "mfx_trace.h"
-#define DDI_086
-#define AVC_DDI_VERSION_0952
-#define AVC_DDI_VERSION_0960
-#define AVC_DDI_VERSION_0964
-#define AVC_DDI_VERSION_0965
-#define AVC_DDI_VERSION_0969
 
 #include "mfx_ext_ddi.h"
 
@@ -221,9 +215,6 @@ typedef enum tagREF_FRAME_TYPE
     ENCODE_UNCOMPRESSED_BUFFER_RECON    = 2
 } REF_FRAME_TYPE;
 
-#ifndef PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
-#define PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
-
 typedef struct tagPAVP_ENCRYPTION_MODE
 {
     UINT    eEncryptionType;
@@ -257,7 +248,6 @@ enum
     PAVP_COUNTER_TYPE_C = 4
 };
 #endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#endif // PAVP_ENCRYPTION_TYPE_AND_COUNTER_DEFINES
 
 typedef struct tagENCODE_CREATEDEVICE
 {
@@ -632,7 +622,6 @@ typedef struct tagENCODE_CAPS
     };
     UCHAR    MaxNum_WeightedPredL0;
     UCHAR    MaxNum_WeightedPredL1;
-#ifdef AVC_DDI_VERSION_0952
     USHORT   reserved16bits0;
     USHORT   reserved16bits1;
     USHORT   MaxNumOfConcurrentFramesMinus1;
@@ -641,7 +630,6 @@ typedef struct tagENCODE_CAPS
     UINT     reserved32bits1;
     UINT     reserved32bits2;
     UINT     reserved32bits3;
-#endif
 } ENCODE_CAPS;
 
 //Linux compatibility
@@ -1050,19 +1038,15 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
     ENCODE_SCENARIO ScenarioInfo;
     ENCODE_CONTENT  ContentInfo;
     ENCODE_FRAME_SIZE_TOLERANCE FrameSizeTolerance;
-#ifdef AVC_DDI_VERSION_0952
     USHORT  SlidingWindowSize;
     UINT    MaxBitRatePerSlidingWindow;
     UINT    MinBitRatePerSlidingWindow;
-#endif
-#ifdef AVC_DDI_VERSION_0969
     union {
         UCHAR   LookaheadDepth;
         UCHAR   TargetFrameSizeConfidence;
     };
 
     UCHAR   reserved8b[3];
-#endif
 } ENCODE_SET_SEQUENCE_PARAMETERS_H264;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_MPEG2
@@ -1230,7 +1214,6 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     CHAR            MaxDeltaQp; // [-51..51]
     CHAR            MinDeltaQp; // [-51..51]
 
-#ifdef AVC_DDI_VERSION_0960
     union
     {
         struct
@@ -1243,7 +1226,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
         } fields;
         UINT value;
     } CustomRoundingOffsetsParams;
-#endif
+
     // Skip Frames
     UCHAR           SkipFrameFlag;
     UCHAR           NumSkipFrames;
@@ -1269,13 +1252,10 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     UCHAR                               AdditionalZeroByte;
     UCHAR                               AdditionalNALHeaderSize;
 
-#ifdef AVC_DDI_VERSION_0960
     UCHAR       NumDeltaQpForNonRectROI;   // [0..15]
     CHAR        NonRectROIDeltaQpList[16];
 
     UINT        TargetFrameSize;
-#endif
-#ifdef AVC_DDI_VERSION_0964
     USHORT      SourceMarkerStartX;
     USHORT      SourceMarkerStartY;
     UCHAR*      SourceMarkerValue;
@@ -1286,7 +1266,6 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     UCHAR       reserved8b[2];
 
     UINT        reserved32b[7];
-#endif
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_MPEG2

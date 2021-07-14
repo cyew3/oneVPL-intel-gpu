@@ -149,6 +149,7 @@ mfxFrameSurface1 MakeSurface(mfxFrameInfo const& fi, mfxMemId mid);
 mfxU16 BitDepthFromFourcc(mfxU32 fourcc);
 mfxU16 ChromaFormatFromFourcc(mfxU32 fourcc);
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
 class mfxBitstreamWrapperWithLock : public mfxBitstream
 {
 public:
@@ -175,5 +176,6 @@ private:
 
     std::vector<mfxU8> m_data;
 };
+#endif //MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
 
 #endif

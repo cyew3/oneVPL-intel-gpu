@@ -74,4 +74,4 @@ target_link_libraries(mfx_common_hw
     mfx_sdl_properties
   )
 
-include(sources_ext.cmake optional)
+include(sources_ext.cmake OPTIONAL)

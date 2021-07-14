@@ -519,6 +519,7 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
             impl.VendorImplID     = adapterNum;
             impl.AccelerationMode = core.GetVAType() == MFX_HW_VAAPI ? MFX_ACCEL_MODE_VIA_VAAPI : MFX_ACCEL_MODE_VIA_D3D11;
 
+#if defined(MFX_ENABLE_QIMPLDESC_MEDIA_ADAPTER_TYPE)
             impl.Dev.Version.Version  = MFX_STRUCT_VERSION(1, 1);
             impl.Dev.MediaAdapterType = MFX_MEDIA_UNKNOWN;
 
@@ -528,6 +529,7 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
                 if (MFX_ERR_NONE == pCore1_19->QueryPlatform(&platform))
                     impl.Dev.MediaAdapterType = platform.MediaAdapterType;
             }
+#endif //MFX_ENABLE_QIMPLDESC_MEDIA_ADAPTER_TYPE
 
             snprintf(impl.Dev.DeviceID, sizeof(impl.Dev.DeviceID), "%x/%d", deviceId, adapterNum);
             snprintf(impl.ImplName, sizeof(impl.ImplName), "mfx-gen");

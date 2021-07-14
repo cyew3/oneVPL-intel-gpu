@@ -20,6 +20,7 @@
 
 #if defined(MFX_ENABLE_UNIT_TEST_CORE)
 
+#include "mfx_config.h"
 #include "mfxpavp.h"
 
 #if (defined(_WIN32) || defined(_WIN64))

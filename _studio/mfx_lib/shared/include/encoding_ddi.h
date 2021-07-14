@@ -21,7 +21,7 @@
 #ifndef __ENCODING_DDI_H__
 #define __ENCODING_DDI_H__
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 
 #pragma warning(disable: 4201)
 
@@ -32,8 +32,6 @@
 #define D3DDDIFORMAT        D3DFORMAT
 #define DXVADDI_VIDEODESC   DXVA2_VideoDesc
 #include "encoder_ddi.hpp"
-#define NEW_STATUS_REPORTING_DDI_0915
-//#pragma pack(push, 4)
 
 static const mfxU32 NUM_MV_PER_MB = 2 * 16;
 
@@ -145,7 +143,6 @@ enum REGISTRATION_OP
     REG_UNREGISTER  = 2
 };
 
-#ifdef NEW_STATUS_REPORTING_DDI_0915
 // new encode query status interface (starting from DDI 0.915)
 typedef struct tagENCODE_QUERY_STATUS_PARAMS_DESCR
 {
@@ -163,7 +160,6 @@ typedef enum tagENCODE_QUERY_STATUS_PARAM_TYPE
     QUERY_STATUS_PARAM_EXT = 2, // Extended Status Report Format, not always supported
     QUERY_STATUS_PARAM_DIRECT = 3 // HW direct writeup mode
 } ENCODE_QUERY_STATUS_PARAM_TYPE;
-#endif // NEW_STATUS_REPORTING_DDI_0915
 
 typedef struct tagENCODE_AES128_CIPHER_COUNTER
 {
@@ -185,7 +181,6 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     CHAR    SuggestedQpYDelta;
     UCHAR   NumberPasses;
     UCHAR   AverageQP;
-#ifdef NEW_STATUS_REPORTING_DDI_0915
     union
     {
         struct
@@ -214,8 +209,6 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     USHORT  reserved16b;
     UINT    Reserved3;
     UINT    Reserved4;
-
-#endif // NEW_STATUS_REPORTING_DDI_0915
 
 } ENCODE_QUERY_STATUS_PARAMS, *PENCODE_QUERY_STATUS_PARAMS;
 
@@ -348,7 +341,6 @@ typedef enum
     AUXDEV_DESTROY_ACCEL_SERVICE            = 9
 } AUXDEV_FUNCTION_ID;
 
-#ifdef DDI_086
 typedef struct tagENCODE_SET_VUI_PARAMETER
 {
     UINT    AspectRatioInfoPresentFlag          : 1;
@@ -398,45 +390,6 @@ typedef struct tagENCODE_SET_VUI_PARAMETER
     UCHAR   TimeOffsetLength;
 
 } ENCODE_SET_VUI_PARAMETER;
-#else
-typedef struct tagENCODE_SET_VUI_PARAMETER
-{
-    UINT    AspectRatioInfoPresentFlag      : 1;
-    UINT    OverscanInfoPresentFlag         : 1;
-    UINT    OverscanAppropriateFlag         : 1;
-    UINT    VideoSignalTypePresentFlag      : 1;
-    UINT    VideoFullRangeFlag              : 1;
-    UINT    ColourDescriptionPresentFlag    : 1;
-    UINT    ChromaLocInfoPresentFlag        : 1;
-    UINT    TimingInfoPresentFlag           : 1;
-    UINT    FixedFrameRateFlag              : 1;
-    UINT    NalHrdParametersPresentFlag     : 1;
-    UINT    VclHrdParametersPresentFlag     : 1;
-    UINT    LowDelayHrdFlag                 : 1;
-    UINT    PicStructPresentFlag            : 1;
-    UINT    CbrFlag                         : 1;
-    UINT                                    : 18;
-    UCHAR   AspectRatioIdc;
-    USHORT  SarWidth;
-    USHORT  SarHeight;
-    UCHAR   VideoFormat;
-    UCHAR   ColourPrimaries;
-    UCHAR   TransferCharacteristics;
-    UCHAR   MatrixCoefficients;
-    UCHAR   ChromaSampleLocTypeTopField;
-    UCHAR   ChromaSampleLocTypeBottomField;
-    UINT    NumUnitsInTick;
-    UINT    TimeScale;
-
-    // HRD parameters assume cpb_cnt == 0
-    UCHAR   InitialCpbRemovalDelayLengthMinus1;
-    UCHAR   CpbRemovalDelayLengthMinus1;
-    UCHAR   DpbOutputDelayLengthMinus1;
-    UCHAR   TimeOffsetLength;
-    UCHAR   BitRateValueMinus1;
-    UCHAR   CpbSizeValueMinus1;
-} ENCODE_SET_VUI_PARAMETER;
-#endif
 
 // statuses returned by ENCODE_QUERY_STATUS_ID
 enum

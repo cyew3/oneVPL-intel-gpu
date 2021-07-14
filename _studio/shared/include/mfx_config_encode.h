@@ -49,6 +49,12 @@
     #if defined(MFX_ENABLE_MCTF) && defined(MFX_ENABLE_KERNELS)
         #define MFX_ENABLE_MCTF_IN_AVC
     #endif
+    #if !defined(MFX_ENABLE_VIDEO_BRC_COMMON)
+        #define MFX_ENABLE_VIDEO_BRC_COMMON
+    #endif
+    #if !defined(UMC_ENABLE_VIDEO_BRC)
+        #define UMC_ENABLE_VIDEO_BRC
+    #endif
 #endif
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -67,6 +73,15 @@
             #define MFX_ENABLE_HEVC_CUSTOM_QMATRIX
         #endif
         #define MFX_ENABLE_HEVCE_SCC
+    #endif
+#endif
+
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+    #if !defined(MFX_ENABLE_VIDEO_BRC_COMMON)
+        #define MFX_ENABLE_VIDEO_BRC_COMMON
+    #endif
+    #if !defined(UMC_ENABLE_VIDEO_BRC)
+        #define UMC_ENABLE_VIDEO_BRC
     #endif
 #endif
 
