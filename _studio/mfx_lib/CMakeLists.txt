@@ -110,6 +110,11 @@ set(LIBS
   ${CMAKE_DL_LIBS}
 )
 
+target_compile_features (mfxcore
+  PRIVATE
+    $<$<PLATFORM_ID:Windows>:cxx_std_17>
+)
+
 target_compile_definitions(mfxcore
   PUBLIC
     MFX_VA

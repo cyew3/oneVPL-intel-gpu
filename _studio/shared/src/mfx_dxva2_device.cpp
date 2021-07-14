@@ -30,6 +30,10 @@
 
 #include "mfx_dxva2_device.h"
 
+#include <atlbase.h>
+#include <cfgmgr32.h>
+#include <devguid.h>
+#include <regex>
 
 using namespace MFX;
 
@@ -59,32 +63,37 @@ DXDevice::~DXDevice(void)
 mfxU32 DXDevice::GetVendorID(void) const
 {
     return m_vendorID;
-
-} // mfxU32 DXDevice::GetVendorID(void) const
+}
 
 mfxU32 DXDevice::GetDeviceID(void) const
 {
     return m_deviceID;
+}
 
-} // mfxU32 DXDevice::GetDeviceID(void) const
+mfxU32 DXDevice::GetSubSysId() const
+{
+    return m_subSysId;
+}
+
+mfxU32 DXDevice::GetRevision() const
+{
+    return m_revision;
+}
 
 mfxU64 DXDevice::GetDriverVersion(void) const
 {
     return m_driverVersion;
-    
-}// mfxU64 DXDevice::GetDriverVersion(void) const
+}
 
 mfxU64 DXDevice::GetLUID(void) const
 {
     return m_luid;
-
-} // mfxU64 DXDevice::GetLUID(void) const
+}
 
 mfxU32 DXDevice::GetAdapterCount(void) const
 {
     return m_numAdapters;
-
-} // mfxU32 DXDevice::GetAdapterCount(void) const
+}
 
 void DXDevice::Close(void)
 {
@@ -94,7 +103,7 @@ void DXDevice::Close(void)
     m_deviceID = 0;
     m_luid = 0;
 
-} // void DXDevice::Close(void)
+}
 
 void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 {
@@ -123,9 +132,6 @@ void DXDevice::UnloadDLLModule(void)
     }
 
 } // void DXDevice::UnloaDLLdModule(void)
-
-typedef
-HRESULT (WINAPI *DXGICreateFactoryFunc) (REFIID riid, void **ppFactory);
 
 DXGI1Device::DXGI1Device(void)
 {
@@ -169,17 +175,18 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
         LoadDLLModule(L"dxgi.dll");
     }
 
+    typedef
+        HRESULT (WINAPI *DXGICreateFactoryFunc) (REFIID riid, void **ppFactory);
+
     if (m_hModule)
     {
-        DXGICreateFactoryFunc pFunc;
         IDXGIFactory1 *pFactory;
         IDXGIAdapter1 *pAdapter;
-        DXGI_ADAPTER_DESC1 desc;
         mfxU32 curAdapter, maxAdapters;
         HRESULT hRes;
 
         // load address of procedure to create DXGI factory 1
-        pFunc = (DXGICreateFactoryFunc) GetProcAddress(m_hModule, "CreateDXGIFactory1");
+        DXGICreateFactoryFunc pFunc = (DXGICreateFactoryFunc) GetProcAddress(m_hModule, "CreateDXGIFactory1");
         if (NULL == pFunc)
         {
             return false;
@@ -229,6 +236,7 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
         pAdapter = (IDXGIAdapter1 *) m_pDXGIAdapter1;
 
         // get the adapter's parameters
+        DXGI_ADAPTER_DESC1 desc;
         hRes = pAdapter->GetDesc1(&desc);
         if (FAILED(hRes))
         {
@@ -238,6 +246,9 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
         // save the parameters
         m_vendorID = desc.VendorId;
         m_deviceID = desc.DeviceId;
+        m_subSysId = desc.SubSysId;
+        m_revision = desc.Revision;
+
         *((LUID *) &m_luid) = desc.AdapterLuid;
     }
 
@@ -295,25 +306,99 @@ bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum)
 mfxU32 DXVA2Device::GetVendorID(void) const
 {
     return m_vendorID;
-
-} // mfxU32 DXVA2Device::GetVendorID(void) const
+}
 
 mfxU32 DXVA2Device::GetDeviceID(void) const
 {
     return m_deviceID;
-
-} // mfxU32 DXVA2Device::GetDeviceID(void) const
+}
 
 mfxU64 DXVA2Device::GetDriverVersion(void) const
 {
     return m_driverVersion;
-}// mfxU64 DXVA2Device::GetDriverVersion(void) const
+}
 
 mfxU32 DXVA2Device::GetAdapterCount(void) const
 {
     return m_numAdapters;
 
-} // mfxU32 DXVA2Device::GetAdapterCount(void) const
+}
+#if defined(MFX_VA_WIN)
+//Returns array of all registered (in DriverStore) RTs
+namespace MFX
+{
+    std::vector<std::tuple<
+        std::wstring /*path*/, mfxU32 /*deviceId*/, mfxU32 /*subSysId*/, mfxU32 /*revision*/
+    > > QueryRegisteredRuntimes()
+    {
+        std::vector<std::tuple<
+            std::wstring /*path*/, mfxU32 /*deviceId*/, mfxU32 /*subSysId*/, mfxU32 /*revision*/
+        > > instances;
+
+        std::vector<wchar_t> filter(40);
+        StringFromGUID2(GUID_DEVCLASS_DISPLAY, filter.data(), int(filter.size()));
+
+        ULONG size;
+        if (CM_Get_Device_ID_List_SizeW(&size, filter.data(), CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT) != CR_SUCCESS)
+            return instances;
+
+        std::vector<wchar_t> list(size);
+        if (CM_Get_Device_ID_List(filter.data(), list.data(), ULONG(list.size()), CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT) != CR_SUCCESS)
+            return instances;
+
+        //copy the full sequence of null-terminated strings
+        std::wistringstream ss(std::wstring(list.data(), list.data() + list.size()));
+
+        /*
+        * Identifier must be in the form of PCI\\VEN_v(4)&DEV_d(4)&SUBSYS_s(4)n(4)&REV_r(2)\<Instance-Id>
+        * v(4) - FOURCC of PCI SIG-assigned identifier for the device
+        * d(4) - FOURCC of vendor's defined identifier for the device
+        * s(4) - FOURCC of vendor's defined subsystem identifier
+        * n(4) - FOURCC of PCI SIG-assigned identifier for the subsystem
+        * r(2) - Two-characters revision's number
+        * Instance-Id - unspecified string that identifies the device among other devices w/ the same type
+        */
+        std::wregex r(
+            LR"x(PCI\\VEN_([[:xdigit:]]{4})&DEV_([[:xdigit:]]{4})&SUBSYS_([[:xdigit:]]{8})&REV_([[:xdigit:]]{2})\\.*)x",
+            std::regex::icase
+        );
+
+        std::vector<wchar_t> id(list.size());
+        while (ss.getline(id.data(), id.size(), L'\0'))
+        {
+            std::wcmatch m;
+            if (!std::regex_match(id.data(), m, r)
+                || m.size() < 5
+                || wcstoul(m[1].str().c_str(), nullptr, 16) != 0x8086
+            )
+                continue;
+
+            DEVINST instance;
+            if (CM_Locate_DevNodeW(&instance, reinterpret_cast<DEVINSTID>(id.data()), CM_LOCATE_DEVNODE_NORMAL) != CR_SUCCESS)
+                continue;
+
+            CRegKey key;
+            if (CM_Open_DevNode_Key(instance, KEY_READ, 0, RegDisposition_OpenExisting, &key.m_hKey, CM_REGISTRY_SOFTWARE) != CR_SUCCESS)
+                continue;
+
+            std::vector<wchar_t> path(1024);
+            size = ULONG(path.size() * sizeof(std::wstring::value_type));
+            key.QueryValue(L"DriverStorePathForVPL", nullptr, reinterpret_cast<BYTE*>(path.data()), &size);
+
+            mfxU32 const deviceId = wcstoul(m[2].str().c_str(), nullptr, 16);
+            mfxU32 const subSysId = wcstoul(m[3].str().c_str(), nullptr, 16);
+            mfxU32 const revision = wcstoul(m[4].str().c_str(), nullptr, 16);
+
+            instances.push_back(
+                std::make_tuple(path.data(), deviceId, subSysId, revision)
+            );
+        }
+
+        return std::move(instances);
+    }
+}
+#endif //MFX_VA_WIN
+
 #else
 #include "mfx_dxva2_device.h"
 namespace MFX
@@ -322,19 +407,23 @@ namespace MFX
         : m_numAdapters(0)
         , m_vendorID(0)
         , m_deviceID(0)
+        , m_subSysId(0)
+        , m_revision(0)
         , m_driverVersion(0)
         , m_luid (0)
     {}
     DXDevice::~DXDevice(void) {}
 
     // Obtain graphic card's parameter
-    mfxU32 DXDevice::GetVendorID(void) const {return 0;}
-    mfxU32 DXDevice::GetDeviceID(void) const {return 0;}
-    mfxU64 DXDevice::GetDriverVersion(void) const { return 0; }
-    mfxU64 DXDevice::GetLUID(void) const { return 0; }
-    mfxU32 DXDevice::GetAdapterCount(void) const { return 0; }
+    mfxU32 DXDevice::GetVendorID() const { return 0; }
+    mfxU32 DXDevice::GetDeviceID() const { return 0; }
+    mfxU32 DXDevice::GetSubSysId() const { return 0; }
+    mfxU32 DXDevice::GetRevision() const { return 0; }
+    mfxU64 DXDevice::GetDriverVersion() const { return 0; }
+    mfxU64 DXDevice::GetLUID() const { return 0; }
+    mfxU32 DXDevice::GetAdapterCount() const { return 0; }
     void DXDevice::LoadDLLModule(const wchar_t * /*pModuleName*/) { return; }
-    
+
     DXVA2Device::DXVA2Device(void)
         : m_numAdapters(0)
         , m_vendorID(0)

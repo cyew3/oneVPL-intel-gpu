@@ -29,9 +29,8 @@
 #include <set>
 
 #if defined(MFX_VA_WIN)
-#include <windows.h>
-#include <tchar.h>
 #include "mfx_dxva2_device.h"
+#include <filesystem>
 #endif
 #if defined(MFX_VA_LINUX)
 #include <unistd.h>
@@ -502,19 +501,14 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
     try
     {
         std::unique_ptr<mfx::ImplDescriptionHolder> holder(new mfx::ImplDescriptionHolder);
-        std::set<mfxU32> deviceIds;
-
         auto IsVplHW = [](eMFXHWType hw) -> bool
         {
             return hw >= MFX_HW_TGL_LP;
         };
         auto QueryImplDesc = [&](VideoCORE& core, mfxU32 deviceId, mfxU32 adapterNum) -> bool
         {
-            if (   !IsVplHW(core.GetHWType())
-                || deviceIds.end() != deviceIds.find(deviceId))
+            if (!IsVplHW(core.GetHWType()))
                 return true;
-
-            deviceIds.insert(deviceId);
 
             auto& impl = holder->PushBack();
 
@@ -548,21 +542,71 @@ mfxHDL* MFX_CDECL MFXQueryImplsDescription(mfxImplCapsDeliveryFormat format, mfx
         };
 
 #if defined(MFX_VA_WIN)
+        //array of tuples <std::wstring /*path*/, mfxU32 /*deviceId*/, mfxU32 /*subSysId*/, mfxU32 /*revision*/>
+        auto instances = MFX::QueryRegisteredRuntimes();
+
+        //Get the module instance of this RT
+        HMODULE module;
+        if (!GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCWSTR>(MFXQueryImplsDescription), &module)
+        )
+            return nullptr;
+
+        std::wstring name(1024, L'\0');
+        if (!GetModuleFileNameW(module, name.data(), DWORD(name.size())))
+            return nullptr;
+
+        auto path = std::filesystem::path(name.c_str()).parent_path();
+
+        //Check if this RT is loaded from any registered (DriverStore) path,
+        //do not try to verify adapter (deviceId/subSysId/revision) otherwise
+        bool needCheckAdapter = std::find_if(
+            std::begin(instances), std::end(instances),
+            [&](auto const& p)
+            { return path == std::get<0>(p); }
+        ) != std::end(instances);
+
+        auto CheckAdapter = [&](mfxU32 deviceId, mfxU32 subSysId, mfxU32 revision)
+        {
+            auto i = std::find_if(
+                std::begin(instances), std::end(instances),
+                [&](auto const& p)
+                {
+                    return
+                           std::get<1>(p) == deviceId
+                        && std::get<2>(p) == subSysId
+                        && std::get<3>(p) == revision;
+                }
+            );
+
+            return
+                   i != std::end(instances)
+                && path == std::get<0>(*i);
+        };
+
         for (mfxU32 adapter = 0;; ++adapter)
         {
             mfxU32 deviceId = 0;
-
+            mfxU32 subSysId = 0;
+            mfxU32 revision = 0;
             {
-                MFX::DXVA2Device dxvaDevice;
+                MFX::DXGI1Device dxgiDevice;
 
-                if (!dxvaDevice.InitDXGI1(adapter))
+                if (!dxgiDevice.Init(adapter))
                     break;
 
-                if (0x8086 != dxvaDevice.GetVendorID())
+                if (0x8086 != dxgiDevice.GetVendorID())
                     continue;
 
-                deviceId = dxvaDevice.GetDeviceID();
+                deviceId = dxgiDevice.GetDeviceID();
+                subSysId = dxgiDevice.GetSubSysId();
+                revision = dxgiDevice.GetRevision();
             }
+
+            bool matched = !needCheckAdapter || CheckAdapter(deviceId, subSysId, revision);
+            if (!matched)
+                continue;
 
             std::unique_ptr<VideoCORE> pCore(FactoryCORE::CreateCORE(MFX_HW_D3D11, adapter, 0));
 

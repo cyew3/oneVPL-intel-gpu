@@ -21,8 +21,10 @@
 #if !defined(__MFX_DXVA2_DEVICE_H)
 #define __MFX_DXVA2_DEVICE_H
 
-#if defined(MFX_VA_WIN) 
+#if defined(MFX_VA_WIN)
 #include <windows.h>
+#include <vector>
+#include <tuple>
 #endif
 
 #include <mfxdefs.h>
@@ -46,6 +48,8 @@ public:
     // Obtain graphic card's parameter
     mfxU32 GetVendorID(void) const;
     mfxU32 GetDeviceID(void) const;
+    mfxU32 GetSubSysId() const;
+    mfxU32 GetRevision() const;
     mfxU64 GetDriverVersion(void) const;
     mfxU64 GetLUID(void) const;
 
@@ -74,6 +78,10 @@ protected:
 
     // Vendor ID
     mfxU32 m_vendorID;
+
+    mfxU32 m_subSysId;
+    mfxU32 m_revision;
+
     // Device ID
     mfxU32 m_deviceID;
     // x.x.x.x each x of two bytes
@@ -151,6 +159,13 @@ private:
     DXVA2Device(const DXVA2Device &);
     void operator=(const DXVA2Device &);
 };
+
+#if defined(MFX_VA_WIN)
+//Returns array of all registered (in DriverStore) RTs
+std::vector<std::tuple<
+    std::wstring /*path*/, mfxU32 /*deviceId*/, mfxU32 /*subSysId*/, mfxU32 /*revision*/
+> > QueryRegisteredRuntimes();
+#endif //MFX_VA_WIN
 
 } // namespace MFX
 
