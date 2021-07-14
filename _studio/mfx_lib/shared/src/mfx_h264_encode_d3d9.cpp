@@ -1546,7 +1546,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
         m_feedbackUpdate.resize(response.NumFrameActual);
         m_feedbackCached.Reset(response.NumFrameActual);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         m_EventCache->Init(response.NumFrameActual);
 #endif
     }
@@ -1923,7 +1923,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(
             HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
             // allocate the event
             DdiTask & task1 = RemoveConst(task);
             task1.m_GpuEvent[fieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;

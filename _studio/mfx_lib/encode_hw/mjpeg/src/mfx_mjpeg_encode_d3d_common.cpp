@@ -39,7 +39,7 @@ D3DXCommonEncoder::~D3DXCommonEncoder()
 {
 }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
 {
     MFX_CHECK_NULL_PTR1(pCore);
@@ -61,7 +61,7 @@ mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
 
 mfxStatus D3DXCommonEncoder::WaitTaskSync(DdiTask & task, mfxU32 timeOutMs)
 {
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "JPEG encode DDIWaitTaskSync");
     HRESULT waitRes = WaitForSingleObject(task.m_GpuEvent.gpuSyncEvent, timeOutMs);
 
@@ -81,7 +81,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task)
     mfxStatus sts = MFX_ERR_NONE;
 
     // use GPUTaskSync call to wait task completion.
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
 
     sts = WaitTaskSync(task, DEFAULT_WAIT_HW_TIMEOUT_MS);
     MFX_CHECK_STS(sts);
@@ -105,7 +105,7 @@ mfxStatus D3DXCommonEncoder::Execute(DdiTask &task, mfxHDL surface)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     // Put dummy event in the task
     task.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
 #endif

@@ -356,7 +356,7 @@ mfxStatus D3D9Encoder::Register(const mfxFrameAllocResponse* pResponse, D3DDDIFO
     hr = m_pDevice->EndFrame(0);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     if (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA && m_bIsBlockingTaskSyncEnabled)
     {
         m_EventCache->Init(256); // allocate a cache for 256 elements as _NUM_STORED_FEEDBACKS
@@ -614,7 +614,7 @@ mfxStatus D3D9Encoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, m
         hr = m_pDevice->BeginFrame((IDirect3DSurface9 *)pExecuteBuffers->m_pSurface,0);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         if (m_bIsBlockingTaskSyncEnabled)
         {
             // allocate the event

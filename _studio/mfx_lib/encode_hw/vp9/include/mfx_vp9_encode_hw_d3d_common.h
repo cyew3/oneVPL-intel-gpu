@@ -30,7 +30,7 @@
 #include "mfx_interface_scheduler.h"
 #include "mfx_vp9_encode_hw_utils.h"
 #include "mfx_vp9_encode_hw_ddi.h"
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 #include "mfx_win_event_cache.h"
 #endif
 
@@ -45,12 +45,12 @@ namespace MfxHwVP9Encode
             ~D3DXCommonEncoder();
 
         // It may be blocking or not blocking call
-        // depend on define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        // depend on define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         virtual
             mfxStatus QueryStatus(
                 Task & task) override;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         // Init
         virtual
             mfxStatus InitBlockingSync(
@@ -66,9 +66,9 @@ namespace MfxHwVP9Encode
             mfxStatus QueryStatusAsync(
                 Task & task) = 0;
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         bool m_bIsBlockingTaskSyncEnabled;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         mfxStatus SetGPUSyncEventEnable(VideoCORE *pCore);
 
         // sync call

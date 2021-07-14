@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined(MFX_VA_LINUX) && defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined(MFX_VA_LINUX) && defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
 
 #include "av1ehw_base.h"
 #include "av1ehw_base_data.h"

@@ -1174,7 +1174,7 @@ namespace MfxHwH264Encode
             m_headersCache[0].reserve(10);
             m_headersCache[1].reserve(10);
 #endif
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
             Zero(m_GpuEvent);
 #endif
         }
@@ -1455,7 +1455,7 @@ namespace MfxHwH264Encode
         BRCFrameParams  m_brcFrameParams;
         mfxBRCFrameCtrl m_brcFrameCtrl;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         GPU_SYNC_EVENT_HANDLE m_GpuEvent[2]; // events for every field.
 #endif
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX

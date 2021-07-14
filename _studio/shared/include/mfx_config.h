@@ -130,7 +130,6 @@
 // want to expose on build system level since they are too detailed.
 
 #if defined(MFX_VA_WIN)
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     #define DEFAULT_WAIT_HW_TIMEOUT_MS 60000
     #define MFX_ENABLE_SINGLE_THREAD
 #endif
@@ -172,7 +171,7 @@
 #include "mfx_config_encode.h"
 #include "mfx_config_vpp.h"
 
-#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
     #define MFX_ENABLE_GLOBAL_HW_EVENT
 #endif
 

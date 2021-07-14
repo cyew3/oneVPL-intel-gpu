@@ -155,7 +155,7 @@ namespace MfxHwMpeg2Encode
             , m_fFrameRate()
             , m_FrameRateExtN()
             , m_FrameRateExtD()
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
             , m_GpuEvent()
 #endif
         {}
@@ -215,7 +215,7 @@ namespace MfxHwMpeg2Encode
         mfxU32                                  m_FrameRateExtN;
         mfxU32                                  m_FrameRateExtD;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         GPU_SYNC_EVENT_HANDLE       m_GpuEvent;
 #endif
     };

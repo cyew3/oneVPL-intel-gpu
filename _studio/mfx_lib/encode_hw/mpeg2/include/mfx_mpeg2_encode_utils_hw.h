@@ -463,7 +463,7 @@ namespace MPEG2EncoderHW
         mfxU32              m_FeedbackNumber;
         mfxU32              m_BitstreamFrameNumber;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         GPU_SYNC_EVENT_HANDLE     m_GpuEvent;
 #endif
 
@@ -480,7 +480,7 @@ namespace MPEG2EncoderHW
             m_Frames.Reset();
             m_FeedbackNumber = 0;
             m_BitstreamFrameNumber = 0;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
             m_GpuEvent = {};
 #endif
         }

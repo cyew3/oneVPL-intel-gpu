@@ -5187,7 +5187,7 @@ mfxStatus ImplementationAvc::QueryStatus(
             )) != MFX_ERR_NONE)
                 return Error(sts);
     }
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     else { //free event if any
         if(task.m_GpuEvent[fid].gpuSyncEvent != INVALID_HANDLE_VALUE) {
             // Return event to the EventCache

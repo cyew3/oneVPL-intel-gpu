@@ -72,7 +72,7 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
 
     m_timeoutSync = IsPreSiPlatform(platform) ? DEFAULT_TIMEOUT_AVCE_HW_SIM : DEFAULT_WAIT_HW_TIMEOUT_MS;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     m_EventCache.reset(new EventCache());
     m_EventCache->SetGlobalHwEvent(pSheduler->GetHwEvent());
 #endif
@@ -101,7 +101,7 @@ mfxStatus D3DXCommonEncoder::Execute(mfxHDLPair pair, DdiTask const & task, mfxU
 
     ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK, 0, make_event_data(this), [&](){ return make_event_data(sts);});
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     // Put dummy event in the task. Real event will be attached if the current task is not to be skipped
     DdiTask & task1 = const_cast<DdiTask&>(task);
     task1.m_GpuEvent[fieldId].gpuSyncEvent = INVALID_HANDLE_VALUE;
@@ -119,7 +119,7 @@ mfxStatus D3DXCommonEncoder::WaitTaskSync(
     mfxU32    fieldId,
     mfxU32    timeOutMs)
 {
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "H264 encode DDIWaitTaskSync");
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -151,7 +151,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId, bool us
     ETW_NEW_EVENT(MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK, 0, make_event_data(this), [&](){ return make_event_data(sts);});
 
     // use GPUTaskSync call to wait task completion.
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
     if(useEvent) {
         // If the task was submitted to the driver
         if(task.m_GpuEvent[fieldId].gpuSyncEvent != INVALID_HANDLE_VALUE)

@@ -287,7 +287,7 @@ private:
     std::unique_ptr<CMEnabledCoreAdapter>     m_pCmAdapter;
 
     D3D9DllCallHelper m_d3d9hlp;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     bool m_bIsBlockingTaskSyncEnabled;
 #endif
 };

@@ -38,7 +38,7 @@ namespace MfxHwMJpegEncode
 
         virtual ~D3DXCommonEncoder();
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         mfxStatus InitCommonEnc(VideoCORE *pCore);
 #endif
 

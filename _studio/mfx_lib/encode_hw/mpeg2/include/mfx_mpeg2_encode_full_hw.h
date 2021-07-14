@@ -31,7 +31,7 @@
 #include "mfxvideo++int.h"
 #include "mfx_mpeg2_encode_utils_hw.h"
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 #include "mfx_mpeg2_encode_d3d_common.h"
 #else
 #include "mfx_mpeg2_encode_interface.h"
@@ -46,7 +46,7 @@ namespace MPEG2EncoderHW
     private:
         VideoCORE*                              m_core;
         MfxHwMpeg2Encode::ExecuteBuffers*       m_pExecuteBuffers;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         MfxHwMpeg2Encode::D3DXCommonEncoder*    m_pDdiEncoder;
 #else
         MfxHwMpeg2Encode::DriverEncoder*        m_pDdiEncoder;
@@ -105,7 +105,7 @@ namespace MPEG2EncoderHW
 
               if (!m_pDdiEncoder)
               {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
                   m_pDdiEncoder = dynamic_cast<MfxHwMpeg2Encode::D3DXCommonEncoder*>(MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder(m_core));
                   m_pDdiEncoder->InitCommonEnc(m_core);
 #else
@@ -164,7 +164,7 @@ namespace MPEG2EncoderHW
              pIntTask->m_FeedbackNumber       = m_pExecuteBuffers->m_pps.StatusReportFeedbackNumber;
              pIntTask->m_BitstreamFrameNumber = (mfxU32)m_pExecuteBuffers->m_idxBs;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
              pIntTask->m_GpuEvent = m_pExecuteBuffers->m_GpuEvent;
 #endif
 
@@ -258,7 +258,7 @@ public:
               {
                   return MFX_ERR_NOT_INITIALIZED;
               }
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
               sts = m_pDdiEncoder->FillBSBuffer(pIntTask->m_FeedbackNumber, pIntTask->m_BitstreamFrameNumber, pIntTask->m_pBitstream, &m_pExecuteBuffers->m_encrypt, &pIntTask->m_GpuEvent);
 #else
               sts = m_pDdiEncoder->FillBSBuffer(pIntTask->m_FeedbackNumber, pIntTask->m_BitstreamFrameNumber, pIntTask->m_pBitstream, &m_pExecuteBuffers->m_encrypt);

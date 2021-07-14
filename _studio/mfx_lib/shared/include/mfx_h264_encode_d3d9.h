@@ -69,7 +69,7 @@ namespace MfxHwH264Encode
         {
             return Execute(func, 0, 0, &out, sizeof(out));
         }
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         HRESULT Execute(mfxU32 func, GPU_SYNC_EVENT_HANDLE &in)
         {
             return Execute(func, &in, sizeof(in), 0, 0);

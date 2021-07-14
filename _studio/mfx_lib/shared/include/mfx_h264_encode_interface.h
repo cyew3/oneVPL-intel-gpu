@@ -32,7 +32,7 @@
 
 #include "mfx_h264_enc_common_hw.h"
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 #include "mfx_win_event_cache.h"
 #endif
 
@@ -171,7 +171,7 @@ namespace MfxHwH264Encode
         mfxStatus SetEncCtrlCaps(
             ENCODE_ENC_CTRL_CAPS const & /*caps*/) { return MFX_ERR_UNSUPPORTED; };
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         std::unique_ptr<EventCache> m_EventCache;
 #endif
     };

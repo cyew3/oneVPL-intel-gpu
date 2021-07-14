@@ -71,7 +71,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     MFX_CHECK_NULL_PTR1(core);
 
     mfxStatus sts = MFX_ERR_NONE;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     sts = InitCommonEnc(core);
     MFX_CHECK_STS(sts);
 #endif
@@ -219,7 +219,7 @@ mfxStatus D3D11Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     m_feedbackUpdate.resize(response.NumFrameActual);
     m_feedbackCached.Reset(response.NumFrameActual);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     m_EventCache->Init(response.NumFrameActual);
 #endif
 
@@ -334,7 +334,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
         bufCnt++;
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     {
         // allocate the event
         task.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;

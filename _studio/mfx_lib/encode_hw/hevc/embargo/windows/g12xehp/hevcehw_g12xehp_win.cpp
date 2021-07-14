@@ -40,7 +40,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     , eFeatureMode mode)
     : TBaseImpl(core, status, mode)
 {
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
     if (IsPreSiPlatform(core.GetHWType()))
         GetFeature<Base::BlockingSync>(HEVCEHW::Base::FEATURE_BLOCKING_SYNC).SetTimeout(3600000); // 1 hour
 #endif

@@ -409,7 +409,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
         m_feedbackUpdate.resize( response.NumFrameActual );
         m_feedbackCached.Reset( response.NumFrameActual );
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         m_EventCache->Init(response.NumFrameActual);
 #endif
     }
@@ -743,7 +743,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
 
     if(SkipFlag != 1)
     {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         {
             // allocate the event
             DdiTask & task1 = RemoveConst(task);
@@ -1249,7 +1249,7 @@ mfxU8 convertDX9TypeToDX11Type(mfxU8 type)
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
     case D3DDDIFMT_INTELENCODE_MBCONTROL:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBCONTROL;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     case D3DDDIFMT_INTELENCODE_SYNCOBJECT:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT;
 #endif

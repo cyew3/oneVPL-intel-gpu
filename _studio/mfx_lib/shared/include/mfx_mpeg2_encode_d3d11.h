@@ -42,7 +42,7 @@
 
 namespace MfxHwMpeg2Encode
 {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     class D3D11Encoder : public D3DXCommonEncoder
 #else
     class D3D11Encoder : public DriverEncoder

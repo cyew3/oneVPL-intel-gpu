@@ -26,7 +26,7 @@
 #include "hevcehw_g12_rext_win.h"
 #include "hevcehw_g12_scc_win.h"
 #include "hevcehw_g12_caps_win.h"
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
 #include "hevcehw_base_blocking_sync_win.h"
 #endif
 #include "hevcehw_base_iddi.h"

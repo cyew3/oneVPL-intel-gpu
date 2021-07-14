@@ -125,7 +125,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     bool        isTemporal)
 {
     mfxStatus sts = MFX_ERR_NONE;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     sts = InitCommonEnc(core);
     MFX_CHECK_STS(sts);
 #endif
@@ -293,7 +293,7 @@ mfxStatus D3D9Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     m_feedbackUpdate.resize(response.NumFrameActual);
     m_feedbackCached.Reset(response.NumFrameActual);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     m_EventCache->Init(response.NumFrameActual);
 #endif
 
@@ -391,7 +391,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
         HRESULT hr = m_pAuxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
         // allocate the event
         task.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;

@@ -16,7 +16,7 @@
 #if defined (MFX_VA_WIN)
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 #include "mfx_mpeg2_encode_d3d_common.h"
 
 using namespace MfxHwMpeg2Encode;
@@ -85,7 +85,7 @@ mfxStatus D3DXCommonEncoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, m
     return sts;
 }
 
-#endif // MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#endif // MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 #endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 #endif //#if defined (MFX_VA_WIN)
 /* EOF */

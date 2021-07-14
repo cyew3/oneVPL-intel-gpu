@@ -56,7 +56,7 @@ D3D11VideoCORE_T<Base>::D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 n
     ,   m_bCmCopyAllowed(true)
     ,   m_VideoDecoderConfigCount(0)
     ,   m_Configs()
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     ,   m_bIsBlockingTaskSyncEnabled(false)
 #endif
 {
@@ -718,7 +718,7 @@ void* D3D11VideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
         return (void*)m_pCmAdapter.get();
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     if (MFXBlockingTaskSyncEnabled_GUID == guid)
     {
         m_bIsBlockingTaskSyncEnabled = m_HWType > MFX_HW_SCL;

@@ -1379,7 +1379,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
 
             MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
             task[i]->m_GpuEvent[firstFieldId] = curTask.m_GpuEvent[firstFieldId];
 #endif
         }
@@ -1406,7 +1406,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
                 impl.m_sei);
             MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
             task[i]->m_GpuEvent[!firstFieldId] = curTask.m_GpuEvent[!firstFieldId];
 #endif
         }
@@ -1532,7 +1532,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
                 MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
                 realTask.m_GpuEvent[firstFieldId] = dummyTask.m_GpuEvent[firstFieldId];
 #endif
                 // submit 2nd field of 'dummy' task to driver
@@ -1546,7 +1546,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
                     MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
                     realTask.m_GpuEvent[!firstFieldId] = dummyTask.m_GpuEvent[!firstFieldId];
 #endif
                 }
@@ -1660,7 +1660,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
     MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     realTask.m_GpuEvent[firstFieldId] = task.m_GpuEvent[firstFieldId];
 #endif
 
@@ -1716,7 +1716,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
         MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         realTask.m_GpuEvent[!firstFieldId] = task.m_GpuEvent[!firstFieldId];
 #endif
         // FIXME: w/a for SNB issue with HRD at high bitrates

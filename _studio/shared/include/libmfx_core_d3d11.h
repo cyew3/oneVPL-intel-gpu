@@ -201,7 +201,7 @@ protected:
     std::unique_ptr<CMEnabledCoreAdapter>   m_pCmAdapter;
     mfxU32                                  m_VideoDecoderConfigCount;
     std::vector<D3D11_VIDEO_DECODER_CONFIG> m_Configs;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     bool                                    m_bIsBlockingTaskSyncEnabled;
 #endif
 };

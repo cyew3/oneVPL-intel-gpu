@@ -43,7 +43,7 @@
 #include "hevcehw_base_d3d11_win.h"
 #include "hevcehw_base_ddi_packer_win.h"
 #include "hevcehw_base_protected_win.h"
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
 #include "hevcehw_base_blocking_sync_win.h"
 #endif
 #include "hevcehw_base_roi_win.h"
@@ -104,7 +104,7 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     m_features.emplace_back(new HRD(FEATURE_HRD));
     m_features.emplace_back(new TaskManager(FEATURE_TASK_MANAGER));
     m_features.emplace_back(new Packer(FEATURE_PACKER));
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
     m_features.emplace_back(new BlockingSync(FEATURE_BLOCKING_SYNC));
 #endif
     m_features.emplace_back(new ExtBRC(FEATURE_EXT_BRC));
@@ -216,14 +216,14 @@ mfxStatus Windows::Base::MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 
     {
         auto& queue = BQ<BQ_QueryTask>::Get(*this);
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
         Reorder(queue
             , { FEATURE_DDI, IDDI::BLK_QueryTask }
             , { FEATURE_BLOCKING_SYNC, BlockingSync::BLK_WaitTask });
         Reorder(queue
             , { FEATURE_DDI_PACKER, IDDIPacker::BLK_QueryTask }
             , { FEATURE_BLOCKING_SYNC, BlockingSync::BLK_ReportHang });
-#endif //defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#endif //defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         Reorder(queue
             , { FEATURE_LEGACY, Legacy::BLK_CopyBS }

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined(MFX_VA_LINUX) && defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined(MFX_VA_LINUX) && defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
 
 #include "hevcehw_base_blocking_sync_win.h"
 #include "mfx_session.h"

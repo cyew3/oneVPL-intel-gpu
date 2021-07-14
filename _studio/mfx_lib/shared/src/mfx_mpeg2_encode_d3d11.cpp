@@ -714,7 +714,7 @@ mfxStatus D3D11Encoder::Register(
     //    m_feedbackCached.Reset( response.NumFrameActual );
     //}
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     if (type == D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA && m_bIsBlockingTaskSyncEnabled)
     {
         m_EventCache->Init(256); // allocate a cache for 256 elements as _NUM_STORED_FEEDBACKS
@@ -1013,7 +1013,7 @@ mfxStatus D3D11Encoder::Execute(
         }
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     if (m_bIsBlockingTaskSyncEnabled)
     {
         // allocate the event

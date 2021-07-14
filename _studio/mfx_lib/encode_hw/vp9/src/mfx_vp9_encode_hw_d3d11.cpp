@@ -207,7 +207,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     mfxStatus sts = D3DXCommonEncoder::InitBlockingSync(m_pmfxCore);
     MFX_CHECK_STS(sts);
 #endif
@@ -266,7 +266,7 @@ mfxU8 ConvertDX9TypeToDX11Type(mfxU8 type)
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
     case D3DDDIFMT_INTELENCODE_MBSEGMENTMAP:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBSEGMENTMAP;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     case D3DDDIFMT_INTELENCODE_SYNCOBJECT:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT;
 #endif
@@ -386,7 +386,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     {
         m_feedbackUpdate.resize(response.NumFrameActual);
         m_feedbackCached.Reset(response.NumFrameActual);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         if (m_bIsBlockingTaskSyncEnabled)
         {
             m_EventCache->Init(response.NumFrameActual);
@@ -518,7 +518,7 @@ mfxStatus D3D11Encoder::Execute(
     assert(bufCnt <= compBufferDesc.size());
 
     HRESULT hr;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     // allocate the event
     if (m_bIsBlockingTaskSyncEnabled)
     {

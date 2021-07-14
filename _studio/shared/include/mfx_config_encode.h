@@ -101,4 +101,8 @@
     #endif
 #endif
 
+#if defined(MFX_VA_WIN)
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
+#endif
+
 #endif // _MFX_CONFIG_ENCODE_H_

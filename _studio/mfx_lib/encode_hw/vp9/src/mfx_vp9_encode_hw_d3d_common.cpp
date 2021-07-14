@@ -39,7 +39,7 @@ namespace MfxHwVP9Encode
 
     D3DXCommonEncoder::D3DXCommonEncoder()
         :m_bIsBlockingTaskSyncEnabled(false)
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         ,pScheduler(NULL)
         ,m_bSingleThreadMode(false)
         ,m_TaskSyncTimeOutMs(DEFAULT_TIMEOUT_VP9_HW)
@@ -49,13 +49,13 @@ namespace MfxHwVP9Encode
 
     D3DXCommonEncoder::~D3DXCommonEncoder()
     {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         if (m_bIsBlockingTaskSyncEnabled)
             (void)DestroyBlockingSync();
 #endif
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     // Init
     mfxStatus D3DXCommonEncoder::InitBlockingSync(VideoCORE *pCore)
     {
@@ -126,7 +126,7 @@ namespace MfxHwVP9Encode
         mfxStatus sts = MFX_ERR_NONE;
 
         // use GPUTaskSync call to wait task completion.
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
         if (m_bIsBlockingTaskSyncEnabled)
         {
             mfxU32 timeOutMs = m_TaskSyncTimeOutMs;
@@ -163,11 +163,11 @@ namespace MfxHwVP9Encode
         MFX_RETURN(sts);
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
     mfxStatus D3DXCommonEncoder::SetGPUSyncEventEnable(VideoCORE *pCore)
     {
         MFX_CHECK_NULL_PTR1(pCore);
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
         bool *eventsEnabled = (bool *)pCore->QueryCoreInterface(MFXBlockingTaskSyncEnabled_GUID);
         if (eventsEnabled)
             m_bIsBlockingTaskSyncEnabled = *eventsEnabled;

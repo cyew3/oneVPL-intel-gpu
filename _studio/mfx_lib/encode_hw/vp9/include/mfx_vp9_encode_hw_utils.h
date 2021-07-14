@@ -664,7 +664,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 
         mfxExtVP9Segmentation const * m_pPrevSegment;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
         GPU_SYNC_EVENT_HANDLE m_GpuEvent;
 #endif
 
@@ -689,7 +689,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
               Zero(m_pRecRefFrames);
               Zero(m_frameParam);
               Zero(m_ctrl);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
               Zero(m_GpuEvent);
 #endif
           }
