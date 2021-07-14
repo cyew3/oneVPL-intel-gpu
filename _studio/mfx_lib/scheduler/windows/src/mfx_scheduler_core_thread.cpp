@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <vm_time.h>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <windows.h>
 #endif
 
@@ -43,7 +43,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
     m_timer_hw_event = 10; //temporary fix for VLV
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     if (!m_hwTaskDone.handle)
         m_hwTaskDone.handle = CreateEventExW(NULL, 
                                             _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
@@ -54,7 +54,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
         // create 'hardware task done' thread
         m_hwWakeUpThread = std::thread([this]() { WakeupThreadProc(); });
     }
-#endif // defined(_WIN32) || defined(_WIN64)
+#endif // defined(MFX_VA_WIN)
 
     return MFX_ERR_NONE;
 
@@ -62,7 +62,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
 
 mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     m_bQuitWakeUpThread = true;
     m_timer_hw_event = 1; // we need close threads ASAP
     vm_event_signal(&m_hwTaskDone); 
@@ -88,7 +88,7 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 
     m_bQuitWakeUpThread = false;
     vm_event_set_invalid(&m_hwTaskDone);
-#endif // defined(_WIN32) || defined(_WIN64)
+#endif // defined(MFX_VA_WIN)
 
     return MFX_ERR_NONE;
 
@@ -102,7 +102,7 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
 
     {
         char thread_name[30] = {};
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         _snprintf_s(thread_name, sizeof(thread_name) - 1, _TRUNCATE, "ThreadName=MSDK#%d", threadNum);
 #else
         snprintf(thread_name, sizeof(thread_name)-1, "ThreadName=MSDK#%d", threadNum);

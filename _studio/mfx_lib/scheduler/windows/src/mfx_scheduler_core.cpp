@@ -39,7 +39,7 @@
 
 mfxSchedulerCore::mfxSchedulerCore(void)
     : m_currentTimeStamp(0)
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #if defined(_MSC_VER)
     , m_timeWaitPeriod(1000000)
 #else // !defined(_MSC_VER)
@@ -107,7 +107,7 @@ mfxSchedulerCore::~mfxSchedulerCore(void)
 bool mfxSchedulerCore::SetScheduling(std::thread& handle)
 {
     (void)handle;
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(MFX_VA_WIN)
     if (m_param.params.SchedulingType || m_param.params.Priority) {
         if (handle.joinable()) {
             struct sched_param param {};
@@ -126,7 +126,8 @@ void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
     // because Linux scheduler ensures socket affinity by itself
 #if defined(_WIN32_WCE)
     return;
-#elif (defined(_WIN32) || defined(_WIN64))
+#else
+#if defined(MFX_VA_WIN)
 
     mfxU64 cpuMasks[16], mask;
     mfxU32 numNodeCpus[16];
@@ -183,6 +184,7 @@ void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
         SetThreadGroupAffinity(m_pThreadCtx[i].threadHandle.native_handle(), &group_affinity, NULL);
 #endif
     }
+#endif
 #endif
     return;
 } // void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
@@ -352,7 +354,7 @@ void mfxSchedulerCore::Wait(const mfxU32 curThreadNum)
     MFX_SCHEDULER_THREAD_CONTEXT* thctx = GetThreadCtx(curThreadNum);
 
     if (thctx) {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         mfxU32 timeout = (curThreadNum) ? MFX_THREAD_TIME_TO_WAIT : 1;
         // Dedicated thread will poll driver for GPU tasks completion, but
         // if HW thread exists we can relax this polling

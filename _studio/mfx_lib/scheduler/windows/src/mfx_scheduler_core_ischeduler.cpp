@@ -33,13 +33,15 @@
 #endif
 
 #if defined(MFX_SCHEDULER_LOG)
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <windows.h>
-#elif defined(LINUX32) || defined(LINUX64)
+#else
+#if defined(MFX_VA_LINUX)
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <time.h>
+#endif
 #endif
 #include <stdio.h>
 #endif // defined(MFX_SCHEDULER_LOG)
@@ -86,7 +88,7 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
 #if defined(MFX_SCHEDULER_LOG)
     {
         char cPath[256];
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         SYSTEMTIME time;
 
         GetLocalTime(&time);
@@ -95,7 +97,8 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                   "c:\\temp\\mfx_scheduler_log(%02u-%02u-%02u %x).txt",
                   time.wHour, time.wMinute, time.wSecond,
                   this);
-#elif defined(LINUX32) || defined(LINUX64)
+#else
+#if defined(MFX_VA_LINUX)
         time_t seconds;
         tm s_time;
 
@@ -103,6 +106,7 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
         localtime_r(&seconds, &s_time);
 
         sprintf(cPath, "~/temp/mfx_scheduler_log(%02u-%02u-%02u %x).txt", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
+#endif
 #endif
         // initialize the log
         m_hLog = mfxLogInit(cPath);
@@ -211,7 +215,7 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
     else
     {
         // to run HW listen thread. Will be enabled if tests are OK
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         m_hwTaskDone.handle = CreateEventExW(NULL, 
             _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
             CREATE_EVENT_MANUAL_RESET, 
@@ -255,7 +259,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWai
 
     Ipp32u stop = vm_time_get_current_time();
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     mfxLogWriteA(m_hLog,
                  "[% u4] WAIT task - %u, job - %u took %u msec (priority - %d)\n",
                  GetCurrentThreadId(),
@@ -263,7 +267,8 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWai
                  handle.jobID,
                  stop - start,
                  GetThreadPriority(GetCurrentThread()));
-#elif defined(LINUX32) || defined(LINUX64)
+#else
+#if defined(MFX_VA_LINUX)
     mfxLogWriteA(m_hLog,
                  "[% u4] WAIT task - %u, job - %u took %u msec (priority - %d)\n",
                  syscall(SYS_gettid),
@@ -271,6 +276,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWai
                  handle.jobID,
                  stop - start,
                  syscall(SYS_getpriority));
+#endif
 #endif
 
 #endif // defined(MFX_SCHEDULER_LOG)
@@ -304,7 +310,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         mfxStatus task_sts = MFX_ERR_NONE;
         mfxU64 start = vm_time_get_tick();
         mfxU64 frequency = vm_time_get_frequency();
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 
         DWORD tid = GetCurrentThreadId();
         {
@@ -353,7 +359,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                 }
             }
         }
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         {
             // lock
             std::lock_guard<std::mutex> guard(m_guard);
@@ -452,7 +458,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
 mfxStatus mfxSchedulerCore::GetTimeout(mfxU32& maxTimeToRun)
 {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     if (MFX_SINGLE_THREAD != m_param.flags)
         return MFX_ERR_UNSUPPORTED;
 
@@ -925,20 +931,22 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         RegisterTaskDependencies(m_pFreeTasks);
 
 #if defined(MFX_SCHEDULER_LOG)
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
         mfxLogWriteA(m_hLog,
                      "[% 4u]  ADD %s task - %u, job - %u (priority - %d)\n",
                      GetCurrentThreadId(),
                      taskType[m_pFreeTasks->param.task.threadingPolicy],
                      m_pFreeTasks->taskID, m_pFreeTasks->jobID,
                      GetThreadPriority(GetCurrentThread()));
-#elif defined(LINUX32) || defined(LINUX64)
+#else
+#if defined(MFX_VA_LINUX)
         mfxLogWriteA(m_hLog,
                      "[% 4u]  ADD %s task - %u, job - %u (priority - %d)\n",
                      syscall(SYS_gettid),
                      taskType[m_pFreeTasks->param.task.threadingPolicy],
                      m_pFreeTasks->taskID, m_pFreeTasks->jobID,
                      syscall(SYS_getpriority));
+#endif
 #endif
         TASK_STAT stat;
 

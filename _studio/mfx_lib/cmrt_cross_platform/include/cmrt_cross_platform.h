@@ -26,7 +26,7 @@
 
 /* Applicable for old and new CMAPI */
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <d3d11.h>
 #include <d3d9.h>
 #define CM_WIN

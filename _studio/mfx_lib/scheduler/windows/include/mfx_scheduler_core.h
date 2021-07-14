@@ -467,7 +467,7 @@ protected:
     DX11GlobalEvent* m_pdx11event;
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     std::map<DWORD, mfxU32> m_timeToRunMap;
 #endif
 
