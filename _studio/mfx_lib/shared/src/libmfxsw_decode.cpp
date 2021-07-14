@@ -546,9 +546,6 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         {
             MFX_LTRACE_P(MFX_TRACE_LEVEL_API, *syncp);
         }
-#if 0 // disabled to not overwrite DXVA2 output
-        MFX_TRACE_1("^Output^MemId", "%p", (*surface_out)->Data.MemId);
-#endif
     }
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
 

@@ -86,7 +86,6 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
-
 #if defined(MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
 #endif
@@ -224,7 +223,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             )
             MFX_RETURN(MFX_ERR_INVALID_VIDEO_PARAM);
         break;
-#if defined(MFX_ENABLE_AV1_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_AV1_VIDEO_CODEC)
     case MFX_CODEC_AV1:
             if (   info->FourCC != MFX_FOURCC_NV12
                 && info->FourCC != MFX_FOURCC_YV12
@@ -367,7 +366,7 @@ static mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
         case MFX_CODEC_JPEG:
         case MFX_CODEC_VP8:
         case MFX_CODEC_VP9:
-#if defined(MFX_ENABLE_AV1_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_AV1_VIDEO_CODEC)
         case MFX_CODEC_AV1:
 #endif
             break;
@@ -977,6 +976,9 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                     }
                 }
             }
+            break;
+
+        case MFX_EXTBUFF_CODING_OPTION_SPSPPS:
             break;
 
 #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE

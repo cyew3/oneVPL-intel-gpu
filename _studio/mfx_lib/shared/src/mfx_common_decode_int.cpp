@@ -213,7 +213,6 @@ UMC::ColorFormat ConvertFOURCCToUMCColorFormat(mfxU32 fourcc)
         case MFX_FOURCC_Y410:    return UMC::Y410;
         case MFX_FOURCC_Y216:    return UMC::Y216;
         case MFX_FOURCC_Y416:    return UMC::Y416;
-
 #if defined (MFX_VA_WIN)
         case DXGI_FORMAT_AYUV:
 #endif

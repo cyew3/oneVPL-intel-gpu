@@ -158,8 +158,12 @@
 #define MFX_ENABLE_MJPEG_VIDEO_CODEC
 #endif
 
-#if defined (MFX_ENABLE_VC1_VIDEO_DECODE) || defined (UMC_ENABLE_VC1_SPLITTER) || defined (UMC_ENABLE_VC1_VIDEO_ENCODER)
+#if defined (MFX_ENABLE_VC1_VIDEO_DECODE) || defined (UMC_ENABLE_VC1_SPLITTER)
 #define MFX_ENABLE_VC1_VIDEO_CODEC
+#endif
+
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
+#define MFX_ENABLE_AV1_VIDEO_CODEC
 #endif
 
 // Per component configs
