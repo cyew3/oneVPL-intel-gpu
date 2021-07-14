@@ -431,11 +431,7 @@ public:
         Defaults::TChain<mfxU32>::TExt
         , const Defaults::Param& par)
     {
-        const auto& mfx = par.mvp.mfx;
-        if (mfx.BufferSizeInKB)
-        {
-            return mfx.BufferSizeInKB * std::max<const mfxU32>(1, mfx.BRCParamMultiplier);
-        }
+        auto& mfx = par.mvp.mfx;
 
         // this code is relevant for CQP only
         const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par.mvp);
