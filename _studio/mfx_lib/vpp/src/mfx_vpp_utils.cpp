@@ -969,7 +969,7 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 #endif
-    else if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DENOISE ))
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DENOISE ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_DENOISE;
         index++;
@@ -2446,6 +2446,7 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
         list.push_back(MFX_EXTBUFF_VPP_DENOISE2);
     }
 #endif
+
     if(caps.uDetailFilter)
     {
         list.push_back(MFX_EXTBUFF_VPP_DETAIL);
