@@ -220,7 +220,7 @@ enum
 
     VPE_FN_PROC_QUERY_CAPS   = 0x10,
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     VPE_FN_SEND_GPU_EVENT_HANDLE = 0x14,
 #endif
 
@@ -740,7 +740,7 @@ typedef struct _VPE_FUNCTION
         VPE_VPREP_YUV_RANGE_PARAM               *pYUVRangeParam;
         VPE_VPREP_SCALING_MODE_PARAM            *pScalingModeParam;
         VPE_VPREP_CHROMASITING_PARAM            *pChromaSitingParam;
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
         HANDLE                                  gpuSyncEvent;
 #endif
         VPE_VPREP_HVSDENOISE_PARAM              *pHVSDenoiseParam;

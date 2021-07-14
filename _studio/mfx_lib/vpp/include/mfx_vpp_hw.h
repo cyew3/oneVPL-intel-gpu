@@ -36,7 +36,7 @@
 #include "mfx_ext_ddi.h"
 #endif
 #include "libmfx_core_interface.h"
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
 #include "mfx_win_event_cache.h"
 #endif
 
@@ -413,7 +413,7 @@ namespace MfxHwVideoProcessing
         std::vector<State> m_surf[2];
 
         SubTask GetSubTask(DdiTask *pTask);
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
         mfxStatus DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx, EventCache *EventCache);
 #else
         mfxStatus DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx);
@@ -848,7 +848,7 @@ namespace MfxHwVideoProcessing
 
         UMC::Mutex m_mutex;
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
         std::unique_ptr<EventCache> m_EventCache;
 #endif
 

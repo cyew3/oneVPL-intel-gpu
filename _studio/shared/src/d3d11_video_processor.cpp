@@ -1381,7 +1381,7 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(SynchronizedTask* pSyncTask)
     HRESULT hRes;
     mfxStatus sts;
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     if (pSyncTask->m_GpuEvent.gpuSyncEvent)
     {
         auto timeOut = IsPreSiPlatform(m_core->GetHWType()) ? 3600000 : DEFAULT_WAIT_HW_TIMEOUT_MS;
@@ -3018,7 +3018,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     SetOutputBackgroundColor(bYCbCr, &Color);
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     if (pParams->m_GpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE) {
         VPE_FUNCTION iFunc;
         iFunc.Function = VPE_FN_SEND_GPU_EVENT_HANDLE;

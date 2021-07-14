@@ -46,4 +46,8 @@
 #define MFX_ENABLE_RGBP
 #define MFX_ENABLE_FOURCC_RGB565
 
+#if defined(MFX_VA_WIN)
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
+#endif
+
 #endif // _MFX_CONFIG_VPP_H_

@@ -1125,7 +1125,7 @@ SubTask ResMngr::GetSubTask(DdiTask *pTask)
     else
         return SubTask();
 }
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
 mfxStatus ResMngr::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx, EventCache *EventCache)
 {
     if (pTask && pTask->pSubResource)
@@ -1216,7 +1216,7 @@ mfxStatus TaskManager::Init(
 
     m_tasks.resize(config.m_surfCount[VPP_OUT]);
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     m_EventCache.reset(new EventCache());
     m_EventCache->Init(config.m_surfCount[VPP_OUT] * ((config.m_multiBlt) ?
         config.m_extConfig.customRateData.fwdRefCount + 1 /* count all streams (not only secondary)*/ : 1));
@@ -1233,7 +1233,7 @@ mfxStatus TaskManager::Init(
 
 mfxStatus TaskManager::Close(void)
 {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     if(m_EventCache.get())
         m_EventCache->Close();
 #endif
@@ -1514,7 +1514,7 @@ mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
         sts = m_core->DecreaseReference(*pTask->input.pSurf);
     MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     m_EventCache->ReturnEvent(pTask->m_GpuEvent.gpuSyncEvent);
 #endif
 
@@ -1688,7 +1688,7 @@ mfxStatus TaskManager::FillTask(
     }
 #endif
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     sts = m_EventCache->GetEvent(pTask->m_GpuEvent.gpuSyncEvent);
     MFX_CHECK_STS(sts);
     if (pTask->pSubResource)
@@ -1829,7 +1829,7 @@ void TaskManager::UpdatePTS_Mode30i60p(
 SubTask TaskManager::GetSubTask(DdiTask *pTask) { return m_resMngr.GetSubTask(pTask); }
 mfxStatus TaskManager::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx)
 {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     return m_resMngr.DeleteSubTask(pTask, subtaskIdx, m_EventCache.get());
 #else
     return m_resMngr.DeleteSubTask(pTask, subtaskIdx);
@@ -4551,7 +4551,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         mfxU32 NumExecute = execParams.refCount;
         for (mfxU32 execIdx = 0; execIdx < NumExecute; execIdx++)
         {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
             execParams.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
 
             if(execIdx == 0)
@@ -4567,7 +4567,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
     else
     {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
         pTask->m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_VP;
         execParams.m_GpuEvent = pTask->m_GpuEvent;
 #endif

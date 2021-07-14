@@ -661,7 +661,7 @@ mfxStatus FastCompositingDDI::QueryTaskStatus(SynchronizedTask* pSyncTask)
 
     std::set<mfxU32>::iterator iterator;
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
     if (pSyncTask->m_GpuEvent.gpuSyncEvent)
     {
         auto timeOut = IsPreSiPlatform(m_core->GetHWType()) ? 3600000 : DEFAULT_WAIT_HW_TIMEOUT_MS;
@@ -1329,7 +1329,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         bltParams.ChromaSitingObject = chromaSitingObject;
     //}
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP
         if (pParams->m_GpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE) {
             HRESULT hr = m_pAuxDevice->Execute(DXVA2_SET_GPU_TASK_EVENT_HANDLE, &pParams->m_GpuEvent, sizeof(GPU_SYNC_EVENT_HANDLE));
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
