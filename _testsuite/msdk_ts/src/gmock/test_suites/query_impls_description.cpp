@@ -198,6 +198,8 @@ private:
         case MFX_HW_ADL_S:
         case MFX_HW_ADL_P:
             return ref_ADL_common.GetReference();
+        case MFX_HW_PVC:
+            return ref_PVC_common.GetReference();
         default:
             break;
         }

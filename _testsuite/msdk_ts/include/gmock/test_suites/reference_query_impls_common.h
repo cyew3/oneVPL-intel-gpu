@@ -127,4 +127,15 @@ namespace query_impls_description
         }
     };
     static ReferenceCommonDG2 ref_DG2_common;
+
+    class ReferenceCommonPVC : public ReferenceCommon
+    {
+    public:
+        ReferenceCommonPVC()
+        {
+            m_reference.MediaAdapterType = MFX_MEDIA_DISCRETE;
+            m_reference.DeviceList = { 0x0BD0, 0x0BD5 };
+        }
+    };
+    static ReferenceCommonPVC ref_PVC_common;
 }
