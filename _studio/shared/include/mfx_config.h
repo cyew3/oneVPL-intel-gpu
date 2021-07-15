@@ -171,8 +171,9 @@
 #include "mfx_config_encode.h"
 #include "mfx_config_vpp.h"
 
-#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VPP)
     #define MFX_ENABLE_GLOBAL_HW_EVENT
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 #endif
 
 #endif // _MFX_CONFIG_H_

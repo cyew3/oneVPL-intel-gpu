@@ -56,7 +56,7 @@ D3D11VideoCORE_T<Base>::D3D11VideoCORE_T(const mfxU32 adapterNum, const mfxU32 n
     ,   m_bCmCopyAllowed(true)
     ,   m_VideoDecoderConfigCount(0)
     ,   m_Configs()
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     ,   m_bIsBlockingTaskSyncEnabled(false)
 #endif
 {
@@ -553,7 +553,7 @@ mfxStatus D3D11VideoCORE_T<Base>::CreateVA(mfxVideoParam *param, mfxFrameAllocRe
     sts = ConvertUMCStatusToMfx(m_pAccelerator->Init(&params));
     MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+#ifdef MFX_ENABLE_GLOBAL_HW_EVENT
     auto pScheduler = (MFXIScheduler2 *)m_session->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
     MFX_CHECK(pScheduler, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -718,7 +718,7 @@ void* D3D11VideoCORE_T<Base>::QueryCoreInterface(const MFX_GUID &guid)
         return (void*)m_pCmAdapter.get();
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     if (MFXBlockingTaskSyncEnabled_GUID == guid)
     {
         m_bIsBlockingTaskSyncEnabled = m_HWType > MFX_HW_SCL;

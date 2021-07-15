@@ -46,7 +46,7 @@
 #define MFX_AUTO_ASYNC_DEPTH_VALUE  5
 #define MFX_MAX_ASYNC_DEPTH_VALUE   15
 
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE)
+#if defined(MFX_ENABLE_GLOBAL_HW_EVENT)
 typedef struct _GPU_SYNC_EVENT_HANDLE
 {
     uint8_t         m_gpuComponentId;   //GPU_COMPONENT_ID

@@ -290,7 +290,7 @@ D3D9VideoCORE::D3D9VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAva
 , m_bCmCopy(false)
 , m_bCmCopySwap(false)
 , m_bCmCopyAllowed(true)
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 , m_bIsBlockingTaskSyncEnabled(false)
 #endif
 {
@@ -736,7 +736,7 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     mfxStatus sts = MFX_ERR_NONE;
     m_pVA.reset(new DXVA2Accelerator);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+#ifdef MFX_ENABLE_GLOBAL_HW_EVENT
     auto pScheduler = (MFXIScheduler2 *)m_session->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
     if (pScheduler == nullptr)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1239,7 +1239,7 @@ void* D3D9VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return &m_API_1_19;
     }
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     else if (MFXBlockingTaskSyncEnabled_GUID == guid)
     {
         m_bIsBlockingTaskSyncEnabled = m_HWType > MFX_HW_SCL;
