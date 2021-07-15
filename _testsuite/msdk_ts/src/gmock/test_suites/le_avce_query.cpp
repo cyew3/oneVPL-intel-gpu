@@ -160,8 +160,8 @@ namespace le_avce_query
 
         /* PicStruct */
         // LowPower require Progressive
-        {/*46*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-        {/*47*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+        {/*46*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+        {/*47*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
         {/*48*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE } },
         {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
         {/*50*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, MFX_HYPERMODE_ON, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
