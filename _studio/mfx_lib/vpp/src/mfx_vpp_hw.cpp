@@ -5049,6 +5049,13 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
             }
 
+#ifndef STRIP_EMBARGO
+            if (core->GetHWType() >= MFX_HW_DG2 && extDI->Mode == MFX_DEINTERLACING_ADVANCED_SCD)
+            {
+                sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
+            }
+#endif
+
             if (core->GetHWType() < MFX_HW_ICL && (
                 (MFX_FOURCC_Y210 == par->vpp.In.FourCC || MFX_FOURCC_Y210 == par->vpp.Out.FourCC) ||
                 (MFX_FOURCC_Y410 == par->vpp.In.FourCC || MFX_FOURCC_Y410 == par->vpp.Out.FourCC) ||
