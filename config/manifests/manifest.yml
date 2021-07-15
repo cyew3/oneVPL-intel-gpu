@@ -60,7 +60,7 @@ components:
     type: git
     repository: https://github.com/intel-innersource/drivers.gpu.media.sdk.val-tools.git
     branch: master
-    revision: 04a15e801fcb2c4b2bb8542db2c2daf404677b1a
+    revision: a83e1df641a669bf3829e2f7caf8690a57eaa0c8
     dest_dir: sources/mdp_msdk-val-tools
   test_system:
     type: git
