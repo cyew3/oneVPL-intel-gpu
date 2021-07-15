@@ -52,7 +52,8 @@ public:
         , m_fFrameRate()
         , m_bFrameRateUnknown(false)
         , m_adapterNum(-1)
-        , m_deviceID(-1)
+        , m_dGfxIdx(-1)
+        , m_adapterType(mfxMediaAdapterType::MFX_MEDIA_UNKNOWN)
         , m_uiMaxAsyncReached()
         , m_fAverageAsync()
         , m_zoomx()
@@ -147,7 +148,8 @@ public:
     mfxF64                         m_fFrameRate;
     bool                           m_bFrameRateUnknown;
     mfxI32                         m_adapterNum;
-    mfxI16                         m_deviceID;
+    mfxI32                         m_dGfxIdx;
+    mfxI16                         m_adapterType;
     //real allocated CORE
     //copy ctor required when we put parameters into vector, shared_pointer remove necessity of copy ctor
     //ComponentParams

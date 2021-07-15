@@ -497,6 +497,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->nPRefType = MFX_P_REF_DEFAULT;
     pParams->QPFileMode = false;
     pParams->BitrateLimit = MFX_CODINGOPTION_OFF;
+#if defined(_WIN64) || defined(_WIN32)
+    pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
+    pParams->dGfxIdx = -1;
+#endif
     pParams->RoundingOffsetFile = NULL;
 #if defined (ENABLE_V4L2_SUPPORT)
     pParams->MipiPort = -1;
@@ -564,8 +568,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #if defined(_WIN64) || defined(_WIN32)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dGfx")))
         {
-            pParams->bPrefferdGfx = true;
-            pParams->dGfxIdx = 0;
+            pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
             if (i + 1 < nArgNum && isdigit(*strInput[1 + i]))
             {
                 if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->dGfxIdx))
@@ -577,7 +580,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-iGfx")))
         {
-            pParams->bPrefferiGfx = true;
+            pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-trows")))
@@ -1726,14 +1729,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         msdk_printf(MSDK_STRING("File output is disabled as -o option isn't specified\n"));
     }
-
-#if defined(_WIN64) || defined(_WIN32)
-    if (pParams->bPrefferdGfx && pParams->bPrefferiGfx)
-    {
-        msdk_printf(MSDK_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered"));
-        pParams->bPrefferdGfx = false;
-    }
-#endif
 
     if(pParams->PartialOutputMode) {
         pParams->nAsyncDepth = 1;

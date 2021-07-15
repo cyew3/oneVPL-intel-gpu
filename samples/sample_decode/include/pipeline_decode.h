@@ -125,9 +125,8 @@ struct sInputParams
     std::string strDevicePath;
 #endif
 #if defined(_WIN64) || defined(_WIN32)
-    bool bPrefferdGfx;
-    bool bPrefferiGfx;
-    mfxU32 dGfxIdx;
+    mfxU16 adapterType;
+    mfxI32 dGfxIdx;
 #endif
 
     bool bIgnoreLevelConstrain;
@@ -205,10 +204,6 @@ public:
     }
 
 protected: // functions
-#if defined(_WIN64) || defined(_WIN32)
-    mfxU32    GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params);
-#endif
-    mfxStatus GetImpl(const sInputParams & params, mfxIMPL & impl);
     virtual mfxStatus CreateRenderingWindow(sInputParams *pParams);
     virtual mfxStatus InitMfxParams(sInputParams *pParams);
 
@@ -246,8 +241,6 @@ protected: // variables
     std::unique_ptr<CSmplBitstreamReader>  m_FileReader;
     mfxBitstreamWrapper                    m_mfxBS; // contains encoded data
     mfxU64 totalBytesProcessed;
-    mfxU32 m_adapterNum;
-    mfxU16 m_deviceID;
 
     std::unique_ptr<VPLImplementationLoader> m_pLoader;
     MainVideoSession        m_mfxSession;

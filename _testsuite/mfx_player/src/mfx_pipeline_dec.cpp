@@ -258,84 +258,6 @@ mfxStatus MFXDecPipeline::CheckParams()
     return MFX_ERR_NONE;
 }
 
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
-mfxU32 MFXDecPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sCommandlineParams & params)
-{
-    if (adapters.NumActual == 0 || !adapters.Adapters)
-        return 0;
-
-    if (params.bPrefferdGfx)
-    {
-        auto idx = adapters.Adapters;
-        auto lookup_start = adapters.Adapters;
-
-        for (mfxU32 dGfxIdxCnt = 0; dGfxIdxCnt <= params.dGfxIdx; dGfxIdxCnt++)
-        {
-            // Find dGfx adapter in list and return it's index
-            idx = std::find_if(lookup_start, adapters.Adapters + adapters.NumActual,
-                [](const mfxAdapterInfo info)
-                {
-                    return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
-                });
-
-            // No dGfx in list
-            if (idx == adapters.Adapters + adapters.NumActual)
-            {
-                PipelineTrace((VM_STRING("Warning: No specified dGfx detected on machine. Will pick another adapter\n")));
-                return 0;
-            }
-
-            lookup_start = idx + 1;
-        }
-        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
-    }
-
-    if (params.bPrefferiGfx)
-    {
-        // Find iGfx adapter in list and return it's index
-
-        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
-            [](const mfxAdapterInfo info)
-        {
-            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
-        });
-
-        // No iGfx in list
-        if (idx == adapters.Adapters + adapters.NumActual)
-        {
-            PipelineTrace((VM_STRING("Warning: No iGfx detected on machine. Will pick another adapter\n")));
-            return 0;
-        }
-
-        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
-    }
-
-    // Other ways return 0, i.e. best suitable detected by dispatcher
-    return 0;
-}
-
-mfxStatus MFXDecPipeline::ForceAdapterAndDeviceID(const sCommandlineParams & params, mfxI32 & adapterNum, mfxI16 & deviceID)
-{
-    mfxU32 num_adapters_available;
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    sts = MFXQueryAdaptersNumber(&num_adapters_available);
-    MFX_CHECK_STS(sts);
-
-    std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
-    mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };
-
-    sts = MFXQueryAdapters(nullptr, &adapters);
-    MFX_CHECK_STS(sts);
-
-    mfxU32 idx = GetPreferredAdapterNum(adapters, params);
-    adapterNum = adapters.Adapters[idx].Number;
-    deviceID = adapters.Adapters[idx].Platform.DeviceId;
-    return MFX_ERR_NONE;
-}
-#endif
-
 mfxStatus MFXDecPipeline::BuildMFXPart()
 {
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
@@ -1115,31 +1037,6 @@ mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
 
 mfxStatus MFXDecPipeline::CreateCore()
 {
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
-    //Force type of adapter in case if user set iGfx or dGfx
-    if (m_inParams.bPrefferiGfx || m_inParams.bPrefferdGfx)
-    {
-        if (m_inParams.bPrefferdGfx && m_inParams.bPrefferiGfx)
-        {
-            PipelineTrace((VM_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered")));
-            m_inParams.bPrefferdGfx = false;
-        }
-    }
-
-    mfxI16 tmpDeviceID = m_components.front().m_deviceID;
-    mfxI32 tmpAdapterNum = m_components.front().m_adapterNum;
-    mfxStatus sts = ForceAdapterAndDeviceID(m_inParams, tmpAdapterNum, tmpDeviceID);
-    MFX_CHECK_STS(sts);
-
-    std::for_each(m_components.begin(), m_components.end(),
-        [tmpDeviceID, tmpAdapterNum](ComponentParams& p)
-        {
-            p.m_deviceID  = tmpDeviceID;
-            p.m_adapterNum           = tmpAdapterNum;
-        }
-    );
-#endif
-
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     //shared access prevention section
     {
@@ -5622,16 +5519,28 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
           else if (m_OptProc.Check(argv[0], VM_STRING("-iGfx"), VM_STRING("preffer processing on iGfx (by default system decides)"), OPT_BOOL))
           {
-              m_inParams.bPrefferiGfx = true;
+              std::for_each(m_components.begin(), m_components.end(),
+              [](ComponentParams& p)
+              {
+                  p.m_adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+              });
           }
           else if (m_OptProc.Check(argv[0], VM_STRING("-dGfx"), VM_STRING("preffer processing on dGfx (by default system decides), also particular dGfx might be spcified, the index starts from 0")))
           {
-              m_inParams.bPrefferdGfx = true;
+              mfxI32 tmpdGfxIdx = -1;
+
               if (1 + argv != argvEnd && isdigit(*argv[1]))
               {
-                  MFX_PARSE_INT(m_inParams.dGfxIdx, argv[1]);
+                  MFX_PARSE_INT(tmpdGfxIdx, argv[1]);
                   argv++;
               }
+
+              std::for_each(m_components.begin(), m_components.end(),
+              [tmpdGfxIdx](ComponentParams& p)
+              {
+                  p.m_adapterType = mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
+                  p.m_dGfxIdx = tmpdGfxIdx;
+              });
           }
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
