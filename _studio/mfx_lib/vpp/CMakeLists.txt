@@ -28,5 +28,6 @@ target_link_libraries(vpp_hw
   PRIVATE
     mfx_sdl_properties
     genx
-    IPP::core
   )
+
+include(sources_ext.cmake OPTIONAL)

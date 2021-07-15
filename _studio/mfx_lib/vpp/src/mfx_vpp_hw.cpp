@@ -6120,7 +6120,6 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.dstRects.clear();
                             executeParams.dstRects.resize(StreamCount);
                         }
-
                         executeParams.iTilesNum4Comp = extComp->NumTiles;
 
                         for (mfxU32 cnt = 0; cnt < StreamCount; ++cnt)
