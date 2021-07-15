@@ -125,6 +125,7 @@ struct sInputParams
     mfxHyperMode hyperMode;
     mfxU16 adapterType;
     mfxI32 dGfxIdx;
+    mfxI32 adapterNum;
 #endif
 
     std::list<msdk_string> InputFiles;

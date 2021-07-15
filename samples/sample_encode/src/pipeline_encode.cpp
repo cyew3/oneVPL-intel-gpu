@@ -1402,6 +1402,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         m_pLoader->SetDiscreteAdapterIndex(pParams->dGfxIdx);
     else
         m_pLoader->SetAdapterType(pParams->adapterType);
+
+    if(pParams->adapterNum >= 0)
+        m_pLoader->SetAdapterNum(pParams->adapterNum);
 #endif
     sts = m_pLoader->EnumImplementations();
     MSDK_CHECK_STATUS(sts, "m_mfxSession.EnumImplementations failed");

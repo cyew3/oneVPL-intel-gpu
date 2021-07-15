@@ -197,6 +197,7 @@ namespace TranscodingSample
         //Adapter type
         mfxU16 adapterType;
         mfxI32 dGfxIdx;
+        mfxI32 adapterNum;
 #endif
         bool   bIsPerf;   // special performance mode. Use pre-allocated bitstreams, output
         mfxU16 nThreadsNum; // number of internal session threads number
@@ -823,9 +824,11 @@ namespace TranscodingSample
         //Adapter type
         void SetAdapterType(mfxU16 adapterType) { m_adapterType = adapterType; };
         void SetPrefferdGfx(mfxI32 dGfxIdx = 0) { m_dGfxIdx = dGfxIdx; };
+        void SetAdapterNum(mfxU32 adapterNum = 0) { m_adapterNum = adapterNum; };
 
         mfxU16 GetAdapterType() const { return m_adapterType; };
         mfxI32 GetdGfxIdx() const { return m_dGfxIdx; };
+        mfxI32 GetAdapterNum() const { return m_adapterNum; };
 #endif
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
@@ -1071,6 +1074,7 @@ namespace TranscodingSample
         //Adapter type
         mfxU16 m_adapterType;
         mfxI32 m_dGfxIdx;
+        mfxI32 m_adapterNum;
 #endif
         mfxU32 TargetID = 0;
         CascadeScalerConfig m_ScalerConfig;

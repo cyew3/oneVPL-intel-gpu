@@ -112,6 +112,10 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             m_pLoader->SetDiscreteAdapterIndex(m_InputParamsArray[0].dGfxIdx);
         else
             m_pLoader->SetAdapterType(m_InputParamsArray[0].adapterType);
+
+        if(m_InputParamsArray[0].adapterNum >= 0)
+             m_pLoader->SetAdapterNum(m_InputParamsArray[0].adapterNum);
+
         sts = m_pLoader->EnumImplementations();
         MSDK_CHECK_STATUS(sts, "EnumImplementations(m_InputParamsArray[0].adapterType, m_InputParamsArray[0].dGfxIdx) failed");
 
@@ -460,6 +464,10 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                     m_pLoader->SetDiscreteAdapterIndex(m_InputParamsArray[i].dGfxIdx);
                 else
                     m_pLoader->SetAdapterType(m_InputParamsArray[i].adapterType);
+
+                if(m_InputParamsArray[i].adapterNum >= 0)
+                    m_pLoader->SetAdapterNum(m_InputParamsArray[i].adapterNum);
+
                 sts = m_pLoader->EnumImplementations();
                 MSDK_CHECK_STATUS(sts, "EnumImplementations(m_InputParamsArray[i].adapterType, m_InputParamsArray[i].dGfxIdx) failed");
             }
@@ -486,6 +494,10 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                     m_pLoader->SetDiscreteAdapterIndex(m_InputParamsArray[i].dGfxIdx);
                 else
                     m_pLoader->SetAdapterType(m_InputParamsArray[i].adapterType);
+
+                if(m_InputParamsArray[i].adapterNum >= 0)
+                    m_pLoader->SetAdapterNum(m_InputParamsArray[i].adapterNum);
+
                 sts = m_pLoader->EnumImplementations();
                 MSDK_CHECK_STATUS(sts, "EnumImplementations(m_InputParamsArray[i].adapterType, m_InputParamsArray[i].dGfxIdx) failed");
             }
@@ -800,6 +812,18 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
         return MFX_ERR_NONE;
     }
 
+    if (pParentPipeline->GetAdapterNum() != -1 && m_InputParamsArray[idxSession].adapterNum == -1)
+    {
+        m_InputParamsArray[idxSession].adapterNum = pParentPipeline->GetAdapterNum();
+        msdk_stringstream ss;
+        ss << MSDK_STRING("\n\n session with index: ") << idxSession
+            << MSDK_STRING(" adapter num was forced to ") << pParentPipeline->GetAdapterNum()
+            << std::endl << std::endl;
+        msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
+
+        return MFX_ERR_NONE;
+    }
+
     // App can't change initialization of the previous session (parent session)
     if (pParentPipeline->GetAdapterType() == mfxMediaAdapterType::MFX_MEDIA_UNKNOWN && m_InputParamsArray[idxSession].adapterType != mfxMediaAdapterType::MFX_MEDIA_UNKNOWN)
     {
@@ -820,6 +844,19 @@ mfxStatus Launcher::CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscoding
         msdk_stringstream ss;
         ss << MSDK_STRING("\n\n session with index: ") << idxSession
             << MSDK_STRING(" failed because it has different adapter type with parent session [")
+            << pParentPipeline->GetSessionText()
+            << MSDK_STRING("]")
+            << std::endl << std::endl;
+        msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
+
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParentPipeline->GetAdapterNum() != m_InputParamsArray[idxSession].adapterNum)
+    {
+        msdk_stringstream ss;
+        ss << MSDK_STRING("\n\n session with index: ") << idxSession
+            << MSDK_STRING(" failed because it has different adapter num with parent session [")
             << pParentPipeline->GetSessionText()
             << MSDK_STRING("]")
             << std::endl << std::endl;

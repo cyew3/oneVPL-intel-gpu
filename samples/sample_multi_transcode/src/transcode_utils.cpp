@@ -149,6 +149,7 @@ void TranscodingSample::PrintHelp()
 #if defined(_WIN64) || defined(_WIN32)
     msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1'\n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
+    msdk_printf(MSDK_STRING("   [-AdapterNum] - specifies adpter number for processing, starts from 0\n"));
 #endif
     msdk_printf(MSDK_STRING("  -mfe_frames <N> maximum number of frames to be combined in multi-frame encode pipeline"));
     msdk_printf(MSDK_STRING("               0 - default for platform will be used\n"));
@@ -1238,6 +1239,15 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
                 PrintError(argv[0], MSDK_STRING("value of -dGfx is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-AdapterNum")))
+    {
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.adapterNum))
+        {
+            PrintError(argv[0], MSDK_STRING("Value of -AdapterNum is invalid"));
+            return MFX_ERR_UNSUPPORTED;
         }
     }
 #endif

@@ -81,6 +81,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1' \n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
     msdk_printf(MSDK_STRING("   [-dual_gfx::<on,off,adaptive>] - prefer processing on both iGfx and dGfx simultaneously\n"));
+    msdk_printf(MSDK_STRING("   [-AdapterNum] - specifies adpter number for processing, starts from 0\n"));
 #endif
 #ifdef MOD_ENC
     MOD_ENC_PRINT_HELP;
@@ -500,6 +501,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #if defined(_WIN64) || defined(_WIN32)
     pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
     pParams->dGfxIdx = -1;
+    pParams->adapterNum = -1;
 #endif
     pParams->RoundingOffsetFile = NULL;
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -581,6 +583,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-iGfx")))
         {
             pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-AdapterNum")))
+        {
+            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->adapterNum))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Value of -AdapterNum is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-trows")))

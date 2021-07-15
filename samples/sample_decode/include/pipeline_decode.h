@@ -127,6 +127,7 @@ struct sInputParams
 #if defined(_WIN64) || defined(_WIN32)
     mfxU16 adapterType;
     mfxI32 dGfxIdx;
+    mfxI32 adapterNum;
 #endif
 
     bool bIgnoreLevelConstrain;

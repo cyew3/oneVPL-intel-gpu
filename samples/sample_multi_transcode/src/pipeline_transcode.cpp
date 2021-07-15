@@ -115,6 +115,7 @@ sInputParams::sInputParams() : __sInputParams()
     //Adapter type
     adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
     dGfxIdx = -1;
+    adapterNum = -1;
 #endif
     MaxFrameNumber = MFX_INFINITE;
     pVppCompDstRects = NULL;

@@ -52,6 +52,7 @@ msdk_printf(MSDK_STRING("                                  If not specified, def
 #if defined(_WIN64) || defined(_WIN32)
 msdk_printf(MSDK_STRING("   [-dGfx]                     - preffer processing on dGfx (by default system decides)\n"));
 msdk_printf(MSDK_STRING("   [-iGfx]                     - preffer processing on iGfx (by default system decides)\n"));
+msdk_printf(MSDK_STRING("   [-AdapterNum]               - specifies adpter number for processing, starts from 0\n"));
 #endif
 #if defined(D3D_SURFACES_SUPPORT)
 msdk_printf(MSDK_STRING("   [-d3d]                      - use d3d9 surfaces\n\n"));
@@ -1776,6 +1777,12 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-iGfx")))
             {
                 pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+            }
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-AdapterNum")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                msdk_sscanf(strInput[i], MSDK_STRING("%d"), reinterpret_cast<mfxI32*>(&pParams->adapterNum));
             }
 #endif
 #if defined(D3D_SURFACES_SUPPORT)

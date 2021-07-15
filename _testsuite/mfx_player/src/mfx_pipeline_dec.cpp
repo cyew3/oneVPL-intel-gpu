@@ -5542,6 +5542,18 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                   p.m_dGfxIdx = tmpdGfxIdx;
               });
           }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-AdapterNum"), VM_STRING("specifies adpter number for processing, starts from 0")))
+          {
+              mfxU32 tmpAdapterNum = -1;
+              MFX_CHECK(1 + argv != argvEnd);
+              MFX_PARSE_INT(tmpAdapterNum, argv[1]);
+              std::for_each(m_components.begin(), m_components.end(),
+              [tmpAdapterNum](ComponentParams& p)
+              {
+                  p.m_adapterNum = tmpAdapterNum;
+              });
+              argv++;
+          }
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
           else if (m_OptProc.Check(argv[0], VM_STRING("-anchors_num"), VM_STRING("number of anchor frames for AV1 large scale tile decode"), OPT_UINT_32))

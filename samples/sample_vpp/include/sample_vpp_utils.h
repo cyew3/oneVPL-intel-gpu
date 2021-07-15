@@ -183,6 +183,7 @@ struct sInputParams
 #if defined(_WIN64) || defined(_WIN32)
     mfxU16 adapterType;
     mfxI32 dGfxIdx;
+    mfxI32 adapterNum;
 #endif
 
     mfxU16   asyncNum;
@@ -290,6 +291,7 @@ struct sInputParams
 #if defined(_WIN64) || defined(_WIN32)
         adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
         dGfxIdx = -1;
+        adapterNum = -1;
 #endif
     }
 };

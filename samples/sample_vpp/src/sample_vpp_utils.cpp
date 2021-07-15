@@ -392,6 +392,9 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
         pProcessor->pLoader->SetDiscreteAdapterIndex(pInParams->dGfxIdx);
     else
         pProcessor->pLoader->SetAdapterType(pInParams->adapterType);
+
+    if(pInParams->adapterNum >= 0)
+        pProcessor->pLoader->SetAdapterNum(pInParams->adapterNum);
 #endif
     sts = pProcessor->pLoader->EnumImplementations();
     MSDK_CHECK_STATUS(sts, "mfxSession.EnumImplementations failed");

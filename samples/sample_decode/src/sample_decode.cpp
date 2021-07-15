@@ -64,6 +64,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 #if defined(_WIN64) || defined(_WIN32)
     msdk_printf(MSDK_STRING("   [-dGfx]                   - preffer processing on dGfx (by default system decides), also can be set with index, for example: '-dGfx 1'\n"));
     msdk_printf(MSDK_STRING("   [-iGfx]                   - preffer processing on iGfx (by default system decides)\n"));
+    msdk_printf(MSDK_STRING("   [-AdapterNum]             - specifies adpter number for processing, starts from 0\n"));
 #endif
 #if defined(LINUX32) || defined(LINUX64)
     msdk_printf(MSDK_STRING("   [-device /path/to/device] - set graphics device for processing\n"));
@@ -163,6 +164,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #if defined(_WIN64) || defined(_WIN32)
     pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_UNKNOWN;
     pParams->dGfxIdx = -1;
+    pParams->adapterNum = -1;
 #endif
 #if defined(LIBVA_SUPPORT)
     pParams->libvaBackend = MFX_LIBVA_DRM;
@@ -499,6 +501,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-iGfx")))
         {
             pParams->adapterType = mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-AdapterNum")))
+        {
+            if (i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -AdapterNum key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->adapterNum))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("AdapterNum is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
 #endif
 #if !defined(_WIN32) && !defined(_WIN64)
