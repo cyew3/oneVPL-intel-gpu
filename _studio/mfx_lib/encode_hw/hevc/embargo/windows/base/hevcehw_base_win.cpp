@@ -60,7 +60,7 @@
 #if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
 #include "hevcehw_base_units_info_win.h"
 #endif
-#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
 #include "hevcehw_base_lpla_analysis.h"
 #include "hevcehw_base_lpla_enc.h"
 #endif
@@ -137,10 +137,10 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
     m_features.emplace_back(new UnitsInfo(FEATURE_UNITS_INFO));
 #endif
-#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     m_features.emplace_back(new LpLookAheadAnalysis(FEATURE_LPLA_ANALYSIS));
 #endif
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)|| defined (MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined (MFX_ENABLE_ENCTOOLS_LPLA)
     m_features.emplace_back(new LpLookAheadEnc(FEATURE_LPLA_ENCODE));
 #endif
     m_features.emplace_back(new QueryImplDesc(FEATURE_QUERY_IMPL_DESC));

@@ -2114,7 +2114,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
         checkSts = sts;
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
     // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
     if (IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, par.mfx.RateControlMethod))
@@ -2337,7 +2337,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (!CheckTriStateOption(par.mfx.LowPower)) changed = true;
 
-#if defined(LOWPOWERENCODE_AVC)
     if (IsOn(par.mfx.LowPower))
     {
 #if defined(MFX_ENABLE_AVCE_VDENC_B_FRAMES)
@@ -2391,13 +2390,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             if (!CheckRange(par.mfx.QPB, 10, 51)) changed = true;
         }
     }
-#else
-    if (IsOn(par.mfx.LowPower))
-    {
-        unsupported = true;
-        par.mfx.LowPower = 0;
-    }
-#endif
 
     if (par.mfx.GopRefDist > 1 && hwCaps.ddi_caps.SliceIPOnly)
     {
@@ -2618,7 +2610,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     {
         if (!bRateControlLA(par.mfx.RateControlMethod))
         {
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
             if (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
             {
                 if (!hwCaps.ddi_caps.LookaheadBRCSupport)
@@ -5720,7 +5712,6 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt2->UseRawRef == MFX_CODINGOPTION_UNKNOWN)
         extOpt2->UseRawRef = MFX_CODINGOPTION_OFF;
 
-#if defined(LOWPOWERENCODE_AVC)
     if (IsOn(par.mfx.LowPower))
     {
         if (par.mfx.GopRefDist == 0)
@@ -5728,7 +5719,6 @@ void MfxHwH264Encode::SetDefaults(
         if (par.mfx.FrameInfo.PicStruct == 0)
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     }
-#endif
 
     if (extOpt2->MaxSliceSize)
     {
@@ -6110,7 +6100,7 @@ void MfxHwH264Encode::SetDefaults(
             extDdi->NumActiveRefP != 1 &&
             (par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) &&
             ((IsExtBrcSceneChangeSupported(par, platform) && !extBRC.pthis)
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
              || IsLpLookaheadSupported(extOpt3->ScenarioInfo, extOpt2->LookAheadDepth, par.mfx.RateControlMethod)
 #endif
             ))
@@ -6196,12 +6186,10 @@ void MfxHwH264Encode::SetDefaults(
         else
             par.mfx.NumRefFrame = std::min({nrfDefault, nrfMaxByLevel, nrfMaxByCaps});
 
-#if defined(LOWPOWERENCODE_AVC)
         if (IsOn(par.mfx.LowPower) && (extOpt3->PRefType != MFX_P_REF_PYRAMID))
         {
             par.mfx.NumRefFrame = std::min<mfxU16>(hwCaps.ddi_caps.MaxNum_Reference, par.mfx.NumRefFrame);
         }
-#endif
         par.calcParam.PPyrInterval = std::min<mfxU32>(par.calcParam.PPyrInterval, par.mfx.NumRefFrame);
     }
 
@@ -7373,94 +7361,17 @@ mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
     return sts;
 }
 
-#if 0 // removed dependency from file operations
-void MfxHwH264Encode::WriteFrameData(
-    vm_file *            file,
-    VideoCORE *          core,
-    mfxFrameData const & fdata,
-    mfxFrameInfo const & info)
-{
-    mfxFrameData data = fdata;
-    FrameLocker lock(core, data, false);
-
-    if (file != 0 && data.Y != 0 && data.UV != 0)
-    {
-        for (mfxU32 i = 0; i < info.Height; i++)
-            vm_file_fwrite(data.Y + i * data.Pitch, 1, info.Width, file);
-
-        for (mfxI32 y = 0; y < info.Height / 2; y++)
-            for (mfxI32 x = 0; x < info.Width; x += 2)
-                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
-
-        for (mfxI32 y = 0; y < info.Height / 2; y++)
-            for (mfxI32 x = 1; x < info.Width; x += 2)
-                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
-
-        vm_file_fflush(file);
-    }
-}
-
-mfxStatus MfxHwH264Encode::ReadFrameData(
-    vm_file *            file,
-    mfxU32               frameNum,
-    VideoCORE *          core,
-    mfxFrameData const & fdata,
-    mfxFrameInfo const & info)
-{
-    mfxFrameData data = fdata;
-    FrameLocker lock(core, data, false);
-
-    if (file != 0 && data.Y != 0 && data.UV != 0)
-    {
-        mfxU32 frameSize = (info.Height * info.Width * 5) / 4;
-        if (vm_file_fseek(file, frameSize * frameNum, VM_FILE_SEEK_SET) != 0)
-        {
-            MFX_RETURN(MFX_ERR_NOT_FOUND);
-        }
-
-        for (mfxU32 i = 0; i < info.Height; i++)
-        {
-            if(!vm_file_fread(data.Y + i * data.Pitch, 1, info.Width, file))
-            {
-                return MFX_ERR_UNKNOWN;
-            }
-        }
-
-        for (mfxI32 y = 0; y < info.Height / 2; y++)
-            for (mfxI32 x = 0; x < info.Width; x += 2)
-            {
-                if(!vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file))
-                {
-                    return MFX_ERR_UNKNOWN;
-                }
-            }
-
-        for (mfxI32 y = 0; y < info.Height / 2; y++)
-            for (mfxI32 x = 1; x < info.Width; x += 2)
-            {
-                if(!vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file))
-                {
-                    return MFX_ERR_UNKNOWN;
-    }
-            }
-    }
-
-    return MFX_ERR_NONE;
-}
-#endif // removed dependency from file operations
-
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
 bool MfxHwH264Encode::IsLpLookaheadSupported(mfxU16 scenario, mfxU16 lookaheadDepth, mfxU16 rateContrlMethod)
 {
     if (scenario == MFX_SCENARIO_GAME_STREAMING && lookaheadDepth > 0 &&
         (rateContrlMethod == MFX_RATECONTROL_CBR || rateContrlMethod == MFX_RATECONTROL_VBR))
     {
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         return true;
-#endif
     }
     return false;
 }
-
+#endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxEncryptedData* MfxHwH264Encode::GetEncryptedData(mfxBitstream& bs, mfxU32 fieldId)

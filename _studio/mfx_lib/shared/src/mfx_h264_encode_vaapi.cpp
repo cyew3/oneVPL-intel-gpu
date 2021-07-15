@@ -1519,7 +1519,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         platform = hwCore_20->GetHWType();
     }
 
-    if (MFX_HW_APL == platform || MFX_HW_CFL == platform || MFX_HW_XE_HP_SDV == platform)
+    if (MFX_HW_APL == platform || MFX_HW_CFL == platform
+#ifndef STRIP_EMBARGO
+        || MFX_HW_XE_HP_SDV == platform
+#endif
+        )
         m_caps.ddi_caps.FrameSizeToleranceSupport = 1;
 
     m_width  = width;

@@ -40,9 +40,9 @@
 
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_cm_defs.h"
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
 #include "mfx_lp_lookahead.h"
-#endif //MFX_ENABLE_LP_LOOKAHEAD
+#endif //MFX_ENABLE_ENCTOOLS_LPLA
 #include "vm_time.h"
 
 #if USE_AGOP
@@ -429,12 +429,10 @@ mfxStatus ImplementationAvc::Query(
         out->Protected             = 1;
         out->AsyncDepth            = 1;
         out->mfx.CodecId           = 1;
-#if defined(LOWPOWERENCODE_AVC)
         out->mfx.LowPower          = 1;
 #ifndef STRIP_EMBARGO
         if (platfrom >= MFX_HW_DG2)
             out->mfx.LowPower      = 0;
-#endif
 #endif
         out->mfx.CodecLevel        = 1;
         out->mfx.CodecProfile      = 1;
@@ -732,10 +730,8 @@ mfxStatus ImplementationAvc::Query(
         MfxVideoParam tmp = *in;
         eMFXHWType platform = core->GetHWType();
         (void)SetLowPowerDefault(tmp, platform);
-#if defined(LOWPOWERENCODE_AVC)
         if(IsOn(tmp.mfx.LowPower))
             return QueryGuid(core, DXVA2_INTEL_LOWPOWERENCODE_AVC);
-#endif
         return QueryGuid(core, DXVA2_Intel_Encode_AVC);
     }
 
@@ -1880,11 +1876,9 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
         IsOn(extOptOld.FieldOutput) || extOptOld.FieldOutput == extOptNew.FieldOutput,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-#if defined(LOWPOWERENCODE_AVC)
     MFX_CHECK(
         IsOn(m_video.mfx.LowPower) == IsOn(newPar.mfx.LowPower),
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-#endif
 
 #if defined(MFX_VA_WIN)
     if (IsOn(extOpt3New.EnableMBQP) && !m_useMBQPSurf)
@@ -3906,22 +3900,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         m_stagesToGo = m_emulatorForAsyncPart.Go(!m_incoming.empty());
     }
 
-#if USE_AGOP
-#if 0
-    fprintf(stderr,"num_calls: %d ", numCall);
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR) fprintf(stderr, "EMUL ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME) fprintf(stderr, "ACCEPT ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_AGOP) fprintf(stderr, "START_AGOP ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_AGOP) fprintf(stderr, "WAIT_AGOP ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_LA) fprintf(stderr, "START_LA ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_LA) fprintf(stderr, "WAIT_LA ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_ENCODE) fprintf(stderr, "START_ENCODE ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE) fprintf(stderr, "WAIT_ENCODE ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_RESTART) fprintf(stderr, "RESTART ");
-    fprintf(stderr,"\n");
-#endif
-#endif
-
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_ACCEPT_FRAME");
@@ -4091,27 +4069,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if(extOpt2.AdaptiveB & MFX_CODINGOPTION_ON)
         {
-#if 1
             SubmitMiniGopSize();
 //            OnMiniGopSizeSubmitted(); //check submitted results, and move to reordering queue
-#else
-#if 0
-            UMC::AutomaticUMCMutex guard(m_listMutex);
-//          m_MiniGopSizeBuffered.splice(m_MiniGopSizeBuffered.end(), m_incoming, m_incoming.begin());
-            DdiTask& task = m_MiniGopSizeBuffered.front();
-            if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                m_core->DecreaseReference(*task.m_yuv);
-#if 1
-            ReleaseResource(m_raw4X, task.m_cmRaw4X);
-            ReleaseResource(m_mbAGOP,    task.m_cmMbAGOP);
-            if (m_cmDevice){
-                m_cmDevice->DestroySurface(task.m_cmRaw);
-                task.m_cmRaw = NULL;
-            }
-#endif
-            m_reordering.splice(m_reordering.end(), m_MiniGopSizeBuffered, m_MiniGopSizeBuffered.begin());
-#endif
-#endif
         }
         m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_AGOP;
     }
@@ -4330,7 +4289,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         OnHistogramQueried();
 
         if (
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
             (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CBR && m_video.mfx.RateControlMethod != MFX_RATECONTROL_VBR) &&
 #endif
             extDdi.LookAheadDependency > 0 && m_lookaheadFinished.size() >= extDdi.LookAheadDependency)

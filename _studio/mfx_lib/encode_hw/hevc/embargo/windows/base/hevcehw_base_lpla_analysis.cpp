@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA))
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
 
 #include "hevcehw_base_ddi_packer_win.h"
 #include "hevcehw_base_data.h"
@@ -110,7 +111,6 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 (16 >> lpla->LookAheadScaleY) - 1 : 0;
         });
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         ddiCC.UpdateCqmHint.Push([this](
             TCC::TUpdateCqmHint::TExt
             , TaskCommonPar& task
@@ -126,21 +126,16 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 task.LplaStatus.ValidInfo = pLPLA.ValidInfo;
                 task.LplaStatus.CqmHint = pLPLA.CqmHint;
                 task.LplaStatus.TargetFrameSize = pLPLA.TargetFrameSize;
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 task.LplaStatus.QpModulation = pLPLA.QpModulationStrength;
-#endif
             }
             else
             {
                 task.LplaStatus.ValidInfo = 0;
                 task.LplaStatus.CqmHint = CQM_HINT_INVALID;
                 task.LplaStatus.TargetFrameSize = 0;
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 task.LplaStatus.QpModulation = 0;
-#endif
             }
 
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
             mfxExtLpLaStatus* pLpLa = ExtBuffer::Get(*task.pBsOut);
             if (pLpLa)
             {
@@ -157,28 +152,21 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 else pLpLa->CqmHint = CQM_HINT_INVALID;
             }
             else
-#endif
             if (pLPLA.ValidInfo)
             {
                 task.LplaStatus.ValidInfo = pLPLA.ValidInfo;
                 task.LplaStatus.CqmHint = pLPLA.CqmHint;
                 task.LplaStatus.TargetFrameSize = pLPLA.TargetFrameSize;
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 task.LplaStatus.QpModulation = pLPLA.QpModulationStrength;
-#endif
             }
             else
             {
                 task.LplaStatus.ValidInfo = 0;
                 task.LplaStatus.CqmHint = CQM_HINT_INVALID;
                 task.LplaStatus.TargetFrameSize = 0;
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 task.LplaStatus.QpModulation = 0;
-#endif
             }
         });
-#endif //MFX_ENABLE_LP_LOOKAHEAD
-
         return MFX_ERR_NONE;
     });
 }
@@ -265,4 +253,6 @@ void LpLookAheadAnalysis::SetInherited(ParamInheritance& par)
     });
 }
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif // defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#endif // defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+

@@ -1683,19 +1683,6 @@ mfxStatus VAAPIEncoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyMBData");
-#if 0
-
-        for (mfxI32 i = 0; i < numMB; i++)
-        {
-            std::copy(Frame.Y + m_layout.MB_CODE_offset + m_layout.MB_CODE_stride * i,
-                      Frame.Y + m_layout.MB_CODE_offset + m_layout.MB_CODE_stride * i + sizeof(ENCODE_ENC_MB_DATA_MPEG2),
-                      pExecuteBuffers->m_pMBs + i);
-        }
-
-
-
-        //memcpy(pExecuteBuffers->m_pMBs, Frame.Y, numMB * sizeof(ENCODE_ENC_MB_DATA_MPEG2));
-#else
 #ifdef MPEG2_ENC_HW_PERF
         if (pExecuteBuffers->m_pps.picture_coding_type == CODING_TYPE_I)
         {
@@ -1740,7 +1727,6 @@ mfxStatus VAAPIEncoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
         {
             vm_time_stop (0,&copy_MB_data_time[2]);
         }
-#endif
 #endif
     }
 

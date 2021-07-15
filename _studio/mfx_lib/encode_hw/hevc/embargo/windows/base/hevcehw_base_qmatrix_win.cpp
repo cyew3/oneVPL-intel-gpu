@@ -185,7 +185,7 @@ void QMatrix::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         MFX_CHECK(bNeedQM, MFX_ERR_NONE);
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
         auto& pps = Glob::PPS::Get(global);
         auto& cqmpps = Glob::CqmPPS::GetOrConstruct(global);
         cqmpps = pps;

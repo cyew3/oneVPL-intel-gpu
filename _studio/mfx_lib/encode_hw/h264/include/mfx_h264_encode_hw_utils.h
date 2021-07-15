@@ -43,7 +43,7 @@
 #include "asc.h"
 #include "libmfx_core_interface.h"
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA) || defined(MFX_ENABLE_ENCTOOLS) 
+#if defined(MFX_ENABLE_ENCTOOLS)
 #include "mfx_lp_lookahead.h"
 #endif
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
@@ -58,8 +58,6 @@ class MfxLpLookAhead;
 
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
-
-
 
 #include <unordered_map>
 #include <queue>
@@ -78,10 +76,8 @@ bool bIntRateControlLA(mfxU16 mode)
 inline constexpr
 bool bRateControlLA(mfxU16 mode)
 {
-    return bIntRateControlLA(mode)
-        ;
+    return bIntRateControlLA(mode);
 }
-
 
 #define MFX_H264ENC_HW_TASK_TIMEOUT 2000
 #define MFX_H264ENC_HW_TASK_TIMEOUT_SIM 600000
@@ -1405,7 +1401,7 @@ namespace MfxHwH264Encode
         bool     m_isMBControl;
         mfxMemId m_midMBControl;
         mfxU32   m_idxMBControl;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA) || defined(MFX_ENABLE_ENCTOOLS) 
+#if defined(MFX_ENABLE_ENCTOOLS)
         mfxLplastatus m_lplastatus;
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
@@ -2512,29 +2508,6 @@ public:
 
         return m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
     }
-
-#if 0
-    mfxStatus QueryPreEncRefList(mfxU32 displayOrder,
-        mfxEncToolsHintPreEncodeARefFrames &preEncodeRefList)
-    {
-        MFX_CHECK(m_pEncTools != 0, MFX_ERR_NOT_INITIALIZED);
-        MFX_CHECK(m_EncToolFunctionality.AdaptiveRef | m_EncToolFunctionality.AdaptiveLTR, MFX_ERR_NOT_INITIALIZED);
-
-        mfxEncToolsTaskParam par = {};
-        par.DisplayOrder = displayOrder;
-        std::vector<mfxExtBuffer*> extParams;
-
-        memset(&preEncodeRefList, 0, sizeof(preEncodeRefList));
-        preEncodeRefList.Header.BufferId = MFX_EXTBUFF_PRE_ENCODE_AREF;
-        preEncodeRefList.Header.BufferSz = sizeof(preEncodeRefList);
-        extParams.push_back((mfxExtBuffer *)&preEncodeRefList);
-
-        par.ExtParam = &extParams[0];
-        par.NumExtParam = (mfxU16)extParams.size();
-
-        return m_pEncTools->Query(m_pEncTools->Context, &par);
-    }
-#endif
 
     mfxStatus SubmitFrameForEncoding(DdiTask &task)
     {
@@ -3659,14 +3632,6 @@ private:
             assert(m_avcTask.cptr());
             return m_avcTask[view];
         }
-// MVC BD {
-#define I_TO_P
-//#undef I_TO_P
-#define MVC_ADD_REF
-//#undef MVC_ADD_REF
-//#define AVC_BS
-#undef AVC_BS
-// MVC BD }
 
     private:
         ScopedArray<DdiTask *> m_avcTask;
@@ -3995,9 +3960,9 @@ private:
 // MVC BD }
 
         mfxU32                      m_inputFrameType;
-#ifdef MVC_ADD_REF
+#ifdef MFX_ENABLE_MVC_ADD_REF
         mfxI32                      m_bufferSizeModifier; // required to obey HRD conformance after 'dummy' run in ViewOutput mode
-#endif // MVC_ADD_REF
+#endif // MFX_ENABLE_MVC_ADD_REF
     };
 #endif // #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
 
@@ -4230,11 +4195,11 @@ private:
 
     void PrepareSeiMessageBufferDepView(
         MfxVideoParam const & video,
-#ifdef AVC_BS
+#ifdef MFX_ENABLE_AVC_BS
         DdiTask &       task,
-#else // AVC_BS
+#else // MFX_ENABLE_AVC_BS
         DdiTask const &       task,
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
         mfxU32                fieldId, // 0 - top/progressive, 1 - bottom
         PreAllocatedVector &  sei);
 

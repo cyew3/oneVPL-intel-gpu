@@ -61,8 +61,6 @@
 #include "umc_defs.h"
 #include "ipps.h"
 
-#define LOWPOWERENCODE_AVC
-
 #define D3DFMT_NV12 (D3DFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #define D3DDDIFMT_YU12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('Y', 'U', '1', '2'))
@@ -684,7 +682,7 @@ namespace MfxHwH264Encode
 #if defined(MFX_ENABLE_GPU_BASED_SYNC)
         mfxExtGameStreaming         m_extGameStreaming;
 #endif
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxExtLplaParam            m_extLowpowerLA;
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)

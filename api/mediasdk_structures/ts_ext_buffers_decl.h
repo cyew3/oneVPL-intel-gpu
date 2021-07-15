@@ -133,10 +133,8 @@ EXTBUF(mfxExtCodingOptionDDI             , MFX_EXTBUFF_DDI                      
 #if defined(MFX_UNDOCUMENTED_DUMP_FILES)
 EXTBUF(mfxExtDumpFiles, MFX_EXTBUFF_DUMP)
 #endif //MFX_UNDOCUMENTED_DUMP_FILES
-#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
-EXTBUF(mfxExtLplaParam                   , MFX_EXTBUFF_LP_LOOKAHEAD              )
-#endif
 #if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+EXTBUF(mfxExtLplaParam                   , MFX_EXTBUFF_LP_LOOKAHEAD              )
 EXTBUF(mfxExtLpLaStatus                  , MFX_EXTBUFF_LPLA_STATUS               )
 #endif
 

@@ -295,7 +295,7 @@ namespace
             }
         }
 
-#ifdef AVC_BS
+#ifdef MFX_ENABLE_AVC_BS
         // copy 0x00
         while (*avcSliceBegin == 0)
         {
@@ -315,7 +315,7 @@ namespace
         *mvcSliceBegin = (*mvcSliceBegin & 0xe0) | 0x5;
         mvcSliceBegin++;
 
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
 
         InputBitstream  reader(avcSliceBegin, avcSliceEnd, true, extPps->entropyCodingModeFlag == 1);
         OutputBitstream writer(mvcSliceBegin, mvcSliceEnd);
@@ -749,7 +749,7 @@ mfxStatus TaskManagerMvc::AssignAndConfirmAvcTask(
 
     m_viewMan[viewIdx].ConfirmTask(*(*m_currentTask)[viewIdx]);
 
-#ifdef MVC_ADD_REF
+#ifdef MFX_ENABLE_MVC_ADD_REF
     mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
     // for all IDRs of dependent view inter-view prediction should be used to avoid I-slices in dependent view
     // reserve surface in 2nd encoder's reconstructed chain to use it for all inter-view references during encoder
@@ -763,7 +763,7 @@ mfxStatus TaskManagerMvc::AssignAndConfirmAvcTask(
         m_viewMan[viewIdx].m_recons[interViewReconIdx].m_reference[BFIELD] = 1;
 
     }
-#endif // MVC_ADD_REF
+#endif // MFX_ENABLE_MVC_ADD_REF
 
     return MFX_ERR_NONE;
 }
@@ -965,13 +965,13 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
     request.NumFrameMin = mfxU16(CalcNumSurfRecon(m_video) * (m_numEncs > 1 ? 1 : extMvc->NumView));
     for (mfxU32 i = 0; i < m_numEncs; i ++)
     {
-#ifdef MVC_ADD_REF
+#ifdef MFX_ENABLE_MVC_ADD_REF
         if (i && extOpt->ViewOutput == MFX_CODINGOPTION_ON)
         {
             request.NumFrameMin ++; // allocate additional reconstruct surface  for dep view to place recon from base view
             request.NumFrameSuggested = request.NumFrameMin;
         }
-#endif // MVC_ADD_REF
+#endif // MFX_ENABLE_MVC_ADD_REF
         sts = m_recon[i].Alloc(m_core, request);
         MFX_CHECK_STS(sts);
     }
@@ -1464,7 +1464,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
     if (impl.m_numEncs > 1)
     {
-#ifdef MVC_ADD_REF
+#ifdef MFX_ENABLE_MVC_ADD_REF
         // extOpt->ViewOutput == MFX_CODINGOPTION_ON means Blu-ray/AVCHD compatible MVC encoding
         // in this mode I-slices are prohibited in dependent view
         // SNB/IVB driver can't correctly encode P-frames w/o references (artifacts appear)
@@ -1604,7 +1604,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                     return MFX_TASK_BUSY;
                 }
         }
-#endif // MVC_ADD_REF
+#endif // MFX_ENABLE_MVC_ADD_REF
 
         // disable surface offsets in case of several AVC encoders since every encoder works with it's own set of surfaces dedicated to one view
         task.m_idxReconOffset = realTask.m_idxReconOffset = 0;
@@ -1639,11 +1639,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
     else
     {
         // BD/AVCHD compatible encoding: values in BP SEI should be equal in base and dependent views
-#ifndef AVC_BS
-        // AVC_BS is dedicated to check HRD conformance of dep view so real HRD state is encoded for AVC_BS
+#ifndef MFX_ENABLE_AVC_BS
+        // MFX_ENABLE_AVC_BS is dedicated to check HRD conformance of dep view so real HRD state is encoded for MFX_ENABLE_AVC_BS
         task.m_initCpbRemoval = mvcTask[0]->m_initCpbRemoval;
         task.m_initCpbRemovalOffset = mvcTask[0]->m_initCpbRemovalOffset;
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
         PrepareSeiMessageBufferDepView(impl.m_video, task, firstFieldId, impl.m_sei);
     }
 
@@ -1689,11 +1689,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
         else
         {
             // BD/AVCHD compatible encoding: values in BP SEI should be equal in base and dependent views
-#ifndef AVC_BS
-            // AVC_BS is dedicated to check HRD conformance of dep view so real HRD state is encoded for AVC_BS
+#ifndef MFX_ENABLE_AVC_BS
+            // MFX_ENABLE_AVC_BS is dedicated to check HRD conformance of dep view so real HRD state is encoded for MFX_ENABLE_AVC_BS
             task.m_initCpbRemoval = mvcTask[0]->m_initCpbRemoval;
             task.m_initCpbRemovalOffset = mvcTask[0]->m_initCpbRemovalOffset;
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
             PrepareSeiMessageBufferDepView(impl.m_video, task, !firstFieldId, impl.m_sei);
         }
 
@@ -1815,38 +1815,6 @@ mfxStatus ImplementationMvc::TaskRoutineQuery(
         sts = impl.UpdateBitstream(task, !firstFieldId);
         MFX_CHECK_STS(sts);
     }
-
-#if 0 // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
-    mfxExtDumpFiles * extDump = GetExtBuffer(impl.m_video);
-    extDump;
-
-    if (vm_file * file = 0)//OpenFile(extDump->ReconFilename, (task[0]->m_frameOrder == 0) ? _T("wb") : _T("ab")))
-    {
-        for (mfxU32 i = 0; i < opt->NumView; i++)
-        {
-            mfxFrameData data = { 0 };
-// MVC BD {
-            data.MemId = impl.m_recon[0].mids[task[i]->m_idxRecon + task[i]->m_idxReconOffset]; // doesn't work for multiple encoders, just to compile
-// MVC BD }
-            WriteFrameData(file, impl.m_core, data, impl.m_video.mfx.FrameInfo);
-        }
-        vm_file_fclose(file);
-    }
-    if (vm_file * file = 0)//OpenFile(extDump->InputFramesFilename, (task[0]->m_frameOrder == 0) ? _T("wb") : _T("ab")))
-    {
-        for (mfxU32 i = 0; i < opt->NumView; i++)
-        {
-            mfxFrameData data = { 0 };
-            FrameLocker lock(
-                impl.m_core,
-                data,
-                impl.GetRawSurfaceMemId(*(task[i])),
-                impl.m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY);
-            WriteFrameData(file, impl.m_core, data, impl.m_video.mfx.FrameInfo);
-        }
-        vm_file_fclose(file);
-    }
-#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 
     return MFX_ERR_NONE;
 }
@@ -2262,9 +2230,9 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy and repack bitstream");
 
-#ifndef AVC_BS
+#ifndef MFX_ENABLE_AVC_BS
     mfxExtMVCSeqDesc * extMvc = GetExtBuffer(m_video);
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
 
     mfxBitstream & bs     = *task.m_bs;
 
@@ -2305,7 +2273,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
     mfxStatus sts = ParseAvcBitstream(m_bitsDesc[task.m_viewIdx]);
     MFX_CHECK_STS(sts);
 
-#ifndef AVC_BS // if 0 then regular AVC bitstream is generated for dependent view
+#ifndef MFX_ENABLE_AVC_BS // if 0 then regular AVC bitstream is generated for dependent view
 
     // repack AUD to DRD
     if (m_bitsDesc[task.m_viewIdx].aud.begin)
@@ -2377,12 +2345,12 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
             anchorPicFlag,
             interViewFlag);
 
-#ifdef I_TO_P
+#ifdef MFX_ENABLE_MVC_I_TO_P
         if (((task.m_type[fieldId] & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_I) &&
             task.m_type[fieldId] & MFX_FRAMETYPE_IDR && task.m_viewIdx)
             mvcBitsBegin = RePackNonIdrSliceToIdr(mvcBitsBegin, mvcBitsEnd, nalu->begin + nalu->numZero + 2, nalu->end, m_video, task, fieldId);
         else
-#endif // I_TO_P
+#endif // MFX_ENABLE_MVC_I_TO_P
         // copy encoded slice
         mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
@@ -2402,7 +2370,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
     }
 
     bs.DataLength = mfxU32(mvcBitsBegin - bs.Data - bs.DataOffset);
-#else // AVC_BS
+#else // MFX_ENABLE_AVC_BS
     // copy AUD and SPS for base view
     if (m_bitsDesc[task.m_viewIdx].aud.begin)
     {
@@ -2450,12 +2418,12 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
     NaluIterator nalu(m_bitsDesc[task.m_viewIdx].slice, m_bitsDesc[task.m_viewIdx].end);
     for (bool firstSlice = true; nalu->type == 1 || nalu->type == 5; ++nalu, firstSlice = false)
     {
-#ifdef I_TO_P
+#ifdef MFX_ENABLE_MVC_I_TO_P
         if (((task.m_type[fieldId] & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_I) &&
             task.m_type[fieldId] & MFX_FRAMETYPE_IDR && task.m_viewIdx)
             mvcBitsBegin = RePackNonIdrSliceToIdr (mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end, m_video, task, fieldId);
         else
-#endif // I_TO_P
+#endif // MFX_ENABLE_MVC_I_TO_P
         mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
     }
 
@@ -2472,7 +2440,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
 
     bs.DataLength = mfxU32(mvcBitsBegin - bs.Data - bs.DataOffset);
 
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
 
     // update hrd state after encoding of access unit
     bool interlace = (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) == 0;
@@ -2518,12 +2486,12 @@ mfxU32 ImplementationMvc::CalcPaddingToCompensateRepack(
         }
         paddingSize += 3 * m_video.mfx.NumSlice; // 3 additional bytes to NALu header per slice for MVC Slice Ext
 
-#ifdef I_TO_P
+#ifdef MFX_ENABLE_MVC_I_TO_P
         if (((task.m_type[fieldId] & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_I) &&
             task.m_type[fieldId] & MFX_FRAMETYPE_IDR && task.m_viewIdx
             && extCO->ViewOutput == MFX_CODINGOPTION_ON)
             paddingSize += 5 * m_video.mfx.NumSlice; // additional place for future repack of non-IDR slices to IDR
-#endif // I_TO_P
+#endif // MFX_ENABLE_MVC_I_TO_P
     }
     else // base view
     {
@@ -2548,7 +2516,7 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
 {
     mfxU32 viewIdx = curTask.m_viewIdx;
 
-#ifdef I_TO_P
+#ifdef MFX_ENABLE_MVC_I_TO_P
     mfxExtCodingOption * extOpt = GetExtBuffer(m_video);
 
     // extOpt->ViewOutput == MFX_CODINGOPTION_ON means Blu-ray/AVCHD compatible MVC encoding
@@ -2566,7 +2534,7 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
             if (curTask.m_type[fieldId] & MFX_FRAMETYPE_IDR)
             {
                 curTask.m_type[fieldId] &= ~MFX_FRAMETYPE_IDR;
-#ifdef MVC_ADD_REF
+#ifdef MFX_ENABLE_MVC_ADD_REF
                 ArrayDpbFrame & curDpb = curTask.m_dpb[0];
                 mfxFrameData sourceD3DBits = {};
                 mfxFrameData distD3DBits = {};
@@ -2625,48 +2593,15 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
                         m_core,
                         distD3DBits,
                         m_recon[1].mids[newDpbFrame.m_frameIdx]);
-
-#if 0 // dump copied frame
-                    char fileName[100];
-                    sprintf(fileName, "recon_%d.yuv", curTask.m_frameOrder);
-
-                    FILE * file = fopen(fileName, "w + b");
-                    mfxI16 i, j;
-                    mfxU8 buf[2048];
-                    mfxI16 W = m_video.mfx.FrameInfo.Width;
-                    mfxI16 H = m_video.mfx.FrameInfo.Height;
-                    mfxU8 * p = distD3DBits.Y;
-                    for (i = 0; i < H; i++) {
-                        fwrite(p, 1, W, file);
-                        p += distD3DBits.Pitch;
-                    }
-                    p = distD3DBits.U;
-                    for (i = 0; i < H >> 1; i++) {
-                        for (j = 0; j < W >> 1; j++) {
-                            buf[j] = p[2*j];
-                        }
-                        fwrite(buf, 1, W >> 1, file);
-                        p += distD3DBits.Pitch;
-                    }
-                    p = distD3DBits.V;
-                    for (i = 0; i < H >> 1; i++) {
-                        for (j = 0; j < W >> 1; j++) {
-                            buf[j] = p[2*j];
-                        }
-                        fwrite(buf, 1, W >> 1, file);
-                        p += distD3DBits.Pitch;
-                    }
-                    fclose(file);
-#endif // dump copied frame
                 }
 
-#else // MVC_ADD_REF
+#else // MFX_ENABLE_MVC_ADD_REF
                 curTask.m_dpb[0].Resize(0);
-#endif // MVC_ADD_REF
+#endif // MFX_ENABLE_MVC_ADD_REF
             }
         }
     }
-#endif // I_TO_P
+#endif // MFX_ENABLE_MVC_I_TO_P
 
     // if all views are produced with one AVC encoder then ref lists and dpb for AVC task should be modified
     if (m_numEncs == 1)

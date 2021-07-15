@@ -30,7 +30,7 @@
 
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
 
-    //#define MFX_ENABLE_H264_PRIVATE_CTRL
+    #undef MFX_ENABLE_H264_PRIVATE_CTRL
     #define MFX_ENABLE_APQ_LQ
     #if defined(MFX_VA_WIN)
         #define MFX_ENABLE_H264_REPARTITION_CHECK
@@ -55,6 +55,12 @@
     #if !defined(UMC_ENABLE_VIDEO_BRC)
         #define UMC_ENABLE_VIDEO_BRC
     #endif
+#endif
+
+#if defined(MFX_ENABLE_MVC_VIDEO_ENCODE)
+    #define MFX_ENABLE_MVC_I_TO_P
+    #define MFX_ENABLE_MVC_ADD_REF
+    #undef MFX_ENABLE_AVC_BS
 #endif
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -91,6 +97,7 @@
 #if !defined(STRIP_EMBARGO)
     #define MFX_ENABLE_VIDEO_HYPER_ENCODE_HW
 #endif
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 #endif
 
 #ifdef MFX_ENABLE_USER_ENCTOOLS
@@ -99,10 +106,6 @@
         #define MFX_ENABLE_ENCTOOLS_LPLA
         #define MFX_ENABLE_LP_LOOKAHEAD
     #endif
-#endif
-
-#if defined(MFX_VA_WIN)
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_ENCODE
 #endif
 
 #endif // _MFX_CONFIG_ENCODE_H_

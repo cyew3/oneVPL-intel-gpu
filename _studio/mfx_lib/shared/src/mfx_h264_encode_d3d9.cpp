@@ -180,7 +180,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     {
         sps.ScenarioInfo = eScenario_RemoteGaming;
     }
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     sps.LookaheadDepth = (UCHAR)extOpt2.LookAheadDepth;
 #endif
 }
@@ -470,15 +470,13 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     pps.SourceMarkerStartY  = task.m_gpuSync.MarkerOffsetY;
 #endif
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
     if (task.m_lplastatus.TargetFrameSize > 0)
     {
         pps.TargetFrameSize = task.m_lplastatus.TargetFrameSize;
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
         pps.QpModulationStrength = task.m_lplastatus.QpModulation;
         if (task.m_lplastatus.MiniGopSize > 1)
             pps.HierarchLevelPlus1 = (mfxU8)(task.m_LowDelayPyramidLayer + 1);
-#endif
     }
 #endif
 

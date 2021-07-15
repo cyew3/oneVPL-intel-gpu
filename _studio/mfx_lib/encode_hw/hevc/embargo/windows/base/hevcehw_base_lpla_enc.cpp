@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (defined(MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA))
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
 
 #include "hevcehw_base_lpla_enc.h"
 #include "hevcehw_base_task.h"
@@ -163,16 +164,12 @@ void LpLookAheadEnc::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             if (task.LplaStatus.TargetFrameSize > 0)
             {
                 pps.TargetFrameSize = task.LplaStatus.TargetFrameSize;
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 pps.QpModulationStrength = task.LplaStatus.QpModulation;
-#endif
             }
             else
             {
                 pps.TargetFrameSize = 0;
-#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
                 pps.QpModulationStrength = 0;
-#endif
             }
             return MFX_ERR_NONE;
         });
@@ -340,5 +337,6 @@ void LpLookAheadEnc::Close(const FeatureBlocks& /*blocks*/, TPushCLS Push)
     });
 }
 
+#endif // defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#endif // defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

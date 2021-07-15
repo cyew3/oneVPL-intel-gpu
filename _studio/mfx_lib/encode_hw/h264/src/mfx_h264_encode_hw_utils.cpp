@@ -338,10 +338,8 @@ namespace MfxHwH264Encode
         {
             if (task.m_ctrl.QP > 0)
             {
-#if defined(LOWPOWERENCODE_AVC)
                 if (IsOn(par.mfx.LowPower) && (task.m_ctrl.QP < 10))
                     return 10;
-#endif
                 // get per frame qp
                 return std::min(mfxU8(task.m_ctrl.QP), mfxU8(maxQP));
             }
@@ -5731,11 +5729,11 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
 // MVC BD {
 void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     MfxVideoParam const & video,
-#ifdef AVC_BS
+#ifdef MFX_ENABLE_AVC_BS
     DdiTask &       task,
-#else // AVC_BS
+#else // MFX_ENABLE_AVC_BS
     DdiTask const &       task,
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
     mfxU32                fieldId,
     PreAllocatedVector &  sei)
 {
@@ -5885,7 +5883,7 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
 
     sei.SetSize(writer.GetNumBits() / 8);
 
-#ifdef AVC_BS
+#ifdef MFX_ENABLE_AVC_BS
     // encoding of AVC SEI with size equal to MVC SEI
     mfxU32 seiSizeMVC = writer.GetNumBits() / 8;
     mfxU32 seiSizeAVC = 0;
@@ -5997,7 +5995,7 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
 
     assert(writer.GetNumBits() == writerAVC.GetNumBits());
     sei.SetSize(writerAVC.GetNumBits() / 8);
-#endif // AVC_BS
+#endif // MFX_ENABLE_AVC_BS
 }
 // MVC BD }
 

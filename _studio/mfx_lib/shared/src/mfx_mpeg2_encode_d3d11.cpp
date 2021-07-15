@@ -367,7 +367,6 @@ mfxStatus D3D11Encoder::Init(
     }
     CHECK_HRES(hRes);
 
-#if 1
     // [3] Query the encoding device capabilities 
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
     decoderExtParam.Function = 0x110; //ENCODE_QUERY_ACCEL_CAPS_ID = 0x110;
@@ -380,7 +379,6 @@ mfxStatus D3D11Encoder::Init(
 
     hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
     CHECK_HRES(hRes);
-#endif    
 
 #ifdef PAVP_SUPPORT
     if (pExecuteBuffers->m_encrypt.m_bEncryptionMode)
