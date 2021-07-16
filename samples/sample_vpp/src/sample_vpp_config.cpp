@@ -78,7 +78,7 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
         // recommend to use mfxExtVPPDenoise2
         auto denoiseConfig      = pVppParam->AddExtBuffer<mfxExtVPPDenoise2>();
         denoiseConfig->Strength = pParams->denoiseParam[paramID].factor;
-        denoiseConfig->Mode     = (mfxDenoiseMode)pParams->denoiseParam[paramID].config;
+        denoiseConfig->Mode     = (mfxDenoiseMode)pParams->denoiseParam[paramID].dnmode;
     }
 #ifdef ENABLE_MCTF
     if (VPP_FILTER_ENABLED_CONFIGURED == pParams->mctfParam[paramID].mode)

@@ -2045,25 +2045,29 @@ mfxStatus D3D11VideoProcessor::SetStreamDenoise(UINT streamIndex, mfxExecutePara
         switch (pParams->denoiseMode)
         {
         case MFX_DENOISE_MODE_INTEL_HVS_AUTO_BDRATE:
-            param.Mode = VPE_HVSDENOISE_AUTO_BDRATE;
+            param.Mode     = VPE_HVSDENOISE_AUTO_BDRATE;
+            param.Strength = 0;
+            param.QP       = 0;
             break;
         case MFX_DENOISE_MODE_INTEL_HVS_AUTO_SUBJECTIVE:
-            param.Mode = VPE_HVSDENOISE_AUTO_SUBJECTIVE;
-            break;
-        case MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST:
-            param.Mode = VPE_HVSDENOISE_AUTO_ADJUST;
+            param.Mode     = VPE_HVSDENOISE_AUTO_SUBJECTIVE;
+            param.Strength = 0;
+            param.QP       = 0;
             break;
         case MFX_DENOISE_MODE_DEFAULT:
-            param.Mode = VPE_HVSDENOISE_DEFAULT;
+            param.Mode     = VPE_HVSDENOISE_DEFAULT;
+            param.Strength = 0;
+            param.QP       = 0;
             break;
         case MFX_DENOISE_MODE_INTEL_HVS_PRE_MANUAL:
-            param.Mode = VPE_HVSDENOISE_MANUAL;
+            param.Mode        = VPE_HVSDENOISE_MANUAL;
+            // HVS denoise strength range [0, 16]
+            param.Strength    = (mfxU16)floor(16.0 / 100.0 * pParams->denoiseStrength);;
+            param.QP          = 0;
             break;
         default:
             break;
         }
-        param.Strength = pParams->denoiseFactor;
-        param.QP       = 0;
     }
 
     iFunc.Function               = VPE_FN_VPREP_HVSDENOISE_PARAM;
@@ -2503,10 +2507,15 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         switch (pParams->denoiseMode)
         {
             case MFX_DENOISE_MODE_INTEL_HVS_AUTO_ADJUST:
-            case MFX_DENOISE_MODE_INTEL_HVS_POST_MANUAL:
             {
                 const mfxU16 DEFAULT_NOISE_LEVEL_D3D11 = 0; // 0 is signal to driver use Auto Mode
-                mfxU16 noiseLevel = (pParams->bDenoiseAutoAdjust) ? DEFAULT_NOISE_LEVEL_D3D11 : pParams->denoiseFactor;
+                SetStreamFilter(0, D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION, TRUE, DEFAULT_NOISE_LEVEL_D3D11);
+                break;
+            }
+            case MFX_DENOISE_MODE_INTEL_HVS_POST_MANUAL:
+            {
+                // D3D11 noise level range [0.0, 64.0]
+                mfxU16 noiseLevel = (mfxU16)floor(64.0 / 100.0 * pParams->denoiseStrength + 0.5);
                 SetStreamFilter(0, D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION, TRUE, noiseLevel);
                 break;
             }

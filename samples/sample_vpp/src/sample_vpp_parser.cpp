@@ -762,17 +762,17 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&readData));
-                    if ( ioStatus > 0 )
+                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int*>(&readData));
+                    if (ioStatus > 0)
                     {
-                        pParams->denoiseParam[paramID].factor = (mfxU16)readData;
-                        pParams->denoiseParam[paramID].mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        pParams->denoiseParam[paramID].dnmode = (mfxU16)readData;
+                        pParams->denoiseParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
                     ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
-                        pParams->denoiseParam[paramID].config = (mfxU16)readData;
+                        pParams->denoiseParam[paramID].factor = (mfxU16)readData;
                         pParams->denoiseParam[paramID].mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
@@ -1277,17 +1277,17 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&readData));
-                    if ( ioStatus > 0 )
+                    ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int*>(&readData));
+                    if (ioStatus > 0)
                     {
-                        pParams->denoiseParam[0].factor = (mfxU16)readData;
-                        pParams->denoiseParam[0].mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        pParams->denoiseParam[0].dnmode = (mfxU16)readData;
+                        pParams->denoiseParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
                     ioStatus = msdk_sscanf(strInput[i+1], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
-                        pParams->denoiseParam[0].config = (mfxU16)readData;
+                        pParams->denoiseParam[0].factor = (mfxU16)readData;
                         pParams->denoiseParam[0].mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }

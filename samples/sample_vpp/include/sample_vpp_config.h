@@ -114,7 +114,7 @@ typedef struct
 {
     mfxU16  factor;
     FilterConfig mode;
-    mfxU16  config;
+    mfxU16  dnmode;
 } sDenoiseParam;
 
 struct sColorFillParam: public mfxExtVPPColorFill

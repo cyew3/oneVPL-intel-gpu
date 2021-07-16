@@ -493,7 +493,6 @@ typedef enum _VPE_HVSDENOISE_MODE
     VPE_HVSDENOISE_AUTO_BDRATE,                      // Auto BD rate mode
     VPE_HVSDENOISE_AUTO_SUBJECTIVE,                  // Auto Subjective mode
     VPE_HVSDENOISE_MANUAL,                           // Manual mode
-    VPE_HVSDENOISE_AUTO_ADJUST,                      // Auto Adjust
 } VPE_HVSDENOISE_MODE;
 
 typedef struct _VPE_VPREP_HVSDENOISE_PARAM
