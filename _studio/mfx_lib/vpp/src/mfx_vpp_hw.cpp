@@ -1702,7 +1702,6 @@ mfxStatus TaskManager::FillTask(
     }
 
 #endif
-
     pTask->SetFree(false);
 
     return MFX_ERR_NONE;
@@ -4504,7 +4503,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         m_executeParams.bFieldSplittingExt = true;
     }
 #endif
-
     if (m_executeParams.mirroring && m_pCore->GetHWType() >= MFX_HW_TGL_LP && m_pCore->GetVAType() != MFX_HW_D3D9)
         m_executeParams.mirroringExt = true;
 
@@ -5055,7 +5053,6 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
             }
 #endif
-
             if (core->GetHWType() < MFX_HW_ICL && (
                 (MFX_FOURCC_Y210 == par->vpp.In.FourCC || MFX_FOURCC_Y210 == par->vpp.Out.FourCC) ||
                 (MFX_FOURCC_Y410 == par->vpp.In.FourCC || MFX_FOURCC_Y410 == par->vpp.Out.FourCC) ||
