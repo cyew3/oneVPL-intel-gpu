@@ -147,7 +147,7 @@ set ( AV1CPP_LIBS "" )
       mfx_sdl_properties
       mfx_require_ssse3_properties)
 
-  find_program(YASM_EXE NAMES yasm REQUIRED)
+  find_program(YASM_EXE NAMES yasm HINTS "${MSDK_BUILDER_ROOT}/../../../build_tools/yasm-win64" REQUIRED)
   if(NOT YASM_EXE)
      message(SEND_ERROR "yasm was not found : av1_pp_ssse3 could not be compiled")
   endif()
