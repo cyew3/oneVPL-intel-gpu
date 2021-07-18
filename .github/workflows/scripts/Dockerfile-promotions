@@ -1,0 +1,25 @@
+FROM python:3.9.6-slim-buster
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV TZ=Europe/Moscow
+ENV http_proxy=http://proxy.inn.intel.com:911/ \
+    https_proxy=http://proxy.inn.intel.com:912/
+RUN apt-get update \
+     && apt-get upgrade \
+     && apt-get install -y git build-essential \
+     && apt-get clean \
+     && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /opt/promotions/venv
+
+WORKDIR /opt/promotions
+
+COPY requirements.txt .
+RUN . ./venv/bin/activate && pip3 install -r requirements.txt
+
+COPY . .
+
+RUN git config --global user.email "intel-msdk@intel.com"
+RUN git config --global user.name "Intel-MSDK"
+
+CMD . ./venv/bin/activate && python promotion.py

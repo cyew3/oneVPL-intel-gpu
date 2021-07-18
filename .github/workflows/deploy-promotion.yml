@@ -1,0 +1,31 @@
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/**'
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, promotion]
+    steps:
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/vpl_promotion.key
+          chmod 600 ~/.ssh/vpl_promotion.key
+          cat >>~/.ssh/config <<END
+          Host vpl_promotion
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/vpl_promotion.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_USER: ${{ secrets.DOCKER_SSH_USERNAME }}
+          SSH_KEY: ${{ secrets.DOCKER_SSH_KEY }}
+          SSH_HOST: ${{ secrets.DOCKER_SSH_HOST }}
+
+      - name: Pull new code and restart server
+        run: ssh vpl_promotion 'cd /opt/vpl_promotions && git pull && cd .github/workflows/scripts && docker build -f Dockerfile-promotions -t vpl_promotions . && docker run --env STATUS_SECRET=${{ secrets.STATUS_SECRET }} -d vpl_promotions && docker image prune && docker container prune'
