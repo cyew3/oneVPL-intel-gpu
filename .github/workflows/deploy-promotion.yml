@@ -28,4 +28,4 @@ jobs:
           SSH_HOST: ${{ secrets.DOCKER_SSH_HOST }}
 
       - name: Pull new code and restart server
-        run: ssh vpl_promotion 'cd /opt/vpl_promotions && git pull && cd .github/workflows/scripts && docker build -f Dockerfile-promotions -t vpl_promotions . && docker run --env STATUS_SECRET=${{ secrets.STATUS_SECRET }} -d vpl_promotions && docker image prune && docker container prune'
+        run: ssh vpl_promotion 'cd /opt/vpl_promotions && git pull && cd .github/workflows/scripts && docker build -f Dockerfile-promotions -t vpl_promotions . && docker stop vpl_promotions && docker run --env STATUS_SECRET=${{ secrets.STATUS_SECRET }} -d --name vpl_promotions vpl_promotions && docker image prune -f && docker container prune -f'

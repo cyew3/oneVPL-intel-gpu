@@ -122,7 +122,7 @@ class ComponentUpdater:
 
         # Extract build number (\d+) and increase it by 1
         try:
-            self._next_build_number = int(re.search(DATA_SOURCE.pattern, current_promoted_version).group(2)) + 2
+            self._next_build_number = int(re.search(DATA_SOURCE.pattern, current_promoted_version).group(2)) + 1
         except AttributeError:
             logging.error('Can\'t find build number by pattern %s in %s', DATA_SOURCE.pattern, current_promoted_version)
             return False
