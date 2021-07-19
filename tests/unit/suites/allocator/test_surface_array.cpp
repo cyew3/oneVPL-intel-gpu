@@ -27,7 +27,7 @@ class SurfArrayTest : public ::testing::Test
 protected:
     SurfArrayTest()
     {
-        m_surfArray = mfxSurfaceArrayImpl::CreateSurfaceArray();
+        m_surfArray = mfxSurfaceArrayImpl::Create();
     }
 
     ~SurfArrayTest()
@@ -107,7 +107,7 @@ class SurfArrayImplTest : public ::testing::Test
 protected:
     SurfArrayImplTest()
     {
-        m_surfArray = mfxSurfaceArrayImpl::CreateSurfaceArray();
+        m_surfArray = mfxSurfaceArrayImpl::Create();
     }
 
     ~SurfArrayImplTest()

@@ -778,7 +778,7 @@ mfxStatus d3d11_buffer_wrapper::Realloc(const mfxFrameInfo & info)
     return AllocBuffer(info);
 }
 
-d3d11_texture_wrapper::d3d11_texture_wrapper(const mfxFrameInfo &info, mfxU16 type, staging_adapter_d3d11_texture & stg_adapter, mfxHDL device)
+d3d11_texture_wrapper::d3d11_texture_wrapper(const mfxFrameInfo &info, mfxU16 type, std::shared_ptr<staging_adapter_d3d11_texture> & stg_adapter, mfxHDL device)
     : d3d11_resource_wrapper(reinterpret_cast<ID3D11Device*>(device))
     , m_staging_adapter(stg_adapter)
     , m_staging_surface(nullptr)
@@ -885,7 +885,7 @@ mfxStatus d3d11_texture_wrapper::Lock(mfxFrameData& frame_data, mfxU32 flags)
     m_pD11Device->GetImmediateContext(&pImmediateContext);
 
     // In d3d11 mapping is performed on staging surfaces
-    unique_ptr_staging_texture staging_surface(m_staging_adapter.get_staging_texture(this, Desc));
+    unique_ptr_staging_texture staging_surface(m_staging_adapter->get_staging_texture(this, Desc));
 
     // If read access requested need to copy actual pixel values to staging surface
     if (flags & MFX_MAP_READ)
@@ -950,16 +950,14 @@ mfxStatus d3d11_texture_wrapper::Realloc(const mfxFrameInfo & info)
     D3D11_TEXTURE2D_DESC Desc = {};
     reinterpret_cast<ID3D11Texture2D *>((ID3D11Resource*)m_resource)->GetDesc(&Desc);
 
-    m_staging_adapter.UpdateCache(this, Desc);
+    m_staging_adapter->UpdateCache(this, Desc);
 
     return MFX_ERR_NONE;
 }
 
-mfxFrameSurface1_hw_d3d11::mfxFrameSurface1_hw_d3d11(const mfxFrameInfo & info, mfxU16 type, mfxMemId mid, staging_adapter_d3d11_texture & stg_adapter, mfxHDL device, mfxU32, FrameAllocatorBase& allocator)
+mfxFrameSurface1_hw_d3d11::mfxFrameSurface1_hw_d3d11(const mfxFrameInfo & info, mfxU16 type, mfxMemId mid, std::shared_ptr<staging_adapter_d3d11_texture>& stg_adapter, mfxHDL device, mfxU32, FrameAllocatorBase& allocator)
     : RWAcessSurface(info, type, mid, allocator)
     , m_pD11Device(reinterpret_cast<ID3D11Device*>(device))
-    , m_staging_adapter(stg_adapter)
-
 {
     MFX_CHECK_WITH_THROW(check_supported_fourcc(info.FourCC), MFX_ERR_UNSUPPORTED, mfx::mfxStatus_exception(MFX_ERR_UNSUPPORTED));
     MFX_CHECK_WITH_THROW(!(type & MFX_MEMTYPE_SYSTEM_MEMORY), MFX_ERR_UNSUPPORTED, mfx::mfxStatus_exception(MFX_ERR_UNSUPPORTED));
@@ -970,7 +968,7 @@ mfxFrameSurface1_hw_d3d11::mfxFrameSurface1_hw_d3d11(const mfxFrameInfo & info, 
     }
     else
     {
-        m_resource_wrapper.reset(new d3d11_texture_wrapper(info, type, m_staging_adapter, m_pD11Device));
+        m_resource_wrapper.reset(new d3d11_texture_wrapper(info, type, stg_adapter, m_pD11Device));
     }
 }
 

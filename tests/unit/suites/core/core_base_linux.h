@@ -53,6 +53,15 @@ namespace test
 
         std::vector<mfxU32>                 buffer;
 
+        virtual ~coreBase()
+        {
+            if (src && src->FrameInterface && src->FrameInterface->Release)
+                std::ignore = src->FrameInterface->Release(src);
+
+            if (dst && dst->FrameInterface && dst->FrameInterface->Release)
+                std::ignore = dst->FrameInterface->Release(dst);
+        }
+
         void SetUp() override
         {
             vp.mfx.FrameInfo.Width        = 640;

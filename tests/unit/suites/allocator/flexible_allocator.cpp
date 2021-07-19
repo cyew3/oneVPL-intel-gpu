@@ -149,20 +149,6 @@ namespace test
         );
     }
 
-    TEST_P(FlexibleAllocator, FreeAfterRemove)
-    {
-        req.NumFrameMin = req.NumFrameSuggested = 5;
-        ASSERT_EQ(
-            allocator->Alloc(req, res),
-            MFX_ERR_NONE
-        );
-        allocator->Remove(res.mids[1]);
-        EXPECT_EQ(
-            allocator->Free(res),
-            MFX_ERR_NONE
-        );
-    }
-
     TEST_P(FlexibleAllocator, PartialFree)
     {
         req.NumFrameMin = req.NumFrameSuggested = 10;
@@ -288,7 +274,16 @@ namespace test
         );
         EXPECT_EQ(
             counter,
-            1u
+            2u
+        );
+        ASSERT_NE(
+            surface->FrameInterface->Release,
+            nullptr
+        );
+
+        ASSERT_EQ(
+            surface->FrameInterface->Release(surface),
+            MFX_ERR_NONE
         );
     }
 
@@ -314,7 +309,7 @@ namespace test
             surface->FrameInterface->GetRefCounter(surface, &cnt),
             MFX_ERR_NONE
         );
-        ASSERT_EQ(cnt, 2);
+        ASSERT_EQ(cnt, 3u);
 
         ASSERT_EQ(
             surface->FrameInterface->Release(surface),
@@ -325,7 +320,7 @@ namespace test
             surface->FrameInterface->GetRefCounter(surface, &cnt),
             MFX_ERR_NONE
         );
-        ASSERT_EQ(cnt, 1);
+        ASSERT_EQ(cnt, 2u);
 
         EXPECT_EQ(
             surface->FrameInterface->Release(surface),
@@ -376,20 +371,6 @@ namespace test
         EXPECT_EQ(
             allocator->Alloc(req, res),
             MFX_ERR_NONE
-        );
-    }
-
-    TEST_P(FlexibleAllocator, Remove)
-    {
-        ASSERT_EQ(
-            allocator->Alloc(req, res),
-            MFX_ERR_NONE
-        );
-        allocator->Remove(res.mids[0]);
-        mfxFrameData data{};
-        EXPECT_EQ(
-            allocator->Lock(res.mids[0], &data, MFX_MAP_READ),
-            MFX_ERR_NOT_FOUND
         );
     }
 }

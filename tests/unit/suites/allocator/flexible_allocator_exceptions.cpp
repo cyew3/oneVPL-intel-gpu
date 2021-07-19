@@ -28,8 +28,13 @@ namespace test
     {
         struct mfxFrameSurface1_fake : public mfxFrameSurface1_sw
         {
-            mfxFrameSurface1_fake(const mfxFrameInfo & info, mfxU16 type, mfxMemId mid, mfxHDL staging_adapter, mfxHDL device, mfxU32 context, FrameAllocatorBase& allocator) :
-                mfxFrameSurface1_sw(info, type, mid, staging_adapter, device, context, allocator)
+            static mfxFrameSurface1_fake* Create(const mfxFrameInfo& info, mfxU16 type, mfxMemId mid, std::shared_ptr<staging_adapter_stub>& staging_adapter, mfxHDL device, mfxU32 context, FrameAllocatorBase& allocator)
+            {
+                return new mfxFrameSurface1_fake(info, type, mid, staging_adapter, device, context, allocator);
+            }
+        private:
+            mfxFrameSurface1_fake(const mfxFrameInfo & info, mfxU16 type, mfxMemId mid, std::shared_ptr<staging_adapter_stub>& staging_adapter, mfxHDL device, mfxU32 context, FrameAllocatorBase& allocator)
+                : mfxFrameSurface1_sw(info, type, mid, staging_adapter, device, context, allocator)
             {
                 throw - 1;
             }

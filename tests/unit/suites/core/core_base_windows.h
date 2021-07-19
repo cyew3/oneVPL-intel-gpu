@@ -68,6 +68,15 @@ namespace test
 
         static int constexpr                         type = MFX_HW_DG2;
 
+        virtual ~coreBase()
+        {
+            if (src && src->FrameInterface && src->FrameInterface->Release)
+                std::ignore = src->FrameInterface->Release(src);
+
+            if (dst && dst->FrameInterface && dst->FrameInterface->Release)
+                std::ignore = dst->FrameInterface->Release(dst);
+        }
+
         void SetUp() override
         {
             ASSERT_NO_THROW({

@@ -387,11 +387,12 @@ struct unique_ptr_staging_texture : public std::unique_ptr<staging_texture, void
 class d3d11_texture_wrapper : public d3d11_resource_wrapper
 {
 public:
-    d3d11_texture_wrapper(const mfxFrameInfo &info, mfxU16 type, staging_adapter_d3d11_texture& stg_adapter, mfxHDL device);
+    d3d11_texture_wrapper(const mfxFrameInfo &info, mfxU16 type, std::shared_ptr<staging_adapter_d3d11_texture>& stg_adapter, mfxHDL device);
 
     virtual ~d3d11_texture_wrapper()
     {
-        m_staging_adapter.UpdateCache(this);
+        if (m_staging_adapter)
+            m_staging_adapter->UpdateCache(this);
     }
 
     virtual mfxStatus Lock(mfxFrameData& frame_data, mfxU32 flags) override;
@@ -401,16 +402,21 @@ public:
 private:
     mfxStatus AllocFrame(const mfxFrameInfo & info);
 
-    staging_adapter_d3d11_texture&  m_staging_adapter;
-    unique_ptr_staging_texture      m_staging_surface;
-    mfxU16                          m_type;
-    bool                            m_was_locked_for_write = false;
+    std::shared_ptr<staging_adapter_d3d11_texture> m_staging_adapter;
+    unique_ptr_staging_texture                     m_staging_surface;
+    mfxU16                                         m_type;
+    bool                                           m_was_locked_for_write = false;
 };
 
 struct mfxFrameSurface1_hw_d3d11 : public RWAcessSurface
 {
-    mfxFrameSurface1_hw_d3d11(const mfxFrameInfo & info, mfxU16 type, mfxMemId id, staging_adapter_d3d11_texture& stg_adapter,
-                                mfxHDL device, mfxU32 context, FrameAllocatorBase& allocator);
+    static mfxFrameSurface1_hw_d3d11* Create(const mfxFrameInfo& info, mfxU16 type, mfxMemId id, std::shared_ptr<staging_adapter_d3d11_texture>& stg_adapter,
+                                        mfxHDL device, mfxU32 context, FrameAllocatorBase& allocator)
+    {
+        auto surface = new mfxFrameSurface1_hw_d3d11(info, type, id, stg_adapter, device, context, allocator);
+        static_cast<mfxRefCountableBase*>(surface)->AddRef();
+        return surface;
+    }
 
     ~mfxFrameSurface1_hw_d3d11()
     {
@@ -444,11 +450,13 @@ struct mfxFrameSurface1_hw_d3d11 : public RWAcessSurface
     }
 
 private:
+    mfxFrameSurface1_hw_d3d11(const mfxFrameInfo& info, mfxU16 type, mfxMemId id, std::shared_ptr<staging_adapter_d3d11_texture>& stg_adapter,
+                                mfxHDL device, mfxU32 context, FrameAllocatorBase& allocator);
+
     mutable std::shared_timed_mutex         m_hdl_mutex;
 
     ID3D11Device*                           m_pD11Device;
     std::unique_ptr<d3d11_resource_wrapper> m_resource_wrapper;
-    staging_adapter_d3d11_texture&          m_staging_adapter;
 };
 
 using FlexibleFrameAllocatorHW_D3D11 = FlexibleFrameAllocator<mfxFrameSurface1_hw_d3d11, staging_adapter_d3d11_texture>;
