@@ -125,10 +125,6 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
     }
 
 #if defined (MFX_VA_WIN)
-
-    if (IS_PROTECTION_CENC(vp.Protected))
-        return false;
-
     mfxU32 const va_profile =
         ChooseProfile(&vp, type) & (UMC::VA_CODEC | UMC::VA_ENTRY_POINT);
 

@@ -562,7 +562,7 @@ mfxStatus D3D11VideoCORE_T<Base>::CreateVA(mfxVideoParam *param, mfxFrameAllocRe
 #endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(param->Protected) && !IS_PROTECTION_CENC(param->Protected))
+    if (IS_PROTECTION_ANY(param->Protected))
     {
         sts = ConvertUMCStatusToMfx(m_pAccelerator->GetVideoDecoderDriverHandle(&m_DXVA2DecodeHandle));
         if (sts != MFX_ERR_NONE)

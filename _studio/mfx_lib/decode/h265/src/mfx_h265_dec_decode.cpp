@@ -303,7 +303,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #if defined (MFX_VA_WIN)
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
         {
@@ -490,7 +490,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #if defined (MFX_VA_WIN)
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
         {

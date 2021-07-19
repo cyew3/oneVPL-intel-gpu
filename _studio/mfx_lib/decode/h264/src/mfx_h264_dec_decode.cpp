@@ -371,7 +371,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     static_cast<UMC::VATaskSupplier*>(m_pH264VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
         {
@@ -652,7 +652,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
     {
         MFX_CHECK(m_va->GetProtectedVA(), MFX_ERR_UNDEFINED_BEHAVIOR);
         umcSts = m_va->GetProtectedVA()->SetModes(par);
@@ -1008,11 +1008,6 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
         dpbSize = par->mfx.MaxDecFrameBuffering;
 
     mfxU32 numMin = dpbSize + 1 + asyncDepth;
-
-#ifdef MFX_ENABLE_CPLIB
-    if (IS_PROTECTION_CENC(par->Protected))
-        numMin += 2;
-#endif
 
     if (useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
         numMin += NUMBER_OF_ADDITIONAL_FRAMES;

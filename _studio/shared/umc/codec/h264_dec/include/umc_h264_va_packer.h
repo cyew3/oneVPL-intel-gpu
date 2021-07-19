@@ -187,20 +187,6 @@ protected:
     void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling);
 };
 
-#ifdef MFX_ENABLE_CPLIB
-class PackerVA_CENC : public PackerVA
-{
-public:
-
-    PackerVA_CENC(VideoAccelerator * va, TaskSupplier * supplier);
-
-private:
-
-    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) override;
-    void PackAU(const H264DecoderFrame*, int32_t isTop) override;
-};
-#endif
-
 #endif // UMC_VA_LINUX
 
 } // namespace UMC

@@ -148,7 +148,7 @@
 #define MFX_ENV_CFG_ENABLE
 #endif
 
-#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     #define MFX_ENABLE_CP
 #endif
 

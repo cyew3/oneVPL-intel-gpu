@@ -66,11 +66,6 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
 
         m_counterMode = extPAVP->CounterType;
     }
-    else if (IS_PROTECTION_CENC(m_protected))
-    {
-        m_encryptionType = 0;
-        m_counterMode = 0;
-    }
     else
     {
         m_encryptionType = MFX_PAVP_AES128_CTR;
@@ -95,12 +90,6 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
 {
     if (!bs)
         return;
-
-    if (IS_PROTECTION_CENC(m_protected))
-    {
-        m_bs = *bs;
-        return;
-    }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (!bs->EncryptedData)
