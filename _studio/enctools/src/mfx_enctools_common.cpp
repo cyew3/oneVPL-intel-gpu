@@ -327,43 +327,45 @@ mfxStatus EncTools::InitVPP(mfxEncToolsCtrl const& ctrl)
     MFX_CHECK_STS(sts);
 
     //LA VPP
-    m_mfxSession_LA = m_lpLookAhead.GetEncSession();
-    MFX_CHECK(m_mfxSession_LA != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    m_pmfxVPP_LA.reset(new MFXVideoVPP(*m_mfxSession_LA));
-    MFX_CHECK(m_pmfxVPP_LA, MFX_ERR_MEMORY_ALLOC);
-
-    mfxExtVPPScaling vppScalingMode = {};
-    vppScalingMode.Header.BufferId = MFX_EXTBUFF_VPP_SCALING;
-    vppScalingMode.Header.BufferSz = sizeof(vppScalingMode);
-    vppScalingMode.ScalingMode = MFX_SCALING_MODE_LOWPOWER;
-    vppScalingMode.InterpolationMethod = MFX_INTERPOLATION_NEAREST_NEIGHBOR;
-    std::vector<mfxExtBuffer*> extParams;
-    extParams.push_back((mfxExtBuffer *)&vppScalingMode);
-    m_mfxVppParams_LA.ExtParam = extParams.data();
-    m_mfxVppParams_LA.NumExtParam = (mfxU16)extParams.size();
-
-    sts = m_pmfxVPP_LA->Init(&m_mfxVppParams_LA);
-    m_mfxVppParams_LA.ExtParam = nullptr;
-    m_mfxVppParams_LA.NumExtParam = 0;
-    MFX_CHECK_STS(sts);
-
-    //memory allocation for LA
-    mfxFrameAllocRequest VppRequest[2]{};
-    sts = m_pmfxVPP_LA->QueryIOSurf(&m_mfxVppParams_LA, VppRequest);
-    MFX_CHECK_STS(sts);
-
-    sts = m_pAllocator->Alloc(m_pAllocator->pthis, &(VppRequest[1]), &m_VppResponse);
-    MFX_CHECK_STS(sts);
-
-    m_pIntSurfaces_LA.resize(m_VppResponse.NumFrameActual);
-    for (mfxU32 i = 0; i < (mfxU32)m_pIntSurfaces_LA.size(); i++)
+    if (isPreEncLA(m_config, ctrl))
     {
-        m_pIntSurfaces_LA[i] = {};
-        m_pIntSurfaces_LA[i].Info = m_mfxVppParams_LA.vpp.Out;
-        m_pIntSurfaces_LA[i].Data.MemId = m_VppResponse.mids[i];
-    }
+        m_mfxSession_LA = m_lpLookAhead.GetEncSession();
+        MFX_CHECK(m_mfxSession_LA != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
 
+        m_pmfxVPP_LA.reset(new MFXVideoVPP(*m_mfxSession_LA));
+        MFX_CHECK(m_pmfxVPP_LA, MFX_ERR_MEMORY_ALLOC);
+
+        mfxExtVPPScaling vppScalingMode = {};
+        vppScalingMode.Header.BufferId = MFX_EXTBUFF_VPP_SCALING;
+        vppScalingMode.Header.BufferSz = sizeof(vppScalingMode);
+        vppScalingMode.ScalingMode = MFX_SCALING_MODE_LOWPOWER;
+        vppScalingMode.InterpolationMethod = MFX_INTERPOLATION_NEAREST_NEIGHBOR;
+        std::vector<mfxExtBuffer*> extParams;
+        extParams.push_back(&vppScalingMode.Header);
+        m_mfxVppParams_LA.ExtParam = extParams.data();
+        m_mfxVppParams_LA.NumExtParam = (mfxU16)extParams.size();
+
+        sts = m_pmfxVPP_LA->Init(&m_mfxVppParams_LA);
+        m_mfxVppParams_LA.ExtParam = nullptr;
+        m_mfxVppParams_LA.NumExtParam = 0;
+        MFX_CHECK_STS(sts);
+
+        //memory allocation for LA
+        mfxFrameAllocRequest VppRequest[2]{};
+        sts = m_pmfxVPP_LA->QueryIOSurf(&m_mfxVppParams_LA, VppRequest);
+        MFX_CHECK_STS(sts);
+
+        sts = m_pAllocator->Alloc(m_pAllocator->pthis, &(VppRequest[1]), &m_VppResponse);
+        MFX_CHECK_STS(sts);
+
+        m_pIntSurfaces_LA.resize(m_VppResponse.NumFrameActual);
+        for (mfxU32 i = 0; i < (mfxU32)m_pIntSurfaces_LA.size(); i++)
+        {
+            m_pIntSurfaces_LA[i] = {};
+            m_pIntSurfaces_LA[i].Info = m_mfxVppParams_LA.vpp.Out;
+            m_pIntSurfaces_LA[i].Data.MemId = m_VppResponse.mids[i];
+        }
+    }
 
     //SCD VPP
     if (isPreEncSCD(m_config, ctrl))
@@ -387,6 +389,7 @@ mfxStatus EncTools::InitVPP(mfxEncToolsCtrl const& ctrl)
     m_bVPPInit = true;
     return MFX_ERR_NONE;
 }
+
 mfxStatus EncTools::InitMfxVppParams(mfxEncToolsCtrl const & ctrl)
 {
     //common for LA and SCD
@@ -890,7 +893,6 @@ mfxStatus EncTools::Query(mfxEncToolsTaskParam* par, mfxU32 /*timeOut*/)
 
     return sts;
 }
-
 
 mfxStatus EncTools::Discard(mfxU32 displayOrder)
 {
