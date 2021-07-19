@@ -166,7 +166,7 @@ protected:
     };
 };
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #if defined(MFX_D3D11_ENABLED)
 
 //application can provide either generic mid from surface or this wrapper
@@ -547,7 +547,7 @@ protected:
     DWORD m_surfaceUsage;
 };
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if defined(MFX_VA_WIN)
 
 
 #if defined(MFX_VA_LINUX)

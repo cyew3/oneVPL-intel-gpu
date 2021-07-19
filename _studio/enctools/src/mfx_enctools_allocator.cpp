@@ -220,7 +220,7 @@ mfxStatus BaseFrameAllocator::Close()
     return MFX_ERR_NONE;
 }
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #if defined(MFX_D3D11_ENABLED)
 
 #define et_alloc_printf(...)
@@ -1254,7 +1254,7 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     return MFX_ERR_NONE;
 }
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if defined(MFX_VA_WIN)
 
 #if defined(MFX_VA_LINUX)
 

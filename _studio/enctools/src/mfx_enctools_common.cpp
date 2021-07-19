@@ -504,7 +504,7 @@ mfxStatus EncTools::Init(mfxExtEncToolsConfig const * pConfig, mfxEncToolsCtrl c
 
         if (!m_pAllocator)
         {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
             if (m_deviceType == MFX_HANDLE_D3D11_DEVICE)
             {
 #if defined(MFX_D3D11_ENABLED)

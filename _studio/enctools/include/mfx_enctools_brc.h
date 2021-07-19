@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2020 Intel Corporation
+// Copyright (c) 2009-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -136,11 +136,11 @@ public:
     bool   bFieldMode;
 
     //BRC accurancy params
-    mfxF64 fAbPeriodLong;   // number on frames to calculate abberation from target frame
-    mfxF64 fAbPeriodShort;  // number on frames to calculate abberation from target frame
-    mfxF64 fAbPeriodLA;     // number on frames to calculate abberation from target frame (LA)
-    mfxF64 dqAbPeriod;      // number on frames to calculate abberation from dequant
-    mfxF64 bAbPeriod;       // number of frames to calculate abberation from target bitrate
+    mfxF64 fAbPeriodLong;   // number on frames to calculate aberration from target frame
+    mfxF64 fAbPeriodShort;  // number on frames to calculate aberration from target frame
+    mfxF64 fAbPeriodLA;     // number on frames to calculate aberration from target frame (LA)
+    mfxF64 dqAbPeriod;      // number on frames to calculate aberration from dequant
+    mfxF64 bAbPeriod;       // number of frames to calculate aberration from target bitrate
 
     //QP parameters
     mfxI32   quantOffset;
@@ -391,10 +391,10 @@ struct BRC_Ctx
 
     mfxU32 LastNonBFrameSize; // encoded frame size of last non B frame (is used for sceneChange)
 
-    mfxF64 fAbLong;         // frame abberation (long period)
-    mfxF64 fAbShort;        // frame abberation (short period)
-    mfxF64 fAbLA;          // frame abberation (LA period)
-    mfxF64 dQuantAb;        // dequant abberation
+    mfxF64 fAbLong;         // frame aberration (long period)
+    mfxF64 fAbShort;        // frame aberration (short period)
+    mfxF64 fAbLA;           // frame aberration (LA period)
+    mfxF64 dQuantAb;        // dequant aberration
     mfxF64 totalDeviation;   // deviation from  target bitrate (total)
 
     mfxF64 eRate;               // eRate of last encoded frame, this parameter is used for scene change calculation
