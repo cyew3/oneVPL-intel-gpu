@@ -258,9 +258,11 @@ namespace MfxHwH264Encode
 
 #endif
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     // MFX_EXTBUFF_MULTI_GPU_PARAM pass through from MultiGpuEncoder (or directly) with MFX_CODINGOPTION_OFF
     // so, no additional logic needed in H264 encoder, just have mfxExtMultiGpuParam support
     BIND_EXTBUF_TYPE_TO_ID(mfxExtHyperModeParam, MFX_EXTBUFF_HYPER_MODE_PARAM);
+#endif
 
 #undef BIND_EXTBUF_TYPE_TO_ID
 
@@ -693,7 +695,9 @@ namespace MfxHwH264Encode
         mfxExtPartialBitstreamParam m_po;
 #endif
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
         mfxExtHyperModeParam m_HyperMode;
+#endif
 
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;

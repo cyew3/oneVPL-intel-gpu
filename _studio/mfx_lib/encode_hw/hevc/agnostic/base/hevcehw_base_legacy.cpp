@@ -278,6 +278,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(QP);
     });
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     // MFX_EXTBUFF_HYPER_MODE_PARAM pass through from HyperEncoder (or directly) with MFX_CODINGOPTION_OFF or MFX_CODINGOPTION_ADAPTIVE
     // so, no additional logic needed in HEVC encoder, just have mfxExtMultiGpuParam support
     blocks.m_ebCopySupported[MFX_EXTBUFF_HYPER_MODE_PARAM].emplace_back(
@@ -287,6 +288,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         auto& buf_dst = *(mfxExtHyperModeParam*)pDst;
         MFX_COPY_FIELD(Mode);
     });
+#endif
 }
 
 bool Legacy::IsTCBRC(const mfxVideoParam& par, mfxU16 tcbrcSupport)

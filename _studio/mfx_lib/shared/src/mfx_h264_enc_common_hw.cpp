@@ -1841,7 +1841,9 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
         || id == MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM
 #endif
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
         || id == MFX_EXTBUFF_HYPER_MODE_PARAM
+#endif
         || id == MFX_EXTBUFF_VPP_DENOISE2
        );
 }
@@ -7887,7 +7889,9 @@ MfxVideoParam::MfxVideoParam()
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
     , m_extGameStreaming()
 #endif
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     , m_HyperMode()
+#endif
     , calcParam()
 {
     memset(m_extParam, 0, sizeof(m_extParam));
@@ -8213,7 +8217,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtPartialBitstreamParam , m_po);
 #endif
 
+#if defined(MFX_ENABLE_VIDEO_HYPER_ENCODE_HW)
     CONSTRUCT_EXT_BUFFER(mfxExtHyperModeParam, m_HyperMode);
+#endif
 
 #undef CONSTRUCT_EXT_BUFFER
 #undef CONSTRUCT_EXT_BUFFER_EX
