@@ -1906,7 +1906,6 @@ mfxStatus D3D11SvcEncoder::Init(
     hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
     CHECK_HRES(hRes);
 
-#if 1
     D3D11_VIDEO_DECODER_EXTENSION ext = {};
     ext.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
     ext.pPrivateOutputData = &m_caps.ddi_caps;
@@ -1916,7 +1915,6 @@ mfxStatus D3D11SvcEncoder::Init(
         hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
     }
     CHECK_HRES(hRes);
-#endif
 
     return MFX_ERR_NONE;
 }

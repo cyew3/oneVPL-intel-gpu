@@ -55,6 +55,10 @@
     #if !defined(UMC_ENABLE_VIDEO_BRC)
         #define UMC_ENABLE_VIDEO_BRC
     #endif
+    #define USE_AGOP 0
+    #if USE_AGOP
+    #define USE_DOWN_SAMPLE_KERNELS
+    #endif
 #endif
 
 #if defined(MFX_ENABLE_MVC_VIDEO_ENCODE)
@@ -88,6 +92,11 @@
     #endif
     #if !defined(UMC_ENABLE_VIDEO_BRC)
         #define UMC_ENABLE_VIDEO_BRC
+    #endif
+    #if defined(MFX_VA_WIN)
+    #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        #define PAVP_SUPPORT
+    #endif
     #endif
 #endif
 

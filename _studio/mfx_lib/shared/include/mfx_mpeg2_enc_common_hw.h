@@ -34,7 +34,6 @@
     #include "auxiliary_device.h"
 
     #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        #define PAVP_SUPPORT
         #include "mfxpcp.h"
         #include "mfxpavp.h"
     #endif
