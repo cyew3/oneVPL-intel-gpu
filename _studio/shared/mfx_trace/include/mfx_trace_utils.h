@@ -25,7 +25,9 @@
 
 #ifdef MFX_TRACE_ENABLE
 
+#if defined MFX_VA_WIN
 #include "sys/mfx_trace_utils_windows.h"
+#endif
 #include "sys/mfx_trace_utils_linux.h"
 
 #include <stdarg.h>

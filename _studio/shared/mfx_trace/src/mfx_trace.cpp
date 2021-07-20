@@ -39,7 +39,9 @@ extern "C"
 #include "mfx_trace_utils.h"
 #include "mfx_trace_textlog.h"
 #include "mfx_trace_stat.h"
+#if defined MFX_VA_WIN
 #include "mfx_trace_etw.h"
+#endif
 #include "mfx_trace_tal.h"
 #include "mfx_trace_itt.h"
 #include "mfx_trace_ftrace.h"
