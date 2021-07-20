@@ -21,39 +21,32 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
-#include "av1ehw_base_data.h"
-#include "av1ehw_base_win.h"
 #include "ehw_platforms.h"
 
 namespace AV1EHW
 {
-namespace Windows
-{
 namespace Gen13_1
 {
-    enum eFeatureId
-    {
-        FEATURE_SCC = AV1EHW::Base::eFeatureId::NUM_FEATURES
-        , FEATURE_G13GENERAL
-        , NUM_FEATURES
-    };
-
-    class MFXVideoENCODEAV1_HW
-        : public Windows::Base::MFXVideoENCODEAV1_HW
+    class General
+        : public FeatureBase
     {
     public:
-        using TBaseImpl = Windows::Base::MFXVideoENCODEAV1_HW;
+#define DECL_BLOCK_LIST\
+        DECL_BLOCK(SetDefaultsCallChain)
+#define DECL_FEATURE_NAME "G13_1_GENERAL"
+#include "av1ehw_decl_blocks.h"
 
-        MFXVideoENCODEAV1_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
+    General(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
+
+    protected:
+        virtual void Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
     };
 
 } //Gen13_1
-} //Windows
-}// namespace AV1EHW
+} //namespace AV1EHW
 
-#endif
+#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

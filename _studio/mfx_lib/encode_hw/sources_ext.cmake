@@ -223,6 +223,9 @@ target_sources(encode_hw
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1/av1ehw_g13_1_scc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1/av1ehw_g13_1_scc.h
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1/av1ehw_g13_1_general.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/agnostic/g13_1/av1ehw_g13_1_general.h
+		
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux/g12/av1ehw_g12_lin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/av1/embargo/linux/g12/av1ehw_g12_lin.h
 

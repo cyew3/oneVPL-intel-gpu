@@ -26,6 +26,7 @@
 #include "av1ehw_base_general.h"
 #include "av1ehw_base_segmentation.h"
 #include "av1ehw_g13_1_scc.h"
+#include "av1ehw_g13_1_general.h"
 
 using namespace AV1EHW;
 
@@ -40,6 +41,7 @@ Windows::Gen13_1::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
 
     newFeatures.emplace_back(new AV1EHW::Base::Segmentation(AV1EHW::Base::FEATURE_SEGMENTATION));
     newFeatures.emplace_back(new AV1EHW::Gen13_1::SCC(FEATURE_SCC));
+    newFeatures.emplace_back(new AV1EHW::Gen13_1::General(FEATURE_G13GENERAL));
 
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
