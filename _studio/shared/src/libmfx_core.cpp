@@ -866,7 +866,8 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
 
     MFX_CHECK(m_hdl || MFX_HW_VAAPI != GetVAType(), MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    *platform = MakePlatform(GetHWType(), m_deviceId);
+    auto type = GetHWType();
+    *platform = MakePlatform(type, m_deviceId);
 
     return MFX_ERR_NONE;
 } // mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
