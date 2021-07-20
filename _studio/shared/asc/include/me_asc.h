@@ -20,7 +20,7 @@
 #ifndef __ME_HEADER__
 #define __ME_HEADER__
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #include <intrin.h>
 #else
 #include <x86intrin.h>

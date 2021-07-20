@@ -31,7 +31,7 @@
 //
 
 static inline mfxI32 CpuFeature_SSE41() {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     mfxI32 info[4], mask = (1 << 19);    // SSE41
     __cpuidex(info, 0x1, 0);
     return ((info[2] & mask) == mask);
@@ -40,23 +40,25 @@ static inline mfxI32 CpuFeature_SSE41() {
 #endif
 }
 
-#if defined(__AVX2__) && (defined(_WIN32) || defined(_WIN64))
-static inline mfxI32 CpuFeature_AVX() {
-#if defined(_WIN32)
-    mfxI32 info[4], mask = (1 << 27) | (1 << 28);    // OSXSAVE,AVX
-    __cpuidex(info, 0x1, 0);
-    if ((info[2] & mask) == mask)
-        return ((_xgetbv(_XCR_XFEATURE_ENABLED_MASK) & 0x6) == 0x6);
-    return 0;
-#else
-    return((__builtin_cpu_supports("avx2")));
-#endif
+#if defined(__AVX2__)
+    #if defined(MFX_VA_WIN)
+        static inline mfxI32 CpuFeature_AVX() {
+        #if defined(_WIN32)
+            mfxI32 info[4], mask = (1 << 27) | (1 << 28);    // OSXSAVE,AVX
+            __cpuidex(info, 0x1, 0);
+            if ((info[2] & mask) == mask)
+                return ((_xgetbv(_XCR_XFEATURE_ENABLED_MASK) & 0x6) == 0x6);
+            return 0;
+        #else
+            return((__builtin_cpu_supports("avx2")));
+        #endif
 }
+    #endif
 #endif
 
 static inline mfxI32 CpuFeature_AVX2() {
 #if defined(__AVX2__)
-    #if defined(_WIN32) || defined(_WIN64)
+    #if defined(MFX_VA_WIN)
         mfxI32 info[4], mask = (1 << 5); // AVX2
         if (CpuFeature_AVX()) {
             __cpuidex(info, 0x7, 0);

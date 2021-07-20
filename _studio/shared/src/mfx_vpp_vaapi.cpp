@@ -1328,7 +1328,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
     }
 
-    // Starting from ATS field weaving is perform on driver
+    // If field weaving is perform on driver
     // Kernel don't uses these parameters
     if (pParams->bFieldWeavingExt)
     {
@@ -1352,7 +1352,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    // Starting from ATS field splitting is perform on driver
+    // If field splitting is perform on driver
     if (pParams->bFieldSplittingExt)
     {
         // TFF and BFF are input frame types for field splitting
@@ -1496,7 +1496,6 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 if (pParams->mirroringExt)
 {
     // First priority is HW fixed function scaling engine. If it can't work, revert to AVS
-    // Starting from ATS there is only HW fixed function scaling engine due to AVS removal
     m_pipelineParam[0].filter_flags = VA_FILTER_SCALING_DEFAULT;
 
     switch (pParams->mirroring)
@@ -2327,15 +2326,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             default:
                 m_pipelineParam[refIdx].filter_flags = VA_FRAME_PICTURE;
                 break;
-#if 0
-            // Composition always expect frames to be marked as progressive even if they are interlaced
-            case MFX_PICSTRUCT_FIELD_TFF:
-                m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD;
-                break;
-            case MFX_PICSTRUCT_FIELD_BFF:
-                m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
-                break;
-#endif
         }
 
         m_pipelineParam[refIdx].filters  = m_filterBufs;

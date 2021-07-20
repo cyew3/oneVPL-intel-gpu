@@ -149,7 +149,7 @@ void ME_SAD_8x8_Block_FSearch_AVX2(
     }
 }
 
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+#if defined(MFX_VA_WIN)
 void RsCsCalc_4x4_AVX2(
     pmfxU8  pSrc,
     int     srcPitch,

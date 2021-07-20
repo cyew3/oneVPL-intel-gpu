@@ -24,7 +24,7 @@
 using namespace ns_asc;
 
 void TimeStart(ASCTime* timer) {
-#if defined (_WIN32) || (_WIN64)
+#if defined (MFX_VA_WIN)
     QueryPerformanceFrequency(&timer->tFrequency);
     QueryPerformanceCounter(&timer->tStart);
 #else
@@ -33,7 +33,7 @@ void TimeStart(ASCTime* timer) {
 }
 
 void TimeStart(ASCTime* timer, int index) {
-#if defined (_WIN32) || (_WIN64)
+#if defined (MFX_VA_WIN)
     QueryPerformanceCounter(&timer->tPause[index]);
 #else
     (void)timer;
@@ -42,7 +42,7 @@ void TimeStart(ASCTime* timer, int index) {
 }
 
 void TimeStop(ASCTime* timer) {
-#if defined (_WIN32) || (_WIN64)
+#if defined (MFX_VA_WIN)
     QueryPerformanceCounter(&timer->tStop);
 #else
     (void)timer;
@@ -62,7 +62,7 @@ mfxF64 CatchTime(ASCTime *timer, const char* message)
 
 mfxF64 CatchTime(ASCTime *timer, int index, const char* message) {
     (void)message;
-#if defined (_WIN32) || (_WIN64)
+#if defined (MFX_VA_WIN)
     mfxF64
         timeval = 0.0;
     QueryPerformanceCounter(&timer->tPause[index]);
@@ -79,7 +79,7 @@ mfxF64 CatchTime(ASCTime *timer, int index, const char* message) {
 
 mfxF64 CatchTime(ASCTime *timer, int indexInit, int indexEnd, const char* message) {
     (void)message;
-#if defined (_WIN32) || (_WIN64)
+#if defined (MFX_VA_WIN)
     mfxF64
         timeval = 0.0;
     QueryPerformanceCounter(&timer->tPause[indexEnd]);

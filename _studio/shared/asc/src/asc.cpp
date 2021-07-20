@@ -25,7 +25,7 @@
 #ifndef STRIP_EMBARGO
 #include "genx_scd_xehp_sdv_isa.h"
 #endif
-#include "genx_scd_gen12lp_isa.cpp"
+#include "genx_scd_gen12lp_isa.h"
 #include "tree.h"
 #include "iofunctions.h"
 #include "motion_estimation_engine.h"
@@ -108,7 +108,7 @@ mfxStatus ASCimageData::InitFrame(ASCImDetails *pDetails) {
     Image.U = NULL;
     Image.V = NULL;
     //Memory Allocation
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+#if defined(MFX_VA_WIN)
     Image.data = (mfxU8*)_aligned_malloc(imageSpaceSize, 0x1000);
     SAD = (mfxU16 *)_aligned_malloc(sizeof(mfxU16) * mvSpaceSize, 0x1000);
     Rs = (mfxU16 *)_aligned_malloc(sizeof(mfxU16) * texSpaceSize, 0x1000);
@@ -159,7 +159,7 @@ mfxStatus ASCimageData::InitAuxFrame(ASCImDetails *pDetails) {
     Image.U = NULL;
     Image.V = NULL;
     //Memory Allocation
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+#if defined(MFX_VA_WIN)
     Image.data = (mfxU8*)_aligned_malloc(imageSpaceSize, 0x1000);
 #else
     Image.data = (mfxU8*)memalign(0x1000, imageSpaceSize);
@@ -173,7 +173,7 @@ mfxStatus ASCimageData::InitAuxFrame(ASCImDetails *pDetails) {
 }
 
 void ASCimageData::Close() {
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     if (Rs)
         _aligned_free(Rs);
     if (Cs)
@@ -336,7 +336,7 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     case PLATFORM_INTEL_BXT:
     case PLATFORM_INTEL_ICL:
     case PLATFORM_INTEL_ICLLP:
-        return MFX_ERR_DEVICE_FAILED;
+        return MFX_ERR_UNSUPPORTED;
 #ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = m_device->LoadProgram((void *)genx_scd_xehp_sdv, sizeof(genx_scd_xehp_sdv), m_program, "nojitter");
@@ -375,7 +375,7 @@ void ASC::Params_Init() {
     m_dataIn->StartingField = ASCTopField;
     m_dataIn->currentField = ASCTopField;
     ImDetails_Init(m_dataIn->layer);
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+#if defined(MFX_VA_WIN)
     m_dataIn->timer.calctime = 0.0;
     m_dataIn->timer.timeval = 0.0;
 #endif
@@ -465,7 +465,7 @@ mfxStatus ASC::VidSample_Alloc() {
         res = m_device->GetSurface2DInfo(m_gpuwidth, m_gpuheight, CM_SURFACE_FORMAT_NV12, m_gpuImPitch, physicalSize);
         SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
         m_frameBkp = nullptr;
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+#if defined(MFX_VA_WIN)
         m_frameBkp = (mfxU8*)_aligned_malloc(physicalSize, 0x1000);
 #else
         m_frameBkp = (mfxU8*)memalign(0x1000, physicalSize);
@@ -544,7 +544,7 @@ void ASC::VidSample_dispose()
             delete (m_videoData[i]);
         }
     }
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+#if defined(MFX_VA_WIN)
     _aligned_free(m_frameBkp);
 #else
     free(m_frameBkp);

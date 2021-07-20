@@ -17,6 +17,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+
+#include "mfx_config.h"
+
 #ifndef __ASC_DEFS__
 #define __ASC_DEFS__
 
@@ -72,13 +75,13 @@
 #define SCD_CHECK_CM_ERR(STS, ERR) if ((STS) != CM_SUCCESS) { ASC_PRINTF("FAILED at file: %s, line: %d, cmerr: %d\n", __FILE__, __LINE__, STS); return ERR; }
 #define SCD_CHECK_MFX_ERR(STS) if ((STS) != MFX_ERR_NONE) { ASC_PRINTF("FAILED at file: %s, line: %d, mfxerr: %d\n", __FILE__, __LINE__, STS); return STS; }
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
 #define ASC_ALIGN_DECL(X) __declspec(align(X))
-#else // linux
+#else
 #define ASC_ALIGN_DECL(X) __attribute__ ((aligned(X)))
-#endif //defined(_WIN32) || defined(_WIN64)
+#endif
 
-#if (defined( _WIN32 ) || defined ( _WIN64 ))
+#if (defined(MFX_VA_WIN))
 #if (defined( _WIN64))
 #define ARCH64
 #else
@@ -87,7 +90,7 @@
 #endif
 
 #if (defined (__GNUC__))
-#if (defined( __x86_64__ ) || defined( __ppc64__ ))
+#if (defined( __x86_64__ ))
 #define ARCH64
 #else
 #define ARCH32

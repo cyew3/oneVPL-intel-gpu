@@ -278,7 +278,7 @@ void RsCsCalc_4x4_SSE4(pmfxU8 pSrc, int srcPitch, int wblocks, int hblocks, pmfx
     }
 }
 
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+#if defined(MFX_VA_WIN)
 void RsCsCalc_bound_SSE4(pmfxU16 pRs, pmfxU16 pCs, pmfxU16 pRsCs, pmfxU32 pRsFrame, pmfxU32 pCsFrame, int wblocks, int hblocks)
 {
     mfxI32 i, len = wblocks * hblocks;

@@ -28,7 +28,7 @@
 #include <string.h>
 #include <math.h>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(MFX_VA_WIN)
     #include <intrin.h>
     #include <smmintrin.h>
 #else

@@ -90,13 +90,13 @@ namespace MfxHwVideoProcessing
         MFX_FOURCC_R16       ,
         MFX_FOURCC_AYUV      ,
         MFX_FOURCC_AYUV_RGB4 ,
-        MFX_FOURCC_UYVY
-        , MFX_FOURCC_Y210
-        , MFX_FOURCC_Y410
-        , MFX_FOURCC_P016
-        , MFX_FOURCC_Y216
-        , MFX_FOURCC_Y416
-        , MFX_FOURCC_BGRP      ,
+        MFX_FOURCC_UYVY      ,
+        MFX_FOURCC_Y210      ,
+        MFX_FOURCC_Y410      ,
+        MFX_FOURCC_P016      ,
+        MFX_FOURCC_Y216      ,
+        MFX_FOURCC_Y416      ,
+        MFX_FOURCC_BGRP      ,
     };
 
     typedef enum mfxFormatSupport {
@@ -422,8 +422,10 @@ namespace MfxHwVideoProcessing
                ,bDenoiseAutoAdjust(false)
                ,denoiseFactor(0)
                ,denoiseFactorOriginal(0)
+#ifdef MFX_ENABLE_VPP_HVS
                ,denoiseMode(MFX_DENOISE_MODE_DEFAULT)
                ,bdenoiseAdvanced(false)
+#endif
                ,bDetailAutoAdjust(false)
                ,detailFactor(0)
                ,detailFactorOriginal(0)
@@ -520,7 +522,9 @@ namespace MfxHwVideoProcessing
                     bDenoiseAutoAdjust != 0 ||
                     bDetailAutoAdjust != 0 ||
                     denoiseFactor != 0 ||
+#ifdef MFX_ENABLE_VPP_HVS
                     bdenoiseAdvanced != false ||
+#endif
                     detailFactor != 0 ||
                     iTargetInterlacingMode != 0 ||
                     bEnableProcAmp != false ||
@@ -545,7 +549,7 @@ namespace MfxHwVideoProcessing
                     mirroring != 0 ||
                     mirroringExt != false ||
                     scene != VPP_NO_SCENE_CHANGE ||
-                    bDeinterlace30i60p != false || 
+                    bDeinterlace30i60p != false  ||
                     chromaSiting != MFX_CHROMA_SITING_UNKNOWN
 #ifdef MFX_ENABLE_MCTF
                     || bEnableMctf != false
