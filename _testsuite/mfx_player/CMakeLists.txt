@@ -1,4 +1,4 @@
-if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR (MFX_DISABLE_SW_FALLBACK AND NOT BUILD_VAL_TOOLS))
+if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR (NOT BUILD_VAL_TOOLS))
   return()
 endif()
 
@@ -88,11 +88,6 @@ set(mfx_dispatch_include
 
 add_library(mfx_pipeline STATIC ${common_mfx_pipeline_sources})
 
-target_compile_options(mfx_pipeline
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
-
 target_include_directories(mfx_pipeline
   PUBLIC
     ${MSDK_STUDIO_ROOT}/shared/include
@@ -147,11 +142,6 @@ target_include_directories(mfx_pipeline_lucas
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
     ${mfx_dispatch_include}
-)
-
-target_compile_options(mfx_pipeline_lucas
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
 )
 
 target_link_libraries(mfx_pipeline_lucas

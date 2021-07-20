@@ -35,7 +35,6 @@ project(mfx1
 include(CMakeDependentOption)
 
 set(OPEN_SOURCE ON)
-set(MFX_DISABLE_SW_FALLBACK ON)
 
 # Default to `release` build if nothing was specified
 if(NOT CMAKE_BUILD_TYPE)

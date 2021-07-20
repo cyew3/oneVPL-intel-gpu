@@ -1,5 +1,5 @@
-if(MFX_BUNDLED_IPP OR NOT BUILD_SAMPLES OR MFX_DISABLE_SW_FALLBACK OR NOT BUILD_EXTRA)
-  return()
+if(NOT BUILD_EXTRA)
+    return()
 endif()
 
 add_executable(test_thread_safety)

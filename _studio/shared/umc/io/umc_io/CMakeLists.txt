@@ -39,9 +39,4 @@ target_include_directories(umc_io
     include
   )
 
-target_compile_options(umc_io
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
-
 target_link_libraries(umc_io PUBLIC vm_plus)

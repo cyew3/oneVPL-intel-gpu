@@ -40,30 +40,6 @@ set( MSDK_TOOLS_ROOT   ${MSDK_BUILD_ROOT_MINUS_ONE}/tools )
 set( MSDK_BUILDER_ROOT ${BUILDER_ROOT} )
 set( MSDK_CMAKE_BINARY_ROOT ${CMAKE_CURRENT_BINARY_DIR} )
 
-function( mfx_include_dirs )
-  include_directories (
-    ${MSDK_STUDIO_ROOT}/shared/include
-    ${MSDK_UMC_ROOT}/core/vm/include
-    ${MSDK_UMC_ROOT}/core/vm_plus/include
-    ${MSDK_UMC_ROOT}/core/umc/include
-    ${MSDK_UMC_ROOT}/io/umc_io/include
-    ${MSDK_UMC_ROOT}/io/umc_va/include
-    ${MSDK_UMC_ROOT}/io/media_buffers/include
-    ${MSDK_LIB_ROOT}/shared/include
-    ${MSDK_LIB_ROOT}/optimization/h265/include
-    ${MSDK_LIB_ROOT}/optimization/h264/include
-    ${MSDK_LIB_ROOT}/shared/include
-    ${MSDK_LIB_ROOT}/fei/include
-    ${MSDK_LIB_ROOT}/fei/h264_la
-  )
-  if (MFX_DISABLE_SW_FALLBACK)
-    include_directories(
-      ${CMAKE_HOME_DIRECTORY}/contrib/ipp/include
-    )
-  endif()
-endfunction()
-
-
 #================================================
 
 add_library(mfx_static_lib INTERFACE)

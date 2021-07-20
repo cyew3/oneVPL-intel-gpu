@@ -1,4 +1,4 @@
-if (MFX_DISABLE_SW_FALLBACK AND NOT BUILD_VAL_TOOLS)
+if (NOT BUILD_VAL_TOOLS)
   return()
 endif()
 

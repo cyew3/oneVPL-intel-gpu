@@ -1,4 +1,4 @@
-if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR (MFX_DISABLE_SW_FALLBACK AND NOT BUILD_VAL_TOOLS))
+if(MFX_BUNDLED_IPP OR (NOT BUILD_SAMPLES) OR (NOT BUILD_VAL_TOOLS))
   return()
 endif()
 
@@ -53,11 +53,6 @@ target_link_libraries(mfx_trans_pipeline
     mfx_va_properties
 )
 
-target_compile_options(mfx_trans_pipeline
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
-
 target_compile_definitions(mfx_trans_pipeline
   PRIVATE
     MFX_VERSION_USE_LATEST
@@ -70,11 +65,6 @@ target_include_directories(mfx_trans_pipeline_lucas
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
-)
-
-target_compile_options(mfx_trans_pipeline_lucas
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
 )
 
 target_link_libraries(mfx_trans_pipeline_lucas

@@ -249,10 +249,6 @@ function( make_library_obsolete name variant type )
 
   configure_build_variant( ${target} ${ARGV1} )
 
-  if( NOT MFX_DISABLE_SW_FALLBACK AND NOT nosafestring )
-    target_link_libraries( ${target} PRIVATE SafeString )
-  endif()
-
   if( defs )
     append_property( ${target} COMPILE_FLAGS ${defs} )
   endif()

@@ -58,11 +58,6 @@ target_include_directories(asf_spl
     codec/asf_spl/include
   )
 
-target_compile_options(asf_spl
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
-
 target_link_libraries(asf_spl PUBLIC vm_plus PRIVATE media_buffers)
 ### UMC codec asf_spl
 
@@ -85,11 +80,6 @@ target_include_directories(avi_spl
     codec/avi_spl/include
   )
 
-target_compile_options(avi_spl
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
-
 target_link_libraries(avi_spl PUBLIC vm_plus PRIVATE spl_common media_buffers)
 ### UMC codec avi_spl
 
@@ -108,11 +98,6 @@ target_include_directories(spl_common
   PUBLIC
     codec/spl_common/include
   )
-
-target_compile_options(spl_common
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
 
 target_link_libraries(spl_common PUBLIC vm_plus PRIVATE common media_buffers)
 ### UMC codec spl_common
@@ -170,11 +155,6 @@ target_include_directories(demuxer
     codec/demuxer/include
   )
 
-target_compile_options(demuxer
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
-
 target_link_libraries(demuxer PUBLIC vm_plus IPP::s IPP::vc IPP::dc IPP::i IPP::cc IPP::cv IPP::j IPP::msdk IPP::core PRIVATE media_buffers)
 ### UMC codec demuxer
 
@@ -194,11 +174,6 @@ target_include_directories(vc1_spl
   PUBLIC
     codec/vc1_spl/include
   )
-
-target_compile_options(vc1_spl
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
 
 target_link_libraries(vc1_spl PUBLIC vm_plus PRIVATE vc1_common)
 ### UMC codec vc1_spl
@@ -223,11 +198,6 @@ target_include_directories(mpeg4_spl
   PUBLIC
   codec/mpeg4_spl/include
   )
-
-target_compile_options(mpeg4_spl
-  PRIVATE
-    $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-)
 
 target_link_libraries(mpeg4_spl PUBLIC vm_plus PRIVATE spl_common common media_buffers)
 

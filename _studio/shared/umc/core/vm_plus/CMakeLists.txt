@@ -32,5 +32,3 @@ target_link_libraries(vm_plus
   PRIVATE
     mfx_sdl_properties
   )
-
-include(sources_ext.cmake OPTIONAL)

@@ -57,11 +57,4 @@ target_link_libraries(vm
     ${CMAKE_DL_LIBS}
   )
 
-if (BUILD_VAL_TOOLS AND MFX_DISABLE_SW_FALLBACK)
-  target_compile_options(vm
-    PRIVATE
-      $<IF:$<PLATFORM_ID:Linux>,-U MFX_DISABLE_SW_FALLBACK,/UMFX_DISABLE_SW_FALLBACK>
-  )
-endif()
-
 include(sources_ext.cmake OPTIONAL)

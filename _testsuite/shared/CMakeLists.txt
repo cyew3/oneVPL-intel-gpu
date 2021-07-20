@@ -39,8 +39,6 @@ target_link_libraries(shared_utils
   PUBLIC
     vm_plus
     ${MFX_DISPATCHER}
-  PRIVATE
-    $<$<NOT:$<BOOL:${MFX_DISABLE_SW_FALLBACK}>>:h264_dec>
   )
 
 add_library(shared_utils_lucas STATIC)
@@ -61,8 +59,6 @@ target_link_libraries(shared_utils_lucas
   PUBLIC
     vm_plus
     ${MFX_DISPATCHER}
-  PRIVATE
-    $<$<NOT:$<BOOL:${MFX_DISABLE_SW_FALLBACK}>>:h264_dec>
   )
 
 target_compile_definitions(shared_utils_lucas PRIVATE LUCAS_DLL)
