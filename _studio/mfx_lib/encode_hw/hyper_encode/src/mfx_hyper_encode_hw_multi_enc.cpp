@@ -276,7 +276,7 @@ void HyperEncodeBase::CorrectFrameIfNeeded(const EncodingTasks* task)
         }
         else {
             mfxU32 index = m_lastProcessedFrame % m_mfxEncParams->mfx.GopPicSize;
-            m_timeStamps[index] += (mfxU64)m_mfxEncParams->mfx.GopPicSize * 2;
+            m_timeStamps[index] += (mfxU64)m_mfxEncParams->mfx.GopPicSize;
             memcpy(task->internalBst->Data + task->internalBst->DataOffset + 4, &m_timeStamps[index], 8);
         }
         m_lastProcessedFrame++;
