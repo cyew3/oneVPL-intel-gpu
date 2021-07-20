@@ -46,9 +46,6 @@
 #if defined(MFX_ENABLE_ENCTOOLS)
 #include "mfx_lp_lookahead.h"
 #endif
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-class MfxLpLookAhead;
-#endif
 
 #ifdef MFX_ENABLE_MCTF_IN_AVC
 #include "cmvm.h"
@@ -3333,9 +3330,6 @@ private:
         mfxU32      m_maxBsSize;
 
         std::unique_ptr<DriverEncoder>    m_ddi;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        std::unique_ptr<MfxLpLookAhead> m_lpLookAhead;
-#endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         QpHistory m_qpHistory;
 #endif

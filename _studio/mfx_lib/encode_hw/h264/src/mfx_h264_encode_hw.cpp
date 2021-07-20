@@ -1721,38 +1721,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     m_videoInit = m_video;
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
-    if (IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, m_video.mfx.RateControlMethod)
-#if defined(MFX_ENABLE_ENCTOOLS)
-        && !(m_enabledEncTools)
-#endif
-        )
-    {
-        //create and initialize lowpower lookahead module
-        m_lpLookAhead.reset(new MfxLpLookAhead(m_core));
-
-        // create ext buffer to set the lookahead data buffer
-        mfxVideoParam lplaParam = m_video;
-        mfxExtLplaParam extBufLPLA = {};
-        extBufLPLA.Header.BufferId  = MFX_EXTBUFF_LP_LOOKAHEAD;
-        extBufLPLA.Header.BufferSz  = sizeof(extBufLPLA);
-        extBufLPLA.LookAheadDepth   = extOpt2.LookAheadDepth;
-        extBufLPLA.InitialDelayInKB = m_video.mfx.InitialDelayInKB;
-        extBufLPLA.BufferSizeInKB   = m_video.mfx.BufferSizeInKB;
-        extBufLPLA.TargetKbps       = m_video.mfx.TargetKbps;
-
-        mfxExtBuffer *extBuffers[1];
-        extBuffers[0] = (mfxExtBuffer*)&extBufLPLA;
-
-        lplaParam.NumExtParam = 1;
-        lplaParam.ExtParam = (mfxExtBuffer**)&extBuffers[0];
-
-        sts = m_lpLookAhead->Init(&lplaParam);
-        MFX_CHECK_STS(sts);
-    }
-#endif
-
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     m_qpHistory.Reset();
 #endif
@@ -2685,20 +2653,6 @@ void ImplementationAvc::OnLookaheadQueried()
             task.m_cmRaw = NULL;
         }
     }
-
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
-    if (m_lpLookAhead)
-    {
-        mfxLplastatus laStatus;
-        task.m_lplastatus = {};
-        mfxStatus sts = m_lpLookAhead->Query(laStatus);
-
-        if (sts == MFX_ERR_NONE)
-        {
-            task.m_lplastatus = laStatus;
-        }
-    }
-#endif
 
     m_histRun.splice(m_histRun.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
 }
@@ -4210,14 +4164,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             SubmitLookahead(*task);
         }
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        //lowpower lookahead submit
-        if (m_lpLookAhead)
-        {
-            sts = m_lpLookAhead->Submit(task->m_yuv);
-            MFX_CHECK_STS(sts);
-        }
-#endif
         //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
         if (extOpt2.MaxSliceSize && m_lastTask.m_yuv && !m_caps.ddi_caps.SliceLevelRateCtrl)
         {
