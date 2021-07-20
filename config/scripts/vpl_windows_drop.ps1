@@ -40,6 +40,16 @@ $PACKAGE_NAMES = @(
     'MediaSDK_Release_Internal-64-bit'
 )
 
+$DISPATCHER_X32 = 'vpl\x32\__bin\Release\libvpl.dll'
+$DISPATCHER_X32_PDB = 'vpl\x32\__bin\Release\libvpl.pdb'
+$DISPATCHER_X64 = 'vpl\x64\__bin\Release\libvpl.dll'
+$DISPATCHER_X64_PDB = 'vpl\x64\__bin\Release\libvpl.pdb'
+
+$DISPATCHER_X32_NAME = 'vpl_dispatcher_32.dll'
+$DISPATCHER_X32_PDB_NAME = 'vpl_dispatcher_32.pdb'
+$DISPATCHER_X64_NAME = 'vpl_dispatcher_64.dll'
+$DISPATCHER_X64_PDB_NAME = 'vpl_dispatcher_64.pdb'
+
 $package_dir = "$PathToSave\to_archive"
 
 $package_name = "VplWindowsDrop.zip"
@@ -53,7 +63,11 @@ foreach ($pkg_name in $PACKAGE_NAMES)
     New-Item -Path $archive_dir -Name $CONFIG_FILE_NAME -ItemType "file" -Value $CONFIG_INI_DATA
 
     Set-Location -Path $BuildDir; Copy-Item $VPL_FILES -Destination $archive_dir;
-      Copy-Item $VPL_PDB_FILES -Destination $archive_dir\pdb
+      Copy-Item $VPL_PDB_FILES -Destination $archive_dir\pdb;
+      Copy-Item $DISPATCHER_X32 -Destination $archive_dir\$DISPATCHER_X32_NAME;
+      Copy-Item $DISPATCHER_X32_PDB -Destination $archive_dir\pdb\$DISPATCHER_X32_PDB_NAME;
+      Copy-Item $DISPATCHER_X64 -Destination $archive_dir\$DISPATCHER_X64_NAME;
+      Copy-Item $DISPATCHER_X64_PDB -Destination $archive_dir\pdb\$DISPATCHER_X64_PDB_NAME;
 
     Set-Location -Path $env:WORKSPACE
     #Compress-Archive -Path $archive_dir\* -DestinationPath "${archive_dir}.zip"
