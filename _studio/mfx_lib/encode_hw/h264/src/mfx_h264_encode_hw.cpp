@@ -614,8 +614,10 @@ mfxStatus ImplementationAvc::Query(
                         in->ExtParam[i]->BufferId == MFX_EXTBUFF_MULTI_FRAME_CONTROL)
                         continue; // skip checking MFE buffers
 
+#if defined(MFX_ENABLE_VPP_HVS)
                     if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DENOISE2)
                         continue; // skip checking HVS denoise buffers
+#endif
 
                     MFX_CHECK(IsVideoParamExtBufferIdSupported(in->ExtParam[i]->BufferId),
                     MFX_ERR_UNSUPPORTED);
@@ -966,6 +968,7 @@ protected:
     }
 };
 
+#if defined(MFX_ENABLE_VPP_HVS)
 mfxStatus ImplementationAvc::InitMctf(const mfxVideoParam* const par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::InitMctf");
@@ -1038,6 +1041,7 @@ mfxStatus ImplementationAvc::InitMctf(const mfxVideoParam* const par)
 
     return sts;
 }
+#endif
 
 mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 {
@@ -1574,11 +1578,29 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
     if (IsMctfSupported(m_video, m_core->GetHWType()))
     {
+#if defined(MFX_ENABLE_VPP_HVS)
         sts = InitMctf(par);
+#else
+        if (!m_cmDevice)
+        {
+            m_cmDevice.Reset(TryCreateCmDevicePtr(m_core));
+            MFX_CHECK(m_cmDevice, MFX_ERR_UNSUPPORTED);
+        }
+
+        request.Info        = m_video.mfx.FrameInfo;
+        request.Type        = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = (mfxU16)m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_MCTF) + 1;
+
+        sts = m_mctf.Alloc(m_core, request);
+        MFX_CHECK_STS(sts);
+
+        m_mctfDenoiser = std::make_shared<CMC>();
+
+        sts = m_mctfDenoiser->MCTF_INIT(m_core, m_cmDevice, m_video.mfx.FrameInfo, NULL, IsCmNeededForSCD(m_video), true, true, true);
+#endif
         MFX_CHECK_STS(sts);
     }
 #endif
-
 #if USE_AGOP
     if (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)//AGOP
     {
@@ -2867,7 +2889,7 @@ mfxStatus ImplementationAvc::SubmitToMctf(DdiTask * pTask)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::SubmitToMctf");
     MFX_CHECK_NULL_PTR1(pTask);
 
-#ifndef STRIP_EMBARGO
+#ifdef MFX_ENABLE_VPP_HVS
     eMFXHWType platform = m_core->GetHWType();
     // VEBOX based HW HVS
     if (platform >= MFX_HW_DG2)
@@ -2888,9 +2910,9 @@ mfxStatus ImplementationAvc::SubmitToMctf(DdiTask * pTask)
 #endif
     {
         pTask->m_bFrameReady = false;
-        bool isIntraFrame = pTask->GetFrameType() & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR);
-        bool isPFrame = pTask->GetFrameType() & MFX_FRAMETYPE_P;
-        bool isAnchorFrame = isIntraFrame || isPFrame;
+        bool isIntraFrame    = pTask->GetFrameType() & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR);
+        bool isPFrame        = pTask->GetFrameType() & MFX_FRAMETYPE_P;
+        bool isAnchorFrame   = isIntraFrame || isPFrame;
 
         m_mctfDenoiser->IntBufferUpdate(pTask->m_SceneChange, isIntraFrame, pTask->m_doMCTFIntraFiltering);
         if (isAnchorFrame || pTask->m_SceneChange)
@@ -2946,7 +2968,7 @@ mfxStatus ImplementationAvc::QueryFromMctf(void *pParam)
     MFX_CHECK_NULL_PTR1(pParam);
     DdiTask *pTask = (DdiTask*)pParam;
 
-#ifndef STRIP_EMBARGO
+#ifdef MFX_ENABLE_VPP_HVS
     eMFXHWType platform = m_core->GetHWType();
     // VEBOX based HW HVS
     if (platform >= MFX_HW_DG2)

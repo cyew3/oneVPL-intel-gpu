@@ -50,7 +50,9 @@
 #ifdef MFX_ENABLE_MCTF_IN_AVC
 #include "cmvm.h"
 #include "mctf_common.h"
+#ifdef MFX_ENABLE_VPP_HVS
 #include "mfx_vpp_helper.h"
+#endif
 #endif
 
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
@@ -3117,6 +3119,7 @@ private:
 
     protected:
 #if defined(MFX_ENABLE_MCTF_IN_AVC)
+#if defined(MFX_ENABLE_VPP_HVS)
         std::unique_ptr<CMC>
             m_mctfDenoiser;
 
@@ -3125,6 +3128,10 @@ private:
         // functions.
         std::unique_ptr<MfxVppHelper>
             m_hvsDenoiser;
+#else
+        std::shared_ptr<CMC>
+            m_mctfDenoiser;
+#endif
 
         mfxStatus SubmitToMctf(
             DdiTask * pTask
@@ -3133,7 +3140,9 @@ private:
             void *pParam
         );
 
+#ifdef MFX_ENABLE_VPP_HVS
         mfxStatus InitMctf(const mfxVideoParam* const par);
+#endif
 #endif
         ASC       amtScd;
         mfxStatus SCD_Put_Frame(
