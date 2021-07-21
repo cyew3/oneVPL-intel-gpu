@@ -10,6 +10,7 @@ Copyright(c) 2016-2021 Intel Corporation. All Rights Reserved.
 
 #include "ts_common.h"
 #include "ts_struct.h"
+#include "ts_embargo_config.h"
 
 #if defined(_WIN32) || defined(_WIN64)
     #include <d3d9.h>
@@ -28,6 +29,9 @@ mfxU32       g_tsTrace    = 1;
 tsPlugin     g_tsPlugin;
 tsStreamPool g_tsStreamPool;
 tsConfig     g_tsConfig = {0, false, MFX_GPUCOPY_DEFAULT, ""};
+bool         g_tsOpenSource = false;
+
+tsEmbargoFeatures::Flag::operator bool() const { return !g_tsOpenSource || !m_val; }
 
 bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
 {
@@ -246,6 +250,8 @@ void MFXVideoTest::SetUp()
     std::string lowpower  = ENV("TS_LOWPOWER", "");
     std::string cfg_file  = ENV("TS_CONFIG_FILE", "");
     std::string copy_mode = ENV("TS_GPUCOPY_MODE", "");
+
+    g_tsOpenSource = (ENV("TS_OPENSOURCE", "0") != "0");
 
     g_tsConfig.sim = (ENV("TS_SIM", "0") == "1");
 

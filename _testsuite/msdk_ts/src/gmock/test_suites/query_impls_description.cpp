@@ -11,6 +11,7 @@ File Name: query_impls_description.cpp
 \* ****************************************************************************** */
 #include "ts_session.h"
 #include "ts_struct.h"
+#include "ts_embargo_config.h"
 
 #include "gmock/test_suites/reference_query_impls_common.h"
 #include "gmock/test_suites/reference_query_impls_decode.h"
@@ -504,10 +505,14 @@ int TestSuite::RunTest(unsigned int id)
                 EXPECT_EQ(ref.VendorID, impl.VendorID);
                 EXPECT_EQ(ref.VendorImplID, impl.VendorImplID);
 
+                if (g_tsEmbargo.common.QImplDescMediaAdapterType)
+                {
+                    EXPECT_EQ(mfxU8(1), impl.Dev.Version.Major);
+                    EXPECT_GE(mfxU8(1), impl.Dev.Version.Minor);
+                    EXPECT_EQ(ref.MediaAdapterType, impl.Dev.MediaAdapterType);
+                }
+
                 mfxU32 DeviceID = 0;
-                EXPECT_EQ(mfxU8(1), impl.Dev.Version.Major);
-                EXPECT_GE(mfxU8(1), impl.Dev.Version.Minor);
-                EXPECT_EQ(ref.MediaAdapterType, impl.Dev.MediaAdapterType);
                 EXPECT_EQ(1, sscanf(impl.Dev.DeviceID, "%x", &DeviceID));
                 EXPECT_TRUE(std::find(ref.DeviceList.begin(), ref.DeviceList.end(), DeviceID) != ref.DeviceList.end());
             }
