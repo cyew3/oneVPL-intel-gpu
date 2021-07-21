@@ -429,16 +429,20 @@ public:
 
     static mfxU32 BufferSizeInKB(
         Defaults::TChain<mfxU32>::TExt
-        , const Defaults::Param& par)
+        , const Defaults::Param& defPar)
     {
-        auto& mfx = par.mvp.mfx;
+        const auto& mfx = defPar.mvp.mfx;
+        if (mfx.BufferSizeInKB)
+        {
+            return mfx.BufferSizeInKB * std::max<const mfxU32>(1, mfx.BRCParamMultiplier);
+        }
 
-        // this code is relevant for CQP only
-        const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par.mvp);
-        const mfxU32 width = pAV1Par ? pAV1Par->FrameWidth : mfx.FrameInfo.Width;
-        const mfxU32 height = pAV1Par ? pAV1Par->FrameHeight : mfx.FrameInfo.Height;
+        // This code is relevant for CQP only
+        mfxU32 width = 0, height = 0;
+        std::tie(width, height)  = GetRealResolution(defPar.mvp);
+
         if (mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
-            return (width * height * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
+            return (width * height * 3) / 1000; // size of two uncompressed 420 10bit frames in KB
         else
             return (width * height * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
     }

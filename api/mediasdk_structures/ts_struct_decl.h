@@ -1127,6 +1127,19 @@ STRUCT(mfxExtAV1BitstreamParam,
     FIELD_T(mfxU16, WriteIVFHeaders)
 )
 
+STRUCT(mfxExtAV1ResolutionParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, FrameWidth)
+    FIELD_T(mfxU32, FrameHeight)
+)
+
+STRUCT(mfxExtAV1TileParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, NumTileRows)
+    FIELD_T(mfxU16, NumTileColumns)
+    FIELD_T(mfxU16, NumTileGroups)
+)
+
 STRUCT(mfxExtAV1AuxData_Cdef,
     FIELD_T(mfxU8, CdefDampingMinus3)
     FIELD_T(mfxU8, CdefBits)
@@ -1155,6 +1168,26 @@ STRUCT(mfxExtAV1AuxData_QP,
 
 STRUCT(mfxExtAV1AuxData,
     FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU8, StillPictureMode)
+    FIELD_T(mfxU8, UseAnnexB)
+    FIELD_T(mfxU8, PackOBUFrame)
+    FIELD_T(mfxU8, InsertTemporalDelimiter)
+    FIELD_T(mfxU8, EnableCdef)
+    FIELD_T(mfxU8, EnableRestoration)
+    FIELD_T(mfxU8, EnableLoopFilter)
+    FIELD_T(mfxU8, LoopFilterSharpness)
+    FIELD_T(mfxU8, EnableSuperres)
+    FIELD_T(mfxU8, SuperresScaleDenominator)
+    FIELD_T(mfxU8, SegmentationMode)
+    FIELD_T(mfxU8, InterpFilter)
+    FIELD_T(mfxU8, DisableCdfUpdate)
+    FIELD_T(mfxU8, DisableFrameEndUpdateCdf)
+    FIELD_T(mfxU8, UniformTileSpacing)
+    FIELD_T(mfxU8, ContextUpdateTileIdPlus1)
+    FIELD_T(mfxU16, SwitchInterval)
+    FIELD_T(mfxU16*, NumTilesPerTileGroup)
+    FIELD_T(mfxU16*, TileWidthInSB)
+    FIELD_T(mfxU16*, TileHeightInSB)
     FIELD_S(mfxExtAV1AuxData_Cdef, Cdef)
     FIELD_S(mfxExtAV1AuxData_LoopFilter, LoopFilter)
     FIELD_S(mfxExtAV1AuxData_QP, QP)

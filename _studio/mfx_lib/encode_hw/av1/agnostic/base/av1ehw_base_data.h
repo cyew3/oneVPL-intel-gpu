@@ -37,7 +37,7 @@ namespace Base
     static const GUID DXVA2_Intel_LowpowerEncode_AV1_420_10b =
     { 0xeea5b11, 0x88c0, 0x4a9f, {0x81, 0xac, 0xb1, 0xf, 0xd6, 0x6b, 0x22, 0xea } };
 
-    const uint16_t SB_SIZE                        = 64;
+    const uint32_t SB_SIZE                        = 64;
     const uint16_t AV1_DIRTY_BLOCK_SIZE           = 32;
     const uint8_t  AV1_MAX_Q_INDEX                = 255;
     const uint8_t  AV1_MIN_Q_INDEX                = 1;
@@ -78,7 +78,7 @@ namespace Base
     const uint8_t MAX_NUM_SPATIAL_LAYERS        = 4;
     const uint8_t MAX_NUM_OPERATING_POINTS      = MAX_NUM_TEMPORAL_LAYERS * MAX_NUM_SPATIAL_LAYERS;
 
-    const uint16_t MAX_AV1_TILE_WIDTH    = 4096;
+    const uint32_t MAX_AV1_TILE_WIDTH    = 4096;
     const uint32_t MAX_AV1_TILE_AREA     = (4096 * 2304);
     const uint32_t MAX_AV1_NUM_TILE_ROWS = 1024;
     const uint32_t MAX_AV1_NUM_TILE_COLS = 1024;
@@ -279,7 +279,7 @@ namespace Base
         uint32_t MinLog2Tiles;
     };
 
-    struct TileInfo
+    struct TileInfoAv1
     {
         // NB: uniform flag only affects tile mapping now,
         //  in bitstream it always in non-uniform way, this
@@ -503,7 +503,7 @@ namespace Base
         uint32_t sbRows;
         uint32_t sbSize;
 
-        TileInfo tile_info;
+        TileInfoAv1 tile_info;
         QuantizationParams quantization_params;
         SegmentationParams segmentation_params;
 
@@ -788,21 +788,34 @@ namespace Base
     }
     inline bool isValid(DpbFrame const & frame) { return IDX_INVALID != frame.Rec.Idx; }
 
-    inline mfxU16 GetActualEncodeWidth(mfxU16 upscaledWidth, bool use_superres, mfxU16 SuperresDenom)
+    inline std::pair<mfxU32, mfxU32> GetRealResolution(const mfxVideoParam& vp)
     {
-        if (use_superres)
+        const mfxExtAV1ResolutionParam* pRsPar  = ExtBuffer::Get(vp);
+        const bool                      rsValid = pRsPar != nullptr && pRsPar->FrameWidth > 0 && pRsPar->FrameHeight > 0;
+        if (rsValid)
         {
-            mfxU16 denom = SuperresDenom != 0 ? SuperresDenom : DEFAULT_DENOM_FOR_SUPERRES_ON;
-
-            return ((upscaledWidth << 3) + (denom >> 1)) / denom;
+            return std::make_pair(pRsPar->FrameWidth, pRsPar->FrameHeight);
         }
 
-        return upscaledWidth;
+        const auto& fi = vp.mfx.FrameInfo;
+        if (fi.CropW > 0 && fi.CropH > 0)
+        {
+            return std::make_pair(fi.CropW, fi.CropH);
+        }
+        else
+        {
+            return std::make_pair(fi.Width, fi.Height);
+        }
     }
 
-    inline mfxU16 GetActualEncodeWidth(const mfxExtAV1Param &av1Par)
+    inline mfxU32 GetActualEncodeWidth(mfxU32 frameWidth, const mfxExtAV1AuxData *pAuxPar)
     {
-        return GetActualEncodeWidth(av1Par.FrameWidth, IsOn(av1Par.EnableSuperres), av1Par.SuperresScaleDenominator);
+        const bool useSuperRes = pAuxPar != nullptr && IsOn(pAuxPar->EnableSuperres);
+        if (!useSuperRes)
+            return frameWidth;
+
+        mfxU16 denom = pAuxPar->SuperresScaleDenominator != 0 ? pAuxPar->SuperresScaleDenominator : DEFAULT_DENOM_FOR_SUPERRES_ON;
+        return ((frameWidth << 3) + (denom >> 1)) / denom;
     }
 
     class FrameLocker
@@ -1135,12 +1148,6 @@ namespace Base
             , mfxU32>;                  //frameOrder
         TGetPreReorderInfo GetPreReorderInfo; // fill all info available at pre-reorder
 
-        using TGetTiles = CallChain<
-            void
-            , const mfxExtAV1AuxData&
-            , mfxExtAV1Param&>;
-        TGetTiles GetTiles;
-
         using TGetLoopFilterLevels = CallChain<
             void
             , const Defaults::Param&
@@ -1263,6 +1270,7 @@ namespace Base
         using Common     = StorageVar<__LINE__ - _KD, TaskCommonPar>;
         using FH         = StorageVar<__LINE__ - _KD, Base::FH>;
         using Segment    = StorageVar<__LINE__ - _KD, mfxExtAV1Segmentation>;
+        using TileInfo   = StorageVar<__LINE__ - _KD, TileInfoAv1>;
         using TileGroups = StorageVar<__LINE__ - _KD, TileGroupInfos>;
         static const StorageR::TKey TaskEventKey = __LINE__ - _KD;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;

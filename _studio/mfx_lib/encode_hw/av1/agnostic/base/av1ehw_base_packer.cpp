@@ -625,7 +625,7 @@ static void PackFrameRefInfo(BitstreamWriter& bs, SH const& sh, FH const& fh, mf
         bs.PutBit(1); //use_ref_frame_mvs
 }
 
-inline void PackUniformTile(BitstreamWriter& bs, TileInfo const& tileInfo)
+inline void PackUniformTile(BitstreamWriter& bs, TileInfoAv1 const& tileInfo)
 {
     mfxU32 ones = tileInfo.TileColsLog2 - tileInfo.tileLimits.MinLog2TileCols;
     while (ones--)
@@ -643,7 +643,7 @@ inline void PackUniformTile(BitstreamWriter& bs, TileInfo const& tileInfo)
 }
 
 
-inline void PackNonUniformTile(BitstreamWriter& bs, mfxU32 sbCols, mfxU32 sbRows, TileInfo const& tileInfo)
+inline void PackNonUniformTile(BitstreamWriter& bs, mfxU32 sbCols, mfxU32 sbRows, TileInfoAv1 const& tileInfo)
 {
     mfxU32 sizeSb = 0;
 
@@ -662,7 +662,7 @@ inline void PackNonUniformTile(BitstreamWriter& bs, mfxU32 sbCols, mfxU32 sbRows
     }
 }
 
-static void PackTileInfo(BitstreamWriter& bs, mfxU32 sbCols, mfxU32 sbRows, TileInfo const& tileInfo)
+static void PackTileInfo(BitstreamWriter& bs, mfxU32 sbCols, mfxU32 sbRows, TileInfoAv1 const& tileInfo)
 {
     bs.PutBit(0/*tileInfo.uniform_tile_spacing_flag*/); //uniform_tile_spacing_flag
 
@@ -1180,8 +1180,8 @@ void Packer::QueryTask(const FeatureBlocks&, TPushQT Push)
                     PackIVF(bitstream, tempFh, insertHeaders, vp);
                 }
 
-                const mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
-                if (IsOn(av1Par.InsertTemporalDelimiter))
+                const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(vp);
+                if (IsOn(auxPar.InsertTemporalDelimiter))
                 {
                     // Add temporal delimiter for shown frame
                     mfxU32 ext = sh.operating_points_cnt_minus_1 ? 1 : 0;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2020 Intel Corporation
+﻿// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,12 +52,15 @@ namespace av1e {
                 strg.Clear();
             }
 
-            void InitAV1Param(ExtBuffer::Param<mfxVideoParam>& vp)
+            void InitExtBuffers(ExtBuffer::Param<mfxVideoParam>& vp)
             {
-                mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+                vp.NewEB(MFX_EXTBUFF_AV1_RESOLUTION_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_TILE_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
 
-                pAV1Par->FrameWidth = 7680;
-                pAV1Par->FrameHeight = 4320;
+                mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(vp);
+                rsPar.FrameWidth                = 7680;
+                rsPar.FrameHeight               = 4320;
             }
         };
 
@@ -68,11 +71,10 @@ namespace av1e {
         TEST_F(FeatureBlocksTileSingleTile, CheckAndFix)
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
-            const auto block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_CheckAndFix });
-            auto& vp = Glob::VideoParam::Get(strg);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_CheckAndFix });
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
-            InitAV1Param(vp);
+            InitExtBuffers(vp);
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
                 MFX_ERR_NONE
@@ -83,29 +85,30 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetDefaults });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
             block->Call(vp, strg, strg);
 
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
-
-            ASSERT_EQ(pAV1Par->UniformTileSpacing, MFX_CODINGOPTION_ON);
-            ASSERT_EQ(pAV1Par->NumTileColumns, 1);
-            ASSERT_EQ(pAV1Par->NumTileRows, 1);
+            mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(vp);
+            mfxExtAV1TileParam& tilePar     = ExtBuffer::Get(vp);
+            mfxExtAV1AuxData&   auxPar      = ExtBuffer::Get(vp);
+            ASSERT_EQ(tilePar.NumTileColumns, 1);
+            ASSERT_EQ(tilePar.NumTileRows, 1);
+            ASSERT_EQ(auxPar.UniformTileSpacing, MFX_CODINGOPTION_ON);
 
             ASSERT_EQ(
-                pAV1Par->TileWidthInSB[0],
-                mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE)
+                auxPar.TileWidthInSB[0],
+                mfx::CeilDiv(rsPar.FrameWidth, SB_SIZE)
             );
 
             ASSERT_EQ(
-                pAV1Par->TileHeightInSB[0],
-                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                auxPar.TileHeightInSB[0],
+                mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE)
             );
 
             ASSERT_EQ(
-                pAV1Par->ContextUpdateTileIdPlus1,
-                pAV1Par->NumTileColumns * pAV1Par->NumTileRows
+                auxPar.ContextUpdateTileIdPlus1,
+                tilePar.NumTileColumns * tilePar.NumTileRows
             );
         }
 
@@ -113,6 +116,7 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileInfo });
+            const auto& vp    = Glob::VideoParam::Get(strg);
 
             ASSERT_EQ(
                 block->Call(strg, strg),
@@ -120,27 +124,25 @@ namespace av1e {
             );
 
             const auto& fh = Glob::FH::GetOrConstruct(strg);
-
             ASSERT_EQ(
                 block->Call(strg, strg),
                 MFX_ERR_NONE
             );
 
-            const auto& vp = Glob::VideoParam::Get(strg);
-            const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            const mfxExtAV1TileParam& tilePar = ExtBuffer::Get(vp);
+            const mfxExtAV1AuxData&   auxPar  = ExtBuffer::Get(vp);
+            ASSERT_EQ(fh.tile_info.TileCols, tilePar.NumTileColumns);
 
-            ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);
-
-            for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
+            for (auto i = 0; i < tilePar.NumTileColumns; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], pAV1Par->TileWidthInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], auxPar.TileWidthInSB[i]);
             }
 
-            ASSERT_EQ(fh.tile_info.TileRows, pAV1Par->NumTileRows);
+            ASSERT_EQ(fh.tile_info.TileRows, tilePar.NumTileRows);
 
-            for (auto i = 0; i < pAV1Par->NumTileRows; i++)
+            for (auto i = 0; i < tilePar.NumTileRows; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], pAV1Par->TileHeightInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], auxPar.TileHeightInSB[i]);
             }
         }
 
@@ -156,7 +158,7 @@ namespace av1e {
 
             ASSERT_TRUE(strg.Contains(Glob::TileGroups::Key));
 
-            const auto& infos = Glob::TileGroups::Get(strg);
+            const auto &infos = Glob::TileGroups::Get(strg);
             ASSERT_EQ(
                 infos.size(),
                 1
@@ -164,7 +166,7 @@ namespace av1e {
 
             ASSERT_EQ(infos[0].TgStart, 0);
 
-            const auto& fh = Glob::FH::Get(strg);
+            const auto &fh = Glob::FH::Get(strg);
             ASSERT_EQ(
                 infos[0].TgEnd,
                 fh.tile_info.TileCols * fh.tile_info.TileRows - 1
@@ -191,33 +193,38 @@ namespace av1e {
                 strg.Clear();
             }
 
-            void InitAV1Param(ExtBuffer::Param<mfxVideoParam>& vp)
+            void InitExtBuffers(ExtBuffer::Param<mfxVideoParam>& vp)
             {
-                mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+                vp.NewEB(MFX_EXTBUFF_AV1_RESOLUTION_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_TILE_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
 
-                pAV1Par->FrameWidth = 7680;
-                pAV1Par->FrameHeight = 4320;
+                mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(vp);
+                rsPar.FrameWidth                = 7680;
+                rsPar.FrameHeight               = 4320;
 
-                pAV1Par->UniformTileSpacing = MFX_CODINGOPTION_ON;
+                mfxExtAV1AuxData& auxPar        = ExtBuffer::Get(vp);
+                auxPar.UniformTileSpacing       = MFX_CODINGOPTION_ON;
 
-                pAV1Par->NumTileColumns = 2;
-                pAV1Par->NumTileRows = 2;
+                mfxExtAV1TileParam& tilePar     = ExtBuffer::Get(vp);
+                tilePar.NumTileColumns          = 2;
+                tilePar.NumTileRows             = 2;
 
                 ASSERT_EQ(
-                    mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE) % pAV1Par->NumTileColumns,
+                    mfx::CeilDiv(rsPar.FrameWidth, SB_SIZE) % tilePar.NumTileColumns,
                     0
                 );
 
                 ASSERT_EQ(
-                    mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
+                    mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE) % tilePar.NumTileRows,
                     0
                 );
 
-                for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
-                    pAV1Par->TileWidthInSB[i] = mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE) / pAV1Par->NumTileColumns;
+                for (auto i = 0; i < tilePar.NumTileColumns; i++)
+                    auxPar.TileWidthInSB[i] = mfx::CeilDiv(rsPar.FrameWidth, SB_SIZE) / tilePar.NumTileColumns;
 
-                for (auto i = 0; i < pAV1Par->NumTileRows; i++)
-                    pAV1Par->TileHeightInSB[i] = mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
+                for (auto i = 0; i < tilePar.NumTileRows; i++)
+                    auxPar.TileHeightInSB[i] = mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE) / tilePar.NumTileRows;
             }
         };
 
@@ -229,34 +236,37 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_CheckAndFix });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
-            InitAV1Param(vp);
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            InitExtBuffers(vp);
+            mfxExtAV1AuxData& auxPar = ExtBuffer::Get(vp);
 
             // Sum of Tile heights not equals to image heights
-            pAV1Par->TileHeightInSB[1]++;
+            auxPar.TileHeightInSB[1]++;
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
                 MFX_ERR_UNSUPPORTED
             );
 
             // Maximum height exceeds spec limitation
-            InitAV1Param(vp);
+            InitExtBuffers(vp);
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
                 MFX_ERR_UNSUPPORTED
             );
 
-            InitAV1Param(vp);
-            pAV1Par->NumTileRows = 4;
+            InitExtBuffers(vp);
+            mfxExtAV1ResolutionParam& rsPar   = ExtBuffer::Get(vp);
+            mfxExtAV1TileParam&       tilePar = ExtBuffer::Get(vp);
+            tilePar.NumTileRows               = 4;
+
             ASSERT_EQ(
-                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
+                mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE) % tilePar.NumTileRows,
                 0
             );
-            for (auto i = 0; i < pAV1Par->NumTileRows; i++)
-                pAV1Par->TileHeightInSB[i] = mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
+
+            for (auto i = 0; i < tilePar.NumTileRows; i++)
+                auxPar.TileHeightInSB[i] = mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE) / tilePar.NumTileRows;
 
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
@@ -264,23 +274,23 @@ namespace av1e {
             );
 
             // ContextUpdateTileID exceeds Tiles number
-            mfxU16 numTileRows = pAV1Par->NumTileRows;
-            pAV1Par->ContextUpdateTileIdPlus1 = static_cast<mfxU8>(pAV1Par->NumTileColumns * pAV1Par->NumTileRows) + 1;
+            mfxU16 numTileRows              = tilePar.NumTileRows;
+            auxPar.ContextUpdateTileIdPlus1 = static_cast<mfxU8>(tilePar.NumTileColumns * tilePar.NumTileRows) + 1;
 
             // NumTileRows could be infered from TileHeightInSB array
-            pAV1Par->NumTileRows = 0;
+            tilePar.NumTileRows = 0;
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
                 MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
             );
 
             // But NumTileRows will not be corrected here
-            ASSERT_EQ(pAV1Par->NumTileRows, 0);
-            pAV1Par->NumTileRows = numTileRows;
+            ASSERT_EQ(tilePar.NumTileRows, 0);
+            tilePar.NumTileRows = numTileRows;
 
             ASSERT_EQ(
-                pAV1Par->ContextUpdateTileIdPlus1,
-                pAV1Par->NumTileColumns * pAV1Par->NumTileRows
+                auxPar.ContextUpdateTileIdPlus1,
+                tilePar.NumTileColumns * tilePar.NumTileRows
             );
         }
 
@@ -288,30 +298,31 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetDefaults });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
-            mfxU16 numTileColumns = pAV1Par->NumTileColumns;
-            mfxU16 numTileRows = pAV1Par->NumTileRows;
-
-            pAV1Par->NumTileColumns = 0;
-            pAV1Par->NumTileRows = 0;
+            mfxExtAV1TileParam& tilePar = ExtBuffer::Get(vp);
+            mfxU16 numTileColumns       = tilePar.NumTileColumns;
+            mfxU16 numTileRows          = tilePar.NumTileRows;
+            tilePar.NumTileColumns      = 0;
+            tilePar.NumTileRows         = 0;
 
             block->Call(vp, strg, strg);
 
-            ASSERT_EQ(pAV1Par->NumTileColumns, numTileColumns);
-            ASSERT_EQ(pAV1Par->NumTileRows, numTileRows);
+            ASSERT_EQ(tilePar.NumTileColumns, numTileColumns);
+            ASSERT_EQ(tilePar.NumTileRows, numTileRows);
         }
 
         TEST_F(FeatureBlocksTileMultiTile, SetTileInfo)
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileInfo });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
-            const auto& fh = Glob::FH::GetOrConstruct(strg);
-            pAV1Par->ContextUpdateTileIdPlus1 = 3;
+            mfxExtAV1ResolutionParam& rsPar   = ExtBuffer::Get(vp);
+            mfxExtAV1TileParam&       tilePar = ExtBuffer::Get(vp);
+            mfxExtAV1AuxData&         auxPar  = ExtBuffer::Get(vp);
+            const auto&               fh      = Glob::FH::GetOrConstruct(strg);
+            auxPar.ContextUpdateTileIdPlus1   = 3;
 
             ASSERT_EQ(
                 block->Call(strg, strg),
@@ -320,31 +331,31 @@ namespace av1e {
 
             ASSERT_EQ(
                 fh.sbCols,
-                mfx::CeilDiv(pAV1Par->FrameWidth, SB_SIZE)
+                mfx::CeilDiv(rsPar.FrameWidth, SB_SIZE)
             );
 
             ASSERT_EQ(
                 fh.sbRows,
-                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE)
             );
 
-            ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);
+            ASSERT_EQ(fh.tile_info.TileCols, tilePar.NumTileColumns);
 
-            for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
+            for (auto i = 0; i < tilePar.NumTileColumns; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], pAV1Par->TileWidthInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], auxPar.TileWidthInSB[i]);
             }
 
-            ASSERT_EQ(fh.tile_info.TileRows, pAV1Par->NumTileRows);
+            ASSERT_EQ(fh.tile_info.TileRows, tilePar.NumTileRows);
 
-            for (auto i = 0; i < pAV1Par->NumTileRows; i++)
+            for (auto i = 0; i < tilePar.NumTileRows; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], pAV1Par->TileHeightInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], auxPar.TileHeightInSB[i]);
             }
 
             ASSERT_EQ(
                 fh.tile_info.context_update_tile_id,
-                pAV1Par->ContextUpdateTileIdPlus1 - 1
+                auxPar.ContextUpdateTileIdPlus1 - 1
             );
 
             ASSERT_EQ(fh.tile_info.TileColsLog2, 1);
@@ -372,7 +383,7 @@ namespace av1e {
 
             ASSERT_EQ(infos[0].TgStart, 0);
 
-            const auto& fh = Glob::FH::Get(strg);
+            const auto &fh = Glob::FH::Get(strg);
             ASSERT_EQ(
                 infos[0].TgEnd,
                 fh.tile_info.TileCols * fh.tile_info.TileRows - 1
@@ -383,10 +394,10 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileGroups });
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            auto& vp = Glob::VideoParam::Get(strg);
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
-            pAV1Par->NumTileGroups = 3;
+            mfxExtAV1TileParam& tilePar = ExtBuffer::Get(vp);
+            tilePar.NumTileGroups       = 3;
 
             ASSERT_EQ(
                 block->Call(strg, strg),
@@ -398,7 +409,7 @@ namespace av1e {
             const auto& infos = Glob::TileGroups::Get(strg);
             ASSERT_EQ(
                 infos.size(),
-                pAV1Par->NumTileGroups
+                tilePar.NumTileGroups
             );
 
             const TileGroupInfos tileGroups = { {0, 1}, {2, 3}, {4, 7} };
@@ -416,9 +427,8 @@ namespace av1e {
             static Tile            tile;
             static StorageRW       strg;
 
-            const mfxU16 upscaledWidth = 7680;
-            const mfxU16 superresDenom = 11;
-            const mfxU16 downscaledWidth = GetActualEncodeWidth(upscaledWidth, true, superresDenom);
+            const static mfxU32 upscaledWidth = 7680;
+            static mfxU32 downscaledWidth;
 
             static void SetUpTestCase()
             {
@@ -433,29 +443,35 @@ namespace av1e {
                 strg.Clear();
             }
 
-            void InitAV1Param(ExtBuffer::Param<mfxVideoParam>& vp)
+            void InitExtBuffers(ExtBuffer::Param<mfxVideoParam>& vp)
             {
-                mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+                vp.NewEB(MFX_EXTBUFF_AV1_RESOLUTION_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_TILE_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
 
-                pAV1Par->FrameWidth = upscaledWidth;
-                pAV1Par->FrameHeight = 4320;
-                pAV1Par->EnableSuperres = MFX_CODINGOPTION_ON;
-                pAV1Par->SuperresScaleDenominator = superresDenom;
+                mfxExtAV1ResolutionParam& rsPar  = ExtBuffer::Get(vp);
+                rsPar.FrameWidth                 = 7680;
+                rsPar.FrameHeight                = 4320;
+
+                mfxExtAV1AuxData& auxPar         = ExtBuffer::Get(vp);
+                auxPar.EnableSuperres            = MFX_CODINGOPTION_ON;
+                auxPar.SuperresScaleDenominator  = 11;
+                downscaledWidth                  = GetActualEncodeWidth(upscaledWidth, &auxPar);
             }
         };
 
         FeatureBlocks FeatureBlocksTileSingleTileSuperres::blocks{};
         Tile FeatureBlocksTileSingleTileSuperres::tile(FEATURE_TILE);
         StorageRW FeatureBlocksTileSingleTileSuperres::strg{};
+        mfxU32 FeatureBlocksTileSingleTileSuperres::downscaledWidth = 0;
 
         TEST_F(FeatureBlocksTileSingleTileSuperres, CheckAndFix)
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_CheckAndFix });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
-            InitAV1Param(vp);
+            InitExtBuffers(vp);
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
                 MFX_ERR_NONE
@@ -466,29 +482,31 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetDefaults });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
             block->Call(vp, strg, strg);
 
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            mfxExtAV1TileParam& tilePar = ExtBuffer::Get(vp);
+            ASSERT_EQ(tilePar.NumTileColumns, 1);
+            ASSERT_EQ(tilePar.NumTileRows, 1);
 
-            ASSERT_EQ(pAV1Par->UniformTileSpacing, MFX_CODINGOPTION_ON);
-            ASSERT_EQ(pAV1Par->NumTileColumns, 1);
-            ASSERT_EQ(pAV1Par->NumTileRows, 1);
+            mfxExtAV1AuxData& auxPar = ExtBuffer::Get(vp);
+            ASSERT_EQ(auxPar.UniformTileSpacing, MFX_CODINGOPTION_ON);
 
             ASSERT_EQ(
-                pAV1Par->TileWidthInSB[0],
+                auxPar.TileWidthInSB[0],
                 mfx::CeilDiv(downscaledWidth, SB_SIZE)
             );
 
+            mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(vp);
             ASSERT_EQ(
-                pAV1Par->TileHeightInSB[0],
-                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                auxPar.TileHeightInSB[0],
+                mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE)
             );
 
             ASSERT_EQ(
-                pAV1Par->ContextUpdateTileIdPlus1,
-                pAV1Par->NumTileColumns * pAV1Par->NumTileRows
+                auxPar.ContextUpdateTileIdPlus1,
+                tilePar.NumTileColumns * tilePar.NumTileRows
             );
         }
 
@@ -496,6 +514,7 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileInfo });
+            const auto& vp    = Glob::VideoParam::Get(strg);
 
             ASSERT_EQ(
                 block->Call(strg, strg),
@@ -503,27 +522,26 @@ namespace av1e {
             );
 
             const auto& fh = Glob::FH::GetOrConstruct(strg);
-
             ASSERT_EQ(
                 block->Call(strg, strg),
                 MFX_ERR_NONE
             );
 
-            const auto& vp = Glob::VideoParam::Get(strg);
-            const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            const mfxExtAV1TileParam& tilePar = ExtBuffer::Get(vp);
+            const mfxExtAV1AuxData&   auxPar  = ExtBuffer::Get(vp);
 
-            ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);
+            ASSERT_EQ(fh.tile_info.TileCols, tilePar.NumTileColumns);
 
-            for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
+            for (auto i = 0; i < tilePar.NumTileColumns; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], pAV1Par->TileWidthInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], auxPar.TileWidthInSB[i]);
             }
 
-            ASSERT_EQ(fh.tile_info.TileRows, pAV1Par->NumTileRows);
+            ASSERT_EQ(fh.tile_info.TileRows, tilePar.NumTileRows);
 
-            for (auto i = 0; i < pAV1Par->NumTileRows; i++)
+            for (auto i = 0; i < tilePar.NumTileRows; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], pAV1Par->TileHeightInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], auxPar.TileHeightInSB[i]);
             }
         }
 
@@ -561,9 +579,8 @@ namespace av1e {
             static Tile            tile;
             static StorageRW       strg;
 
-            const mfxU16 upscaledWidth   = 7680;
-            const mfxU16 superresDenom   = 16;
-            const mfxU16 downscaledWidth = GetActualEncodeWidth(upscaledWidth, true, superresDenom);
+            const static mfxU32 upscaledWidth = 7680;
+            static mfxU32 downscaledWidth;
 
             static void SetUpTestCase()
             {
@@ -578,54 +595,57 @@ namespace av1e {
                 strg.Clear();
             }
 
-            void InitAV1Param(ExtBuffer::Param<mfxVideoParam>& vp)
+            void InitExtBuffers(ExtBuffer::Param<mfxVideoParam>& vp)
             {
-                mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+                vp.NewEB(MFX_EXTBUFF_AV1_RESOLUTION_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_TILE_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
 
-                pAV1Par->FrameWidth = upscaledWidth;
-                pAV1Par->FrameHeight = 4320;
-                pAV1Par->EnableSuperres = MFX_CODINGOPTION_ON;
-                pAV1Par->SuperresScaleDenominator = superresDenom;
+                mfxExtAV1ResolutionParam& rsPar  = ExtBuffer::Get(vp);
+                rsPar.FrameWidth                 = upscaledWidth;
+                rsPar.FrameHeight                = 4320;
 
-                pAV1Par->UniformTileSpacing = MFX_CODINGOPTION_ON;
+                mfxExtAV1AuxData& auxPar         = ExtBuffer::Get(vp);
+                auxPar.UniformTileSpacing        = MFX_CODINGOPTION_ON;
+                auxPar.EnableSuperres            = MFX_CODINGOPTION_ON;
+                auxPar.SuperresScaleDenominator  = 16;
+                downscaledWidth                  = GetActualEncodeWidth(upscaledWidth, &auxPar);
 
-                pAV1Par->NumTileColumns = 2;
-                pAV1Par->NumTileRows = 2;
+                mfxExtAV1TileParam& tilePar      = ExtBuffer::Get(vp);
+                tilePar.NumTileColumns           = 2;
+                tilePar.NumTileRows              = 2;
 
                 ASSERT_EQ(
-                    mfx::CeilDiv(downscaledWidth, SB_SIZE) % pAV1Par->NumTileColumns,
+                    mfx::CeilDiv(downscaledWidth, SB_SIZE) % tilePar.NumTileColumns,
                     0
                 );
 
                 ASSERT_EQ(
-                    mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) % pAV1Par->NumTileRows,
+                    mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE) % tilePar.NumTileRows,
                     0
                 );
 
-                for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
-                    pAV1Par->TileWidthInSB[i] = mfx::CeilDiv(downscaledWidth, SB_SIZE) / pAV1Par->NumTileColumns;
+                for (auto i = 0; i < tilePar.NumTileColumns; i++)
+                    auxPar.TileWidthInSB[i] = mfx::CeilDiv(downscaledWidth, SB_SIZE) / tilePar.NumTileColumns;
 
-                for (auto i = 0; i < pAV1Par->NumTileRows; i++)
-                    pAV1Par->TileHeightInSB[i] = mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE) / pAV1Par->NumTileRows;
+                for (auto i = 0; i < tilePar.NumTileRows; i++)
+                    auxPar.TileHeightInSB[i] = mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE) / tilePar.NumTileRows;
             }
         };
 
         FeatureBlocks FeatureBlocksTileMultiTileSuperres::blocks{};
         Tile FeatureBlocksTileMultiTileSuperres::tile(FEATURE_TILE);
         StorageRW FeatureBlocksTileMultiTileSuperres::strg{};
+        mfxU32 FeatureBlocksTileMultiTileSuperres::downscaledWidth = 0;
 
         TEST_F(FeatureBlocksTileMultiTileSuperres, CheckTileWithParam)
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_CheckAndFix });
-            auto& vp = Glob::VideoParam::Get(strg);
-
-            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
-            InitAV1Param(vp);
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
             // Maximum height exceeds spec limitation, but after superres, it's within the limitation
-            InitAV1Param(vp);
+            InitExtBuffers(vp);
             ASSERT_EQ(
                 block->Call(vp, vp, strg),
                 MFX_ERR_NONE
@@ -636,30 +656,32 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetDefaults });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
-            mfxU16 numTileColumns = pAV1Par->NumTileColumns;
-            mfxU16 numTileRows = pAV1Par->NumTileRows;
+            mfxExtAV1TileParam& tilePar        = ExtBuffer::Get(vp);
+            mfxU16              numTileColumns = tilePar.NumTileColumns;
+            mfxU16              numTileRows    = tilePar.NumTileRows;
 
-            pAV1Par->NumTileColumns = 0;
-            pAV1Par->NumTileRows = 0;
+            tilePar.NumTileColumns = 0;
+            tilePar.NumTileRows    = 0;
 
             block->Call(vp, strg, strg);
 
-            ASSERT_EQ(pAV1Par->NumTileColumns, numTileColumns);
-            ASSERT_EQ(pAV1Par->NumTileRows, numTileRows);
+            ASSERT_EQ(tilePar.NumTileColumns, numTileColumns);
+            ASSERT_EQ(tilePar.NumTileRows, numTileRows);
         }
 
         TEST_F(FeatureBlocksTileMultiTileSuperres, SetTileInfo)
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileInfo });
-            auto& vp = Glob::VideoParam::Get(strg);
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
-            const auto& fh = Glob::FH::GetOrConstruct(strg);
-            pAV1Par->ContextUpdateTileIdPlus1 = 3;
+            mfxExtAV1ResolutionParam& rsPar   = ExtBuffer::Get(vp);
+            mfxExtAV1TileParam&       tilePar = ExtBuffer::Get(vp);
+            mfxExtAV1AuxData&         auxPar  = ExtBuffer::Get(vp);
+            const auto&               fh      = Glob::FH::GetOrConstruct(strg);
+            auxPar.ContextUpdateTileIdPlus1   = 3;
 
             ASSERT_EQ(
                 block->Call(strg, strg),
@@ -673,26 +695,26 @@ namespace av1e {
 
             ASSERT_EQ(
                 fh.sbRows,
-                mfx::CeilDiv(pAV1Par->FrameHeight, SB_SIZE)
+                mfx::CeilDiv(rsPar.FrameHeight, SB_SIZE)
             );
 
-            ASSERT_EQ(fh.tile_info.TileCols, pAV1Par->NumTileColumns);
+            ASSERT_EQ(fh.tile_info.TileCols, tilePar.NumTileColumns);
 
-            for (auto i = 0; i < pAV1Par->NumTileColumns; i++)
+            for (auto i = 0; i < tilePar.NumTileColumns; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], pAV1Par->TileWidthInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileWidthInSB[i], auxPar.TileWidthInSB[i]);
             }
 
-            ASSERT_EQ(fh.tile_info.TileRows, pAV1Par->NumTileRows);
+            ASSERT_EQ(fh.tile_info.TileRows, tilePar.NumTileRows);
 
-            for (auto i = 0; i < pAV1Par->NumTileRows; i++)
+            for (auto i = 0; i < tilePar.NumTileRows; i++)
             {
-                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], pAV1Par->TileHeightInSB[i]);
+                ASSERT_EQ(fh.tile_info.TileHeightInSB[i], auxPar.TileHeightInSB[i]);
             }
 
             ASSERT_EQ(
                 fh.tile_info.context_update_tile_id,
-                pAV1Par->ContextUpdateTileIdPlus1 - 1
+                auxPar.ContextUpdateTileIdPlus1 - 1
             );
 
             ASSERT_EQ(fh.tile_info.TileColsLog2, 1);
@@ -712,7 +734,7 @@ namespace av1e {
 
             ASSERT_TRUE(strg.Contains(Glob::TileGroups::Key));
 
-            const auto& infos = Glob::TileGroups::Get(strg);
+            const auto &infos = Glob::TileGroups::Get(strg);
             ASSERT_EQ(
                 infos.size(),
                 1
@@ -720,7 +742,7 @@ namespace av1e {
 
             ASSERT_EQ(infos[0].TgStart, 0);
 
-            const auto& fh = Glob::FH::Get(strg);
+            const auto &fh = Glob::FH::Get(strg);
             ASSERT_EQ(
                 infos[0].TgEnd,
                 fh.tile_info.TileCols * fh.tile_info.TileRows - 1
@@ -731,10 +753,10 @@ namespace av1e {
         {
             const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
             const auto& block = FeatureBlocks::Get(queue, { FEATURE_TILE, Tile::BLK_SetTileGroups });
+            auto&       vp    = Glob::VideoParam::Get(strg);
 
-            auto& vp = Glob::VideoParam::Get(strg);
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(vp);
-            pAV1Par->NumTileGroups = 3;
+            mfxExtAV1TileParam& tilePar = ExtBuffer::Get(vp);
+            tilePar.NumTileGroups       = 3;
 
             ASSERT_EQ(
                 block->Call(strg, strg),
@@ -743,10 +765,10 @@ namespace av1e {
 
             ASSERT_TRUE(strg.Contains(Glob::TileGroups::Key));
 
-            const auto& infos = Glob::TileGroups::Get(strg);
+            const auto &infos = Glob::TileGroups::Get(strg);
             ASSERT_EQ(
                 infos.size(),
-                pAV1Par->NumTileGroups
+                tilePar.NumTileGroups
             );
 
             const TileGroupInfos tileGroups = { {0, 0}, {1, 1}, {2, 3} };

@@ -221,7 +221,7 @@ namespace Base
             , mfxFrameInfo& rec);
         mfxU32 GetMinBsSize(
             const mfxVideoParam & par
-            , const mfxExtAV1Param& AV1Param
+            , const mfxExtAV1ResolutionParam& rsPar
             , const mfxExtCodingOption3& CO3);
 
         Defaults::Param GetRTDefaults(StorageR& strg)
@@ -233,10 +233,11 @@ namespace Base
                 , Glob::Defaults::Get(strg));
         }
     };
-    inline void SetDefaultFrameInfo(mfxU16& frameWidth, mfxU16& frameHeight, mfxFrameInfo& fi)
+
+    inline void SetDefaultFrameInfo(mfxU32& frameWidth, mfxU32& frameHeight, mfxFrameInfo& fi)
     {
         if (frameWidth)
-            SetDefault(fi.CropW, std::min(fi.Width, frameWidth));
+            SetDefault(fi.CropW, std::min(mfxU32(fi.Width), frameWidth));
         else
         {
             SetDefault(fi.CropW, fi.Width);
@@ -244,7 +245,7 @@ namespace Base
         }
 
         if (frameHeight)
-            SetDefault(fi.CropH, std::min(fi.Height, frameHeight));
+            SetDefault(fi.CropH, std::min(mfxU32(fi.Height), frameHeight));
         else
         {
             SetDefault(fi.CropH, fi.Height);

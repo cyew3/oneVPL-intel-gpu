@@ -690,6 +690,42 @@ protected:
     virtual void ConstructValues() const;
 };
 template<>
+class MFXStructureRef <mfxExtAV1ResolutionParam>
+    : public MFXStructureBase<mfxExtAV1ResolutionParam>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAV1ResolutionParam>((mfxExtAV1ResolutionParam &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtAV1ResolutionParam & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtAV1ResolutionParam>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
+template<>
+class MFXStructureRef <mfxExtAV1TileParam>
+    : public MFXStructureBase<mfxExtAV1TileParam>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAV1TileParam>((mfxExtAV1TileParam &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtAV1TileParam & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtAV1TileParam>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
+template<>
 class MFXStructureRef <mfxExtAV1Param>
     : public MFXStructureBase<mfxExtAV1Param>
 {

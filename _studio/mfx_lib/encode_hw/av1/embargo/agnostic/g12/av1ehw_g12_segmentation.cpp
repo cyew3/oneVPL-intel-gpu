@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,9 +58,9 @@ void Segmentation::InitTask(const FeatureBlocks& blocks, TPushIT Push)
         {
 
             const auto& par = Base::Glob::VideoParam::Get(global);
-            const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
+            const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
 
-            if (!IsForceSegmentationEnabled(&av1Par))
+            if (!IsForceSegmentationEnabled(&auxPar))
                 return MFX_ERR_NONE;
 
             /* "PatchSegmentParam" does 2 workarounds

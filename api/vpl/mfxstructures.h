@@ -4361,6 +4361,35 @@ MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer Header;
 
+    mfxU8   StillPictureMode;         /* tri-state option */
+    mfxU8   UseAnnexB;                /* tri-state option */
+    mfxU8   PackOBUFrame;             /* tri-state option */
+    mfxU8   InsertTemporalDelimiter;  /* tri-state option */
+
+    mfxU8   EnableCdef;               /* tri-state option */
+    mfxU8   EnableRestoration;        /* tri-state option */
+
+    mfxU8   EnableLoopFilter;         /* tri-state option */
+    mfxU8   LoopFilterSharpness;      /* 0..8, 0 = default, map to bitstream: [1..8] => [0..7] */
+
+    mfxU8   EnableSuperres;           /* tri-state option */
+    mfxU8   SuperresScaleDenominator; /* 9..16, 0 = default */
+
+    mfxU8   SegmentationMode;         /* see enum AV1SegmentMode*/
+    mfxU8   InterpFilter;             /* see enum AV1InterpolationMode */
+
+    mfxU8   DisableCdfUpdate;         /* tri-state option */
+    mfxU8   DisableFrameEndUpdateCdf; /* tri-state option */
+
+    mfxU8   UniformTileSpacing;       /* tri-state option */
+    mfxU8   ContextUpdateTileIdPlus1; /* Minus 1 specifies context_update_tile_id */
+
+    mfxU16  SwitchInterval;           /* interval, 0 - disabled */
+
+    mfxU16  NumTilesPerTileGroup[256];
+    mfxU16  TileWidthInSB[128];
+    mfxU16  TileHeightInSB[128];
+
     struct {
         mfxU8  CdefDampingMinus3;   /* 0..3 */
         mfxU8  CdefBits;            /* 0..3 */
@@ -4399,7 +4428,7 @@ typedef struct {
     mfxU16 Palette;                     /* tri-state option */
     mfxU16 IBC;                         /* tri-state option */
 
-    mfxU8  reserved[56];
+    mfxU8  reserved[54];
 } mfxExtAV1AuxData;
 MFX_PACK_END()
 

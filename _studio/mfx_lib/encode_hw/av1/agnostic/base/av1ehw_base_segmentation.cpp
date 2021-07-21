@@ -96,27 +96,17 @@ inline bool CheckAndZeroSegmentParam(
 }
 
 static mfxU32 CheckSegmentMap(
-    const mfxVideoParam& par
-    , const mfxExtAV1Param& av1Par
+    const mfxU32 width
+    , const mfxU32 height
     , mfxExtAV1Segmentation& seg)
 {
     mfxU32 invalid = 0;
 
-    mfxFrameInfo  fiTemp  = par.mfx.FrameInfo;
-    mfxU16 frameWidthTemp = av1Par.FrameWidth;
-    mfxU16 frameHeightTemp = av1Par.FrameHeight;
-    SetDefaultFrameInfo(frameWidthTemp, frameHeightTemp, fiTemp);
+    const mfxU32 blockSize      = seg.SegmentIdBlockSize > 0 ? seg.SegmentIdBlockSize : MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32;
+    const mfxU32 widthInBlocks  = mfx::CeilDiv(width, blockSize);
+    const mfxU32 heightInBlocks = mfx::CeilDiv(height, blockSize);
 
-    mfxU16 frameWidth = frameWidthTemp ? frameWidthTemp : fiTemp.Width;
-    frameWidth        = GetActualEncodeWidth(frameWidth, IsOn(av1Par.EnableSuperres), av1Par.SuperresScaleDenominator);
-
-    const mfxU16 frameHeight = frameHeightTemp ? frameHeightTemp : fiTemp.Height;
-
-    const mfxU16 blockSize = seg.SegmentIdBlockSize > 0 ? seg.SegmentIdBlockSize : MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32;
-    const mfxU16 widthInBlocks  = mfx::CeilDiv(frameWidth, blockSize);
-    const mfxU16 heightInBlocks = mfx::CeilDiv(frameHeight, blockSize);
-
-    if (seg.NumSegmentIdAlloc && seg.NumSegmentIdAlloc < static_cast<mfxU32>(widthInBlocks) * heightInBlocks)
+    if (seg.NumSegmentIdAlloc && seg.NumSegmentIdAlloc < widthInBlocks * heightInBlocks)
         invalid++;
 
     if (seg.SegmentId && seg.NumSegments)
@@ -263,32 +253,36 @@ inline mfxU32 CheckSegDeltaForLossless(const mfxVideoParam& par, mfxExtAV1Segmen
 mfxStatus CheckAndFixSegmentBuffers(
     const mfxVideoParam& par
     , const ENCODE_CAPS_AV1& caps
-    , const mfxExtAV1Param* pAV1
-    , mfxExtAV1Segmentation* pSeg
-    , const Defaults::Param& defPar)
+    , const Defaults::Param& defPar
+    , mfxExtAV1Segmentation* pSeg)
 {
+    const mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
     // If Segmentation is not explicitly enabled through SegmentationMode, it will assumed disabled
-    MFX_CHECK(IsSegmentationEnabled(pAV1), MFX_ERR_NONE);
+    MFX_CHECK(IsSegmentationEnabled(pAuxPar), MFX_ERR_NONE);
 
     // Only support Force Segmentation currently
-    MFX_CHECK(!IsAutoSegmentationEnabled(pAV1), MFX_ERR_UNSUPPORTED);
-    MFX_CHECK(IsForceSegmentationEnabled(pAV1), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(!IsAutoSegmentationEnabled(pAuxPar), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(IsForceSegmentationEnabled(pAuxPar), MFX_ERR_UNSUPPORTED);
 
     MFX_CHECK(pSeg,  MFX_ERR_NONE);
 
     mfxU32 invalid = 0, changed = 0;
 
-    invalid += !caps.ForcedSegmentationSupport;
+    invalid += !!!caps.ForcedSegmentationSupport;
 
     // Further parameter check hardly rely on NumSegments. Cannot fix value of NumSegments and then use
     // modified value for checks. Need to drop and return MFX_ERR_UNSUPPORTED
     invalid += CheckNumSegments(*pSeg);
 
-    invalid += CheckSegmentMap(par, *pAV1, *pSeg);
+    mfxU32 width = 0, height = 0;
+    std::tie(width, height) = GetRealResolution(defPar.mvp);
+    width = GetActualEncodeWidth(width, pAuxPar);
+
+    invalid += CheckSegmentMap(width, height, *pSeg);
 
     mfxU16 rateControlMethod      = defPar.base.GetRateControlMethod(defPar);
-    invalid += (rateControlMethod == MFX_RATECONTROL_CQP && CheckSegQP(par, *pSeg));
-    invalid += (rateControlMethod == MFX_RATECONTROL_CQP && CheckSegDeltaForLossless(par, *pSeg));
+    invalid += !!(rateControlMethod == MFX_RATECONTROL_CQP && CheckSegQP(par, *pSeg));
+    invalid += !!(rateControlMethod == MFX_RATECONTROL_CQP && CheckSegDeltaForLossless(par, *pSeg));
 
     MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
 
@@ -336,18 +330,13 @@ void Segmentation::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     Push(BLK_CheckAndFix
         , [this](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& global) -> mfxStatus
     {
-        const auto& caps = Glob::EncodeCaps::Get(global);
-        const mfxExtAV1Param* pAV1 = ExtBuffer::Get(par);
-        mfxExtAV1Segmentation* pSeg = ExtBuffer::Get(par);
+        const auto&            caps     = Glob::EncodeCaps::Get(global);
+        auto&                  core     = Glob::VideoCore::Get(global);
+        const auto&            defchain = Glob::Defaults::Get(global);
+        const Defaults::Param& defPar   = Defaults::Param(par, caps, core.GetHWType(), defchain);
+        mfxExtAV1Segmentation* pSeg     = ExtBuffer::Get(par);
 
-        auto& core                    = Glob::VideoCore::Get(global);
-        const auto& defchain          = Glob::Defaults::Get(global);
-        const Defaults::Param& defPar = Defaults::Param(par, caps, core.GetHWType(), defchain);
-
-        auto sts = CheckAndFixSegmentBuffers(par, caps, pAV1, pSeg, defPar);
-        MFX_CHECK_STS(sts);
-
-        return MFX_ERR_NONE;
+        return CheckAndFixSegmentBuffers(par, caps, defPar, pSeg);
     });
 }
 
@@ -358,9 +347,9 @@ void Segmentation::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
     {
         mfxExtAV1Segmentation* pSeg = ExtBuffer::Get(par);
         if (pSeg)
+        {
             SetDefault(pSeg->SegmentIdBlockSize, MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32);
-
-        return MFX_ERR_NONE;
+        }
     });
 }
 
@@ -427,9 +416,7 @@ static mfxStatus SetFinalSegParam(
     {
         MergeSegParam(initSeg, *pFrameSeg, finalSeg);
 
-        const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-        const mfxStatus checkSts = CheckAndFixSegmentBuffers(par, caps, &av1Par, &finalSeg, defPar);
-
+        const mfxStatus checkSts = CheckAndFixSegmentBuffers(par, caps, defPar, &finalSeg);
         if (checkSts < MFX_ERR_NONE)
         {
             AV1E_LOG("  *DEBUG* STATUS: Merge of Init and Frame mfxExtAV1Segmentation resulted in erroneous configuration!\n");
@@ -460,36 +447,35 @@ void Segmentation::InitTask(const FeatureBlocks& blocks, TPushIT Push)
             , StorageW& global
             , StorageW& task) -> mfxStatus
         {
-            const auto& par = Glob::VideoParam::Get(global);
-            const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
+            const auto&             par    = Glob::VideoParam::Get(global);
+            const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
 
-            if (!IsForceSegmentationEnabled(&av1Par))
+            if (!IsForceSegmentationEnabled(&auxPar))
                 return MFX_ERR_NONE;
 
             mfxExtAV1Segmentation *pFrameSeg = ExtBuffer::Get(Task::Common::Get(task).ctrl);
 
-            mfxStatus checkSts            = MFX_ERR_NONE;
-            const auto& caps              = Glob::EncodeCaps::Get(global);
-            auto& core                    = Glob::VideoCore::Get(global);
-            const auto& defchain          = Glob::Defaults::Get(global);
-            const Defaults::Param& defPar = Defaults::Param(par, caps, core.GetHWType(), defchain);
+            mfxStatus              checkSts = MFX_ERR_NONE;
+            const auto&            caps    = Glob::EncodeCaps::Get(global);
+            auto&                  core    = Glob::VideoCore::Get(global);
+            const auto&            defchain = Glob::Defaults::Get(global);
+            const Defaults::Param& defPar   = Defaults::Param(par, caps, core.GetHWType(), defchain);
 
             if (pFrameSeg && !IsSegmentationSwitchedOff(pFrameSeg))
             {
-                checkSts = CheckAndFixSegmentBuffers(par, caps, &av1Par, pFrameSeg, defPar);
-
+                checkSts = CheckAndFixSegmentBuffers(par, caps, defPar, pFrameSeg);
                 if (checkSts < MFX_ERR_NONE)
                 {
                     // ignore Frame segment param and return warning if there are issues MSDK can't fix
                     pFrameSeg = nullptr;
-                    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                    checkSts  = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                     AV1E_LOG("  *DEBUG* STATUS: Critical issue in Frame mfxExtAV1Segmentation - it's ignored!\n");
                 }
             }
 
-            const mfxExtAV1Segmentation& initSeg = ExtBuffer::Get(par);
-            mfxExtAV1Segmentation& finalSeg = Task::Segment::Get(task);
-            const mfxStatus mergeSts = SetFinalSegParam(par, caps, initSeg, pFrameSeg, finalSeg, defPar);
+            const mfxExtAV1Segmentation& initSeg  = ExtBuffer::Get(par);
+            mfxExtAV1Segmentation&       finalSeg = Task::Segment::Get(task);
+            const mfxStatus              mergeSts = SetFinalSegParam(par, caps, initSeg, pFrameSeg, finalSeg, defPar);
 
             return checkSts == MFX_ERR_NONE ? mergeSts : checkSts;
         });

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -98,16 +98,19 @@ namespace av1e {
             tpar.FrameType      = MFX_FRAMETYPE_I;
             tpar.InsertHeaders  = INSERT_IVF_SEQ | INSERT_IVF_FRM;
 
-            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
-            mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
-
-            av1Par.UniformTileSpacing = 1;
-            av1Par.FrameWidth         = TEST_WIDTH;
-            av1Par.FrameHeight        = TEST_HEIGHT;
-            av1Par.NumTileColumns = 1;
-            av1Par.NumTileRows = 1;
-            av1Par.TileWidthInSB[0]   = mfx::CeilDiv(mfxU16(TEST_WIDTH), mfxU16(SB_SIZE));
-            av1Par.TileHeightInSB[0]  = mfx::CeilDiv(mfxU16(TEST_HEIGHT), mfxU16(SB_SIZE));
+            vp.NewEB(MFX_EXTBUFF_AV1_RESOLUTION_PARAM, false);
+            vp.NewEB(MFX_EXTBUFF_AV1_TILE_PARAM, false);
+            vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
+            mfxExtAV1ResolutionParam& rsPar   = ExtBuffer::Get(vp);
+            mfxExtAV1TileParam&       tilePar = ExtBuffer::Get(vp);
+            mfxExtAV1AuxData&         auxPar  = ExtBuffer::Get(vp);
+            rsPar.FrameWidth                  = TEST_WIDTH;
+            rsPar.FrameHeight                 = TEST_HEIGHT;
+            tilePar.NumTileColumns            = 1;
+            tilePar.NumTileRows               = 1;
+            auxPar.UniformTileSpacing         = 1;
+            auxPar.TileWidthInSB[0]           = mfx::CeilDiv(mfxU16(TEST_WIDTH), mfxU16(SB_SIZE));
+            auxPar.TileHeightInSB[0]          = mfx::CeilDiv(mfxU16(TEST_HEIGHT), mfxU16(SB_SIZE));
 
             auto const& setTileInfo = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks),
@@ -134,7 +137,7 @@ namespace av1e {
 
             // adding dummy frame size for the internal BSParser checks
             mfxU32 ivfFrameHeader[3] = { 10000, 0, 0x00000000 };
-            mfxU8 * pIVFPicHeader = ph.IVF.pData + IVF_SEQ_HEADER_SIZE_BYTES;
+            mfxU8* pIVFPicHeader     = ph.IVF.pData + IVF_SEQ_HEADER_SIZE_BYTES;
             std::copy(std::begin(ivfFrameHeader), std::end(ivfFrameHeader), reinterpret_cast <mfxU32*> (pIVFPicHeader));
 
             // checkign header with BSParser

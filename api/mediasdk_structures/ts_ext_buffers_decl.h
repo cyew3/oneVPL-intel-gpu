@@ -80,6 +80,8 @@ EXTBUF(mfxExtDPB                         , MFX_EXTBUFF_DPB)
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
 EXTBUF(mfxExtAV1BitstreamParam           , MFX_EXTBUFF_AV1_BITSTREAM_PARAM)
+EXTBUF(mfxExtAV1ResolutionParam          , MFX_EXTBUFF_AV1_RESOLUTION_PARAM)
+EXTBUF(mfxExtAV1TileParam                , MFX_EXTBUFF_AV1_TILE_PARAM)
 EXTBUF(mfxExtAV1Param                    , MFX_EXTBUFF_AV1_PARAM)
 EXTBUF(mfxExtAV1AuxData                  , MFX_EXTBUFF_AV1_AUXDATA)
 EXTBUF(mfxExtAV1Segmentation             , MFX_EXTBUFF_AV1_SEGMENTATION)

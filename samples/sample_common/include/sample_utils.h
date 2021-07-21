@@ -306,8 +306,11 @@ template<>struct mfx_ext_buffer_id<mfxExtVP9Param> {
 template<>struct mfx_ext_buffer_id<mfxExtAV1BitstreamParam> {
     enum {id = MFX_EXTBUFF_AV1_BITSTREAM_PARAM};
 };
-template<>struct mfx_ext_buffer_id<mfxExtAV1Param> {
-    enum {id = MFX_EXTBUFF_AV1_PARAM};
+template<>struct mfx_ext_buffer_id<mfxExtAV1ResolutionParam> {
+    enum {id = MFX_EXTBUFF_AV1_RESOLUTION_PARAM};
+};
+template<>struct mfx_ext_buffer_id<mfxExtAV1TileParam> {
+    enum {id = MFX_EXTBUFF_AV1_TILE_PARAM};
 };
 template<>struct mfx_ext_buffer_id<mfxExtVideoSignalInfo> {
     enum {id = MFX_EXTBUFF_VIDEO_SIGNAL_INFO};
@@ -598,7 +601,8 @@ private:
             MFX_EXTBUFF_HEVC_PARAM,
             MFX_EXTBUFF_VP9_PARAM,
             MFX_EXTBUFF_AV1_BITSTREAM_PARAM,
-            MFX_EXTBUFF_AV1_PARAM,
+            MFX_EXTBUFF_AV1_RESOLUTION_PARAM,
+            MFX_EXTBUFF_AV1_TILE_PARAM,
             MFX_EXTBUFF_DEC_VIDEO_PROCESSING
         };
 

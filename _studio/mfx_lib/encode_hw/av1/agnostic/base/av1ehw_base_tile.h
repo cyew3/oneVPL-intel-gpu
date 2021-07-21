@@ -63,7 +63,7 @@ namespace Base
 
         //mfxStatus UpdateFrameTileInfo(
         //    const TaskCommonPar& task
-        //    , TileInfo& tileInfo) const;
+        //    , TileInfoAv1& tileInfo) const;
     };
 
 } //Base

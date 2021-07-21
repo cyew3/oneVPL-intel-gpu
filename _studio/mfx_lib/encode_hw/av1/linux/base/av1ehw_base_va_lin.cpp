@@ -156,8 +156,8 @@ void DDI_VA::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
     Push(BLK_CreateService
         , [this](StorageRW& strg, StorageRW& local) -> mfxStatus
         {
-            const auto&           par    = Glob::VideoParam::Get(strg);
-            const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
+            const auto&                     par   = Glob::VideoParam::Get(strg);
+            const mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(par);
             mfxStatus sts;
 
             m_callVa = Glob::DDI_Execute::Get(strg);
@@ -179,8 +179,8 @@ void DDI_VA::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             attrib[1].value = vaRCType;
 
             sts = MfxEncodeHW::DeviceVAAPI::Init(
-                av1Par.FrameWidth
-                , av1Par.FrameHeight
+                rsPar.FrameWidth
+                , rsPar.FrameHeight
                 , VA_PROGRESSIVE
                 , Glob::AllocRec::Get(strg).GetResponse()
                 , attrib.data()
@@ -194,8 +194,8 @@ void DDI_VA::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
             // context_id required for allocation video memory (temp  solution)
             info.AllocId      = m_vaContextEncode;
-            info.Info.Width   = av1Par.FrameWidth * 2;
-            info.Info.Height  = av1Par.FrameHeight;
+            info.Info.Width   = rsPar.FrameWidth * 2;
+            info.Info.Height  = rsPar.FrameHeight;
 
             return MFX_ERR_NONE;
         });

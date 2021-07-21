@@ -328,8 +328,8 @@ static void InitSegMap(
     const ExtBuffer::Param<mfxVideoParam>& par
     , std::vector<mfxU8>& segment_map)
 {
-    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-    if (av1Par.SegmentationMode != MFX_AV1_SEGMENT_MANUAL)
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
+    if (auxPar.SegmentationMode != MFX_AV1_SEGMENT_MANUAL)
         return;
 
     const mfxExtAV1Segmentation& seg = ExtBuffer::Get(par);

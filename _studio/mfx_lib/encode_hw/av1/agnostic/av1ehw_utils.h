@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -337,15 +337,6 @@ inline bool SetIf(T& opt, bool bSet, TF&& get, TA&&... arg)
         return false;
     opt = get(std::forward<TA>(arg)...);
     return true;
-}
-
-inline bool IsOn(mfxU16 opt)
-{
-    return opt == MFX_CODINGOPTION_ON;
-}
-inline bool IsOff(mfxU16 opt)
-{
-    return opt == MFX_CODINGOPTION_OFF;
 }
 inline bool IsIdr(mfxU32 type)
 {

@@ -594,8 +594,39 @@ void MFXStructureRef <mfxExtAV1BitstreamParam>::ConstructValues() const
 {
     SERIALIZE_INT(WriteIVFHeaders);
 }
+void MFXStructureRef <mfxExtAV1ResolutionParam>::ConstructValues() const
+{
+    SERIALIZE_INT(FrameWidth);
+    SERIALIZE_INT(FrameHeight);
+}
+void MFXStructureRef <mfxExtAV1TileParam>::ConstructValues() const
+{
+    SERIALIZE_INT(NumTileRows);
+    SERIALIZE_INT(NumTileColumns);
+    SERIALIZE_INT(NumTileGroups);
+}
 void MFXStructureRef <mfxExtAV1AuxData>::ConstructValues() const
 {
+    SERIALIZE_INT(StillPictureMode);
+    SERIALIZE_INT(UseAnnexB);
+    SERIALIZE_INT(PackOBUFrame);
+    SERIALIZE_INT(InsertTemporalDelimiter);
+    SERIALIZE_INT(EnableCdef);
+    SERIALIZE_INT(EnableRestoration);
+    SERIALIZE_INT(EnableLoopFilter);
+    SERIALIZE_INT(LoopFilterSharpness);
+    SERIALIZE_INT(EnableSuperres);
+    SERIALIZE_INT(SuperresScaleDenominator);
+    SERIALIZE_INT(SegmentationMode);
+    SERIALIZE_INT(InterpFilter);
+    SERIALIZE_INT(DisableCdfUpdate);
+    SERIALIZE_INT(DisableFrameEndUpdateCdf);
+    SERIALIZE_INT(UniformTileSpacing);
+    SERIALIZE_INT(ContextUpdateTileIdPlus1);
+    SERIALIZE_INT(SwitchInterval);
+    SERIALIZE_POD_ARRAY(NumTilesPerTileGroup, 8);
+    SERIALIZE_POD_ARRAY(TileWidthInSB, 8);
+    SERIALIZE_POD_ARRAY(TileHeightInSB, 8);
     SerializeWithInserter(VM_STRING("CdefDampingMinus3"), m_pStruct->Cdef.CdefDampingMinus3);
     SerializeWithInserter(VM_STRING("CdefBits"), m_pStruct->Cdef.CdefBits);
     SerializeArrayOfPODs(VM_STRING("CdefYStrengths"), m_pStruct->Cdef.CdefYStrengths, 8);
@@ -1276,14 +1307,22 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             break;
         }
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_EXTBUFF_AV1_PARAM: {
-            SerializeStruct(VM_STRING("AV1."), *(mfxExtAV1Param*)m_pStruct);
-            break;
-        }
         case MFX_EXTBUFF_AV1_BITSTREAM_PARAM: {
             SerializeStruct(VM_STRING("AV1BS."), *(mfxExtAV1BitstreamParam*)m_pStruct);
             break;
         }
+        case MFX_EXTBUFF_AV1_RESOLUTION_PARAM: {
+            SerializeStruct(VM_STRING("AV1RS."), *(mfxExtAV1ResolutionParam*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AV1_TILE_PARAM: {
+            SerializeStruct(VM_STRING("AV1Tile."), *(mfxExtAV1TileParam*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AV1_PARAM: {
+            SerializeStruct(VM_STRING("AV1."), *(mfxExtAV1Param*)m_pStruct);
+            break;
+        }        
         case MFX_EXTBUFF_AV1_AUXDATA: {
             SerializeStruct(VM_STRING("AV1AuxData."), *(mfxExtAV1AuxData*)m_pStruct);
             break;

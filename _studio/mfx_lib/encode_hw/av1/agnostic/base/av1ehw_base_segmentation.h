@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2019-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,19 +29,19 @@
 namespace AV1EHW
 {
 
-inline bool IsSegmentationEnabled(const mfxExtAV1Param* pAV1)
+inline bool IsSegmentationEnabled(const mfxExtAV1AuxData* pAuxPar)
 {
-    return pAV1 && pAV1->SegmentationMode != MFX_AV1_SEGMENT_DISABLED;
+    return pAuxPar && pAuxPar->SegmentationMode != MFX_AV1_SEGMENT_DISABLED;
 }
 
-inline bool IsAutoSegmentationEnabled(const mfxExtAV1Param* pAV1)
+inline bool IsAutoSegmentationEnabled(const mfxExtAV1AuxData* pAuxPar)
 {
-    return pAV1 && pAV1->SegmentationMode == MFX_AV1_SEGMENT_AUTO;
+    return pAuxPar && pAuxPar->SegmentationMode == MFX_AV1_SEGMENT_AUTO;
 }
 
-inline bool IsForceSegmentationEnabled(const mfxExtAV1Param* pAV1)
+inline bool IsForceSegmentationEnabled(const mfxExtAV1AuxData* pAuxPar)
 {
-    return pAV1 && pAV1->SegmentationMode == MFX_AV1_SEGMENT_MANUAL;
+    return pAuxPar && pAuxPar->SegmentationMode == MFX_AV1_SEGMENT_MANUAL;
 }
 
 inline bool IsSegmentationSwitchedOff(const mfxExtAV1Segmentation* pPar)

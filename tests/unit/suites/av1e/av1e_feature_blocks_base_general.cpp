@@ -85,8 +85,8 @@ namespace av1e {
 
         TEST_F(FeatureBlocksGeneral, InitTask)
         {
-            auto& queueAT = FeatureBlocks::BQ<FeatureBlocks::BQ_AllocTask>::Get(blocks);
-            auto const& allocTask = FeatureBlocks::Get(queueAT, { FEATURE_GENERAL, General::BLK_AllocTask });
+            const auto& queueAT   = FeatureBlocks::BQ<FeatureBlocks::BQ_AllocTask>::Get(blocks);
+            const auto& allocTask = FeatureBlocks::Get(queueAT, { FEATURE_GENERAL, General::BLK_AllocTask });
 
             auto& vp = Glob::VideoParam::GetOrConstruct(global);
             const mfxU16 numRefFrame = 2;
@@ -97,8 +97,8 @@ namespace av1e {
             );
 
             // calling General's InitTask routing
-            auto& queueIT = FeatureBlocks::BQ<FeatureBlocks::BQ_InitTask>::Get(blocks);
-            auto const& block = FeatureBlocks::Get(queueIT, { FEATURE_GENERAL, General::BLK_InitTask });
+            const auto& queueIT = FeatureBlocks::BQ<FeatureBlocks::BQ_InitTask>::Get(blocks);
+            const auto& block   = FeatureBlocks::Get(queueIT, { FEATURE_GENERAL, General::BLK_InitTask });
 
             mfxEncodeCtrl* pCtrl = nullptr;
             mfxFrameSurface1 surf{};
@@ -120,8 +120,8 @@ namespace av1e {
         {
             local.Insert(Task::Common::Key, MfxFeatureBlocks::make_storable<TaskCommonPar>());
 
-            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_PreReorderTask>::Get(blocks);
-            auto block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_PrepareTask });
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_PreReorderTask>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_PrepareTask });
 
             EXPECT_EQ(
                 block->Call(global, local),
@@ -135,8 +135,8 @@ namespace av1e {
         {
             local.Insert(Task::Common::Key, MfxFeatureBlocks::make_storable<TaskCommonPar>());
 
-            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_PreReorderTask>::Get(blocks);
-            auto block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_PrepareTask });
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_PreReorderTask>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_PrepareTask });
 
             EXPECT_EQ(
                 block->Call(global, local),
@@ -153,8 +153,8 @@ namespace av1e {
 
         TEST_F(FeatureBlocksGeneral, SetDefaults)
         {
-            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks);
-            auto block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_SetDefaults });
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_GENERAL, General::BLK_SetDefaults });
 
             auto& vpOld = Glob::VideoParam::GetOrConstruct(global);
             EXPECT_EQ(vpOld.mfx.TargetUsage, 0);
@@ -176,26 +176,25 @@ namespace av1e {
         TEST_F(FeatureBlocksGeneral, SetFH)
         {
             auto& vp   = Glob::VideoParam::Get(global);
-            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
+            vp.NewEB(MFX_EXTBUFF_AV1_RESOLUTION_PARAM, false);
             vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
             vp.NewEB(MFX_EXTBUFF_CODING_OPTION3, false);
             vp.NewEB(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, false);
 
-            mfxExtAV1Param& av1Par          = ExtBuffer::Get(vp);
-            av1Par.FrameHeight              = 480;
-            av1Par.FrameWidth               = 640;
-            av1Par.StillPictureMode         = MFX_CODINGOPTION_OFF;
-            av1Par.EnableSuperres           = MFX_CODINGOPTION_ON;
-            av1Par.SuperresScaleDenominator = 11;
-            av1Par.EnableCdef               = MFX_CODINGOPTION_OFF;
-            av1Par.EnableRestoration        = MFX_CODINGOPTION_ON;
-            av1Par.InterpFilter             = MFX_AV1_INTERP_EIGHTTAP;
-            av1Par.DisableCdfUpdate         = MFX_CODINGOPTION_OFF;
-            av1Par.DisableFrameEndUpdateCdf = MFX_CODINGOPTION_OFF;
-
-            mfxExtAV1AuxData& av1AuxPar     = ExtBuffer::Get(vp);
-            av1AuxPar.EnableOrderHint       = MFX_CODINGOPTION_OFF;
-            av1AuxPar.ErrorResilientMode    = MFX_CODINGOPTION_OFF;
+            mfxExtAV1ResolutionParam* pRsPar  = ExtBuffer::Get(vp);
+            mfxExtAV1AuxData*         pAuxPar = ExtBuffer::Get(vp);
+            pRsPar->FrameHeight               = 480;
+            pRsPar->FrameWidth                = 640;
+            pAuxPar->StillPictureMode         = MFX_CODINGOPTION_OFF;
+            pAuxPar->EnableSuperres           = MFX_CODINGOPTION_ON;
+            pAuxPar->SuperresScaleDenominator = 11;
+            pAuxPar->EnableCdef               = MFX_CODINGOPTION_OFF;
+            pAuxPar->EnableRestoration        = MFX_CODINGOPTION_ON;
+            pAuxPar->InterpFilter             = MFX_AV1_INTERP_EIGHTTAP;
+            pAuxPar->DisableCdfUpdate         = MFX_CODINGOPTION_OFF;
+            pAuxPar->DisableFrameEndUpdateCdf = MFX_CODINGOPTION_OFF;
+            pAuxPar->EnableOrderHint          = MFX_CODINGOPTION_OFF;
+            pAuxPar->ErrorResilientMode       = MFX_CODINGOPTION_OFF;
 
             auto& caps = Glob::EncodeCaps::Get(global);
             auto& sh   = Glob::SH::GetOrConstruct(global);
@@ -210,8 +209,8 @@ namespace av1e {
             EXPECT_EQ(fh.lr_params.lr_unit_shift, 0);
             EXPECT_EQ(fh.lr_params.lr_unit_extra_shift, 0);
             EXPECT_EQ(fh.lr_params.lr_uv_shift, 1);
-            EXPECT_EQ(fh.RenderWidth, av1Par.FrameWidth);
-            EXPECT_EQ(fh.FrameWidth, GetActualEncodeWidth(av1Par));
+            EXPECT_EQ(fh.RenderWidth, pRsPar->FrameWidth);
+            EXPECT_EQ(fh.FrameWidth, GetActualEncodeWidth(pRsPar->FrameWidth, pAuxPar));
         }
 
         TEST_F(FeatureBlocksGeneral, CheckTemporalLayers)

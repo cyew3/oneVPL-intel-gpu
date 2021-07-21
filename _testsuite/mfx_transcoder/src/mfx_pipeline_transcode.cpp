@@ -95,6 +95,8 @@ Copyright(c) 2008-2021 Intel Corporation. All Rights Reserved.
 #define HANDLE_AV1_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsAV1E, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 #define HANDLE_AV1_BS_PARAM(member, OPT_TYPE, description)    HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1BsParam, member, OPT_TYPE, description, MFX_CODEC_AV1)
+#define HANDLE_AV1_RS_PARAM(member, OPT_TYPE, description)    HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1RsParam, member, OPT_TYPE, description, MFX_CODEC_AV1)
+#define HANDLE_AV1_TILE_PARAM(member, OPT_TYPE, description)  HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1TileParam, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #define HANDLE_AV1_PARAM(member, OPT_TYPE, description)       HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1Param, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #define HANDLE_AV1_AUX_DATA(member, OPT_TYPE, description)    HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1AuxData, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #endif
@@ -151,6 +153,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extCodingOptionsAV1E(new mfxExtCodingOptionAV1E())
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     , m_extAV1BsParam(new mfxExtAV1BitstreamParam())
+    , m_extAV1RsParam(new mfxExtAV1ResolutionParam())
+    , m_extAV1TileParam(new mfxExtAV1TileParam())
     , m_extAV1Param(new mfxExtAV1Param())
     , m_extAV1AuxData(new mfxExtAV1AuxData())
     , m_extAV1Segmentation(new mfxExtAV1Segmentation())
@@ -461,31 +465,29 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_OPTION(NumGpuSlices, OPT_UINT_16, "number of slices on GPU"),
         //AV1 params
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        HANDLE_AV1_PARAM(FrameWidth,               OPT_UINT_16,   "0-maxU16"),
-        HANDLE_AV1_PARAM(FrameHeight,              OPT_UINT_16,   "0-maxU16"),
-        HANDLE_AV1_PARAM(UseAnnexB,                OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(PackOBUFrame,             OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(InsertTemporalDelimiter,  OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(UniformTileSpacing,       OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(ContextUpdateTileIdPlus1, OPT_UINT_8,    "0-128"),
-        HANDLE_AV1_PARAM(NumTileRows,              OPT_UINT_16,   "0-maxU16: Number of tile rows (1 - default)"),
-        HANDLE_AV1_PARAM(NumTileColumns,           OPT_UINT_16,   "0-maxU16: Number of tile columns (1 - default)"),
-        HANDLE_AV1_PARAM(NumTileGroups,            OPT_UINT_16,   "0-maxU16"),
-        HANDLE_AV1_PARAM(EnableCdef,               OPT_TRI_STATE, "on/off: Constrained Directional Enhancement Filter"),
-        HANDLE_AV1_PARAM(EnableRestoration,        OPT_TRI_STATE, "on/off: Enable Loop Restoration"),
-        HANDLE_AV1_PARAM(LoopFilterSharpness,      OPT_UINT_8,    "0-8: 0 - app default, map to bitstream: [1..8] => [0..7]"),
-        HANDLE_AV1_PARAM(InterpFilter,             OPT_UINT_8,    "0-4: Interpolation filters during mode decision"),
-        HANDLE_AV1_PARAM(SegmentationMode,         OPT_UINT_8,    "0 - off, 1 - auto, 2 - manual"),
-        HANDLE_AV1_PARAM(DisableCdfUpdate,         OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(DisableFrameEndUpdateCdf, OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(EnableSuperres,           OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(SuperresScaleDenominator, OPT_UINT_8,    "9-16: 0 - app default"),
-        HANDLE_AV1_PARAM(StillPictureMode,         OPT_TRI_STATE, "on/off"),
-        HANDLE_AV1_PARAM(SwitchInterval,           OPT_UINT_16,   "0-maxU16: Interval (0 - disabled)"),
-        HANDLE_AV1_PARAM(EnableLoopFilter,         OPT_TRI_STATE, "on/off: Loop Filter"),
-
-        HANDLE_AV1_BS_PARAM(WriteIVFHeaders,       OPT_TRI_STATE, "on/off: Insertion IVF container headers to output stream"),
-
+        HANDLE_AV1_BS_PARAM(WriteIVFHeaders,          OPT_TRI_STATE, "on/off: Insertion IVF container headers to output stream"),
+        HANDLE_AV1_RS_PARAM(FrameWidth,               OPT_UINT_16,   "0-maxU16"),
+        HANDLE_AV1_RS_PARAM(FrameHeight,              OPT_UINT_16,   "0-maxU16"),
+        HANDLE_AV1_TILE_PARAM(NumTileRows,            OPT_UINT_16,   "0-maxU16: Number of tile rows (1 - default)"),
+        HANDLE_AV1_TILE_PARAM(NumTileColumns,         OPT_UINT_16,   "0-maxU16: Number of tile columns (1 - default)"),
+        HANDLE_AV1_TILE_PARAM(NumTileGroups,          OPT_UINT_16,   "0-maxU16"),
+        HANDLE_AV1_AUX_DATA(StillPictureMode,         OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(UseAnnexB,                OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(PackOBUFrame,             OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(InsertTemporalDelimiter,  OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(EnableCdef,               OPT_TRI_STATE, "on/off: Constrained Directional Enhancement Filter"),
+        HANDLE_AV1_AUX_DATA(EnableRestoration,        OPT_TRI_STATE, "on/off: Enable Loop Restoration"),
+        HANDLE_AV1_AUX_DATA(EnableLoopFilter,         OPT_TRI_STATE, "on/off: Loop Filter"),
+        HANDLE_AV1_AUX_DATA(LoopFilterSharpness,      OPT_UINT_8,    "0-8: 0 - app default, map to bitstream: [1..8] => [0..7]"),
+        HANDLE_AV1_AUX_DATA(EnableSuperres,           OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(SuperresScaleDenominator, OPT_UINT_8,    "9-16: 0 - app default"),
+        HANDLE_AV1_AUX_DATA(SegmentationMode,         OPT_UINT_8,    "0 - off, 1 - auto, 2 - manual"),
+        HANDLE_AV1_AUX_DATA(InterpFilter,             OPT_UINT_8,    "0-4: Interpolation filters during mode decision"),
+        HANDLE_AV1_AUX_DATA(DisableCdfUpdate,         OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(DisableFrameEndUpdateCdf, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(UniformTileSpacing,       OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(ContextUpdateTileIdPlus1, OPT_UINT_8,    "0-128"),
+        HANDLE_AV1_AUX_DATA(SwitchInterval,           OPT_UINT_16,   "0-maxU16: Interval (0 - disabled)"),
         HANDLE_AV1_AUX_DATA(Cdef.CdefDampingMinus3, OPT_UINT_8, "0-3"),
         HANDLE_AV1_AUX_DATA(Cdef.CdefBits, OPT_UINT_8, "0-3"),
         HANDLE_AV1_AUX_DATA(LoopFilter.LFLevelYVert, OPT_UINT_8, "0-63"),
@@ -1465,7 +1467,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
             {
-                mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffers.get());
+                mfxExtAV1ResolutionParam* pExt = RetrieveExtBuffer<mfxExtAV1ResolutionParam>(*m_ExtBuffers.get());
 
                 pExt->FrameWidth = val;
                 m_ExtBuffers.get()->push_back(pExt);
@@ -1488,7 +1490,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
             {
-                mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffers.get());
+                mfxExtAV1ResolutionParam* pExt = RetrieveExtBuffer<mfxExtAV1ResolutionParam>(*m_ExtBuffers.get());
 
                 pExt->FrameHeight = val;
                 m_ExtBuffers.get()->push_back(pExt);
@@ -2110,9 +2112,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxU16 frameWidth = m_inParams.FrameInfo.CropW > 0 ? m_inParams.FrameInfo.CropW : m_inParams.FrameInfo.Width;
             mfxU16 frameHeight = m_inParams.FrameInfo.CropH > 0 ? m_inParams.FrameInfo.CropH : m_inParams.FrameInfo.Height;
 
-            mfxExtAV1Param *pAV1 = m_extAV1Param.get();
-            frameWidth = pAV1->FrameWidth > 0 ? pAV1->FrameWidth : frameWidth;
-            frameHeight = pAV1->FrameHeight > 0 ? pAV1->FrameHeight : frameHeight;
+            mfxExtAV1ResolutionParam* pRS = m_extAV1RsParam.get();
+            frameWidth  = pRS->FrameWidth > 0 ? pRS->FrameWidth : frameWidth;
+            frameHeight = pRS->FrameHeight > 0 ? pRS->FrameHeight : frameHeight;
 
             if (frameWidth == 0 || frameHeight == 0)
                 return MFX_ERR_UNKNOWN;
@@ -2298,7 +2300,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+            mfxExtAV1TileParam* pExt = RetrieveExtBuffer<mfxExtAV1TileParam>(*m_ExtBuffersPerFrame.get());
 
             pExt->NumTileRows = val;
             m_ExtBuffersPerFrame.get()->push_back(pExt);
@@ -2311,7 +2313,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+            mfxExtAV1TileParam* pExt = RetrieveExtBuffer<mfxExtAV1TileParam>(*m_ExtBuffersPerFrame.get());
 
             pExt->NumTileColumns = val;
             m_ExtBuffersPerFrame.get()->push_back(pExt);
@@ -2324,7 +2326,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+            mfxExtAV1TileParam* pExt = RetrieveExtBuffer<mfxExtAV1TileParam>(*m_ExtBuffersPerFrame.get());
 
             pExt->NumTileGroups = val;
             m_ExtBuffersPerFrame.get()->push_back(pExt);
@@ -2337,7 +2339,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+            mfxExtAV1AuxData* pExt = RetrieveExtBuffer<mfxExtAV1AuxData>(*m_ExtBuffersPerFrame.get());
 
             pExt->UniformTileSpacing = val;
             m_ExtBuffersPerFrame.get()->push_back(pExt);
@@ -2350,7 +2352,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+            mfxExtAV1AuxData* pExt = RetrieveExtBuffer<mfxExtAV1AuxData>(*m_ExtBuffersPerFrame.get());
 
             pExt->ContextUpdateTileIdPlus1 = val;
             m_ExtBuffersPerFrame.get()->push_back(pExt);
@@ -2361,9 +2363,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             MFX_CHECK(1 + argv != argvEnd);
 
-            mfxExtAV1Param *pExt = m_bPerFrameParamsStart ?
-                RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get()) :
-                m_extAV1Param.get();
+            mfxExtAV1AuxData* pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1AuxData>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1AuxData.get();
 
             for (mfxU8 i = 0; i < 256 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
             {
@@ -2378,9 +2380,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             MFX_CHECK(1 + argv != argvEnd);
 
-            mfxExtAV1Param *pExt = m_bPerFrameParamsStart ?
-                RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get()) :
-                m_extAV1Param.get();
+            mfxExtAV1AuxData* pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1AuxData>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1AuxData.get();
 
             for (mfxU8 i = 0; i < 128 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
             {
@@ -2395,9 +2397,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             MFX_CHECK(1 + argv != argvEnd);
 
-            mfxExtAV1Param *pExt = m_bPerFrameParamsStart ?
-                RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get()) :
-                m_extAV1Param.get();
+            mfxExtAV1AuxData* pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1AuxData>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1AuxData.get();
 
             for (mfxU8 i = 0; i < 128 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
             {
@@ -2830,6 +2832,10 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (!m_extAV1BsParam.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
         m_components[eREN].m_extParams.push_back(m_extAV1BsParam);
+    if (!m_extAV1RsParam.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
+        m_components[eREN].m_extParams.push_back(m_extAV1RsParam);
+    if (!m_extAV1TileParam.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
+        m_components[eREN].m_extParams.push_back(m_extAV1TileParam);
     if (!m_extAV1Param.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
         m_components[eREN].m_extParams.push_back(m_extAV1Param);
     if (!m_extAV1AuxData.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)

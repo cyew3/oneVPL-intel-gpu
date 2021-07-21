@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,144 +69,141 @@ namespace av1e {
                 vp.mfx.FrameInfo.Width = 4096;
                 vp.mfx.FrameInfo.Height = 2160;
 
-                vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_RESOLUTION_PARAM, false);
+                vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
 
-                mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
-                av1Par.FrameWidth = vp.mfx.FrameInfo.Width;
-                av1Par.FrameHeight = vp.mfx.FrameInfo.Height;
+                mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(vp);
+                rsPar.FrameWidth                = vp.mfx.FrameInfo.Width;
+                rsPar.FrameHeight               = vp.mfx.FrameInfo.Height;
 
-                auto p_sh = MfxFeatureBlocks::make_storable<SH>();
-                auto p_fh = MfxFeatureBlocks::make_storable<FH>();
-                storage.Insert(Glob::SH::Key, std::move(p_sh));
-                storage.Insert(Glob::FH::Key, std::move(p_fh));
+                auto pSH = MfxFeatureBlocks::make_storable<SH>();
+                auto pFH = MfxFeatureBlocks::make_storable<FH>();
+                storage.Insert(Glob::SH::Key, std::move(pSH));
+                storage.Insert(Glob::FH::Key, std::move(pFH));
 
-                auto &caps = Glob::EncodeCaps::GetOrConstruct(storage);
+                auto& caps = Glob::EncodeCaps::GetOrConstruct(storage);
                 caps.SuperResSupport = 1;
             }
         };
 
         TEST_F(FeatureBlocksSuperres, CheckAndFix)
         {
-            auto& vp = Glob::VideoParam::Get(storage);
-            mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_CheckAndFix });
+            auto&       vp    = Glob::VideoParam::Get(storage);
 
-            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
-            auto blk = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_CheckAndFix });
-
-            av1Par.EnableSuperres = MFX_CODINGOPTION_ON;
-            av1Par.SuperresScaleDenominator = 8;
+            mfxExtAV1AuxData& auxPar        = ExtBuffer::Get(vp);
+            auxPar.EnableSuperres           = MFX_CODINGOPTION_ON;
+            auxPar.SuperresScaleDenominator = 8;
             ASSERT_EQ(
-                blk->Call(vp, vp, storage),
+                block->Call(vp, vp, storage),
                 MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
             );
             ASSERT_EQ(
-                av1Par.SuperresScaleDenominator,
+                auxPar.SuperresScaleDenominator,
                 16);
 
-            av1Par.EnableSuperres = MFX_CODINGOPTION_ON;
-            av1Par.SuperresScaleDenominator = 17;
+            auxPar.EnableSuperres           = MFX_CODINGOPTION_ON;
+            auxPar.SuperresScaleDenominator = 17;
             ASSERT_EQ(
-                blk->Call(vp, vp, storage),
+                block->Call(vp, vp, storage),
                 MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
             );
             ASSERT_EQ(
-                av1Par.SuperresScaleDenominator,
+                auxPar.SuperresScaleDenominator,
                 16);
 
-            av1Par.EnableSuperres = MFX_CODINGOPTION_OFF;
-            av1Par.SuperresScaleDenominator = 5;
+            auxPar.EnableSuperres           = MFX_CODINGOPTION_OFF;
+            auxPar.SuperresScaleDenominator = 5;
             ASSERT_EQ(
-                blk->Call(vp, vp, storage),
+                block->Call(vp, vp, storage),
                 MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
             );
             ASSERT_EQ(
-                av1Par.SuperresScaleDenominator,
+                auxPar.SuperresScaleDenominator,
                 8);
 
-            av1Par.EnableSuperres = MFX_CODINGOPTION_ON;
-            av1Par.SuperresScaleDenominator = 9;
+            auxPar.EnableSuperres           = MFX_CODINGOPTION_ON;
+            auxPar.SuperresScaleDenominator = 9;
             ASSERT_EQ(
-                blk->Call(vp, vp, storage),
+                block->Call(vp, vp, storage),
                 MFX_ERR_NONE
             );
             ASSERT_EQ(
-                av1Par.SuperresScaleDenominator,
+                auxPar.SuperresScaleDenominator,
                 9);
 
-            av1Par.EnableSuperres = MFX_CODINGOPTION_OFF;
-            av1Par.SuperresScaleDenominator = 8;
+            auxPar.EnableSuperres           = MFX_CODINGOPTION_OFF;
+            auxPar.SuperresScaleDenominator = 8;
             ASSERT_EQ(
-                blk->Call(vp, vp, storage),
+                block->Call(vp, vp, storage),
                 MFX_ERR_NONE
             );
             ASSERT_EQ(
-                av1Par.SuperresScaleDenominator,
+                auxPar.SuperresScaleDenominator,
                 8);
         }
 
         TEST_F(FeatureBlocksSuperres, SetDefaults)
         {
-            auto& vp = Glob::VideoParam::Get(storage);
-            mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_SetDefaults });
+            auto&       vp    = Glob::VideoParam::Get(storage);
 
-            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
-            auto blk = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_SetDefaults });
-
-            av1Par.EnableSuperres = 0;
-            av1Par.SuperresScaleDenominator = 0;
-            blk->Call(vp, storage, storage);
+            mfxExtAV1AuxData& auxPar        = ExtBuffer::Get(vp);
+            auxPar.EnableSuperres           = 0;
+            auxPar.SuperresScaleDenominator = 0;
+            block->Call(vp, storage, storage);
             ASSERT_EQ(
-                av1Par.EnableSuperres,
+                auxPar.EnableSuperres,
                 MFX_CODINGOPTION_OFF);
             ASSERT_EQ(
-                av1Par.SuperresScaleDenominator,
+                auxPar.SuperresScaleDenominator,
                 8);
 
-            av1Par.EnableSuperres = MFX_CODINGOPTION_ON;
-            av1Par.SuperresScaleDenominator = 0;
-            blk->Call(vp, storage, storage);
+            auxPar.EnableSuperres           = MFX_CODINGOPTION_ON;
+            auxPar.SuperresScaleDenominator = 0;
+            block->Call(vp, storage, storage);
             ASSERT_EQ(
-                av1Par.EnableSuperres,
+                auxPar.EnableSuperres,
                 MFX_CODINGOPTION_ON);
             ASSERT_EQ(
-                av1Par.SuperresScaleDenominator,
+                auxPar.SuperresScaleDenominator,
                 16);
         }
 
         TEST_F(FeatureBlocksSuperres, SetSH)
         {
-            auto& vp = Glob::VideoParam::Get(storage);
-            mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
-            auto& sh = Glob::SH::Get(storage);
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_SetSH });
+            auto&       vp    = Glob::VideoParam::Get(storage);
 
-            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
-            auto blk = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_SetSH });
-
-            uint32_t superresEn = std::rand() % 2;
-            av1Par.EnableSuperres = (mfxU8)(superresEn ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+            mfxExtAV1AuxData& auxPar    = ExtBuffer::Get(vp);
+            auto&             sh        = Glob::SH::Get(storage);
+            bool              isEnabled = static_cast<bool>(std::rand() % 2);
+            auxPar.EnableSuperres       = (mfxU8)(isEnabled ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
             ASSERT_EQ(
-                blk->Call(storage, storage),
+                block->Call(storage, storage),
                 MFX_ERR_NONE
             );
             ASSERT_EQ(
                 sh.enable_superres,
-                superresEn
+                isEnabled
             );
         }
 
         TEST_F(FeatureBlocksSuperres, SetFH)
         {
-            auto& vp = Glob::VideoParam::Get(storage);
-            mfxExtAV1Param& av1Par = ExtBuffer::Get(vp);
-            auto& fh = Glob::FH::Get(storage);
+            const auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
+            const auto& block = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_SetFH });
+            auto&       vp    = Glob::VideoParam::Get(storage);
 
-            auto& queue = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
-            auto blk = FeatureBlocks::Get(queue, { FEATURE_SUPERRES, Superres::BLK_SetFH });
-
-            av1Par.EnableSuperres = MFX_CODINGOPTION_ON;
-            av1Par.SuperresScaleDenominator = 11;
+            mfxExtAV1AuxData& auxPar        = ExtBuffer::Get(vp);
+            auto&             fh            = Glob::FH::Get(storage);
+            auxPar.EnableSuperres           = MFX_CODINGOPTION_ON;
+            auxPar.SuperresScaleDenominator = 11;
             ASSERT_EQ(
-                blk->Call(storage, storage),
+                block->Call(storage, storage),
                 MFX_ERR_NONE
             );
             ASSERT_EQ(
@@ -221,9 +218,11 @@ namespace av1e {
                 fh.SuperresDenom,
                 11
             );
+
+            mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(vp);
             ASSERT_EQ(
                 fh.UpscaledWidth,
-                av1Par.FrameWidth
+                rsPar.FrameWidth
             );
         }
     }

@@ -89,31 +89,18 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(WriteIVFHeaders);
     });
 
-    blocks.m_ebCopySupported[MFX_EXTBUFF_AV1_PARAM].emplace_back(
+    blocks.m_ebCopySupported[MFX_EXTBUFF_AV1_RESOLUTION_PARAM].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
-        const auto& buf_src = *(const mfxExtAV1Param*)pSrc;
-        auto& buf_dst = *(mfxExtAV1Param*)pDst;
+        const auto& buf_src = *(const mfxExtAV1ResolutionParam*)pSrc;
+        auto& buf_dst = *(mfxExtAV1ResolutionParam*)pDst;
         MFX_COPY_FIELD(FrameWidth);
         MFX_COPY_FIELD(FrameHeight);
+    });
 
-        MFX_COPY_FIELD(UseAnnexB);
-        MFX_COPY_FIELD(PackOBUFrame);
-        MFX_COPY_FIELD(InsertTemporalDelimiter);
-
-        MFX_COPY_FIELD(EnableCdef);
-        MFX_COPY_FIELD(EnableLoopFilter);
-        MFX_COPY_FIELD(EnableRestoration);
-        MFX_COPY_FIELD(LoopFilterSharpness);
-        MFX_COPY_FIELD(InterpFilter);
-        MFX_COPY_FIELD(SegmentationMode);
-        MFX_COPY_FIELD(DisableCdfUpdate);
-        MFX_COPY_FIELD(DisableFrameEndUpdateCdf);
-
-        MFX_COPY_FIELD(EnableSuperres);
-        MFX_COPY_FIELD(SuperresScaleDenominator);
-        MFX_COPY_FIELD(StillPictureMode);
-        MFX_COPY_FIELD(SwitchInterval);
+    blocks.m_ebCopySupported[MFX_EXTBUFF_AV1_PARAM].emplace_back(
+        [](const mfxExtBuffer* /*pSrc*/, mfxExtBuffer* /*pDst*/) -> void
+    {
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_AV1_AUXDATA].emplace_back(
@@ -121,6 +108,29 @@ void General::SetSupported(ParamSupport& blocks)
     {
         const auto& buf_src = *(const mfxExtAV1AuxData*)pSrc;
         auto& buf_dst = *(mfxExtAV1AuxData*)pDst;
+
+        MFX_COPY_FIELD(StillPictureMode);
+        MFX_COPY_FIELD(UseAnnexB);
+        MFX_COPY_FIELD(PackOBUFrame);
+        MFX_COPY_FIELD(InsertTemporalDelimiter);
+
+        MFX_COPY_FIELD(EnableCdef);
+        MFX_COPY_FIELD(EnableRestoration);
+
+        MFX_COPY_FIELD(EnableLoopFilter);
+        MFX_COPY_FIELD(LoopFilterSharpness);
+
+        MFX_COPY_FIELD(EnableSuperres);
+        MFX_COPY_FIELD(SuperresScaleDenominator);
+
+        MFX_COPY_FIELD(SegmentationMode);
+        MFX_COPY_FIELD(InterpFilter);
+
+        MFX_COPY_FIELD(DisableCdfUpdate);
+        MFX_COPY_FIELD(DisableFrameEndUpdateCdf);
+
+        MFX_COPY_FIELD(SwitchInterval);
+
         MFX_COPY_FIELD(Cdef.CdefDampingMinus3);
         MFX_COPY_FIELD(Cdef.CdefBits);
 
@@ -371,32 +381,6 @@ void General::SetInherited(ParamInheritance& par)
         INHERIT_OPT(WriteIVFHeaders);
     });
 
-    par.m_ebInheritDefault[MFX_EXTBUFF_AV1_PARAM].emplace_back(
-        [](const mfxVideoParam& /*parInit*/
-            , const mfxExtBuffer* pSrc
-            , const mfxVideoParam& /*parReset*/
-            , mfxExtBuffer* pDst)
-    {
-        INIT_EB(mfxExtAV1Param);
-        INHERIT_OPT(UseAnnexB);
-        INHERIT_OPT(PackOBUFrame);
-        INHERIT_OPT(InsertTemporalDelimiter);
-
-        INHERIT_OPT(EnableCdef);
-        INHERIT_OPT(EnableLoopFilter);
-        INHERIT_OPT(EnableRestoration);
-        INHERIT_OPT(LoopFilterSharpness);
-        INHERIT_OPT(InterpFilter);
-        INHERIT_OPT(SegmentationMode);
-        INHERIT_OPT(DisableCdfUpdate);
-        INHERIT_OPT(DisableFrameEndUpdateCdf);
-
-        INHERIT_OPT(EnableSuperres);
-        INHERIT_OPT(SuperresScaleDenominator);
-        INHERIT_OPT(StillPictureMode);
-        INHERIT_OPT(SwitchInterval);
-    });
-
     par.m_ebInheritDefault[MFX_EXTBUFF_AV1_AUXDATA].emplace_back(
         [](const mfxVideoParam& /*parInit*/
             , const mfxExtBuffer* pSrc
@@ -404,6 +388,29 @@ void General::SetInherited(ParamInheritance& par)
             , mfxExtBuffer* pDst)
     {
         INIT_EB(mfxExtAV1AuxData);
+
+        INHERIT_OPT(StillPictureMode);
+        INHERIT_OPT(UseAnnexB);
+        INHERIT_OPT(PackOBUFrame);
+        INHERIT_OPT(InsertTemporalDelimiter);
+
+        INHERIT_OPT(EnableCdef);
+        INHERIT_OPT(EnableRestoration);
+
+        INHERIT_OPT(EnableLoopFilter);
+        INHERIT_OPT(LoopFilterSharpness);
+
+        INHERIT_OPT(EnableSuperres);
+        INHERIT_OPT(SuperresScaleDenominator);
+
+        INHERIT_OPT(SegmentationMode);
+        INHERIT_OPT(InterpFilter);
+
+        INHERIT_OPT(DisableCdfUpdate);
+        INHERIT_OPT(DisableFrameEndUpdateCdf);
+
+        INHERIT_OPT(SwitchInterval);
+
         INHERIT_OPT(Cdef.CdefDampingMinus3);
         INHERIT_OPT(Cdef.CdefBits);
 
@@ -443,7 +450,6 @@ void General::SetInherited(ParamInheritance& par)
         INIT_EB(mfxExtCodingOption2);
         INHERIT_OPT(BRefType);
     });
-
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION3].emplace_back(
         [this](const mfxVideoParam& /*parInit*/
@@ -2274,8 +2280,8 @@ inline void SetTaskTDHeaderInsert(
     if (IsHidden(prevTask))
         return;
 
-    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-    if (IsOn(av1Par.InsertTemporalDelimiter))
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
+    if (IsOn(auxPar.InsertTemporalDelimiter))
     {
         task.InsertHeaders |= INSERT_TD;
         return;
@@ -2307,8 +2313,8 @@ inline void SetTaskInsertHeaders(
     if (!task.FramesToShow.empty())
         task.InsertHeaders |= INSERT_REPEATED;
 
-    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-    if (IsOn(av1Par.PackOBUFrame))
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
+    if (IsOn(auxPar.PackOBUFrame))
         task.InsertHeaders |= INSERT_FRM_OBU;
 }
 
@@ -2488,11 +2494,11 @@ TTaskIt General::ReorderWrap(
 
 mfxU32 General::GetMinBsSize(
     const mfxVideoParam & par
-    , const mfxExtAV1Param& AV1Param
+    , const mfxExtAV1ResolutionParam& rsPar
     , const mfxExtCodingOption3& CO3)
 {
     // TODO: it's more correct to use sizes aligned to Mi block size
-    mfxU32 size = AV1Param.FrameWidth * AV1Param.FrameHeight;
+    mfxU32 size = rsPar.FrameWidth * rsPar.FrameHeight;
 
     SetDefault(size, par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height);
 
@@ -2583,14 +2589,11 @@ void General::SetSH(
     , const EncodeCapsAv1& caps
     , SH& sh)
 {
-
-    const mfxExtAV1Param& av1Par   = ExtBuffer::Get(par);
-    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
-
     sh = {};
 
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(par);
     sh.seq_profile   = MapMfxProfileToSpec(par.mfx.CodecProfile);
-    sh.still_picture = IsOn(av1Par.StillPictureMode);
+    sh.still_picture = IsOn(auxPar.StillPictureMode);
 
     const int maxFrameResolutionBits = 15;
     sh.frame_width_bits       = maxFrameResolutionBits;
@@ -2598,8 +2601,8 @@ void General::SetSH(
     sh.sbSize                 = SB_SIZE;
     sh.enable_order_hint      = CO2Flag(auxPar.EnableOrderHint);
     sh.order_hint_bits_minus1 = auxPar.OrderHintBits - 1;
-    sh.enable_cdef            = CO2Flag(av1Par.EnableCdef);
-    sh.enable_restoration     = CO2Flag(av1Par.EnableRestoration);
+    sh.enable_cdef            = CO2Flag(auxPar.EnableCdef);
+    sh.enable_restoration     = CO2Flag(auxPar.EnableRestoration);
 
     // Below fields will directly use setting from caps.
     sh.enable_dual_filter         = caps.AV1ToolSupportFlags.fields.enable_dual_filter;
@@ -2663,17 +2666,17 @@ void General::SetFH(
     // this functions sets "static" parameters which can be changed via Reset
     fh = {};
 
-    const mfxExtAV1Param& av1Par     = ExtBuffer::Get(par);
-    const mfxExtAV1AuxData& auxPar   = ExtBuffer::Get(par);
-                                     
-    fh.FrameWidth                    = GetActualEncodeWidth(av1Par);
-    fh.FrameHeight                   = av1Par.FrameHeight;
+    const mfxExtAV1ResolutionParam& rsPar  = ExtBuffer::Get(par);
+    const mfxExtAV1AuxData&         auxPar = ExtBuffer::Get(par);
+
+    fh.FrameWidth                    = GetActualEncodeWidth(rsPar.FrameWidth, &auxPar);
+    fh.FrameHeight                   = rsPar.FrameHeight;
     fh.error_resilient_mode          = CO2Flag(auxPar.ErrorResilientMode);
-    fh.disable_cdf_update            = CO2Flag(av1Par.DisableCdfUpdate);
-    fh.interpolation_filter          = MapMfxInterpFilter(av1Par.InterpFilter);
-    fh.RenderWidth                   = av1Par.FrameWidth;
-    fh.RenderHeight                  = av1Par.FrameHeight;
-    fh.disable_frame_end_update_cdf  = CO2Flag(av1Par.DisableFrameEndUpdateCdf);
+    fh.disable_cdf_update            = CO2Flag(auxPar.DisableCdfUpdate);
+    fh.interpolation_filter          = MapMfxInterpFilter(auxPar.InterpFilter);
+    fh.RenderWidth                   = rsPar.FrameWidth;
+    fh.RenderHeight                  = rsPar.FrameHeight;
+    fh.disable_frame_end_update_cdf  = CO2Flag(auxPar.DisableFrameEndUpdateCdf);
     fh.allow_high_precision_mv       = 0; // Set default value to 0 as recommondation.
 
     fh.quantization_params.DeltaQYDc = auxPar.QP.YDcDeltaQ;
@@ -2683,9 +2686,9 @@ void General::SetFH(
     fh.quantization_params.DeltaQVAc = auxPar.QP.VAcDeltaQ;
 
     // Loop Filter params
-    if (IsOn(av1Par.EnableLoopFilter))
+    if (IsOn(auxPar.EnableLoopFilter))
     {
-        fh.loop_filter_params.loop_filter_sharpness     = av1Par.LoopFilterSharpness;
+        fh.loop_filter_params.loop_filter_sharpness     = auxPar.LoopFilterSharpness;
         fh.loop_filter_params.loop_filter_delta_enabled = auxPar.LoopFilter.ModeRefDeltaEnabled;
         fh.loop_filter_params.loop_filter_delta_update  = auxPar.LoopFilter.ModeRefDeltaUpdate;
 
@@ -2840,10 +2843,10 @@ void General::SetDefaults(
         SetDefault(pBsPar->WriteIVFHeaders, MFX_CODINGOPTION_ON);
     }
 
-    mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    if (pAV1Par != nullptr)
+    mfxExtAV1ResolutionParam* pRsPar = ExtBuffer::Get(par);
+    if (pRsPar != nullptr)
     {
-        SetDefaultFrameInfo(pAV1Par->FrameWidth, pAV1Par->FrameHeight, fi);
+        SetDefaultFrameInfo(pRsPar->FrameWidth, pRsPar->FrameHeight, fi);
     }
 
     SetDefault(fi.AspectRatioW, mfxU16(1));
@@ -2857,25 +2860,20 @@ void General::SetDefaults(
 
     SetDefaultFormat(par, defPar, pCO3);
 
-    if (pAV1Par)
-    {
-        SetDefault(pAV1Par->UseAnnexB, MFX_CODINGOPTION_OFF);
-        SetDefault(pAV1Par->PackOBUFrame, MFX_CODINGOPTION_ON);
-        SetDefault(pAV1Par->InsertTemporalDelimiter, MFX_CODINGOPTION_ON);
-        SetDefault(pAV1Par->DisableCdfUpdate, MFX_CODINGOPTION_OFF);
-        SetDefault(pAV1Par->DisableFrameEndUpdateCdf, MFX_CODINGOPTION_OFF);
-        SetDefault(pAV1Par->EnableCdef, MFX_CODINGOPTION_ON);
-        SetDefault(pAV1Par->EnableLoopFilter, MFX_CODINGOPTION_ON);
-        SetDefault(pAV1Par->EnableRestoration, MFX_CODINGOPTION_OFF);
-        SetDefault(pAV1Par->EnableSuperres, MFX_CODINGOPTION_OFF);
-        SetDefault(pAV1Par->StillPictureMode, MFX_CODINGOPTION_OFF);
-
-        SetDefault(pAV1Par->InterpFilter, MFX_AV1_INTERP_EIGHTTAP);
-    }
-
     mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
     if (pAuxPar)
     {
+        SetDefault(pAuxPar->StillPictureMode, MFX_CODINGOPTION_OFF);
+        SetDefault(pAuxPar->UseAnnexB, MFX_CODINGOPTION_OFF);
+        SetDefault(pAuxPar->PackOBUFrame, MFX_CODINGOPTION_ON);
+        SetDefault(pAuxPar->InsertTemporalDelimiter, MFX_CODINGOPTION_ON);
+        SetDefault(pAuxPar->EnableCdef, MFX_CODINGOPTION_ON);
+        SetDefault(pAuxPar->EnableRestoration, MFX_CODINGOPTION_OFF);
+        SetDefault(pAuxPar->EnableLoopFilter, MFX_CODINGOPTION_ON);
+        SetDefault(pAuxPar->EnableSuperres, MFX_CODINGOPTION_OFF);
+        SetDefault(pAuxPar->InterpFilter, MFX_AV1_INTERP_EIGHTTAP);
+        SetDefault(pAuxPar->DisableCdfUpdate, MFX_CODINGOPTION_OFF);
+        SetDefault(pAuxPar->DisableFrameEndUpdateCdf, MFX_CODINGOPTION_OFF);
         SetDefault(pAuxPar->LoopFilter.ModeRefDeltaEnabled, MFX_CODINGOPTION_OFF);
         SetDefault(pAuxPar->LoopFilter.ModeRefDeltaUpdate, MFX_CODINGOPTION_OFF);
         SetDefault(pAuxPar->DisplayFormatSwizzle, MFX_CODINGOPTION_OFF);
@@ -2987,11 +2985,11 @@ mfxStatus General::CheckCrops(
     mfxU32 changed = 0;
     changed += CheckMaxOrClip(fi.CropW, fi.Width);
     changed += CheckMaxOrClip(fi.CropH, fi.Height);
-    const mfxExtAV1Param* pAv1Par = ExtBuffer::Get(par);
-    if (pAv1Par)
+    const mfxExtAV1ResolutionParam* pRsPar = ExtBuffer::Get(par);
+    if (pRsPar)
     {
-        changed += pAv1Par->FrameWidth && CheckMaxOrClip(fi.CropW, pAv1Par->FrameWidth);
-        changed += pAv1Par->FrameHeight && CheckMaxOrClip(fi.CropH, pAv1Par->FrameHeight);
+        changed += pRsPar->FrameWidth > 0 && CheckMaxOrClip(fi.CropW, pRsPar->FrameWidth);
+        changed += pRsPar->FrameHeight > 0 && CheckMaxOrClip(fi.CropH, pRsPar->FrameHeight);
     }
 
     MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
@@ -3235,8 +3233,8 @@ mfxStatus General::CheckTemporalLayers(mfxVideoParam & par)
 
 mfxStatus General::CheckStillPicture(mfxVideoParam & par)
 {
-    mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    MFX_CHECK(pAV1Par && IsOn(pAV1Par->StillPictureMode), MFX_ERR_NONE);
+    mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
+    MFX_CHECK(pAuxPar && IsOn(pAuxPar->StillPictureMode), MFX_ERR_NONE);
 
     mfxU32 changed = 0;
     if (par.mfx.GopPicSize != 1)
@@ -3314,22 +3312,25 @@ mfxStatus General::CheckDeltaQ(mfxVideoParam& par)
 
 mfxStatus General::CheckFrameOBU(mfxVideoParam& par,  const ENCODE_CAPS_AV1& caps)
 {
-    mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    MFX_CHECK(pAV1Par, MFX_ERR_NONE);
+    mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
+    MFX_CHECK(pAuxPar, MFX_ERR_NONE);
     mfxU32 invalid = 0;
 
-    if (IsOn(pAV1Par->PackOBUFrame) && caps.FrameOBUSupport == false)
+    if (IsOn(pAuxPar->PackOBUFrame) && caps.FrameOBUSupport == false)
     {
-        pAV1Par->PackOBUFrame = MFX_CODINGOPTION_OFF;
+        pAuxPar->PackOBUFrame = MFX_CODINGOPTION_OFF;
         invalid = 1;
     }
 
     MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
 
+    mfxExtAV1TileParam* pTilePar = ExtBuffer::Get(par);
+    MFX_CHECK(pTilePar, MFX_ERR_NONE);
+
     mfxU32 changed = 0;
-    if (IsOn(pAV1Par->PackOBUFrame) && pAV1Par->NumTileGroups > 1)
-    {   
-        pAV1Par->PackOBUFrame = MFX_CODINGOPTION_OFF;
+    if (pTilePar->NumTileGroups > 1 && IsOn(pAuxPar->PackOBUFrame))
+    {
+        pAuxPar->PackOBUFrame = MFX_CODINGOPTION_OFF;
         changed = 1;
     }
 
@@ -3391,20 +3392,18 @@ inline void CheckCDEFStrength(mfxExtAV1AuxData& auxPar, mfxU32& invalid, mfxU32&
 
 mfxStatus General::CheckCDEF(mfxVideoParam& par,  const ENCODE_CAPS_AV1& caps)
 {
-    mfxU32 invalid = 0;
-    mfxExtAV1Param* const pAV1Par = ExtBuffer::Get(par);
+    mfxExtAV1AuxData* const pAuxPar = ExtBuffer::Get(par);
 
-    if (pAV1Par && IsOn(pAV1Par->EnableCdef) && !caps.AV1ToolSupportFlags.fields.enable_cdef)
+    mfxU32 invalid = 0;
+    if (pAuxPar && IsOn(pAuxPar->EnableCdef) && !caps.AV1ToolSupportFlags.fields.enable_cdef)
     {
-        pAV1Par->EnableCdef = MFX_CODINGOPTION_OFF;
+        pAuxPar->EnableCdef = MFX_CODINGOPTION_OFF;
         invalid += 1;
     }
 
     MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
 
     mfxU32 changed = 0;
-    mfxExtAV1AuxData* const pAuxPar = ExtBuffer::Get(par);
-
     if (pAuxPar)
     {
         changed += CheckMaxOrClip(pAuxPar->Cdef.CdefDampingMinus3, 3);
@@ -3615,11 +3614,11 @@ mfxStatus General::CheckCodedPicSize(
     mfxVideoParam& par
     , const Defaults::Param& /*defPar*/)
 {
-    mfxExtAV1Param* pAV1 = ExtBuffer::Get(par);
-    MFX_CHECK(pAV1, MFX_ERR_NONE);
+    mfxExtAV1ResolutionParam* pRsPar = ExtBuffer::Get(par);
+    MFX_CHECK(pRsPar, MFX_ERR_NONE);
 
-    MFX_CHECK(!CheckMaxOrZero(pAV1->FrameWidth, par.mfx.FrameInfo.Width), MFX_ERR_UNSUPPORTED);
-    MFX_CHECK(!CheckMaxOrZero(pAV1->FrameHeight, par.mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(!CheckMaxOrZero(pRsPar->FrameWidth, par.mfx.FrameInfo.Width), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(!CheckMaxOrZero(pRsPar->FrameHeight, par.mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
     return MFX_ERR_NONE;
 }
@@ -3715,11 +3714,10 @@ inline void SetLoopFilterLevels(
     const Defaults::Param& dflts
     , FH& fh)
 {
-    const mfxExtAV1Param& av1Par = ExtBuffer::Get(dflts.mvp);
-    if (!IsOn(av1Par.EnableLoopFilter))
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(dflts.mvp);
+    if (!IsOn(auxPar.EnableLoopFilter))
         return;
 
-    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(dflts.mvp);
     if (IsLoopFilterLevelsEmpty(auxPar))
     {
         //Get default LoopFilter settings

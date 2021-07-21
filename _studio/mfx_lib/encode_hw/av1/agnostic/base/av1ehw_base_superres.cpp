@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Intel Corporation
+// Copyright (c) 2020-2021 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,34 +33,31 @@ void Superres::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     Push(BLK_CheckAndFix
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW& strg) -> mfxStatus
     {
-        mfxExtAV1Param* pAV1Par = ExtBuffer::Get(out);
-        MFX_CHECK(pAV1Par, MFX_ERR_NONE);
-
-        MFX_CHECK(pAV1Par->SuperresScaleDenominator != 0, MFX_ERR_NONE);
+        mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(out);
+        MFX_CHECK(pAuxPar && pAuxPar->SuperresScaleDenominator != 0, MFX_ERR_NONE);
 
         mfxU32 changed = 0;
         mfxU32 invalid = 0;
         auto&  caps    = Glob::EncodeCaps::Get(strg);
 
-        changed += SetIf(pAV1Par->SuperresScaleDenominator,
-                         IsOn(pAV1Par->EnableSuperres) &&
-                             (pAV1Par->SuperresScaleDenominator < 9 ||
-                              pAV1Par->SuperresScaleDenominator > 16),
+        changed += SetIf(pAuxPar->SuperresScaleDenominator,
+                         IsOn(pAuxPar->EnableSuperres) &&
+                             (pAuxPar->SuperresScaleDenominator < 9 ||
+                              pAuxPar->SuperresScaleDenominator > 16),
                          DEFAULT_DENOM_FOR_SUPERRES_ON);
 
         // HW restriction of SuperRes denominator for SuperRes + LoopRestoration
-        changed += SetIf(pAV1Par->SuperresScaleDenominator,
-                         IsOn(pAV1Par->EnableSuperres) && IsOn(pAV1Par->EnableRestoration) &&
-                             (pAV1Par->SuperresScaleDenominator % 2 ==1),
+        changed += SetIf(pAuxPar->SuperresScaleDenominator,
+                         IsOn(pAuxPar->EnableSuperres) && IsOn(pAuxPar->EnableRestoration) &&
+                             (pAuxPar->SuperresScaleDenominator % 2 ==1),
                          DEFAULT_DENOM_FOR_SUPERRES_ON);
 
-        changed += SetIf(pAV1Par->SuperresScaleDenominator,
-                         IsOff(pAV1Par->EnableSuperres) &&
-                             pAV1Par->SuperresScaleDenominator !=
-                                 DEFAULT_DENOM_FOR_SUPERRES_OFF,
+        changed += SetIf(pAuxPar->SuperresScaleDenominator,
+                         IsOff(pAuxPar->EnableSuperres) &&
+                               pAuxPar->SuperresScaleDenominator != DEFAULT_DENOM_FOR_SUPERRES_OFF,
                          DEFAULT_DENOM_FOR_SUPERRES_OFF);
 
-        invalid += !caps.SuperResSupport && IsOn(pAV1Par->EnableSuperres);
+        invalid += !caps.SuperResSupport && IsOn(pAuxPar->EnableSuperres);
 
         MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
         MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
@@ -74,17 +71,17 @@ void Base::Superres::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
     Push(BLK_SetDefaults
         , [this](mfxVideoParam& par, StorageW& /*strg*/, StorageRW&)
     {
-        mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-        if (!pAV1Par)
+        mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(par);
+        if (!pAuxPar)
             return;
 
-        SetDefault(pAV1Par->EnableSuperres, MFX_CODINGOPTION_OFF);
+        SetDefault(pAuxPar->EnableSuperres, MFX_CODINGOPTION_OFF);
 
-        mfxU8 defaultDenom = IsOn(pAV1Par->EnableSuperres) ?
+        mfxU8 defaultDenom = IsOn(pAuxPar->EnableSuperres) ?
             DEFAULT_DENOM_FOR_SUPERRES_ON :
             DEFAULT_DENOM_FOR_SUPERRES_OFF;  // default denom for superres off, no scaling will be performed
 
-        SetDefault(pAV1Par->SuperresScaleDenominator, defaultDenom);
+        SetDefault(pAuxPar->SuperresScaleDenominator, defaultDenom);
     });
 }
 
@@ -93,13 +90,11 @@ void Base::Superres::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     Push(BLK_SetSH
         , [this](StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(Glob::VideoParam::Get(strg));
-        MFX_CHECK(pAV1Par, MFX_ERR_NONE);
-
         MFX_CHECK(strg.Contains(Glob::SH::Key), MFX_ERR_NOT_FOUND);
         auto &sh = Glob::SH::Get(strg);
 
-        sh.enable_superres = CO2Flag(pAV1Par->EnableSuperres);
+        const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(Glob::VideoParam::Get(strg));
+        sh.enable_superres             = CO2Flag(auxPar.EnableSuperres);
 
         return MFX_ERR_NONE;
     });
@@ -107,21 +102,19 @@ void Base::Superres::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     Push(BLK_SetFH
         , [this](StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        const mfxExtAV1Param* pAV1Par = ExtBuffer::Get(Glob::VideoParam::Get(strg));
-        MFX_CHECK(pAV1Par, MFX_ERR_NONE);
-
         MFX_CHECK(strg.Contains(Glob::FH::Key), MFX_ERR_NOT_FOUND);
         auto& fh = Glob::FH::Get(strg);
 
-        fh.use_superres = CO2Flag(pAV1Par->EnableSuperres) &&
-            pAV1Par->SuperresScaleDenominator >= 9 &&
-            pAV1Par->SuperresScaleDenominator <= 16;
+        const mfxExtAV1ResolutionParam& rsPar = ExtBuffer::Get(Glob::VideoParam::Get(strg));
+        fh.UpscaledWidth                      = rsPar.FrameWidth;
 
-        fh.frame_size_override_flag =
-            fh.use_superres ? 1 : fh.frame_size_override_flag;
+        const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(Glob::VideoParam::Get(strg));
+        fh.use_superres                = CO2Flag(auxPar.EnableSuperres) &&
+                                                 auxPar.SuperresScaleDenominator >= 9 &&
+                                                 auxPar.SuperresScaleDenominator <= 16;
 
-        fh.SuperresDenom = pAV1Par->SuperresScaleDenominator;
-        fh.UpscaledWidth = pAV1Par->FrameWidth;
+        fh.frame_size_override_flag = fh.use_superres ? 1 : fh.frame_size_override_flag;
+        fh.SuperresDenom            = auxPar.SuperresScaleDenominator;
 
         return MFX_ERR_NONE;
     });

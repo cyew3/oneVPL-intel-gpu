@@ -67,14 +67,10 @@ void SCC::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         {
             invalid += SetIf(pAV1Aux->IBC, !caps.AV1ToolSupportFlags.fields.allow_intrabc, 0);
 
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-            if (pAV1Par)
-            {
-                changed += SetIf(
-                    pAV1Par->EnableSuperres,
-                    IsOn(pAV1Par->EnableSuperres) && IsOn(pAV1Aux->IBC),
-                    MFX_CODINGOPTION_OFF);
-            }
+            changed += SetIf(
+                pAV1Aux->EnableSuperres,
+                IsOn(pAV1Aux->EnableSuperres) && IsOn(pAV1Aux->IBC),
+                MFX_CODINGOPTION_OFF);
         }
 
         MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
@@ -114,12 +110,8 @@ void SCC::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
 
         if (IsOn(pAux->IBC))
         {
-            mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-            if (!pAV1Par)
-                return;
-
-            SetDefault(pAV1Par->EnableSuperres, MFX_CODINGOPTION_OFF);
-            SetDefault(pAV1Par->EnableRestoration, MFX_CODINGOPTION_OFF);
+            SetDefault(pAux->EnableSuperres, MFX_CODINGOPTION_OFF);
+            SetDefault(pAux->EnableRestoration, MFX_CODINGOPTION_OFF);
         }
     });
 }

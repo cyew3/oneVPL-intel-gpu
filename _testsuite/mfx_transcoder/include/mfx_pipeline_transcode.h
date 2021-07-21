@@ -87,11 +87,13 @@ protected:
     MFXExtBufferPtr<mfxExtCodingOptionHEVC>  m_extCodingOptionsHEVC;
     MFXExtBufferPtr<mfxExtCodingOptionAV1E>  m_extCodingOptionsAV1E;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    MFXExtBufferPtr<mfxExtAV1BitstreamParam> m_extAV1BsParam;
-    MFXExtBufferPtr<mfxExtAV1Param>          m_extAV1Param;
-    MFXExtBufferPtr<mfxExtAV1AuxData>        m_extAV1AuxData;
-    MFXExtBufferPtr<mfxExtAV1Segmentation>   m_extAV1Segmentation;
-    std::vector<std::unique_ptr<mfxU8>>      m_segMaps;
+    MFXExtBufferPtr<mfxExtAV1BitstreamParam>    m_extAV1BsParam;
+    MFXExtBufferPtr<mfxExtAV1ResolutionParam>   m_extAV1RsParam;
+    MFXExtBufferPtr<mfxExtAV1TileParam>         m_extAV1TileParam;
+    MFXExtBufferPtr<mfxExtAV1Param>             m_extAV1Param;
+    MFXExtBufferPtr<mfxExtAV1AuxData>           m_extAV1AuxData;
+    MFXExtBufferPtr<mfxExtAV1Segmentation>      m_extAV1Segmentation;
+    std::vector<std::unique_ptr<mfxU8>>         m_segMaps;
 #endif
     MFXExtBufferPtr<mfxExtHEVCTiles> m_extHEVCTiles;
     MFXExtBufferPtr<mfxExtHEVCParam> m_extHEVCParam;
