@@ -21,6 +21,8 @@
 #ifndef __AV1SCD_H
 #define __AV1SCD_H
 
+#include <stdint.h>
+
 #include "aenc.h"
 
 #if defined(ENABLE_ADAPTIVE_ENCODE)

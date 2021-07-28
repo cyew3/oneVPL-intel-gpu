@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <set>
+#include <stdint.h>
 
 #include "av1_scd.h"
 
